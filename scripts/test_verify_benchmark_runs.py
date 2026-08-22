@@ -55,6 +55,23 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
             path = self.make_complete_run(Path(temporary))
             verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
 
+    def test_literature_data_loaded_event_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = self.make_complete_run(root)
+            literature_path = root / "JCB003" / "track_A" / "run_001"
+            literature_path.parent.mkdir(parents=True)
+            path.rename(literature_path)
+            run_path = literature_path / "run.json"
+            run = json.loads(run_path.read_text())
+            run["caseId"] = "JCB003"
+            run_path.write_text(json.dumps(run), encoding="utf-8")
+            events_path = literature_path / "interaction_log.json"
+            events = json.loads(events_path.read_text())
+            events[1]["type"] = "literature_benchmark_data_loaded"
+            events_path.write_text(json.dumps(events), encoding="utf-8")
+            verify_run_directory(literature_path, "JCB003", "track_A", "run_001")
+
     def test_missing_artifact_and_inconsistent_count_fail(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             path = self.make_complete_run(Path(temporary))
@@ -86,6 +103,16 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
             path = self.make_complete_run(Path(temporary))
             (path / "debug.txt").write_text("not part of the artifact contract", encoding="utf-8")
             with self.assertRaisesRegex(VerificationError, "unexpected artifacts: debug.txt"):
+                verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
+
+    def test_visible_final_annotation_requires_a_distinct_default_graph(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.make_complete_run(Path(temporary))
+            (path / "graph_state.json").write_text(
+                json.dumps({"statisticsAnnotation": {"mode": "exact_p", "testIndex": 0}}),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(VerificationError, "visible final statistics annotation"):
                 verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
 
 

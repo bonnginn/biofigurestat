@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +34,7 @@ SUPPORT_STATUSES = {
     "scientifically_compromising",
     "impossible",
 }
+SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 
 
 class VerificationError(ValueError):
@@ -87,7 +89,16 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
     result = statistics.get("result")
     if not isinstance(result, dict) or result.get("status") != "ok":
         raise VerificationError("statistics.json must contain a successful engine result")
-    read_json_object(path / "graph_state.json")
+    graph_state = read_json_object(path / "graph_state.json")
+    annotation = graph_state.get("statisticsAnnotation")
+    if (
+        isinstance(annotation, dict)
+        and annotation.get("mode") not in {None, "hidden"}
+        and (path / "default_graph.svg").read_bytes() == (path / "final_graph.svg").read_bytes()
+    ):
+        raise VerificationError(
+            "default_graph.svg matches final_graph.svg despite a visible final statistics annotation"
+        )
 
     try:
         events = json.loads((path / "interaction_log.json").read_text(encoding="utf-8"))
@@ -102,7 +113,6 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
     event_types = {event.get("type") for event in events if isinstance(event, dict)}
     required_events = {
         "benchmark_run_started",
-        "benchmark_pilot_data_loaded",
         "statistics_executed",
         "default_graph_captured",
         "benchmark_run_finalized",
@@ -110,6 +120,11 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
     missing_events = sorted(required_events - event_types)
     if missing_events:
         raise VerificationError(f"interaction log is missing: {', '.join(missing_events)}")
+    if not {
+        "benchmark_pilot_data_loaded",
+        "literature_benchmark_data_loaded",
+    }.intersection(event_types):
+        raise VerificationError("interaction log is missing a benchmark data-loaded event")
     if run.get("interactionCount") != len(events):
         raise VerificationError("run.json interactionCount does not match interaction_log.json")
     graph_edit_count = sum(event.get("type") == "graph_configuration_changed" for event in events)
@@ -132,9 +147,12 @@ def main() -> None:
     parser.add_argument("--output-root", type=Path, default=Path("benchmark_runs"))
     parser.add_argument("--track", choices=("track_A", "track_B"), default="track_A")
     parser.add_argument("--run-id", default="run_001")
-    parser.add_argument("--case", dest="case_ids", action="append", choices=PILOT_CASE_IDS)
+    parser.add_argument("--case", dest="case_ids", action="append")
     args = parser.parse_args()
     case_ids = tuple(args.case_ids or PILOT_CASE_IDS)
+    invalid_case_ids = [case_id for case_id in case_ids if not SAFE_ID.fullmatch(case_id)]
+    if invalid_case_ids:
+        parser.error(f"invalid case ID: {invalid_case_ids[0]}")
     failures: list[str] = []
     for case_id in case_ids:
         path = args.output_root / case_id / args.track / args.run_id
