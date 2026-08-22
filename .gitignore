@@ -8,6 +8,7 @@ engine/python/.venv/
 engine/python/build/
 engine/python/dist/
 engine/python/*.spec
+*.egg-info/
 __pycache__/
 *.pyc
 .DS_Store

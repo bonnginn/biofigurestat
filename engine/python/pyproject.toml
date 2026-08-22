@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "lsaa-analysis-engine"
 version = "0.7.0"
@@ -13,6 +17,9 @@ dependencies = [
 packaging = [
   "pyinstaller==6.21.0",
 ]
+
+[tool.setuptools]
+packages = ["lsaa_engine"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

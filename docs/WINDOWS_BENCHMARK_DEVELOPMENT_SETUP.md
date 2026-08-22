@@ -92,6 +92,11 @@ py -3.12 -m venv .venv
 Set-Location ..\..
 ```
 
+The project declares setuptools as its build backend and explicitly packages only
+`engine/python/lsaa_engine`; the adjacent `reference` directory is validation data, not a Python
+package. Build isolation installs the required setuptools version inside the venv automatically,
+so no global Python or packaging-tool changes are needed.
+
 The repository pins:
 
 - `lsaa-analysis-engine==0.7.0`;
@@ -102,8 +107,13 @@ The repository pins:
 Confirm the actual environment:
 
 ```powershell
-.\engine\python\.venv\Scripts\python.exe -c "import numpy, scipy, statsmodels; print(numpy.__version__, scipy.__version__, statsmodels.__version__)"
+.\engine\python\.venv\Scripts\python.exe -m pip check
+.\engine\python\.venv\Scripts\python.exe -c "from importlib.metadata import version; import lsaa_engine, numpy, scipy, statsmodels; print(version('lsaa-analysis-engine'), numpy.__version__, scipy.__version__, statsmodels.__version__)"
+'{}' | .\engine\python\.venv\Scripts\python.exe -m lsaa_engine.cli
 ```
+
+The version line must begin with `0.7.0`. The final command must emit one JSON response from the
+real CLI; a `validation_error` for the intentionally empty request confirms startup and is expected.
 
 ## 5. Validate shared code and numerical equivalence
 
