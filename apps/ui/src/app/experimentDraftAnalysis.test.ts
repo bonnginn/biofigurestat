@@ -1,0 +1,474 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  createExperimentSetDraft,
+  experimentCellKey,
+  type ExperimentCellMap,
+} from "./experimentDraft";
+import { assessDraftGraphAnalysis } from "./experimentDraftAnalysis";
+import { createLongitudinalFixture, createXyCorrelationFixture } from "./syntheticFixtures";
+
+function fixture(conditionLabels: readonly string[]) {
+  const base = createExperimentSetDraft("cell_culture", "proportion");
+  const conditions = conditionLabels.map((label, index) => ({
+    ...base.conditions[index],
+    label,
+    attributes: { "attribute.1": label },
+  }));
+  const draft = { ...base, conditions };
+  const cells: Record<string, ExperimentCellMap[string]> = {};
+  draft.experiments.forEach((experiment, experimentIndex) => {
+    conditions.forEach((condition, conditionIndex) => {
+      cells[
+        experimentCellKey({
+          experimentId: experiment.id,
+          conditionId: condition.id,
+          readoutId: draft.readouts[0].id,
+        })
+      ] = {
+        kind: "proportion",
+        positive: 20 + experimentIndex * 4 + conditionIndex * 8,
+        eligible: 100,
+      };
+    });
+  });
+  return { draft, cells };
+}
+
+describe("temporary experiment-first analysis adapter", () => {
+  it("routes three same-unit conditions to the existing repeated-measures backend", () => {
+    const { draft: independent, cells } = fixture(["Baseline", "6 h", "24 h"]);
+    const draft = {
+      ...independent,
+      conditionAssignment: { kind: "matched" as const, unitLabel: "Cell" },
+    };
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+    expect(assessment.request).toMatchObject({
+      protocolVersion: "0.3.0",
+      templateId: "D04",
+      method: "repeated_measures_anova",
+      options: { multiplicityMethod: "holm_paired_all_pairs" },
+    });
+    expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId)).size).toBe(3);
+  });
+
+  it("uses explicit within-Exp WB control=1 values without overwriting bands", () => {
+    const base = createExperimentSetDraft("protein_biochemical", "wb_ratio");
+    const conditions = base.conditions.slice(0, 2).map((condition, index) => ({
+      ...condition,
+      label: index === 0 ? "Control" : "Treatment",
+      attributes: { "attribute.1": index === 0 ? "Control" : "Treatment" },
+    }));
+    const readout = {
+      ...base.readouts[0],
+      withinExperimentNormalization: {
+        method: "control_equals_one" as const,
+        baselineConditionId: conditions[0].id,
+      },
+    };
+    const draft = { ...base, conditions, readouts: [readout] };
+    const cells: Record<string, ExperimentCellMap[string]> = {};
+    draft.experiments.forEach((experiment, index) => {
+      conditions.forEach((condition, conditionIndex) => {
+        cells[
+          experimentCellKey({
+            experimentId: experiment.id,
+            conditionId: condition.id,
+            readoutId: readout.id,
+          })
+        ] = {
+          kind: "wb_ratio",
+          target: conditionIndex === 0 ? 20 + index : 40 + index * 2,
+          reference: 10,
+        };
+      });
+    });
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: readout.id,
+      conditionIds: conditions.map(({ id }) => id),
+    });
+    expect(assessment.request?.observations.map(({ value }) => value)).toEqual([1, 1, 1, 2, 2, 2]);
+    expect(cells[Object.keys(cells)[0]]).toMatchObject({ target: 20, reference: 10 });
+  });
+
+  it("builds a validated independent two-condition request from Exp-level values", () => {
+    const { draft, cells } = fixture(["Control", "Treatment"]);
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+
+    expect(assessment.state).toBe("ready");
+    expect(assessment.request).toMatchObject({ templateId: "D01", method: "welch_t" });
+    expect(assessment.request?.observations).toHaveLength(6);
+    expect(
+      new Set(assessment.request?.observations.map(({ experimentalUnitId }) => experimentalUnitId))
+        .size,
+    ).toBe(6);
+  });
+
+  it("offers and executes Tier A alternatives without changing the declared independent design", () => {
+    const { draft, cells } = fixture(["Control", "Treatment"]);
+    const mann = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+      selectedMethod: "mann_whitney",
+    });
+    expect(mann).toMatchObject({
+      recommendedMethod: "welch_t",
+      method: "mann_whitney",
+      request: { templateId: "D01", method: "mann_whitney" },
+    });
+    expect(mann.methodChoices?.map(({ method, enabled }) => ({ method, enabled }))).toEqual([
+      { method: "welch_t", enabled: true },
+      { method: "mann_whitney", enabled: true },
+      { method: "student_t", enabled: true },
+    ]);
+  });
+
+  it("WBは標的とreferenceの比だけを解析入力にし、生値を保持する", () => {
+    const base = createExperimentSetDraft("protein_biochemical", "wb_ratio");
+    const draft = {
+      ...base,
+      conditions: base.conditions.slice(0, 2).map((condition, index) => ({
+        ...condition,
+        label: index === 0 ? "Control" : "Treatment",
+        attributes: { "attribute.1": index === 0 ? "Control" : "Treatment" },
+      })),
+    };
+    const cells: Record<string, ExperimentCellMap[string]> = {};
+    draft.experiments.forEach((experiment, experimentIndex) => {
+      draft.conditions.forEach((condition, conditionIndex) => {
+        cells[
+          experimentCellKey({
+            experimentId: experiment.id,
+            conditionId: condition.id,
+            readoutId: draft.readouts[0].id,
+          })
+        ] = {
+          kind: "wb_ratio",
+          target: (conditionIndex + 1) * (experimentIndex + 2) * 10,
+          reference: (experimentIndex + 2) * 10,
+        };
+      });
+    });
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+
+    expect(assessment.request).toMatchObject({ templateId: "D01", method: "welch_t" });
+    expect(assessment.request?.observations.map(({ value }) => value)).toEqual([1, 1, 1, 2, 2, 2]);
+    expect(cells[Object.keys(cells)[0]]).toMatchObject({ target: 20, reference: 20 });
+  });
+
+  it("uses only explicitly matched complete units for a paired comparison", () => {
+    const { draft: baseDraft, cells } = fixture(["Before", "After"]);
+    const draft = {
+      ...baseDraft,
+      conditionAssignment: { kind: "matched" as const, unitLabel: "動物" },
+    };
+    delete cells[
+      experimentCellKey({
+        experimentId: draft.experiments[2].id,
+        conditionId: draft.conditions[1].id,
+        readoutId: draft.readouts[0].id,
+      })
+    ];
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+    expect(assessment.request).toMatchObject({ templateId: "D02", method: "paired_t" });
+    expect(assessment.request?.observations).toHaveLength(4);
+    expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId)).size).toBe(2);
+    expect(assessment.reason).toContain("完全な組 2");
+  });
+
+  it("executes Wilcoxon only on explicit complete stable pairs", () => {
+    const { draft: baseDraft, cells } = fixture(["Before", "After"]);
+    const draft = {
+      ...baseDraft,
+      conditionAssignment: { kind: "matched" as const, unitLabel: "動物" },
+    };
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+      selectedMethod: "wilcoxon_signed_rank",
+    });
+    expect(assessment).toMatchObject({
+      recommendedMethod: "paired_t",
+      method: "wilcoxon_signed_rank",
+      request: { templateId: "D02", method: "wilcoxon_signed_rank" },
+    });
+    expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId)).size).toBe(3);
+  });
+
+  it("uses Welch ANOVA with Games–Howell for three or more independent conditions", () => {
+    const { draft, cells } = fixture(["Control", "siRNA #1", "siRNA #2"]);
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+
+    expect(assessment.request).toMatchObject({
+      templateId: "D03",
+      method: "welch_anova",
+      options: { multiplicityMethod: "games_howell_all_pairs" },
+    });
+  });
+
+  it("uses an explicit stable control ID for a selected Dunnett control-vs-many workflow", () => {
+    const { draft: baseDraft, cells } = fixture(["Control", "siRNA #1", "siRNA #2"]);
+    const draft = { ...baseDraft, controlConditionId: baseDraft.conditions[0].id };
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+      selectedMethod: "one_way_anova",
+      contrastIntent: "control_vs_many",
+    });
+    expect(assessment).toMatchObject({
+      recommendedMethod: "welch_anova",
+      method: "one_way_anova",
+      contrastIntent: "control_vs_many",
+      request: {
+        method: "one_way_anova",
+        controlConditionId: draft.conditions[0].id,
+        contrastIntent: "control_vs_many",
+        options: { multiplicityMethod: "dunnett_control_vs_many" },
+      },
+    });
+  });
+
+  it("keeps Kruskal–Wallis omnibus-only and does not invent pairwise tests", () => {
+    const { draft, cells } = fixture(["Control", "siRNA #1", "siRNA #2"]);
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+      selectedMethod: "kruskal_wallis",
+      contrastIntent: "omnibus_only",
+    });
+    expect(assessment.request).toMatchObject({
+      method: "kruskal_wallis",
+      contrastIntent: "omnibus_only",
+      options: { multiplicityMethod: null },
+    });
+  });
+
+  it("shapes only explicitly selected planned pairs with Holm correction", () => {
+    const { draft, cells } = fixture(["Control", "siRNA #1", "siRNA #2"]);
+    const plannedPairs = [
+      [draft.conditions[0].id, draft.conditions[1].id],
+      [draft.conditions[0].id, draft.conditions[2].id],
+    ] as const;
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+      selectedMethod: "one_way_anova",
+      contrastIntent: "planned_comparisons",
+      plannedContrastConditionIds: plannedPairs,
+    });
+    expect(assessment).toMatchObject({
+      recommendedMethod: "welch_anova",
+      method: "one_way_anova",
+      contrastIntent: "planned_comparisons",
+      request: {
+        method: "one_way_anova",
+        contrastIntent: "planned_comparisons",
+        plannedContrastConditionIds: plannedPairs,
+        options: { multiplicityMethod: "holm_planned_comparisons" },
+      },
+    });
+  });
+
+  it("does not run when one condition has fewer than two Exp-level values", () => {
+    const { draft, cells } = fixture(["Control", "Treatment"]);
+    delete cells[
+      experimentCellKey({
+        experimentId: draft.experiments[1].id,
+        conditionId: draft.conditions[1].id,
+        readoutId: draft.readouts[0].id,
+      })
+    ];
+    delete cells[
+      experimentCellKey({
+        experimentId: draft.experiments[2].id,
+        conditionId: draft.conditions[1].id,
+        readoutId: draft.readouts[0].id,
+      })
+    ];
+
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+    expect(assessment.state).toBe("insufficient");
+    expect(assessment.request).toBeNull();
+    expect(assessment.missingCount).toBe(2);
+  });
+
+  it("縦断時系列は各実験単位のAUCを群比較に使える", () => {
+    const fixture = createLongitudinalFixture();
+    const assessment = assessDraftGraphAnalysis({
+      draft: fixture.draft,
+      cells: fixture.cells,
+      readoutId: fixture.draft.readouts[0].id,
+      conditionIds: fixture.draft.conditions.map(({ id }) => id),
+      timeAnalysis: { kind: "auc" },
+    });
+
+    expect(assessment).toMatchObject({ state: "ready", method: "paired_t" });
+    expect(assessment.request?.observations).toHaveLength(8);
+    expect(assessment.request?.observations[0]?.value).toBe(762);
+  });
+
+  it("時点ごとに別サンプルの設計でAUCを推測しない", () => {
+    const fixture = createLongitudinalFixture();
+    const draft = {
+      ...fixture.draft,
+      time: { ...fixture.draft.time, sampling: "cross_sectional" as const },
+    };
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells: fixture.cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+      timeAnalysis: { kind: "auc" },
+    });
+
+    expect(assessment).toMatchObject({ state: "unsupported", request: null });
+    expect(assessment.reason).toContain("AUC");
+  });
+
+  it("routes a complete two-treatment combination to the factorial engine contract", () => {
+    const { draft: baseDraft, cells } = fixture(["Control −", "Control +", "siRNA −", "siRNA +"]);
+    const draft = {
+      ...baseDraft,
+      attributes: [
+        { id: "attribute.sirna", label: "siRNA" },
+        { id: "attribute.drug", label: "薬剤" },
+      ],
+      conditions: baseDraft.conditions.map((condition, index) => ({
+        ...condition,
+        attributes: {
+          "attribute.sirna": index < 2 ? "Control" : "siRNA",
+          "attribute.drug": index % 2 === 1 ? "+" : "−",
+        },
+      })),
+    };
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+
+    expect(assessment.state).toBe("ready");
+    expect(assessment.request).toMatchObject({
+      protocolVersion: "0.4.0",
+      templateId: "D05",
+      method: "two_way_anova",
+      options: { multiplicityMethod: "holm_all_cell_pairs" },
+    });
+  });
+
+  it("builds D09 from stable complete X-Y pairs and excludes an incomplete pair", () => {
+    const { draft, cells } = createXyCorrelationFixture();
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+
+    expect(assessment.state).toBe("ready");
+    expect(assessment.request).toMatchObject({
+      protocolVersion: "0.5.0",
+      templateId: "D09",
+      method: "pearson",
+      variableConditionIds: ["condition.xy.x", "condition.xy.y"],
+    });
+    expect(assessment.request?.observations).toHaveLength(10);
+    expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId)).size).toBe(5);
+    expect(assessment.missingCount).toBe(1);
+  });
+
+  it("同じsessionでも別の安定unit IDを1つの対応にまとめない", () => {
+    const { draft: baseDraft, cells } = fixture(["Before", "After"]);
+    const draft = {
+      ...baseDraft,
+      conditionAssignment: { kind: "matched" as const, unitLabel: "細胞" },
+      experiments: baseDraft.experiments.map((experiment, index) => ({
+        ...experiment,
+        sessionId: "session.same-day",
+        stableUnitId: `cell.${index + 1}`,
+      })),
+    };
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+
+    expect(assessment).toMatchObject({ state: "ready", method: "paired_t" });
+    expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId))).toEqual(
+      new Set(["cell.1", "cell.2", "cell.3"]),
+    );
+  });
+
+  it("安定unit IDは条件間で同じ実単位のpair IDとして使う", () => {
+    const { draft: baseDraft, cells } = fixture(["Before", "After"]);
+    const draft = {
+      ...baseDraft,
+      conditionAssignment: { kind: "matched" as const, unitLabel: "動物" },
+      experiments: baseDraft.experiments.map((experiment, index) => ({
+        ...experiment,
+        sessionId: `session.${index + 1}`,
+        stableUnitId: `mouse.${index + 1}`,
+      })),
+    };
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+
+    const byPair = new Map<string, Set<string>>();
+    assessment.request?.observations.forEach((observation) => {
+      const conditions = byPair.get(observation.pairId ?? "") ?? new Set<string>();
+      conditions.add(observation.conditionId);
+      byPair.set(observation.pairId ?? "", conditions);
+    });
+    expect([...byPair.entries()]).toHaveLength(3);
+    expect([...byPair.values()].every((conditionIds) => conditionIds.size === 2)).toBe(true);
+  });
+});

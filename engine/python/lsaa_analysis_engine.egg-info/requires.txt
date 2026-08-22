@@ -1,0 +1,8 @@
+numpy==2.3.5
+scipy==1.18.0
+
+[packaging]
+pyinstaller==6.21.0
+
+[validation]
+statsmodels==0.14.6

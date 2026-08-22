@@ -1,0 +1,1995 @@
+import { useState, type KeyboardEvent } from "react";
+
+import type {
+  ConditionAttributeDraft,
+  ConditionDraft,
+  ExperimentContext,
+  ExperimentSetDraft,
+  ExperimentSessionDraft,
+  ExperimentCellMap,
+  ReadoutShape,
+  TimeSampling,
+  TimeUnit,
+} from "../app/experimentDraft";
+import {
+  activeConditions,
+  conditionDisplayLabel,
+  createExperimentSession,
+  createExperimentSetDraft,
+  EXPERIMENT_CONTEXT_OPTIONS,
+  expectedAnalysisLabel,
+  withActiveConditions,
+} from "../app/experimentDraft";
+import type { AppRoute } from "../app/routes";
+import type { SaveProjectAction } from "../app/projectActions";
+import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
+import { ConditionTimePreview } from "../components/ConditionTimePreview";
+import { ExistingDataImport } from "../components/ExistingDataImport";
+import { ExperimentWorkspace } from "./ExperimentWorkspace";
+import { recordBenchmarkEvent } from "../app/benchmarkEvaluation";
+import { evaluationMode, evaluationModeIsConfigured } from "../app/evaluationMode";
+import { syntheticFixtures, type SyntheticFixture } from "../app/syntheticFixtures";
+import "./NewExperimentPage.css";
+import type { FavoriteGraphDefault } from "../app/favoriteDesigns";
+
+type NewExperimentPageProps = {
+  onNavigate: (route: AppRoute) => void;
+  saveProject?: SaveProjectAction;
+  analysisRunner?: AnalysisRunner;
+  browserPreview?: boolean;
+  initialDraft?: ExperimentSetDraft | null;
+  favoriteGraphDefaults?: readonly FavoriteGraphDefault[];
+  onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
+};
+
+type FlowStage = "context" | "import" | "design" | "confirmation" | "workspace";
+type DesignStep = 0 | 1 | 2 | 3;
+type FlowStep = DesignStep | 4;
+
+const READOUT_OPTIONS: ReadonlyArray<{
+  shape: ReadoutShape;
+  title: string;
+  description: string;
+}> = [
+  {
+    shape: "proportion",
+    title: "数・割合（陽性率など）",
+    description: "陽性数と全体の数を入力し、割合を確認します。",
+  },
+  {
+    shape: "nested_continuous",
+    title: "強度・サイズ・形態",
+    description: "実験単位ごとにまとめた測定値を入力します。",
+  },
+  {
+    shape: "categorical_counts",
+    title: "カテゴリ別の数・構成",
+    description: "G0/G1/S/G2-Mや表現型A/B/Cなどの数を入力し、構成割合を計算します。",
+  },
+  {
+    shape: "wb_ratio",
+    title: "WB：標的バンド／reference",
+    description: "標的とローディングコントロールの生値を保存し、比を自動計算します。",
+  },
+];
+
+const TIME_UNITS: ReadonlyArray<{ value: TimeUnit; label: string }> = [
+  { value: "sec", label: "秒" },
+  { value: "min", label: "分" },
+  { value: "h", label: "時間" },
+  { value: "day", label: "日" },
+];
+
+const STEP_LABELS = ["測定項目", "条件", "時間", "実験回", "最終確認"] as const;
+
+export function flowStepsFor(draft: ExperimentSetDraft): readonly FlowStep[] {
+  if (draft.entryRoute === "protein_wb" || draft.analysisIntent.kind === "correlation") {
+    return [0, 1, 3, 4];
+  }
+  if (
+    draft.entryRoute === "cell_count_growth" ||
+    draft.entryRoute === "microscopy_fluorescence" ||
+    draft.entryRoute === "microscopy_cell_roi" ||
+    draft.entryRoute === "microscopy_morphology" ||
+    draft.entryRoute === "microscopy_tracking" ||
+    draft.entryRoute === "animal_numeric" ||
+    draft.entryRoute === "animal_longitudinal"
+  ) {
+    return [0, 2, 1, 3, 4];
+  }
+  return [0, 1, 2, 3, 4];
+}
+
+const CONTEXT_LABELS: Record<ExperimentContext, string> = Object.fromEntries(
+  EXPERIMENT_CONTEXT_OPTIONS.map((option) => [option.id, option.title]),
+) as Record<ExperimentContext, string>;
+
+type ExperimentEntryRoute = Readonly<{
+  id: string;
+  title: string;
+  description: string;
+  shape: ReadoutShape;
+  correlation?: boolean;
+  longitudinal?: boolean;
+}>;
+
+export const ENTRY_ROUTES: Readonly<
+  Record<Exclude<ExperimentContext, "existing_data">, readonly ExperimentEntryRoute[]>
+> = {
+  cell_culture: [
+    {
+      id: "cell_count_growth",
+      title: "細胞数・増殖",
+      description: "cell number、増殖、growth assay",
+      shape: "nested_continuous",
+    },
+    {
+      id: "cell_positive_proportion",
+      title: "陽性数・割合",
+      description: "Marker陽性、EdU、Ki-67、繊毛陽性など",
+      shape: "proportion",
+    },
+    {
+      id: "cell_other_assay",
+      title: "その他の培養アッセイ",
+      description: "培養単位から得たその他の数値",
+      shape: "nested_continuous",
+    },
+  ],
+  microscopy_imaging: [
+    {
+      id: "microscopy_fluorescence",
+      title: "蛍光強度",
+      description: "実験単位の要約、またはCell・ROIの値",
+      shape: "nested_continuous",
+    },
+    {
+      id: "microscopy_cell_roi",
+      title: "Cell・ROIごとの測定",
+      description: "強度、長さ、距離などの数値",
+      shape: "nested_continuous",
+    },
+    {
+      id: "microscopy_morphology",
+      title: "形態・サイズ",
+      description: "面積、長さ、形状指標など",
+      shape: "nested_continuous",
+    },
+    {
+      id: "microscopy_tracking",
+      title: "移動・tracking",
+      description: "速度、移動距離、軌跡、time-lapse",
+      shape: "nested_continuous",
+      longitudinal: true,
+    },
+    {
+      id: "microscopy_proportion",
+      title: "陽性数・割合",
+      description: "画像から数えた陽性数と対象数",
+      shape: "proportion",
+    },
+  ],
+  protein_biochemical: [
+    {
+      id: "protein_wb",
+      title: "Western blot",
+      description: "Targetのみ、Target + reference、補正済み値",
+      shape: "wb_ratio",
+    },
+    {
+      id: "protein_amount",
+      title: "タンパク質量・濃度",
+      description: "定量値を条件間で比較",
+      shape: "nested_continuous",
+    },
+    {
+      id: "protein_activity",
+      title: "活性",
+      description: "酵素活性などの数値",
+      shape: "nested_continuous",
+    },
+    {
+      id: "protein_other",
+      title: "その他の数値測定",
+      description: "生化学アッセイの数値",
+      shape: "nested_continuous",
+    },
+    {
+      id: "protein_xy",
+      title: "2つの測定値の関係",
+      description: "同じ試料のXとYを1組として入力",
+      shape: "nested_continuous",
+      correlation: true,
+    },
+  ],
+  animal: [
+    {
+      id: "animal_numeric",
+      title: "個体の数値測定",
+      description: "体重、腫瘍体積、血糖、行動スコアなど",
+      shape: "nested_continuous",
+    },
+    {
+      id: "animal_longitudinal",
+      title: "経時測定",
+      description: "同じ個体を複数時点で追跡",
+      shape: "nested_continuous",
+      longitudinal: true,
+    },
+    {
+      id: "animal_proportion",
+      title: "数・割合",
+      description: "個体を単位としたcount・proportion",
+      shape: "proportion",
+    },
+    {
+      id: "animal_category",
+      title: "カテゴリ・分類",
+      description: "複数カテゴリのcountと構成",
+      shape: "categorical_counts",
+    },
+    {
+      id: "animal_xy",
+      title: "2つの測定値の関係",
+      description: "同じ個体のXとYを1組として入力",
+      shape: "nested_continuous",
+      correlation: true,
+    },
+  ],
+  general_assay: [
+    {
+      id: "general_continuous",
+      title: "連続値",
+      description: "条件ごとの数値を入力",
+      shape: "nested_continuous",
+    },
+    {
+      id: "general_proportion",
+      title: "数・割合",
+      description: "positive / totalなど",
+      shape: "proportion",
+    },
+    {
+      id: "general_category",
+      title: "カテゴリ・構成",
+      description: "カテゴリ別countと構成割合",
+      shape: "categorical_counts",
+    },
+    {
+      id: "general_xy",
+      title: "2つの測定値の関係",
+      description: "同じ単位のXとYを1組として入力",
+      shape: "nested_continuous",
+      correlation: true,
+    },
+  ],
+};
+
+export function createDraftForEntryRoute(
+  context: Exclude<ExperimentContext, "existing_data">,
+  route: ExperimentEntryRoute,
+): ExperimentSetDraft {
+  const baseDraft = createExperimentSetDraft(context, route.shape);
+  const routedDraft: ExperimentSetDraft = route.correlation
+    ? {
+        ...baseDraft,
+        readouts: [{ id: "readout.xy", label: "XとYの関係", shape: "nested_continuous" }],
+        attributes: [{ id: "attribute.variable", label: "測定変数" }],
+        conditions: [
+          { id: "condition.xy.x", label: "X", attributes: { "attribute.variable": "X" } },
+          { id: "condition.xy.y", label: "Y", attributes: { "attribute.variable": "Y" } },
+        ],
+        analysisIntent: { kind: "correlation", relationshipForm: "linear" },
+        conditionAssignment: { kind: "matched", unitLabel: "実験単位" },
+      }
+    : baseDraft;
+  return {
+    ...routedDraft,
+    readouts: routedDraft.readouts.map((readout) => ({
+      ...readout,
+      ...(readout.shape === "nested_continuous"
+        ? {
+            nestedInputMode:
+              context === "microscopy_imaging"
+                ? ("nested_observations" as const)
+                : ("unit_summary" as const),
+          }
+        : {}),
+    })),
+    entryRoute: route.id,
+    ...(route.longitudinal
+      ? { time: { ...routedDraft.time, sampling: "longitudinal" as const } }
+      : {}),
+    conditionAssignment: {
+      ...routedDraft.conditionAssignment,
+      unitLabel:
+        context === "animal"
+          ? "動物"
+          : context === "general_assay"
+            ? "試料"
+            : context === "protein_biochemical"
+              ? "サンプル"
+              : routedDraft.conditionAssignment.unitLabel,
+    },
+  };
+}
+
+function updateAttributeLabel(
+  attributes: readonly ConditionAttributeDraft[],
+  attributeId: string,
+  label: string,
+): ConditionAttributeDraft[] {
+  return attributes.map((attribute) =>
+    attribute.id === attributeId ? { ...attribute, label } : attribute,
+  );
+}
+
+function removeAttributeValues(
+  conditions: readonly ConditionDraft[],
+  attributeId: string,
+  attributes: readonly ConditionAttributeDraft[],
+): ConditionDraft[] {
+  return conditions.map((condition) => ({
+    ...condition,
+    attributes: Object.fromEntries(
+      Object.entries(condition.attributes).filter(([key]) => key !== attributeId),
+    ),
+    label: conditionDisplayLabel(
+      {
+        ...condition,
+        attributes: Object.fromEntries(
+          Object.entries(condition.attributes).filter(([key]) => key !== attributeId),
+        ),
+      },
+      attributes.filter((attribute) => attribute.id !== attributeId),
+    ),
+  }));
+}
+
+function parseTimePoints(value: string) {
+  return value
+    .split(/[,、\n]/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .map(Number)
+    .filter((point) => Number.isFinite(point))
+    .map((point, index) => ({ id: `time.${index + 1}`, value: point }));
+}
+
+function invalidTimeTokens(value: string): string[] {
+  return value
+    .split(/[,、\n]/)
+    .map((token) => token.trim())
+    .filter((token) => token !== "" && !Number.isFinite(Number(token)));
+}
+
+function nextIndexedId(items: readonly { id: string }[], prefix: string): string {
+  const maximum = items.reduce((current, item) => {
+    const match = item.id.match(new RegExp(`^${prefix}\\.(\\d+)$`));
+    return Math.max(current, match ? Number(match[1]) : 0);
+  }, 0);
+  return `${prefix}.${maximum + 1}`;
+}
+
+function withSessionCount(
+  sessions: readonly ExperimentSessionDraft[],
+  requestedCount: number,
+): ExperimentSessionDraft[] {
+  const count = Math.min(12, Math.max(1, Math.round(requestedCount) || 1));
+  if (count <= sessions.length) return sessions.slice(0, count);
+  return [
+    ...sessions,
+    ...Array.from({ length: count - sessions.length }, (_, index) =>
+      createExperimentSession(sessions.length + index + 1),
+    ),
+  ];
+}
+
+function Stepper({
+  activeStep,
+  steps,
+  furthestStep,
+  confirmationEnabled,
+  onSelect,
+}: {
+  activeStep: FlowStep;
+  steps: readonly FlowStep[];
+  furthestStep: FlowStep;
+  confirmationEnabled: boolean;
+  onSelect: (step: FlowStep) => void;
+}) {
+  return (
+    <ol className="experiment-start__stepper" aria-label="実験設計の進み具合">
+      {steps.map((step, index) => {
+        const label = STEP_LABELS[step];
+        const enabled = step <= furthestStep && (step !== 4 || confirmationEnabled);
+        return (
+          <li
+            className={`experiment-start__step${step === activeStep ? " is-active" : ""}${
+              step < furthestStep && step !== activeStep ? " is-complete" : ""
+            }`}
+            key={label}
+          >
+            <button
+              type="button"
+              aria-current={step === activeStep ? "step" : undefined}
+              aria-label={`${index + 1}. ${label}`}
+              disabled={!enabled}
+              onClick={() => onSelect(step)}
+            >
+              <span className="experiment-start__step-number">{index + 1}</span>
+              <span>{label}</span>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function ContextStart({
+  onSelect,
+  selectedContext,
+  onRouteSelect,
+  onContextBack,
+  onDemoSelect,
+  browserPreview = false,
+  showDemos = true,
+}: {
+  onSelect: (context: ExperimentContext) => void;
+  selectedContext: Exclude<ExperimentContext, "existing_data"> | null;
+  onRouteSelect: (route: ExperimentEntryRoute) => void;
+  onContextBack: () => void;
+  onDemoSelect: (fixture: SyntheticFixture) => void;
+  browserPreview?: boolean;
+  showDemos?: boolean;
+}) {
+  const demos = syntheticFixtures();
+  if (selectedContext) {
+    return (
+      <section className="experiment-start__context-card" aria-labelledby="entry-route-heading">
+        <div className="experiment-start__section-heading">
+          <div>
+            <p className="experiment-start__eyebrow">{CONTEXT_LABELS[selectedContext]}</p>
+            <h2 id="entry-route-heading">今回、主に何を解析しましたか？</h2>
+          </div>
+          <button className="secondary-button" type="button" onClick={onContextBack}>
+            種類を戻す
+          </button>
+        </div>
+        <p className="experiment-start__context-note">
+          試料の由来ではなく、今回主に解析した内容に最も近いものを選んでください。
+        </p>
+        <div className="experiment-start__entry-route-grid">
+          {ENTRY_ROUTES[selectedContext].map((route) => (
+            <button key={route.id} type="button" onClick={() => onRouteSelect(route)}>
+              <strong>{route.title}</strong>
+              <span>{route.description}</span>
+            </button>
+          ))}
+        </div>
+        {selectedContext === "animal" ? (
+          <p className="experiment-start__context-note">
+            生存時間・発症までの時間は別の解析族です。この段階では通常の連続値へ変換しません。
+          </p>
+        ) : null}
+      </section>
+    );
+  }
+  return (
+    <>
+      <section
+        className="experiment-start__context-card"
+        aria-labelledby="context-heading"
+        data-review-entry={browserPreview ? "phase-a" : undefined}
+      >
+        <div className="experiment-start__section-heading">
+          <div>
+            <p className="experiment-start__eyebrow">
+              {browserPreview ? "Phase A · 手動フロー" : "最初の質問"}
+            </p>
+            <h2 id="context-heading">どのような実験ですか？</h2>
+          </div>
+          <span className="experiment-start__hint">実験の背景から選びます</span>
+        </div>
+        <div className="experiment-start__context-grid">
+          {EXPERIMENT_CONTEXT_OPTIONS.map((option, index) => (
+            <button
+              className={`experiment-start__context-option${option.available ? "" : " is-disabled"}`}
+              data-context={option.id}
+              disabled={!option.available}
+              key={option.id}
+              type="button"
+              onClick={() => option.available && onSelect(option.id)}
+            >
+              <span className={`experiment-start__context-icon context-icon--${index + 1}`}>
+                {index + 1}
+              </span>
+              <span className="experiment-start__context-copy">
+                <span className="experiment-start__context-title">{option.title}</span>
+                <span className="experiment-start__context-description">{option.description}</span>
+              </span>
+              <span className="experiment-start__context-status">
+                {option.available ? "利用可能" : "準備中"}
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="experiment-start__context-note">
+          {browserPreview
+            ? "通常の新規実験フローを最初から確認します。入力内容はブラウザ内だけに一時保持されます。"
+            : "今回主に解析した内容に近い入口を選びます。統計名や解析IDは選びません。"}
+        </p>
+      </section>
+      {showDemos ? (
+        <section
+          className="experiment-start__demo-card"
+          aria-labelledby="demo-heading"
+          data-review-entry={browserPreview ? "phase-b" : undefined}
+        >
+          <div>
+            <p className="experiment-start__eyebrow">
+              {browserPreview ? "Phase B · 詳細確認用" : "UX・動作確認用"}
+            </p>
+            <h2 id="demo-heading">合成デモデータですぐ試す</h2>
+            <p>
+              {browserPreview
+                ? "一時プレビューでは合成データだけを使用できます。ローカルファイルや実測データには接続しません。"
+                : "実測データではありません。毎回同じ値を使い、画面確認をすぐ始められます。"}
+            </p>
+          </div>
+          <div className="experiment-start__demo-options">
+            {demos.map((fixture) => (
+              <button key={fixture.id} type="button" onClick={() => onDemoSelect(fixture)}>
+                <strong>{fixture.title}</strong>
+                <span>{fixture.description}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </>
+  );
+}
+
+function ReadoutStep({
+  draft,
+  onUpdate,
+}: {
+  draft: ExperimentSetDraft;
+  onUpdate: (updater: (current: ExperimentSetDraft) => ExperimentSetDraft) => void;
+}) {
+  const updateReadout = (
+    readoutId: string,
+    patch: Partial<ExperimentSetDraft["readouts"][number]>,
+  ) =>
+    onUpdate((current) => ({
+      ...current,
+      readouts: current.readouts.map((item) =>
+        item.id === readoutId ? { ...item, ...patch } : item,
+      ),
+    }));
+  const addReadout = () =>
+    onUpdate((current) => {
+      const nextIndex =
+        current.readouts.reduce((maximum, item) => {
+          const match = item.id.match(/readout\.(\d+)$/);
+          return Math.max(maximum, match ? Number(match[1]) : 0);
+        }, 0) + 1;
+      return {
+        ...current,
+        readouts: [
+          ...current.readouts,
+          {
+            id: `readout.${nextIndex}`,
+            label: `測定項目 ${nextIndex}`,
+            shape: "nested_continuous",
+            unit: "a.u.",
+          },
+        ],
+      };
+    });
+  const availableReadoutOptions = READOUT_OPTIONS.filter((option) => {
+    if (draft.entryRoute === "protein_wb") return false;
+    if (draft.context === "protein_biochemical") return option.shape === "nested_continuous";
+    if (draft.context === "microscopy_imaging" || draft.context === "cell_culture") {
+      return option.shape === "nested_continuous" || option.shape === "proportion";
+    }
+    return option.shape !== "wb_ratio";
+  });
+  return (
+    <section className="experiment-start__form-card" aria-labelledby="readout-heading">
+      <div className="experiment-start__section-heading">
+        <div>
+          <p className="experiment-start__eyebrow">実験設計</p>
+          <h2 id="readout-heading">何を測りましたか？</h2>
+        </div>
+        <span className="experiment-start__hint">測定項目はあとで編集できます</span>
+      </div>
+      {draft.analysisIntent.kind === "correlation" ? (
+        <p className="experiment-start__helper">
+          同じ実験単位から得たXとYを1組として入力します。関係の評価方法は、データ入力後に統計画面で確認します。
+        </p>
+      ) : (
+        <>
+          {draft.entryRoute === "protein_wb" ? (
+            <fieldset className="experiment-start__fieldset">
+              <legend>どのバンド値を入力しますか？</legend>
+              <div className="experiment-start__radio-row">
+                <label className="experiment-start__radio-card">
+                  <input
+                    checked={draft.readouts[0]?.shape === "wb_ratio"}
+                    name="wb-kind"
+                    type="radio"
+                    onChange={() =>
+                      updateReadout(draft.readouts[0].id, {
+                        shape: "wb_ratio",
+                        label: "標的タンパク質",
+                        unit: "ratio",
+                        referenceLabel: draft.readouts[0].referenceLabel || "GAPDH",
+                        wbInputMode: draft.readouts[0].wbInputMode ?? "corrected_value",
+                      })
+                    }
+                  />
+                  <span>
+                    <strong>Target + reference</strong>
+                    <small>両方を保存し、Target/referenceを計算します。</small>
+                  </span>
+                </label>
+                <label className="experiment-start__radio-card">
+                  <input
+                    checked={
+                      draft.readouts[0]?.shape === "nested_continuous" &&
+                      draft.readouts[0]?.unit !== "normalized"
+                    }
+                    name="wb-kind"
+                    type="radio"
+                    onChange={() =>
+                      updateReadout(draft.readouts[0].id, {
+                        shape: "nested_continuous",
+                        label: "標的バンド強度",
+                        unit: "a.u.",
+                        referenceLabel: undefined,
+                        wbInputMode: undefined,
+                        withinExperimentNormalization: undefined,
+                      })
+                    }
+                  />
+                  <span>
+                    <strong>Targetのみ</strong>
+                    <small>入力値をそのまま保存し、自動正規化しません。</small>
+                  </span>
+                </label>
+                <label className="experiment-start__radio-card">
+                  <input
+                    checked={draft.readouts[0]?.unit === "normalized"}
+                    name="wb-kind"
+                    type="radio"
+                    onChange={() =>
+                      updateReadout(draft.readouts[0].id, {
+                        shape: "nested_continuous",
+                        label: "正規化済みWB値",
+                        unit: "normalized",
+                        referenceLabel: undefined,
+                        wbInputMode: undefined,
+                        withinExperimentNormalization: undefined,
+                      })
+                    }
+                  />
+                  <span>
+                    <strong>すでに正規化した値</strong>
+                    <small>外部で算出済みの値として入力します。</small>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+          ) : null}
+          <div className="experiment-start__readout-list">
+            {draft.readouts.map((readout, readoutIndex) => (
+              <fieldset className="experiment-start__fieldset" key={readout.id}>
+                <legend>測定項目 {readoutIndex + 1}</legend>
+                {availableReadoutOptions.length > 1 ? (
+                  <div className="experiment-start__choice-grid">
+                    {availableReadoutOptions.map((option) => (
+                      <label
+                        className={`experiment-start__choice-card${
+                          readout.shape === option.shape ? " is-selected" : ""
+                        }`}
+                        key={option.shape}
+                      >
+                        <input
+                          checked={readout.shape === option.shape}
+                          name={`readout-shape-${readout.id}`}
+                          type="radio"
+                          value={option.shape}
+                          onChange={() =>
+                            updateReadout(readout.id, {
+                              shape: option.shape,
+                              ...(option.shape !== "wb_ratio"
+                                ? {
+                                    referenceLabel: undefined,
+                                    wbInputMode: undefined,
+                                    withinExperimentNormalization: undefined,
+                                  }
+                                : {
+                                    referenceLabel: readout.referenceLabel || "GAPDH",
+                                    wbInputMode: readout.wbInputMode ?? "corrected_value",
+                                  }),
+                              ...(option.shape === "categorical_counts" && !readout.categories
+                                ? {
+                                    categories: [
+                                      { id: `${readout.id}.category.1`, label: "Category A" },
+                                      { id: `${readout.id}.category.2`, label: "Category B" },
+                                      { id: `${readout.id}.category.3`, label: "Category C" },
+                                    ],
+                                  }
+                                : {}),
+                            })
+                          }
+                        />
+                        <span>
+                          <strong>{option.title}</strong>
+                          <span>{option.description}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="experiment-start__field-row">
+                  <label className="experiment-start__field">
+                    <span>測定項目の名前</span>
+                    <input
+                      aria-label={
+                        readoutIndex === 0 ? "測定項目の名前" : `測定項目${readoutIndex + 1}の名前`
+                      }
+                      value={readout.label}
+                      onChange={(event) => updateReadout(readout.id, { label: event.target.value })}
+                    />
+                  </label>
+                  {readout.shape === "nested_continuous" ? (
+                    <label className="experiment-start__field experiment-start__field--small">
+                      <span>単位（任意）</span>
+                      <input
+                        aria-label={
+                          readoutIndex === 0 ? "測定単位" : `測定項目${readoutIndex + 1}の単位`
+                        }
+                        placeholder="例：µm、a.u."
+                        value={readout.unit ?? ""}
+                        onChange={(event) =>
+                          updateReadout(readout.id, { unit: event.target.value })
+                        }
+                      />
+                    </label>
+                  ) : null}
+                  {readout.shape === "nested_continuous" &&
+                  draft.context === "microscopy_imaging" ? (
+                    <fieldset className="experiment-start__fieldset experiment-start__wb-normalization">
+                      <legend>1つの実験単位から何を入力しますか？</legend>
+                      <label>
+                        <input
+                          checked={readout.nestedInputMode === "unit_summary"}
+                          name={`nested-input-${readout.id}`}
+                          type="radio"
+                          onChange={() =>
+                            updateReadout(readout.id, { nestedInputMode: "unit_summary" })
+                          }
+                        />
+                        ディッシュ・動物・試料ごとの要約値を1つ
+                      </label>
+                      <label>
+                        <input
+                          checked={
+                            (readout.nestedInputMode ?? "nested_observations") ===
+                            "nested_observations"
+                          }
+                          name={`nested-input-${readout.id}`}
+                          type="radio"
+                          onChange={() =>
+                            updateReadout(readout.id, { nestedInputMode: "nested_observations" })
+                          }
+                        />
+                        各実験単位内のCell・ROI値を複数
+                      </label>
+                      <small>
+                        Cell・ROIを複数入力しても、それらの個数を生物学的nにはしません。実験単位ごとに要約します。
+                      </small>
+                    </fieldset>
+                  ) : null}
+                  {readout.shape === "categorical_counts" ? (
+                    <label className="experiment-start__field">
+                      <span>カテゴリ名（カンマ区切り）</span>
+                      <input
+                        aria-label={
+                          readoutIndex === 0
+                            ? "カテゴリ名"
+                            : `測定項目${readoutIndex + 1}のカテゴリ名`
+                        }
+                        value={readout.categories?.map(({ label }) => label).join(", ") ?? ""}
+                        onChange={(event) => {
+                          const labels = event.target.value
+                            .split(/[,、]/)
+                            .map((label) => label.trim())
+                            .filter(Boolean)
+                            .slice(0, 10);
+                          updateReadout(readout.id, {
+                            categories: labels.map((label, index) => ({
+                              id: `${readout.id}.category.${index + 1}`,
+                              label,
+                            })),
+                          });
+                        }}
+                      />
+                    </label>
+                  ) : null}
+                  {readout.shape === "wb_ratio" ? (
+                    <>
+                      <label className="experiment-start__field experiment-start__field--small">
+                        <span>referenceの名前</span>
+                        <input
+                          aria-label={
+                            readoutIndex === 0
+                              ? "referenceの名前"
+                              : `測定項目${readoutIndex + 1}のreferenceの名前`
+                          }
+                          placeholder="例：GAPDH、total protein"
+                          value={readout.referenceLabel ?? ""}
+                          onChange={(event) =>
+                            updateReadout(readout.id, { referenceLabel: event.target.value })
+                          }
+                        />
+                      </label>
+                      <fieldset className="experiment-start__fieldset experiment-start__wb-normalization">
+                        <legend>バンド値の入力方法</legend>
+                        <label>
+                          <input
+                            checked={
+                              (readout.wbInputMode ?? "corrected_value") === "corrected_value"
+                            }
+                            name={`wb-input-${readout.id}`}
+                            type="radio"
+                            onChange={() =>
+                              updateReadout(readout.id, { wbInputMode: "corrected_value" })
+                            }
+                          />
+                          補正済みのバンド値を入力
+                        </label>
+                        <label>
+                          <input
+                            checked={readout.wbInputMode === "imagej_mean_background_area"}
+                            name={`wb-input-${readout.id}`}
+                            type="radio"
+                            onChange={() =>
+                              updateReadout(readout.id, {
+                                wbInputMode: "imagej_mean_background_area",
+                              })
+                            }
+                          />
+                          ImageJのIntensity・Background・Areaから計算
+                        </label>
+                        <small>
+                          後者は Mean intensity と Mean background にだけ （Intensity −
+                          Background）× Area を適用します。RawIntDenを同じ値とは扱いません。
+                        </small>
+                      </fieldset>
+                      <fieldset className="experiment-start__fieldset experiment-start__wb-normalization">
+                        <legend>target/reference後の追加正規化</legend>
+                        <label>
+                          <input
+                            checked={!readout.withinExperimentNormalization}
+                            name={`wb-normalization-${readout.id}`}
+                            type="radio"
+                            onChange={() =>
+                              updateReadout(readout.id, {
+                                withinExperimentNormalization: undefined,
+                              })
+                            }
+                          />
+                          追加しない
+                        </label>
+                        <label>
+                          <input
+                            checked={
+                              readout.withinExperimentNormalization?.method === "control_equals_one"
+                            }
+                            name={`wb-normalization-${readout.id}`}
+                            type="radio"
+                            onChange={() =>
+                              updateReadout(readout.id, {
+                                withinExperimentNormalization: {
+                                  method: "control_equals_one",
+                                  baselineConditionId: draft.conditions[0]?.id,
+                                },
+                              })
+                            }
+                          />
+                          各実験回で先頭の条件を1にする
+                        </label>
+                        <label>
+                          <input
+                            checked={
+                              readout.withinExperimentNormalization?.method === "per_unit_maximum"
+                            }
+                            name={`wb-normalization-${readout.id}`}
+                            type="radio"
+                            onChange={() =>
+                              updateReadout(readout.id, {
+                                withinExperimentNormalization: { method: "per_unit_maximum" },
+                              })
+                            }
+                          />
+                          各実験回の最大値を1にする
+                        </label>
+                        <small>選んだ場合だけ適用し、標的・referenceの生値は残します。</small>
+                      </fieldset>
+                    </>
+                  ) : null}
+                  {draft.context === "protein_biochemical" &&
+                  readout.shape === "nested_continuous" ? (
+                    <p className="experiment-start__helper">
+                      referenceなしのWB強度はこの形式で入力値をそのまま保存します。自動正規化は行いません。
+                    </p>
+                  ) : null}
+                  {draft.readouts.length > 1 ? (
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      aria-label={`測定項目${readoutIndex + 1}を削除`}
+                      onClick={() =>
+                        onUpdate((current) => ({
+                          ...current,
+                          readouts: current.readouts.filter(({ id }) => id !== readout.id),
+                        }))
+                      }
+                    >
+                      削除
+                    </button>
+                  ) : null}
+                </div>
+              </fieldset>
+            ))}
+          </div>
+          <button
+            className="secondary-button"
+            disabled={draft.readouts.length >= 6}
+            type="button"
+            onClick={addReadout}
+          >
+            ＋ 測定項目を追加
+          </button>
+        </>
+      )}
+    </section>
+  );
+}
+
+function ConditionsStep({
+  draft,
+  onUpdate,
+}: {
+  draft: ExperimentSetDraft;
+  onUpdate: (updater: (current: ExperimentSetDraft) => ExperimentSetDraft) => void;
+}) {
+  if (draft.analysisIntent.kind === "correlation") {
+    return (
+      <section className="experiment-start__form-card" aria-labelledby="conditions-heading">
+        <div className="experiment-start__section-heading">
+          <div>
+            <p className="experiment-start__eyebrow">実験設計</p>
+            <h2 id="conditions-heading">XとYの名前を入力してください</h2>
+          </div>
+          <span className="experiment-start__hint">同じ実験単位の1組として入力します</span>
+        </div>
+        <div className="experiment-start__field-row">
+          {draft.conditions.map((condition, index) => (
+            <label className="experiment-start__field" key={condition.id}>
+              <span>{index === 0 ? "X（横軸）" : "Y（縦軸）"}</span>
+              <input
+                aria-label={index === 0 ? "Xの名前" : "Yの名前"}
+                value={condition.label}
+                onChange={(event) =>
+                  onUpdate((current) => ({
+                    ...current,
+                    conditions: current.conditions.map((item) =>
+                      item.id === condition.id
+                        ? {
+                            ...item,
+                            label: event.target.value,
+                            attributes: { "attribute.variable": event.target.value },
+                          }
+                        : item,
+                    ),
+                  }))
+                }
+              />
+            </label>
+          ))}
+        </div>
+        <p className="experiment-start__helper">
+          例：Xを「細胞面積」、Yを「蛍光強度」とします。各Expで両方がそろった組だけを相関解析に使います。
+        </p>
+      </section>
+    );
+  }
+  const moveConditionGridFocus = (
+    event: KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    columnIndex: number,
+  ) => {
+    const movement: Record<string, [number, number]> = {
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1],
+      Enter: [event.shiftKey ? -1 : 1, 0],
+    };
+    const delta = movement[event.key];
+    if (!delta || event.metaKey || event.ctrlKey || event.altKey) return;
+    const target = event.currentTarget
+      .closest("table")
+      ?.querySelector<HTMLInputElement>(
+        `[data-condition-row="${rowIndex + delta[0]}"][data-condition-column="${
+          columnIndex + delta[1]
+        }"]`,
+      );
+    if (!target) return;
+    event.preventDefault();
+    target.focus();
+    target.select();
+  };
+
+  const appendRows = (count = 5) => {
+    if (draft.conditions.length >= 50) return;
+    onUpdate((current) => {
+      const conditions = [...current.conditions];
+      const rowsToAdd = Math.min(count, 50 - conditions.length);
+      for (let index = 0; index < rowsToAdd; index += 1) {
+        conditions.push({
+          id: nextIndexedId(conditions, "condition"),
+          label: "",
+          attributes: Object.fromEntries(current.attributes.map((attribute) => [attribute.id, ""])),
+        });
+      }
+      return { ...current, conditions };
+    });
+  };
+
+  const addAttribute = () => {
+    if (draft.attributes.length >= 6) return;
+    const attribute = {
+      id: nextIndexedId(draft.attributes, "attribute"),
+      label: `列${draft.attributes.length + 1}`,
+    };
+    onUpdate((current) => ({
+      ...current,
+      attributes: [...current.attributes, attribute],
+      conditions: current.conditions.map((condition) => ({
+        ...condition,
+        attributes: { ...condition.attributes, [attribute.id]: "" },
+      })),
+    }));
+  };
+
+  const removeAttribute = (attributeId: string) => {
+    onUpdate((current) => ({
+      ...current,
+      attributes: current.attributes.filter((attribute) => attribute.id !== attributeId),
+      conditions: removeAttributeValues(current.conditions, attributeId, current.attributes),
+    }));
+  };
+
+  const updateDescriptor = (conditionId: string, attributeId: string, value: string) => {
+    onUpdate((current) => {
+      const conditions = current.conditions.map((condition) => {
+        if (condition.id !== conditionId) return condition;
+        const nextCondition = {
+          ...condition,
+          attributes: { ...condition.attributes, [attributeId]: value },
+        };
+        return {
+          ...nextCondition,
+          label: conditionDisplayLabel(nextCondition, current.attributes),
+        };
+      });
+      const rowIndex = conditions.findIndex((condition) => condition.id === conditionId);
+      if (rowIndex === conditions.length - 1 && conditions.length < 50) {
+        const id = nextIndexedId(conditions, "condition");
+        conditions.push({
+          id,
+          label: "",
+          attributes: Object.fromEntries(current.attributes.map((attribute) => [attribute.id, ""])),
+        });
+      }
+      return {
+        ...current,
+        conditions,
+        controlConditionId:
+          current.controlConditionId === conditionId &&
+          !Object.values(conditions[rowIndex]?.attributes ?? {}).some((item) => item.trim() !== "")
+            ? undefined
+            : current.controlConditionId,
+      };
+    });
+  };
+
+  const pasteDescriptors = (startRow: number, startColumn: number, text: string): boolean => {
+    if (text === "") return false;
+    const pastedRows = text.replace(/\r\n?/g, "\n").split("\n");
+    while (pastedRows.at(-1) === "") pastedRows.pop();
+    onUpdate((current) => {
+      const requiredRows = Math.min(50, startRow + pastedRows.length + 1);
+      const conditions = [...current.conditions];
+      while (conditions.length < requiredRows) {
+        conditions.push({
+          id: nextIndexedId(conditions, "condition"),
+          label: "",
+          attributes: Object.fromEntries(current.attributes.map((attribute) => [attribute.id, ""])),
+        });
+      }
+      pastedRows.forEach((line, rowOffset) => {
+        const condition = conditions[startRow + rowOffset];
+        if (!condition) return;
+        const nextAttributes = { ...condition.attributes };
+        line.split("\t").forEach((value, columnOffset) => {
+          const attribute = current.attributes[startColumn + columnOffset];
+          if (attribute) nextAttributes[attribute.id] = value;
+        });
+        const nextCondition = { ...condition, attributes: nextAttributes };
+        conditions[startRow + rowOffset] = {
+          ...nextCondition,
+          label: conditionDisplayLabel(nextCondition, current.attributes),
+        };
+      });
+      return { ...current, conditions };
+    });
+    return true;
+  };
+  const showControlColumn = activeConditions(draft).length >= 3;
+
+  return (
+    <section className="experiment-start__form-card" aria-labelledby="conditions-heading">
+      <div className="experiment-start__section-heading">
+        <div>
+          <p className="experiment-start__eyebrow">実験設計</p>
+          <h2 id="conditions-heading">条件を入力してください</h2>
+        </div>
+        <span className="experiment-start__hint">空行は条件として数えません</span>
+      </div>
+      <p className="experiment-start__helper">
+        表計算ソフトから矩形のまま貼り付けられます。「Gene A
+        #1」は1セルのままで構いません。階層表示したい場合だけGeneとSequenceのように列を分けます。
+      </p>
+      <div className="experiment-start__condition-table-wrap">
+        <table className="experiment-start__condition-table">
+          <thead>
+            <tr>
+              <th className="experiment-start__row-number" scope="col">
+                No.
+              </th>
+              {showControlColumn ? (
+                <th className="experiment-start__control-column" scope="col">
+                  対照
+                </th>
+              ) : null}
+              {draft.attributes.map((attribute) => (
+                <th scope="col" key={attribute.id}>
+                  <label className="experiment-start__table-heading-field">
+                    <span className="sr-only">属性名</span>
+                    <input
+                      aria-label={`${attribute.label || "属性"}の列名`}
+                      value={attribute.label}
+                      onChange={(event) =>
+                        onUpdate((current) => ({
+                          ...current,
+                          attributes: updateAttributeLabel(
+                            current.attributes,
+                            attribute.id,
+                            event.target.value,
+                          ),
+                        }))
+                      }
+                    />
+                    {attribute.id !== draft.attributes[0]?.id ? (
+                      <button
+                        aria-label={`${attribute.label || "列"}を削除`}
+                        className="experiment-start__icon-button"
+                        type="button"
+                        onClick={() => removeAttribute(attribute.id)}
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </label>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {draft.conditions.map((condition, index) => (
+              <tr key={condition.id}>
+                <th className="experiment-start__row-number" scope="row">
+                  {index + 1}
+                </th>
+                {showControlColumn ? (
+                  <td className="experiment-start__control-cell">
+                    <input
+                      aria-label={`条件${index + 1}を対照群に指定`}
+                      checked={draft.controlConditionId === condition.id}
+                      disabled={
+                        !Object.values(condition.attributes).some((value) => value.trim() !== "")
+                      }
+                      name="control-condition"
+                      type="radio"
+                      onChange={() =>
+                        onUpdate((current) => ({
+                          ...current,
+                          controlConditionId: condition.id,
+                        }))
+                      }
+                    />
+                  </td>
+                ) : null}
+                {draft.attributes.map((attribute, columnIndex) => (
+                  <td key={attribute.id}>
+                    <input
+                      aria-label={`行${index + 1}：${attribute.label || `列${columnIndex + 1}`}`}
+                      value={condition.attributes[attribute.id] ?? ""}
+                      data-condition-row={index}
+                      data-condition-column={columnIndex}
+                      onFocus={(event) => event.currentTarget.select()}
+                      onKeyDown={(event) => moveConditionGridFocus(event, index, columnIndex)}
+                      onChange={(event) =>
+                        updateDescriptor(condition.id, attribute.id, event.target.value)
+                      }
+                      onPaste={(event) => {
+                        if (
+                          pasteDescriptors(index, columnIndex, event.clipboardData.getData("text"))
+                        ) {
+                          event.preventDefault();
+                        }
+                      }}
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="experiment-start__inline-actions">
+        <button
+          className="secondary-button"
+          disabled={draft.conditions.length >= 50}
+          type="button"
+          onClick={() => appendRows()}
+        >
+          ＋ 行を追加
+        </button>
+        <button
+          className="secondary-button"
+          disabled={draft.attributes.length >= 6}
+          type="button"
+          onClick={addAttribute}
+        >
+          ＋ 列を追加（任意）
+        </button>
+      </div>
+      {showControlColumn ? (
+        <p className="experiment-start__helper">
+          対照は必要な場合だけ明示してください。名前がControl・WT・Vehicleでも自動判定せず、選んだ条件IDを保存します。
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function TimeStep({
+  draft,
+  onUpdate,
+}: {
+  draft: ExperimentSetDraft;
+  onUpdate: (updater: (current: ExperimentSetDraft) => ExperimentSetDraft) => void;
+}) {
+  if (draft.analysisIntent.kind === "correlation") {
+    return (
+      <section className="experiment-start__form-card" aria-labelledby="time-heading">
+        <div className="experiment-start__section-heading">
+          <div>
+            <p className="experiment-start__eyebrow">実験設計</p>
+            <h2 id="time-heading">XとYの対応を確認</h2>
+          </div>
+          <span className="experiment-start__hint">時間点による対応は推測しません</span>
+        </div>
+        <p>
+          各ExpのXとYは、同じ{draft.conditionAssignment.unitLabel || "実験単位"}
+          から得た1組として保存します。表の行順や同じ日付だけを根拠に対応づけません。
+        </p>
+      </section>
+    );
+  }
+  const hasTime = draft.time.sampling !== "none";
+  const [pointsText, setPointsText] = useState(() =>
+    draft.time.points.map((point) => point.value).join(", "),
+  );
+  const invalidTokens = invalidTimeTokens(pointsText);
+
+  const setTimeMode = (sampling: TimeSampling) => {
+    onUpdate((current) => ({
+      ...current,
+      time:
+        sampling === "none"
+          ? { sampling, unit: current.time.unit, points: [] }
+          : {
+              sampling,
+              unit: current.time.unit,
+              points: parseTimePoints(pointsText),
+            },
+    }));
+  };
+
+  return (
+    <section className="experiment-start__form-card" aria-labelledby="time-heading">
+      <div className="experiment-start__section-heading">
+        <div>
+          <p className="experiment-start__eyebrow">実験設計</p>
+          <h2 id="time-heading">時間の情報はありますか？</h2>
+        </div>
+        <span className="experiment-start__hint">時間がなければそのまま進めます</span>
+      </div>
+      <fieldset className="experiment-start__fieldset">
+        <legend>条件ごとに測った単位は同じですか？</legend>
+        <p className="experiment-start__helper">
+          日付ではなく、同じディッシュ・動物・細胞などを条件間で実際に対応づけたかを選びます。
+        </p>
+        <div className="experiment-start__radio-row">
+          <label className="experiment-start__radio-card">
+            <input
+              checked={draft.conditionAssignment.kind === "independent"}
+              name="condition-assignment"
+              type="radio"
+              onChange={() =>
+                onUpdate((current) => ({
+                  ...current,
+                  conditionAssignment: { ...current.conditionAssignment, kind: "independent" },
+                }))
+              }
+            />
+            <span>
+              <strong>条件ごとに別の単位</strong>
+              <small>例：条件ごとに別々のディッシュや動物を使った。</small>
+            </span>
+          </label>
+          <label className="experiment-start__radio-card">
+            <input
+              checked={draft.conditionAssignment.kind === "matched"}
+              name="condition-assignment"
+              type="radio"
+              onChange={() =>
+                onUpdate((current) => ({
+                  ...current,
+                  conditionAssignment: { ...current.conditionAssignment, kind: "matched" },
+                }))
+              }
+            />
+            <span>
+              <strong>同じ単位を条件間で測った</strong>
+              <small>例：同じ動物・細胞・試料を両条件で測った。</small>
+            </span>
+          </label>
+        </div>
+        {draft.conditionAssignment.kind === "matched" ? (
+          <label className="experiment-start__field experiment-start__field--small">
+            <span>対応づけた単位</span>
+            <input
+              aria-label="対応づけた単位"
+              placeholder="例：動物、細胞、試料"
+              value={draft.conditionAssignment.unitLabel}
+              onChange={(event) =>
+                onUpdate((current) => ({
+                  ...current,
+                  conditionAssignment: {
+                    ...current.conditionAssignment,
+                    unitLabel: event.target.value,
+                  },
+                }))
+              }
+            />
+          </label>
+        ) : null}
+      </fieldset>
+      <fieldset className="experiment-start__fieldset">
+        <legend>時間点</legend>
+        <div className="experiment-start__radio-row">
+          <label className="experiment-start__radio-card">
+            <input
+              checked={!hasTime}
+              name="time-mode"
+              type="radio"
+              onChange={() => setTimeMode("none")}
+            />
+            <span>時間点なし</span>
+          </label>
+          <label className="experiment-start__radio-card">
+            <input
+              checked={hasTime}
+              name="time-mode"
+              type="radio"
+              onChange={() => setTimeMode("cross_sectional")}
+            />
+            <span>順序のある時間点を追加する</span>
+          </label>
+        </div>
+      </fieldset>
+      {hasTime && (
+        <div className="experiment-start__time-details">
+          <div className="experiment-start__field-row">
+            <label className="experiment-start__field experiment-start__field--small">
+              <span>単位</span>
+              <select
+                aria-label="時間の単位"
+                value={draft.time.unit}
+                onChange={(event) =>
+                  onUpdate((current) => ({
+                    ...current,
+                    time: { ...current.time, unit: event.target.value as TimeUnit },
+                  }))
+                }
+              >
+                {TIME_UNITS.map((unit) => (
+                  <option key={unit.value} value={unit.value}>
+                    {unit.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="experiment-start__field">
+              <span>時間点（カンマ区切り）</span>
+              <input
+                aria-label="時間点"
+                inputMode="decimal"
+                placeholder="例：0, 24, 48"
+                value={pointsText}
+                aria-invalid={invalidTokens.length > 0}
+                onChange={(event) => {
+                  setPointsText(event.target.value);
+                  onUpdate((current) => ({
+                    ...current,
+                    time: { ...current.time, points: parseTimePoints(event.target.value) },
+                  }));
+                }}
+              />
+            </label>
+          </div>
+          {invalidTokens.length > 0 ? (
+            <p className="experiment-start__validation" role="status">
+              数値として読めない入力はまだ時間点に含めていません：{invalidTokens.join("、")}
+            </p>
+          ) : null}
+          <fieldset className="experiment-start__fieldset">
+            <legend>各時間点で、どのように測りましたか？</legend>
+            <div className="experiment-start__radio-row">
+              <label className="experiment-start__radio-card">
+                <input
+                  checked={draft.time.sampling === "cross_sectional"}
+                  name="time-sampling"
+                  type="radio"
+                  onChange={() => setTimeMode("cross_sectional")}
+                />
+                <span>
+                  <strong>時間点ごとに別のサンプル</strong>
+                  <small>時間ごとに別の実験単位を測りました。</small>
+                </span>
+              </label>
+              <label className="experiment-start__radio-card">
+                <input
+                  checked={draft.time.sampling === "longitudinal"}
+                  name="time-sampling"
+                  type="radio"
+                  onChange={() => setTimeMode("longitudinal")}
+                />
+                <span>
+                  <strong>同じ単位を時間ごとに追った</strong>
+                  <small>同じ実験単位を複数の時間点で測りました。</small>
+                </span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ExperimentsStep({
+  draft,
+  onUpdate,
+}: {
+  draft: ExperimentSetDraft;
+  onUpdate: (updater: (current: ExperimentSetDraft) => ExperimentSetDraft) => void;
+}) {
+  const updateSession = (sessionId: string, patch: Partial<ExperimentSessionDraft>) => {
+    onUpdate((current) => ({
+      ...current,
+      experiments: current.experiments.map((session) =>
+        session.id === sessionId ? { ...session, ...patch } : session,
+      ),
+    }));
+  };
+
+  return (
+    <section className="experiment-start__form-card" aria-labelledby="experiments-heading">
+      <div className="experiment-start__section-heading">
+        <div>
+          <p className="experiment-start__eyebrow">実験設計</p>
+          <h2 id="experiments-heading">実験回を登録してください</h2>
+        </div>
+        <span className="experiment-start__hint">実験回ごとに日付を記録します</span>
+      </div>
+      <p className="experiment-start__helper">
+        別の日に行った実験は別の実験回にします。回数はあとでも増減できます。
+      </p>
+      <label className="experiment-start__field experiment-start__experiment-count">
+        <span>実験回数</span>
+        <input
+          aria-label="実験回数"
+          max={12}
+          min={1}
+          type="number"
+          value={draft.experiments.length}
+          onChange={(event) =>
+            onUpdate((current) => ({
+              ...current,
+              experiments: withSessionCount(current.experiments, Number(event.target.value)),
+            }))
+          }
+        />
+      </label>
+      <div className="experiment-start__experiment-list">
+        {draft.experiments.map((session, index) => (
+          <div className="experiment-start__experiment-row" key={session.id}>
+            <span className="experiment-start__experiment-index">{index + 1}</span>
+            <label className="experiment-start__field">
+              <span>実験回の名前</span>
+              <input
+                aria-label={`実験回${index + 1}の名前`}
+                value={session.label}
+                onChange={(event) => updateSession(session.id, { label: event.target.value })}
+              />
+            </label>
+            <label className="experiment-start__field experiment-start__field--date">
+              <span>実験日</span>
+              <input
+                aria-label={`${session.label || `実験回${index + 1}`}の実験日`}
+                type="date"
+                value={session.date}
+                onChange={(event) => updateSession(session.id, { date: event.target.value })}
+              />
+            </label>
+            <label className="experiment-start__field">
+              <span>メモ（任意）</span>
+              <input
+                aria-label={`${session.label || `実験回${index + 1}`}のメモ`}
+                value={session.note}
+                onChange={(event) => updateSession(session.id, { note: event.target.value })}
+              />
+            </label>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DesignConfirmation({
+  draft,
+  canSave,
+  onEdit,
+  onStart,
+}: {
+  draft: ExperimentSetDraft;
+  canSave: boolean;
+  onEdit: () => void;
+  onStart: () => void;
+}) {
+  const readout = draft.readouts[0];
+  const readoutLabel =
+    draft.readouts.length > 1
+      ? `${draft.readouts.length}測定項目`
+      : readout?.shape === "proportion"
+        ? "数・割合"
+        : "強度・サイズ・形態";
+  const timeLabel =
+    draft.time.sampling === "none"
+      ? "時間点なし"
+      : `${draft.time.points.length}点（${
+          draft.time.sampling === "longitudinal" ? "同じ単位を追う" : "時間点ごとに別のサンプル"
+        }）`;
+
+  return (
+    <div className="experiment-start__confirmation">
+      <section
+        className="experiment-start__confirmation-intro"
+        aria-labelledby="confirmation-heading"
+      >
+        <p className="experiment-start__eyebrow">入力前の最終確認</p>
+        <h1 id="confirmation-heading">この実験の設計を確認</h1>
+        <p>
+          入力シートを作る前に、実際に行った実験のまとまりを確認します。測定値はまだ入力していません。
+        </p>
+      </section>
+
+      <section className="experiment-start__summary-card" aria-labelledby="summary-heading">
+        <div className="experiment-start__section-heading">
+          <div>
+            <p className="experiment-start__eyebrow">実験者向けのまとめ</p>
+            <h2 id="summary-heading">{CONTEXT_LABELS[draft.context]}の実験</h2>
+          </div>
+          <span className="experiment-start__summary-readout">{readoutLabel}</span>
+        </div>
+        <dl className="experiment-start__summary-list">
+          <div>
+            <dt>測定項目</dt>
+            <dd>{draft.readouts.map(({ label }) => label || "名前未入力").join(" ／ ")}</dd>
+          </div>
+          <div>
+            <dt>条件構造</dt>
+            <dd>
+              {draft.conditions.length}条件・{draft.attributes.length}項目
+            </dd>
+          </div>
+          {draft.controlConditionId ? (
+            <div>
+              <dt>対照群</dt>
+              <dd>
+                {draft.conditions.find(({ id }) => id === draft.controlConditionId)?.label ??
+                  "指定した条件"}
+              </dd>
+            </div>
+          ) : null}
+          <div>
+            <dt>条件間の単位</dt>
+            <dd>
+              {draft.conditionAssignment.kind === "matched"
+                ? `同じ${draft.conditionAssignment.unitLabel || "実験単位"}を対応づける`
+                : "条件ごとに別の実験単位"}
+            </dd>
+          </div>
+          <div>
+            <dt>時間</dt>
+            <dd>{timeLabel}</dd>
+          </div>
+          <div>
+            <dt>実験回</dt>
+            <dd>
+              {draft.experiments.map((experiment) => experiment.label || "名前未入力").join(" ／ ")}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <ConditionTimePreview draft={draft} />
+
+      <section
+        className="experiment-start__expected-analysis"
+        aria-labelledby="expected-analysis-heading"
+      >
+        <p className="experiment-start__eyebrow">入力前の見込み</p>
+        <h2 id="expected-analysis-heading">予定している解析</h2>
+        <p>{expectedAnalysisLabel(draft)}</p>
+        <small>
+          実データの欠損や入力構造を確認したあとに、最終的な推奨を理由とともに更新します。
+        </small>
+      </section>
+
+      <aside className="experiment-start__temporary-notice" aria-label="保存について">
+        <span className="experiment-start__temporary-notice-icon" aria-hidden="true">
+          ✓
+        </span>
+        <div>
+          <strong>
+            {canSave ? "プロジェクトとして保存できます" : "ブラウザ表示では保存できません"}
+          </strong>
+          <p>
+            {canSave
+              ? "入力した測定値、実験回、条件・時間構造、グラフ設定をローカルプロジェクトとして保存し、再編集できます。"
+              : "デスクトップ版で開くと、入力内容をローカルプロジェクトとして保存できます。"}
+          </p>
+        </div>
+      </aside>
+
+      <aside className="experiment-start__confirmation-note">
+        <span aria-hidden="true">i</span>
+        <p>
+          解析方法は実データを入力したあとに確認します。この画面では統計名や解析IDを選びません。
+        </p>
+      </aside>
+
+      <div className="experiment-start__confirmation-actions">
+        <button className="secondary-button" type="button" onClick={onEdit}>
+          設計を修正
+        </button>
+        <button className="primary-button primary-button--ready" type="button" onClick={onStart}>
+          この設計で入力を始める
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function NewExperimentPage({
+  onNavigate,
+  saveProject,
+  analysisRunner = defaultAnalysisRunner,
+  browserPreview = false,
+  initialDraft = null,
+  favoriteGraphDefaults,
+  onSaveFavorite,
+}: NewExperimentPageProps) {
+  const evaluationPreview = browserPreview && evaluationModeIsConfigured(evaluationMode);
+  const [stage, setStage] = useState<FlowStage>(initialDraft ? "confirmation" : "context");
+  const [designStep, setDesignStep] = useState<DesignStep>(0);
+  const [furthestStep, setFurthestStep] = useState<FlowStep>(initialDraft ? 4 : 0);
+  const [draft, setDraft] = useState<ExperimentSetDraft | null>(initialDraft);
+  const [fixtureCells, setFixtureCells] = useState<ExperimentCellMap | undefined>();
+  const [selectedContext, setSelectedContext] = useState<Exclude<
+    ExperimentContext,
+    "existing_data"
+  > | null>(null);
+  const flowSteps = draft ? flowStepsFor(draft) : ([0, 1, 2, 3, 4] as const);
+
+  const updateDraft = (updater: (current: ExperimentSetDraft) => ExperimentSetDraft) => {
+    setDraft((current) => (current ? updater(current) : current));
+  };
+
+  const selectContext = (context: ExperimentContext) => {
+    if (context === "existing_data") {
+      setDraft(null);
+      setFixtureCells(undefined);
+      setStage("import");
+      return;
+    }
+    setSelectedContext(context);
+  };
+
+  const selectEntryRoute = (route: ExperimentEntryRoute) => {
+    if (!selectedContext) return;
+    const nextDraft = createDraftForEntryRoute(selectedContext, route);
+    setDraft(
+      browserPreview
+        ? {
+            ...nextDraft,
+            dataOrigin: "synthetic_demo",
+            name: "ブラウザレビュー用の一時実験",
+          }
+        : nextDraft,
+    );
+    setFixtureCells(undefined);
+    setDesignStep(0);
+    setFurthestStep(0);
+    setStage("design");
+  };
+
+  const goBackToContext = () => {
+    setDraft(null);
+    setFixtureCells(undefined);
+    setDesignStep(0);
+    setFurthestStep(0);
+    setStage("context");
+    setSelectedContext(null);
+  };
+
+  const canAdvance = () => {
+    if (!draft) return false;
+    if (designStep === 0) {
+      return (
+        draft.readouts.length > 0 &&
+        draft.readouts.every(
+          ({ label, shape, categories, referenceLabel }) =>
+            Boolean(label.trim()) &&
+            (shape !== "categorical_counts" || (categories?.length ?? 0) >= 2) &&
+            (shape !== "wb_ratio" || Boolean(referenceLabel?.trim())),
+        )
+      );
+    }
+    if (designStep === 1) {
+      return activeConditions(draft).length >= 2;
+    }
+    if (designStep === 2) return draft.time.sampling === "none" || draft.time.points.length > 0;
+    return draft.experiments.length > 0 && draft.experiments.every((experiment) => experiment.date);
+  };
+
+  const designIsComplete = () => {
+    if (!draft) return false;
+    return (
+      draft.readouts.length > 0 &&
+      draft.readouts.every(
+        ({ label, shape, categories, referenceLabel }) =>
+          Boolean(label.trim()) &&
+          (shape !== "categorical_counts" || (categories?.length ?? 0) >= 2) &&
+          (shape !== "wb_ratio" || Boolean(referenceLabel?.trim())),
+      ) &&
+      activeConditions(draft).length >= 2 &&
+      (draft.time.sampling === "none" || draft.time.points.length > 0) &&
+      draft.experiments.length > 0 &&
+      draft.experiments.every((experiment) => experiment.date)
+    );
+  };
+
+  const selectFlowStep = (step: FlowStep) => {
+    if (step > furthestStep || (step === 4 && !designIsComplete())) return;
+    recordBenchmarkEvent(step < designStep ? "design_backtracked" : "design_step_selected", {
+      from: designStep,
+      to: step,
+    });
+    if (step === 4) {
+      setStage("confirmation");
+      return;
+    }
+    setDesignStep(step);
+    setStage("design");
+  };
+
+  const advance = () => {
+    if (!canAdvance()) return;
+    const currentIndex = flowSteps.indexOf(designStep);
+    const nextStep = flowSteps[currentIndex + 1];
+    if (nextStep !== undefined && nextStep !== 4) {
+      setDesignStep(nextStep);
+      setFurthestStep((current) => Math.max(current, nextStep) as FlowStep);
+      return;
+    }
+    setFurthestStep(4);
+    setStage("confirmation");
+  };
+  const recordWorkspaceStart = (workspaceDraft: ExperimentSetDraft, source: string) => {
+    recordBenchmarkEvent("experiment_workspace_started", {
+      source,
+      context: workspaceDraft.context,
+      entryRoute: workspaceDraft.entryRoute ?? "unspecified",
+      timeSampling: workspaceDraft.time.sampling,
+      unitStructure: workspaceDraft.conditionAssignment.kind,
+      unitLabel: workspaceDraft.conditionAssignment.unitLabel,
+      readout: workspaceDraft.readouts.map(({ shape }) => shape).join(","),
+      conditionCount: workspaceDraft.conditions.length,
+    });
+  };
+
+  if (stage === "workspace" && draft) {
+    return (
+      <ExperimentWorkspace
+        initialDraft={withActiveConditions(draft)}
+        initialCells={fixtureCells}
+        analysisRunner={analysisRunner}
+        saveProject={saveProject}
+        favoriteGraphDefaults={favoriteGraphDefaults}
+        onSaveFavorite={onSaveFavorite}
+        onBack={() => (fixtureCells ? goBackToContext() : setStage("confirmation"))}
+      />
+    );
+  }
+
+  return (
+    <div className="page-stack narrow-page experiment-start">
+      <button
+        className="back-link"
+        type="button"
+        onClick={() => (stage === "context" ? onNavigate("home") : goBackToContext())}
+      >
+        <span aria-hidden="true">←</span>{" "}
+        {stage === "context" ? "ワークスペースに戻る" : "実験の種類を変更"}
+      </button>
+
+      {stage === "context" && (
+        <>
+          <section className="experiment-start__intro" aria-labelledby="new-experiment-heading">
+            <p className="experiment-start__eyebrow">新しい実験</p>
+            <h1 id="new-experiment-heading">何をした実験ですか？</h1>
+            <p>
+              実験の背景を選び、短い質問に答えていくと、あなたの実験に合った入力シートにつながります。
+            </p>
+            <p className="experiment-start__subtle">統計用語や解析名を先に選ぶ必要はありません。</p>
+          </section>
+          <ContextStart
+            browserPreview={browserPreview}
+            showDemos={!evaluationPreview}
+            onSelect={selectContext}
+            selectedContext={selectedContext}
+            onRouteSelect={selectEntryRoute}
+            onContextBack={() => setSelectedContext(null)}
+            onDemoSelect={(fixture) => {
+              setDraft(fixture.draft);
+              setFixtureCells(fixture.cells);
+              recordWorkspaceStart(fixture.draft, `synthetic_fixture:${fixture.id}`);
+              setStage("workspace");
+            }}
+          />
+        </>
+      )}
+
+      {stage === "import" ? (
+        <ExistingDataImport
+          onReady={({ draft: importedDraft, cells }) => {
+            setDraft(importedDraft);
+            setFixtureCells(cells);
+            recordWorkspaceStart(importedDraft, "existing_data_import");
+            setStage("workspace");
+          }}
+        />
+      ) : null}
+
+      {stage === "design" && draft && (
+        <>
+          <section
+            className="experiment-start__intro experiment-start__intro--design"
+            aria-labelledby="design-heading"
+          >
+            <div>
+              <p className="experiment-start__eyebrow">
+                {CONTEXT_LABELS[draft.context]} / 実験設計
+              </p>
+              <h1 id="design-heading">実験の内容を教えてください</h1>
+            </div>
+            <p>一度に一つだけ質問します。分からない項目は後から戻って修正できます。</p>
+          </section>
+          <Stepper
+            activeStep={designStep}
+            steps={flowSteps}
+            furthestStep={furthestStep}
+            confirmationEnabled={designIsComplete()}
+            onSelect={selectFlowStep}
+          />
+          {designStep === 0 && <ReadoutStep draft={draft} onUpdate={updateDraft} />}
+          {designStep === 1 && <ConditionsStep draft={draft} onUpdate={updateDraft} />}
+          {designStep === 2 && <TimeStep draft={draft} onUpdate={updateDraft} />}
+          {designStep === 3 && <ExperimentsStep draft={draft} onUpdate={updateDraft} />}
+          <div className="experiment-start__form-actions">
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() =>
+                designStep === flowSteps[0]
+                  ? goBackToContext()
+                  : setDesignStep(
+                      flowSteps[Math.max(0, flowSteps.indexOf(designStep) - 1)] as DesignStep,
+                    )
+              }
+            >
+              戻る
+            </button>
+            <button
+              className="primary-button primary-button--ready"
+              disabled={!canAdvance()}
+              type="button"
+              onClick={advance}
+            >
+              {designStep === 3 ? "設計を確認" : "次へ"}
+            </button>
+          </div>
+        </>
+      )}
+
+      {stage === "confirmation" && draft && (
+        <>
+          <Stepper
+            activeStep={4}
+            steps={flowSteps}
+            furthestStep={furthestStep}
+            confirmationEnabled={designIsComplete()}
+            onSelect={selectFlowStep}
+          />
+          <DesignConfirmation
+            draft={withActiveConditions(draft)}
+            canSave={Boolean(saveProject)}
+            onEdit={() => {
+              setDesignStep(0);
+              setStage("design");
+            }}
+            onStart={() => {
+              recordWorkspaceStart(withActiveConditions(draft), "design_wizard");
+              setStage("workspace");
+            }}
+          />
+        </>
+      )}
+    </div>
+  );
+}

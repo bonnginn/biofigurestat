@@ -1,0 +1,1015 @@
+.experiment-graph-workbench {
+  --experiment-graph-ink: #1f2937;
+  --experiment-graph-muted: #52657a;
+  --experiment-graph-line: #cbd5e1;
+  --experiment-graph-accent: #245c8a;
+  box-sizing: border-box;
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d9e2ec;
+  border-radius: 16px;
+  color: var(--experiment-graph-ink);
+  background: #fff;
+  font-size: 16px;
+  line-height: 1.5;
+  container-type: inline-size;
+}
+
+.experiment-graph-workbench *,
+.experiment-graph-workbench *::before,
+.experiment-graph-workbench *::after {
+  box-sizing: border-box;
+}
+
+.experiment-graph-workbench-header,
+.experiment-graph-canvas-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.experiment-graph-workbench-header h2,
+.experiment-graph-canvas-heading h3,
+.experiment-graph-inspector-section h3 {
+  margin: 0;
+  color: var(--experiment-graph-ink);
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+
+.experiment-graph-canvas-heading h3 {
+  font-size: 1.05rem;
+}
+
+.experiment-graph-canvas-heading > div:first-child {
+  min-width: 0;
+}
+
+.experiment-graph-overline {
+  margin: 0 0 4px;
+  color: var(--experiment-graph-accent);
+  font-size: 1rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.experiment-graph-subtitle,
+.experiment-graph-caption,
+.experiment-graph-help,
+.experiment-graph-statistics-section p {
+  color: var(--experiment-graph-muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.experiment-graph-subtitle {
+  max-width: 780px;
+  margin: 6px 0 0;
+}
+
+.experiment-graph-close {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 7px 14px;
+  border: 1px solid #b8c9d8;
+  border-radius: 8px;
+  color: #244f70;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.experiment-graph-close:hover,
+.experiment-graph-close:focus-visible {
+  border-color: var(--experiment-graph-accent);
+  background: #f3f8fc;
+}
+
+.experiment-graph-workbench-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 278px);
+  gap: 10px;
+  align-items: start;
+}
+
+.experiment-graph-workbench--statistics .experiment-graph-workbench-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.experiment-graph-workbench--statistics .experiment-graph-inspector {
+  position: static;
+  display: grid;
+  grid-template-columns: minmax(250px, 0.42fr) minmax(420px, 1fr);
+  gap: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+.experiment-graph-workbench--statistics .experiment-statistics-source {
+  grid-column: 1;
+  grid-row: 1 / span 20;
+  align-self: start;
+  border-right: 1px solid #d9e2ec;
+}
+
+.experiment-graph-workbench--statistics
+  .experiment-graph-inspector
+  > :not(.experiment-statistics-source) {
+  grid-column: 2;
+}
+
+.experiment-statistics-design-summary {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.experiment-statistics-design-summary div {
+  padding-top: 8px;
+  border-top: 1px solid #e1e8ef;
+}
+
+.experiment-statistics-design-summary dt {
+  color: var(--experiment-graph-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.experiment-statistics-design-summary dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+}
+
+.experiment-graph-canvas-panel {
+  min-width: 0;
+  min-height: min(720px, calc(100vh - 230px));
+  padding: 12px;
+  border: 1px solid #e0e7ef;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.experiment-graph-svg-scroll {
+  max-width: 100%;
+  margin-top: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.experiment-graph-stage {
+  position: relative;
+  min-width: 0;
+}
+
+.experiment-graph-svg-scroll.is-fit-overview {
+  overflow-x: hidden;
+}
+
+.experiment-graph-svg-scroll.is-fit-overview .experiment-graph-svg {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.experiment-graph-view-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.experiment-graph-view-controls button {
+  min-height: 34px;
+  padding: 5px 10px;
+  border: 1px solid #b8c7d7;
+  color: #53657a;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.experiment-graph-view-controls button:first-child {
+  border-radius: 7px 0 0 7px;
+}
+
+.experiment-graph-view-controls button:last-child {
+  margin-left: -1px;
+  border-radius: 0 7px 7px 0;
+}
+
+.experiment-graph-view-controls button.is-active {
+  z-index: 1;
+  border-color: #4779a5;
+  color: #264f71;
+  background: #edf4fa;
+}
+
+.experiment-graph-svg {
+  display: block;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  height: auto;
+  margin-inline: auto;
+  background: #fff;
+}
+
+.experiment-graph-axis-hit-target,
+.experiment-graph-error-hit-target {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.experiment-graph-axis-hit-target:hover,
+.experiment-graph-axis-hit-target[data-selected="true"] {
+  stroke: rgba(35, 79, 112, 0.18);
+}
+
+.experiment-graph-error-hit-target:hover,
+.experiment-graph-error-hit-target[data-selected="true"] {
+  stroke: rgba(35, 79, 112, 0.24);
+}
+
+.experiment-graph-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 10px;
+  padding-left: 27px;
+}
+
+.experiment-graph-axis-line,
+.experiment-graph-tick {
+  stroke: #000;
+  fill: none;
+}
+
+.experiment-graph-axis-line {
+  stroke-width: 1.4;
+}
+
+.experiment-graph-tick {
+  stroke-width: 1.2;
+}
+
+.experiment-graph-category-tick {
+  stroke: #000;
+  stroke-width: 1.2;
+}
+
+.experiment-graph-axis-label,
+.experiment-graph-axis-title,
+.experiment-graph-condition-label,
+.experiment-graph-condition-attribute {
+  fill: #000;
+  font-family: inherit;
+  font-size: 16px;
+}
+
+.experiment-graph-time-label {
+  fill: #000;
+  font-weight: 680;
+}
+
+.experiment-graph-hierarchy-line {
+  stroke: #c2ccd8;
+  stroke-width: 1;
+}
+
+.experiment-graph-hierarchy-line--parent {
+  stroke: #8fa0b4;
+  stroke-width: 1.2;
+}
+
+.experiment-graph-hierarchy-heading {
+  fill: #000;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 680;
+}
+
+.experiment-graph-axis-title,
+.experiment-graph-condition-label {
+  font-weight: 650;
+}
+
+.experiment-graph-point {
+  stroke: #fff;
+  stroke-width: 1.3;
+}
+
+.experiment-graph-point--raw {
+  stroke: none;
+}
+
+.experiment-graph-violin {
+  fill-opacity: 0.16;
+  stroke: #526b85;
+  stroke-width: 1.2;
+}
+
+.experiment-graph-violin-hit-target,
+.experiment-graph-box-hit-target {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 12;
+  pointer-events: all;
+}
+
+.experiment-graph-bar {
+  stroke: #274f70;
+  stroke-width: 1;
+  cursor: pointer;
+  transition:
+    opacity 120ms ease,
+    stroke-width 120ms ease;
+}
+
+.experiment-graph-bar:hover,
+.experiment-graph-bar[data-selected="true"] {
+  opacity: 0.34;
+  stroke-width: 2;
+}
+
+[data-inspector-target="experiment-summary"],
+[data-inspector-target="raw-dots"],
+[data-inspector-target="violin"],
+[data-inspector-target="box"] {
+  cursor: pointer;
+}
+
+[data-inspector-target="experiment-summary"]:hover.experiment-graph-point {
+  stroke: #315f7f;
+  stroke-width: 2;
+}
+
+[data-inspector-target="raw-dots"]:hover.experiment-graph-point--raw {
+  stroke: #315f7f;
+  stroke-width: 1.1;
+  opacity: 0.44;
+}
+
+[data-inspector-target="experiment-summary"][data-selected="true"].experiment-graph-point {
+  stroke: #163f61;
+  stroke-width: 2.4;
+}
+
+[data-inspector-target="raw-dots"][data-selected="true"].experiment-graph-point--raw {
+  stroke: #315f7f;
+  stroke-width: 1.4;
+}
+
+[data-inspector-target="violin"]:hover .experiment-graph-violin,
+[data-inspector-target="violin"][data-selected="true"] .experiment-graph-violin {
+  fill-opacity: 0.24;
+  stroke: #234f70;
+}
+
+[data-inspector-target="box"]:hover .experiment-graph-distribution-box,
+[data-inspector-target="box"][data-selected="true"] .experiment-graph-distribution-box {
+  fill-opacity: 0.18;
+  stroke: #234f70;
+}
+
+[data-inspector-target="x-axis"]:hover .experiment-graph-condition-label,
+[data-inspector-target="x-axis"]:hover .experiment-graph-condition-attribute,
+[data-inspector-target="x-axis"][data-selected="true"] .experiment-graph-condition-label,
+[data-inspector-target="x-axis"][data-selected="true"] .experiment-graph-condition-attribute {
+  fill: #234f70;
+}
+
+[data-inspector-target="x-axis"]:hover .experiment-graph-hierarchy-line,
+[data-inspector-target="x-axis"][data-selected="true"] .experiment-graph-hierarchy-line {
+  stroke: #4d718e;
+}
+
+.experiment-graph-error-line[data-selected="true"],
+.experiment-graph-error-cap[data-selected="true"] {
+  stroke-width: 2.3 !important;
+}
+
+.experiment-graph-connecting-line {
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.experiment-graph-distribution-box {
+  fill-opacity: 0.1;
+  stroke: #526b85;
+  stroke-width: 1.1;
+}
+
+.experiment-graph-distribution-whisker,
+.experiment-graph-distribution-median {
+  stroke: #526b85;
+  stroke-width: 1.2;
+}
+
+.experiment-graph-distribution-median {
+  stroke-width: 1.8;
+}
+
+.experiment-graph-stat-line {
+  stroke: #000;
+  stroke-width: 1.2;
+}
+
+.experiment-graph-stat-label {
+  fill: #000;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.experiment-graph-svg-legend {
+  cursor: pointer;
+}
+
+.experiment-graph-svg-legend:hover,
+.experiment-graph-svg-legend[data-selected="true"] {
+  filter: drop-shadow(0 0 1px rgba(35, 79, 112, 0.55));
+}
+
+.experiment-graph-svg-legend-label {
+  fill: #000;
+  font-family: inherit;
+}
+
+.experiment-graph-mean-line,
+.experiment-graph-error-line,
+.experiment-graph-error-cap {
+  stroke: #334e68;
+  fill: none;
+}
+
+.experiment-graph-mean-line {
+  stroke-width: 2;
+}
+
+.experiment-graph-error-line,
+.experiment-graph-error-cap {
+  stroke-width: 1.6;
+}
+
+.experiment-graph-condition-label {
+  font-size: 16px;
+}
+
+.experiment-graph-condition-attribute {
+  fill: #000;
+  font-size: 16px;
+}
+
+.experiment-graph-caption {
+  margin: 8px 0 0;
+}
+
+.experiment-graph-empty {
+  display: grid;
+  min-height: 300px;
+  place-items: center;
+  margin-top: 16px;
+  border: 1px dashed #b9c8d8;
+  border-radius: 10px;
+  color: var(--experiment-graph-muted);
+  background: #fff;
+  font-size: 1rem;
+}
+
+.experiment-graph-inspector {
+  position: sticky;
+  top: 16px;
+  display: block;
+  max-height: calc(100vh - 155px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid #d9e2ec;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.experiment-graph-inspector-target {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  padding: 12px;
+  border-bottom: 1px solid #d9e2ec;
+  background: #f8fafc;
+}
+
+.experiment-graph-inspector-section,
+.experiment-graph-statistics-section {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+}
+
+.experiment-graph-method-levels {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.experiment-graph-method-choices {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.65rem;
+  border: 1px solid #d5dfec;
+  border-radius: 0.65rem;
+}
+
+.experiment-graph-method-choices legend {
+  padding: 0 0.3rem;
+  color: #425772;
+  font-weight: 700;
+}
+
+.experiment-graph-method-choices label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem;
+  align-items: start;
+  padding: 0.35rem 0.45rem;
+  border-radius: 0.45rem;
+}
+
+.experiment-graph-method-choices label:has(input:checked) {
+  background: #edf4ff;
+}
+
+.experiment-graph-method-choices label[aria-disabled="true"] {
+  color: #8390a3;
+}
+
+.experiment-graph-method-choices label span,
+.experiment-graph-method-choices label small {
+  display: block;
+}
+
+.experiment-graph-field {
+  display: grid;
+  gap: 6px;
+  color: var(--experiment-graph-ink);
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.experiment-graph-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.experiment-graph-field select {
+  min-height: 40px;
+  padding: 7px 9px;
+  border: 1px solid #b9c8d8;
+  border-radius: 7px;
+  color: var(--experiment-graph-ink);
+  background: #fff;
+  font: inherit;
+}
+
+.experiment-graph-field input[type="text"],
+.experiment-graph-field input[type="number"] {
+  width: 100%;
+  min-height: 40px;
+  padding: 7px 9px;
+  border: 1px solid #b9c8d8;
+  border-radius: 7px;
+  color: var(--experiment-graph-ink);
+  background: #fff;
+  font: inherit;
+}
+
+.experiment-graph-range-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.experiment-graph-hierarchy-order {
+  display: grid;
+  gap: 6px;
+}
+
+.experiment-graph-hierarchy-order > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px 34px;
+  gap: 5px;
+  align-items: center;
+}
+
+.experiment-graph-hierarchy-order button {
+  min-height: 32px;
+  border: 1px solid #bdcad9;
+  border-radius: 5px;
+  color: #355d7d;
+  background: #fff;
+  cursor: pointer;
+}
+
+.experiment-graph-hierarchy-order button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.experiment-graph-field input[type="range"] {
+  width: 100%;
+  accent-color: var(--experiment-graph-accent);
+}
+
+.experiment-graph-field select:disabled {
+  color: #64748b;
+  background: #f4f6f8;
+}
+
+.experiment-graph-condition-fieldset {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.experiment-graph-condition-fieldset legend {
+  padding: 0;
+  margin-bottom: 2px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.experiment-graph-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--experiment-graph-ink);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.experiment-graph-checkbox input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  accent-color: var(--experiment-graph-accent);
+}
+
+.experiment-graph-checkbox > span {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+}
+
+.experiment-graph-layer-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.experiment-graph-layer-heading button,
+.experiment-graph-layer-solo,
+.experiment-graph-export-actions button {
+  min-height: 34px;
+  padding: 5px 9px;
+  border: 1px solid #b8c9d8;
+  border-radius: 6px;
+  color: #355d7d;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.experiment-graph-layer-solo {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 3px 7px;
+}
+
+.experiment-graph-export-actions {
+  width: 198px;
+  flex: 0 0 198px;
+  display: grid;
+  grid-template-columns: 70px 56px 56px;
+  gap: 8px;
+}
+
+.experiment-graph-export-actions button {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.experiment-graph-copy-status {
+  margin: 6px 0 0;
+  color: #385e4f;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.experiment-graph-reset-layout,
+.experiment-graph-color-details button {
+  min-height: 36px;
+  padding: 6px 9px;
+  border: 1px solid #b8c9d8;
+  border-radius: 7px;
+  color: #355d7d;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.experiment-graph-color-details {
+  display: grid;
+  gap: 8px;
+  color: #34465a;
+}
+
+.experiment-graph-color-details summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.experiment-graph-color-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--experiment-graph-ink);
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.experiment-graph-color-field span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.experiment-graph-color-field input[type="color"] {
+  width: 46px;
+  height: 34px;
+  flex: 0 0 auto;
+  padding: 2px;
+  border: 1px solid #b9c8d8;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.experiment-graph-export-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.experiment-graph-help,
+.experiment-graph-statistics-section p {
+  margin: 0;
+}
+
+.experiment-graph-statistics-section {
+  border-color: #c9d9e8;
+  background: #f7fbff;
+}
+
+.experiment-graph-run-analysis {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid #285f94;
+  border-radius: 8px;
+  color: #fff;
+  background: #285f94;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+}
+
+.experiment-graph-run-analysis:disabled {
+  border-color: #b7c7d7;
+  color: #50657a;
+  background: #e9eef3;
+  cursor: not-allowed;
+}
+
+.experiment-graph-recommendation {
+  padding: 12px 13px;
+  border-left: 3px solid #3f7c67;
+  color: #405164;
+  background: #f3faf7;
+}
+
+.experiment-graph-recommendation.is-insufficient,
+.experiment-graph-recommendation.is-unsupported {
+  border-left-color: #b07a36;
+  background: #fff9ef;
+}
+
+.experiment-graph-recommendation strong {
+  color: #244b41;
+}
+
+.experiment-graph-recommendation p {
+  margin: 5px 0 0;
+}
+
+.experiment-graph-confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: #35465a;
+  line-height: 1.55;
+}
+
+.experiment-graph-confirmation input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  accent-color: #285f94;
+}
+
+.experiment-graph-statistics-section details {
+  padding-top: 8px;
+  border-top: 1px solid #dce6ef;
+  color: #52657a;
+}
+
+.experiment-graph-statistics-section summary {
+  cursor: pointer;
+  color: #355d7d;
+  font-weight: 700;
+}
+
+.experiment-graph-statistics-section details p {
+  margin-top: 7px;
+}
+
+.experiment-graph-analysis-error {
+  padding: 10px 11px;
+  color: #8b342b;
+  background: #fff2f0;
+}
+
+.experiment-graph-analysis-stale {
+  padding: 10px 11px;
+  color: #76521f;
+  background: #fff8e9;
+}
+
+.experiment-graph-analysis-result {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid #bad9cd;
+  border-radius: 8px;
+  background: #f3faf7;
+}
+
+.experiment-graph-methods-text {
+  max-height: 18rem;
+  padding: 10px;
+  overflow: auto;
+  border: 1px solid #d8e2ed;
+  border-radius: 7px;
+  background: #f8fafc;
+  color: #24364a;
+  font:
+    0.84rem/1.55 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+  white-space: pre-wrap;
+}
+
+.experiment-graph-analysis-result dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.experiment-graph-analysis-result dt {
+  color: #607266;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.experiment-graph-analysis-result dd {
+  margin: 2px 0 0;
+  color: #263d35;
+}
+
+.experiment-graph-analysis-result p {
+  margin: 0;
+  color: #52675f;
+  font-size: 1rem;
+}
+
+.experiment-graph-data-summary {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #e3e9ef;
+}
+
+.experiment-graph-data-details {
+  margin-top: 10px;
+  color: var(--experiment-graph-muted);
+}
+
+.experiment-graph-data-details > summary {
+  width: fit-content;
+  cursor: pointer;
+  color: #355d7d;
+  font-weight: 700;
+}
+
+.experiment-graph-axis-settings {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.experiment-graph-axis-settings > div {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.experiment-graph-axis-settings dt {
+  color: var(--experiment-graph-muted);
+  font-weight: 700;
+}
+
+.experiment-graph-axis-settings dd {
+  margin: 0;
+}
+
+.experiment-graph-summary-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 0.35fr) minmax(0, 1fr);
+  gap: 10px;
+  color: var(--experiment-graph-muted);
+  font-size: 1rem;
+}
+
+.experiment-graph-summary-row strong {
+  color: var(--experiment-graph-ink);
+}
+
+@media (max-width: 960px) {
+  .experiment-graph-workbench-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .experiment-graph-inspector {
+    position: static;
+    max-height: none;
+  }
+}
+
+@container (max-width: 900px) {
+  .experiment-graph-workbench-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .experiment-graph-inspector {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .experiment-graph-workbench {
+    padding: 18px;
+  }
+
+  .experiment-graph-workbench-header,
+  .experiment-graph-canvas-heading {
+    display: grid;
+  }
+
+  .experiment-graph-canvas-panel {
+    padding: 16px;
+  }
+
+  .experiment-graph-summary-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}

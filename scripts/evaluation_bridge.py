@@ -1,0 +1,299 @@
+#!/usr/bin/env python3
+"""Loopback-only evaluation bridge to the pinned LSAA statistical sidecar protocol.
+
+This server is development infrastructure. It accepts synthetic benchmark requests only and
+must never be bundled into the production desktop application.
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import json
+import os
+import re
+import secrets
+import subprocess
+import sys
+import tempfile
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+# Do not resolve this path: Unix virtual-environment launchers are commonly symlinks, and
+# resolving one to the base interpreter discards the venv's scientific packages.
+ENGINE_PYTHON = Path(sys.executable).absolute()
+ENGINE_SOURCE = ROOT / "engine/python"
+SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
+ALLOWED_ARTIFACTS = {
+    "run.json",
+    "default_graph.png",
+    "default_graph.svg",
+    "final_graph.png",
+    "final_graph.svg",
+    "statistics.json",
+    "methods.txt",
+    "graph_state.json",
+    "interaction_log.json",
+}
+MAX_REQUEST_BYTES = 16 * 1024 * 1024
+
+
+def run_engine(request: dict[str, Any]) -> dict[str, Any]:
+    if not ENGINE_PYTHON.is_file():
+        raise RuntimeError(f"Pinned engine Python is missing: {ENGINE_PYTHON}")
+    environment = os.environ.copy()
+    existing = environment.get("PYTHONPATH")
+    environment["PYTHONPATH"] = f"{ENGINE_SOURCE}{os.pathsep}{existing}" if existing else str(ENGINE_SOURCE)
+    completed = subprocess.run(
+        [str(ENGINE_PYTHON), "-m", "lsaa_engine.cli"],
+        input=json.dumps(request, ensure_ascii=False) + "\n",
+        text=True,
+        capture_output=True,
+        timeout=30,
+        check=False,
+        env=environment,
+    )
+    if completed.returncode != 0:
+        raise RuntimeError(completed.stderr.strip() or "Statistical engine failed")
+    output = completed.stdout.strip().splitlines()
+    if len(output) != 1:
+        raise RuntimeError("Statistical engine did not return exactly one JSON result")
+    parsed = json.loads(output[0])
+    if not isinstance(parsed, dict):
+        raise RuntimeError("Statistical engine returned a non-object result")
+    return parsed
+
+
+def safe_run_directory(output_root: Path, benchmark: dict[str, Any]) -> Path:
+    values = {
+        "caseId": benchmark.get("caseId"),
+        "track": benchmark.get("track"),
+        "runId": benchmark.get("runId"),
+    }
+    for label, value in values.items():
+        if not isinstance(value, str) or not SAFE_ID.fullmatch(value):
+            raise ValueError(f"Invalid benchmark {label}")
+    if values["track"] not in {"track_A", "track_B"}:
+        raise ValueError("Benchmark track must be track_A or track_B")
+    return output_root / values["caseId"] / values["track"] / values["runId"]
+
+
+def atomic_write(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}.", delete=False) as handle:
+        temporary = Path(handle.name)
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+    temporary.replace(path)
+
+
+def write_artifact_batch(
+    output_root: Path,
+    benchmark: dict[str, Any],
+    artifacts: list[Any],
+    required_artifacts: list[Any],
+) -> tuple[Path, list[str], list[str]]:
+    if any(
+        not isinstance(name, str) or name not in ALLOWED_ARTIFACTS
+        for name in required_artifacts
+    ):
+        raise ValueError("Required artifact names are not allowed")
+    if len(set(required_artifacts)) != len(required_artifacts):
+        raise ValueError("Required artifact names must be unique")
+    target = safe_run_directory(output_root, benchmark)
+    written: list[str] = []
+    artifact_names: set[str] = set()
+    for artifact in artifacts:
+        if not isinstance(artifact, dict) or artifact.get("name") not in ALLOWED_ARTIFACTS:
+            raise ValueError("Artifact name is not allowed")
+        name = artifact["name"]
+        if name in artifact_names:
+            raise ValueError("Artifact names must be unique within one request")
+        artifact_names.add(name)
+        content = artifact.get("content")
+        if not isinstance(content, str):
+            raise ValueError(f"Artifact {name} has no string content")
+        encoding = artifact.get("encoding", "text")
+        if encoding not in {"text", "base64"}:
+            raise ValueError(f"Artifact {name} uses an unsupported encoding")
+        payload = (
+            base64.b64decode(content, validate=True)
+            if encoding == "base64"
+            else content.encode("utf-8")
+        )
+        atomic_write(target / name, payload)
+        written.append(name)
+    present = sorted(
+        path.name
+        for path in target.iterdir()
+        if path.is_file() and path.name in ALLOWED_ARTIFACTS
+    )
+    missing = sorted(set(required_artifacts) - set(present))
+    if missing:
+        raise ValueError(f"Benchmark artifact set is incomplete: {', '.join(missing)}")
+    return target, written, present
+
+
+class EvaluationHandler(BaseHTTPRequestHandler):
+    server_version = "LSAAEvaluationBridge/0.1"
+
+    @property
+    def config(self) -> "EvaluationServer":
+        return self.server  # type: ignore[return-value]
+
+    def _cors(self) -> None:
+        origin = self.headers.get("Origin")
+        if origin == self.config.allowed_origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+
+    def _json(self, status: HTTPStatus, payload: dict[str, Any]) -> None:
+        body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        self.send_response(status)
+        self._cors()
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _authorized(self) -> bool:
+        return secrets.compare_digest(
+            self.headers.get("Authorization", ""), f"Bearer {self.config.token}"
+        )
+
+    def _read_json(self) -> dict[str, Any]:
+        length = int(self.headers.get("Content-Length", "0"))
+        if length <= 0 or length > MAX_REQUEST_BYTES:
+            raise ValueError("Request size is invalid")
+        parsed = json.loads(self.rfile.read(length))
+        if not isinstance(parsed, dict):
+            raise ValueError("JSON body must be an object")
+        return parsed
+
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        if self.headers.get("Origin") != self.config.allowed_origin:
+            self._json(HTTPStatus.FORBIDDEN, {"error": "Origin is not allowed"})
+            return
+        self.send_response(HTTPStatus.NO_CONTENT)
+        self._cors()
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.end_headers()
+
+    def do_GET(self) -> None:  # noqa: N802
+        if self.path != "/api/evaluation/health" or not self._authorized():
+            self._json(HTTPStatus.NOT_FOUND, {"error": "Not found"})
+            return
+        if self.headers.get("Origin") != self.config.allowed_origin:
+            self._json(HTTPStatus.FORBIDDEN, {"error": "Origin is not allowed"})
+            return
+        self._json(
+            HTTPStatus.OK,
+            {
+                "mode": "evaluation",
+                "syntheticOnly": True,
+                "bridgeVersion": "0.1.0",
+                "production": False,
+            },
+        )
+
+    def do_POST(self) -> None:  # noqa: N802
+        if not self._authorized():
+            self._json(HTTPStatus.UNAUTHORIZED, {"error": "Evaluation token is invalid"})
+            return
+        if self.headers.get("Origin") != self.config.allowed_origin:
+            self._json(HTTPStatus.FORBIDDEN, {"error": "Origin is not allowed"})
+            return
+        try:
+            body = self._read_json()
+            if body.get("mode") != "evaluation" or body.get("syntheticOnly") is not True:
+                raise ValueError("Evaluation requests must explicitly declare synthetic-only mode")
+            if self.path == "/api/evaluation/analysis":
+                request = body.get("request")
+                if not isinstance(request, dict):
+                    raise ValueError("Analysis request is missing")
+                result = run_engine(request)
+                self._json(
+                    HTTPStatus.OK,
+                    {
+                        "result": result,
+                        "evaluation": {
+                            "syntheticOnly": True,
+                            "bridgeVersion": "0.1.0",
+                        },
+                    },
+                )
+                return
+            if self.path == "/api/evaluation/artifacts":
+                benchmark = body.get("benchmark")
+                artifacts = body.get("artifacts")
+                required_artifacts = body.get("requiredArtifacts", [])
+                if not isinstance(benchmark, dict) or not isinstance(artifacts, list):
+                    raise ValueError("Benchmark identity and artifacts are required")
+                if not isinstance(required_artifacts, list):
+                    raise ValueError("Required artifact names are not allowed")
+                target, written, present = write_artifact_batch(
+                    self.config.output_root,
+                    benchmark,
+                    artifacts,
+                    required_artifacts,
+                )
+                self._json(
+                    HTTPStatus.OK,
+                    {"written": written, "present": present, "directory": str(target)},
+                )
+                return
+            self._json(HTTPStatus.NOT_FOUND, {"error": "Not found"})
+        except (ValueError, json.JSONDecodeError) as error:
+            self._json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
+        except Exception as error:  # pragma: no cover - defensive bridge boundary
+            self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(error)})
+
+    def log_message(self, format: str, *args: object) -> None:
+        print(f"[evaluation-bridge] {self.address_string()} {format % args}")
+
+
+class EvaluationServer(ThreadingHTTPServer):
+    def __init__(
+        self,
+        address: tuple[str, int],
+        token: str,
+        allowed_origin: str,
+        output_root: Path,
+    ) -> None:
+        super().__init__(address, EvaluationHandler)
+        self.token = token
+        self.allowed_origin = allowed_origin
+        self.output_root = output_root
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default="127.0.0.1", choices=["127.0.0.1", "localhost"])
+    parser.add_argument("--port", type=int, default=43128)
+    parser.add_argument("--origin", default="http://127.0.0.1:1420")
+    parser.add_argument("--token", default=os.environ.get("LSAA_EVALUATION_TOKEN") or secrets.token_urlsafe(32))
+    parser.add_argument("--output-root", type=Path, default=ROOT / "benchmark_runs")
+    args = parser.parse_args()
+    server = EvaluationServer(
+        (args.host, args.port), args.token, args.origin, args.output_root.resolve()
+    )
+    print("LSAA evaluation bridge (synthetic benchmark data only)", flush=True)
+    print(f"URL=http://{args.host}:{args.port}", flush=True)
+    print(f"TOKEN={args.token}", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()

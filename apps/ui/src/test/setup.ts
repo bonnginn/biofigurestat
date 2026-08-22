@@ -1,0 +1,8 @@
+import "@testing-library/jest-dom/vitest";
+
+if (typeof document !== "undefined" && typeof document.execCommand !== "function") {
+  Object.defineProperty(document, "execCommand", {
+    configurable: true,
+    value: () => false,
+  });
+}

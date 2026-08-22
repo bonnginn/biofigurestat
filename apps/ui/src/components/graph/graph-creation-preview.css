@@ -1,0 +1,108 @@
+.graph-type-thumbnail {
+  width: 100%;
+  height: 72px;
+  color: #315f88;
+}
+
+.graph-type-thumbnail line,
+.graph-type-thumbnail polyline,
+.graph-type-thumbnail path,
+.graph-type-thumbnail rect {
+  fill: rgba(72, 127, 170, 0.12);
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.graph-type-thumbnail circle {
+  fill: #4779a5;
+  stroke: #fff;
+  stroke-width: 1;
+}
+
+.graph-current-preview__scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #d8e2ed;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.graph-current-preview {
+  display: block;
+  height: 220px;
+  max-width: none;
+  color: #294f70;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.graph-current-preview__axis,
+.graph-current-preview__summary,
+.graph-current-preview__error,
+.graph-current-preview__line {
+  fill: none;
+  stroke: #2f4052;
+  stroke-width: 1.4;
+}
+
+.graph-current-preview__line {
+  stroke: #4779a5;
+  stroke-width: 2;
+}
+
+.graph-current-preview__unit-line {
+  fill: none;
+  stroke: #4779a5;
+  stroke-width: 1;
+  opacity: 0.34;
+}
+
+.graph-current-preview__point {
+  fill: #245c8a;
+  stroke: #fff;
+  stroke-width: 1;
+}
+
+.graph-current-preview__raw {
+  fill: #245c8a;
+  opacity: 0.26;
+}
+
+.graph-current-preview__category {
+  stroke: #fff;
+  stroke-width: 1;
+}
+
+.graph-current-preview__category--1,
+.graph-type-thumbnail rect:not(.graph-type-thumbnail__secondary, .graph-type-thumbnail__tertiary) {
+  fill: #4477aa;
+}
+
+.graph-current-preview__category--2,
+.graph-type-thumbnail__secondary {
+  fill: #ee6677;
+}
+
+.graph-current-preview__category--3,
+.graph-type-thumbnail__tertiary {
+  fill: #228833;
+}
+
+.graph-current-preview__bar,
+.graph-current-preview__box,
+.graph-current-preview__violin {
+  fill: rgba(65, 112, 154, 0.18);
+  stroke: #3d6f98;
+  stroke-width: 1.3;
+}
+
+.graph-current-preview__empty {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  margin: 0;
+  border: 1px dashed #c6d3e0;
+  border-radius: 9px;
+  color: #6b7889;
+  background: #fbfcfe;
+}

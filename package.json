@@ -1,0 +1,37 @@
+{
+  "name": "lifescience-analysis-app",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "dev": "pnpm --filter @lsaa/ui dev",
+    "dev:evaluation": "node scripts/run_with_engine_python.mjs scripts/run_evaluation_environment.py",
+    "evaluation:tunnel": "cloudflared tunnel --url http://127.0.0.1:1420 --no-autoupdate",
+    "evaluation:bridge": "node scripts/run_with_engine_python.mjs scripts/evaluation_bridge.py",
+    "engine:test": "node scripts/run_with_engine_python.mjs -m unittest discover -s engine/python/tests -p test_*.py",
+    "engine:reference": "node scripts/run_with_engine_python.mjs scripts/verify_engine_reference.py",
+    "benchmark:verify": "node scripts/run_with_engine_python.mjs scripts/verify_benchmark_runs.py",
+    "preview:ux": "pnpm --filter @lsaa/ui build && pnpm --filter @lsaa/ui preview --host 127.0.0.1 --port 4173 --strictPort",
+    "preview:tunnel": "cloudflared tunnel --url http://127.0.0.1:4173 --no-autoupdate",
+    "engine:build:mac": "engine/python/.venv/bin/python engine/python/build_sidecar.py && engine/python/.venv/bin/python engine/python/smoke_sidecar.py",
+    "engine:smoke:mac": "engine/python/.venv/bin/python engine/python/smoke_sidecar.py",
+    "native:verify:mac": "engine/python/.venv/bin/python scripts/verify_macos_bundle.py && engine/python/.venv/bin/python engine/python/smoke_sidecar.py 'apps/desktop/src-tauri/target/release/bundle/macos/Life Science Analysis.app/Contents/Resources/engine/lsaa-engine'",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "tauri:dev": "pnpm --filter @lsaa/desktop tauri:dev",
+    "tauri:build": "pnpm --filter @lsaa/desktop tauri:build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.34.0",
+    "@types/node": "^24.5.2",
+    "eslint": "^9.34.0",
+    "globals": "^16.3.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.40.0"
+  }
+}

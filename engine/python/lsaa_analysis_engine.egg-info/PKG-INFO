@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: lsaa-analysis-engine
+Version: 0.2.0
+Summary: Pinned local statistical engine for Life Science Analysis App
+Requires-Python: <3.15,>=3.12
+Requires-Dist: numpy==2.3.5
+Requires-Dist: scipy==1.18.0
+Provides-Extra: validation
+Requires-Dist: statsmodels==0.14.6; extra == "validation"
+Provides-Extra: packaging
+Requires-Dist: pyinstaller==6.21.0; extra == "packaging"

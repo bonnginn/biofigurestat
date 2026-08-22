@@ -1,0 +1,12 @@
+{
+  "bundle": {
+    "active": true,
+    "targets": ["app"],
+    "macOS": {
+      "signingIdentity": "-"
+    },
+    "resources": {
+      "../../../engine/python/dist/darwin-arm64/lsaa-engine/": "engine/"
+    }
+  }
+}

@@ -1,0 +1,487 @@
+export const EXPERIMENT_DRAFT_VERSION = "0.1.0" as const;
+
+export type ExperimentContext =
+  | "cell_culture"
+  | "microscopy_imaging"
+  | "protein_biochemical"
+  | "animal"
+  | "general_assay"
+  | "existing_data";
+
+export type ReadoutShape = "proportion" | "nested_continuous" | "categorical_counts" | "wb_ratio";
+export type TimeSampling = "none" | "cross_sectional" | "longitudinal";
+export type TimeUnit = "sec" | "min" | "h" | "day";
+export type ConditionAssignmentKind = "independent" | "matched";
+export type AnalysisIntent =
+  | Readonly<{ kind: "group_comparison" }>
+  | Readonly<{
+      kind: "correlation";
+      relationshipForm: "linear" | "monotonic_or_ranked";
+    }>;
+export type TimeAnalysisPlan = Readonly<{
+  kind:
+    | "selected_timepoint"
+    | "endpoint"
+    | "maximum"
+    | "minimum"
+    | "auc"
+    | "change_from_baseline"
+    | "f_over_f0";
+  windowStart?: number;
+  windowEnd?: number;
+  baselineTime?: number;
+}>;
+
+export type ConditionAssignmentDraft = Readonly<{
+  kind: ConditionAssignmentKind;
+  unitLabel: string;
+}>;
+
+export type ConditionAttributeDraft = Readonly<{
+  id: string;
+  label: string;
+}>;
+
+export type ConditionDraft = Readonly<{
+  id: string;
+  label: string;
+  attributes: Readonly<Record<string, string>>;
+}>;
+
+export type ReadoutDraft = Readonly<{
+  id: string;
+  label: string;
+  shape: ReadoutShape;
+  unit?: string;
+  categories?: readonly Readonly<{ id: string; label: string }>[];
+  referenceLabel?: string;
+  wbInputMode?: "corrected_value" | "imagej_mean_background_area";
+  nestedInputMode?: "unit_summary" | "nested_observations";
+  withinExperimentNormalization?: Readonly<{
+    method: "control_equals_one" | "per_unit_maximum";
+    baselineConditionId?: string;
+  }>;
+}>;
+
+export type TimePointDraft = Readonly<{
+  id: string;
+  value: number;
+}>;
+
+export type TimePlanDraft = Readonly<{
+  sampling: TimeSampling;
+  unit: TimeUnit;
+  points: readonly TimePointDraft[];
+}>;
+
+export type ExperimentSessionDraft = Readonly<{
+  id: string;
+  label: string;
+  /** Independently performed run/date/batch identity. */
+  sessionId?: string;
+  /** Stable biological/statistical unit identity; never inferred from date or row order. */
+  stableUnitId?: string;
+  date: string;
+  note: string;
+}>;
+
+export type ExperimentSetDraft = Readonly<{
+  version: typeof EXPERIMENT_DRAFT_VERSION;
+  dataOrigin: "research" | "synthetic_demo";
+  context: ExperimentContext;
+  entryRoute?: string;
+  name: string;
+  readouts: readonly ReadoutDraft[];
+  attributes: readonly ConditionAttributeDraft[];
+  conditions: readonly ConditionDraft[];
+  /** Explicit researcher-selected control. Never inferred from a visible label. */
+  controlConditionId?: string;
+  analysisIntent: AnalysisIntent;
+  conditionAssignment: ConditionAssignmentDraft;
+  time: TimePlanDraft;
+  experiments: readonly ExperimentSessionDraft[];
+  importProvenance?: Readonly<{
+    sourceLabel: string;
+    importedAt: string;
+    headers: readonly string[];
+    sourceRows: readonly (readonly string[])[];
+    mapping: Readonly<Record<string, string | number | null>>;
+    excludedRowNumbers: readonly number[];
+    duplicateDecision: "none" | "nested_observations";
+    transformations?: readonly string[];
+  }>;
+}>;
+
+export type ProportionCellDraft = Readonly<{
+  kind: "proportion";
+  positive: number | null;
+  eligible: number | null;
+  availability?: "planned" | "not_planned";
+}>;
+
+export type NestedContinuousCellDraft = Readonly<{
+  kind: "nested_continuous";
+  rawValues: readonly number[];
+  source: "manual" | "paste";
+  sourceLocations?: readonly string[];
+  availability?: "planned" | "not_planned";
+}>;
+
+export type CategoricalCountsCellDraft = Readonly<{
+  kind: "categorical_counts";
+  counts: Readonly<Record<string, number | null>>;
+  availability?: "planned" | "not_planned";
+}>;
+
+export type WbRatioCellDraft = Readonly<{
+  kind: "wb_ratio";
+  target: number | null;
+  reference: number | null;
+  inputMode?: "corrected_value" | "imagej_mean_background_area";
+  targetSource?: WbBandSourceDraft;
+  referenceSource?: WbBandSourceDraft;
+  availability?: "planned" | "not_planned";
+}>;
+
+export type WbBandSourceDraft = Readonly<{
+  intensity: number | null;
+  background: number | null;
+  area: number | null;
+}>;
+
+export type ExperimentCellDraft =
+  ProportionCellDraft | NestedContinuousCellDraft | CategoricalCountsCellDraft | WbRatioCellDraft;
+export type ExperimentCellMap = Readonly<Record<string, ExperimentCellDraft>>;
+
+export const EXPERIMENT_CONTEXT_OPTIONS: ReadonlyArray<{
+  id: ExperimentContext;
+  title: string;
+  description: string;
+  available: boolean;
+}> = [
+  {
+    id: "cell_culture",
+    title: "細胞・培養",
+    description: "細胞数、陽性率、強度、大きさ、形態など",
+    available: true,
+  },
+  {
+    id: "microscopy_imaging",
+    title: "顕微鏡・画像解析",
+    description: "蛍光強度、Cell・ROI、形態、移動、trackingなど",
+    available: true,
+  },
+  {
+    id: "protein_biochemical",
+    title: "タンパク質・生化学",
+    description: "WB、タンパク質量、活性、比率など",
+    available: true,
+  },
+  {
+    id: "animal",
+    title: "動物",
+    description: "個体、組織、繰り返し測定など",
+    available: true,
+  },
+  {
+    id: "general_assay",
+    title: "その他の定量測定",
+    description: "吸光度、発光、活性、濃度など",
+    available: true,
+  },
+  {
+    id: "existing_data",
+    title: "既存データを取り込む",
+    description: "Excel、CSV、ImageJ Resultsなど",
+    available: true,
+  },
+];
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function createExperimentSetDraft(
+  context: ExperimentContext,
+  shape: ReadoutShape,
+): ExperimentSetDraft {
+  const readout =
+    shape === "proportion"
+      ? { id: "readout.1", label: "Marker X陽性率", shape }
+      : shape === "categorical_counts"
+        ? {
+            id: "readout.1",
+            label: "カテゴリ構成",
+            shape,
+            categories: [
+              { id: "category.1", label: "Category A" },
+              { id: "category.2", label: "Category B" },
+              { id: "category.3", label: "Category C" },
+            ],
+          }
+        : shape === "wb_ratio"
+          ? {
+              id: "readout.1",
+              label: "標的タンパク質",
+              shape,
+              unit: "ratio",
+              referenceLabel: "GAPDH",
+              wbInputMode: "corrected_value" as const,
+            }
+          : {
+              id: "readout.1",
+              label: "細胞強度",
+              shape,
+              unit: "a.u.",
+              nestedInputMode: "unit_summary" as const,
+            };
+  return {
+    version: EXPERIMENT_DRAFT_VERSION,
+    dataOrigin: "research",
+    context,
+    name: "新しい実験",
+    readouts: [readout],
+    attributes: [{ id: "attribute.1", label: "条件" }],
+    conditions: Array.from({ length: 10 }, (_, index) => ({
+      id: `condition.${index + 1}`,
+      label: "",
+      attributes: { "attribute.1": "" },
+    })),
+    analysisIntent: { kind: "group_comparison" },
+    conditionAssignment: { kind: "independent", unitLabel: "実験単位" },
+    time: { sampling: "none", unit: "h", points: [] },
+    experiments: Array.from({ length: 3 }, (_, index) => ({
+      id: `experiment.${index + 1}`,
+      label: `Exp ${index + 1}`,
+      sessionId: `session.${index + 1}`,
+      stableUnitId: `unit.${index + 1}`,
+      date: today(),
+      note: "",
+    })),
+  };
+}
+
+export function conditionHasContent(condition: ConditionDraft): boolean {
+  return Object.values(condition.attributes).some((value) => value.trim() !== "");
+}
+
+export function activeConditions(draft: ExperimentSetDraft): ConditionDraft[] {
+  return draft.conditions.filter(conditionHasContent);
+}
+
+export function conditionDisplayLabel(
+  condition: ConditionDraft,
+  attributes: readonly ConditionAttributeDraft[],
+): string {
+  const values = attributes
+    .map((attribute) => condition.attributes[attribute.id]?.trim() ?? "")
+    .filter(Boolean);
+  return values.join(" / ");
+}
+
+export function conditionAttributeLevels(
+  draft: ExperimentSetDraft,
+): Readonly<Record<string, Readonly<Record<string, readonly string[]>>>> {
+  return Object.fromEntries(
+    draft.attributes.map((attribute) => {
+      const levels: Record<string, string[]> = {};
+      activeConditions(draft).forEach((condition) => {
+        const value = condition.attributes[attribute.id]?.trim();
+        if (!value) return;
+        levels[value] = [...(levels[value] ?? []), condition.id];
+      });
+      return [attribute.id, levels];
+    }),
+  );
+}
+
+export function withActiveConditions(draft: ExperimentSetDraft): ExperimentSetDraft {
+  const conditions = activeConditions(draft);
+  return {
+    ...draft,
+    conditions,
+    controlConditionId: conditions.some(({ id }) => id === draft.controlConditionId)
+      ? draft.controlConditionId
+      : undefined,
+  };
+}
+
+export function createExperimentSession(index: number): ExperimentSessionDraft {
+  return {
+    id: `experiment.${index}`,
+    label: `Exp ${index}`,
+    sessionId: `session.${index}`,
+    stableUnitId: `unit.${index}`,
+    date: today(),
+    note: "",
+  };
+}
+
+/** Copies reusable structure only. Measurement cells, graphs, and analysis history live elsewhere. */
+export function reuseExperimentDesign(draft: ExperimentSetDraft): ExperimentSetDraft {
+  return {
+    ...draft,
+    dataOrigin: "research",
+    name: `${draft.name}（設計再利用）`,
+    experiments: draft.experiments.map((experiment, index) => ({
+      ...experiment,
+      label: `Exp ${index + 1}`,
+      sessionId: `session.${index + 1}`,
+      stableUnitId: `unit.${index + 1}`,
+      date: today(),
+      note: "",
+    })),
+  };
+}
+
+export function createTimePoint(index: number, value = index - 1): TimePointDraft {
+  return { id: `time.${index}`, value };
+}
+
+export function experimentCellKey(input: {
+  experimentId: string;
+  conditionId: string;
+  readoutId: string;
+  timePointId?: string;
+}): string {
+  return [
+    input.experimentId,
+    input.conditionId,
+    input.timePointId ?? "time.none",
+    input.readoutId,
+  ].join("::");
+}
+
+export function percentage(cell: ProportionCellDraft): number | null {
+  if (cell.availability === "not_planned") return null;
+  if (cell.positive === null || cell.eligible === null || cell.eligible <= 0) return null;
+  if (cell.positive > cell.eligible) return null;
+  return (cell.positive / cell.eligible) * 100;
+}
+
+export function cellIsNotPlanned(cell: ExperimentCellDraft | undefined): boolean {
+  return cell?.availability === "not_planned";
+}
+
+export function categoricalTotal(cell: CategoricalCountsCellDraft): number | null {
+  const values = Object.values(cell.counts);
+  if (values.some((value) => value === null) || values.length < 2) return null;
+  return values.reduce<number>((total, value) => total + (value ?? 0), 0);
+}
+
+export function categoricalPercentage(
+  cell: CategoricalCountsCellDraft,
+  categoryId: string,
+): number | null {
+  const total = categoricalTotal(cell);
+  const value = cell.counts[categoryId];
+  return total && value !== null && value !== undefined ? (value / total) * 100 : null;
+}
+
+export function wbRatio(cell: WbRatioCellDraft): number | null {
+  if (cell.availability === "not_planned") return null;
+  const target = wbCorrectedBandValue(cell, "target");
+  const reference = wbCorrectedBandValue(cell, "reference");
+  if (target === null || reference === null || reference <= 0) return null;
+  return target / reference;
+}
+
+export function wbCorrectedBandValue(
+  cell: WbRatioCellDraft,
+  band: "target" | "reference",
+): number | null {
+  if ((cell.inputMode ?? "corrected_value") === "corrected_value") return cell[band];
+  const source = band === "target" ? cell.targetSource : cell.referenceSource;
+  if (
+    !source ||
+    source.intensity === null ||
+    source.background === null ||
+    source.area === null ||
+    source.intensity < 0 ||
+    source.background < 0 ||
+    source.area <= 0
+  ) {
+    return null;
+  }
+  const corrected = (source.intensity - source.background) * source.area;
+  return Number.isFinite(corrected) && corrected >= 0 ? corrected : null;
+}
+
+export function normalizeWithinExperiment(
+  value: number | null,
+  valuesByCondition: Readonly<Record<string, number | null>>,
+  conditionId: string,
+  readout: ReadoutDraft,
+): number | null {
+  if (value === null || !readout.withinExperimentNormalization) return value;
+  const plan = readout.withinExperimentNormalization;
+  const denominator =
+    plan.method === "control_equals_one"
+      ? (valuesByCondition[plan.baselineConditionId ?? ""] ?? null)
+      : Math.max(
+          ...Object.values(valuesByCondition).filter(
+            (candidate): candidate is number => candidate !== null && Number.isFinite(candidate),
+          ),
+        );
+  if (denominator === null || !Number.isFinite(denominator) || denominator === 0) return null;
+  return valuesByCondition[conditionId] === null ? null : value / denominator;
+}
+
+export function continuousSummary(values: readonly number[]): Readonly<{
+  n: number;
+  mean: number | null;
+  median: number | null;
+  sd: number | null;
+}> {
+  if (values.length === 0) return { n: 0, mean: null, median: null, sd: null };
+  const ordered = [...values].sort((first, second) => first - second);
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const middle = Math.floor(ordered.length / 2);
+  const median =
+    ordered.length % 2 === 0 ? (ordered[middle - 1] + ordered[middle]) / 2 : ordered[middle];
+  const sd =
+    values.length < 2
+      ? null
+      : Math.sqrt(
+          values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1),
+        );
+  return { n: values.length, mean, median, sd };
+}
+
+export function parseNumericPaste(text: string): number[] {
+  return text
+    .split(/[\s,;]+/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .map(Number)
+    .filter(Number.isFinite);
+}
+
+export function expectedAnalysisLabel(draft: ExperimentSetDraft): string {
+  if (draft.analysisIntent.kind === "correlation") {
+    return draft.analysisIntent.relationshipForm === "linear"
+      ? "同じ実験単位から得たXとYの直線的な関係"
+      : "同じ実験単位から得たXとYの順位・単調な関係";
+  }
+  if (draft.time.sampling === "longitudinal") {
+    return draft.conditionAssignment.kind === "matched"
+      ? "同じ単位を条件間・時間点間で追った解析候補"
+      : "同じ単位を時間点間で追った解析候補";
+  }
+  if (draft.time.sampling === "cross_sectional") {
+    return draft.conditionAssignment.kind === "matched"
+      ? "時間点ごとの別サンプル内で、対応づけた条件を比較する解析候補"
+      : "時間点ごとに別サンプルとして扱う条件と時間の比較候補";
+  }
+  if (draft.conditionAssignment.kind === "matched") {
+    return activeConditions(draft).length > 2
+      ? "同じ実験単位を対応づけた複数条件の比較"
+      : "同じ実験単位を対応づけた2条件の比較";
+  }
+  if (activeConditions(draft).length > 2) return "独立した複数条件の比較";
+  return "独立した2条件の比較";
+}
+
+export function timePointLabel(point: TimePointDraft, unit: TimeUnit): string {
+  return `${point.value} ${unit}`;
+}

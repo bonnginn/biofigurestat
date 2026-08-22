@@ -1,0 +1,535 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import type {
+  AnalysisEngineRequest,
+  AnalysisEngineResult,
+  AnalysisRecommendation,
+} from "@lsaa/analysis-contracts";
+
+import type { AnalysisRunner } from "../../app/analysisClient";
+import type { ContrastIntent, DraftAnalysisAssessment } from "../../app/experimentDraftAnalysis";
+import type { WorkspaceGraphAnalysis } from "../../app/experimentWorkspaceProject";
+import { copyMethodsText } from "../../app/methodsText";
+import { canSafelyAutomaticallyRerun } from "../../app/analysisRequestFingerprint";
+import { recordBenchmarkEvent } from "../../app/benchmarkEvaluation";
+
+type GraphStatisticsPanelProps = Readonly<{
+  assessment: DraftAnalysisAssessment;
+  analysisRunner: AnalysisRunner;
+  initialAnalysis?: WorkspaceGraphAnalysis | null;
+  onAnalysisChange?: (analysis: WorkspaceGraphAnalysis | null) => void;
+  methodsText?: string | null;
+  correlationMethod?: "pearson" | "spearman";
+  onCorrelationMethodChange?: (method: "pearson" | "spearman") => void;
+  selectedMethod?: AnalysisRecommendation["recommendedMethod"];
+  onSelectedMethodChange?: (method: AnalysisRecommendation["recommendedMethod"]) => void;
+  contrastIntent?: ContrastIntent;
+  onContrastIntentChange?: (intent: ContrastIntent) => void;
+  conditionOptions?: readonly Readonly<{ id: string; label: string }>[];
+  plannedContrastConditionIds?: readonly (readonly [string, string])[];
+  onPlannedContrastConditionIdsChange?: (pairs: readonly (readonly [string, string])[]) => void;
+  /** Changes whenever this Graph's scientific source/subset changes, even if the shaped request is temporarily identical. */
+  analysisContextKey?: string;
+}>;
+
+function formatNumber(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  return new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 4 }).format(value);
+}
+
+function formatP(value: number): string {
+  return value < 0.0001 ? value.toExponential(2) : formatNumber(value);
+}
+
+function diagnosticLabel(code: string): string {
+  if (code === "assumptions_not_fully_evaluated") {
+    return "少数例の有意差検定だけで正規性を断定していません。実験単位の分布と実験設計も確認してください。";
+  }
+  if (code === "variance_robust_multi_group_default") {
+    return "等分散を前提にしない多群比較です。実験単位同士が独立していることは別途必要です。";
+  }
+  if (code === "very_small_biological_n") {
+    return "一部の条件で実験単位が3未満です。推定値と前提の評価には大きな不確実性があります。";
+  }
+  if (code === "equal_variance_assumption_selected") {
+    return "等分散を仮定する方法を選択しています。このより強い仮定を結果とMethodsに記録します。";
+  }
+  if (code === "rank_distribution_test_semantics") {
+    return "Mann–Whitneyは順位と分布の並び方を評価します。追加仮定なしに単なる中央値の検定とは解釈しません。";
+  }
+  if (code === "paired_rank_test_semantics") {
+    return "Wilcoxonは、安定IDで対応した各実験単位内の差の符号と順位を評価します。";
+  }
+  if (code === "omnibus_only_no_posthoc") {
+    return "全体差のみを評価しました。未検証の条件間比較は自動生成していません。";
+  }
+  if (code === "planned_pairwise_no_simultaneous_ci") {
+    return "事前に選んだ条件ペアだけをHolm法で補正しました。この方式では同時信頼区間を表示しません。";
+  }
+  return code;
+}
+
+export function GraphStatisticsPanel({
+  assessment,
+  analysisRunner,
+  initialAnalysis,
+  onAnalysisChange,
+  methodsText,
+  correlationMethod,
+  onCorrelationMethodChange,
+  selectedMethod,
+  onSelectedMethodChange,
+  contrastIntent,
+  onContrastIntentChange,
+  conditionOptions = [],
+  plannedContrastConditionIds = [],
+  onPlannedContrastConditionIdsChange,
+  analysisContextKey,
+}: GraphStatisticsPanelProps) {
+  const [independenceConfirmed, setIndependenceConfirmed] = useState(false);
+  const [result, setResult] = useState<AnalysisEngineResult | null>(
+    initialAnalysis?.result ?? null,
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [running, setRunning] = useState(false);
+  const [staleNotice, setStaleNotice] = useState<string | null>(null);
+  const [methodsCopyStatus, setMethodsCopyStatus] = useState<string | null>(null);
+  const matchedAnalysis =
+    assessment.method === "paired_t" ||
+    assessment.method === "wilcoxon_signed_rank" ||
+    assessment.method === "repeated_measures_anova";
+  const correlationAnalysis = assessment.method === "pearson" || assessment.method === "spearman";
+  const effectiveContrastIntent = contrastIntent ?? assessment.contrastIntent;
+  const plannedPairChoices = conditionOptions.flatMap((first, firstIndex) =>
+    conditionOptions.slice(firstIndex + 1).map((second) => ({ first, second })),
+  );
+  const executablePlannedPairCount =
+    assessment.request?.protocolVersion === "0.2.0"
+      ? (assessment.request.plannedContrastConditionIds?.length ?? 0)
+      : 0;
+  const plannedComparisonsMissing =
+    effectiveContrastIntent === "planned_comparisons" && executablePlannedPairCount === 0;
+  const executedRef = useRef(Boolean(initialAnalysis));
+  const lastExecutedRequestRef = useRef<AnalysisEngineRequest | null>(
+    initialAnalysis?.request ?? null,
+  );
+  const executionGenerationRef = useRef(0);
+  const firstAssessmentRef = useRef(true);
+
+  const executeRequest = useCallback(
+    async (request: AnalysisEngineRequest, mode: "manual" | "automatic") => {
+      const generation = ++executionGenerationRef.current;
+      setRunning(true);
+      setError(null);
+      try {
+        const nextResult = await analysisRunner(request);
+        if (executionGenerationRef.current !== generation) return;
+        setResult(nextResult);
+        executedRef.current = nextResult.status === "ok";
+        lastExecutedRequestRef.current = nextResult.status === "ok" ? request : null;
+        setStaleNotice(
+          mode === "automatic" && nextResult.status === "ok"
+            ? "値のみが変更され、実験設計・実験単位・比較・解析法が同一だったため、同じ解析を自動再実行しました。"
+            : null,
+        );
+        onAnalysisChange?.(
+          nextResult.status === "ok"
+            ? {
+                request,
+                result: nextResult,
+                ...(assessment.recommendedMethod
+                  ? { recommendedMethod: assessment.recommendedMethod }
+                  : {}),
+              }
+            : null,
+        );
+        if (nextResult.status !== "ok") {
+          setError("ローカル解析エンジンが入力を受理できませんでした。入力値は保持されています。");
+        }
+        recordBenchmarkEvent("statistics_executed", {
+          method: request.method,
+          recommendedMethod: assessment.recommendedMethod ?? request.method,
+          recommendationDiffers:
+            Boolean(assessment.recommendedMethod) &&
+            assessment.recommendedMethod !== request.method,
+          contrast:
+            request.protocolVersion === "0.2.0"
+              ? request.contrastIntent === "planned_comparisons"
+                ? `${request.contrastIntent}:${(request.plannedContrastConditionIds ?? [])
+                    .map(([firstId, secondId]) => `${firstId}:${secondId}`)
+                    .join("|")}`
+                : request.contrastIntent
+              : request.protocolVersion === "0.1.0"
+                ? request.contrastConditionIds.join("|")
+                : request.protocolVersion === "0.5.0"
+                  ? request.variableConditionIds.join("|")
+                  : request.primaryContrastConditionIds.join("|"),
+          correction: request.options.multiplicityMethod,
+          protocolVersion: request.protocolVersion,
+          mode,
+          status: nextResult.status,
+        });
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "ローカル解析を実行できませんでした。");
+      } finally {
+        if (executionGenerationRef.current === generation) setRunning(false);
+      }
+    },
+    [analysisRunner, assessment.recommendedMethod, onAnalysisChange],
+  );
+
+  useEffect(() => {
+    if (firstAssessmentRef.current) {
+      firstAssessmentRef.current = false;
+      return;
+    }
+    const previousRequest = lastExecutedRequestRef.current;
+    const nextRequest = assessment.request;
+    const automaticRerunIsSafe = Boolean(
+      executedRef.current &&
+      previousRequest &&
+      nextRequest &&
+      canSafelyAutomaticallyRerun(previousRequest, nextRequest),
+    );
+    executionGenerationRef.current += 1;
+    if (executedRef.current) {
+      setStaleNotice(
+        automaticRerunIsSafe
+          ? "値の変更を検出しました。構造を確認後、同じ解析を自動再実行します…"
+          : "表示するデータまたは実験構造が変わったため、以前の解析結果を外しました。解析法は自動変更しません。",
+      );
+    }
+    executedRef.current = false;
+    setIndependenceConfirmed(false);
+    setResult(null);
+    onAnalysisChange?.(null);
+    setError(null);
+    if (!automaticRerunIsSafe || !nextRequest) return;
+    const timer = window.setTimeout(() => {
+      void executeRequest(nextRequest, "automatic");
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [analysisContextKey, assessment.request, executeRequest, onAnalysisChange]);
+
+  const run = async () => {
+    if (!assessment.request || !independenceConfirmed || plannedComparisonsMissing) return;
+    await executeRequest(assessment.request, "manual");
+  };
+
+  return (
+    <section className="experiment-graph-statistics-section" aria-label="このグラフの統計">
+      <div>
+        <p className="experiment-graph-overline">実データ確認後</p>
+        <h3>このグラフの統計</h3>
+      </div>
+      <div className={`experiment-graph-recommendation is-${assessment.state}`}>
+        <strong>{assessment.title}</strong>
+        <p>{assessment.reason}</p>
+        {assessment.missingCount > 0 ? (
+          <p>未入力または無効なセル：{assessment.missingCount}件</p>
+        ) : null}
+        {assessment.notPlannedCount > 0 ? (
+          <p>測定予定なし（解析対象外）：{assessment.notPlannedCount}件</p>
+        ) : null}
+      </div>
+
+      {assessment.state === "ready" ? (
+        <>
+          {assessment.request?.protocolVersion === "0.2.0" ? (
+            <fieldset className="experiment-graph-method-choices">
+              <legend>何を比較しますか</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="contrast-intent"
+                  value="all_pairs"
+                  checked={(contrastIntent ?? assessment.contrastIntent) === "all_pairs"}
+                  onChange={() => onContrastIntentChange?.("all_pairs")}
+                />
+                <span>すべての群を比較</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="contrast-intent"
+                  value="control_vs_many"
+                  disabled={!assessment.request.controlConditionId}
+                  checked={(contrastIntent ?? assessment.contrastIntent) === "control_vs_many"}
+                  onChange={() => onContrastIntentChange?.("control_vs_many")}
+                />
+                <span>各処置を対照群と比較</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="contrast-intent"
+                  value="omnibus_only"
+                  checked={(contrastIntent ?? assessment.contrastIntent) === "omnibus_only"}
+                  onChange={() => onContrastIntentChange?.("omnibus_only")}
+                />
+                <span>まず全体差のみを評価</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="contrast-intent"
+                  value="planned_comparisons"
+                  checked={effectiveContrastIntent === "planned_comparisons"}
+                  onChange={() => onContrastIntentChange?.("planned_comparisons")}
+                />
+                <span>事前に決めた条件ペアだけを比較</span>
+              </label>
+            </fieldset>
+          ) : null}
+          {assessment.request?.protocolVersion === "0.2.0" &&
+          effectiveContrastIntent === "planned_comparisons" ? (
+            <fieldset className="experiment-graph-method-choices">
+              <legend>事前に決めた比較を選択</legend>
+              {plannedPairChoices.map(({ first, second }) => {
+                const checked = plannedContrastConditionIds.some(
+                  ([firstId, secondId]) =>
+                    (firstId === first.id && secondId === second.id) ||
+                    (firstId === second.id && secondId === first.id),
+                );
+                return (
+                  <label key={`${first.id}:${second.id}`}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(event) => {
+                        const next = event.target.checked
+                          ? [...plannedContrastConditionIds, [first.id, second.id] as const]
+                          : plannedContrastConditionIds.filter(
+                              ([firstId, secondId]) =>
+                                !(
+                                  (firstId === first.id && secondId === second.id) ||
+                                  (firstId === second.id && secondId === first.id)
+                                ),
+                            );
+                        onPlannedContrastConditionIdsChange?.(next);
+                      }}
+                    />
+                    <span>
+                      {first.label} vs {second.label}
+                    </span>
+                  </label>
+                );
+              })}
+              <small>ここで選んだペアだけを比較し、p値をHolm法で調整します。</small>
+            </fieldset>
+          ) : null}
+          {correlationAnalysis ? (
+            <label className="experiment-graph-field">
+              <span>相関の方法</span>
+              <select
+                aria-label="相関の方法"
+                value={correlationMethod ?? assessment.method ?? "pearson"}
+                onChange={(event) =>
+                  onCorrelationMethodChange?.(event.currentTarget.value as "pearson" | "spearman")
+                }
+              >
+                <option value="pearson">Pearson（直線的な関係）</option>
+                <option value="spearman">Spearman（順位・単調な関係）</option>
+              </select>
+              <small>どちらもローカルの検証済みエンジンで実行します。</small>
+            </label>
+          ) : null}
+          {!correlationAnalysis && assessment.methodChoices?.length ? (
+            <div className="experiment-graph-method-levels" aria-label="統計解析法の選択">
+              {(["recommended", "alternative", "advanced"] as const).map((level) => {
+                const choices = assessment.methodChoices?.filter(
+                  (choice) => choice.level === level,
+                );
+                if (!choices?.length) return null;
+                return (
+                  <fieldset key={level} className="experiment-graph-method-choices">
+                    <legend>
+                      {level === "recommended"
+                        ? "推奨"
+                        : level === "alternative"
+                          ? "代替案"
+                          : "詳細設定"}
+                    </legend>
+                    {choices.map((choice) => (
+                      <label key={choice.method} aria-disabled={!choice.enabled}>
+                        <input
+                          type="radio"
+                          name="statistical-method"
+                          value={choice.method}
+                          disabled={!choice.enabled}
+                          checked={(selectedMethod ?? assessment.method) === choice.method}
+                          onChange={() => onSelectedMethodChange?.(choice.method)}
+                        />
+                        <span>
+                          <strong>{choice.label}</strong>
+                          <small>{choice.explanation}</small>
+                          {!choice.enabled && choice.unavailableReason ? (
+                            <small>{choice.unavailableReason}</small>
+                          ) : null}
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
+                );
+              })}
+              {assessment.recommendedMethod &&
+              assessment.method !== assessment.recommendedMethod ? (
+                <p className="experiment-graph-help">
+                  推奨法と異なる方法を選択しています。選択は解析履歴に保存されます。
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <label className="experiment-graph-confirmation">
+            <input
+              type="checkbox"
+              checked={independenceConfirmed}
+              onChange={(event) => setIndependenceConfirmed(event.target.checked)}
+            />
+            <span>
+              {correlationAnalysis
+                ? "各行のXとYが、同じ実験単位から得た1組として正しく対応づけられています。"
+                : matchedAnalysis
+                  ? "同じ実験単位の2条件が、入力シート上で同じ実験回として正しく対応づけられています。"
+                  : "各条件は別々のdish・試料・動物などの実験単位です。同じ個体や同じ試料を両条件で測った対応データではありません。"}
+            </span>
+          </label>
+          <p className="experiment-graph-help">
+            {correlationAnalysis
+              ? "XとYは同じExpの安定IDで対応づけます。行順や日付の一致だけから組を作りません。"
+              : matchedAnalysis
+                ? "日付の一致から対応を推測していません。実験設計で明示した対応と、完全な組だけを解析します。"
+                : "同じ日に実施しただけでは、自動的に「対応あり」にはしません。同じ単位を両条件で測った場合は実行せず、設計を修正してください。"}
+          </p>
+          <button
+            className="experiment-graph-run-analysis"
+            type="button"
+            disabled={!independenceConfirmed || plannedComparisonsMissing || running}
+            onClick={run}
+          >
+            {running ? "ローカルで解析中…" : "選択した解析を実行"}
+          </button>
+        </>
+      ) : null}
+
+      {error ? (
+        <p className="experiment-graph-analysis-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {staleNotice ? (
+        <p className="experiment-graph-analysis-stale" role="status">
+          {staleNotice}
+        </p>
+      ) : null}
+
+      {result?.status === "ok" ? (
+        <div className="experiment-graph-analysis-result" role="group" aria-label="統計解析結果">
+          <strong>解析完了（ローカル）</strong>
+          <p>
+            解析に用いた実験単位：
+            {assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join("、")}
+          </p>
+          {result.estimates.length > 0 ? (
+            <dl>
+              {result.estimates.map((estimate) => (
+                <div key={estimate.name}>
+                  <dt>{estimate.name}</dt>
+                  <dd>
+                    推定値 = {formatNumber(estimate.value)}
+                    {estimate.standardError === null
+                      ? ""
+                      : `、SE = ${formatNumber(estimate.standardError)}`}
+                    {estimate.confidenceInterval
+                      ? `、${estimate.confidenceInterval.level * 100}% CI ${formatNumber(
+                          estimate.confidenceInterval.lower,
+                        )}–${formatNumber(estimate.confidenceInterval.upper)}`
+                      : ""}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+          <dl>
+            {result.tests.map((test) => (
+              <div key={test.name}>
+                <dt>
+                  {/^(games_howell|tukey_hsd|dunnett|planned_holm):/.test(test.name)
+                    ? "条件間比較"
+                    : "全体／主解析"}
+                </dt>
+                <dd>
+                  {test.statisticName} = {formatNumber(test.statistic)}、p ={" "}
+                  {formatP(test.adjustedPValue ?? test.pValue)}
+                  {test.adjustedPValue !== null ? "（多重比較調整済み）" : ""}
+                  {test.degreesOfFreedom ? `、df = ${test.degreesOfFreedom.join(", ")}` : ""}
+                  {test.effectSizeName && test.effectSize !== null
+                    ? `、${test.effectSizeName} = ${formatNumber(test.effectSize)}`
+                    : ""}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          {[...result.diagnostics, ...result.warnings].map((item) => (
+            <p key={`${item.code}-${item.message}`}>{diagnosticLabel(item.code)}</p>
+          ))}
+          <details>
+            <summary>解析エンジンと再現情報</summary>
+            <dl>
+              <div>
+                <dt>検定・モデル</dt>
+                <dd>{assessment.method ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>エンジン</dt>
+                <dd>
+                  {result.engine.name} {result.engine.version}
+                </dd>
+              </div>
+              {Object.entries(result.engine.packages).map(([name, version]) => (
+                <div key={name}>
+                  <dt>統計ライブラリ</dt>
+                  <dd>
+                    {name} {version}
+                  </dd>
+                </div>
+              ))}
+              <div>
+                <dt>アプリケーション</dt>
+                <dd>Life Science Analysis App 0.1.0</dd>
+              </div>
+              <div>
+                <dt>多重性の調整</dt>
+                <dd>{assessment.request?.options.multiplicityMethod ?? "なし"}</dd>
+              </div>
+              <div>
+                <dt>実行リクエスト</dt>
+                <dd>
+                  {assessment.request?.templateId} / {assessment.request?.templateVersion}
+                </dd>
+              </div>
+            </dl>
+          </details>
+          <p>プロジェクト保存時に、使用データと解析条件を再現可能な解析履歴として保存します。</p>
+          {methodsText ? (
+            <details>
+              <summary>Methodsと再現記録</summary>
+              <pre className="experiment-graph-methods-text">{methodsText}</pre>
+              <button
+                type="button"
+                onClick={async () => {
+                  const copied = await copyMethodsText(methodsText);
+                  setMethodsCopyStatus(
+                    copied ? "Methodsをコピーしました。" : "コピーできませんでした。",
+                  );
+                }}
+              >
+                Methodsをコピー
+              </button>
+              {methodsCopyStatus ? <p role="status">{methodsCopyStatus}</p> : null}
+            </details>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}

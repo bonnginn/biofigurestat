@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+"""Verify complete benchmark pilot output folders without interpreting scientific results."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any
+
+
+PILOT_CASE_IDS = (
+    "pilot_independent_2group",
+    "pilot_independent_3group",
+    "pilot_paired_2condition",
+    "pilot_nested_microscopy",
+    "pilot_longitudinal_endpoint",
+)
+REQUIRED_ARTIFACTS = {
+    "run.json",
+    "default_graph.png",
+    "default_graph.svg",
+    "final_graph.png",
+    "final_graph.svg",
+    "statistics.json",
+    "methods.txt",
+    "graph_state.json",
+    "interaction_log.json",
+}
+SUPPORT_STATUSES = {
+    "direct",
+    "reasonable_workaround",
+    "scientifically_compromising",
+    "impossible",
+}
+
+
+class VerificationError(ValueError):
+    pass
+
+
+def read_json_object(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise VerificationError(f"{path.name} is not valid JSON: {error}") from error
+    if not isinstance(value, dict):
+        raise VerificationError(f"{path.name} must contain a JSON object")
+    return value
+
+
+def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> None:
+    if not path.is_dir():
+        raise VerificationError(f"run folder is missing: {path}")
+    present = {item.name for item in path.iterdir() if item.is_file()}
+    missing = sorted(REQUIRED_ARTIFACTS - present)
+    if missing:
+        raise VerificationError(f"{path}: missing artifacts: {', '.join(missing)}")
+    unexpected = sorted(present - REQUIRED_ARTIFACTS)
+    if unexpected:
+        raise VerificationError(f"{path}: unexpected artifacts: {', '.join(unexpected)}")
+
+    run = read_json_object(path / "run.json")
+    expected_identity = {"caseId": case_id, "track": track, "runId": run_id}
+    for key, expected in expected_identity.items():
+        if run.get(key) != expected:
+            raise VerificationError(f"run.json {key} must be {expected!r}")
+    if run.get("artifactCompleteness") != "complete":
+        raise VerificationError("run.json must declare artifactCompleteness=complete")
+    if run.get("defaultGraphCaptured") is not True:
+        raise VerificationError("run.json must confirm the default Graph capture")
+    if run.get("supportStatus") not in SUPPORT_STATUSES:
+        raise VerificationError("run.json has no valid support status")
+    required_versions = {
+        "appVersion": "app version",
+        "benchmarkVersion": "benchmark version",
+        "engineVersion": "engine version",
+        "sourceRevision": "source revision",
+    }
+    for key, label in required_versions.items():
+        if not isinstance(run.get(key), str) or not run[key].strip():
+            raise VerificationError(f"run.json has no {label}")
+
+    statistics = read_json_object(path / "statistics.json")
+    if statistics.get("state") != "current":
+        raise VerificationError("statistics.json must contain a current result")
+    result = statistics.get("result")
+    if not isinstance(result, dict) or result.get("status") != "ok":
+        raise VerificationError("statistics.json must contain a successful engine result")
+    read_json_object(path / "graph_state.json")
+
+    try:
+        events = json.loads((path / "interaction_log.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise VerificationError(f"interaction_log.json is invalid: {error}") from error
+    if not isinstance(events, list) or not events:
+        raise VerificationError("interaction_log.json must contain an event list")
+    if [event.get("sequence") for event in events if isinstance(event, dict)] != list(
+        range(1, len(events) + 1)
+    ):
+        raise VerificationError("interaction log sequence is incomplete or unordered")
+    event_types = {event.get("type") for event in events if isinstance(event, dict)}
+    required_events = {
+        "benchmark_run_started",
+        "benchmark_pilot_data_loaded",
+        "statistics_executed",
+        "default_graph_captured",
+        "benchmark_run_finalized",
+    }
+    missing_events = sorted(required_events - event_types)
+    if missing_events:
+        raise VerificationError(f"interaction log is missing: {', '.join(missing_events)}")
+    if run.get("interactionCount") != len(events):
+        raise VerificationError("run.json interactionCount does not match interaction_log.json")
+    graph_edit_count = sum(event.get("type") == "graph_configuration_changed" for event in events)
+    if run.get("graphEditCount") != graph_edit_count:
+        raise VerificationError("run.json graphEditCount does not match interaction_log.json")
+
+    methods = (path / "methods.txt").read_text(encoding="utf-8").strip()
+    if not methods:
+        raise VerificationError("methods.txt is empty")
+    for name in ("default_graph.svg", "final_graph.svg"):
+        if "<svg" not in (path / name).read_text(encoding="utf-8")[:500]:
+            raise VerificationError(f"{name} is not an SVG document")
+    for name in ("default_graph.png", "final_graph.png"):
+        if (path / name).read_bytes()[:8] != b"\x89PNG\r\n\x1a\n":
+            raise VerificationError(f"{name} is not a PNG document")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output-root", type=Path, default=Path("benchmark_runs"))
+    parser.add_argument("--track", choices=("track_A", "track_B"), default="track_A")
+    parser.add_argument("--run-id", default="run_001")
+    parser.add_argument("--case", dest="case_ids", action="append", choices=PILOT_CASE_IDS)
+    args = parser.parse_args()
+    case_ids = tuple(args.case_ids or PILOT_CASE_IDS)
+    failures: list[str] = []
+    for case_id in case_ids:
+        path = args.output_root / case_id / args.track / args.run_id
+        try:
+            verify_run_directory(path, case_id, args.track, args.run_id)
+            print(f"PASS {case_id} / {args.track} / {args.run_id}")
+        except VerificationError as error:
+            failures.append(str(error))
+            print(f"FAIL {case_id}: {error}")
+    if failures:
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

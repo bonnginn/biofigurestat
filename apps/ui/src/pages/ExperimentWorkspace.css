@@ -1,0 +1,1278 @@
+.experiment-workspace {
+  width: min(1400px, 100%);
+  min-height: calc(100vh - 72px);
+  margin: 0 auto;
+  color: #1d2735;
+}
+
+.experiment-workspace-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 22px;
+  padding: 2px 0 12px;
+}
+
+.experiment-workspace-header h1,
+.experiment-workspace-header p {
+  margin: 0;
+}
+
+.experiment-workspace-header h1 {
+  font-size: clamp(1.55rem, 2.4vw, 2rem);
+  letter-spacing: -0.03em;
+}
+
+.experiment-workspace-context {
+  margin-top: 5px !important;
+  color: #6e7785;
+  font-size: 1rem;
+}
+
+.experiment-workspace-back {
+  flex: 0 0 auto;
+  padding: 8px 0;
+  border: 0;
+  color: #4779e8;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 720;
+}
+
+.experiment-workspace-eyebrow {
+  color: #8b94a3;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.experiment-workspace-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  min-height: 55px;
+  padding: 0 5px;
+  overflow-x: auto;
+  border-bottom: 1px solid #dfe5ef;
+}
+
+.experiment-workspace-project-nav {
+  position: sticky;
+  z-index: 6;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  min-height: 58px;
+  border: 1px solid #d2dce8;
+  border-bottom-color: #bac8d8;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95),
+    0 3px 8px rgba(47, 64, 97, 0.08);
+  isolation: isolate;
+}
+
+.experiment-workspace-project-nav button {
+  min-height: 40px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 6px;
+  color: #526176;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 740;
+}
+
+.experiment-workspace-project-nav button:hover:not(:disabled),
+.experiment-workspace-project-nav button.is-active {
+  color: #274f91;
+  background: #edf3ff;
+}
+
+.experiment-workspace-project-nav button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.experiment-workspace-project-nav .experiment-workspace-project-nav-create {
+  margin-left: auto;
+  color: #fff;
+  background: #416fc4;
+}
+
+.experiment-workspace-project-nav .experiment-workspace-project-nav-create:hover {
+  color: #fff;
+  background: #315da9;
+}
+
+.experiment-workspace-project-nav .experiment-workspace-project-nav-save {
+  min-width: 62px;
+  border: 1px solid #9bb0ce;
+  color: #315b91;
+  background: #fff;
+}
+
+.experiment-workspace-file-menu {
+  position: relative;
+}
+
+.experiment-workspace-file-menu > summary {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #526176;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 740;
+  list-style: none;
+}
+
+.experiment-workspace-file-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.experiment-workspace-file-menu > summary:hover {
+  background: #edf3ff;
+}
+
+.experiment-workspace-file-menu > div {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 5px);
+  left: 0;
+  width: 250px;
+  padding: 6px;
+  border: 1px solid #cdd7e3;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(35, 50, 75, 0.15);
+}
+
+.experiment-workspace-project-nav .experiment-workspace-file-menu button {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.experiment-workspace-file-menu kbd {
+  color: #7a8798;
+  font: inherit;
+}
+
+.experiment-workspace-dirty-state {
+  min-width: 58px;
+  color: #657386;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.experiment-workspace-dirty-state.is-dirty {
+  color: #9a6321;
+}
+
+.experiment-workspace-save-message {
+  padding: 9px 12px;
+  margin: 8px 0 0;
+  border-left: 3px solid #4f9278;
+  color: #315f50;
+  background: #f1faf6;
+  font-size: 1rem;
+}
+
+.experiment-workspace-save-message.is-error {
+  border-left-color: #bd624e;
+  color: #873c31;
+  background: #fff3f1;
+}
+
+.experiment-workspace-graph-choice-backdrop {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  padding: 24px;
+  place-items: center;
+  background: rgba(24, 34, 49, 0.38);
+}
+
+.experiment-workspace-graph-choice {
+  width: min(980px, 100%);
+  max-height: calc(100vh - 48px);
+  padding: 24px;
+  overflow: auto;
+  border: 1px solid #cbd6e4;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(25, 38, 57, 0.24);
+}
+
+.experiment-workspace-graph-choice-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.experiment-workspace-graph-choice-heading h2,
+.experiment-workspace-graph-choice-heading p {
+  margin: 0;
+}
+
+.experiment-workspace-graph-choice-heading h2 {
+  margin-top: 4px;
+}
+
+.experiment-workspace-graph-choice-heading p:last-child {
+  margin-top: 7px;
+  color: #667386;
+}
+
+.experiment-workspace-graph-choice-heading button,
+.experiment-workspace-graph-type-grid button {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid #bdcadb;
+  border-radius: 8px;
+  color: #35536f;
+  background: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.experiment-workspace-graph-choice-recommended {
+  display: grid;
+  gap: 7px;
+  margin-top: 22px;
+}
+
+.experiment-workspace-graph-choice-recommended > span {
+  color: #2f755e;
+  font-weight: 780;
+}
+
+.experiment-workspace-graph-choice-recommended button {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 3px;
+  align-items: center;
+  padding: 15px 17px;
+  border: 2px solid #4e927a;
+  border-radius: 10px;
+  color: #24483c;
+  background: #f1faf6;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.experiment-workspace-graph-choice-recommended button.is-selected,
+.experiment-workspace-graph-type-grid button.is-selected {
+  border-color: #3c7f68;
+  outline: 3px solid rgba(62, 139, 112, 0.14);
+  background: #f1faf6;
+}
+
+.experiment-workspace-graph-choice-recommended button > span {
+  display: grid;
+  gap: 4px;
+}
+
+.experiment-workspace-graph-choice-recommended small {
+  color: #587166;
+  font-size: 1rem;
+}
+
+.experiment-workspace-graph-type-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.experiment-workspace-graph-type-grid > button {
+  display: grid;
+  min-height: 112px;
+  padding: 8px;
+  text-align: center;
+}
+
+.experiment-workspace-graph-type-grid button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.experiment-workspace-graph-type-disabled {
+  display: grid;
+  gap: 4px;
+}
+
+.experiment-workspace-graph-type-disabled button {
+  width: 100%;
+}
+
+.experiment-workspace-graph-type-disabled small {
+  color: #68778a;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.experiment-workspace-graph-type-guidance {
+  margin: 8px 0 0;
+  color: #68778a;
+  font-size: 0.9rem;
+}
+
+.experiment-workspace-layer-builder {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.experiment-workspace-layer-builder > button {
+  justify-self: start;
+}
+
+.experiment-workspace-layer-builder fieldset {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 14px;
+  padding: 12px;
+  border: 1px solid #d8e2ed;
+  border-radius: 9px;
+  background: #fbfcfe;
+}
+
+.experiment-workspace-layer-builder legend {
+  padding: 0 5px;
+  color: #3d536d;
+  font-weight: 750;
+}
+
+.experiment-workspace-layer-builder label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+}
+
+.experiment-workspace-layer-builder small {
+  grid-column: 1 / -1;
+  color: #68778a;
+}
+
+.experiment-workspace-current-preview {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #cddbeb;
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.experiment-workspace-current-preview h3,
+.experiment-workspace-current-preview p {
+  margin: 0;
+}
+
+.experiment-workspace-current-preview-note {
+  color: #68778a;
+  font-size: 0.92rem;
+}
+
+.experiment-workspace-box-guidance {
+  padding: 8px 10px;
+  border-left: 3px solid #b17b35;
+  color: #76521f;
+  background: #fff8e9;
+  font-size: 0.92rem;
+}
+
+.experiment-workspace-graph-choice-actions {
+  position: sticky;
+  z-index: 3;
+  bottom: -24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 12px 0 24px;
+  border-top: 1px solid #dce4ed;
+  background: linear-gradient(rgba(255, 255, 255, 0.94), #fff 22%);
+}
+
+.experiment-workspace-graph-choice-actions button {
+  min-height: 42px;
+  padding: 8px 15px;
+  border: 1px solid #b9c7d8;
+  border-radius: 8px;
+  color: #35536f;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 740;
+}
+
+.experiment-workspace-graph-choice-actions button.is-primary {
+  border-color: #315fa9;
+  color: #fff;
+  background: #416fc4;
+}
+
+.experiment-workspace-demo-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 13px;
+  margin: 0 0 10px;
+  border: 1px solid #dfb763;
+  border-radius: 8px;
+  color: #684a12;
+  background: #fff8e7;
+  font-size: 1rem;
+}
+
+.experiment-workspace-demo-banner strong {
+  flex: 0 0 auto;
+}
+
+.benchmark-pilot-loader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid #9db8e7;
+  border-radius: 10px;
+  background: #f2f6ff;
+  color: #23466f;
+}
+
+.benchmark-pilot-loader > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  flex: 1;
+}
+
+.benchmark-pilot-loader span {
+  font-size: 0.88rem;
+}
+
+.benchmark-pilot-loader button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.experiment-workspace-tab {
+  flex: 0 0 auto;
+  min-height: 47px;
+  padding: 10px 17px 12px;
+  border: 1px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-radius: 10px 10px 0 0;
+  color: #697485;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 730;
+  white-space: nowrap;
+}
+
+.experiment-workspace-tab:hover {
+  color: #315fab;
+  background: #f2f6ff;
+}
+
+.experiment-workspace-tab.is-active {
+  border-color: #dce5fb;
+  border-bottom-color: #4779e8;
+  color: #315fab;
+  background: #f4f7ff;
+}
+
+.experiment-workspace-tab--add {
+  color: #4779e8;
+}
+
+.experiment-workspace-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 21px;
+  padding-top: 10px;
+}
+
+.experiment-workspace-body[hidden],
+.experiment-workspace-graph-view[hidden] {
+  display: none !important;
+}
+
+.experiment-workspace-body:has(.experiment-workspace-inspector) {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 330px);
+}
+
+.experiment-workspace-main {
+  min-width: 0;
+}
+
+.experiment-workspace-panel,
+.experiment-workspace-inspector {
+  border: 1px solid #e0e6f0;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(47, 64, 97, 0.06);
+}
+
+.experiment-workspace-panel {
+  padding: clamp(12px, 2vw, 20px);
+}
+
+.experiment-workspace-panel-heading,
+.experiment-workspace-inspector-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.experiment-workspace-panel-heading h2,
+.experiment-workspace-inspector-heading h2 {
+  margin: 3px 0 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.025em;
+}
+
+.experiment-workspace-secondary-button {
+  flex: 0 0 auto;
+  min-height: 43px;
+  padding: 9px 14px;
+  border: 1px solid #cbd9f7;
+  border-radius: 9px;
+  color: #315fab;
+  background: #f5f8ff;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 730;
+}
+
+.experiment-workspace-secondary-button:hover {
+  background: #eaf0ff;
+}
+
+.experiment-workspace-progress {
+  padding: 19px 0 21px;
+}
+
+.experiment-workspace-progress-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: #3b4759;
+}
+
+.experiment-workspace-progress-topline span {
+  color: #4779e8;
+  font-weight: 760;
+}
+
+.experiment-workspace-progress-track {
+  height: 9px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf1f7;
+}
+
+.experiment-workspace-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #6d91ef, #42a585);
+  transition: width 160ms ease;
+}
+
+.experiment-workspace-progress p,
+.experiment-workspace-session-note,
+.experiment-workspace-inspector-note {
+  margin: 9px 0 0;
+  color: #6e7785;
+  font-size: 1rem;
+}
+
+.experiment-workspace-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  margin: 0;
+}
+
+.experiment-workspace-summary-grid div {
+  min-width: 0;
+  padding: 13px 15px;
+  border: 1px solid #e7ebf2;
+  border-radius: 10px;
+  background: #fafbfe;
+}
+
+.experiment-workspace-summary-grid dt {
+  color: #8992a1;
+  font-size: 1rem;
+  font-weight: 760;
+}
+
+.experiment-workspace-summary-grid dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  color: #293648;
+  font-weight: 700;
+}
+
+.experiment-workspace-overview-section {
+  padding-top: 24px;
+}
+
+.experiment-workspace-overview-section h3 {
+  margin: 0 0 9px;
+  font-size: 1rem;
+}
+
+.experiment-workspace-overview-condition-wrap {
+  overflow-x: auto;
+  border: 1px solid #d8e0ea;
+  border-radius: 8px;
+}
+
+.experiment-workspace-overview-condition-table {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+
+.experiment-workspace-overview-condition-table th,
+.experiment-workspace-overview-condition-table td {
+  padding: 8px 11px;
+  border-bottom: 1px solid #e4e9f0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.experiment-workspace-overview-condition-table thead th {
+  color: #627084;
+  background: #f6f8fb;
+  font-weight: 760;
+}
+
+.experiment-workspace-overview-condition-table tbody th {
+  width: 4.5rem;
+  color: #778397;
+  background: #fafbfc;
+  font-weight: 700;
+}
+
+.experiment-workspace-overview-condition-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.experiment-workspace-readout-list {
+  display: grid;
+  gap: 9px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.experiment-workspace-readout-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 7px 15px;
+  padding: 11px 13px;
+  border: 1px solid #e7ebf2;
+  border-radius: 9px;
+}
+
+.experiment-workspace-readout-list li > span:last-child {
+  color: #6e7785;
+  font-size: 1rem;
+}
+
+.experiment-workspace-readout-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-weight: 760;
+}
+
+.experiment-workspace-unit {
+  color: #778191;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.experiment-workspace-notice {
+  padding: 14px 16px;
+  margin-top: 23px;
+  border-left: 4px solid #8066dc;
+  border-radius: 8px;
+  color: #4f5968;
+  background: #f6f4ff;
+}
+
+.experiment-workspace-notice strong {
+  color: #5543a1;
+}
+
+.experiment-workspace-notice p {
+  margin: 5px 0 0;
+  font-size: 1rem;
+}
+
+.experiment-workspace-session-badge {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #2b7b61;
+  background: #eaf8f1;
+  font-size: 1rem;
+  font-weight: 740;
+}
+
+.experiment-workspace-session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.experiment-workspace-remove-session {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #e0b9b3;
+  border-radius: 8px;
+  color: #9a493f;
+  background: #fff8f7;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 720;
+}
+
+.experiment-workspace-remove-session:hover {
+  border-color: #c98379;
+  background: #fff0ee;
+}
+
+.experiment-workspace-session-note {
+  padding: 7px 10px;
+  margin: 8px 0 0;
+  border-radius: 8px;
+  background: #f8f9fc;
+}
+
+.experiment-workspace-session-details {
+  margin: 8px 0 10px;
+  border: 1px solid #dbe3ed;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.experiment-workspace-session-details summary {
+  padding: 8px 11px;
+  color: #4f6075;
+  cursor: pointer;
+  font-weight: 720;
+}
+
+.experiment-workspace-session-details[open] {
+  padding: 0 11px;
+}
+
+.experiment-workspace-session-details[open] summary {
+  margin: 0 -11px;
+  border-bottom: 1px solid #dbe3ed;
+}
+
+.experiment-workspace-meta {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.35fr) minmax(260px, 1fr);
+  gap: 13px;
+  padding: 11px 0 13px;
+}
+
+.experiment-workspace-meta label,
+.experiment-workspace-inspector-field {
+  display: grid;
+  gap: 6px;
+  color: #5c6675;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.experiment-workspace-meta input,
+.experiment-workspace-inspector-field input,
+.experiment-workspace-inspector-field textarea,
+.experiment-workspace-number-input {
+  width: 100%;
+  min-height: 43px;
+  padding: 8px 10px;
+  border: 1px solid #cfd7e4;
+  border-radius: 8px;
+  color: #1d2735;
+  background: #fff;
+  font-size: 1rem;
+}
+
+.experiment-workspace-meta input:focus,
+.experiment-workspace-inspector-field input:focus,
+.experiment-workspace-inspector-field textarea:focus,
+.experiment-workspace-number-input:focus {
+  border-color: #6c8ee7;
+  outline: 3px solid rgba(71, 121, 232, 0.15);
+}
+
+.experiment-workspace-table-wrap {
+  width: 100%;
+  overflow: visible;
+  border: 1px solid #bac6d4;
+  border-radius: 3px;
+}
+
+.experiment-workspace-paste-hint,
+.experiment-workspace-paste-status {
+  padding: 10px 14px;
+  margin: 0;
+  border-top: 1px solid #e7ebf2;
+  font-size: 1rem;
+}
+
+.experiment-workspace-paste-hint {
+  color: #6e7785;
+  background: #fbfcfe;
+}
+
+.experiment-workspace-paste-status {
+  color: #2b7b61;
+  background: #f2fbf7;
+  font-weight: 720;
+}
+
+.experiment-workspace-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+
+.experiment-workspace-table--proportion {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.experiment-workspace-col-attribute {
+  width: auto;
+}
+
+.experiment-workspace-col-time {
+  width: 12%;
+}
+
+.experiment-workspace-col-value {
+  width: 21%;
+}
+
+.experiment-workspace-col-derived {
+  width: 19%;
+}
+
+.experiment-workspace-table--continuous {
+  table-layout: fixed;
+}
+
+.experiment-workspace-col-summary {
+  width: 34%;
+}
+
+.experiment-workspace-table caption {
+  padding: 13px 15px;
+  color: #354357;
+  background: #f8faff;
+  font-size: 1rem;
+  font-weight: 780;
+  text-align: left;
+}
+
+.experiment-workspace-normalization-status {
+  display: block;
+  margin-top: 3px;
+  color: #607086;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.experiment-workspace-table th,
+.experiment-workspace-table td {
+  padding: 7px 9px;
+  border-top: 1px solid #cfd8e3;
+  border-right: 1px solid #cfd8e3;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.experiment-workspace-table thead th {
+  position: sticky;
+  z-index: 4;
+  top: 58px;
+  color: #697485;
+  background: #fff;
+  box-shadow:
+    inset 0 1px #e3e8ef,
+    inset 0 -1px #c3ceda,
+    0 2px 4px rgba(47, 64, 97, 0.05);
+  font-size: 1rem;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.experiment-workspace-graph-created {
+  padding: 8px 11px;
+  margin: 7px 0 0;
+  border-left: 3px solid #4f9278;
+  color: #315f50;
+  background: #f1faf6;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.experiment-workspace-table tbody th {
+  color: #293648;
+  font-weight: 740;
+}
+
+.experiment-workspace-table tbody tr:nth-child(even) {
+  background: #fbfcfe;
+}
+
+.experiment-workspace-table tbody td:has(.experiment-workspace-number-input) {
+  padding: 0;
+}
+
+.experiment-workspace-number-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 37px;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.experiment-workspace-number-input::-webkit-inner-spin-button,
+.experiment-workspace-number-input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.experiment-workspace-number-input:focus {
+  outline: 2px solid #4779e8;
+  outline-offset: -2px;
+}
+
+.experiment-workspace-derived-cell {
+  color: #2b7b61;
+  background: #eef6f3;
+  font-weight: 760;
+}
+
+.experiment-workspace-derived-cell,
+.experiment-workspace-table--continuous td:last-child {
+  gap: 8px;
+}
+
+.experiment-workspace-availability-button {
+  min-height: 28px;
+  padding: 3px 5px;
+  margin-left: 8px;
+  border: 0;
+  border-radius: 4px;
+  color: #748194;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 620;
+  text-decoration: underline;
+  text-decoration-color: #c2cad5;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.experiment-workspace-availability-button:hover {
+  color: #315b91;
+  background: #f3f6fa;
+  text-decoration-color: currentColor;
+}
+
+.experiment-workspace-availability-button.is-active {
+  color: #7b5520;
+  background: #fff6e8;
+  font-weight: 700;
+}
+
+.experiment-workspace-attribute-cell {
+  color: #3f4d61;
+  font-weight: 650;
+}
+
+.experiment-workspace-raw-button {
+  min-width: 190px;
+  min-height: 40px;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: 0;
+  color: #315fab;
+  background: #f5f8ff;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 720;
+  text-align: left;
+}
+
+.experiment-workspace-graph-view {
+  padding-top: 10px;
+  scroll-margin-top: 64px;
+  outline: none;
+}
+
+.experiment-workspace-graph-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid #d7e0ea;
+}
+
+.experiment-workspace-graph-tab-item {
+  display: flex;
+  align-items: center;
+  border-bottom: 3px solid transparent;
+  color: #5a687b;
+  background: transparent;
+}
+
+.experiment-workspace-graph-tab-item.is-active {
+  border-bottom-color: #4779e8;
+  color: #315fab;
+  background: #f4f7ff;
+}
+
+.experiment-workspace-graph-tab {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 7px 13px;
+  border: 0;
+  border-bottom: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 730;
+}
+
+.experiment-workspace-graph-tab-input {
+  width: clamp(140px, 22vw, 280px);
+  min-height: 40px;
+  padding: 5px 9px;
+  border: 1px solid #afbfda;
+  border-radius: 5px;
+  color: #315fab;
+  background: #fff;
+  font: inherit;
+  font-weight: 730;
+  outline: none;
+}
+
+.experiment-workspace-graph-tab-rename {
+  min-width: 34px;
+  min-height: 34px;
+  padding: 4px 7px;
+  border: 0;
+  border-radius: 6px;
+  color: #5070a3;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1rem;
+}
+
+.experiment-workspace-graph-tab-rename:hover,
+.experiment-workspace-graph-tab-rename:focus-visible {
+  color: #244f91;
+  background: #e5edfc;
+  outline: none;
+}
+
+.experiment-workspace-graph-tab.is-active {
+  border-bottom-color: #4779e8;
+  color: #315fab;
+}
+
+@media (max-width: 760px) {
+  .experiment-workspace-graph-choice-recommended button {
+    grid-template-columns: 1fr;
+  }
+
+  .experiment-workspace-graph-type-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .experiment-workspace-table-wrap {
+    overflow-x: auto;
+  }
+
+  .experiment-workspace-table thead th {
+    position: static;
+  }
+}
+
+.experiment-workspace-graph-source {
+  padding: 10px 13px;
+  margin: 0 0 10px;
+  border-left: 3px solid #4779e8;
+  color: #4e6079;
+  background: #f4f7fc;
+  font-size: 1rem;
+}
+
+.experiment-workspace-graph-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 0;
+  color: #52637a;
+  font-size: 1rem;
+  font-weight: 720;
+}
+
+.experiment-workspace-graph-name input {
+  width: min(320px, 100%);
+  min-height: 38px;
+  padding: 6px 9px;
+  border: 1px solid #bcc9d9;
+  border-radius: 6px;
+  color: #26384f;
+  background: #fff;
+  font: inherit;
+}
+
+.experiment-workspace-raw-button:hover {
+  background: #eaf0ff;
+}
+
+.experiment-workspace-inspector {
+  position: sticky;
+  top: 20px;
+  padding: 20px;
+}
+
+.experiment-workspace-icon-button {
+  display: grid;
+  width: 35px;
+  height: 35px;
+  place-items: center;
+  border: 1px solid #d8dfeb;
+  border-radius: 8px;
+  color: #687486;
+  background: #fff;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.experiment-workspace-inspector-location {
+  padding: 9px 10px;
+  margin: 15px 0 18px;
+  border-radius: 8px;
+  color: #596575;
+  background: #f8f9fc;
+  font-size: 1rem;
+}
+
+.experiment-workspace-inspector-field + .experiment-workspace-inspector-field {
+  margin-top: 16px;
+}
+
+.experiment-workspace-inspector-field textarea {
+  min-height: 155px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  line-height: 1.5;
+}
+
+.experiment-workspace-inspector-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px 0 0;
+}
+
+.experiment-workspace-inspector-stats div {
+  padding: 10px;
+  border: 1px solid #e7ebf2;
+  border-radius: 8px;
+  background: #fafbfe;
+}
+
+.experiment-workspace-inspector-stats dt {
+  color: #8992a1;
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.experiment-workspace-inspector-stats dd {
+  margin: 3px 0 0;
+  color: #293648;
+  font-weight: 760;
+}
+
+@media (max-width: 850px) {
+  .experiment-workspace-body:has(.experiment-workspace-inspector) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .experiment-workspace-inspector {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .experiment-workspace-header {
+    display: block;
+  }
+
+  .experiment-workspace-back {
+    margin-bottom: 11px;
+  }
+
+  .experiment-workspace-summary-grid,
+  .experiment-workspace-meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .experiment-workspace-panel {
+    padding: 17px;
+  }
+}
+
+/* GraphWorkbench owns its presentation in components/graph/graph-workbench.css. */
