@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "JCB010",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/221/11/e202206131/213466/",
+    "assay_context": "imaging_continuous",
+    "case_id": "JCB010",
+    "curated_graph_reference": "box/violin + points",
+    "doi": "10.1083/jcb.202206131",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "Mann-Whitney test",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Two-group quantitative panel",
+    "title": "Conformational transitions of the Spindly adaptor underlie dynein recruitment",
+    "year": 2022
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic continuous microscopy measurement. Conditions: Control, Treatment. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Two unpaired non-normal groups.",
+    "case_id": "JCB010",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "Two unpaired non-normal groups",
+    "independent_session_count": 3,
+    "measurement_context": "continuous microscopy measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

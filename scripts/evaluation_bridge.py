@@ -20,6 +20,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # resolving one to the base interpreter discards the venv's scientific packages.
 ENGINE_PYTHON = Path(sys.executable).absolute()
 ENGINE_SOURCE = ROOT / "engine/python"
+LITERATURE_RUNTIME = ROOT / "benchmark/literature_v1_1/runtime"
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 ALLOWED_ARTIFACTS = {
     "run.json",
@@ -40,6 +42,21 @@ ALLOWED_ARTIFACTS = {
     "interaction_log.json",
 }
 MAX_REQUEST_BYTES = 16 * 1024 * 1024
+
+
+def load_literature_experimenter_view(case_id: str, track: str) -> dict[str, Any]:
+    if not SAFE_ID.fullmatch(case_id):
+        raise ValueError("Invalid literature benchmark case ID")
+    if track not in {"track_A", "track_B"}:
+        raise ValueError("Invalid literature benchmark track")
+    suffix = "experimenter_track_a.json" if track == "track_A" else "experimenter_track_b.json"
+    path = LITERATURE_RUNTIME / "cases" / case_id / suffix
+    if not path.is_file():
+        raise ValueError("Literature benchmark case is not available")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or payload.get("caseId") != case_id:
+        raise RuntimeError("Literature benchmark runtime identity mismatch")
+    return payload
 
 
 def run_engine(request: dict[str, Any]) -> dict[str, Any]:
@@ -187,21 +204,34 @@ class EvaluationHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self) -> None:  # noqa: N802
-        if self.path != "/api/evaluation/health" or not self._authorized():
+        parsed = urlparse(self.path)
+        if not self._authorized():
             self._json(HTTPStatus.NOT_FOUND, {"error": "Not found"})
             return
         if self.headers.get("Origin") != self.config.allowed_origin:
             self._json(HTTPStatus.FORBIDDEN, {"error": "Origin is not allowed"})
             return
-        self._json(
-            HTTPStatus.OK,
-            {
-                "mode": "evaluation",
-                "syntheticOnly": True,
-                "bridgeVersion": "0.1.0",
-                "production": False,
-            },
-        )
+        if parsed.path == "/api/evaluation/health":
+            self._json(
+                HTTPStatus.OK,
+                {
+                    "mode": "evaluation",
+                    "syntheticOnly": True,
+                    "bridgeVersion": "0.1.0",
+                    "production": False,
+                },
+            )
+            return
+        if parsed.path == "/api/evaluation/literature/case":
+            try:
+                query = parse_qs(parsed.query, strict_parsing=True)
+                case_id = query.get("caseId", [""])[0]
+                track = query.get("track", [""])[0]
+                self._json(HTTPStatus.OK, load_literature_experimenter_view(case_id, track))
+            except ValueError as error:
+                self._json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
+            return
+        self._json(HTTPStatus.NOT_FOUND, {"error": "Not found"})
 
     def do_POST(self) -> None:  # noqa: N802
         if not self._authorized():

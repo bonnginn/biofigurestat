@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "SA046",
+  "paperReference": {
+    "article_url": "https://www.science.org/doi/10.1126/sciadv.abi8295",
+    "assay_context": "quantitative_microscopy",
+    "case_id": "SA046",
+    "curated_graph_reference": "scatter + identity/calibration line",
+    "doi": "10.1126/sciadv.abi8295",
+    "journal": "Science Advances",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "probabilistic calibration analysis",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Calibration / benchmark panel",
+    "title": "Probabilistic spatial analysis in quantitative microscopy",
+    "year": 2022
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic quantitative microscopy measurement. Conditions: All. Readout(s): outcome. Time structure: no explicit time axis. Experimental-unit structure: Predicted probability vs observed outcome.",
+    "case_id": "SA046",
+    "conditions": "All",
+    "experimental_unit_description": "Predicted probability vs observed outcome",
+    "independent_session_count": 30,
+    "measurement_context": "quantitative microscopy measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "outcome",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

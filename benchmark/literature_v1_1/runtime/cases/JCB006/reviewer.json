@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "JCB006",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/222/8/e202211032/214169/",
+    "assay_context": "imaging_continuous",
+    "case_id": "JCB006",
+    "curated_graph_reference": "box/violin + points",
+    "doi": "10.1083/jcb.202211032",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "Kruskal-Wallis with Dunn multiple comparisons",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Fig. panel using Dunn comparison",
+    "title": "Membrane shapers from two distinct superfamilies cooperate in caveola formation",
+    "year": 2023
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic continuous microscopy measurement. Conditions: Control, Group A, Group B. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Multiple independent groups; skewed imaging measurements.",
+    "case_id": "JCB006",
+    "conditions": "Control | Group A | Group B",
+    "experimental_unit_description": "Multiple independent groups; skewed imaging measurements",
+    "independent_session_count": 3,
+    "measurement_context": "continuous microscopy measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

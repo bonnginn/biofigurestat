@@ -49,6 +49,12 @@ import "./ExperimentWorkspace.css";
 import type { FavoriteGraphDefault } from "../app/favoriteDesigns";
 import { recordBenchmarkEvent, useBenchmarkRun } from "../app/benchmarkEvaluation";
 import { BENCHMARK_PILOT_CASES, mapBenchmarkPilotMeasurements } from "../app/benchmarkPilotCases";
+import {
+  fetchLiteratureExperimenterCase,
+  isLiteratureCaseId,
+  mapLiteratureMeasurements,
+  type LiteratureExperimenterCase,
+} from "../app/literatureBenchmark";
 
 export type ExperimentWorkspaceProps = {
   initialDraft: ExperimentSetDraft;
@@ -1627,6 +1633,8 @@ export function ExperimentWorkspace({
     null,
   );
   const [benchmarkPilotLoadMessage, setBenchmarkPilotLoadMessage] = useState<string | null>(null);
+  const [literatureCase, setLiteratureCase] = useState<LiteratureExperimenterCase | null>(null);
+  const [literatureLoadError, setLiteratureLoadError] = useState<string | null>(null);
   const benchmarkRun = useBenchmarkRun();
   const benchmarkPilot = BENCHMARK_PILOT_CASES.find(
     ({ caseId }) => caseId === benchmarkRun.identity?.caseId,
@@ -1634,6 +1642,27 @@ export function ExperimentWorkspace({
   const benchmarkPilotLoad = useMemo(
     () => (benchmarkPilot ? mapBenchmarkPilotMeasurements(benchmarkPilot, draft) : null),
     [benchmarkPilot, draft],
+  );
+  useEffect(() => {
+    const identity = benchmarkRun.identity;
+    setLiteratureCase(null);
+    setLiteratureLoadError(null);
+    if (!identity || !isLiteratureCaseId(identity.caseId)) return;
+    let cancelled = false;
+    void fetchLiteratureExperimenterCase(identity)
+      .then((loaded) => {
+        if (!cancelled) setLiteratureCase(loaded);
+      })
+      .catch(() => {
+        if (!cancelled) setLiteratureLoadError("Literature benchmark caseを読み込めませんでした。");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [benchmarkRun.identity]);
+  const literatureLoad = useMemo(
+    () => (literatureCase ? mapLiteratureMeasurements(literatureCase, draft) : null),
+    [literatureCase, draft],
   );
   const scientificSourceSnapshot = JSON.stringify({ draft, cells });
   const previousScientificSourceRef = useRef(scientificSourceSnapshot);
@@ -2363,6 +2392,48 @@ export function ExperimentWorkspace({
             }}
           >
             このPilotの合成値を一括入力
+          </button>
+          {benchmarkPilotLoadMessage ? (
+            <span role="status">{benchmarkPilotLoadMessage}</span>
+          ) : null}
+        </section>
+      ) : null}
+
+      {literatureLoadError && activeTab !== "overview" && !showGraph ? (
+        <div className="experiment-workspace-demo-banner" role="alert">
+          {literatureLoadError}
+        </div>
+      ) : null}
+
+      {literatureCase && literatureLoad && activeTab !== "overview" && !showGraph ? (
+        <section className="benchmark-pilot-loader" aria-label="Literature Benchmark合成値">
+          <div>
+            <strong>{literatureCase.caseId}</strong>
+            <span>{literatureCase.researcherPacket.blind_experiment_summary}</span>
+            <span>{literatureLoad.reason}</span>
+            {literatureCase.paperReference ? (
+              <span>
+                Paper: {literatureCase.paperReference.target_figure_or_panel}；
+                {literatureCase.paperReference.curated_graph_reference}；
+                {literatureCase.paperReference.paper_reported_analysis}
+              </span>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            disabled={!literatureLoad.compatible}
+            onClick={() => {
+              if (!literatureLoad.compatible) return;
+              setCells((current) => ({ ...current, ...literatureLoad.cells }));
+              setDraft((current) => ({ ...current, dataOrigin: "synthetic_demo" }));
+              setBenchmarkPilotLoadMessage("Literature benchmark合成値を入力しました。");
+              recordBenchmarkEvent("literature_benchmark_data_loaded", {
+                caseId: literatureCase.caseId,
+                mappedCells: Object.keys(literatureLoad.cells).length,
+              });
+            }}
+          >
+            このLiterature caseの合成値を一括入力
           </button>
           {benchmarkPilotLoadMessage ? (
             <span role="status">{benchmarkPilotLoadMessage}</span>

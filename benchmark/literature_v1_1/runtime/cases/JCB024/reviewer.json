@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "JCB024",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/224/11/e202506102/278189/",
+    "assay_context": "method_benchmark",
+    "case_id": "JCB024",
+    "curated_graph_reference": "matched multi-condition dots",
+    "doi": "10.1083/jcb.202506102",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "Friedman test followed by Quade post hoc",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Network-comparison panel",
+    "title": "ReSCU-Nets: Recurrent U-Nets for segmentation of three-dimensional nuclei",
+    "year": 2025
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic method-comparison benchmark measurement. Conditions: Method A, Method B, Method C. Readout(s): error. Time structure: no explicit time axis. Experimental-unit structure: Same embryos evaluated by multiple networks.",
+    "case_id": "JCB024",
+    "conditions": "Method A | Method B | Method C",
+    "experimental_unit_description": "Same embryos evaluated by multiple networks",
+    "independent_session_count": 8,
+    "measurement_context": "method-comparison benchmark measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "error",
+    "repeated_identity_note": "Matched/repeated units are compared across multiple conditions; identity must be preserved.",
+    "timepoints": "(none)"
+  }
+}

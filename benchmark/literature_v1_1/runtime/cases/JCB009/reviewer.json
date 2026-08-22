@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "JCB009",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/222/4/e202207121/213875/",
+    "assay_context": "ratio_measurement",
+    "case_id": "JCB009",
+    "curated_graph_reference": "cell distribution plus experiment summaries",
+    "doi": "10.1083/jcb.202207121",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "test specified in figure legend",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Fork degradation ratio panel",
+    "title": "Rapid profiling of DNA replication dynamics using mass cytometry",
+    "year": 2023
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic ratio measurement with nested observations. Conditions: Control, Treatment. Readout(s): cell_value. Time structure: no explicit time axis. Experimental-unit structure: CldU/IdU ratio per fiber pooled from independent experiments.",
+    "case_id": "JCB009",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "CldU/IdU ratio per fiber pooled from independent experiments",
+    "independent_session_count": 3,
+    "measurement_context": "ratio measurement with nested observations",
+    "nested_observation_note": "Lower-level observations are nested within biological/statistical units; do not treat lower-level rows as biological n.",
+    "readouts": "cell_value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

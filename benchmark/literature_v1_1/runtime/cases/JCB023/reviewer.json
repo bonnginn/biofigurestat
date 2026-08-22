@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "JCB023",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/225/1/e202501145/278397/",
+    "assay_context": "physiology",
+    "case_id": "JCB023",
+    "curated_graph_reference": "grouped dot plot",
+    "doi": "10.1083/jcb.202501145",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "two-way ANOVA",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Genotype-by-challenge panel",
+    "title": "TMEM175 does not function as a proton-selective ion channel in lysosomes",
+    "year": 2026
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic physiological measurement. Conditions: WT, KO. Readout(s): value. Time structure: Baseline, Challenge. Experimental-unit structure: Two factors with continuous lysosomal measurements.",
+    "case_id": "JCB023",
+    "conditions": "WT | KO",
+    "experimental_unit_description": "Two factors with continuous lysosomal measurements",
+    "independent_session_count": 6,
+    "measurement_context": "physiological measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "Baseline | Challenge"
+  }
+}

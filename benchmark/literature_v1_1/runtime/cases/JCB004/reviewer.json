@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "JCB004",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/223/1/e202206109/276402/",
+    "assay_context": "nested_imaging",
+    "case_id": "JCB004",
+    "curated_graph_reference": "cell distribution plus experiment summaries",
+    "doi": "10.1083/jcb.202206109",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "two-sided Mann-Whitney test",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Per-cell contact metric panel",
+    "title": "Membrane contact site detection (MCS-DETECT) reveals dual control of rough mitochondria-ER contacts",
+    "year": 2024
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic microscopy with nested Cell/ROI observations. Conditions: Control, Treatment. Readout(s): cell_value. Time structure: no explicit time axis. Experimental-unit structure: Contacts aggregated per cell before testing.",
+    "case_id": "JCB004",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "Contacts aggregated per cell before testing",
+    "independent_session_count": 3,
+    "measurement_context": "microscopy with nested Cell/ROI observations",
+    "nested_observation_note": "Lower-level observations are nested within biological/statistical units; do not treat lower-level rows as biological n.",
+    "readouts": "cell_value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

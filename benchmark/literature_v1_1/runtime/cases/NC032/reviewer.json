@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "NC032",
+  "paperReference": {
+    "article_url": "https://www.nature.com/articles/s41467-024-54609-z",
+    "assay_context": "super_resolution",
+    "case_id": "NC032",
+    "curated_graph_reference": "dot + mean/CI",
+    "doi": "10.1038/s41467-024-54609-z",
+    "journal": "Nature Communications",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "mean plus SEM",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Resolution comparison panel",
+    "title": "Whole-cell multi-target single-molecule super-resolution imaging",
+    "year": 2024
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic super-resolution imaging measurement. Conditions: Control, Treatment A, Treatment B, Treatment C. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Three matched regions of interest.",
+    "case_id": "NC032",
+    "conditions": "Control | Treatment A | Treatment B | Treatment C",
+    "experimental_unit_description": "Three matched regions of interest",
+    "independent_session_count": 5,
+    "measurement_context": "super-resolution imaging measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

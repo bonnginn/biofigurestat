@@ -14,6 +14,7 @@ from evaluation_bridge import (
     ALLOWED_ARTIFACTS,
     ROOT,
     EvaluationServer,
+    load_literature_experimenter_view,
     run_engine,
     safe_run_directory,
     write_artifact_batch,
@@ -93,6 +94,29 @@ class EvaluationBridgeTests(unittest.TestCase):
         with urllib.request.urlopen(request, timeout=30) as response:
             return json.loads(response.read())
 
+    def get(self, path: str, token: str = TOKEN, origin: str = ORIGIN) -> dict:
+        request = urllib.request.Request(
+            self.base + path,
+            headers={"Authorization": f"Bearer {token}", "Origin": origin},
+        )
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return json.loads(response.read())
+
+    def test_literature_case_endpoint_enforces_track_specific_blinding(self) -> None:
+        track_a = self.get("/api/evaluation/literature/case?caseId=JCB003&track=track_A")
+        track_b = self.get("/api/evaluation/literature/case?caseId=JCB003&track=track_B")
+        self.assertIn("paperReference", track_a)
+        self.assertNotIn("paperReference", track_b)
+        serialized_b = json.dumps(track_b).lower()
+        for forbidden in ("scope_expectation", "paper_reported", "gold", "recommended"):
+            self.assertNotIn(forbidden, serialized_b)
+        self.assertEqual(track_a["syntheticData"], track_b["syntheticData"])
+
+    def test_literature_case_endpoint_rejects_invalid_identity(self) -> None:
+        with self.assertRaises(urllib.error.HTTPError) as context:
+            self.get("/api/evaluation/literature/case?caseId=../escape&track=track_B")
+        self.assertEqual(context.exception.code, 400)
+
     def test_browser_bridge_returns_same_engine_result_as_direct_protocol(self) -> None:
         request = welch_request()
         direct = run_engine(request)
@@ -100,6 +124,10 @@ class EvaluationBridgeTests(unittest.TestCase):
             "/api/evaluation/analysis",
             {"mode": "evaluation", "syntheticOnly": True, "request": request},
         )["result"]
+        direct_completed_at = direct.pop("completedAt")
+        bridged_completed_at = bridged.pop("completedAt")
+        self.assertRegex(direct_completed_at, r"^\d{4}-\d{2}-\d{2}T")
+        self.assertRegex(bridged_completed_at, r"^\d{4}-\d{2}-\d{2}T")
         self.assertEqual(bridged, direct)
         self.assertEqual(bridged["engine"]["version"], "0.7.0")
 
@@ -197,6 +225,11 @@ class EvaluationBridgeTests(unittest.TestCase):
 
 
 class EvaluationBoundaryTests(unittest.TestCase):
+    def test_direct_literature_views_do_not_leak_gold_to_track_b(self) -> None:
+        track_b = load_literature_experimenter_view("JCB003", "track_B")
+        self.assertNotIn("paperReference", track_b)
+        self.assertNotIn("gold", json.dumps(track_b).lower())
+
     def test_pinned_cli_boundary_executes_canonical_request(self) -> None:
         result = run_engine(welch_request())
         self.assertEqual(result["status"], "ok")

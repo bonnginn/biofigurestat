@@ -1,0 +1,14 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseCount": 50,
+  "sourceFile": "LSA_Literature_Benchmark_50_v1_1.xlsx",
+  "sourceSha256": "028c6f5639c98bf50e4a6a87c25b04defa1c89ddda8b063624d6746188aa5bf5",
+  "syntheticRowCount": 2691,
+  "trackBExcludedSourceFields": [
+    "coverage_tier",
+    "scope_expectation",
+    "synthetic_seed",
+    "synthetic_data_location",
+    "blind_packet_rule"
+  ]
+}

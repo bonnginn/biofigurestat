@@ -2,3 +2,4 @@ apps/desktop/src-tauri/gen/
 apps/desktop/src-tauri/target/
 engine/python/build/
 engine/python/dist/
+benchmark/literature_v1_1/runtime/

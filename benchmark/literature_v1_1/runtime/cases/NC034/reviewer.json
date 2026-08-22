@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "NC034",
+  "paperReference": {
+    "article_url": "https://www.nature.com/articles/s41467-024-51849-x",
+    "assay_context": "electron_microscopy",
+    "case_id": "NC034",
+    "curated_graph_reference": "box/violin + points",
+    "doi": "10.1038/s41467-024-51849-x",
+    "journal": "Nature Communications",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "Kruskal-Wallis with Dunn comparisons",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Age comparison panel",
+    "title": "SUB-immunogold-SEM reveals nanoscale distribution of cell-surface proteins",
+    "year": 2024
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic electron microscopy measurement. Conditions: Control, Group A, Group B. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Distinct samples across multiple ages.",
+    "case_id": "NC034",
+    "conditions": "Control | Group A | Group B",
+    "experimental_unit_description": "Distinct samples across multiple ages",
+    "independent_session_count": 3,
+    "measurement_context": "electron microscopy measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

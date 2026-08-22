@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "JCB019",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/223/10/e202307146/276856/",
+    "assay_context": "positive_fraction",
+    "case_id": "JCB019",
+    "curated_graph_reference": "dot + mean/CI",
+    "doi": "10.1083/jcb.202307146",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "analysis described in figure legend",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Construct comparison panel",
+    "title": "UBAP2L contributes to formation of P-bodies and stress granules",
+    "year": 2024
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic positive/total proportion measurement. Conditions: Control, Treatment A, Treatment B, Treatment C. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Cells counted across biological replicates for constructs.",
+    "case_id": "JCB019",
+    "conditions": "Control | Treatment A | Treatment B | Treatment C",
+    "experimental_unit_description": "Cells counted across biological replicates for constructs",
+    "independent_session_count": 5,
+    "measurement_context": "positive/total proportion measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

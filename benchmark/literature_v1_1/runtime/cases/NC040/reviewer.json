@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "NC040",
+  "paperReference": {
+    "article_url": "https://www.nature.com/articles/s41467-021-25282-3",
+    "assay_context": "live_cell",
+    "case_id": "NC040",
+    "curated_graph_reference": "dot + mean/CI",
+    "doi": "10.1038/s41467-021-25282-3",
+    "journal": "Nature Communications",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "unpaired t test or Mann-Whitney",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Killing-efficiency panel",
+    "title": "Cytotoxic T cells efficiently eliminate cancer cells by additive cytotoxicity",
+    "year": 2021
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic live cell. Conditions: Control, Treatment. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Independent cell/sample summaries.",
+    "case_id": "NC040",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "Independent cell/sample summaries",
+    "independent_session_count": 3,
+    "measurement_context": "live_cell",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

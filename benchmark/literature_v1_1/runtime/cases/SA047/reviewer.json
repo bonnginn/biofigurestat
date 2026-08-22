@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "SA047",
+  "paperReference": {
+    "article_url": "https://www.science.org/doi/10.1126/sciadv.adg6231",
+    "assay_context": "qpi",
+    "case_id": "SA047",
+    "curated_graph_reference": "line trajectories",
+    "doi": "10.1126/sciadv.adg6231",
+    "journal": "Science Advances",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "time-point statistical analysis",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "QPI time-course panel",
+    "title": "Noninvasive morpho-molecular imaging reveals early human embryo development",
+    "year": 2023
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic quantitative phase-imaging time-course measurement. Conditions: Control, Treatment. Readout(s): value. Time structure: 0, 4, 8, 16, 24, 48. Experimental-unit structure: Same embryo measured at 0,24,48,72 h and day 7.",
+    "case_id": "SA047",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "Same embryo measured at 0,24,48,72 h and day 7",
+    "independent_session_count": 3,
+    "measurement_context": "quantitative phase-imaging time-course measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "The same biological/statistical units are followed across time; identity must be preserved.",
+    "timepoints": "0 | 4 | 8 | 16 | 24 | 48"
+  }
+}

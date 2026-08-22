@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "JCB021",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/224/8/e202401021/278039/",
+    "assay_context": "animal_count",
+    "case_id": "JCB021",
+    "curated_graph_reference": "dot/box",
+    "doi": "10.1083/jcb.202401021",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "test specified in figure legend after Shapiro-Wilk",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Crossover-count panel",
+    "title": "CNTD1 is crucial for crossover formation in female meiosis",
+    "year": 2025
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic animal-level count measurement. Conditions: Control, Group A, Group B. Readout(s): count. Time structure: no explicit time axis. Experimental-unit structure: Mouse/oocyte-level count data.",
+    "case_id": "JCB021",
+    "conditions": "Control | Group A | Group B",
+    "experimental_unit_description": "Mouse/oocyte-level count data",
+    "independent_session_count": 3,
+    "measurement_context": "animal-level count measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "count",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

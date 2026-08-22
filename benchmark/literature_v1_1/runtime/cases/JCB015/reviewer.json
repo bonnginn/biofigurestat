@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "JCB015",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/221/11/e202109100/213501/",
+    "assay_context": "multivariate",
+    "case_id": "JCB015",
+    "curated_graph_reference": "composition plot + sample dots",
+    "doi": "10.1083/jcb.202109100",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "PCA and k-means; hierarchical clustering",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "PCA / morphotype composition panel",
+    "title": "In vivo 3D profiling of site-specific human cancer cell morphotypes",
+    "year": 2022
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic multivariate/compositional measurement. Conditions: Control, Treatment. Readout(s): Type A, Type B, Type C. Time structure: no explicit time axis. Experimental-unit structure: Animals/samples with cell-shape class proportions.",
+    "case_id": "JCB015",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "Animals/samples with cell-shape class proportions",
+    "independent_session_count": 8,
+    "measurement_context": "multivariate/compositional measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "Type A | Type B | Type C",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

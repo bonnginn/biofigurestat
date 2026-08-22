@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "NC037",
+  "paperReference": {
+    "article_url": "https://www.nature.com/articles/s41467-022-35238-w",
+    "assay_context": "single_cell",
+    "case_id": "NC037",
+    "curated_graph_reference": "scatter",
+    "doi": "10.1038/s41467-022-35238-w",
+    "journal": "Nature Communications",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "Wilcoxon rank-sum; Spearman correlation",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Fig. 1f / correlation panels",
+    "title": "A comprehensive single-cell map of T cell exhaustion-associated immune environments",
+    "year": 2022
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic single-cell measurement. Conditions: All. Readout(s): outcome. Time structure: no explicit time axis. Experimental-unit structure: n=12 independent patient samples.",
+    "case_id": "NC037",
+    "conditions": "All",
+    "experimental_unit_description": "n=12 independent patient samples",
+    "independent_session_count": 30,
+    "measurement_context": "single-cell measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "outcome",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

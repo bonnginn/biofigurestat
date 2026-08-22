@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "NC031",
+  "paperReference": {
+    "article_url": "https://www.nature.com/articles/s41467-021-25960-2",
+    "assay_context": "single_cell",
+    "case_id": "NC031",
+    "curated_graph_reference": "volcano/feature table",
+    "doi": "10.1038/s41467-021-25960-2",
+    "journal": "Nature Communications",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "pseudobulk and mixed-model benchmarking",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Method benchmark panel",
+    "title": "Confronting false discoveries in single-cell differential expression",
+    "year": 2021
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic single-cell measurement. Conditions: Control, Treatment. Readout(s): Feature 01, Feature 02, Feature 03, Feature 04, Feature 05, Feature 06, Feature 07, Feature 08, Feature 09, Feature 10, Feature 11, Feature 12, Feature 13, Feature 14, Feature 15, Feature 16, Feature 17, Feature 18, Feature 19, Feature 20. Time structure: no explicit time axis. Experimental-unit structure: Biological replicates; pseudobulk vs cell-level tests.",
+    "case_id": "NC031",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "Biological replicates; pseudobulk vs cell-level tests",
+    "independent_session_count": 5,
+    "measurement_context": "single-cell measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "Feature 01 | Feature 02 | Feature 03 | Feature 04 | Feature 05 | Feature 06 | Feature 07 | Feature 08 | Feature 09 | Feature 10 | Feature 11 | Feature 12 | Feature 13 | Feature 14 | Feature 15 | Feature 16 | Feature 17 | Feature 18 | Feature 19 | Feature 20",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}

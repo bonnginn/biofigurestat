@@ -1,0 +1,30 @@
+{
+  "benchmarkVersion": "LSA50_v1_1",
+  "caseId": "JCB017",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/223/2/e202303082/276448/",
+    "assay_context": "western_blot",
+    "case_id": "JCB017",
+    "curated_graph_reference": "dot + mean/CI with WB lineage",
+    "doi": "10.1083/jcb.202303082",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "paper_reported_analysis": "one-way ANOVA with Tukey",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Multi-condition biochemical panel",
+    "title": "NAK-associated protein 1 activates TBK1 to ensure autophagic clearance",
+    "year": 2024
+  },
+  "researcherPacket": {
+    "blind_experiment_summary": "Synthetic Western blot quantitative measurement. Conditions: Control, Treatment A, Treatment B, Treatment C. Readout(s): target_raw, reference_raw, target_reference_ratio. Time structure: no explicit time axis. Experimental-unit structure: Target/reference ratios across conditions.",
+    "case_id": "JCB017",
+    "conditions": "Control | Treatment A | Treatment B | Treatment C",
+    "experimental_unit_description": "Target/reference ratios across conditions",
+    "independent_session_count": 4,
+    "measurement_context": "Western blot quantitative measurement",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "target_raw | reference_raw | target_reference_ratio",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  }
+}
