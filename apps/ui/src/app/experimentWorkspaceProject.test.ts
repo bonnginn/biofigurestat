@@ -1299,6 +1299,87 @@ describe("experiment workspace project adapter", () => {
     });
   });
 
+  it("endpoint由来のpaired requestとstable-unit lineageを保存後に再構築する", () => {
+    const fixture = createLongitudinalFixture();
+    const analysisMetric = { kind: "endpoint" as const, windowStart: 0, windowEnd: 24 };
+    const assessment = assessDraftGraphAnalysis({
+      draft: fixture.draft,
+      cells: fixture.cells,
+      readoutId: fixture.draft.readouts[0].id,
+      conditionIds: fixture.draft.conditions.map(({ id }) => id),
+      timeAnalysis: analysisMetric,
+    });
+    if (!assessment.request)
+      throw new Error("Longitudinal endpoint should produce a paired request");
+    const graph: WorkspaceGraphState = {
+      id: "graph.endpoint",
+      displayName: "Time course + endpoint",
+      analysisRunId: null,
+      selectedReadoutId: fixture.draft.readouts[0].id,
+      sourceMode: "derived_metric",
+      selectedConditionIds: fixture.draft.conditions.map(({ id }) => id),
+      selectedTimePointIds: fixture.draft.time.points.map(({ id }) => id),
+      analysisTimePointId: null,
+      analysisMetric,
+      graphType: "line",
+      layers: {
+        raw: true,
+        distribution: false,
+        experiment: true,
+        overall: true,
+        violin: false,
+        box: false,
+        errorBar: true,
+        connectingLine: true,
+      },
+      appearance: TEST_APPEARANCE,
+      axes: testAxes("Reporter intensity (a.u.)", ["attribute.group"]),
+      statisticsAnnotation: { mode: "hidden", testIndex: 0 },
+      analysis: {
+        request: assessment.request,
+        result: {
+          protocolVersion: assessment.request.protocolVersion,
+          requestId: assessment.request.requestId,
+          status: "ok",
+          engine: { name: "fixture", version: "1", packages: {} },
+          estimates: [],
+          tests: [],
+          diagnostics: [],
+          warnings: [],
+          completedAt: "2026-08-23T00:00:00.000Z",
+        },
+      },
+    };
+    const state = createExperimentWorkspaceProject({
+      draft: fixture.draft,
+      cells: fixture.cells,
+      graphs: [graph],
+      now: "2026-08-23T00:00:00.000Z",
+    });
+    const reopened = rehydrateExperimentWorkspace(state);
+    const rebuilt = reopened
+      ? assessDraftGraphAnalysis({
+          draft: reopened.draft,
+          cells: reopened.cells,
+          readoutId: reopened.draft.readouts[0].id,
+          conditionIds: reopened.draft.conditions.map(({ id }) => id),
+          timeAnalysis: reopened.graphs[0]?.analysisMetric ?? analysisMetric,
+        })
+      : null;
+    expect(reopened?.graphs[0]?.analysisMetric).toEqual(analysisMetric);
+    expect(rebuilt?.request?.observations).toEqual(assessment.request.observations);
+    expect(state.derivedValues).toHaveLength(8);
+    const persistedUnitIds = new Set(
+      state.derivedValues.map(({ experimentalUnitId }) => experimentalUnitId),
+    );
+    expect(persistedUnitIds.size).toBe(4);
+    expect(
+      fixture.draft.experiments.every(({ stableUnitId }) =>
+        [...persistedUnitIds].some((persistedId) => persistedId.includes(stableUnitId ?? "")),
+      ),
+    ).toBe(true);
+  });
+
   it("解析未実行でも派生時間指標をGraph sourceとして永続化する", () => {
     const fixture = createLongitudinalFixture();
     const graph: WorkspaceGraphState = {

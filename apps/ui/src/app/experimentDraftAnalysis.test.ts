@@ -349,6 +349,79 @@ describe("temporary experiment-first analysis adapter", () => {
     expect(assessment.request?.observations[0]?.value).toBe(762);
   });
 
+  it("縦断endpointはstable unitごとに1値×2条件の有限な4 pairを作る", () => {
+    const fixture = createLongitudinalFixture();
+    const assessment = assessDraftGraphAnalysis({
+      draft: fixture.draft,
+      cells: fixture.cells,
+      readoutId: fixture.draft.readouts[0].id,
+      conditionIds: fixture.draft.conditions.map(({ id }) => id),
+      timeAnalysis: { kind: "endpoint" },
+    });
+
+    expect(assessment).toMatchObject({ state: "ready", method: "paired_t" });
+    expect(assessment.request?.observations).toHaveLength(8);
+    const observations = assessment.request?.observations ?? [];
+    const byPair = new Map<string, Map<string, number>>();
+    observations.forEach(({ pairId, conditionId, value }) => {
+      const pair = byPair.get(pairId ?? "") ?? new Map<string, number>();
+      pair.set(conditionId, value);
+      byPair.set(pairId ?? "", pair);
+    });
+    expect(byPair.size).toBe(4);
+    expect([...byPair.values()].every((pair) => pair.size === 2)).toBe(true);
+    const [controlId, stimulatedId] = fixture.draft.conditions.map(({ id }) => id);
+    const differences = [...byPair.values()].map(
+      (pair) => pair.get(controlId)! - pair.get(stimulatedId)!,
+    );
+    expect(new Set(differences).size).toBeGreaterThan(1);
+    expect(differences.every(Number.isFinite)).toBe(true);
+  });
+
+  it("縦断endpointのpair matchingはexperiment row順に依存しない", () => {
+    const fixture = createLongitudinalFixture();
+    const assess = (draft: typeof fixture.draft) =>
+      assessDraftGraphAnalysis({
+        draft,
+        cells: fixture.cells,
+        readoutId: draft.readouts[0].id,
+        conditionIds: draft.conditions.map(({ id }) => id),
+        timeAnalysis: { kind: "endpoint" },
+      });
+    const original = assess(fixture.draft);
+    const reordered = assess({
+      ...fixture.draft,
+      experiments: [...fixture.draft.experiments].reverse(),
+    });
+    const values = (assessment: typeof original) =>
+      (assessment.request?.observations ?? [])
+        .map(({ pairId, conditionId, value }) => `${pairId}:${conditionId}:${value}`)
+        .sort();
+    expect(values(reordered)).toEqual(values(original));
+  });
+
+  it("縦断endpointが片条件で欠けたstable unitを独立群へ変換しない", () => {
+    const fixture = createLongitudinalFixture();
+    const missingKey = experimentCellKey({
+      experimentId: fixture.draft.experiments[0].id,
+      conditionId: fixture.draft.conditions[1].id,
+      readoutId: fixture.draft.readouts[0].id,
+      timePointId: fixture.draft.time.points.at(-1)?.id,
+    });
+    const cells = { ...fixture.cells };
+    delete cells[missingKey];
+    const assessment = assessDraftGraphAnalysis({
+      draft: fixture.draft,
+      cells,
+      readoutId: fixture.draft.readouts[0].id,
+      conditionIds: fixture.draft.conditions.map(({ id }) => id),
+      timeAnalysis: { kind: "endpoint" },
+    });
+    expect(assessment).toMatchObject({ state: "ready", method: "paired_t" });
+    expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId)).size).toBe(3);
+    expect(assessment.request?.observations).toHaveLength(6);
+  });
+
   it("時点ごとに別サンプルの設計でAUCを推測しない", () => {
     const fixture = createLongitudinalFixture();
     const draft = {

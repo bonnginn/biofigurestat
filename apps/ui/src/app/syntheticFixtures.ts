@@ -384,9 +384,12 @@ export function createLongitudinalFixture(): SyntheticFixture {
           source: "manual",
           rawValues: [
             Number(
-              (30 + unitIndex * 1.5 + conditionIndex * (3 + timeIndex * 2.2) + timeIndex).toFixed(
-                2,
-              ),
+              (
+                30 +
+                unitIndex * 1.5 +
+                conditionIndex * (3 + timeIndex * 2.2 + unitIndex * 0.4) +
+                timeIndex
+              ).toFixed(2),
             ),
           ],
         };
