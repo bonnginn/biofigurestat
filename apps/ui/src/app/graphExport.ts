@@ -102,7 +102,10 @@ export async function svgToPngBlob(svgText: string, width: number, height: numbe
     canvas.height = Math.max(1, Math.ceil(height));
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Canvas is unavailable");
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.save();
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.restore();
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
     return await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(
@@ -125,7 +128,7 @@ async function copyGraphToNativeClipboard(
   await invoke("copy_graph_png", { pngBytes });
 }
 
-/** Copies vector SVG when supported, then a transparent PNG, then SVG text as a safe fallback. */
+/** Copies vector SVG when supported, then a white-background PNG, then SVG text as a safe fallback. */
 export async function copyGraphToClipboard(svg: SVGSVGElement): Promise<"svg" | "png" | "text"> {
   const svgText = serializeGraphSvg(svg);
   const viewBox = svg.viewBox.baseVal;

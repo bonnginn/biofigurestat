@@ -12,6 +12,7 @@ const METHOD_LABELS: Record<AnalysisRecommendation["recommendedMethod"], string>
   repeated_measures_anova: "反復測定分散分析",
   friedman: "Friedman検定",
   two_way_anova: "二元配置分散分析",
+  mixed_anova: "条件×時間の反復測定分散分析",
   mixed_model: "混合効果モデル",
   pearson: "Pearsonの相関",
   spearman: "Spearmanの順位相関",
@@ -27,6 +28,7 @@ export function templateLabel(templateId: AnalysisRecommendation["templateId"]) 
   if (templateId === "D03") return "D03 · 3条件以上の独立群";
   if (templateId === "D04") return "D04 · 3条件以上の繰り返し測定";
   if (templateId === "D05") return "D05 · 2因子の要因配置";
+  if (templateId === "D06") return "D06 · 条件×時間の反復測定";
   if (templateId === "D09") return "D09 · 2つの測定値の相関";
   return `${templateId} · 解析テンプレート`;
 }
@@ -49,6 +51,9 @@ export function recommendationExplanation(recommendation: AnalysisRecommendation
   }
   if (recommendation.reasonCode === "complete_two_factor_independent_design") {
     return "2つの因子の全組み合わせを、各条件で独立した実験単位に割り当てています。交互作用を先に確認し、条件間の比較は多重性を調整します。";
+  }
+  if (recommendation.reasonCode === "balanced_condition_by_time_repeated_design") {
+    return "条件間では独立した実験単位を用い、各単位を時間内で反復追跡します。条件×時間の交互作用を最初に評価します。";
   }
   if (recommendation.reasonCode === "two_complete_continuous_variables_linear_question") {
     return "同じ実験単位からXとYを1つずつ測定し、直線的な関係を評価します。各単位を対応付けた散布図として扱います。";

@@ -164,7 +164,9 @@ export function GraphStatisticsPanel({
                   ? request.contrastConditionIds.join("|")
                   : request.protocolVersion === "0.5.0"
                     ? request.variableConditionIds.join("|")
-                    : request.primaryContrastConditionIds.join("|"),
+                    : request.protocolVersion === "0.6.0"
+                      ? request.conditionIds.join("|")
+                      : request.primaryContrastConditionIds.join("|"),
             correction: request.options.multiplicityMethod,
             protocolVersion: request.protocolVersion,
             mode,

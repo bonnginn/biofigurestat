@@ -54,6 +54,9 @@ const TEST_APPEARANCE: WorkspaceGraphState["appearance"] = {
 
 function testAxes(yTitle: string, hierarchyOrder: readonly string[]): WorkspaceGraphState["axes"] {
   return {
+    xSemantic: "categorical",
+    xTitle: "",
+    xUnit: "",
     yTitle,
     yRangeMode: "auto",
     yMin: null,
@@ -1296,6 +1299,81 @@ describe("experiment workspace project adapter", () => {
       kind: "auc",
       windowStart: 0,
       windowEnd: 24,
+    });
+  });
+
+  it("D06の全時点identityと軸semanticを派生1値へ潰さず保存する", () => {
+    const longitudinal = createLongitudinalFixture();
+    const draft = {
+      ...longitudinal.draft,
+      conditionAssignment: { kind: "independent" as const, unitLabel: "sample" },
+    };
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells: longitudinal.cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+      timeAnalysis: { kind: "full_time_course" },
+    });
+    if (!assessment.request || assessment.request.protocolVersion !== "0.6.0")
+      throw new Error("Balanced longitudinal fixture should produce D06");
+    const axes = {
+      ...testAxes("Reporter intensity (a.u.)", ["attribute.group"]),
+      xSemantic: "numeric_covariate" as const,
+      xTitle: "Radius",
+      xUnit: "µm",
+    };
+    const graph: WorkspaceGraphState = {
+      id: "graph.d06",
+      displayName: "Condition by radius",
+      analysisRunId: null,
+      selectedReadoutId: draft.readouts[0].id,
+      sourceMode: "raw_readout",
+      selectedConditionIds: draft.conditions.map(({ id }) => id),
+      selectedTimePointIds: draft.time.points.map(({ id }) => id),
+      analysisTimePointId: null,
+      analysisMetric: { kind: "full_time_course" },
+      graphType: "line",
+      layers: { ...fixture().graph.layers, connectingLine: true },
+      appearance: TEST_APPEARANCE,
+      axes,
+      statisticsAnnotation: { mode: "exact_p", testIndex: 0 },
+      analysis: {
+        request: assessment.request,
+        result: {
+          protocolVersion: "0.6.0",
+          requestId: assessment.request.requestId,
+          status: "ok",
+          engine: { name: "fixture", version: "1", packages: {} },
+          estimates: [],
+          tests: [],
+          diagnostics: [],
+          warnings: [],
+          completedAt: "2026-08-24T00:00:00.000Z",
+        },
+      },
+    };
+    const state = createExperimentWorkspaceProject({
+      draft,
+      cells: longitudinal.cells,
+      graphs: [graph],
+      now: "2026-08-24T00:00:00.000Z",
+    });
+
+    expect(state.derivedDatasetRevisions).toHaveLength(1);
+    expect(state.derivedValues).toHaveLength(assessment.request.observations.length);
+    expect(state.analysisRuns[0]?.request).toMatchObject({ protocolVersion: "0.6.0" });
+    const persistedRequest = state.analysisRuns[0]?.request;
+    expect(
+      persistedRequest?.protocolVersion === "0.6.0" &&
+        persistedRequest.observations.every(
+          ({ pairId, experimentalUnitId, timePointId }) =>
+            pairId === experimentalUnitId && Boolean(timePointId),
+        ),
+    ).toBe(true);
+    expect(rehydrateExperimentWorkspace(state)?.graphs[0]).toMatchObject({
+      analysisMetric: { kind: "full_time_course" },
+      axes: { xSemantic: "numeric_covariate", xTitle: "Radius", xUnit: "µm" },
     });
   });
 

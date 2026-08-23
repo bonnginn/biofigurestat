@@ -6,6 +6,7 @@ export * from "./d04";
 export * from "./d04-request-builder";
 export * from "./d05";
 export * from "./d05-request-builder";
+export * from "./d06";
 export * from "./d09";
 export * from "./d09-request-builder";
 export * from "./request-builder";

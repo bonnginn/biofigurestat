@@ -1,6 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, RefObject } from "react";
-import type { AnalysisEngineResult, AnalysisRecommendation } from "@lsaa/analysis-contracts";
+import type {
+  AnalysisEngineRequest,
+  AnalysisEngineResult,
+  AnalysisRecommendation,
+} from "@lsaa/analysis-contracts";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
 
 import {
@@ -22,6 +26,7 @@ import {
 import {
   assessDraftGraphAnalysis,
   deriveTimeMetricValue,
+  isDerivedTimeMetric,
   type ContrastIntent,
 } from "../../app/experimentDraftAnalysis";
 import { defaultGraphYTitle, defaultLayersForGraphType } from "../../app/graphDefaults";
@@ -81,6 +86,7 @@ type GraphType = WorkspaceGraphState["graphType"];
 type StatisticsAnnotation = NonNullable<WorkspaceGraphState["statisticsAnnotation"]>;
 
 function timeMetricLabel(plan: TimeAnalysisPlan): string {
+  if (plan.kind === "full_time_course") return "条件×時間の全体モデル";
   if (plan.kind === "endpoint") return "最後の時点（endpoint）";
   if (plan.kind === "maximum") return "最大値";
   if (plan.kind === "minimum") return "最小値";
@@ -88,6 +94,52 @@ function timeMetricLabel(plan: TimeAnalysisPlan): string {
   if (plan.kind === "change_from_baseline") return "baselineからの変化量";
   if (plan.kind === "f_over_f0") return "F/F0";
   return "選んだ時点の値";
+}
+
+function methodShortLabel(method: AnalysisEngineRequest["method"]): string {
+  const labels: Partial<Record<AnalysisEngineRequest["method"], string>> = {
+    welch_t: "Welch t",
+    student_t: "Student t",
+    paired_t: "paired t",
+    mann_whitney: "Mann–Whitney",
+    wilcoxon_signed_rank: "Wilcoxon signed-rank",
+    welch_anova: "Welch ANOVA",
+    one_way_anova: "one-way ANOVA",
+    kruskal_wallis: "Kruskal–Wallis",
+    repeated_measures_anova: "repeated-measures ANOVA",
+    two_way_anova: "two-way ANOVA",
+    mixed_anova: "mixed ANOVA",
+    pearson: "Pearson",
+    spearman: "Spearman",
+  };
+  return labels[method] ?? method;
+}
+
+function graphAnnotationContext(input: {
+  request: AnalysisEngineRequest;
+  timeAnalysis: TimeAnalysisPlan;
+  analysisTimePointId: string | null;
+  draft: ExperimentSetDraft;
+  axes: AxisSettings;
+}): string {
+  const { request, timeAnalysis, draft, axes } = input;
+  if (request.protocolVersion === "0.6.0") {
+    return "condition × time interaction · mixed ANOVA";
+  }
+  const method = methodShortLabel(request.method);
+  const unit = axes.xUnit.trim() || draft.time.unit;
+  if (timeAnalysis.kind === "selected_timepoint") {
+    const point = draft.time.points.find(({ id }) => id === input.analysisTimePointId);
+    return point ? `${point.value} ${unit} · ${method}` : method;
+  }
+  const start = timeAnalysis.windowStart ?? draft.time.points[0]?.value ?? "first";
+  const end = timeAnalysis.windowEnd ?? draft.time.points.at(-1)?.value ?? "last";
+  if (timeAnalysis.kind === "endpoint") return `${end} ${unit} endpoint · ${method}`;
+  if (timeAnalysis.kind === "auc") return `${start}–${end} ${unit} AUC · ${method}`;
+  if (timeAnalysis.kind === "change_from_baseline")
+    return `${start}–${end} ${unit} change from baseline · ${method}`;
+  if (timeAnalysis.kind === "f_over_f0") return `${start}–${end} ${unit} F/F0 · ${method}`;
+  return `per-unit ${timeAnalysis.kind} · ${method}`;
 }
 
 type ProportionPoint = Readonly<{
@@ -165,11 +217,11 @@ const DEFAULT_APPEARANCE: GraphAppearance = {
   hierarchicalLabels: true,
   jitter: 12,
   fontFamily: "arial",
-  graphTitleFontSize: 18,
-  axisTitleFontSize: 17,
-  tickFontSize: 15,
-  hierarchyFontSize: 15,
-  legendFontSize: 15,
+  graphTitleFontSize: 20,
+  axisTitleFontSize: 19,
+  tickFontSize: 17,
+  hierarchyFontSize: 17,
+  legendFontSize: 16,
   legendPosition: "hidden",
   seriesColors: {},
   rawPointColor: "#8a96a3",
@@ -397,7 +449,6 @@ function ExperimentGraphSvg({
   shape,
   readoutLabel,
   readoutUnit,
-  timeUnit,
   timeSampling,
   conditionAssignment,
   axisLabels,
@@ -409,6 +460,7 @@ function ExperimentGraphSvg({
   svgRef,
   analysisResult,
   statisticsAnnotation,
+  annotationContext,
   layerDescription,
   onInspect,
   activeInspectorTarget,
@@ -416,7 +468,6 @@ function ExperimentGraphSvg({
   shape: "proportion" | "nested_continuous";
   readoutLabel: string;
   readoutUnit?: string;
-  timeUnit?: string;
   timeSampling: ExperimentSetDraft["time"]["sampling"];
   conditionAssignment: ExperimentSetDraft["conditionAssignment"];
   axisLabels: readonly ConditionAxisLabel[];
@@ -428,6 +479,7 @@ function ExperimentGraphSvg({
   svgRef: RefObject<SVGSVGElement | null>;
   analysisResult: AnalysisEngineResult | null;
   statisticsAnnotation: StatisticsAnnotation;
+  annotationContext: string;
   layerDescription: string;
   onInspect: (target: InspectorTarget) => void;
   activeInspectorTarget: InspectorTarget;
@@ -475,6 +527,16 @@ function ExperimentGraphSvg({
   const topLegendRows =
     showLegend && appearance.legendPosition === "top" ? Math.ceil(legendConditions.length / 3) : 0;
   const topLegendHeight = topLegendRows * Math.max(34, appearance.legendFontSize * 2);
+  const xAxisTitle =
+    axes.xTitle.trim() ||
+    (axes.xSemantic === "time"
+      ? "Time"
+      : axes.xSemantic === "numeric_covariate"
+        ? "Covariate"
+        : "");
+  const renderedXAxisTitle = xAxisTitle
+    ? `${xAxisTitle}${axes.xUnit.trim() ? ` (${axes.xUnit.trim()})` : ""}`
+    : "";
   const margin = {
     ...CHART_MARGIN,
     top: CHART_MARGIN.top + topLegendHeight,
@@ -485,8 +547,9 @@ function ExperimentGraphSvg({
     ? Math.max(0, axisLabels[0]?.levels.length ?? 0)
     : 0;
   const extraLabelHeight = Math.max(0, hierarchyDepth - 1) * 27;
-  const height = CHART_HEIGHT + extraLabelHeight + topLegendHeight;
-  margin.bottom = CHART_MARGIN.bottom + extraLabelHeight;
+  const xAxisTitleHeight = renderedXAxisTitle ? 34 : 0;
+  const height = CHART_HEIGHT + extraLabelHeight + topLegendHeight + xAxisTitleHeight;
+  margin.bottom = CHART_MARGIN.bottom + extraLabelHeight + xAxisTitleHeight;
   const plotHeight = height - margin.top - margin.bottom;
   const baseColors = PALETTES[appearance.palette];
   const conditionIds = [...new Set(series.map((item) => item.conditionId))];
@@ -820,6 +883,21 @@ function ExperimentGraphSvg({
       >
         {yLabel}
       </text>
+      {renderedXAxisTitle ? (
+        <text
+          x={(margin.left + width - margin.right) / 2}
+          y={height - 12}
+          textAnchor="middle"
+          className="experiment-graph-axis-title"
+          style={{ fontSize: appearance.axisTitleFontSize, fill: "#000" }}
+          onDoubleClick={(event) => {
+            event.stopPropagation();
+            onInspect("x-axis");
+          }}
+        >
+          {renderedXAxisTitle}
+        </text>
+      ) : null}
       {statisticsAnnotation.mode !== "hidden" &&
       analysisResult?.status === "ok" &&
       analysisResult.tests[statisticsAnnotation.testIndex] ? (
@@ -852,15 +930,17 @@ function ExperimentGraphSvg({
               textAnchor="middle"
               className="experiment-graph-stat-label"
             >
-              {statisticsAnnotation.mode === "symbol"
-                ? significanceSymbol(
-                    analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
-                      analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
-                  )
-                : `p = ${formatExactPValue(
-                    analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
-                      analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
-                  )}`}
+              {`${annotationContext} · ${
+                statisticsAnnotation.mode === "symbol"
+                  ? significanceSymbol(
+                      analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
+                        analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
+                    )
+                  : `p = ${formatExactPValue(
+                      analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
+                        analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
+                    )}`
+              }`}
             </text>
           </g>
         ) : (
@@ -871,15 +951,17 @@ function ExperimentGraphSvg({
             className="experiment-graph-stat-label"
             data-graph-layer="statistics-annotation"
           >
-            {statisticsAnnotation.mode === "symbol"
-              ? significanceSymbol(
-                  analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
-                    analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
-                )
-              : `全体 p = ${formatExactPValue(
-                  analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
-                    analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
-                )}`}
+            {`${annotationContext} · ${
+              statisticsAnnotation.mode === "symbol"
+                ? significanceSymbol(
+                    analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
+                      analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
+                  )
+                : `全体 p = ${formatExactPValue(
+                    analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
+                      analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
+                  )}`
+            }`}
           </text>
         )
       ) : null}
@@ -931,21 +1013,6 @@ function ExperimentGraphSvg({
             />
           );
         })}
-      {axes.showCategoryLabels && hasTimeLabels ? (
-        <text
-          x={margin.left - 10}
-          y={height - margin.bottom + 25}
-          textAnchor="end"
-          className="experiment-graph-hierarchy-heading"
-          style={{ fontSize: appearance.hierarchyFontSize, fill: "#000" }}
-          onDoubleClick={(event) => {
-            event.stopPropagation();
-            onInspect("x-axis");
-          }}
-        >
-          {`Time${timeUnit ? ` (${timeUnit})` : ""}`}
-        </text>
-      ) : null}
       {axes.showCategoryLabels
         ? hierarchyGroups.flatMap((groups, levelIndex) => {
             const rowY =
@@ -955,7 +1022,7 @@ function ExperimentGraphSvg({
               (hierarchyDepth - 1 - levelIndex) * 27;
             const heading = axisLabels[0]?.levels[levelIndex]?.label;
             return [
-              heading ? (
+              heading && !(levelIndex === 0 && heading === "条件") ? (
                 <text
                   key={`heading-${levelIndex}`}
                   x={margin.left - 10}
@@ -1940,6 +2007,9 @@ export function ExperimentGraphWorkbench({
   const [graphType, setGraphType] = useState<GraphType>(initialState?.graphType ?? "dot");
   const [axes, setAxes] = useState<AxisSettings>(
     initialState?.axes ?? {
+      xSemantic: draft.time.points.length > 0 ? "time" : "categorical",
+      xTitle: draft.time.points.length > 0 ? "Time" : "",
+      xUnit: draft.time.points.length > 0 ? draft.time.unit : "",
       yTitle: defaultGraphYTitle(draft.readouts[0]),
       yRangeMode: "auto",
       yMin: null,
@@ -1981,7 +2051,8 @@ export function ExperimentGraphWorkbench({
       graphSpec: null,
       outcomeId: selectedReadoutId,
     });
-    if (timeAnalysis.kind === "selected_timepoint") return base;
+    if (timeAnalysis.kind === "selected_timepoint" || timeAnalysis.kind === "full_time_course")
+      return base;
     const window = `${timeAnalysis.windowStart ?? "最初"}～${timeAnalysis.windowEnd ?? "最後"} ${draft.time.unit}`;
     const baseline =
       timeAnalysis.kind === "change_from_baseline" || timeAnalysis.kind === "f_over_f0"
@@ -2033,7 +2104,8 @@ export function ExperimentGraphWorkbench({
     appearance,
     axes,
     statisticsAnnotation,
-    displayedDerivedMetric: sourceMode === "derived_metric" ? timeAnalysis : null,
+    displayedDerivedMetric:
+      sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis) ? timeAnalysis : null,
   });
   const benchmarkAnalysisState = JSON.stringify({
     selectedReadoutId,
@@ -2159,7 +2231,7 @@ export function ExperimentGraphWorkbench({
     selectedTimePointIds.includes(point.id),
   );
   const timeLabel =
-    sourceMode === "derived_metric" && timeAnalysis.kind !== "selected_timepoint"
+    sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis)
       ? `派生値：${timeMetricLabel(timeAnalysis)}`
       : activeTimePoints.length
         ? activeTimePoints.map((point) => `${point.value} ${draft.time.unit}`).join("、")
@@ -2169,8 +2241,7 @@ export function ExperimentGraphWorkbench({
 
   const series = useMemo<readonly GraphSeries[]>(() => {
     if (!readout) return [];
-    const showDerivedMetric =
-      sourceMode === "derived_metric" && timeAnalysis.kind !== "selected_timepoint";
+    const showDerivedMetric = sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis);
     const timePoints = showDerivedMetric
       ? [undefined]
       : draft.time.points.length > 0
@@ -2273,7 +2344,9 @@ export function ExperimentGraphWorkbench({
           conditionId: condition.id,
           conditionLabel: condition.label,
           timePointId: timePoint?.id,
-          timeLabel: timePoint ? `${timePoint.value} ${draft.time.unit}` : undefined,
+          timeLabel: timePoint
+            ? `${timePoint.value} ${axes.xUnit.trim() || draft.time.unit}`
+            : undefined,
           proportionPoints,
           experimentPoints,
           rawPoints,
@@ -2288,13 +2361,14 @@ export function ExperimentGraphWorkbench({
     draft.experiments,
     draft.time.points.length,
     draft.time.unit,
+    axes.xUnit,
     readout,
     sourceMode,
     timeAnalysis,
   ]);
 
   const derivedLineageRows =
-    sourceMode === "derived_metric" && timeAnalysis.kind !== "selected_timepoint" && readout
+    sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis) && readout
       ? draft.experiments.flatMap((experiment) =>
           activeConditions.flatMap((condition) => {
             const value = deriveTimeMetricValue({
@@ -2332,7 +2406,7 @@ export function ExperimentGraphWorkbench({
       : [];
 
   const shape =
-    sourceMode === "derived_metric" && timeAnalysis.kind !== "selected_timepoint"
+    sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis)
       ? "nested_continuous"
       : (readout?.shape ?? "proportion");
   const axisLabels = useMemo(() => {
@@ -2344,6 +2418,15 @@ export function ExperimentGraphWorkbench({
       timeLabel: item.timeLabel ?? "",
     }));
   }, [appearance.hierarchicalLabels, axes.hierarchyOrder, draft, series]);
+  const annotationContext = analysis
+    ? graphAnnotationContext({
+        request: analysis.request,
+        timeAnalysis,
+        analysisTimePointId,
+        draft,
+        axes,
+      })
+    : "selected analysis";
   const compositionHasData =
     shape === "categorical_counts" &&
     Object.values(cells).some(
@@ -2628,7 +2711,9 @@ export function ExperimentGraphWorkbench({
                 }
               : analysis.request.protocolVersion === "0.5.0"
                 ? analysis.request.variableConditionIds
-                : analysis.request.primaryContrastConditionIds,
+                : analysis.request.protocolVersion === "0.6.0"
+                  ? analysis.request.conditionIds
+                  : analysis.request.primaryContrastConditionIds,
         nByCondition: analysisAssessment.nByCondition,
         correction: analysis.request.options.multiplicityMethod,
         request: analysis.request,
@@ -2880,7 +2965,6 @@ export function ExperimentGraphWorkbench({
                       shape={shape === "proportion" ? "proportion" : "nested_continuous"}
                       readoutLabel={readout.label}
                       readoutUnit={readout.unit}
-                      timeUnit={draft.time.points.length > 0 ? draft.time.unit : undefined}
                       timeSampling={draft.time.sampling}
                       conditionAssignment={draft.conditionAssignment}
                       axisLabels={axisLabels}
@@ -2892,6 +2976,7 @@ export function ExperimentGraphWorkbench({
                       svgRef={svgRef}
                       analysisResult={analysisResult}
                       statisticsAnnotation={statisticsAnnotation}
+                      annotationContext={annotationContext}
                       layerDescription={activeLayerDescription}
                       onInspect={inspectGraphPart}
                       activeInspectorTarget={inspectorTarget}
@@ -3946,6 +4031,55 @@ export function ExperimentGraphWorkbench({
                 </>
               ) : (
                 <>
+                  {draft.time.points.length > 0 ? (
+                    <>
+                      <label className="experiment-graph-field">
+                        <span>X軸の意味</span>
+                        <select
+                          aria-label="X軸の意味"
+                          value={axes.xSemantic}
+                          onChange={(event) =>
+                            setAxes((current) => ({
+                              ...current,
+                              xSemantic: event.target.value as AxisSettings["xSemantic"],
+                              xTitle:
+                                event.target.value === "time"
+                                  ? "Time"
+                                  : event.target.value === "numeric_covariate"
+                                    ? "Covariate"
+                                    : "",
+                            }))
+                          }
+                        >
+                          <option value="time">時間</option>
+                          <option value="numeric_covariate">数値共変量</option>
+                          <option value="categorical">カテゴリ</option>
+                        </select>
+                      </label>
+                      <label className="experiment-graph-field">
+                        <span>X軸タイトル</span>
+                        <input
+                          aria-label="X軸タイトル"
+                          type="text"
+                          value={axes.xTitle}
+                          onChange={(event) =>
+                            setAxes((current) => ({ ...current, xTitle: event.target.value }))
+                          }
+                        />
+                      </label>
+                      <label className="experiment-graph-field">
+                        <span>X軸単位</span>
+                        <input
+                          aria-label="X軸単位"
+                          type="text"
+                          value={axes.xUnit}
+                          onChange={(event) =>
+                            setAxes((current) => ({ ...current, xUnit: event.target.value }))
+                          }
+                        />
+                      </label>
+                    </>
+                  ) : null}
                   <label className="experiment-graph-checkbox">
                     <input
                       type="checkbox"
@@ -4058,6 +4192,7 @@ export function ExperimentGraphWorkbench({
                           kind: event.target.value as TimeAnalysisPlan["kind"],
                         };
                         setTimeAnalysis(nextPlan);
+                        if (nextPlan.kind === "full_time_course") setSourceMode("raw_readout");
                         if (sourceMode === "derived_metric") {
                           setAxes((current) => ({
                             ...current,
@@ -4068,6 +4203,12 @@ export function ExperimentGraphWorkbench({
                       }}
                     >
                       <option value="selected_timepoint">選んだ時点の値</option>
+                      <option
+                        value="full_time_course"
+                        disabled={draft.time.sampling !== "longitudinal"}
+                      >
+                        条件×時間（反復測定の全体モデル）
+                      </option>
                       <option value="endpoint" disabled={draft.time.sampling !== "longitudinal"}>
                         最後の時点（endpoint）
                       </option>
@@ -4122,7 +4263,7 @@ export function ExperimentGraphWorkbench({
                       </select>
                     </label>
                   ) : null}
-                  {timeAnalysis.kind !== "selected_timepoint" ? (
+                  {isDerivedTimeMetric(timeAnalysis) ? (
                     <div className="experiment-graph-field-grid">
                       <label className="experiment-graph-field">
                         <span>解析windowの開始</span>
@@ -4197,6 +4338,11 @@ export function ExperimentGraphWorkbench({
                         </label>
                       ) : null}
                     </div>
+                  ) : null}
+                  {timeAnalysis.kind === "full_time_course" ? (
+                    <p className="experiment-graph-help">
+                      全時点と実験単位identityを保持し、条件×時間の交互作用を最初に評価します。欠測のないbalanced設計に限定します。
+                    </p>
                   ) : null}
                   <p className="experiment-graph-help">
                     図には全時間を表示したまま、特定時点または各実験単位から求めた派生値を解析できます。
@@ -4330,7 +4476,8 @@ export function ExperimentGraphWorkbench({
                     </select>
                   </label>
                   <p className="experiment-graph-help">
-                    保存済みのこのグラフの解析結果にだけリンクします。データや比較対象を変更すると注釈も外れます。
+                    表示内容：{annotationContext}
+                    。保存済みのこのグラフの解析結果にだけリンクします。派生値の注釈はそのmetric/windowだけを表し、曲線全体の推論を意味しません。データや比較対象を変更すると注釈も外れます。
                   </p>
                 </section>
               ) : null}

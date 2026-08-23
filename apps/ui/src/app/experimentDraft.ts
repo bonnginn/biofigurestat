@@ -21,6 +21,7 @@ export type AnalysisIntent =
 export type TimeAnalysisPlan = Readonly<{
   kind:
     | "selected_timepoint"
+    | "full_time_course"
     | "endpoint"
     | "maximum"
     | "minimum"

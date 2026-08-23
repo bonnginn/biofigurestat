@@ -83,7 +83,11 @@ function previewGroups(
       const experimentPoints: Array<{ experimentId: string; value: number }> = [];
       const observationValues: number[] = [];
       draft.experiments.forEach((experiment) => {
-        if (sourceMode === "derived_metric" && timeAnalysis.kind !== "selected_timepoint") {
+        if (
+          sourceMode === "derived_metric" &&
+          timeAnalysis.kind !== "selected_timepoint" &&
+          timeAnalysis.kind !== "full_time_course"
+        ) {
           const value = deriveTimeMetricValue({
             draft,
             cells,

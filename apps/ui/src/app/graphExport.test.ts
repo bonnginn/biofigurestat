@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { CoreGraphModel } from "@lsaa/graph-spec";
 
-import { copyGraphToClipboard, serializeAnalyzedDataCsv, serializeGraphSvg } from "./graphExport";
+import {
+  copyGraphToClipboard,
+  serializeAnalyzedDataCsv,
+  serializeGraphSvg,
+  svgToPngBlob,
+} from "./graphExport";
 
 const model: CoreGraphModel = {
   type: "paired_dot",
@@ -32,6 +37,39 @@ const model: CoreGraphModel = {
 };
 
 describe("publication graph exports", () => {
+  it("paints an opaque white canvas before rasterizing PNG", async () => {
+    const save = vi.fn();
+    const fillRect = vi.fn();
+    const restore = vi.fn();
+    const drawImage = vi.fn();
+    const context = { save, fillStyle: "", fillRect, restore, drawImage };
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context as never);
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback) => {
+      callback(new Blob(["png"], { type: "image/png" }));
+    });
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        set src(_value: string) {
+          this.onload?.();
+        }
+      },
+    );
+
+    await expect(svgToPngBlob("<svg/>", 20, 10)).resolves.toBeInstanceOf(Blob);
+    expect(context.fillStyle).toBe("#ffffff");
+    expect(fillRect).toHaveBeenCalledWith(0, 0, 20, 10);
+    expect(fillRect.mock.invocationCallOrder[0]).toBeLessThan(
+      drawImage.mock.invocationCallOrder[0],
+    );
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it("copies SVG vector content when the browser clipboard supports it", async () => {
     class TestClipboardItem {
       constructor(readonly data: Record<string, Blob>) {}

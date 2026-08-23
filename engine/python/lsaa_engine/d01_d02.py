@@ -11,6 +11,7 @@ from scipy.special import gammaln
 from .d03 import run_classical_one_way, run_kruskal_wallis, run_welch_anova
 from .d04 import run_repeated_measures_anova
 from .d05 import run_two_way_anova
+from .d06 import run_mixed_anova
 from .result_common import base_result, estimate
 
 
@@ -358,6 +359,12 @@ def run_wilcoxon(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def run_request(request: dict[str, Any]) -> dict[str, Any]:
+    if request.get("protocolVersion") == "0.6.0":
+        if request.get("templateId") == "D06" and request.get("method") == "mixed_anova":
+            return run_mixed_anova(request)
+        raise ValueError(
+            f"Unsupported template/method combination: {request.get('templateId')}/{request.get('method')}"
+        )
     if request.get("protocolVersion") == "0.5.0":
         from .d09 import run_correlation
 

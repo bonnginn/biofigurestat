@@ -2122,11 +2122,11 @@ export function ExperimentWorkspace({
         hierarchicalLabels: true,
         jitter: 12,
         fontFamily: "arial",
-        graphTitleFontSize: 18,
-        axisTitleFontSize: 17,
-        tickFontSize: 15,
-        hierarchyFontSize: 15,
-        legendFontSize: 15,
+        graphTitleFontSize: 20,
+        axisTitleFontSize: 19,
+        tickFontSize: 17,
+        hierarchyFontSize: 17,
+        legendFontSize: 16,
         legendPosition: "hidden",
         seriesColors: {},
         rawPointColor: "#8a96a3",
@@ -2150,6 +2150,9 @@ export function ExperimentWorkspace({
                 : defaultGraphYTitle(selectedSourceReadout),
           }
         : {
+            xSemantic: draft.time.points.length > 0 ? "time" : "categorical",
+            xTitle: draft.time.points.length > 0 ? "Time" : "",
+            xUnit: draft.time.points.length > 0 ? draft.time.unit : "",
             yTitle:
               draft.analysisIntent.kind === "correlation"
                 ? (draft.conditions[1]?.label ?? "Y")

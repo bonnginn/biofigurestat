@@ -43,6 +43,12 @@ export type DraftAnalysisAssessment = Readonly<{
   request: AnalysisEngineRequest | null;
 }>;
 
+export function isDerivedTimeMetric(plan: TimeAnalysisPlan | undefined): boolean {
+  return (
+    plan !== undefined && plan.kind !== "selected_timepoint" && plan.kind !== "full_time_course"
+  );
+}
+
 function analysisValue(cell: ExperimentCellMap[string]): number | null {
   if (!cell) return null;
   if (cell.availability === "not_planned") return null;
@@ -149,8 +155,7 @@ export function assessDraftGraphAnalysis(input: {
       request: null,
     };
   }
-  const usesDerivedTimeMetric =
-    input.timeAnalysis !== undefined && input.timeAnalysis.kind !== "selected_timepoint";
+  const usesDerivedTimeMetric = isDerivedTimeMetric(input.timeAnalysis);
   if (
     usesDerivedTimeMetric &&
     input.timeAnalysis?.windowStart !== undefined &&
@@ -204,6 +209,160 @@ export function assessDraftGraphAnalysis(input: {
       missingCount: 0,
       notPlannedCount: 0,
       request: null,
+    };
+  }
+
+  if (input.timeAnalysis?.kind === "full_time_course") {
+    const timePoints = [...input.draft.time.points].sort((a, b) => a.value - b.value);
+    if (input.draft.time.sampling !== "longitudinal" || timePoints.length < 2) {
+      return {
+        state: "unsupported",
+        title: "条件×時間モデルには縦断データが必要です",
+        reason: "同じ実験単位を2時点以上追跡する設計を指定してください。",
+        method: null,
+        commonAlternative: null,
+        nByCondition: [],
+        missingCount: 0,
+        notPlannedCount: 0,
+        request: null,
+      };
+    }
+    if (input.draft.conditionAssignment.kind !== "independent") {
+      return {
+        state: "unsupported",
+        title: "条件間で独立した縦断設計に限定しています",
+        reason:
+          "現在の条件×時間モデルは、条件間は独立、時間内は同じ実験単位を追跡する完全なbalanced設計だけを扱います。",
+        method: null,
+        commonAlternative: null,
+        nByCondition: [],
+        missingCount: 0,
+        notPlannedCount: 0,
+        request: null,
+      };
+    }
+    if (readout?.withinExperimentNormalization) {
+      return {
+        state: "unsupported",
+        title: "正規化を伴う条件×時間モデルは未接続です",
+        reason:
+          "時点内正規化と反復測定identityの両方を再現可能に保存する専用契約を追加するまで、この組合せを実行しません。",
+        method: null,
+        commonAlternative: null,
+        nByCondition: [],
+        missingCount: 0,
+        notPlannedCount: 0,
+        request: null,
+      };
+    }
+    const observations: Array<{
+      observationId: string;
+      conditionId: string;
+      value: number;
+      experimentalUnitId: string;
+      pairId: string;
+      timePointId: string;
+    }> = [];
+    let missingCount = 0;
+    let notPlannedCount = 0;
+    const nByCondition = conditions.map((condition, conditionIndex) => {
+      let completeUnits = 0;
+      input.draft.experiments.forEach((experiment, experimentIndex) => {
+        const unitValues = timePoints.map((timePoint) => {
+          const cell =
+            input.cells[
+              experimentCellKey({
+                experimentId: experiment.id,
+                conditionId: condition.id,
+                readoutId: input.readoutId,
+                timePointId: timePoint.id,
+              })
+            ];
+          if (cell?.availability === "not_planned") notPlannedCount += 1;
+          const valuesByCondition = Object.fromEntries(
+            conditions.map(({ id }) => [
+              id,
+              analysisValue(
+                input.cells[
+                  experimentCellKey({
+                    experimentId: experiment.id,
+                    conditionId: id,
+                    readoutId: input.readoutId,
+                    timePointId: timePoint.id,
+                  })
+                ],
+              ),
+            ]),
+          );
+          return readout
+            ? normalizeWithinExperiment(
+                valuesByCondition[condition.id] ?? null,
+                valuesByCondition,
+                condition.id,
+                readout,
+              )
+            : null;
+        });
+        if (unitValues.some((value) => value === null || !Number.isFinite(value))) {
+          missingCount += unitValues.filter(
+            (value) => value === null || !Number.isFinite(value),
+          ).length;
+          return;
+        }
+        completeUnits += 1;
+        const pairId = `${experiment.stableUnitId ?? `unit.draft.${experimentIndex + 1}`}.${condition.id}`;
+        timePoints.forEach((timePoint, timeIndex) => {
+          observations.push({
+            observationId: `observation.draft.${experimentIndex + 1}.${conditionIndex + 1}.${timeIndex + 1}`,
+            conditionId: condition.id,
+            value: unitValues[timeIndex] as number,
+            experimentalUnitId: pairId,
+            pairId,
+            timePointId: timePoint.id,
+          });
+        });
+      });
+      return { conditionId: condition.id, label: condition.label, n: completeUnits };
+    });
+    const counts = nByCondition.map(({ n }) => n);
+    if (missingCount > 0 || counts.some((count) => count < 2) || new Set(counts).size !== 1) {
+      return {
+        state: "unsupported",
+        title: "条件×時間モデルのcomplete balanced条件を満たしません",
+        reason:
+          "各実験単位の全時点がそろい、各条件の実験単位数が等しく2以上である必要があります。不完全な単位を暗黙に除外しません。",
+        method: null,
+        commonAlternative: "欠測や不均衡を扱える検証済みmixed model（未接続）",
+        nByCondition,
+        missingCount,
+        notPlannedCount,
+        request: null,
+      };
+    }
+    const request = AnalysisEngineRequestSchema.parse({
+      protocolVersion: "0.6.0",
+      requestId: "request.draft.graph",
+      projectId: "project.draft",
+      analysisId: "analysis.draft.graph",
+      templateId: "D06",
+      templateVersion: "0.1.0",
+      method: "mixed_anova",
+      conditionIds: conditions.map(({ id }) => id),
+      timePoints: timePoints.map(({ id, value }) => ({ timePointId: id, value })),
+      observations,
+      options: { alternative: "two_sided", confidenceLevel: 0.95, multiplicityMethod: null },
+    });
+    return {
+      state: "ready",
+      title: "条件×時間の反復測定分散分析を推奨",
+      reason: `条件間は独立、時間内は同じ${input.draft.conditionAssignment.unitLabel}を追跡します。まず条件×時間の交互作用を評価し、次に条件と時間の全体効果を示します。`,
+      method: "mixed_anova",
+      recommendedMethod: "mixed_anova",
+      commonAlternative: "欠測や不均衡を扱えるmixed-effects model（未接続）",
+      nByCondition,
+      missingCount,
+      notPlannedCount,
+      request,
     };
   }
 

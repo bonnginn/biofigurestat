@@ -60,7 +60,9 @@ function conditionLabels(input: MethodsTextInput): string {
       ? input.request.contrastConditionIds
       : input.request.protocolVersion === "0.5.0"
         ? input.request.variableConditionIds
-        : input.request.primaryContrastConditionIds;
+        : input.request.protocolVersion === "0.6.0"
+          ? input.request.conditionIds
+          : input.request.primaryContrastConditionIds;
   return contrastIds
     .map((conditionId) => labels.get(conditionId) ?? conditionId)
     .join(input.request.protocolVersion === "0.5.0" ? " と " : " vs ");
@@ -232,6 +234,20 @@ function executedResultLines(input: MethodsTextInput): string[] {
       ...pairwiseResultLines(input, 3),
     ];
   }
+  if (recommendation.templateId === "D06") {
+    const effectLabels = ["条件 × 時間（交互作用）", "条件（実験単位間）", "時間（実験単位内）"];
+    return [
+      `結果：${result.status === "ok" ? "完了" : result.status}`,
+      "balanced split-plot検定（交互作用を先に表示）：",
+      ...result.tests
+        .slice(0, 3)
+        .map(
+          (test, index) =>
+            `・${effectLabels[index]}：${test.statisticName}=${numberLabel(test.statistic)}、自由度 ${degreesLabel(test.degreesOfFreedom)}、p=${pValueLabel(test.pValue)}、${test.effectSizeName ?? "効果量"}=${numberLabel(test.effectSize)}`,
+        ),
+      "条件間の事後比較：実行せず",
+    ];
+  }
 
   const estimate = result.estimates[0];
   const test = result.tests[0];
@@ -256,11 +272,13 @@ export function generateMethodsText(input: MethodsTextInput): string {
   const resultLines = executedResultLines(input);
   const multiplicityNote = request.options.multiplicityMethod
     ? `多重性補正：${request.options.multiplicityMethod}を指定。`
-    : request.protocolVersion === "0.5.0"
-      ? "多重性補正：単一の相関係数を評価したため指定なし。"
-      : request.protocolVersion === "0.2.0"
-        ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
-        : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
+    : request.protocolVersion === "0.6.0"
+      ? "多重性補正：条件×時間、条件、時間の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。"
+      : request.protocolVersion === "0.5.0"
+        ? "多重性補正：単一の相関係数を評価したため指定なし。"
+        : request.protocolVersion === "0.2.0"
+          ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
+          : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
   const warnings = [
     "除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。",
     normalizationWarning(design),
@@ -283,7 +301,7 @@ export function generateMethodsText(input: MethodsTextInput): string {
     pairingLabel(design),
     `統計上のn：${recommendation.statisticalNDefinition}`,
     `解析条件：${allConditionLabels(input)}`,
-    `${request.protocolVersion === "0.5.0" ? "解析対象" : "主比較"}：${conditionLabels(input)}`,
+    `${request.protocolVersion === "0.5.0" ? "解析対象" : request.protocolVersion === "0.6.0" ? "解析条件" : "主比較"}：${conditionLabels(input)}`,
     `エラーバー：${errorBarLabel(input.graphSpec)}`,
     "",
     "解析結果",

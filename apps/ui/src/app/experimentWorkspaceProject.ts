@@ -531,6 +531,19 @@ export function createWorkspaceRecommendation(
       multiplicityMethod: "holm_all_cell_pairs",
     };
   }
+  if (request.templateId === "D06") {
+    return {
+      templateId: "D06",
+      templateVersion: request.templateVersion,
+      recommendedMethod: "mixed_anova",
+      alternativeMethods: ["mixed_model"],
+      reasonCode: "balanced_condition_by_time_repeated_design",
+      explanation:
+        "Conditions use independent experimental units while repeated time observations preserve stable unit identity; the interaction is evaluated first.",
+      statisticalNDefinition: `Complete stable units at level ${design.experimentalUnitLevelId} within each condition`,
+      multiplicityMethod: null,
+    };
+  }
   if (request.templateId === "D09") {
     return {
       templateId: "D09",
@@ -570,20 +583,29 @@ function prepareWorkspaceAnalyses(input: {
   input.graphs.forEach((graph) => {
     const executedAnalysis = graph.analysis?.result.status === "ok" ? graph.analysis : null;
     const timeAnalysis = graph.analysisMetric ?? { kind: "selected_timepoint" as const };
-    const usesTimeMetric = timeAnalysis.kind !== "selected_timepoint";
+    const usesFullTimeCourse = timeAnalysis.kind === "full_time_course";
+    const usesTimeMetric = timeAnalysis.kind !== "selected_timepoint" && !usesFullTimeCourse;
     const materializeDerivedGraphSource = graph.sourceMode === "derived_metric" && usesTimeMetric;
     if (!executedAnalysis && !materializeDerivedGraphSource) return;
     const selectedTimePointId =
       graph.analysisTimePointId ??
       (graph.selectedTimePointIds.length === 1 ? graph.selectedTimePointIds[0] : undefined);
-    if (input.draft.time.points.length > 0 && !selectedTimePointId && !usesTimeMetric) return;
-    const analysisTimePoints = usesTimeMetric
-      ? input.draft.time.points.filter(
-          ({ value }) =>
-            (timeAnalysis.windowStart === undefined || value >= timeAnalysis.windowStart) &&
-            (timeAnalysis.windowEnd === undefined || value <= timeAnalysis.windowEnd),
-        )
-      : input.draft.time.points.filter(({ id }) => id === selectedTimePointId);
+    if (
+      input.draft.time.points.length > 0 &&
+      !selectedTimePointId &&
+      !usesTimeMetric &&
+      !usesFullTimeCourse
+    )
+      return;
+    const analysisTimePoints = usesFullTimeCourse
+      ? input.draft.time.points
+      : usesTimeMetric
+        ? input.draft.time.points.filter(
+            ({ value }) =>
+              (timeAnalysis.windowStart === undefined || value >= timeAnalysis.windowStart) &&
+              (timeAnalysis.windowEnd === undefined || value <= timeAnalysis.windowEnd),
+          )
+        : input.draft.time.points.filter(({ id }) => id === selectedTimePointId);
     const sourceKeys = new Set(
       input.draft.experiments.flatMap((experiment) =>
         graph.selectedConditionIds.flatMap((conditionId) =>
@@ -621,9 +643,91 @@ function prepareWorkspaceAnalyses(input: {
       value: number;
       experimentalUnitId: string;
       pairId?: string;
+      timePointId?: string;
     }>;
     let derivedDatasetRevisionId: string | null = null;
-    if (usesTimeMetric) {
+    if (usesFullTimeCourse) {
+      derivedDatasetRevisionId = `derived.workspace.${graph.id}.longitudinal.r${input.revisionIndex}`;
+      const transformationId = `transformation.workspace.${graph.id}.longitudinal.r${input.revisionIndex}`;
+      const grouped = new Map<
+        string,
+        {
+          observations: Observation[];
+          experimentalUnitId: string;
+          conditionId: string;
+          time: number;
+        }
+      >();
+      selectedRaw.forEach((observation) => {
+        if (observation.time === undefined) return;
+        const unit = input.records.unitInstances.find(
+          ({ id }) => id === observation.unitInstanceId,
+        );
+        const experimentalUnitId = unit?.parentUnitId ?? observation.unitInstanceId;
+        const key = `${experimentalUnitId}\u0000${observation.conditionId}\u0000${observation.time}`;
+        const current = grouped.get(key);
+        grouped.set(key, {
+          observations: [...(current?.observations ?? []), observation],
+          experimentalUnitId,
+          conditionId: observation.conditionId,
+          time: observation.time,
+        });
+      });
+      const longitudinalValues: DerivedScalarValue[] = [...grouped.values()].map((group, index) => {
+        const numeric = group.observations.map((observation) =>
+          measurementNumericValue(observation.measurement),
+        );
+        return {
+          id: `derived-value.workspace.${graph.id}.longitudinal.${index + 1}.r${input.revisionIndex}`,
+          derivedDatasetRevisionId: derivedDatasetRevisionId!,
+          experimentalUnitId: group.experimentalUnitId,
+          conditionId: group.conditionId,
+          outcomeId: graph.selectedReadoutId,
+          value: numeric.reduce((sum, value) => sum + value, 0) / numeric.length,
+          sourceObservationIds: group.observations.map(({ id }) => id),
+          sourceUnitIds: group.observations.map(({ unitInstanceId }) => unitInstanceId),
+          subsampleCount: group.observations.length,
+        };
+      });
+      transformations.push({
+        id: transformationId,
+        version: "0.1.0",
+        method: "replicate_summary",
+        inputRevisionIds: [input.records.rawRevision.id],
+        parameters: {
+          center: "mean",
+          grouping: ["experimentalUnitId", "conditionId", "time"],
+          stableUnitIdentity: "preserved",
+        },
+      });
+      derivedDatasetRevisions.push({
+        id: derivedDatasetRevisionId,
+        previousRevisionId: null,
+        sourceRawRevisionId: input.records.rawRevision.id,
+        sourceQcRevisionId: null,
+        outcomeId: graph.selectedReadoutId,
+        transformationId,
+        createdAt: input.now,
+        createdBy: input.actor,
+        state: "current",
+        staleReason: null,
+      });
+      derivedValues.push(...longitudinalValues);
+      analysisObservations = [...grouped.values()].map((group, index) => {
+        const value = longitudinalValues[index];
+        const timePoint = input.draft.time.points.find(({ value: time }) => time === group.time);
+        if (!value || !timePoint)
+          throw new Error("Longitudinal analysis source does not match a declared axis point");
+        return {
+          observationId: value.id,
+          conditionId: value.conditionId,
+          value: value.value,
+          experimentalUnitId: value.experimentalUnitId,
+          pairId: value.experimentalUnitId,
+          timePointId: timePoint.id,
+        };
+      });
+    } else if (usesTimeMetric) {
       derivedDatasetRevisionId = `derived.workspace.${graph.id}.r${input.revisionIndex}`;
       const grouped = new Map<string, Observation[]>();
       selectedRaw.forEach((observation) => {

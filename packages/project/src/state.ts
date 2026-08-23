@@ -141,6 +141,7 @@ export const ExperimentWorkspaceStateSchema = z
           .object({
             kind: z.enum([
               "selected_timepoint",
+              "full_time_course",
               "endpoint",
               "maximum",
               "minimum",
@@ -187,11 +188,11 @@ export const ExperimentWorkspaceStateSchema = z
           hierarchicalLabels: z.boolean(),
           jitter: z.number().min(0).max(24).default(12),
           fontFamily: z.enum(["arial", "helvetica", "system"]).default("arial"),
-          graphTitleFontSize: z.number().min(12).max(32).default(18),
-          axisTitleFontSize: z.number().min(10).max(28).default(17),
-          tickFontSize: z.number().min(9).max(24).default(15),
-          hierarchyFontSize: z.number().min(9).max(24).default(15),
-          legendFontSize: z.number().min(9).max(24).default(15),
+          graphTitleFontSize: z.number().min(12).max(32).default(20),
+          axisTitleFontSize: z.number().min(10).max(28).default(19),
+          tickFontSize: z.number().min(9).max(24).default(17),
+          hierarchyFontSize: z.number().min(9).max(24).default(17),
+          legendFontSize: z.number().min(9).max(24).default(16),
           legendPosition: z.enum(["hidden", "top", "right", "inside"]).default("hidden"),
           seriesColors: z.record(EntityIdSchema, z.string()).default({}),
           rawPointColor: z.string().default("#8a96a3"),
@@ -207,6 +208,9 @@ export const ExperimentWorkspaceStateSchema = z
         }),
         axes: z
           .object({
+            xSemantic: z.enum(["categorical", "time", "numeric_covariate"]).default("categorical"),
+            xTitle: z.string().default(""),
+            xUnit: z.string().default(""),
             yTitle: z.string(),
             yRangeMode: z.enum(["auto", "manual"]),
             yMin: z.number().finite().nullable(),
@@ -219,6 +223,9 @@ export const ExperimentWorkspaceStateSchema = z
             yTickInterval: z.number().positive().nullable().default(null),
           })
           .default({
+            xSemantic: "categorical",
+            xTitle: "",
+            xUnit: "",
             yTitle: "",
             yRangeMode: "auto",
             yMin: null,

@@ -378,6 +378,63 @@ describe("temporary experiment-first analysis adapter", () => {
     expect(differences.every(Number.isFinite)).toBe(true);
   });
 
+  it("完全なbalanced縦断設計はidentityを保持したD06条件×時間requestを作る", () => {
+    const fixture = createLongitudinalFixture();
+    const draft = {
+      ...fixture.draft,
+      conditionAssignment: { kind: "independent" as const, unitLabel: "sample" },
+    };
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells: fixture.cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+      timeAnalysis: { kind: "full_time_course" },
+    });
+
+    expect(assessment).toMatchObject({ state: "ready", method: "mixed_anova" });
+    expect(assessment.request).toMatchObject({
+      protocolVersion: "0.6.0",
+      templateId: "D06",
+      method: "mixed_anova",
+    });
+    expect(assessment.request?.observations).toHaveLength(
+      draft.experiments.length * draft.conditions.length * draft.time.points.length,
+    );
+    const d06 = assessment.request?.protocolVersion === "0.6.0" ? assessment.request : null;
+    expect(new Set(d06?.observations.map(({ pairId }) => pairId)).size).toBe(
+      draft.experiments.length * draft.conditions.length,
+    );
+    expect(
+      d06?.observations.every(({ pairId, experimentalUnitId }) => pairId === experimentalUnitId),
+    ).toBe(true);
+  });
+
+  it("D06は欠測を暗黙除外せずunsupportedにする", () => {
+    const fixture = createLongitudinalFixture();
+    const draft = {
+      ...fixture.draft,
+      conditionAssignment: { kind: "independent" as const, unitLabel: "sample" },
+    };
+    const cells = { ...fixture.cells };
+    delete cells[
+      experimentCellKey({
+        experimentId: draft.experiments[0].id,
+        conditionId: draft.conditions[0].id,
+        readoutId: draft.readouts[0].id,
+        timePointId: draft.time.points[0].id,
+      })
+    ];
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+      timeAnalysis: { kind: "full_time_course" },
+    });
+    expect(assessment).toMatchObject({ state: "unsupported", request: null, missingCount: 1 });
+  });
+
   it("縦断endpointのpair matchingはexperiment row順に依存しない", () => {
     const fixture = createLongitudinalFixture();
     const assess = (draft: typeof fixture.draft) =>
