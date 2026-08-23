@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0.0",
+  "runs": [
+    {
+      "benchmarkVersion": "LSA50_v1_1",
+      "caseId": "JCB010",
+      "track": "track_B",
+      "runId": "external_blind_B_JCB010_002",
+      "role": "first_external_fresh_blind_track_b_smoke",
+      "validity": "valid",
+      "outcome": "completed",
+      "supportStatus": "direct",
+      "blindPackageSha256": "83f3e042205f49b4e873383bb4fd1c67c4022becdc8b586fbe9905839fe08e63",
+      "infrastructureRevision": "61da4cfb3271342041aabc4fbb662eb565ae2d25",
+      "validatedAt": "2026-08-23T12:34:10+09:00",
+      "validation": {
+        "externalIsolation": "reported_pass",
+        "packageIdentityAndHash": "pass",
+        "trackBLeakageScanner": "pass",
+        "nineArtifactVerifier": "pass",
+        "captureProvenance": "pass"
+      }
+    }
+  ]
+}
