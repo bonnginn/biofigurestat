@@ -17,14 +17,14 @@
     },
     {
       "caseId": "JCB003",
-      "shape": "direct",
+      "shape": "nested_parent_mean",
       "rowCount": 16,
-      "analysisCount": 16,
-      "nByCondition": [8, 8],
+      "analysisCount": 6,
+      "nByCondition": [3, 3],
       "method": "welch_t",
       "template": "D01",
-      "referenceStatistic": -4.250192,
-      "referenceP": 0.0011949118,
+      "referenceStatistic": -5.653139674308264,
+      "referenceP": 0.01370631241522072,
       "status": "READY_FOR_EXTERNAL"
     },
     {

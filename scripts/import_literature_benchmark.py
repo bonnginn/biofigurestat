@@ -18,6 +18,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = ROOT / "benchmark/literature_v1_1/source/LSA_Literature_Benchmark_50_v1_1.xlsx"
 DEFAULT_OUTPUT = ROOT / "benchmark/literature_v1_1/runtime"
+DEFAULT_CORRECTIONS = ROOT / "benchmark/literature_v1_1/runtime_corrections_v1_1_1.json"
 BENCHMARK_VERSION = "LSA50_v1_1"
 EXPECTED_SOURCE_SHA256 = "028c6f5639c98bf50e4a6a87c25b04defa1c89ddda8b063624d6746188aa5bf5"
 REQUIRED_SHEETS = {
@@ -148,14 +149,95 @@ def select(record: dict[str, Any], fields: tuple[str, ...]) -> dict[str, Any]:
 
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
+    # Runtime JSON is historically CRLF in this Windows-authored benchmark tree.
+    with path.open("w", encoding="utf-8", newline="\r\n") as handle:
+        handle.write(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True) + "\n")
 
 
-def convert(source: Path, output: Path) -> dict[str, Any]:
+def install_generated_runtime(temporary: Path, output: Path) -> None:
+    """Install generated files without deleting the live runtime tree first."""
+    generated = {
+        path.relative_to(temporary)
+        for path in temporary.rglob("*")
+        if path.is_file()
+    }
+    existing = (
+        {
+            path.relative_to(output)
+            for path in output.rglob("*")
+            if path.is_file()
+        }
+        if output.exists()
+        else set()
+    )
+    unexpected = existing - generated
+    if unexpected:
+        names = ", ".join(str(path) for path in sorted(unexpected))
+        raise ValueError(f"Refusing to remove unexpected runtime files: {names}")
+
+    output.mkdir(parents=True, exist_ok=True)
+    for relative_path in sorted(generated):
+        source_path = temporary / relative_path
+        destination_path = output / relative_path
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, destination_path)
+
+    shutil.rmtree(temporary)
+
+
+def load_corrections(path: Path, source_hash: str) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if (
+        not isinstance(payload, dict)
+        or payload.get("schemaVersion") != "1.0.0"
+        or payload.get("sourceSha256") != source_hash
+        or not isinstance(payload.get("cases"), dict)
+    ):
+        raise ValueError("Literature runtime correction metadata is invalid")
+    return payload
+
+
+def apply_case_correction(
+    case_id: str,
+    correction: dict[str, Any] | None,
+    *,
+    case: dict[str, Any],
+    packet: dict[str, Any],
+    gold_analysis: dict[str, Any],
+    gold_metadata: dict[str, Any],
+    synthetic: list[dict[str, Any]],
+) -> None:
+    if correction is None:
+        return
+    parent_source = correction.get("rowParentFrom")
+    if parent_source is not None:
+        if parent_source not in {"experiment_id", "unit_id"}:
+            raise ValueError(f"{case_id}: unsupported hierarchy correction source")
+        for row in synthetic:
+            parent = row.get(parent_source)
+            if not isinstance(parent, str) or not parent:
+                raise ValueError(f"{case_id}: hierarchy correction parent is missing")
+            row["parent_unit_id"] = parent
+    for target, key in (
+        (case, "caseOverrides"),
+        (packet, "researcherPacketOverrides"),
+        (gold_analysis, "goldAnalysisOverrides"),
+        (gold_metadata, "goldMetadataOverrides"),
+    ):
+        overrides = correction.get(key, {})
+        if not isinstance(overrides, dict) or any(field not in target for field in overrides):
+            raise ValueError(f"{case_id}: correction contains an unknown {key} field")
+        target.update(overrides)
+
+
+def convert(
+    source: Path, output: Path, corrections_path: Path = DEFAULT_CORRECTIONS
+) -> dict[str, Any]:
     source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
     if source_hash != EXPECTED_SOURCE_SHA256:
         raise ValueError(f"Unexpected source workbook SHA-256: {source_hash}")
     tables = read_workbook(source)
+    corrections = load_corrections(corrections_path, source_hash)
     cases = tables["Cases"]
     case_ids = [record["case_id"] for record in cases]
     if len(case_ids) != 50 or len(set(case_ids)) != 50:
@@ -181,9 +263,22 @@ def convert(source: Path, output: Path) -> dict[str, Any]:
     temporary.mkdir(parents=True)
     public_cases = []
     for case_id in sorted(case_ids):
-        packet = select(indexed["Researcher_Packets"][case_id], TRACK_B_PACKET_FIELDS)
+        case = dict(indexed["Cases"][case_id])
+        packet_source = dict(indexed["Researcher_Packets"][case_id])
+        gold_analysis = dict(indexed["Gold_Analysis"][case_id])
+        gold_metadata = dict(indexed["Gold_Metadata"][case_id])
+        synthetic = [dict(row) for row in raw_by_case[case_id]]
+        apply_case_correction(
+            case_id,
+            corrections["cases"].get(case_id),
+            case=case,
+            packet=packet_source,
+            gold_analysis=gold_analysis,
+            gold_metadata=gold_metadata,
+            synthetic=synthetic,
+        )
+        packet = select(packet_source, TRACK_B_PACKET_FIELDS)
         paper = select(indexed["Paper_Reference"][case_id], TRACK_A_PAPER_FIELDS)
-        synthetic = raw_by_case[case_id]
         public_cases.append({"caseId": case_id})
         case_dir = temporary / "cases" / case_id
         write_json(
@@ -203,11 +298,11 @@ def convert(source: Path, output: Path) -> dict[str, Any]:
             {
                 "benchmarkVersion": BENCHMARK_VERSION,
                 "caseId": case_id,
-                "case": indexed["Cases"][case_id],
-                "researcherPacketSource": indexed["Researcher_Packets"][case_id],
+                "case": case,
+                "researcherPacketSource": packet_source,
                 "paperReference": indexed["Paper_Reference"][case_id],
-                "goldAnalysis": indexed["Gold_Analysis"][case_id],
-                "goldMetadata": indexed["Gold_Metadata"][case_id],
+                "goldAnalysis": gold_analysis,
+                "goldMetadata": gold_metadata,
                 "benchmarkIndex": indexed["Benchmark_Index_v1_1"][case_id],
                 "syntheticData": synthetic,
             },
@@ -219,14 +314,16 @@ def convert(source: Path, output: Path) -> dict[str, Any]:
         "syntheticRowCount": len(tables["Synthetic_Raw"]),
         "sourceFile": source.name,
         "sourceSha256": source_hash,
+        "runtimeCorrectionFile": corrections_path.name,
+        "runtimeCorrectionSha256": hashlib.sha256(corrections_path.read_bytes()).hexdigest(),
+        "runtimeCorrectionVersion": corrections["correctionVersion"],
+        "correctedCases": sorted(corrections["cases"]),
         "trackBExcludedSourceFields": [
             "coverage_tier", "scope_expectation", "synthetic_seed", "synthetic_data_location", "blind_packet_rule",
         ],
     }
     write_json(temporary / "manifest.json", manifest)
-    if output.exists():
-        shutil.rmtree(output)
-    temporary.replace(output)
+    install_generated_runtime(temporary, output)
     return manifest
 
 
@@ -234,8 +331,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--corrections", type=Path, default=DEFAULT_CORRECTIONS)
     args = parser.parse_args()
-    print(json.dumps(convert(args.source.resolve(), args.output.resolve()), indent=2))
+    print(
+        json.dumps(
+            convert(args.source.resolve(), args.output.resolve(), args.corrections.resolve()),
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -16,13 +16,13 @@
     "year": 2024
   },
   "researcherPacket": {
-    "blind_experiment_summary": "Synthetic cell/count measurement. Conditions: Control, Treatment. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Migrasome number per cell; >=50 cells; repeated experiments.",
+    "blind_experiment_summary": "Synthetic cell/count measurement. Conditions: Control, Treatment. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: three independent experimental sessions per condition; cell observations are nested within session.",
     "case_id": "JCB003",
     "conditions": "Control | Treatment",
-    "experimental_unit_description": "Migrasome number per cell; >=50 cells; repeated experiments",
+    "experimental_unit_description": "Independent experimental session; cell observations nested within each of 3 sessions per condition",
     "independent_session_count": 3,
     "measurement_context": "cell/count measurement",
-    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "nested_observation_note": "Cell-level observations are nested within independent experimental sessions; analyze one session-level summary per condition and do not count cells as biological n.",
     "readouts": "value",
     "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
     "timepoints": "(none)"

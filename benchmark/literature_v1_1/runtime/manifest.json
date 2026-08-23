@@ -1,6 +1,12 @@
 {
   "benchmarkVersion": "LSA50_v1_1",
   "caseCount": 50,
+  "correctedCases": [
+    "JCB003"
+  ],
+  "runtimeCorrectionFile": "runtime_corrections_v1_1_1.json",
+  "runtimeCorrectionSha256": "9794aa8d5903d42a1412a4e948e7e2cd1465b8771586e28ae18f3cc808f1c96c",
+  "runtimeCorrectionVersion": "LSA50_v1_1_runtime_hierarchy_1",
   "sourceFile": "LSA_Literature_Benchmark_50_v1_1.xlsx",
   "sourceSha256": "028c6f5639c98bf50e4a6a87c25b04defa1c89ddda8b063624d6746188aa5bf5",
   "syntheticRowCount": 2691,

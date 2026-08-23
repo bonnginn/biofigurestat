@@ -59,8 +59,24 @@ def check_gold(case_id: str, label: str, statistic: float, p_value: float) -> di
 
 def representative_gold_checks() -> list[dict[str, Any]]:
     checks = []
-    result = stats.ttest_ind(grouped_values("JCB003", "Control"), grouped_values("JCB003", "Treatment"), equal_var=False)
-    checks.append(check_gold("JCB003", "Welch independent t", float(result.statistic), float(result.pvalue)))
+    jcb003_sessions: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for row in rows("JCB003"):
+        jcb003_sessions[row["condition"]][row["parent_unit_id"]].append(row["value"])
+    jcb003_means = {
+        condition: [float(np.mean(values)) for values in sessions.values()]
+        for condition, sessions in jcb003_sessions.items()
+    }
+    result = stats.ttest_ind(
+        jcb003_means["Control"], jcb003_means["Treatment"], equal_var=False
+    )
+    checks.append(
+        check_gold(
+            "JCB003",
+            "session-summary Welch independent t",
+            float(result.statistic),
+            float(result.pvalue),
+        )
+    )
 
     by_unit: dict[str, dict[str, float]] = defaultdict(dict)
     for row in rows("JCB002"):
@@ -169,4 +185,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

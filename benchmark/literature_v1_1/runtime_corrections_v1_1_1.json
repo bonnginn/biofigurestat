@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0.0",
+  "correctionVersion": "LSA50_v1_1_runtime_hierarchy_1",
+  "sourceSha256": "028c6f5639c98bf50e4a6a87c25b04defa1c89ddda8b063624d6746188aa5bf5",
+  "cases": {
+    "JCB003": {
+      "classification": "source_data_and_schema_ambiguity",
+      "reason": "The source workbook declares three independent sessions and repeated experiments, but leaves every parent_unit_id null and computes Gold on eight row-level cell values per condition. The correction preserves rows while making experiment_id the explicit biological parent.",
+      "rowParentFrom": "experiment_id",
+      "researcherPacketOverrides": {
+        "blind_experiment_summary": "Synthetic cell/count measurement. Conditions: Control, Treatment. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: three independent experimental sessions per condition; cell observations are nested within session.",
+        "experimental_unit_description": "Independent experimental session; cell observations nested within each of 3 sessions per condition",
+        "nested_observation_note": "Cell-level observations are nested within independent experimental sessions; analyze one session-level summary per condition and do not count cells as biological n."
+      },
+      "caseOverrides": {
+        "statistical_unit_and_nesting": "Independent experimental session; cell observations nested within 3 sessions per condition"
+      },
+      "goldMetadataOverrides": {
+        "experimental_unit_and_nesting": "Independent experimental session; cell observations nested within 3 sessions per condition",
+        "reference_method": "Welch t test on experiment-session means",
+        "reference_statistic": -5.653139674308264,
+        "reference_p_value": 0.01370631241522072
+      },
+      "goldAnalysisOverrides": {
+        "reference_method": "Welch t test on experiment-session means",
+        "reference_statistic": -5.653139674308264,
+        "reference_p_value": 0.01370631241522072,
+        "analysis_scope_note": "Corrected runtime reference aggregates synthetic cell rows within each of three experiment sessions per condition. The unchanged source workbook used row-level values and is preserved as provenance."
+      }
+    }
+  }
+}

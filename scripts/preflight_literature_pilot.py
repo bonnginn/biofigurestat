@@ -18,6 +18,7 @@ import numpy as np
 from blind_batch_queue import BlindBatchQueue, prepare_batch
 from blind_benchmark_package import FORBIDDEN_TERMS, canonical_bytes, create_package, load_package
 from verify_benchmark_runs import verify_explicit_unsupported_run_directory, verify_run_directory
+from audit_literature_hierarchy import PASS as HIERARCHY_PASS, audit_all
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -322,6 +323,7 @@ def run_preflight() -> dict[str, Any]:
     fixtures = definition["cases"]
     if tuple(item["caseId"] for item in fixtures) != EXPECTED_ORDER:
         raise AssertionError("frozen selection identity or order changed")
+    hierarchy_by_case = {case["caseId"]: case for case in audit_all()["cases"]}
     results = []
     with tempfile.TemporaryDirectory() as temporary:
         temporary_root = Path(temporary)
@@ -408,7 +410,18 @@ def run_preflight() -> dict[str, Any]:
                     "persistenceQueueIntegrity": "pass",
                     "statistic": statistic,
                     "pValue": p_value,
-                    "status": fixture["status"],
+                    "packetExpectedBiologicalN": hierarchy_by_case[case_id]["packetExpectedBiologicalN"],
+                    "goldExpectedBiologicalN": hierarchy_by_case[case_id]["goldExpectedBiologicalN"],
+                    "runtimeDerivedBiologicalN": hierarchy_by_case[case_id]["runtimeDerivedBiologicalN"],
+                    "loaderRequiredBiologicalN": hierarchy_by_case[case_id]["loaderRequiredBiologicalN"],
+                    "hierarchyPath": hierarchy_by_case[case_id]["hierarchyPath"],
+                    "hierarchyStatus": hierarchy_by_case[case_id]["status"],
+                    "hierarchyIssues": hierarchy_by_case[case_id]["issues"],
+                    "status": (
+                        fixture["status"]
+                        if hierarchy_by_case[case_id]["status"] == HIERARCHY_PASS
+                        else "PREFLIGHT_BLOCKED_HIERARCHY"
+                    ),
                 }
             )
         matrix = _exercise_queue_matrix(
@@ -421,9 +434,16 @@ def run_preflight() -> dict[str, Any]:
         "caseCount": len(results),
         "supportedEngineCaseCount": sum(item["statisticalEngineIntegrity"] == "pass" for item in results),
         "expectedUnsupportedCaseCount": sum(item["status"] == "READY_EXPECTED_UNSUPPORTED" for item in results),
+        "hierarchyBlockedCaseCount": sum(
+            item["status"] == "PREFLIGHT_BLOCKED_HIERARCHY" for item in results
+        ),
         "queueTransitionMatrix": matrix,
         "cases": results,
-        "overall": "PASS",
+        "overall": (
+            "PASS"
+            if all(item["hierarchyStatus"] == HIERARCHY_PASS for item in results)
+            else "BLOCKED"
+        ),
         "certificationScope": "deterministic machinery only; not a human/Experimenter benchmark score",
     }
 
@@ -431,9 +451,15 @@ def run_preflight() -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--compact", action="store_true")
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     report = run_preflight()
-    print(json.dumps(report, ensure_ascii=False, indent=None if args.compact else 2))
+    text = json.dumps(report, ensure_ascii=False, indent=None if args.compact else 2) + "\n"
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        with args.output.open("w", encoding="utf-8", newline="\n") as handle:
+            handle.write(text)
+    print(text, end="")
 
 
 if __name__ == "__main__":

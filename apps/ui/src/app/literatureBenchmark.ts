@@ -101,6 +101,15 @@ export function mapLiteratureMeasurements(
   if (!rows.length || rows.some((row) => row.case_id !== source.caseId || row.synthetic !== true)) {
     return mismatch("Runtimeのcase identityまたはsynthetic flagが一致しません。");
   }
+  const packetDeclaresNestedObservations =
+    /(?:cell|lower-level)-level observations are nested/i.test(
+      source.researcherPacket.nested_observation_note,
+    );
+  if (packetDeclaresNestedObservations && rows.some((row) => !row.parent_unit_id)) {
+    return mismatch(
+      "Researcher Packetは下位観測のnestingを宣言していますが、runtime rowにparent unitがありません。",
+    );
+  }
   const sourceConditions = uniqueInOrder(rows.map((row) => row.condition));
   const sourceTimes = uniqueInOrder(
     rows.map((row) => row.time).filter((value): value is number => value !== null),
@@ -138,14 +147,9 @@ export function mapLiteratureMeasurements(
     return mismatch(`条件をこの順序で作成してください：${sourceConditions.join("、")}`);
   }
 
-  const appearances = new Map<string, Set<string>>();
-  for (const row of rows) {
-    const unit = sourceUnit(row);
-    const seen = appearances.get(unit) ?? new Set<string>();
-    seen.add(row.condition);
-    appearances.set(unit, seen);
-  }
-  const matched = [...appearances.values()].some((conditions) => conditions.size > 1);
+  const matched = /across (?:paired|multiple) conditions/i.test(
+    source.researcherPacket.repeated_identity_note,
+  );
   if (target.conditionAssignment.kind !== (matched ? "matched" : "independent")) {
     return mismatch(
       matched
@@ -156,7 +160,7 @@ export function mapLiteratureMeasurements(
   const unitTimes = new Map<string, Set<number>>();
   for (const row of rows) {
     if (row.time === null) continue;
-    const unit = sourceUnit(row);
+    const unit = `${row.condition}:${sourceUnit(row)}`;
     const seen = unitTimes.get(unit) ?? new Set<number>();
     seen.add(row.time);
     unitTimes.set(unit, seen);
