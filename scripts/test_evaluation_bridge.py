@@ -60,6 +60,52 @@ def welch_request() -> dict:
     }
 
 
+def unicode_mixed_request() -> dict:
+    values = {
+        "control.1": [1.0, 2.0, 3.0],
+        "control.2": [2.0, 2.8, 4.2],
+        "control.3": [1.5, 2.7, 3.4],
+        "treatment.1": [1.0, 2.4, 4.1],
+        "treatment.2": [2.0, 3.6, 4.8],
+        "treatment.3": [1.4, 3.1, 4.7],
+    }
+    observations = []
+    for unit_name, unit_values in values.items():
+        condition = f"condition.{unit_name.split('.')[0]}"
+        unit_id = f"unit.{unit_name}"
+        for radius_index, (radius, value) in enumerate(zip((0, 10, 20), unit_values)):
+            observations.append(
+                {
+                    "observationId": f"observation.{unit_name}.{radius_index}",
+                    "conditionId": condition,
+                    "value": value,
+                    "experimentalUnitId": unit_id,
+                    "pairId": unit_id,
+                    "timePointId": f"radius.{radius}",
+                }
+            )
+    return {
+        "protocolVersion": "0.6.0",
+        "requestId": "request.bridge.unicode",
+        "projectId": "project.bridge.unicode",
+        "analysisId": "analysis.bridge.unicode",
+        "templateId": "D06",
+        "templateVersion": "0.1.0",
+        "method": "mixed_anova",
+        "withinFactor": {"role": "numeric_covariate", "title": "Radius", "unit": "µm"},
+        "conditionIds": ["condition.control", "condition.treatment"],
+        "timePoints": [
+            {"timePointId": f"radius.{radius}", "value": radius} for radius in (0, 10, 20)
+        ],
+        "observations": observations,
+        "options": {
+            "alternative": "two_sided",
+            "confidenceLevel": 0.95,
+            "multiplicityMethod": None,
+        },
+    }
+
+
 class EvaluationBridgeTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -169,6 +215,22 @@ class EvaluationBridgeTests(unittest.TestCase):
         self.assertRegex(bridged_completed_at, r"^\d{4}-\d{2}-\d{2}T")
         self.assertEqual(bridged, direct)
         self.assertEqual(bridged["engine"]["version"], "0.7.0")
+
+    def test_browser_bridge_uses_utf8_for_unicode_factor_metadata(self) -> None:
+        request = unicode_mixed_request()
+        result = self.post(
+            "/api/evaluation/analysis",
+            {
+                "mode": "evaluation",
+                "syntheticOnly": True,
+                "request": request,
+            },
+        )["result"]
+        self.assertEqual(
+            result["factorMetadata"]["withinFactor"]["unit"],
+            request["withinFactor"]["unit"],
+        )
+        self.assertEqual(result["tests"][0]["name"], "condition_by_within_factor_interaction")
 
     def test_bridge_rejects_missing_synthetic_only_declaration(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as context:

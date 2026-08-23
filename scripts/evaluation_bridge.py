@@ -107,9 +107,10 @@ def run_engine(request: dict[str, Any]) -> dict[str, Any]:
     existing = environment.get("PYTHONPATH")
     environment["PYTHONPATH"] = f"{ENGINE_SOURCE}{os.pathsep}{existing}" if existing else str(ENGINE_SOURCE)
     completed = subprocess.run(
-        [str(ENGINE_PYTHON), "-m", "lsaa_engine.cli"],
+        [str(ENGINE_PYTHON), "-X", "utf8", "-m", "lsaa_engine.cli"],
         input=json.dumps(request, ensure_ascii=False) + "\n",
         text=True,
+        encoding="utf-8",
         capture_output=True,
         timeout=30,
         check=False,
