@@ -1,5 +1,10 @@
 import type { ExperimentSetDraft } from "../app/experimentDraft";
-import { timePointLabel } from "../app/experimentDraft";
+import {
+  orderedAxisSemantic,
+  orderedAxisTitle,
+  orderedAxisUnit,
+  timePointLabel,
+} from "../app/experimentDraft";
 import "./ConditionTimePreview.css";
 
 type ConditionTimePreviewProps = Readonly<{
@@ -7,11 +12,13 @@ type ConditionTimePreviewProps = Readonly<{
   compact?: boolean;
 }>;
 
-const SAMPLING_LABELS = {
-  none: "時間点なし",
-  cross_sectional: "時間点ごとに別のサンプル",
-  longitudinal: "同じ単位を時間ごとに追う",
-} as const;
+function samplingLabel(draft: ExperimentSetDraft): string {
+  if (draft.time.sampling === "none") return "順序のある測定軸なし";
+  const axis = orderedAxisSemantic(draft.time) === "time" ? "時間点" : "軸水準";
+  return draft.time.sampling === "cross_sectional"
+    ? `${axis}ごとに別のサンプル`
+    : `同じ単位を${axis}ごとに反復測定`;
+}
 
 /**
  * A structure-only preview for the design confirmation step.
@@ -44,12 +51,12 @@ export function ConditionTimePreview({ draft, compact = false }: ConditionTimePr
   return (
     <section
       className={`condition-time-preview${compact ? " condition-time-preview--compact" : ""}`}
-      aria-label="条件と時間の配置プレビュー"
+      aria-label="条件と測定軸の配置プレビュー"
     >
       <div className="condition-time-preview__heading">
         <div>
           <p className="condition-time-preview__eyebrow">入力前に確認</p>
-          <h2>条件と時間の配置</h2>
+          <h2>条件と測定軸の配置</h2>
         </div>
         <span className="condition-time-preview__badge">配置のみ</span>
       </div>
@@ -105,21 +112,21 @@ export function ConditionTimePreview({ draft, compact = false }: ConditionTimePr
         </div>
 
         <div className="condition-time-preview__block">
-          <p className="condition-time-preview__label">時間</p>
+          <p className="condition-time-preview__label">
+            {draft.time.sampling === "none" ? "順序のある測定軸" : orderedAxisTitle(draft.time)}
+          </p>
           {draft.time.sampling === "none" ? (
-            <p className="condition-time-preview__empty">時間点を設定していません</p>
+            <p className="condition-time-preview__empty">順序のある測定軸を設定していません</p>
           ) : (
             <>
-              <div className="condition-time-preview__timeline" aria-label="時間点">
+              <div className="condition-time-preview__timeline" aria-label="測定軸の水準">
                 {draft.time.points.map((point) => (
                   <span className="condition-time-preview__time" key={point.id}>
-                    {timePointLabel(point, draft.time.unit)}
+                    {timePointLabel(point, orderedAxisUnit(draft.time))}
                   </span>
                 ))}
               </div>
-              <p className="condition-time-preview__sampling">
-                {SAMPLING_LABELS[draft.time.sampling]}
-              </p>
+              <p className="condition-time-preview__sampling">{samplingLabel(draft)}</p>
             </>
           )}
         </div>

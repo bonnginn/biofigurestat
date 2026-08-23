@@ -1,6 +1,9 @@
 import {
   conditionDisplayLabel,
   experimentCellKey,
+  orderedAxisSemantic,
+  orderedAxisTitle,
+  orderedAxisUnit,
   type ExperimentCellMap,
   type ExperimentSetDraft,
 } from "./experimentDraft";
@@ -205,6 +208,7 @@ export function mapLiteratureMeasurements(
       : [...unitTimes.values()].some((times) => times.size > 1)
         ? "longitudinal"
         : "cross_sectional";
+  const expectedAxis = structuredXAxis(source);
   if (
     target.time.sampling !== expectedSampling ||
     target.time.points.length !== sourceTimes.length ||
@@ -212,6 +216,18 @@ export function mapLiteratureMeasurements(
   ) {
     return mismatch(
       `時間構造を${expectedSampling}、時点 ${sourceTimes.length ? sourceTimes.join("、") : "なし"}にしてください。`,
+    );
+  }
+  if (
+    expectedAxis &&
+    (orderedAxisSemantic(target.time) !== expectedAxis.semantic ||
+      orderedAxisTitle(target.time) !== expectedAxis.title ||
+      orderedAxisUnit(target.time) !== expectedAxis.unit)
+  ) {
+    return mismatch(
+      expectedAxis.semantic === "numeric_covariate"
+        ? `測定軸を「時間以外の数値軸」、名前を${expectedAxis.title}、単位を${expectedAxis.unit || "空欄"}にしてください。時間として入力しません。`
+        : `測定軸を${expectedAxis.title} (${expectedAxis.unit})にしてください。`,
     );
   }
 

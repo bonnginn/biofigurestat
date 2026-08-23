@@ -455,6 +455,8 @@ describe("temporary experiment-first analysis adapter", () => {
       state: "ready",
       method: "two_way_anova",
       recommendedMethod: "two_way_anova",
+      nDisplay: "n=4 / 条件×Timeセル、独立した実験単位は全32個",
+      statisticalNDefinition: "各条件×Timeセルで独立した実験単位 n=4、全32実験単位",
     });
     expect(assessment.request).toMatchObject({
       protocolVersion: "0.7.0",

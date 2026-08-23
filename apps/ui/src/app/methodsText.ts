@@ -19,6 +19,7 @@ export type MethodsTextInput = Readonly<{
   request: AnalysisEngineRequest;
   result: AnalysisEngineResult;
   graphSpec?: GraphSpec | null;
+  graphErrorBar?: "sd" | "sem" | "none";
   nestedSummary?: Readonly<{
     transformation: TransformationSpec;
     revision: DerivedDatasetRevision;
@@ -87,7 +88,13 @@ function degreesLabel(values: number[] | null | undefined): string {
   return values.map(numberLabel).join(", ");
 }
 
-function errorBarLabel(graphSpec: GraphSpec | null | undefined): string {
+function errorBarLabel(
+  graphSpec: GraphSpec | null | undefined,
+  graphErrorBar: MethodsTextInput["graphErrorBar"],
+): string {
+  if (graphErrorBar === "sd") return "平均±SD（標本標準偏差）";
+  if (graphErrorBar === "sem") return "平均±SEM（SD/√n）";
+  if (graphErrorBar === "none") return "エラーバーなし";
   if (!graphSpec) return "グラフ仕様なし（SD/SEMは断定しない）";
   if (graphSpec.summary.interval === "sd") return "平均±SD（標本標準偏差）";
   if (graphSpec.summary.interval === "sem") return "平均±SEM（SD/√n）";
@@ -357,6 +364,12 @@ export function generateMethodsText(input: MethodsTextInput): string {
     scientificGroupingWarning(input),
     executedNestedSummaryNote(input),
     multiplicityNote,
+    ...result.diagnostics
+      .filter(({ code }) => code === "sphericity_not_estimated")
+      .map(
+        ({ code, message }) =>
+          `エンジン診断（${code}）：${message} 球面性補正を必要とする場合は検証済みmixed-effects modelを使用してください。`,
+      ),
     ...result.warnings.map((warning) => `エンジン警告（${warning.code}）：${warning.message}`),
   ];
   const outcome = input.design.outcomes.find(({ id }) => id === input.outcomeId);
@@ -366,13 +379,14 @@ export function generateMethodsText(input: MethodsTextInput): string {
     `解析テンプレート：${methodsTemplateLabel(input)}（${recommendation.templateVersion}）`,
     `実行手法：${methodsMethodLabel(input, request.method)}（${request.method}）`,
     `推奨手法：${methodsMethodLabel(input, recommendation.recommendedMethod)}（選択と${recommendation.recommendedMethod === request.method ? "同じ" : "異なる"}）`,
+    `推奨判断：${recommendation.decision ? (recommendation.decision.kind === "accepted" ? "推奨法を明示的に採用" : `推奨法を上書きして${recommendation.decision.selectedMethod}を選択${recommendation.decision.overrideReason ? `（理由：${recommendation.decision.overrideReason}）` : ""}`) : "過去データのため明示記録なし"}`,
     `実験デザイン：${design.name}／実験単位：${design.experimentalUnitLevelId}`,
     `解析した測定項目：${outcome ? `${outcome.label}${outcome.unit ? ` (${outcome.unit})` : ""}` : (input.outcomeId ?? "記録なし")}`,
     pairingLabel(design),
     `統計上のn：${recommendation.statisticalNDefinition}`,
     `解析条件：${allConditionLabels(input)}`,
     `${request.protocolVersion === "0.5.0" ? "解析対象" : request.protocolVersion === "0.6.0" || request.protocolVersion === "0.7.0" ? "解析条件" : "主比較"}：${conditionLabels(input)}`,
-    `エラーバー：${errorBarLabel(input.graphSpec)}`,
+    `エラーバー：${errorBarLabel(input.graphSpec, input.graphErrorBar)}`,
     "",
     "解析結果",
     ...resultLines,

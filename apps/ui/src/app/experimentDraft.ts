@@ -11,6 +11,7 @@ export type ExperimentContext =
 export type ReadoutShape = "proportion" | "nested_continuous" | "categorical_counts" | "wb_ratio";
 export type TimeSampling = "none" | "cross_sectional" | "longitudinal";
 export type TimeUnit = "sec" | "min" | "h" | "day";
+export type OrderedAxisSemantic = "time" | "numeric_covariate";
 export type ConditionAssignmentKind = "independent" | "matched";
 export type AnalysisIntent =
   | Readonly<{ kind: "group_comparison" }>
@@ -73,7 +74,23 @@ export type TimePlanDraft = Readonly<{
   sampling: TimeSampling;
   unit: TimeUnit;
   points: readonly TimePointDraft[];
+  /** Optional additive metadata; absent legacy drafts retain time semantics. */
+  axisSemantic?: OrderedAxisSemantic;
+  axisTitle?: string;
+  axisUnit?: string;
 }>;
+
+export function orderedAxisSemantic(time: TimePlanDraft): OrderedAxisSemantic {
+  return time.axisSemantic ?? "time";
+}
+
+export function orderedAxisTitle(time: TimePlanDraft): string {
+  return time.axisTitle?.trim() || (orderedAxisSemantic(time) === "time" ? "Time" : "Numeric axis");
+}
+
+export function orderedAxisUnit(time: TimePlanDraft): string {
+  return time.axisUnit?.trim() || (orderedAxisSemantic(time) === "time" ? time.unit : "");
+}
 
 export type ExperimentSessionDraft = Readonly<{
   id: string;
@@ -483,6 +500,6 @@ export function expectedAnalysisLabel(draft: ExperimentSetDraft): string {
   return "独立した2条件の比較";
 }
 
-export function timePointLabel(point: TimePointDraft, unit: TimeUnit): string {
+export function timePointLabel(point: TimePointDraft, unit: string): string {
   return `${point.value} ${unit}`;
 }

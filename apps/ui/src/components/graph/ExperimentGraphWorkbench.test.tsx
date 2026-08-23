@@ -70,6 +70,10 @@ function withTwoConditions(base: ExperimentSetDraft): ExperimentSetDraft {
   };
 }
 
+function acceptRecommendedMethod(): void {
+  fireEvent.click(screen.getByRole("button", { name: "推奨法を使う" }));
+}
+
 function proportionFixture(): { draft: ExperimentSetDraft; cells: ExperimentCellMap } {
   const draft = withTwoConditions(createExperimentSetDraft("cell_culture", "proportion"));
   const readoutId = draft.readouts[0].id;
@@ -363,6 +367,7 @@ describe("ExperimentGraphWorkbench", () => {
 
     selectInspectorTarget("statistics");
     fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
+    acceptRecommendedMethod();
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
 
     await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
@@ -407,6 +412,7 @@ describe("ExperimentGraphWorkbench", () => {
 
     selectInspectorTarget("statistics");
     fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
+    acceptRecommendedMethod();
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
     await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
     fireEvent.change(screen.getByRole("combobox", { name: "統計注釈の表示" }), {
@@ -440,7 +446,7 @@ describe("ExperimentGraphWorkbench", () => {
     expect(screen.getByText("代替案")).toBeVisible();
     expect(screen.getByText("詳細設定")).toBeVisible();
     fireEvent.click(screen.getByRole("radio", { name: /Mann–Whitney/ }));
-    expect(screen.getByText(/推奨法と異なる方法/)).toBeVisible();
+    expect(screen.getByText(/推奨法を上書き/)).toBeVisible();
     fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
     await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
@@ -500,6 +506,7 @@ describe("ExperimentGraphWorkbench", () => {
     fireEvent.click(screen.getByRole("radio", { name: "事前に決めた条件ペアだけを比較" }));
     expect(screen.getByRole("button", { name: "選択した解析を実行" })).toBeDisabled();
     fireEvent.click(screen.getByRole("checkbox", { name: "Control vs Treatment B" }));
+    acceptRecommendedMethod();
     fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
     expect(screen.getByRole("button", { name: "選択した解析を実行" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
@@ -556,6 +563,7 @@ describe("ExperimentGraphWorkbench", () => {
 
     selectInspectorTarget("statistics");
     fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
+    acceptRecommendedMethod();
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
     await screen.findByRole("group", { name: "統計解析結果" });
 
@@ -600,6 +608,7 @@ describe("ExperimentGraphWorkbench", () => {
     );
     selectInspectorTarget("statistics");
     fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
+    acceptRecommendedMethod();
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
     await screen.findByRole("group", { name: "統計解析結果" });
 
@@ -1194,6 +1203,7 @@ describe("ExperimentGraphWorkbench", () => {
     selectInspectorTarget("statistics");
     expect(screen.getByText("対応のあるt検定を推奨")).toBeVisible();
     fireEvent.click(screen.getByRole("checkbox", { name: /同じ実験単位の2条件/ }));
+    acceptRecommendedMethod();
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
     await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
     expect(runner.mock.calls[0][0]).toMatchObject({ templateId: "D02", method: "paired_t" });
@@ -1267,6 +1277,7 @@ describe("ExperimentGraphWorkbench", () => {
     expect(workbench.querySelector('[data-graph-value="70"]')).toBeInTheDocument();
     expect(within(workbench).getByText("Welchの2標本t検定を推奨")).toBeVisible();
     fireEvent.click(within(workbench).getByRole("checkbox", { name: /各条件は別々のdish/ }));
+    acceptRecommendedMethod();
     fireEvent.click(within(workbench).getByRole("button", { name: "選択した解析を実行" }));
     await within(workbench).findByRole("group", { name: "統計解析結果" });
 
@@ -1326,6 +1337,7 @@ describe("ExperimentGraphWorkbench", () => {
 
     selectInspectorTarget("statistics");
     fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
+    acceptRecommendedMethod();
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
     await screen.findByRole("group", { name: "統計解析結果" });
     fireEvent.change(screen.getByRole("combobox", { name: "統計注釈の表示" }), {

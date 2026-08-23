@@ -35,6 +35,9 @@ import { GraphSpecSchema } from "@lsaa/graph-spec";
 import {
   experimentCellKey,
   normalizeWithinExperiment,
+  orderedAxisSemantic,
+  orderedAxisTitle,
+  orderedAxisUnit,
   wbCorrectedBandValue,
   type ExperimentCellMap,
   type ExperimentSetDraft,
@@ -240,6 +243,9 @@ export function createExperimentWorkspaceDesign(
           ]
         : [{ questionId: "workspace.analysis.intent", answer: "group_comparison" }]),
       { questionId: "workspace.time.sampling", answer: draft.time.sampling },
+      { questionId: "workspace.ordered_axis.semantic", answer: orderedAxisSemantic(draft.time) },
+      { questionId: "workspace.ordered_axis.title", answer: orderedAxisTitle(draft.time) },
+      { questionId: "workspace.ordered_axis.unit", answer: orderedAxisUnit(draft.time) },
       {
         questionId: "workspace.condition.assignment",
         answer: draft.conditionAssignment.kind,
@@ -1271,6 +1277,7 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
               request: analysis.request,
               result: analysis.result,
               recommendedMethod: analysis.recommendation.recommendedMethod,
+              recommendation: analysis.recommendation,
             },
           }
         : { analysis: null }),

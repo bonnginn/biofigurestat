@@ -577,6 +577,7 @@ describe("Japanese Methods generation", () => {
       reasonCode: "balanced_condition_by_time_repeated_design",
       explanation: "Balanced repeated-axis design",
       statisticalNDefinition: "Stable biological units",
+      decision: { kind: "accepted", selectedMethod: "mixed_anova" },
     };
     const d06Result: AnalysisEngineResult = {
       ...result,
@@ -593,6 +594,7 @@ describe("Japanese Methods generation", () => {
         effectSizeName: "partial_eta_squared",
         effectSize: 0.3,
       })),
+      diagnostics: [{ code: "sphericity_not_estimated", message: "Sphericity was not estimated." }],
     };
     const text = generateMethodsText({
       design,
@@ -600,6 +602,7 @@ describe("Japanese Methods generation", () => {
       request: d06Request,
       result: d06Result,
       repeatedAxis: { semantic: "numeric_covariate", title: "Radius", unit: "µm" },
+      graphErrorBar: "sd",
     });
 
     expect(text).toContain("条件×Radiusの反復測定");
@@ -609,6 +612,10 @@ describe("Japanese Methods generation", () => {
     expect(text).toContain("Radius（実験単位内）");
     expect(text).not.toContain("条件 × 時間");
     expect(text).not.toContain("条件×時間");
+    expect(text).toContain("推奨法を明示的に採用");
+    expect(text).toContain("平均±SD（標本標準偏差）");
+    expect(text).toContain("sphericity_not_estimated");
+    expect(text).toContain("球面性補正を必要とする場合");
   });
 
   it("describes D07 as an independent-cell condition-by-axis analysis", () => {

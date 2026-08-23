@@ -1307,6 +1307,12 @@ describe("experiment workspace project adapter", () => {
     const draft = {
       ...longitudinal.draft,
       conditionAssignment: { kind: "independent" as const, unitLabel: "sample" },
+      time: {
+        ...longitudinal.draft.time,
+        axisSemantic: "numeric_covariate" as const,
+        axisTitle: "Radius",
+        axisUnit: "µm",
+      },
     };
     const assessment = assessDraftGraphAnalysis({
       draft,
@@ -1314,6 +1320,7 @@ describe("experiment workspace project adapter", () => {
       readoutId: draft.readouts[0].id,
       conditionIds: draft.conditions.map(({ id }) => id),
       timeAnalysis: { kind: "full_time_course" },
+      withinFactor: { role: "numeric_covariate", title: "Radius", unit: "µm" },
     });
     if (!assessment.request || assessment.request.protocolVersion !== "0.6.0")
       throw new Error("Balanced longitudinal fixture should produce D06");
@@ -1375,6 +1382,11 @@ describe("experiment workspace project adapter", () => {
       analysisMetric: { kind: "full_time_course" },
       axes: { xSemantic: "numeric_covariate", xTitle: "Radius", xUnit: "µm" },
     });
+    expect(rehydrateExperimentWorkspace(state)?.draft.time).toMatchObject({
+      axisSemantic: "numeric_covariate",
+      axisTitle: "Radius",
+      axisUnit: "µm",
+    });
   });
 
   it("D07の独立セルidentityと推奨provenanceを保存する", () => {
@@ -1403,6 +1415,7 @@ describe("experiment workspace project adapter", () => {
       explanation: assessment.reason,
       statisticalNDefinition: "Independent experimental units in each condition-by-axis cell",
       multiplicityMethod: null,
+      decision: { kind: "accepted" as const, selectedMethod: "two_way_anova" as const },
     };
     const graph: WorkspaceGraphState = {
       id: "graph.d07",
@@ -1454,6 +1467,9 @@ describe("experiment workspace project adapter", () => {
         ),
     ).toBe(true);
     expect(state.analysisRuns[0]?.recommendation).toEqual(recommendation);
+    expect(rehydrateExperimentWorkspace(state)?.graphs[0]?.analysis?.recommendation).toEqual(
+      recommendation,
+    );
   });
 
   it("endpoint由来のpaired requestとstable-unit lineageを保存後に再構築する", () => {

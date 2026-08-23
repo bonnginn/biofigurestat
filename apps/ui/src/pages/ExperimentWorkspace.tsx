@@ -11,6 +11,9 @@ import {
   createExperimentSession,
   experimentCellKey,
   normalizeWithinExperiment,
+  orderedAxisSemantic,
+  orderedAxisTitle,
+  orderedAxisUnit,
   parseNumericPaste,
   percentage,
   wbRatio,
@@ -77,7 +80,7 @@ type CellDescriptor = {
   conditionId: string;
   conditionLabel: string;
   timePoint: TimePointDraft | null;
-  timeUnit: ExperimentSetDraft["time"]["unit"];
+  timeUnit: string;
   readout: ReadoutDraft;
 };
 
@@ -182,7 +185,7 @@ function findCellDescriptor(draft: ExperimentSetDraft, key: string): CellDescrip
               conditionId: condition.id,
               conditionLabel: condition.label,
               timePoint,
-              timeUnit: draft.time.unit,
+              timeUnit: orderedAxisUnit(draft.time),
               readout,
             };
           }
@@ -249,10 +252,7 @@ function formatNumber(value: number | null): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
-function rowTimeQualifier(
-  row: Pick<TableRow, "timePoint">,
-  unit: ExperimentSetDraft["time"]["unit"],
-): string {
+function rowTimeQualifier(row: Pick<TableRow, "timePoint">, unit: string): string {
   return row.timePoint ? `（${timePointLabel(row.timePoint, unit)}）` : "";
 }
 
@@ -337,7 +337,9 @@ function OverviewPanel({ draft, cells }: { draft: ExperimentSetDraft; cells: Exp
           <dt>時間</dt>
           <dd>
             {draft.time.points.length > 0
-              ? draft.time.points.map((point) => timePointLabel(point, draft.time.unit)).join("、")
+              ? draft.time.points
+                  .map((point) => timePointLabel(point, orderedAxisUnit(draft.time)))
+                  .join("、")
               : "時間点なし"}
           </dd>
         </div>
@@ -707,11 +709,13 @@ function ProportionTable({
             return (
               <tr key={row.key}>
                 <ConditionCells draft={draft} row={row} />
-                <td>{row.timePoint ? timePointLabel(row.timePoint, draft.time.unit) : "—"}</td>
+                <td>
+                  {row.timePoint ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time)) : "—"}
+                </td>
                 <td>
                   <input
                     className="experiment-workspace-number-input"
-                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, draft.time.unit)}の陽性数`}
+                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の陽性数`}
                     type="number"
                     disabled={notPlanned}
                     min="0"
@@ -743,7 +747,7 @@ function ProportionTable({
                 <td>
                   <input
                     className="experiment-workspace-number-input"
-                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, draft.time.unit)}の対象数`}
+                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の対象数`}
                     type="number"
                     disabled={notPlanned}
                     min="0"
@@ -775,13 +779,13 @@ function ProportionTable({
                 <td
                   className="experiment-workspace-derived-cell"
                   title="陽性数 ÷ 対象数 × 100（自動計算・編集不可）"
-                  aria-label={`${row.conditionLabel}${rowTimeQualifier(row, draft.time.unit)}の計算された割合`}
+                  aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の計算された割合`}
                 >
                   <span>{notPlanned ? "予定なし" : formatNumber(percentage(proportionCell))}</span>
                   <button
                     className={`experiment-workspace-availability-button ${notPlanned ? "is-active" : ""}`}
                     type="button"
-                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, draft.time.unit)}を${notPlanned ? "入力対象に戻す" : "測定予定なしにする"}`}
+                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}を${notPlanned ? "入力対象に戻す" : "測定予定なしにする"}`}
                     onClick={() => onToggleNotPlanned(key)}
                   >
                     {notPlanned ? "戻す" : "予定なし"}
@@ -863,13 +867,15 @@ function NestedContinuousTable({
             return (
               <tr key={row.key}>
                 <ConditionCells draft={draft} row={row} />
-                <td>{row.timePoint ? timePointLabel(row.timePoint, draft.time.unit) : "—"}</td>
+                <td>
+                  {row.timePoint ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time)) : "—"}
+                </td>
                 <td>
                   <button
                     className="experiment-workspace-raw-button"
                     type="button"
                     disabled={notPlanned}
-                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, draft.time.unit)}の生データを開く`}
+                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の生データを開く`}
                     onClick={() => onSelect(key)}
                   >
                     {notPlanned
@@ -881,7 +887,7 @@ function NestedContinuousTable({
                   <button
                     className={`experiment-workspace-availability-button ${notPlanned ? "is-active" : ""}`}
                     type="button"
-                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, draft.time.unit)}を${notPlanned ? "入力対象に戻す" : "測定予定なしにする"}`}
+                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}を${notPlanned ? "入力対象に戻す" : "測定予定なしにする"}`}
                     onClick={() => onToggleNotPlanned(key)}
                   >
                     {notPlanned ? "戻す" : "予定なし"}
@@ -1082,11 +1088,13 @@ function CategoricalCountsTable({
             return (
               <tr key={row.key}>
                 <ConditionCells draft={draft} row={row} />
-                <td>{row.timePoint ? timePointLabel(row.timePoint, draft.time.unit) : "—"}</td>
+                <td>
+                  {row.timePoint ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time)) : "—"}
+                </td>
                 {categories.map((category, columnIndex) => (
                   <td key={category.id}>
                     <input
-                      aria-label={`${row.conditionLabel}${rowTimeQualifier(row, draft.time.unit)}の${category.label}数`}
+                      aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の${category.label}数`}
                       className="experiment-workspace-number-input"
                       data-grid-row={rowIndex}
                       data-grid-column={columnIndex}
@@ -1318,11 +1326,13 @@ function WbRatioTable({
             return (
               <tr key={row.key}>
                 <ConditionCells draft={draft} row={row} />
-                <td>{row.timePoint ? timePointLabel(row.timePoint, draft.time.unit) : "—"}</td>
+                <td>
+                  {row.timePoint ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time)) : "—"}
+                </td>
                 {editableFields.map((field, columnIndex) => (
                   <td key={field}>
                     <input
-                      aria-label={`${row.conditionLabel}${rowTimeQualifier(row, draft.time.unit)}の${fieldLabel(field)}`}
+                      aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の${fieldLabel(field)}`}
                       className="experiment-workspace-number-input"
                       data-grid-column={columnIndex}
                       data-grid-row={rowIndex}
@@ -2154,19 +2164,19 @@ export function ExperimentWorkspace({
               literatureLoad?.compatible && literatureLoad.xAxis
                 ? literatureLoad.xAxis.semantic
                 : draft.time.points.length > 0
-                  ? "time"
+                  ? orderedAxisSemantic(draft.time)
                   : "categorical",
             xTitle:
               literatureLoad?.compatible && literatureLoad.xAxis
                 ? literatureLoad.xAxis.title
                 : draft.time.points.length > 0
-                  ? "Time"
+                  ? orderedAxisTitle(draft.time)
                   : "",
             xUnit:
               literatureLoad?.compatible && literatureLoad.xAxis
                 ? literatureLoad.xAxis.unit
                 : draft.time.points.length > 0
-                  ? draft.time.unit
+                  ? orderedAxisUnit(draft.time)
                   : "",
             yTitle:
               draft.analysisIntent.kind === "correlation"

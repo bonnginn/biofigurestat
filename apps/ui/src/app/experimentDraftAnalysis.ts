@@ -38,6 +38,8 @@ export type DraftAnalysisAssessment = Readonly<{
   contrastIntent?: ContrastIntent | null;
   commonAlternative: string | null;
   nByCondition: readonly { conditionId: string; label: string; n: number }[];
+  nDisplay?: string;
+  statisticalNDefinition?: string;
   missingCount: number;
   notPlannedCount: number;
   request: AnalysisEngineRequest | null;
@@ -359,6 +361,8 @@ export function assessDraftGraphAnalysis(input: {
         recommendedMethod: "two_way_anova",
         commonAlternative: null,
         nByCondition,
+        nDisplay: `n=${cellCounts[0]} / 条件×${withinFactor.title}セル、独立した実験単位は全${observations.length}個`,
+        statisticalNDefinition: `各条件×${withinFactor.title}セルで独立した実験単位 n=${cellCounts[0]}、全${observations.length}実験単位`,
         missingCount,
         notPlannedCount,
         request,

@@ -93,6 +93,13 @@ export function GraphStatisticsPanel({
   const [running, setRunning] = useState(false);
   const [staleNotice, setStaleNotice] = useState<string | null>(null);
   const [methodsCopyStatus, setMethodsCopyStatus] = useState<string | null>(null);
+  const [recommendationDecision, setRecommendationDecision] = useState<NonNullable<
+    AnalysisRecommendation["decision"]
+  > | null>(initialAnalysis?.recommendation?.decision ?? null);
+  const recommendationDecisionRef = useRef(recommendationDecision);
+  useEffect(() => {
+    recommendationDecisionRef.current = recommendationDecision;
+  }, [recommendationDecision]);
   const matchedAnalysis =
     assessment.method === "paired_t" ||
     assessment.method === "wilcoxon_signed_rank" ||
@@ -141,10 +148,13 @@ export function GraphStatisticsPanel({
               .map(({ method }) => method) ?? [],
           reasonCode: `draft_${request.templateId.toLowerCase()}_design_assessment`,
           explanation: assessment.reason,
-          statisticalNDefinition: assessment.nByCondition
-            .map(({ label, n }) => `${label} n=${n}`)
-            .join(", "),
+          statisticalNDefinition:
+            assessment.statisticalNDefinition ??
+            assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join(", "),
           multiplicityMethod: request.options.multiplicityMethod,
+          ...(recommendationDecisionRef.current
+            ? { decision: recommendationDecisionRef.current }
+            : {}),
         };
         onAnalysisChange?.(
           nextResult.status === "ok"
@@ -167,6 +177,9 @@ export function GraphStatisticsPanel({
             recommendationDiffers: canonicalRecommendation.recommendedMethod !== request.method,
             recommendationReasonCode: canonicalRecommendation.reasonCode,
             recommendationExplanation: canonicalRecommendation.explanation,
+            recommendationDecision: canonicalRecommendation.decision?.kind ?? null,
+            recommendationSelectedMethod:
+              canonicalRecommendation.decision?.selectedMethod ?? request.method,
             contrast:
               request.protocolVersion === "0.2.0"
                 ? request.contrastIntent === "planned_comparisons"
@@ -231,7 +244,13 @@ export function GraphStatisticsPanel({
   }, [analysisContextKey, assessment.request, executeRequest, onAnalysisChange]);
 
   const run = async () => {
-    if (!assessment.request || !independenceConfirmed || plannedComparisonsMissing) return;
+    if (
+      !assessment.request ||
+      !independenceConfirmed ||
+      plannedComparisonsMissing ||
+      (assessment.recommendedMethod && !recommendationDecision)
+    )
+      return;
     await executeRequest(assessment.request, "manual");
   };
 
@@ -343,9 +362,21 @@ export function GraphStatisticsPanel({
               <select
                 aria-label="相関の方法"
                 value={correlationMethod ?? assessment.method ?? "pearson"}
-                onChange={(event) =>
-                  onCorrelationMethodChange?.(event.currentTarget.value as "pearson" | "spearman")
-                }
+                onChange={(event) => {
+                  const method = event.currentTarget.value as "pearson" | "spearman";
+                  onCorrelationMethodChange?.(method);
+                  const kind = method === assessment.recommendedMethod ? "accepted" : "overridden";
+                  setRecommendationDecision({ kind, selectedMethod: method });
+                  recordBenchmarkEvent(
+                    "recommendation_decision_recorded",
+                    {
+                      decision: kind,
+                      recommendedMethod: assessment.recommendedMethod ?? null,
+                      selectedMethod: method,
+                    },
+                    "analysis_only",
+                  );
+                }}
               >
                 <option value="pearson">Pearson（直線的な関係）</option>
                 <option value="spearman">Spearman（順位・単調な関係）</option>
@@ -377,7 +408,26 @@ export function GraphStatisticsPanel({
                           value={choice.method}
                           disabled={!choice.enabled}
                           checked={(selectedMethod ?? assessment.method) === choice.method}
-                          onChange={() => onSelectedMethodChange?.(choice.method)}
+                          onChange={() => {
+                            onSelectedMethodChange?.(choice.method);
+                            const kind =
+                              choice.method === assessment.recommendedMethod
+                                ? "accepted"
+                                : "overridden";
+                            setRecommendationDecision({
+                              kind,
+                              selectedMethod: choice.method,
+                            });
+                            recordBenchmarkEvent(
+                              "recommendation_decision_recorded",
+                              {
+                                decision: kind,
+                                recommendedMethod: assessment.recommendedMethod ?? null,
+                                selectedMethod: choice.method,
+                              },
+                              "analysis_only",
+                            );
+                          }}
                         />
                         <span>
                           <strong>{choice.label}</strong>
@@ -394,11 +444,40 @@ export function GraphStatisticsPanel({
             </div>
           ) : null}
           {assessment.recommendedMethod ? (
-            <p className="experiment-graph-help" data-recommendation-decision>
-              {(selectedMethod ?? assessment.method) === assessment.recommendedMethod
-                ? `推奨法を採用しています：${assessment.recommendedMethod}。`
-                : `推奨法と異なる方法を選択しています：${assessment.recommendedMethod} を上書きし、${selectedMethod ?? assessment.method}を選択。理由と選択は解析履歴に保存されます。`}
-            </p>
+            <div className="experiment-graph-help" data-recommendation-decision>
+              <button
+                type="button"
+                onClick={() => {
+                  if ((selectedMethod ?? assessment.method) !== assessment.recommendedMethod) {
+                    onSelectedMethodChange?.(
+                      assessment.recommendedMethod as AnalysisRecommendation["recommendedMethod"],
+                    );
+                  }
+                  setRecommendationDecision({
+                    kind: "accepted",
+                    selectedMethod:
+                      assessment.recommendedMethod as AnalysisRecommendation["recommendedMethod"],
+                  });
+                  recordBenchmarkEvent(
+                    "recommendation_decision_recorded",
+                    {
+                      decision: "accepted",
+                      recommendedMethod: assessment.recommendedMethod ?? null,
+                    },
+                    "analysis_only",
+                  );
+                }}
+              >
+                推奨法を使う
+              </button>
+              <p>
+                {recommendationDecision
+                  ? recommendationDecision.kind === "accepted"
+                    ? `推奨法を明示的に採用しました：${recommendationDecision.selectedMethod}。`
+                    : `推奨法を上書きし、${recommendationDecision.selectedMethod}を選択しました。`
+                  : "解析前に、推奨法を使うか別の方法へ上書きするかを明示してください。"}
+              </p>
+            </div>
           ) : null}
           <label className="experiment-graph-confirmation">
             <input
@@ -424,7 +503,12 @@ export function GraphStatisticsPanel({
           <button
             className="experiment-graph-run-analysis"
             type="button"
-            disabled={!independenceConfirmed || plannedComparisonsMissing || running}
+            disabled={
+              !independenceConfirmed ||
+              plannedComparisonsMissing ||
+              running ||
+              Boolean(assessment.recommendedMethod && !recommendationDecision)
+            }
             onClick={run}
           >
             {running ? "ローカルで解析中…" : "選択した解析を実行"}
@@ -448,7 +532,8 @@ export function GraphStatisticsPanel({
           <strong>解析完了（ローカル）</strong>
           <p>
             解析に用いた実験単位：
-            {assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join("、")}
+            {assessment.nDisplay ??
+              assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join("、")}
           </p>
           {result.estimates.length > 0 ? (
             <dl>

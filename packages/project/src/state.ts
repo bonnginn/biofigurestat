@@ -101,6 +101,9 @@ export const ExperimentWorkspaceStateSchema = z
       sampling: z.enum(["none", "cross_sectional", "longitudinal"]),
       unit: z.enum(["sec", "min", "h", "day"]),
       points: z.array(z.object({ id: EntityIdSchema, value: z.number().finite() })),
+      axisSemantic: z.enum(["time", "numeric_covariate"]).optional(),
+      axisTitle: z.string().min(1).optional(),
+      axisUnit: z.string().optional(),
     }),
     experimentSessions: z
       .array(

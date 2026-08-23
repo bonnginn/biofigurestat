@@ -3,6 +3,7 @@ import {
   experimentCellKey,
   percentage,
   timePointLabel,
+  orderedAxisUnit,
   wbRatio,
   type ExperimentCellMap,
   type ExperimentSetDraft,
@@ -135,7 +136,7 @@ function previewGroups(
           }
         }
       });
-      const time = timePoint ? timePointLabel(timePoint, draft.time.unit) : "";
+      const time = timePoint ? timePointLabel(timePoint, orderedAxisUnit(draft.time)) : "";
       return {
         key: `${condition.id}:${timePoint?.id ?? "none"}`,
         conditionId: condition.id,

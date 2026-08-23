@@ -14,6 +14,9 @@ import {
   cellIsNotPlanned,
   experimentCellKey,
   normalizeWithinExperiment,
+  orderedAxisSemantic,
+  orderedAxisTitle,
+  orderedAxisUnit,
   percentage,
   wbRatio,
   type ExperimentCellMap,
@@ -2022,9 +2025,9 @@ export function ExperimentGraphWorkbench({
   const [graphType, setGraphType] = useState<GraphType>(initialState?.graphType ?? "dot");
   const [axes, setAxes] = useState<AxisSettings>(
     initialState?.axes ?? {
-      xSemantic: draft.time.points.length > 0 ? "time" : "categorical",
-      xTitle: draft.time.points.length > 0 ? "Time" : "",
-      xUnit: draft.time.points.length > 0 ? draft.time.unit : "",
+      xSemantic: draft.time.points.length > 0 ? orderedAxisSemantic(draft.time) : "categorical",
+      xTitle: draft.time.points.length > 0 ? orderedAxisTitle(draft.time) : "",
+      xUnit: draft.time.points.length > 0 ? orderedAxisUnit(draft.time) : "",
       yTitle: defaultGraphYTitle(draft.readouts[0]),
       yRangeMode: "auto",
       yMin: null,
@@ -2065,6 +2068,7 @@ export function ExperimentGraphWorkbench({
       request: analysis.request,
       result: analysis.result,
       graphSpec: null,
+      graphErrorBar: layers.errorBar ? appearance.errorBar : "none",
       outcomeId: selectedReadoutId,
       repeatedAxis: {
         semantic: axes.xSemantic,
@@ -2080,7 +2084,17 @@ export function ExperimentGraphWorkbench({
         ? `。baseline=${timeAnalysis.baselineTime ?? "最初の時点"} ${draft.time.unit}`
         : "";
     return `${base}\n時系列の派生値：${timeMetricLabel(timeAnalysis)}。解析window=${window}${baseline}。raw時系列と変換設定はプロジェクトに保持。`;
-  }, [analysis, axes.xSemantic, axes.xTitle, axes.xUnit, draft, selectedReadoutId, timeAnalysis]);
+  }, [
+    analysis,
+    appearance.errorBar,
+    axes.xSemantic,
+    axes.xTitle,
+    axes.xUnit,
+    draft,
+    layers.errorBar,
+    selectedReadoutId,
+    timeAnalysis,
+  ]);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const onStateChangeRef = useRef(onStateChange);
   const graphStateSnapshot = useMemo<Omit<WorkspaceGraphState, "id" | "displayName">>(

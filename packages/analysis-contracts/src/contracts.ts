@@ -43,6 +43,13 @@ export const AnalysisRecommendationSchema = z.object({
   explanation: z.string().min(1),
   statisticalNDefinition: z.string().min(1),
   multiplicityMethod: z.string().min(1).nullable().optional(),
+  decision: z
+    .object({
+      kind: z.enum(["accepted", "overridden"]),
+      selectedMethod: StatisticalMethodSchema,
+      overrideReason: z.string().min(1).optional(),
+    })
+    .optional(),
 });
 
 export const EngineObservationSchema = z.object({

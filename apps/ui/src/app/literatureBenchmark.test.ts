@@ -146,10 +146,28 @@ describe("literature benchmark experimenter boundary", () => {
       ),
     };
     const draft = compatibleDraft(2);
+    const timeCoercion = mapLiteratureMeasurements(radiusSource, {
+      ...draft,
+      time: {
+        sampling: "cross_sectional",
+        unit: "h",
+        points: [
+          { id: "time.1", value: 10 },
+          { id: "time.2", value: 20 },
+        ],
+      },
+    });
+    expect(timeCoercion.compatible).toBe(false);
+    expect(timeCoercion.message).toContain("時間以外の数値軸");
+    expect(timeCoercion.message).toContain("時間として入力しません");
+
     const result = mapLiteratureMeasurements(radiusSource, {
       ...draft,
       time: {
         sampling: "cross_sectional",
+        axisSemantic: "numeric_covariate",
+        axisTitle: "Radius",
+        axisUnit: "µm",
         unit: "h",
         points: [
           { id: "time.1", value: 10 },

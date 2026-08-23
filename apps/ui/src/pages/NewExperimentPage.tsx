@@ -18,6 +18,9 @@ import {
   createExperimentSetDraft,
   EXPERIMENT_CONTEXT_OPTIONS,
   expectedAnalysisLabel,
+  orderedAxisSemantic,
+  orderedAxisTitle,
+  orderedAxisUnit,
   withActiveConditions,
 } from "../app/experimentDraft";
 import type { AppRoute } from "../app/routes";
@@ -80,7 +83,7 @@ const TIME_UNITS: ReadonlyArray<{ value: TimeUnit; label: string }> = [
   { value: "day", label: "日" },
 ];
 
-const STEP_LABELS = ["測定項目", "条件", "時間", "実験回", "最終確認"] as const;
+const STEP_LABELS = ["測定項目", "条件", "測定軸", "実験回", "最終確認"] as const;
 
 export function flowStepsFor(draft: ExperimentSetDraft): readonly FlowStep[] {
   if (draft.entryRoute === "protein_wb" || draft.analysisIntent.kind === "correlation") {
@@ -1306,7 +1309,8 @@ function TimeStep({
       </section>
     );
   }
-  const hasTime = draft.time.sampling !== "none";
+  const hasOrderedAxis = draft.time.sampling !== "none";
+  const axisSemantic = orderedAxisSemantic(draft.time);
   const [pointsText, setPointsText] = useState(() =>
     draft.time.points.map((point) => point.value).join(", "),
   );
@@ -1317,10 +1321,10 @@ function TimeStep({
       ...current,
       time:
         sampling === "none"
-          ? { sampling, unit: current.time.unit, points: [] }
+          ? { ...current.time, sampling, points: [] }
           : {
+              ...current.time,
               sampling,
-              unit: current.time.unit,
               points: parseTimePoints(pointsText),
             },
     }));
@@ -1331,9 +1335,11 @@ function TimeStep({
       <div className="experiment-start__section-heading">
         <div>
           <p className="experiment-start__eyebrow">実験設計</p>
-          <h2 id="time-heading">時間の情報はありますか？</h2>
+          <h2 id="time-heading">順序のある測定軸はありますか？</h2>
         </div>
-        <span className="experiment-start__hint">時間がなければそのまま進めます</span>
+        <span className="experiment-start__hint">
+          時間や距離など、順序のある測定がなければそのまま進めます
+        </span>
       </div>
       <fieldset className="experiment-start__fieldset">
         <legend>条件ごとに測った単位は同じですか？</legend>
@@ -1397,54 +1403,146 @@ function TimeStep({
         ) : null}
       </fieldset>
       <fieldset className="experiment-start__fieldset">
-        <legend>時間点</legend>
+        <legend>測定軸</legend>
         <div className="experiment-start__radio-row">
           <label className="experiment-start__radio-card">
             <input
-              checked={!hasTime}
+              checked={!hasOrderedAxis}
               name="time-mode"
               type="radio"
               onChange={() => setTimeMode("none")}
             />
-            <span>時間点なし</span>
+            <span>順序のある測定軸なし</span>
           </label>
           <label className="experiment-start__radio-card">
             <input
-              checked={hasTime}
+              checked={hasOrderedAxis}
               name="time-mode"
               type="radio"
               onChange={() => setTimeMode("cross_sectional")}
             />
-            <span>順序のある時間点を追加する</span>
+            <span>順序のある測定軸を追加する</span>
           </label>
         </div>
       </fieldset>
-      {hasTime && (
+      {hasOrderedAxis && (
         <div className="experiment-start__time-details">
+          <fieldset className="experiment-start__fieldset">
+            <legend>この軸は何を表しますか？</legend>
+            <div className="experiment-start__radio-row">
+              <label className="experiment-start__radio-card">
+                <input
+                  checked={axisSemantic === "time"}
+                  name="ordered-axis-semantic"
+                  type="radio"
+                  onChange={() =>
+                    onUpdate((current) => ({
+                      ...current,
+                      time: {
+                        ...current.time,
+                        axisSemantic: "time",
+                        axisTitle: "Time",
+                        axisUnit: current.time.unit,
+                      },
+                    }))
+                  }
+                />
+                <span>
+                  <strong>時間</strong>
+                  <small>同じ単位または別の単位を、複数の時点で測定。</small>
+                </span>
+              </label>
+              <label className="experiment-start__radio-card">
+                <input
+                  checked={axisSemantic === "numeric_covariate"}
+                  name="ordered-axis-semantic"
+                  type="radio"
+                  onChange={() =>
+                    onUpdate((current) => ({
+                      ...current,
+                      time: {
+                        ...current.time,
+                        axisSemantic: "numeric_covariate",
+                        axisTitle:
+                          current.time.axisSemantic === "numeric_covariate"
+                            ? current.time.axisTitle || "Radius"
+                            : "Radius",
+                        axisUnit:
+                          current.time.axisSemantic === "numeric_covariate"
+                            ? current.time.axisUnit || "µm"
+                            : "µm",
+                      },
+                    }))
+                  }
+                />
+                <span>
+                  <strong>時間以外の数値軸</strong>
+                  <small>例：Sholl radius、距離、濃度。時間として扱いません。</small>
+                </span>
+              </label>
+            </div>
+          </fieldset>
           <div className="experiment-start__field-row">
-            <label className="experiment-start__field experiment-start__field--small">
-              <span>単位</span>
-              <select
-                aria-label="時間の単位"
-                value={draft.time.unit}
-                onChange={(event) =>
-                  onUpdate((current) => ({
-                    ...current,
-                    time: { ...current.time, unit: event.target.value as TimeUnit },
-                  }))
-                }
-              >
-                {TIME_UNITS.map((unit) => (
-                  <option key={unit.value} value={unit.value}>
-                    {unit.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {axisSemantic === "time" ? (
+              <label className="experiment-start__field experiment-start__field--small">
+                <span>時間の単位</span>
+                <select
+                  aria-label="時間の単位"
+                  value={draft.time.unit}
+                  onChange={(event) =>
+                    onUpdate((current) => ({
+                      ...current,
+                      time: {
+                        ...current.time,
+                        unit: event.target.value as TimeUnit,
+                        axisUnit: event.target.value,
+                      },
+                    }))
+                  }
+                >
+                  {TIME_UNITS.map((unit) => (
+                    <option key={unit.value} value={unit.value}>
+                      {unit.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <>
+                <label className="experiment-start__field">
+                  <span>軸の名前</span>
+                  <input
+                    aria-label="数値軸の名前"
+                    value={draft.time.axisTitle ?? ""}
+                    placeholder="例：Radius"
+                    onChange={(event) =>
+                      onUpdate((current) => ({
+                        ...current,
+                        time: { ...current.time, axisTitle: event.target.value },
+                      }))
+                    }
+                  />
+                </label>
+                <label className="experiment-start__field experiment-start__field--small">
+                  <span>軸の単位</span>
+                  <input
+                    aria-label="数値軸の単位"
+                    value={draft.time.axisUnit ?? ""}
+                    placeholder="例：µm"
+                    onChange={(event) =>
+                      onUpdate((current) => ({
+                        ...current,
+                        time: { ...current.time, axisUnit: event.target.value },
+                      }))
+                    }
+                  />
+                </label>
+              </>
+            )}
             <label className="experiment-start__field">
-              <span>時間点（カンマ区切り）</span>
+              <span>{axisSemantic === "time" ? "時間点" : "軸の水準"}（カンマ区切り）</span>
               <input
-                aria-label="時間点"
+                aria-label={axisSemantic === "time" ? "時間点" : "数値軸の水準"}
                 inputMode="decimal"
                 placeholder="例：0, 24, 48"
                 value={pointsText}
@@ -1461,11 +1559,13 @@ function TimeStep({
           </div>
           {invalidTokens.length > 0 ? (
             <p className="experiment-start__validation" role="status">
-              数値として読めない入力はまだ時間点に含めていません：{invalidTokens.join("、")}
+              数値として読めない入力はまだ測定軸に含めていません：{invalidTokens.join("、")}
             </p>
           ) : null}
           <fieldset className="experiment-start__fieldset">
-            <legend>各時間点で、どのように測りましたか？</legend>
+            <legend>
+              各{axisSemantic === "time" ? "時間点" : "軸水準"}で、どのように測りましたか？
+            </legend>
             <div className="experiment-start__radio-row">
               <label className="experiment-start__radio-card">
                 <input
@@ -1475,8 +1575,8 @@ function TimeStep({
                   onChange={() => setTimeMode("cross_sectional")}
                 />
                 <span>
-                  <strong>時間点ごとに別のサンプル</strong>
-                  <small>時間ごとに別の実験単位を測りました。</small>
+                  <strong>{axisSemantic === "time" ? "時間点" : "軸水準"}ごとに別のサンプル</strong>
+                  <small>各水準で別の実験単位を測りました。</small>
                 </span>
               </label>
               <label className="experiment-start__radio-card">
@@ -1487,8 +1587,10 @@ function TimeStep({
                   onChange={() => setTimeMode("longitudinal")}
                 />
                 <span>
-                  <strong>同じ単位を時間ごとに追った</strong>
-                  <small>同じ実験単位を複数の時間点で測りました。</small>
+                  <strong>
+                    同じ単位を各{axisSemantic === "time" ? "時間点" : "軸水準"}で測った
+                  </strong>
+                  <small>同じ実験単位のidentityを複数の水準で保持します。</small>
                 </span>
               </label>
             </div>
@@ -1599,9 +1701,9 @@ function DesignConfirmation({
         : "強度・サイズ・形態";
   const timeLabel =
     draft.time.sampling === "none"
-      ? "時間点なし"
-      : `${draft.time.points.length}点（${
-          draft.time.sampling === "longitudinal" ? "同じ単位を追う" : "時間点ごとに別のサンプル"
+      ? "順序のある測定軸なし"
+      : `${orderedAxisTitle(draft.time)} (${orderedAxisUnit(draft.time) || "単位なし"})・${draft.time.points.length}水準（${
+          draft.time.sampling === "longitudinal" ? "同じ単位を反復測定" : "水準ごとに別のサンプル"
         }）`;
 
   return (
@@ -1654,7 +1756,7 @@ function DesignConfirmation({
             </dd>
           </div>
           <div>
-            <dt>時間</dt>
+            <dt>順序のある測定軸</dt>
             <dd>{timeLabel}</dd>
           </div>
           <div>
@@ -1793,7 +1895,13 @@ export function NewExperimentPage({
     if (designStep === 1) {
       return activeConditions(draft).length >= 2;
     }
-    if (designStep === 2) return draft.time.sampling === "none" || draft.time.points.length > 0;
+    if (designStep === 2)
+      return (
+        draft.time.sampling === "none" ||
+        (draft.time.points.length > 0 &&
+          (orderedAxisSemantic(draft.time) === "time" ||
+            Boolean(draft.time.axisTitle?.trim() && draft.time.axisUnit?.trim())))
+      );
     return draft.experiments.length > 0 && draft.experiments.every((experiment) => experiment.date);
   };
 
@@ -1808,7 +1916,10 @@ export function NewExperimentPage({
           (shape !== "wb_ratio" || Boolean(referenceLabel?.trim())),
       ) &&
       activeConditions(draft).length >= 2 &&
-      (draft.time.sampling === "none" || draft.time.points.length > 0) &&
+      (draft.time.sampling === "none" ||
+        (draft.time.points.length > 0 &&
+          (orderedAxisSemantic(draft.time) === "time" ||
+            Boolean(draft.time.axisTitle?.trim() && draft.time.axisUnit?.trim())))) &&
       draft.experiments.length > 0 &&
       draft.experiments.every((experiment) => experiment.date)
     );
@@ -1846,6 +1957,9 @@ export function NewExperimentPage({
       context: workspaceDraft.context,
       entryRoute: workspaceDraft.entryRoute ?? "unspecified",
       timeSampling: workspaceDraft.time.sampling,
+      orderedAxisSemantic: orderedAxisSemantic(workspaceDraft.time),
+      orderedAxisTitle: orderedAxisTitle(workspaceDraft.time),
+      orderedAxisUnit: orderedAxisUnit(workspaceDraft.time),
       unitStructure: workspaceDraft.conditionAssignment.kind,
       unitLabel: workspaceDraft.conditionAssignment.unitLabel,
       readout: workspaceDraft.readouts.map(({ shape }) => shape).join(","),
