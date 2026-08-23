@@ -83,6 +83,8 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
             raise VerificationError(f"run.json {key} must be {expected!r}")
     if run.get("artifactCompleteness") != "complete":
         raise VerificationError("run.json must declare artifactCompleteness=complete")
+    if run.get("outcome") not in {None, "completed"}:
+        raise VerificationError("run.json benchmark outcome is not completed")
     if run.get("defaultGraphCaptured") is not True:
         raise VerificationError("run.json must confirm the default Graph capture")
     if run.get("supportStatus") not in SUPPORT_STATUSES:

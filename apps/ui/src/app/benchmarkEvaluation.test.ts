@@ -18,6 +18,7 @@ import {
   recordFinalGraphCapture,
   recordBenchmarkEvent,
   resetBenchmarkRun,
+  setBenchmarkOutcome,
   setBenchmarkSupportStatus,
   startBenchmarkRun,
   writeBenchmarkArtifacts,
@@ -61,6 +62,7 @@ describe("benchmark evaluation run store", () => {
       runId: "run_001",
     });
     expect(run.supportStatus).toBe("direct");
+    expect(run.outcome).toBe("in_progress");
     expect(run.defaultGraphCaptured).toBe(true);
     expect(run.events.map(({ sequence }) => sequence)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(run.events.map(({ type }) => type)).toEqual([
@@ -114,9 +116,22 @@ describe("benchmark evaluation run store", () => {
     const run = currentBenchmarkRun();
     expect(run.identity).toMatchObject({ track: "track_B", runId: "fresh_blind_JCB010_001" });
     expect(run.supportStatus).toBeNull();
+    expect(run.outcome).toBe("in_progress");
     expect(run.defaultGraphCapture).toBeNull();
     expect(run.finalGraphCapture).toBeNull();
     expect(run.events.map((event) => event.type)).toEqual(["benchmark_run_started"]);
+  });
+
+  it("records infrastructure outcomes without a scientific support classification", () => {
+    setBenchmarkSupportStatus("impossible");
+    setBenchmarkOutcome("infrastructure_failure");
+    const run = currentBenchmarkRun();
+    expect(run.outcome).toBe("infrastructure_failure");
+    expect(run.supportStatus).toBeNull();
+    expect(run.events.at(-1)).toMatchObject({
+      type: "benchmark_outcome_selected",
+      detail: { outcome: "infrastructure_failure" },
+    });
   });
 
   it("sends synthetic-only artifacts to the token-authenticated evaluation bridge", async () => {

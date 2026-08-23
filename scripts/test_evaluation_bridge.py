@@ -127,17 +127,29 @@ class EvaluationBridgeTests(unittest.TestCase):
         self.assertEqual(context.exception.code, 400)
 
     def test_contaminated_run_is_invalid_and_read_only(self) -> None:
-        with self.assertRaises(urllib.error.HTTPError) as context:
-            self.get("/api/evaluation/literature/case?caseId=JCB010&track=track_B&runId=pilot15_B_JCB010_001")
-        self.assertEqual(context.exception.code, 400)
-        with self.assertRaises(urllib.error.HTTPError) as write_context:
-            self.post(
-                "/api/evaluation/artifacts",
-                {"mode": "evaluation", "syntheticOnly": True,
-                 "benchmark": {"caseId": "JCB010", "track": "track_B", "runId": "pilot15_B_JCB010_001"},
-                 "artifacts": [{"name": "run.json", "content": "{}"}]},
-            )
-        self.assertEqual(write_context.exception.code, 400)
+        for run_id in ("pilot15_B_JCB010_001", "external_blind_B_JCB010_001"):
+            with self.subTest(run_id=run_id):
+                with self.assertRaises(urllib.error.HTTPError) as context:
+                    self.get(
+                        "/api/evaluation/literature/case"
+                        f"?caseId=JCB010&track=track_B&runId={run_id}"
+                    )
+                self.assertEqual(context.exception.code, 400)
+                with self.assertRaises(urllib.error.HTTPError) as write_context:
+                    self.post(
+                        "/api/evaluation/artifacts",
+                        {
+                            "mode": "evaluation",
+                            "syntheticOnly": True,
+                            "benchmark": {
+                                "caseId": "JCB010",
+                                "track": "track_B",
+                                "runId": run_id,
+                            },
+                            "artifacts": [{"name": "run.json", "content": "{}"}],
+                        },
+                    )
+                self.assertEqual(write_context.exception.code, 400)
 
     def test_literature_case_endpoint_rejects_invalid_identity(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as context:

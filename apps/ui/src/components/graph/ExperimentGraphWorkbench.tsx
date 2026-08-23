@@ -46,6 +46,7 @@ import {
   currentBenchmarkRun,
   recordFinalGraphCapture,
   recordBenchmarkEvent,
+  setBenchmarkOutcome,
   sha256Hex,
   useBenchmarkRun,
   writeBenchmarkArtifacts,
@@ -2601,6 +2602,7 @@ export function ExperimentGraphWorkbench({
         svgSha256,
         pngSha256,
       });
+      setBenchmarkOutcome("completed");
       recordBenchmarkEvent("benchmark_run_finalized", {
         selectedGraph: graphType,
         selectedStatistics: analysis.request.method,
@@ -2646,6 +2648,7 @@ export function ExperimentGraphWorkbench({
                 engineVersion: analysis.result.engine.version,
                 startedAt: finalRun.startedAt,
                 completedAt: new Date().toISOString(),
+                outcome: finalRun.outcome,
                 supportStatus: finalRun.supportStatus,
                 artifactCompleteness: "complete",
                 defaultGraphCaptured: finalRun.defaultGraphCaptured,

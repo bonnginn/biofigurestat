@@ -26,6 +26,7 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
             "track": "track_A",
             "runId": "run_001",
             "artifactCompleteness": "complete",
+            "outcome": "completed",
             "defaultGraphCaptured": True,
             "supportStatus": "direct",
             "appVersion": "0.1.0",
@@ -263,6 +264,16 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
             del run["sourceRevision"]
             run_path.write_text(json.dumps(run), encoding="utf-8")
             with self.assertRaisesRegex(VerificationError, "source revision"):
+                verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
+
+    def test_non_completed_benchmark_outcome_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.make_complete_run(Path(temporary))
+            run_path = path / "run.json"
+            run = json.loads(run_path.read_text())
+            run["outcome"] = "infrastructure_failure"
+            run_path.write_text(json.dumps(run), encoding="utf-8")
+            with self.assertRaisesRegex(VerificationError, "outcome is not completed"):
                 verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
 
     def test_unexpected_artifact_fails(self) -> None:

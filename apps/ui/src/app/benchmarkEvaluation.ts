@@ -5,6 +5,14 @@ import { evaluationMode, evaluationModeIsConfigured } from "./evaluationMode";
 export type BenchmarkSupportStatus =
   "direct" | "reasonable_workaround" | "scientifically_compromising" | "impossible";
 
+export type BenchmarkOutcome =
+  | "in_progress"
+  | "completed"
+  | "explicit_unsupported"
+  | "infrastructure_failure"
+  | "contaminated"
+  | "aborted_not_started";
+
 export type BenchmarkIdentity = Readonly<{
   benchmarkVersion: string;
   caseId: string;
@@ -35,6 +43,7 @@ export type BenchmarkGraphCapture = Readonly<{
 export type BenchmarkRunState = Readonly<{
   identity: BenchmarkIdentity | null;
   startedAt: string | null;
+  outcome: BenchmarkOutcome | null;
   supportStatus: BenchmarkSupportStatus | null;
   defaultGraphCaptured: boolean;
   defaultGraphCapture: BenchmarkGraphCapture | null;
@@ -45,6 +54,7 @@ export type BenchmarkRunState = Readonly<{
 const EMPTY: BenchmarkRunState = {
   identity: null,
   startedAt: null,
+  outcome: null,
   supportStatus: null,
   defaultGraphCaptured: false,
   defaultGraphCapture: null,
@@ -76,6 +86,7 @@ export function startBenchmarkRun(identity: BenchmarkIdentity): void {
   publish({
     identity,
     startedAt,
+    outcome: "in_progress",
     supportStatus: null,
     defaultGraphCaptured: false,
     defaultGraphCapture: null,
@@ -121,6 +132,18 @@ export function setBenchmarkSupportStatus(supportStatus: BenchmarkSupportStatus 
   if (!state.identity) return;
   publish({ ...state, supportStatus });
   recordBenchmarkEvent("support_status_selected", { supportStatus });
+}
+
+export function setBenchmarkOutcome(outcome: BenchmarkOutcome): void {
+  if (!state.identity) return;
+  const preservesScientificSupport =
+    outcome === "in_progress" || outcome === "completed" || outcome === "explicit_unsupported";
+  publish({
+    ...state,
+    outcome,
+    supportStatus: preservesScientificSupport ? state.supportStatus : null,
+  });
+  recordBenchmarkEvent("benchmark_outcome_selected", { outcome });
 }
 
 export function beginDefaultGraphCapture(capturedAt: string): boolean {

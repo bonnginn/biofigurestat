@@ -42,6 +42,15 @@
       "runId": "pilot15_B_SA047_001",
       "validity": "invalid",
       "reason": "track_b_information_leakage"
+    },
+    {
+      "caseId": "JCB010",
+      "track": "track_B",
+      "runId": "external_blind_B_JCB010_001",
+      "validity": "invalid",
+      "outcome": "infrastructure_failure",
+      "executionState": "not_started",
+      "reason": "blind_case_not_delivered_before_scientific_workflow"
     }
   ]
 }
