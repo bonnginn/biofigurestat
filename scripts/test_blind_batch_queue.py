@@ -18,6 +18,14 @@ ORIGIN = "http://127.0.0.1:1420"
 
 
 class BlindBatchQueueTests(unittest.TestCase):
+    def test_batch_uses_effective_runtime_benchmark_version(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            snapshot = prepare_batch(
+                "batch_effective_version", root / "queue.json", root / "packages", ("JCB010",)
+            )
+            self.assertEqual(snapshot["benchmarkVersion"], "LSA50_v1_1_runtime_hierarchy_2")
+
     def test_six_case_poc_order_is_exact_and_each_job_is_unique(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

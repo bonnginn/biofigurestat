@@ -15,6 +15,7 @@ from blind_benchmark_package import ROOT, SAFE_ID, create_package, load_package
 
 
 SCHEMA_VERSION = "1.0.0"
+RUNTIME_MANIFEST = ROOT / "benchmark/literature_v1_1/runtime/manifest.json"
 DEFAULT_CASES = ("JCB010", "NC033", "JCB023", "JCB024", "JCB015", "SA047")
 EVALUATED_STATUSES = {"completed", "explicit_unsupported"}
 FAILURE_STATUSES = {"infrastructure_failure", "contaminated", "aborted"}
@@ -236,9 +237,13 @@ def prepare_batch(batch_id: str, queue_path: Path, package_root: Path,
             "packageSha256": manifest["payloadSha256"],
             "status": "active" if position == 1 else "queued",
         })
+    runtime_manifest = json.loads(RUNTIME_MANIFEST.read_text(encoding="utf-8"))
+    benchmark_version = runtime_manifest.get("benchmarkVersion")
+    if not isinstance(benchmark_version, str) or not benchmark_version:
+        raise ValueError("Runtime benchmark version is unavailable")
     value = {
         "schemaVersion": SCHEMA_VERSION, "batchId": batch_id,
-        "benchmarkVersion": "LSA50_v1_1", "status": "running", "jobs": jobs,
+        "benchmarkVersion": benchmark_version, "status": "running", "jobs": jobs,
     }
     _atomic_json(queue_path.resolve(), value)
     return BlindBatchQueue(queue_path).snapshot()
