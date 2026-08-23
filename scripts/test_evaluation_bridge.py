@@ -209,6 +209,45 @@ class EvaluationBridgeTests(unittest.TestCase):
         self.assertEqual(target.relative_to(self.temporary.name).as_posix(), "case_001/track_A/run_001")
         self.assertEqual((target / "methods.txt").read_text(), "fixture methods")
 
+    def test_manual_track_a_explicit_unsupported_is_source_verified(self) -> None:
+        run_id = "fresh_A_JCB017_bridge_001"
+        source = self.get(
+            f"/api/evaluation/literature/case?caseId=JCB017&track=track_A&runId={run_id}"
+        )
+        source_sha = source["sourceViewSha256"]
+        events = [
+            {"sequence": 1, "occurredAt": "2026-08-23T00:00:00Z", "type": "benchmark_run_started", "effect": "non_rendering_ui", "detail": {}},
+            {"sequence": 2, "occurredAt": "2026-08-23T00:00:01Z", "type": "blind_case_delivered", "effect": "non_rendering_ui", "detail": {"caseId": "JCB017"}},
+            {"sequence": 3, "occurredAt": "2026-08-23T00:01:00Z", "type": "explicit_unsupported_finalized", "effect": "non_rendering_ui", "detail": {"caseId": "JCB017", "runId": run_id, "sourceViewSha256": source_sha}},
+            {"sequence": 4, "occurredAt": "2026-08-23T00:01:01Z", "type": "benchmark_metadata_only_outcome_recorded", "effect": "non_rendering_ui", "detail": {"outcome": "explicit_unsupported"}},
+        ]
+        run = {
+            "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2", "caseId": "JCB017",
+            "track": "track_A", "runId": run_id, "appVersion": "0.1.0",
+            "sourceRevision": "fixture", "productRevision": "fixture",
+            "benchmarkInfrastructureRevision": "fixture", "startedAt": events[0]["occurredAt"],
+            "completedAt": events[-1]["occurredAt"], "outcome": "explicit_unsupported",
+            "supportStatus": "impossible", "artifactCompleteness": "metadata_only_explicit_unsupported",
+            "trackASourceView": {"caseId": "JCB017", "runId": run_id, "sha256": source_sha},
+            "evidenceProvenance": {"caseId": "JCB017", "runId": run_id, "sourceViewSha256": source_sha},
+            "unsupportedEvidenceProvenanceVersion": "1.1.0", "scientificReason": "WB lineage cannot be loaded safely.",
+            "experimentalUnit": "independent WB replicate", "biologicalN": 4,
+            "attemptedRoutes": ["safe literature loader"],
+            "scientificCompromiseReason": "Manual reconstruction would lose lineage.",
+            "interactionCount": len(events),
+        }
+        result = self.post(
+            "/api/evaluation/artifacts",
+            {"mode": "evaluation", "syntheticOnly": True,
+             "benchmark": {key: run[key] for key in ("benchmarkVersion", "caseId", "track", "runId")},
+             "artifacts": [
+                 {"name": "run.json", "content": json.dumps(run)},
+                 {"name": "interaction_log.json", "content": json.dumps(events)},
+             ],
+             "requiredArtifacts": ["run.json", "interaction_log.json"]},
+        )
+        self.assertTrue(result["verified"])
+
     def test_artifact_path_traversal_is_rejected(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as context:
             self.post(
@@ -264,6 +303,14 @@ class EvaluationBridgeTests(unittest.TestCase):
 
 
 class EvaluationBoundaryTests(unittest.TestCase):
+    def test_track_a_view_has_a_deterministic_source_ownership_hash(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            first = load_literature_experimenter_view("JCB003", "track_A", "fresh_A_001", root)
+            second = load_literature_experimenter_view("JCB003", "track_A", "fresh_A_002", root)
+        self.assertRegex(first["sourceViewSha256"], r"^[0-9a-f]{64}$")
+        self.assertEqual(first["sourceViewSha256"], second["sourceViewSha256"])
+
     def test_direct_literature_views_do_not_leak_gold_to_track_b(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

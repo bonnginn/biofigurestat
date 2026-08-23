@@ -33,7 +33,8 @@ const NON_SCIENTIFIC_OUTCOMES: readonly BenchmarkOutcome[] = [
 type UnsupportedEvidenceOwner = Readonly<{
   caseId: string;
   runId: string;
-  packageSha256: string;
+  packageSha256?: string | null;
+  sourceViewSha256?: string | null;
 }>;
 
 type UnsupportedEvidenceDraft = Readonly<{
@@ -108,6 +109,7 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
           caseId: batch.current.caseId,
           runId: batch.current.runId,
           packageSha256: batch.current.packageSha256,
+          sourceViewSha256: null,
         };
         const terminalEvidence = batch.current.terminalEvidence;
         if (terminalEvidence) {
@@ -152,6 +154,17 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         if (cancelled) return;
         setLiteratureCase(loaded);
         setCaseDeliveryStatus("ready");
+        if (identity.track === "track_A" && loaded.sourceViewSha256) {
+          setUnsupportedEvidence((current) => ({
+            ...current,
+            owner: {
+              caseId: identity.caseId,
+              runId: identity.runId,
+              packageSha256: null,
+              sourceViewSha256: loaded.sourceViewSha256 ?? null,
+            },
+          }));
+        }
         recordBenchmarkEvent("blind_case_delivered", {
           caseId: loaded.caseId,
           syntheticRows: loaded.syntheticData.length,
@@ -176,16 +189,27 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
     const parsedBiologicalN = unsupportedEvidence.biologicalN.trim()
       ? Number(unsupportedEvidence.biologicalN)
       : null;
+    const ownerMatchesIdentity =
+      unsupportedEvidence.owner?.caseId === run.identity.caseId &&
+      unsupportedEvidence.owner.runId === run.identity.runId;
+    const hasValidSourceOwnership =
+      run.identity.track === "track_B"
+        ? Boolean(
+            blindBatch?.current &&
+            blindBatch.current.status === "active" &&
+            blindBatch.current.runId === run.identity.runId &&
+            unsupportedEvidence.owner?.packageSha256 === blindBatch.current.packageSha256,
+          )
+        : Boolean(
+            literatureCase?.sourceViewSha256 &&
+            unsupportedEvidence.owner?.sourceViewSha256 === literatureCase.sourceViewSha256,
+          );
     if (
       isExplicitUnsupported &&
       (caseDeliveryStatus !== "ready" ||
         !literatureCase ||
-        !blindBatch?.current ||
-        blindBatch.current.status !== "active" ||
-        blindBatch.current.runId !== run.identity.runId ||
-        unsupportedEvidence.owner?.caseId !== run.identity.caseId ||
-        unsupportedEvidence.owner.runId !== run.identity.runId ||
-        unsupportedEvidence.owner.packageSha256 !== blindBatch.current.packageSha256 ||
+        !ownerMatchesIdentity ||
+        !hasValidSourceOwnership ||
         !unsupportedEvidence.scientificReason.trim() ||
         !unsupportedEvidence.experimentalUnit.trim() ||
         !unsupportedEvidence.scientificCompromiseReason.trim() ||
@@ -202,6 +226,7 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
           caseId: unsupportedEvidence.owner?.caseId ?? null,
           runId: unsupportedEvidence.owner?.runId ?? null,
           packageSha256: unsupportedEvidence.owner?.packageSha256 ?? null,
+          sourceViewSha256: unsupportedEvidence.owner?.sourceViewSha256 ?? null,
           scientificReason: unsupportedEvidence.scientificReason.trim(),
           experimentalUnit: unsupportedEvidence.experimentalUnit.trim(),
           biologicalN: parsedBiologicalN,
@@ -214,7 +239,7 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
       });
       const completed = currentBenchmarkRun();
       const completedAt = new Date().toISOString();
-      await writeBenchmarkArtifacts(
+      const persisted = await writeBenchmarkArtifacts(
         [
           {
             name: "run.json",
@@ -235,13 +260,35 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
                   : "metadata_only",
                 ...(isExplicitUnsupported
                   ? {
-                      blindPackage: {
-                        caseId: completed.identity?.caseId,
-                        runId: completed.identity?.runId,
-                        sha256: blindBatch?.current?.packageSha256,
-                      },
-                      evidenceProvenance: unsupportedEvidence.owner,
-                      unsupportedEvidenceProvenanceVersion: "1.0.0",
+                      ...(completed.identity?.track === "track_B"
+                        ? {
+                            blindPackage: {
+                              caseId: completed.identity.caseId,
+                              runId: completed.identity.runId,
+                              sha256: unsupportedEvidence.owner?.packageSha256,
+                            },
+                          }
+                        : {
+                            trackASourceView: {
+                              caseId: completed.identity?.caseId,
+                              runId: completed.identity?.runId,
+                              sha256: unsupportedEvidence.owner?.sourceViewSha256,
+                            },
+                          }),
+                      evidenceProvenance:
+                        completed.identity?.track === "track_B"
+                          ? {
+                              caseId: unsupportedEvidence.owner?.caseId,
+                              runId: unsupportedEvidence.owner?.runId,
+                              packageSha256: unsupportedEvidence.owner?.packageSha256,
+                            }
+                          : {
+                              caseId: unsupportedEvidence.owner?.caseId,
+                              runId: unsupportedEvidence.owner?.runId,
+                              sourceViewSha256: unsupportedEvidence.owner?.sourceViewSha256,
+                            },
+                      unsupportedEvidenceProvenanceVersion:
+                        completed.identity?.track === "track_B" ? "1.0.0" : "1.1.0",
                       scientificReason: unsupportedEvidence.scientificReason.trim(),
                       experimentalUnit: unsupportedEvidence.experimentalUnit.trim(),
                       biologicalN: parsedBiologicalN,
@@ -268,8 +315,11 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         isExplicitUnsupported ? { requiredArtifacts: ["run.json", "interaction_log.json"] } : {},
       );
       if (isExplicitUnsupported) {
-        const persistedBatch = await fetchBlindBatchCurrent();
-        setBlindBatch(persistedBatch);
+        if (persisted.verified !== true) throw new Error("Terminal evidence was not verified");
+        if (blindBatch) {
+          const persistedBatch = await fetchBlindBatchCurrent();
+          setBlindBatch(persistedBatch);
+        }
         setSaveStatus("Explicit unsupportedを検証・永続化しました。");
       } else {
         setSaveStatus("対応状況と操作ログを保存しました。");
@@ -304,6 +354,7 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
             caseId: batch.current.caseId,
             runId: batch.current.runId,
             packageSha256: batch.current.packageSha256,
+            sourceViewSha256: null,
           }),
         );
         startBenchmarkRun(identity);
@@ -419,6 +470,7 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
           onClick={() => {
             if (run.identity) {
               resetBenchmarkRun();
+              onNavigateHome?.();
               setUnsupportedEvidence(
                 createFreshUnsupportedEvidence(
                   blindBatch?.current?.status === "active"
@@ -426,11 +478,13 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
                         caseId: blindBatch.current.caseId,
                         runId: blindBatch.current.runId,
                         packageSha256: blindBatch.current.packageSha256,
+                        sourceViewSha256: null,
                       }
                     : null,
                 ),
               );
             } else {
+              onNavigateHome?.();
               startBenchmarkRun({ benchmarkVersion, caseId, track, runId });
             }
           }}

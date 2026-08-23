@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import os
 import re
@@ -73,7 +74,7 @@ def load_literature_experimenter_view(
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict) or payload.get("caseId") != case_id:
         raise RuntimeError("Literature benchmark runtime identity mismatch")
-    return payload
+    return {**payload, "sourceViewSha256": hashlib.sha256(path.read_bytes()).hexdigest()}
 
 
 def load_excluded_runs(path: Path) -> set[tuple[str, str, str]]:
@@ -371,12 +372,13 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                     except json.JSONDecodeError:
                         pass
                 explicit_unsupported = recorded_run.get("outcome") == "explicit_unsupported"
-                if self.config.blind_batch_queue is not None and explicit_unsupported:
+                if explicit_unsupported:
                     if set(required_artifacts) != EXPLICIT_UNSUPPORTED_ARTIFACTS:
                         error = ValueError(
                             "Explicit unsupported requires its exact metadata-only artifact contract"
                         )
-                        self.config.blind_batch_queue.pause(identity, str(error))
+                        if self.config.blind_batch_queue is not None:
+                            self.config.blind_batch_queue.pause(identity, str(error))
                         raise error
                 try:
                     target, written, present = write_artifact_batch(
@@ -432,6 +434,22 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                         self.config.blind_batch_queue.pause(identity, str(error))
                         raise ValueError(
                             f"Explicit unsupported terminal verification failed: {error}"
+                        ) from error
+                elif explicit_unsupported and identity[1] == "track_A":
+                    try:
+                        source_path = (
+                            LITERATURE_RUNTIME / "cases" / identity[0] / "experimenter_track_a.json"
+                        )
+                        source_sha = hashlib.sha256(source_path.read_bytes()).hexdigest()
+                        verify_explicit_unsupported_run_directory(
+                            target, identity[0], identity[1], identity[2],
+                            source_view_sha256=source_sha,
+                            require_evidence_provenance=True,
+                        )
+                        verified = True
+                    except Exception as error:
+                        raise ValueError(
+                            f"Track A explicit unsupported terminal verification failed: {error}"
                         ) from error
                 elif self.config.blind_batch_queue is not None and set(required_artifacts) == REQUIRED_ARTIFACTS:
                     try:

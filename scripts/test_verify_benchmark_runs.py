@@ -6,7 +6,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from verify_benchmark_runs import REQUIRED_ARTIFACTS, VerificationError, verify_run_directory
+from verify_benchmark_runs import (
+    REQUIRED_ARTIFACTS,
+    VerificationError,
+    verify_explicit_unsupported_run_directory,
+    verify_run_directory,
+    verify_run_sequence,
+)
 
 
 class BenchmarkRunVerifierTests(unittest.TestCase):
@@ -238,8 +244,87 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
             events = json.loads(events_path.read_text())
             events[1]["type"] = "literature_benchmark_data_loaded"
             events[1]["detail"] = {"caseId": "JCB003", "mappedCells": 16}
+            events.insert(1, {"type": "blind_case_delivered", "detail": {"caseId": "JCB003"}})
+            for sequence, event in enumerate(events, start=1):
+                event["sequence"] = sequence
             events_path.write_text(json.dumps(events), encoding="utf-8")
+            run["interactionCount"] = len(events)
+            run_path.write_text(json.dumps(run), encoding="utf-8")
             verify_run_directory(literature_path, "JCB003", "track_A", "run_001")
+
+    def test_track_a_explicit_unsupported_uses_source_view_ownership(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "JCB017" / "track_A" / "fresh_A_JCB017_002"
+            path.mkdir(parents=True)
+            source_sha = "d" * 64
+            events = [
+                {"sequence": 1, "occurredAt": "2026-08-23T00:00:00Z", "type": "benchmark_run_started"},
+                {"sequence": 2, "occurredAt": "2026-08-23T00:00:01Z", "type": "blind_case_delivered"},
+                {"sequence": 3, "occurredAt": "2026-08-23T00:01:00Z", "type": "explicit_unsupported_finalized", "detail": {"caseId": "JCB017", "runId": "fresh_A_JCB017_002", "sourceViewSha256": source_sha}},
+                {"sequence": 4, "occurredAt": "2026-08-23T00:01:01Z", "type": "benchmark_metadata_only_outcome_recorded"},
+            ]
+            run = {
+                "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2", "caseId": "JCB017",
+                "track": "track_A", "runId": "fresh_A_JCB017_002", "appVersion": "0.1.0",
+                "sourceRevision": "fixture", "productRevision": "fixture",
+                "benchmarkInfrastructureRevision": "fixture", "startedAt": events[0]["occurredAt"],
+                "completedAt": events[-1]["occurredAt"], "outcome": "explicit_unsupported",
+                "supportStatus": "impossible", "artifactCompleteness": "metadata_only_explicit_unsupported",
+                "trackASourceView": {"caseId": "JCB017", "runId": "fresh_A_JCB017_002", "sha256": source_sha},
+                "evidenceProvenance": {"caseId": "JCB017", "runId": "fresh_A_JCB017_002", "sourceViewSha256": source_sha},
+                "unsupportedEvidenceProvenanceVersion": "1.1.0", "scientificReason": "WB lineage cannot be loaded safely.",
+                "experimentalUnit": "independent WB replicate", "biologicalN": 4,
+                "attemptedRoutes": ["safe literature loader"],
+                "scientificCompromiseReason": "Manual reconstruction would lose lineage.",
+                "interactionCount": len(events),
+            }
+            (path / "run.json").write_text(json.dumps(run), encoding="utf-8")
+            (path / "interaction_log.json").write_text(json.dumps(events), encoding="utf-8")
+            verify_explicit_unsupported_run_directory(
+                path, "JCB017", "track_A", "fresh_A_JCB017_002",
+                source_view_sha256=source_sha, require_evidence_provenance=True,
+            )
+            with self.assertRaisesRegex(VerificationError, "hash does not match"):
+                verify_explicit_unsupported_run_directory(
+                    path, "JCB017", "track_A", "fresh_A_JCB017_002",
+                    source_view_sha256="e" * 64, require_evidence_provenance=True,
+                )
+
+    def test_literature_default_capture_before_delivery_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = self.make_complete_run(root)
+            literature_path = root / "JCB003" / "track_A" / "run_001"
+            literature_path.parent.mkdir(parents=True)
+            path.rename(literature_path)
+            run_path = literature_path / "run.json"
+            run = json.loads(run_path.read_text())
+            run["caseId"] = "JCB003"
+            events_path = literature_path / "interaction_log.json"
+            events = json.loads(events_path.read_text())
+            events.insert(1, {"type": "default_graph_capture_started"})
+            events.insert(3, {"type": "blind_case_delivered", "detail": {"caseId": "JCB003"}})
+            events[2]["type"] = "literature_benchmark_data_loaded"
+            events[2]["detail"] = {"caseId": "JCB003", "mappedCells": 16}
+            for sequence, event in enumerate(events, start=1):
+                event["sequence"] = sequence
+            run["interactionCount"] = len(events)
+            run_path.write_text(json.dumps(run), encoding="utf-8")
+            events_path.write_text(json.dumps(events), encoding="utf-8")
+            with self.assertRaisesRegex(VerificationError, "before current case delivery"):
+                verify_run_directory(literature_path, "JCB003", "track_A", "run_001")
+
+    def test_cross_case_sequence_rejects_previous_final_as_next_default(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            previous = root / "01_JCB001"
+            current = root / "02_JCB003"
+            previous.mkdir()
+            current.mkdir()
+            (previous / "final_graph.svg").write_text("<svg>case one final</svg>")
+            (current / "default_graph.svg").write_text("<svg>case one final</svg>")
+            with self.assertRaisesRegex(VerificationError, "cross-case Graph contamination"):
+                verify_run_sequence([previous, current])
 
     def test_missing_artifact_and_inconsistent_count_fail(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

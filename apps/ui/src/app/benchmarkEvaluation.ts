@@ -148,6 +148,11 @@ export function setBenchmarkOutcome(outcome: BenchmarkOutcome): void {
 
 export function beginDefaultGraphCapture(capturedAt: string): boolean {
   if (!state.identity || state.defaultGraphCapture) return false;
+  if (
+    /^(?:JCB|NC|SA|EL)\d{3}$/.test(state.identity.caseId) &&
+    !state.events.some(({ type }) => type === "blind_case_delivered")
+  )
+    return false;
   const eventIndex = state.events.length + 1;
   const capture: BenchmarkGraphCapture = {
     status: "pending",
@@ -308,6 +313,7 @@ export async function writeBenchmarkArtifacts(
     written: string[];
     present?: string[];
     directory: string;
+    verified?: boolean;
   };
   if (options.requiredArtifacts) {
     const present = new Set(result.present ?? []);

@@ -122,6 +122,18 @@ describe("benchmark evaluation run store", () => {
     expect(run.events.map((event) => event.type)).toEqual(["benchmark_run_started"]);
   });
 
+  it("does not capture a literature default Graph before the current case is delivered", () => {
+    startBenchmarkRun({
+      benchmarkVersion: "LSA50_v1_1",
+      caseId: "JCB017",
+      track: "track_A",
+      runId: "fresh_track_a_JCB017_001",
+    });
+    expect(beginDefaultGraphCapture("2026-08-23T00:00:00.000Z")).toBe(false);
+    recordBenchmarkEvent("blind_case_delivered", { caseId: "JCB017", syntheticRows: 48 });
+    expect(beginDefaultGraphCapture("2026-08-23T00:00:01.000Z")).toBe(true);
+  });
+
   it("records infrastructure outcomes without a scientific support classification", () => {
     setBenchmarkSupportStatus("impossible");
     setBenchmarkOutcome("infrastructure_failure");

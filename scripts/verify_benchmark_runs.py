@@ -69,6 +69,7 @@ def read_json_object(path: Path) -> dict[str, Any]:
 def verify_explicit_unsupported_run_directory(
     path: Path, case_id: str, track: str, run_id: str,
     package_sha256: str | None = None,
+    source_view_sha256: str | None = None,
     require_evidence_provenance: bool = False,
 ) -> dict[str, Any]:
     """Validate a deliberate scientific unsupported decision without fabricated analysis files."""
@@ -114,25 +115,38 @@ def verify_explicit_unsupported_run_directory(
         isinstance(biological_n, bool) or not isinstance(biological_n, (int, float)) or biological_n <= 0
     ):
         raise VerificationError("explicit unsupported run has an invalid biological n")
-    blind_package = run.get("blindPackage")
-    if not isinstance(blind_package, dict) or any(
-        blind_package.get(key) != expected
+    if track == "track_B":
+        source = run.get("blindPackage")
+        source_label = "blind package"
+        provenance_key = "packageSha256"
+        expected_sha = package_sha256
+        expected_version = "1.0.0"
+    elif track == "track_A":
+        source = run.get("trackASourceView")
+        source_label = "Track A source view"
+        provenance_key = "sourceViewSha256"
+        expected_sha = source_view_sha256
+        expected_version = "1.1.0"
+    else:
+        raise VerificationError("explicit unsupported run has an invalid track")
+    if not isinstance(source, dict) or any(
+        source.get(key) != expected
         for key, expected in {"caseId": case_id, "runId": run_id}.items()
     ):
-        raise VerificationError("explicit unsupported run has the wrong blind package identity")
-    actual_package_sha = blind_package.get("sha256")
-    if not isinstance(actual_package_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", actual_package_sha):
-        raise VerificationError("explicit unsupported run has no valid blind package hash")
-    if package_sha256 is not None and actual_package_sha != package_sha256:
-        raise VerificationError("explicit unsupported run blind package hash does not match the queue")
+        raise VerificationError(f"explicit unsupported run has the wrong {source_label} identity")
+    actual_source_sha = source.get("sha256")
+    if not isinstance(actual_source_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", actual_source_sha):
+        raise VerificationError(f"explicit unsupported run has no valid {source_label} hash")
+    if expected_sha is not None and actual_source_sha != expected_sha:
+        raise VerificationError(f"explicit unsupported run {source_label} hash does not match source")
     expected_provenance = {
         "caseId": case_id,
         "runId": run_id,
-        "packageSha256": actual_package_sha,
+        provenance_key: actual_source_sha,
     }
     provenance_version = run.get("unsupportedEvidenceProvenanceVersion")
     if require_evidence_provenance or provenance_version is not None or "evidenceProvenance" in run:
-        if provenance_version != "1.0.0":
+        if provenance_version != expected_version:
             raise VerificationError("explicit unsupported evidence provenance version is invalid")
         if run.get("evidenceProvenance") != expected_provenance:
             raise VerificationError("explicit unsupported evidence provenance belongs to another run")
@@ -280,6 +294,15 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
     }.intersection(event_types):
         raise VerificationError("interaction log is missing a benchmark data-loaded event")
     if re.fullmatch(r"(?:JCB|NC|SA|EL)\d{3}", case_id):
+        ordered_event_types = [event.get("type") for event in events if isinstance(event, dict)]
+        if "default_graph_capture_started" in ordered_event_types:
+            if "blind_case_delivered" not in ordered_event_types:
+                raise VerificationError("interaction log is missing blind_case_delivered")
+            if (
+                ordered_event_types.index("default_graph_capture_started")
+                < ordered_event_types.index("blind_case_delivered")
+            ):
+                raise VerificationError("default Graph capture started before current case delivery")
         literature_loads = [
             event for event in events
             if isinstance(event, dict) and event.get("type") == "literature_benchmark_data_loaded"
@@ -470,6 +493,21 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
     for name in ("default_graph.png", "final_graph.png"):
         if (path / name).read_bytes()[:8] != b"\x89PNG\r\n\x1a\n":
             raise VerificationError(f"{name} is not a PNG document")
+
+
+def verify_run_sequence(run_paths: list[Path]) -> None:
+    """Reject a previous case's final Graph reused as the next case's default Graph."""
+    for previous, current in zip(run_paths, run_paths[1:]):
+        for extension in ("svg", "png"):
+            previous_final = previous / f"final_graph.{extension}"
+            current_default = current / f"default_graph.{extension}"
+            if previous_final.is_file() and current_default.is_file() and (
+                sha256(previous_final) == sha256(current_default)
+            ):
+                raise VerificationError(
+                    f"cross-case Graph contamination: {previous.name} final {extension} "
+                    f"matches {current.name} default {extension}"
+                )
 
 
 def main() -> None:

@@ -112,6 +112,78 @@ describe("BenchmarkRunBar case initialization", () => {
     });
   });
 
+  it("persists manual Track A explicit unsupported with source-view ownership", async () => {
+    const sourceViewSha256 = "d".repeat(64);
+    const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/blind-batch/current")) return { ok: false, status: 404 };
+      if (url.includes("/literature/case?")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            ...blindCase,
+            caseId: "JCB017",
+            sourceViewSha256,
+            researcherPacket: { ...blindCase.researcherPacket, case_id: "JCB017" },
+            syntheticData: blindCase.syntheticData.map((row) => ({ ...row, case_id: "JCB017" })),
+          }),
+        };
+      }
+      if (url.endsWith("/artifacts") && init?.method === "POST") {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            written: ["run.json", "interaction_log.json"],
+            present: ["run.json", "interaction_log.json"],
+            verified: true,
+          }),
+        };
+      }
+      throw new Error(`unexpected request: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<BenchmarkRunBar />);
+    await screen.findByRole("button", { name: "Runを開始" });
+    fireEvent.change(screen.getByLabelText("Case"), { target: { value: "JCB017" } });
+    fireEvent.change(screen.getByLabelText("Run"), { target: { value: "fresh_A_JCB017_002" } });
+    fireEvent.click(screen.getByRole("button", { name: "Runを開始" }));
+    await screen.findByText(/Blind case ready: JCB017/);
+    fireEvent.change(screen.getByLabelText("Benchmark outcome"), {
+      target: { value: "explicit_unsupported" },
+    });
+    fireEvent.change(screen.getByLabelText("Scientific support"), {
+      target: { value: "impossible" },
+    });
+    fireEvent.change(screen.getByLabelText("Scientific reason"), {
+      target: { value: "WB lineage cannot be loaded safely." },
+    });
+    fireEvent.change(screen.getByLabelText("Experimental unit"), {
+      target: { value: "independent WB replicate" },
+    });
+    fireEvent.change(screen.getByLabelText("Biological n (if determinable)"), {
+      target: { value: "4" },
+    });
+    fireEvent.change(screen.getByLabelText("Attempted routes"), {
+      target: { value: "safe literature loader" },
+    });
+    fireEvent.change(
+      screen.getByLabelText("Why continuation would require scientific compromise"),
+      { target: { value: "Manual reconstruction would lose lineage." } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "終了状態だけ記録" }));
+    await screen.findByText("Explicit unsupportedを検証・永続化しました。");
+    const artifactCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/artifacts"));
+    const artifactBody = JSON.parse(String(artifactCall?.[1]?.body));
+    expect(JSON.parse(artifactBody.artifacts[0].content)).toMatchObject({
+      track: "track_A",
+      trackASourceView: { caseId: "JCB017", runId: "fresh_A_JCB017_002", sha256: sourceViewSha256 },
+      evidenceProvenance: { caseId: "JCB017", runId: "fresh_A_JCB017_002", sourceViewSha256 },
+      unsupportedEvidenceProvenanceVersion: "1.1.0",
+    });
+  });
+
   it("arms one active batch case and resets run state before the next case", async () => {
     const batch = (position: number, caseId: string, runId: string) => ({
       batchId: "batch_fixture",

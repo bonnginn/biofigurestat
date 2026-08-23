@@ -2451,6 +2451,7 @@ export function ExperimentGraphWorkbench({
   }, [
     benchmarkAnalysisState,
     benchmarkRun.defaultGraphCapture,
+    benchmarkRun.events.length,
     benchmarkRun.identity,
     hasData,
     workspaceMode,

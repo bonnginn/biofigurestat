@@ -27,6 +27,7 @@ export type LiteratureSyntheticRow = Readonly<{
 export type LiteratureExperimenterCase = Readonly<{
   benchmarkVersion: string;
   caseId: string;
+  sourceViewSha256?: string;
   researcherPacket: Readonly<{
     case_id: string;
     blind_experiment_summary: string;
