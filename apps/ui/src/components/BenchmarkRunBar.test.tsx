@@ -340,11 +340,15 @@ describe("BenchmarkRunBar case initialization", () => {
     rendered.unmount();
     resetBenchmarkRun();
     render(<BenchmarkRunBar />);
-    await waitFor(() => expect(currentBenchmarkRun().outcome).toBe("explicit_unsupported"));
-    expect(currentBenchmarkRun().supportStatus).toBe("impossible");
-    expect(screen.getByLabelText("Scientific reason")).toHaveValue(
-      terminalEvidence.scientificReason,
-    );
+    expect(
+      await screen.findByRole("region", { name: "Server-verified terminal run" }),
+    ).toHaveTextContent("Server-verified Explicit unsupported");
+    expect(currentBenchmarkRun().identity).toBeNull();
+    expect(screen.getByText(terminalEvidence.scientificReason)).toBeVisible();
+    expect(screen.queryByLabelText("Scientific reason")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Runをリセット" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Active caseを開始" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "終了状態だけ記録" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "次のケース" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "次のケース" }));
     await waitFor(() =>
@@ -364,6 +368,124 @@ describe("BenchmarkRunBar case initialization", () => {
     expect(
       screen.getByLabelText("Why continuation would require scientific compromise"),
     ).toHaveValue("");
+  });
+
+  it("shows a fresh completed batch run as authoritative and advances without rewriting it", async () => {
+    const completedBatch = {
+      batchId: "formal_batch",
+      benchmarkVersion: "LSA50_v1_1",
+      status: "ready_to_advance",
+      position: 1,
+      total: 15,
+      completed: 1,
+      current: {
+        position: 1,
+        caseId: "JCB001",
+        track: "track_B",
+        runId: "formal_batch_01_JCB001",
+        packageSha256: "d".repeat(64),
+        status: "completed",
+      },
+    } as const;
+    const nextBatch = {
+      ...completedBatch,
+      status: "running",
+      position: 2,
+      current: {
+        ...completedBatch.current,
+        position: 2,
+        caseId: "JCB003",
+        runId: "formal_batch_02_JCB003",
+        packageSha256: "e".repeat(64),
+        status: "active",
+      },
+    } as const;
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("/blind-batch/current")) {
+        return { ok: true, status: 200, json: async () => completedBatch };
+      }
+      if (url.endsWith("/blind-batch/next")) {
+        return { ok: true, status: 200, json: async () => nextBatch };
+      }
+      if (url.includes("/literature/case?caseId=JCB003")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            ...blindCase,
+            caseId: "JCB003",
+            runId: nextBatch.current.runId,
+            researcherPacket: { ...blindCase.researcherPacket, case_id: "JCB003" },
+            syntheticData: blindCase.syntheticData.map((row) => ({ ...row, case_id: "JCB003" })),
+          }),
+        };
+      }
+      throw new Error(`unexpected request: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const onNavigateHome = vi.fn();
+    render(<BenchmarkRunBar onNavigateHome={onNavigateHome} />);
+
+    const terminal = await screen.findByRole("region", { name: "Server-verified terminal run" });
+    expect(terminal).toHaveTextContent("Server-verified Completed");
+    expect(terminal).toHaveTextContent("Case: JCB001");
+    expect(terminal).toHaveTextContent("Run: formal_batch_01_JCB001");
+    expect(currentBenchmarkRun().identity).toBeNull();
+    expect(screen.queryByRole("button", { name: "Active caseを開始" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Runをリセット" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Benchmark outcome")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "終了状態だけ記録" })).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "次のケース" }));
+    await waitFor(() =>
+      expect(currentBenchmarkRun().identity?.runId).toBe(nextBatch.current.runId),
+    );
+    expect(onNavigateHome).toHaveBeenCalledOnce();
+    expect(currentBenchmarkRun()).toMatchObject({
+      supportStatus: null,
+      outcome: "in_progress",
+      defaultGraphCapture: null,
+      finalGraphCapture: null,
+    });
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith("/artifacts"))).toBe(false);
+  });
+
+  it("shows a paused infrastructure failure without restart or next controls", async () => {
+    const pausedBatch = {
+      batchId: "formal_batch",
+      benchmarkVersion: "LSA50_v1_1",
+      status: "paused",
+      position: 2,
+      total: 15,
+      completed: 1,
+      current: {
+        position: 2,
+        caseId: "JCB003",
+        track: "track_B",
+        runId: "formal_batch_02_JCB003",
+        packageSha256: "e".repeat(64),
+        status: "infrastructure_failure",
+      },
+    } as const;
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => pausedBatch,
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<BenchmarkRunBar />);
+
+    const terminal = await screen.findByRole("region", { name: "Server-verified terminal run" });
+    expect(terminal).toHaveTextContent("Paused: Infrastructure failure");
+    expect(terminal).toHaveTextContent("Case: JCB003");
+    expect(terminal).toHaveTextContent("Run: formal_batch_02_JCB003");
+    expect(currentBenchmarkRun().identity).toBeNull();
+    expect(screen.queryByRole("button", { name: "次のケース" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Active caseを開始" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Runをリセット" })).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("creates unsupported evidence as a fresh run-owned object", () => {

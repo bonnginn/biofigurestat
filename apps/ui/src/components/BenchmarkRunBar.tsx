@@ -89,7 +89,11 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         if (cancelled) return;
         setBlindBatch(batch);
         setBatchStatus("ready");
-        if (!batch?.current) return;
+        if (!batch) return;
+        if (!batch.current) {
+          resetBenchmarkRun();
+          return;
+        }
         const identity = {
           benchmarkVersion: batch.benchmarkVersion,
           caseId: batch.current.caseId,
@@ -119,17 +123,14 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         } else {
           setUnsupportedEvidence(createFreshUnsupportedEvidence(evidenceOwner));
         }
-        if (batch.current.status !== "active" && batch.current.status !== "explicit_unsupported") {
+        if (batch.current.status !== "active") {
+          resetBenchmarkRun();
           return;
         }
         const existing = currentBenchmarkRun().identity;
         if (!existing || existing.runId !== identity.runId) {
           resetBenchmarkRun();
           startBenchmarkRun(identity);
-        }
-        if (batch.current.status === "explicit_unsupported") {
-          setBenchmarkSupportStatus("impossible");
-          setBenchmarkOutcome("explicit_unsupported");
         }
       })
       .catch(() => {
@@ -314,6 +315,27 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
       setSaveStatus("server-side verificationが未完了または失敗しました。停止します。");
     }
   };
+  const terminalJob =
+    blindBatch?.current && blindBatch.current.status !== "active" ? blindBatch.current : null;
+  const terminalStatusLabel = terminalJob
+    ? {
+        active: "Active",
+        completed: "Server-verified Completed",
+        explicit_unsupported: "Server-verified Explicit unsupported",
+        infrastructure_failure: "Paused: Infrastructure failure",
+        contaminated: "Paused: Contaminated",
+        aborted: "Paused: Aborted / not started",
+      }[terminalJob.status]
+    : null;
+  const serverAllowsAdvance = Boolean(
+    terminalJob &&
+    blindBatch?.status === "ready_to_advance" &&
+    (terminalJob.status === "completed" || terminalJob.status === "explicit_unsupported"),
+  );
+  const activeRunAllowsAdvance = Boolean(
+    blindBatch?.current?.status === "active" && run.outcome === "completed",
+  );
+  const canAdvance = serverAllowsAdvance || activeRunAllowsAdvance;
   return (
     <section className="benchmark-run-bar" aria-label="Benchmark run">
       <strong>Benchmark</strong>
@@ -325,6 +347,27 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
       ) : null}
       {batchStatus === "error" ? (
         <span role="alert">Blind batch queueを確認できません。</span>
+      ) : null}
+      {terminalJob ? (
+        <section className="benchmark-case-delivery" aria-label="Server-verified terminal run">
+          <strong>{terminalStatusLabel}</strong>
+          <span>Case: {terminalJob.caseId}</span>
+          <span>Run: {terminalJob.runId}</span>
+          {terminalJob.status === "explicit_unsupported" && terminalJob.terminalEvidence ? (
+            <dl aria-label="Persisted explicit unsupported evidence">
+              <dt>Scientific reason</dt>
+              <dd>{terminalJob.terminalEvidence.scientificReason}</dd>
+              <dt>Experimental unit</dt>
+              <dd>{terminalJob.terminalEvidence.experimentalUnit}</dd>
+              <dt>Biological n</dt>
+              <dd>{terminalJob.terminalEvidence.biologicalN ?? "Undetermined"}</dd>
+              <dt>Attempted routes</dt>
+              <dd>{terminalJob.terminalEvidence.attemptedRoutes.join("; ")}</dd>
+              <dt>Why continuation would require scientific compromise</dt>
+              <dd>{terminalJob.terminalEvidence.scientificCompromiseReason}</dd>
+            </dl>
+          ) : null}
+        </section>
       ) : null}
       <label>
         <span>Version</span>
@@ -361,30 +404,32 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
           onChange={(event) => setRunId(event.target.value)}
         />
       </label>
-      <button
-        type="button"
-        onClick={() => {
-          if (run.identity) {
-            resetBenchmarkRun();
-            setUnsupportedEvidence(
-              createFreshUnsupportedEvidence(
-                blindBatch?.current?.status === "active"
-                  ? {
-                      caseId: blindBatch.current.caseId,
-                      runId: blindBatch.current.runId,
-                      packageSha256: blindBatch.current.packageSha256,
-                    }
-                  : null,
-              ),
-            );
-          } else {
-            startBenchmarkRun({ benchmarkVersion, caseId, track, runId });
-          }
-        }}
-      >
-        {run.identity ? "Runをリセット" : blindBatch ? "Active caseを開始" : "Runを開始"}
-      </button>
-      {blindBatch && (run.outcome === "completed" || blindBatch.status === "ready_to_advance") ? (
+      {!blindBatch || blindBatch.current?.status === "active" ? (
+        <button
+          type="button"
+          onClick={() => {
+            if (run.identity) {
+              resetBenchmarkRun();
+              setUnsupportedEvidence(
+                createFreshUnsupportedEvidence(
+                  blindBatch?.current?.status === "active"
+                    ? {
+                        caseId: blindBatch.current.caseId,
+                        runId: blindBatch.current.runId,
+                        packageSha256: blindBatch.current.packageSha256,
+                      }
+                    : null,
+                ),
+              );
+            } else {
+              startBenchmarkRun({ benchmarkVersion, caseId, track, runId });
+            }
+          }}
+        >
+          {run.identity ? "Runをリセット" : blindBatch ? "Active caseを開始" : "Runを開始"}
+        </button>
+      ) : null}
+      {blindBatch && canAdvance ? (
         <button type="button" onClick={() => void advanceToNextCase()}>
           次のケース
         </button>
