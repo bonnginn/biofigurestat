@@ -131,14 +131,28 @@ export function GraphStatisticsPanel({
             ? "値のみが変更され、実験設計・実験単位・比較・解析法が同一だったため、同じ解析を自動再実行しました。"
             : null,
         );
+        const canonicalRecommendation: AnalysisRecommendation = {
+          templateId: request.templateId,
+          templateVersion: request.templateVersion,
+          recommendedMethod: assessment.recommendedMethod ?? request.method,
+          alternativeMethods:
+            assessment.methodChoices
+              ?.filter(({ method }) => method !== (assessment.recommendedMethod ?? request.method))
+              .map(({ method }) => method) ?? [],
+          reasonCode: `draft_${request.templateId.toLowerCase()}_design_assessment`,
+          explanation: assessment.reason,
+          statisticalNDefinition: assessment.nByCondition
+            .map(({ label, n }) => `${label} n=${n}`)
+            .join(", "),
+          multiplicityMethod: request.options.multiplicityMethod,
+        };
         onAnalysisChange?.(
           nextResult.status === "ok"
             ? {
                 request,
                 result: nextResult,
-                ...(assessment.recommendedMethod
-                  ? { recommendedMethod: assessment.recommendedMethod }
-                  : {}),
+                recommendedMethod: canonicalRecommendation.recommendedMethod,
+                recommendation: canonicalRecommendation,
               }
             : null,
         );
@@ -149,10 +163,10 @@ export function GraphStatisticsPanel({
           "statistics_executed",
           {
             method: request.method,
-            recommendedMethod: assessment.recommendedMethod ?? request.method,
-            recommendationDiffers:
-              Boolean(assessment.recommendedMethod) &&
-              assessment.recommendedMethod !== request.method,
+            recommendedMethod: canonicalRecommendation.recommendedMethod,
+            recommendationDiffers: canonicalRecommendation.recommendedMethod !== request.method,
+            recommendationReasonCode: canonicalRecommendation.reasonCode,
+            recommendationExplanation: canonicalRecommendation.explanation,
             contrast:
               request.protocolVersion === "0.2.0"
                 ? request.contrastIntent === "planned_comparisons"
@@ -164,7 +178,7 @@ export function GraphStatisticsPanel({
                   ? request.contrastConditionIds.join("|")
                   : request.protocolVersion === "0.5.0"
                     ? request.variableConditionIds.join("|")
-                    : request.protocolVersion === "0.6.0"
+                    : request.protocolVersion === "0.6.0" || request.protocolVersion === "0.7.0"
                       ? request.conditionIds.join("|")
                       : request.primaryContrastConditionIds.join("|"),
             correction: request.options.multiplicityMethod,
@@ -180,7 +194,7 @@ export function GraphStatisticsPanel({
         if (executionGenerationRef.current === generation) setRunning(false);
       }
     },
-    [analysisRunner, assessment.recommendedMethod, onAnalysisChange],
+    [analysisRunner, assessment, onAnalysisChange],
   );
 
   useEffect(() => {
@@ -377,13 +391,14 @@ export function GraphStatisticsPanel({
                   </fieldset>
                 );
               })}
-              {assessment.recommendedMethod &&
-              assessment.method !== assessment.recommendedMethod ? (
-                <p className="experiment-graph-help">
-                  推奨法と異なる方法を選択しています。選択は解析履歴に保存されます。
-                </p>
-              ) : null}
             </div>
+          ) : null}
+          {assessment.recommendedMethod ? (
+            <p className="experiment-graph-help" data-recommendation-decision>
+              {(selectedMethod ?? assessment.method) === assessment.recommendedMethod
+                ? `推奨法を採用しています：${assessment.recommendedMethod}。`
+                : `推奨法と異なる方法を選択しています：${assessment.recommendedMethod} を上書きし、${selectedMethod ?? assessment.method}を選択。理由と選択は解析履歴に保存されます。`}
+            </p>
           ) : null}
           <label className="experiment-graph-confirmation">
             <input
@@ -395,7 +410,7 @@ export function GraphStatisticsPanel({
               {correlationAnalysis
                 ? "各行のXとYが、同じ実験単位から得た1組として正しく対応づけられています。"
                 : matchedAnalysis
-                  ? "同じ実験単位の2条件が、入力シート上で同じ実験回として正しく対応づけられています。"
+                  ? `同じ実験単位の${conditionOptions.length || "複数"}条件が、入力シート上で同じ実験回として正しく対応づけられています。`
                   : "各条件は別々のdish・試料・動物などの実験単位です。同じ個体や同じ試料を両条件で測った対応データではありません。"}
             </span>
           </label>

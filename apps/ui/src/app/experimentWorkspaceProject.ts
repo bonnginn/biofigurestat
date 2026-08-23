@@ -46,6 +46,7 @@ export type WorkspaceGraphAnalysis = Readonly<{
   request: AnalysisEngineRequest;
   result: AnalysisEngineResult;
   recommendedMethod?: AnalysisRecommendation["recommendedMethod"];
+  recommendation?: AnalysisRecommendation;
 }>;
 
 export type WorkspaceGraphState = PersistedWorkspaceGraphState &
@@ -544,6 +545,19 @@ export function createWorkspaceRecommendation(
       multiplicityMethod: null,
     };
   }
+  if (request.templateId === "D07") {
+    return {
+      templateId: "D07",
+      templateVersion: request.templateVersion,
+      recommendedMethod: "two_way_anova",
+      alternativeMethods: [],
+      reasonCode: "balanced_independent_condition_by_within_factor",
+      explanation:
+        "Every condition-by-factor cell uses separate biological units; interaction and main effects are evaluated with an independent factorial error model.",
+      statisticalNDefinition: `${statisticalNDefinition} within each condition-by-factor cell`,
+      multiplicityMethod: null,
+    };
+  }
   if (request.templateId === "D09") {
     return {
       templateId: "D09",
@@ -644,6 +658,7 @@ function prepareWorkspaceAnalyses(input: {
       experimentalUnitId: string;
       pairId?: string;
       timePointId?: string;
+      withinFactorLevelId?: string;
     }>;
     let derivedDatasetRevisionId: string | null = null;
     if (usesFullTimeCourse) {
@@ -677,10 +692,16 @@ function prepareWorkspaceAnalyses(input: {
         const numeric = group.observations.map((observation) =>
           measurementNumericValue(observation.measurement),
         );
+        const timePoint = input.draft.time.points.find(({ value }) => value === group.time);
+        if (!timePoint) throw new Error("Full-course source does not match a declared axis point");
+        const statisticalUnitId =
+          executedAnalysis?.request.protocolVersion === "0.7.0"
+            ? `${group.experimentalUnitId}.${group.conditionId}.${timePoint.id}`
+            : group.experimentalUnitId;
         return {
           id: `derived-value.workspace.${graph.id}.longitudinal.${index + 1}.r${input.revisionIndex}`,
           derivedDatasetRevisionId: derivedDatasetRevisionId!,
-          experimentalUnitId: group.experimentalUnitId,
+          experimentalUnitId: statisticalUnitId,
           conditionId: group.conditionId,
           outcomeId: graph.selectedReadoutId,
           value: numeric.reduce((sum, value) => sum + value, 0) / numeric.length,
@@ -722,9 +743,16 @@ function prepareWorkspaceAnalyses(input: {
           observationId: value.id,
           conditionId: value.conditionId,
           value: value.value,
-          experimentalUnitId: value.experimentalUnitId,
-          pairId: value.experimentalUnitId,
-          timePointId: timePoint.id,
+          ...(executedAnalysis?.request.protocolVersion === "0.7.0"
+            ? {
+                experimentalUnitId: value.experimentalUnitId,
+                withinFactorLevelId: timePoint.id,
+              }
+            : {
+                experimentalUnitId: value.experimentalUnitId,
+                pairId: value.experimentalUnitId,
+                timePointId: timePoint.id,
+              }),
         };
       });
     } else if (usesTimeMetric) {
@@ -974,7 +1002,7 @@ function prepareWorkspaceAnalyses(input: {
       graphId: graph.id,
       request,
       result,
-      recommendation: {
+      recommendation: graph.analysis?.recommendation ?? {
         ...createWorkspaceRecommendation(request, input.design),
         ...(graph.analysis?.recommendedMethod
           ? { recommendedMethod: graph.analysis.recommendedMethod }

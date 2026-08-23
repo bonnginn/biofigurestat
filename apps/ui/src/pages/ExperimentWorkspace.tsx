@@ -2150,9 +2150,24 @@ export function ExperimentWorkspace({
                 : defaultGraphYTitle(selectedSourceReadout),
           }
         : {
-            xSemantic: draft.time.points.length > 0 ? "time" : "categorical",
-            xTitle: draft.time.points.length > 0 ? "Time" : "",
-            xUnit: draft.time.points.length > 0 ? draft.time.unit : "",
+            xSemantic:
+              literatureLoad?.compatible && literatureLoad.xAxis
+                ? literatureLoad.xAxis.semantic
+                : draft.time.points.length > 0
+                  ? "time"
+                  : "categorical",
+            xTitle:
+              literatureLoad?.compatible && literatureLoad.xAxis
+                ? literatureLoad.xAxis.title
+                : draft.time.points.length > 0
+                  ? "Time"
+                  : "",
+            xUnit:
+              literatureLoad?.compatible && literatureLoad.xAxis
+                ? literatureLoad.xAxis.unit
+                : draft.time.points.length > 0
+                  ? draft.time.unit
+                  : "",
             yTitle:
               draft.analysisIntent.kind === "correlation"
                 ? (draft.conditions[1]?.label ?? "Y")

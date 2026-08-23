@@ -33,16 +33,25 @@ export type MethodsTextInput = Readonly<{
 }>;
 
 function repeatedAxisLabel(input: MethodsTextInput): string {
+  const requestFactor =
+    input.request.protocolVersion === "0.7.0"
+      ? input.request.withinFactor
+      : input.request.protocolVersion === "0.6.0"
+        ? input.request.withinFactor
+        : undefined;
   if (input.repeatedAxis?.semantic === "numeric_covariate") {
     return input.repeatedAxis.title.trim() || "数値軸";
   }
   if (input.repeatedAxis?.semantic === "categorical") {
     return input.repeatedAxis.title.trim() || "反復軸";
   }
-  return input.repeatedAxis?.title.trim() || "時間";
+  return input.repeatedAxis?.title.trim() || requestFactor?.title.trim() || "時間";
 }
 
 function methodsTemplateLabel(input: MethodsTextInput): string {
+  if (input.recommendation.templateId === "D07") {
+    return `D07 · 独立条件×${repeatedAxisLabel(input)}の二因子解析`;
+  }
   if (input.recommendation.templateId !== "D06") {
     return templateLabel(input.recommendation.templateId);
   }
@@ -55,6 +64,9 @@ function methodsMethodLabel(
 ): string {
   if (input.recommendation.templateId === "D06" && method === "mixed_anova") {
     return `条件×${repeatedAxisLabel(input)}の反復測定分散分析`;
+  }
+  if (input.recommendation.templateId === "D07" && method === "two_way_anova") {
+    return `独立条件×${repeatedAxisLabel(input)}の二因子分散分析`;
   }
   return methodLabel(method);
 }
@@ -92,7 +104,7 @@ function conditionLabels(input: MethodsTextInput): string {
       ? input.request.contrastConditionIds
       : input.request.protocolVersion === "0.5.0"
         ? input.request.variableConditionIds
-        : input.request.protocolVersion === "0.6.0"
+        : input.request.protocolVersion === "0.6.0" || input.request.protocolVersion === "0.7.0"
           ? input.request.conditionIds
           : input.request.primaryContrastConditionIds;
   return contrastIds
@@ -285,6 +297,25 @@ function executedResultLines(input: MethodsTextInput): string[] {
       "条件間の事後比較：実行せず",
     ];
   }
+  if (recommendation.templateId === "D07") {
+    const axisLabel = repeatedAxisLabel(input);
+    const effectLabels = [
+      `条件 × ${axisLabel}（交互作用）`,
+      "条件（独立セル間）",
+      `${axisLabel}（独立セル間）`,
+    ];
+    return [
+      `結果：${result.status === "ok" ? "完了" : result.status}`,
+      "balanced独立二因子検定（交互作用を先に表示）：",
+      ...result.tests
+        .slice(0, 3)
+        .map(
+          (test, index) =>
+            `・${effectLabels[index]}：${test.statisticName}=${numberLabel(test.statistic)}、自由度 ${degreesLabel(test.degreesOfFreedom)}、p=${pValueLabel(test.pValue)}、${test.effectSizeName ?? "効果量"}=${numberLabel(test.effectSize)}`,
+        ),
+      "事後比較：実行せず",
+    ];
+  }
 
   const estimate = result.estimates[0];
   const test = result.tests[0];
@@ -311,11 +342,13 @@ export function generateMethodsText(input: MethodsTextInput): string {
     ? `多重性補正：${request.options.multiplicityMethod}を指定。`
     : request.protocolVersion === "0.6.0"
       ? `多重性補正：条件×${repeatedAxisLabel(input)}、条件、${repeatedAxisLabel(input)}の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
-      : request.protocolVersion === "0.5.0"
-        ? "多重性補正：単一の相関係数を評価したため指定なし。"
-        : request.protocolVersion === "0.2.0"
-          ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
-          : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
+      : request.protocolVersion === "0.7.0"
+        ? `多重性補正：独立条件×${repeatedAxisLabel(input)}の3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
+        : request.protocolVersion === "0.5.0"
+          ? "多重性補正：単一の相関係数を評価したため指定なし。"
+          : request.protocolVersion === "0.2.0"
+            ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
+            : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
   const warnings = [
     "除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。",
     normalizationWarning(design),
@@ -338,7 +371,7 @@ export function generateMethodsText(input: MethodsTextInput): string {
     pairingLabel(design),
     `統計上のn：${recommendation.statisticalNDefinition}`,
     `解析条件：${allConditionLabels(input)}`,
-    `${request.protocolVersion === "0.5.0" ? "解析対象" : request.protocolVersion === "0.6.0" ? "解析条件" : "主比較"}：${conditionLabels(input)}`,
+    `${request.protocolVersion === "0.5.0" ? "解析対象" : request.protocolVersion === "0.6.0" || request.protocolVersion === "0.7.0" ? "解析条件" : "主比較"}：${conditionLabels(input)}`,
     `エラーバー：${errorBarLabel(input.graphSpec)}`,
     "",
     "解析結果",

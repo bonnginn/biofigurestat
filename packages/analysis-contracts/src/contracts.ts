@@ -179,6 +179,13 @@ export const LongitudinalMixedAnalysisEngineRequestSchema = z.object({
   templateId: z.literal("D06"),
   templateVersion: z.string().min(1),
   method: z.literal("mixed_anova"),
+  withinFactor: z
+    .object({
+      role: z.enum(["time", "numeric_covariate", "categorical"]),
+      title: z.string().min(1),
+      unit: z.string(),
+    })
+    .optional(),
   conditionIds: z.array(EntityIdSchema).min(2),
   timePoints: z.array(z.object({ timePointId: EntityIdSchema, value: z.number().finite() })).min(2),
   observations: z
@@ -195,6 +202,48 @@ export const LongitudinalMixedAnalysisEngineRequestSchema = z.object({
   }),
 });
 
+export const IndependentRepeatedAxisAnalysisEngineRequestSchema = z.object({
+  protocolVersion: z.literal("0.7.0"),
+  requestId: EntityIdSchema,
+  projectId: EntityIdSchema,
+  analysisId: EntityIdSchema,
+  templateId: z.literal("D07"),
+  templateVersion: z.string().min(1),
+  method: z.literal("two_way_anova"),
+  conditionIds: z.array(EntityIdSchema).min(2),
+  withinFactor: z.object({
+    role: z.enum(["time", "numeric_covariate", "categorical"]),
+    title: z.string().min(1),
+    unit: z.string(),
+    levels: z
+      .array(
+        z.object({
+          levelId: EntityIdSchema,
+          value: z.number().finite(),
+        }),
+      )
+      .min(2),
+  }),
+  observations: z
+    .array(
+      EngineObservationSchema.extend({ withinFactorLevelId: EntityIdSchema }).superRefine(
+        (observation, context) => {
+          if (observation.pairId !== undefined || observation.blockId !== undefined) {
+            context.addIssue({
+              code: "custom",
+              message: "D07 independent-cell observations cannot carry pairId or blockId",
+            });
+          }
+        },
+      ),
+    )
+    .min(8),
+  options: AnalysisOptionsSchema.extend({
+    alternative: z.literal("two_sided").default("two_sided"),
+    multiplicityMethod: z.null(),
+  }),
+});
+
 export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion", [
   TwoConditionAnalysisEngineRequestSchema,
   MultiGroupAnalysisEngineRequestSchema,
@@ -202,6 +251,7 @@ export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion
   FactorialAnalysisEngineRequestSchema,
   CorrelationAnalysisEngineRequestSchema,
   LongitudinalMixedAnalysisEngineRequestSchema,
+  IndependentRepeatedAxisAnalysisEngineRequestSchema,
 ]);
 
 export const EstimateSchema = z.object({
@@ -229,7 +279,7 @@ export const TestResultSchema = z.object({
 });
 
 export const AnalysisEngineResultSchema = z.object({
-  protocolVersion: z.enum(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.5.0", "0.6.0"]),
+  protocolVersion: z.enum(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.5.0", "0.6.0", "0.7.0"]),
   requestId: EntityIdSchema,
   status: z.enum(["ok", "validation_error", "engine_error"]),
   engine: z.object({
@@ -239,6 +289,21 @@ export const AnalysisEngineResultSchema = z.object({
   }),
   estimates: z.array(EstimateSchema),
   tests: z.array(TestResultSchema),
+  factorMetadata: z
+    .object({
+      withinFactor: z.object({
+        role: z.enum(["time", "numeric_covariate", "categorical"]),
+        title: z.string().min(1),
+        unit: z.string(),
+      }),
+      effectIds: z.object({
+        interaction: z.literal("condition_by_within_factor_interaction"),
+        condition: z.literal("condition_main_effect"),
+        withinFactor: z.literal("within_factor_main_effect"),
+      }),
+      legacyEffectAliases: z.record(z.string(), z.string()),
+    })
+    .optional(),
   diagnostics: z.array(z.object({ code: z.string(), message: z.string() })),
   warnings: z.array(z.object({ code: z.string(), message: z.string() })),
   completedAt: IsoDateTimeSchema,

@@ -125,6 +125,48 @@ describe("literature benchmark experimenter boundary", () => {
     expect(Object.values(result.cells)).toHaveLength(6);
   });
 
+  it("preserves an explicitly described Sholl radius as the graph X semantic", () => {
+    const radiusSource: LiteratureExperimenterCase = {
+      ...source,
+      researcherPacket: {
+        ...source.researcherPacket,
+        blind_experiment_summary: "Radius-dependent Sholl intersections in two conditions",
+        measurement_context: "Sholl intersection radius",
+      },
+      syntheticData: ["Control", "Treatment"].flatMap((condition) =>
+        [10, 20].flatMap((time) =>
+          [1, 2].map((replicate) => ({
+            ...source.syntheticData[0],
+            condition,
+            time,
+            unit_id: `${condition}-${time}-${replicate}`,
+            value: time + replicate,
+          })),
+        ),
+      ),
+    };
+    const draft = compatibleDraft(2);
+    const result = mapLiteratureMeasurements(radiusSource, {
+      ...draft,
+      time: {
+        sampling: "cross_sectional",
+        unit: "h",
+        points: [
+          { id: "time.1", value: 10 },
+          { id: "time.2", value: 20 },
+        ],
+      },
+    });
+
+    expect(result.compatible).toBe(true);
+    expect(result.xAxis).toEqual({
+      semantic: "numeric_covariate",
+      title: "Radius",
+      unit: "µm",
+      source: "researcher_packet",
+    });
+  });
+
   it("refuses a nested packet with a missing parent mapping", () => {
     const broken = nestedSource.syntheticData.map((row, index) =>
       index === 0 ? { ...row, parent_unit_id: null } : row,

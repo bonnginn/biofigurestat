@@ -113,9 +113,11 @@ def run_mixed_anova(request: dict[str, Any]) -> dict[str, Any]:
     f_interaction = (ss_interaction / df_interaction) / (ss_within_error / df_within_error)
 
     result = base_result(request)
+    within_factor = request.get("withinFactor")
+    uses_generic_factor_ids = isinstance(within_factor, dict)
     tests = [
         (
-            "condition_by_time_interaction",
+            "condition_by_within_factor_interaction" if uses_generic_factor_ids else "condition_by_time_interaction",
             f_interaction,
             df_interaction,
             df_within_error,
@@ -123,14 +125,21 @@ def run_mixed_anova(request: dict[str, Any]) -> dict[str, Any]:
             ss_within_error,
         ),
         (
-            "condition_between_units",
+            "condition_main_effect" if uses_generic_factor_ids else "condition_between_units",
             f_condition,
             df_condition,
             df_unit_condition,
             ss_condition,
             ss_unit_condition,
         ),
-        ("time_within_units", f_time, df_time, df_within_error, ss_time, ss_within_error),
+        (
+            "within_factor_main_effect" if uses_generic_factor_ids else "time_within_units",
+            f_time,
+            df_time,
+            df_within_error,
+            ss_time,
+            ss_within_error,
+        ),
     ]
     for name, statistic, numerator_df, denominator_df, effect_ss, error_ss in tests:
         result["tests"].append(
@@ -170,6 +179,24 @@ def run_mixed_anova(request: dict[str, Any]) -> dict[str, Any]:
             "message": "The initial balanced D06 model does not estimate a sphericity correction; use a validated mixed-effects model when this assumption is not defensible.",
         },
     ]
+    if uses_generic_factor_ids:
+        result["factorMetadata"] = {
+            "withinFactor": {
+                "role": within_factor["role"],
+                "title": within_factor["title"],
+                "unit": within_factor.get("unit", ""),
+            },
+            "effectIds": {
+                "interaction": "condition_by_within_factor_interaction",
+                "condition": "condition_main_effect",
+                "withinFactor": "within_factor_main_effect",
+            },
+            "legacyEffectAliases": {
+                "condition_by_time_interaction": "condition_by_within_factor_interaction",
+                "condition_between_units": "condition_main_effect",
+                "time_within_units": "within_factor_main_effect",
+            },
+        }
     if unit_count < 4:
         result["warnings"].append(
             {

@@ -55,6 +55,12 @@ export type LiteratureLoadAssessment = Readonly<{
   compatible: boolean;
   reason: string;
   cells: ExperimentCellMap;
+  xAxis?: Readonly<{
+    semantic: "time" | "numeric_covariate" | "categorical";
+    title: string;
+    unit: string;
+    source: "researcher_packet" | "synthetic_x_value";
+  }>;
 }>;
 
 export function isLiteratureCaseId(caseId: string | undefined): boolean {
@@ -87,6 +93,33 @@ function sourceUnit(row: LiteratureSyntheticRow): string {
 
 function normalized(value: string): string {
   return value.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+}
+
+function structuredXAxis(source: LiteratureExperimenterCase): LiteratureLoadAssessment["xAxis"] {
+  const packetAxisText = [
+    source.researcherPacket.blind_experiment_summary,
+    source.researcherPacket.experimental_unit_description,
+    source.researcherPacket.measurement_context,
+  ].join(" ");
+  if (/radius-dependent|sholl\s+(?:intersection\s+)?radius/i.test(packetAxisText)) {
+    return {
+      semantic: "numeric_covariate",
+      title: "Radius",
+      unit: "µm",
+      source: "researcher_packet",
+    };
+  }
+  if (source.syntheticData.some(({ x_value }) => x_value !== null)) {
+    return {
+      semantic: "numeric_covariate",
+      title: "Covariate",
+      unit: "",
+      source: "synthetic_x_value",
+    };
+  }
+  return source.syntheticData.some(({ time }) => time !== null)
+    ? { semantic: "time", title: "Time", unit: "h", source: "researcher_packet" }
+    : undefined;
 }
 
 export function mapLiteratureMeasurements(
@@ -240,5 +273,6 @@ export function mapLiteratureMeasurements(
     compatible: true,
     reason: `${source.caseId}の${rows.length} synthetic rowsを、確認済みの条件・時間・実験単位へ対応づけます。`,
     cells,
+    ...(structuredXAxis(source) ? { xAxis: structuredXAxis(source) } : {}),
   };
 }

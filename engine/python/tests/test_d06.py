@@ -77,6 +77,28 @@ class D06Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "complete repeated measurements"):
             run_mixed_anova(broken)
 
+    def test_emits_generic_factor_provenance_when_metadata_is_explicit(self) -> None:
+        explicit = request()
+        explicit["withinFactor"] = {
+            "role": "numeric_covariate",
+            "title": "Radius",
+            "unit": "µm",
+        }
+        result = run_mixed_anova(explicit)
+        self.assertEqual(
+            [test["name"] for test in result["tests"]],
+            [
+                "condition_by_within_factor_interaction",
+                "condition_main_effect",
+                "within_factor_main_effect",
+            ],
+        )
+        self.assertEqual(result["factorMetadata"]["withinFactor"]["title"], "Radius")
+        self.assertEqual(
+            result["factorMetadata"]["legacyEffectAliases"]["condition_by_time_interaction"],
+            "condition_by_within_factor_interaction",
+        )
+
     def test_refuses_stable_unit_crossing_conditions(self) -> None:
         broken = request()
         broken["observations"][-1]["pairId"] = "A1"

@@ -435,6 +435,42 @@ describe("temporary experiment-first analysis adapter", () => {
     expect(assessment).toMatchObject({ state: "unsupported", request: null, missingCount: 1 });
   });
 
+  it("時点ごとに独立なbalanced設計はD07条件×軸requestを作る", () => {
+    const fixture = createLongitudinalFixture();
+    const draft = {
+      ...fixture.draft,
+      conditionAssignment: { kind: "independent" as const, unitLabel: "sample" },
+      time: { ...fixture.draft.time, sampling: "cross_sectional" as const },
+    };
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells: fixture.cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+      timeAnalysis: { kind: "full_time_course" },
+      withinFactor: { role: "time", title: "Time", unit: "h" },
+    });
+
+    expect(assessment).toMatchObject({
+      state: "ready",
+      method: "two_way_anova",
+      recommendedMethod: "two_way_anova",
+    });
+    expect(assessment.request).toMatchObject({
+      protocolVersion: "0.7.0",
+      templateId: "D07",
+      withinFactor: { role: "time", title: "Time", unit: "h" },
+    });
+    const d07 = assessment.request?.protocolVersion === "0.7.0" ? assessment.request : null;
+    expect(d07?.observations).toHaveLength(
+      draft.experiments.length * draft.conditions.length * draft.time.points.length,
+    );
+    expect(
+      new Set(d07?.observations.map(({ experimentalUnitId }) => experimentalUnitId)).size,
+    ).toBe(d07?.observations.length);
+    expect(d07?.observations.every(({ pairId, blockId }) => !pairId && !blockId)).toBe(true);
+  });
+
   it("縦断endpointのpair matchingはexperiment row順に依存しない", () => {
     const fixture = createLongitudinalFixture();
     const assess = (draft: typeof fixture.draft) =>

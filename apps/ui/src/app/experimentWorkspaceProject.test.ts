@@ -1377,6 +1377,85 @@ describe("experiment workspace project adapter", () => {
     });
   });
 
+  it("D07の独立セルidentityと推奨provenanceを保存する", () => {
+    const longitudinal = createLongitudinalFixture();
+    const draft = {
+      ...longitudinal.draft,
+      time: { ...longitudinal.draft.time, sampling: "cross_sectional" as const },
+      conditionAssignment: { kind: "independent" as const, unitLabel: "sample" },
+    };
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells: longitudinal.cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+      timeAnalysis: { kind: "full_time_course" },
+      withinFactor: { role: "time", title: "Time", unit: "h" },
+    });
+    if (!assessment.request || assessment.request.protocolVersion !== "0.7.0")
+      throw new Error("Balanced cross-sectional fixture should produce D07");
+    const recommendation = {
+      templateId: "D07" as const,
+      templateVersion: "0.1.0",
+      recommendedMethod: "two_way_anova" as const,
+      alternativeMethods: [],
+      reasonCode: "balanced_independent_condition_by_axis_design",
+      explanation: assessment.reason,
+      statisticalNDefinition: "Independent experimental units in each condition-by-axis cell",
+      multiplicityMethod: null,
+    };
+    const graph: WorkspaceGraphState = {
+      id: "graph.d07",
+      displayName: "Independent condition by time",
+      analysisRunId: null,
+      selectedReadoutId: draft.readouts[0].id,
+      sourceMode: "raw_readout",
+      selectedConditionIds: draft.conditions.map(({ id }) => id),
+      selectedTimePointIds: draft.time.points.map(({ id }) => id),
+      analysisTimePointId: null,
+      analysisMetric: { kind: "full_time_course" },
+      graphType: "line",
+      layers: { ...fixture().graph.layers, connectingLine: false },
+      appearance: TEST_APPEARANCE,
+      axes: testAxes("Reporter intensity (a.u.)", ["attribute.group"]),
+      statisticsAnnotation: { mode: "exact_p", testIndex: 0 },
+      analysis: {
+        request: assessment.request,
+        recommendation,
+        result: {
+          protocolVersion: "0.7.0",
+          requestId: assessment.request.requestId,
+          status: "ok",
+          engine: { name: "fixture", version: "1", packages: {} },
+          estimates: [],
+          tests: [],
+          diagnostics: [],
+          warnings: [],
+          completedAt: "2026-08-24T00:00:00.000Z",
+        },
+      },
+    };
+    const state = createExperimentWorkspaceProject({
+      draft,
+      cells: longitudinal.cells,
+      graphs: [graph],
+      now: "2026-08-24T00:00:00.000Z",
+    });
+    const persistedRequest = state.analysisRuns[0]?.request;
+
+    expect(persistedRequest).toMatchObject({ protocolVersion: "0.7.0", templateId: "D07" });
+    expect(
+      persistedRequest?.protocolVersion === "0.7.0" &&
+        new Set(persistedRequest.observations.map(({ experimentalUnitId }) => experimentalUnitId))
+          .size === persistedRequest.observations.length &&
+        persistedRequest.observations.every(
+          ({ pairId, blockId, withinFactorLevelId }) =>
+            pairId === undefined && blockId === undefined && Boolean(withinFactorLevelId),
+        ),
+    ).toBe(true);
+    expect(state.analysisRuns[0]?.recommendation).toEqual(recommendation);
+  });
+
   it("endpoint由来のpaired requestとstable-unit lineageを保存後に再構築する", () => {
     const fixture = createLongitudinalFixture();
     const analysisMetric = { kind: "endpoint" as const, windowStart: 0, windowEnd: 24 };

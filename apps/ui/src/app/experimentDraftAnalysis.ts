@@ -124,6 +124,11 @@ export function assessDraftGraphAnalysis(input: {
   selectedMethod?: StatisticalMethod;
   contrastIntent?: ContrastIntent;
   plannedContrastConditionIds?: readonly (readonly [string, string])[];
+  withinFactor?: Readonly<{
+    role: "time" | "numeric_covariate" | "categorical";
+    title: string;
+    unit: string;
+  }>;
 }): DraftAnalysisAssessment {
   const selected = new Set(input.conditionIds);
   const conditions = input.draft.conditions.filter((condition) => selected.has(condition.id));
@@ -214,11 +219,11 @@ export function assessDraftGraphAnalysis(input: {
 
   if (input.timeAnalysis?.kind === "full_time_course") {
     const timePoints = [...input.draft.time.points].sort((a, b) => a.value - b.value);
-    if (input.draft.time.sampling !== "longitudinal" || timePoints.length < 2) {
+    if (timePoints.length < 2 || input.draft.time.sampling === "none") {
       return {
         state: "unsupported",
-        title: "条件×時間モデルには縦断データが必要です",
-        reason: "同じ実験単位を2時点以上追跡する設計を指定してください。",
+        title: "条件×軸モデルには2水準以上が必要です",
+        reason: "同じ軸に属する測定水準を2つ以上指定してください。",
         method: null,
         commonAlternative: null,
         nByCondition: [],
@@ -253,6 +258,108 @@ export function assessDraftGraphAnalysis(input: {
         missingCount: 0,
         notPlannedCount: 0,
         request: null,
+      };
+    }
+    const withinFactor = {
+      role: input.withinFactor?.role ?? ("time" as const),
+      title: input.withinFactor?.title.trim() || "Time",
+      unit: input.withinFactor?.unit.trim() || input.draft.time.unit,
+    };
+    if (input.draft.time.sampling === "cross_sectional") {
+      const observations: Array<{
+        observationId: string;
+        conditionId: string;
+        value: number;
+        experimentalUnitId: string;
+        withinFactorLevelId: string;
+      }> = [];
+      let missingCount = 0;
+      let notPlannedCount = 0;
+      const cellCounts: number[] = [];
+      const nByCondition = conditions.map((condition, conditionIndex) => {
+        let minimumCellN = Number.POSITIVE_INFINITY;
+        timePoints.forEach((timePoint, timeIndex) => {
+          let cellN = 0;
+          input.draft.experiments.forEach((experiment, experimentIndex) => {
+            const cell =
+              input.cells[
+                experimentCellKey({
+                  experimentId: experiment.id,
+                  conditionId: condition.id,
+                  readoutId: input.readoutId,
+                  timePointId: timePoint.id,
+                })
+              ];
+            if (cell?.availability === "not_planned") notPlannedCount += 1;
+            const value = analysisValue(cell);
+            if (value === null || !Number.isFinite(value)) {
+              missingCount += 1;
+              return;
+            }
+            const baseUnitId = experiment.stableUnitId ?? `unit.draft.${experimentIndex + 1}`;
+            observations.push({
+              observationId: `observation.draft.${conditionIndex + 1}.${timeIndex + 1}.${experimentIndex + 1}`,
+              conditionId: condition.id,
+              value,
+              experimentalUnitId: `${baseUnitId}.${condition.id}.${timePoint.id}`,
+              withinFactorLevelId: timePoint.id,
+            });
+            cellN += 1;
+          });
+          cellCounts.push(cellN);
+          minimumCellN = Math.min(minimumCellN, cellN);
+        });
+        return {
+          conditionId: condition.id,
+          label: condition.label,
+          n: Number.isFinite(minimumCellN) ? minimumCellN : 0,
+        };
+      });
+      if (
+        missingCount > 0 ||
+        cellCounts.some((count) => count < 2) ||
+        new Set(cellCounts).size !== 1
+      ) {
+        return {
+          state: "unsupported",
+          title: "独立条件×軸モデルのbalanced条件を満たしません",
+          reason:
+            "すべての条件×軸水準で、別々の実験単位が同数かつ2以上必要です。欠測や不均衡を暗黙に除外しません。",
+          method: null,
+          commonAlternative: "不均衡を扱える検証済み一般化モデル（未接続）",
+          nByCondition,
+          missingCount,
+          notPlannedCount,
+          request: null,
+        };
+      }
+      const request = AnalysisEngineRequestSchema.parse({
+        protocolVersion: "0.7.0",
+        requestId: "request.draft.graph",
+        projectId: "project.draft",
+        analysisId: "analysis.draft.graph",
+        templateId: "D07",
+        templateVersion: "0.1.0",
+        method: "two_way_anova",
+        conditionIds: conditions.map(({ id }) => id),
+        withinFactor: {
+          ...withinFactor,
+          levels: timePoints.map(({ id, value }) => ({ levelId: id, value })),
+        },
+        observations,
+        options: { alternative: "two_sided", confidenceLevel: 0.95, multiplicityMethod: null },
+      });
+      return {
+        state: "ready",
+        title: `独立条件×${withinFactor.title}の二因子分散分析を推奨`,
+        reason: `各条件×${withinFactor.title}水準で別々の${input.draft.conditionAssignment.unitLabel}を使い、交互作用と両主効果を評価します。反復測定とは扱いません。`,
+        method: "two_way_anova",
+        recommendedMethod: "two_way_anova",
+        commonAlternative: null,
+        nByCondition,
+        missingCount,
+        notPlannedCount,
+        request,
       };
     }
     const observations: Array<{
@@ -347,6 +454,7 @@ export function assessDraftGraphAnalysis(input: {
       templateId: "D06",
       templateVersion: "0.1.0",
       method: "mixed_anova",
+      withinFactor,
       conditionIds: conditions.map(({ id }) => id),
       timePoints: timePoints.map(({ id, value }) => ({ timePointId: id, value })),
       observations,
@@ -585,6 +693,16 @@ export function assessDraftGraphAnalysis(input: {
       title: "反復測定の分散分析を推奨",
       reason: `同じ${input.draft.conditionAssignment.unitLabel}の${conditions.length}条件を比較します（完全な単位 ${completePairIds?.size ?? 0}）。条件間比較はHolm法で調整します。${missingCount > 0 ? " 不完全な単位は解析に含めません。" : ""}`,
       method: "repeated_measures_anova",
+      recommendedMethod: "repeated_measures_anova",
+      methodChoices: [
+        {
+          method: "repeated_measures_anova",
+          level: "recommended",
+          label: "推奨を採用：反復測定の分散分析 + Holm",
+          explanation: `同じ${input.draft.conditionAssignment.unitLabel}の完全な${conditions.length}条件の対応を保持します。`,
+          enabled: true,
+        },
+      ],
       commonAlternative: "順位に基づくFriedman検定（実装準備中）",
       nByCondition: effectiveNByCondition,
       missingCount,

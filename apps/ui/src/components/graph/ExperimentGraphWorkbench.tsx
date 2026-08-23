@@ -137,6 +137,10 @@ function graphAnnotationContext(input: {
     const repeatedAxis = repeatedAxisAnnotationLabel(axes);
     return `condition × ${repeatedAxis} interaction · mixed ANOVA`;
   }
+  if (request.protocolVersion === "0.7.0") {
+    const repeatedAxis = repeatedAxisAnnotationLabel(axes);
+    return `condition × ${repeatedAxis} interaction · independent two-way ANOVA`;
+  }
   const method = methodShortLabel(request.method);
   const unit = axes.xUnit.trim() || draft.time.unit;
   if (timeAnalysis.kind === "selected_timepoint") {
@@ -2050,7 +2054,8 @@ export function ExperimentGraphWorkbench({
   const methodsText = useMemo(() => {
     if (!analysis || analysis.result.status !== "ok") return null;
     const design = createExperimentWorkspaceDesign(draft, analysis.result.completedAt);
-    const recommendation = createWorkspaceRecommendation(analysis.request, design);
+    const recommendation =
+      analysis.recommendation ?? createWorkspaceRecommendation(analysis.request, design);
     const base = generateMethodsText({
       design,
       recommendation: {
@@ -2472,6 +2477,11 @@ export function ExperimentGraphWorkbench({
         selectedMethod: selectedStatisticalMethod,
         contrastIntent,
         plannedContrastConditionIds,
+        withinFactor: {
+          role: axes.xSemantic,
+          title: axes.xTitle,
+          unit: axes.xUnit,
+        },
       }),
     [
       activeReadoutId,
@@ -2483,6 +2493,9 @@ export function ExperimentGraphWorkbench({
       selectedConditionIds,
       selectedStatisticalMethod,
       plannedContrastConditionIds,
+      axes.xSemantic,
+      axes.xTitle,
+      axes.xUnit,
       timeAnalysis,
     ],
   );
@@ -2711,11 +2724,21 @@ export function ExperimentGraphWorkbench({
         selectedReadoutId,
         selectedConditionIds,
         statisticalUnit: draft.conditionAssignment.unitLabel,
-        recommendedMethod: analysis.recommendedMethod ?? analysisAssessment.recommendedMethod,
+        recommendation:
+          analysis.recommendation ??
+          createWorkspaceRecommendation(
+            analysis.request,
+            createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
+          ),
+        recommendedMethod:
+          analysis.recommendation?.recommendedMethod ??
+          analysis.recommendedMethod ??
+          analysisAssessment.recommendedMethod,
         selectedMethod: analysis.request.method,
         recommendationDiffers:
-          (analysis.recommendedMethod ?? analysisAssessment.recommendedMethod) !==
-          analysis.request.method,
+          (analysis.recommendation?.recommendedMethod ??
+            analysis.recommendedMethod ??
+            analysisAssessment.recommendedMethod) !== analysis.request.method,
         contrast:
           analysis.request.protocolVersion === "0.1.0"
             ? analysis.request.contrastConditionIds
@@ -2727,7 +2750,8 @@ export function ExperimentGraphWorkbench({
                 }
               : analysis.request.protocolVersion === "0.5.0"
                 ? analysis.request.variableConditionIds
-                : analysis.request.protocolVersion === "0.6.0"
+                : analysis.request.protocolVersion === "0.6.0" ||
+                    analysis.request.protocolVersion === "0.7.0"
                   ? analysis.request.conditionIds
                   : analysis.request.primaryContrastConditionIds,
         nByCondition: analysisAssessment.nByCondition,

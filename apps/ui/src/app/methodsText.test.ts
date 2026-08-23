@@ -5,6 +5,7 @@ import type {
   AnalysisEngineResult,
   AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
+import { AnalysisEngineRequestSchema } from "@lsaa/analysis-contracts";
 import type { ExperimentDesign } from "@lsaa/domain";
 import { createCoreTwoConditionGraphSpec } from "@lsaa/graph-spec";
 
@@ -608,5 +609,88 @@ describe("Japanese Methods generation", () => {
     expect(text).toContain("Radius（実験単位内）");
     expect(text).not.toContain("条件 × 時間");
     expect(text).not.toContain("条件×時間");
+  });
+
+  it("describes D07 as an independent-cell condition-by-axis analysis", () => {
+    const request = AnalysisEngineRequestSchema.parse({
+      protocolVersion: "0.7.0",
+      requestId: "request.d07.time",
+      projectId: "project.methods",
+      analysisId: "analysis.d07.time",
+      templateId: "D07",
+      templateVersion: "0.1.0",
+      method: "two_way_anova",
+      conditionIds: ["condition.control", "condition.treatment"],
+      withinFactor: {
+        role: "time",
+        title: "Time",
+        unit: "h",
+        levels: [
+          { levelId: "axis.24", value: 24 },
+          { levelId: "axis.72", value: 72 },
+        ],
+      },
+      observations: ["condition.control", "condition.treatment"].flatMap(
+        (conditionId, conditionIndex) =>
+          ["axis.24", "axis.72"].flatMap((withinFactorLevelId, levelIndex) =>
+            [1, 2].map((replicate) => ({
+              observationId: `observation.${conditionIndex}.${levelIndex}.${replicate}`,
+              conditionId,
+              withinFactorLevelId,
+              value: conditionIndex + levelIndex + replicate,
+              experimentalUnitId: `unit.${conditionIndex}.${levelIndex}.${replicate}`,
+            })),
+          ),
+      ),
+      options: { alternative: "two_sided", confidenceLevel: 0.95, multiplicityMethod: null },
+    });
+    const recommendation: AnalysisRecommendation = {
+      templateId: "D07",
+      templateVersion: "0.1.0",
+      recommendedMethod: "two_way_anova",
+      alternativeMethods: [],
+      reasonCode: "balanced_independent_condition_by_axis_design",
+      explanation: "Balanced independent cells",
+      statisticalNDefinition: "Independent experimental units in each condition-by-axis cell",
+    };
+    const result: AnalysisEngineResult = {
+      protocolVersion: "0.7.0",
+      requestId: request.requestId,
+      status: "ok",
+      engine: { name: "fixture", version: "1", packages: {} },
+      estimates: [],
+      tests: [
+        "condition_by_within_factor_interaction",
+        "condition_main_effect",
+        "within_factor_main_effect",
+      ].map((name) => ({
+        name,
+        statisticName: "F",
+        statistic: 4.2,
+        degreesOfFreedom: [1, 4],
+        pValue: 0.04,
+        adjustedPValue: null,
+        effectSizeName: "partial_eta_squared",
+        effectSize: 0.3,
+      })),
+      diagnostics: [],
+      warnings: [],
+      completedAt: "2026-08-24T00:00:00.000Z",
+      factorMetadata: {
+        withinFactor: { role: "time", title: "Time", unit: "h" },
+        effectIds: {
+          interaction: "condition_by_within_factor_interaction",
+          condition: "condition_main_effect",
+          withinFactor: "within_factor_main_effect",
+        },
+        legacyEffectAliases: {},
+      },
+    };
+    const text = generateMethodsText({ design, recommendation, request, result });
+
+    expect(text).toContain("独立条件×Timeの二因子分散分析");
+    expect(text).toContain("条件 × Time（交互作用）");
+    expect(text).toContain("Time（独立セル間）");
+    expect(text).not.toContain("反復測定");
   });
 });
