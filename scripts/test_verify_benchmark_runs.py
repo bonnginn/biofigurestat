@@ -284,6 +284,40 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
                 path, "JCB017", "track_A", "fresh_A_JCB017_002",
                 source_view_sha256=source_sha, require_evidence_provenance=True,
             )
+
+            default_svg = b"<svg><text>Default Graph before unsupported decision</text></svg>"
+            default_png = b"\x89PNG\r\n\x1a\ndefault"
+            (path / "default_graph.svg").write_bytes(default_svg)
+            (path / "default_graph.png").write_bytes(default_png)
+            events.insert(
+                2,
+                {
+                    "sequence": 3,
+                    "occurredAt": "2026-08-23T00:00:30Z",
+                    "type": "default_graph_captured",
+                    "detail": {
+                        "svgSha256": hashlib.sha256(default_svg).hexdigest(),
+                        "pngSha256": hashlib.sha256(default_png).hexdigest(),
+                    },
+                },
+            )
+            for sequence, event in enumerate(events, start=1):
+                event["sequence"] = sequence
+            run["artifactCompleteness"] = (
+                "metadata_only_explicit_unsupported_with_default_graph"
+            )
+            run["defaultGraphCaptured"] = True
+            run["interactionCount"] = len(events)
+            (path / "run.json").write_text(json.dumps(run), encoding="utf-8")
+            (path / "interaction_log.json").write_text(json.dumps(events), encoding="utf-8")
+            verify_explicit_unsupported_run_directory(
+                path,
+                "JCB017",
+                "track_A",
+                "fresh_A_JCB017_002",
+                source_view_sha256=source_sha,
+                require_evidence_provenance=True,
+            )
             with self.assertRaisesRegex(VerificationError, "hash does not match"):
                 verify_explicit_unsupported_run_directory(
                     path, "JCB017", "track_A", "fresh_A_JCB017_002",

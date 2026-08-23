@@ -1097,6 +1097,7 @@ describe("ExperimentGraphWorkbench", () => {
     const draft = {
       ...fixture.draft,
       time: { ...fixture.draft.time, sampling: "cross_sectional" as const },
+      conditionAssignment: { kind: "independent" as const, unitLabel: "sample" },
     };
     render(<ExperimentGraphWorkbench draft={draft} cells={fixture.cells} onClose={vi.fn()} />);
     selectInspectorTarget("background");
@@ -1106,6 +1107,28 @@ describe("ExperimentGraphWorkbench", () => {
     const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="unit-trajectory"]')).toHaveLength(0);
     expect(graph.querySelectorAll('[data-graph-layer="summary-trend"]')).toHaveLength(2);
+  });
+
+  it("時点ごとに別サンプルでも独立条件×時間の全体モデルを選べる", () => {
+    const fixture = createLongitudinalFixture();
+    const draft = {
+      ...fixture.draft,
+      time: { ...fixture.draft.time, sampling: "cross_sectional" as const },
+      conditionAssignment: { kind: "independent" as const, unitLabel: "sample" },
+    };
+    render(<ExperimentGraphWorkbench draft={draft} cells={fixture.cells} onClose={vi.fn()} />);
+    selectInspectorTarget("statistics");
+    const selector = screen.getByRole("combobox", { name: "時系列の解析値" });
+    expect(
+      within(selector).getByRole("option", {
+        name: "条件×時間（時点ごとに独立な全体モデル）",
+      }),
+    ).toBeEnabled();
+
+    fireEvent.change(selector, { target: { value: "full_time_course" } });
+
+    expect(screen.getByText("独立条件×Timeの二因子分散分析を推奨")).toBeVisible();
+    expect(screen.getByText(/反復測定とは扱わず/)).toBeVisible();
   });
 
   it("全時間の図を保ったままAUCを解析値に選べる", () => {

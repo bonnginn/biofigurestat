@@ -256,7 +256,9 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
                 outcome: completed.outcome,
                 supportStatus: completed.supportStatus,
                 artifactCompleteness: isExplicitUnsupported
-                  ? "metadata_only_explicit_unsupported"
+                  ? completed.defaultGraphCaptured
+                    ? "metadata_only_explicit_unsupported_with_default_graph"
+                    : "metadata_only_explicit_unsupported"
                   : "metadata_only",
                 ...(isExplicitUnsupported
                   ? {

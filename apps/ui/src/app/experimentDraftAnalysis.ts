@@ -235,9 +235,11 @@ export function assessDraftGraphAnalysis(input: {
     if (input.draft.conditionAssignment.kind !== "independent") {
       return {
         state: "unsupported",
-        title: "条件間で独立した縦断設計に限定しています",
+        title: "群間で独立した条件×軸設計に限定しています",
         reason:
-          "現在の条件×時間モデルは、条件間は独立、時間内は同じ実験単位を追跡する完全なbalanced設計だけを扱います。",
+          input.draft.time.sampling === "longitudinal"
+            ? "現在の縦断モデルは、条件間は独立、軸内は同じ実験単位を追跡する完全なbalanced設計だけを扱います。"
+            : "現在の独立二因子モデルは、すべての条件×軸セルで別々の実験単位を使う完全なbalanced設計だけを扱います。",
         method: null,
         commonAlternative: null,
         nByCondition: [],

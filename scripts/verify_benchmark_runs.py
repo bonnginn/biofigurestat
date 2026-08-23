@@ -30,6 +30,11 @@ REQUIRED_ARTIFACTS = {
     "interaction_log.json",
 }
 EXPLICIT_UNSUPPORTED_ARTIFACTS = {"run.json", "interaction_log.json"}
+EXPLICIT_UNSUPPORTED_DEFAULT_GRAPH_ARTIFACTS = {
+    *EXPLICIT_UNSUPPORTED_ARTIFACTS,
+    "default_graph.png",
+    "default_graph.svg",
+}
 SUPPORT_STATUSES = {
     "direct",
     "reasonable_workaround",
@@ -76,9 +81,12 @@ def verify_explicit_unsupported_run_directory(
     if not path.is_dir():
         raise VerificationError(f"run folder is missing: {path}")
     present = {item.name for item in path.iterdir() if item.is_file()}
-    if present != EXPLICIT_UNSUPPORTED_ARTIFACTS:
+    if frozenset(present) not in {
+        frozenset(EXPLICIT_UNSUPPORTED_ARTIFACTS),
+        frozenset(EXPLICIT_UNSUPPORTED_DEFAULT_GRAPH_ARTIFACTS),
+    }:
         raise VerificationError(
-            "explicit unsupported run must contain only run.json and interaction_log.json"
+            "explicit unsupported run must contain terminal metadata and, if captured, the complete default Graph pair"
         )
     run = read_json_object(path / "run.json")
     for key, expected in {"caseId": case_id, "track": track, "runId": run_id}.items():
@@ -103,8 +111,18 @@ def verify_explicit_unsupported_run_directory(
         raise VerificationError("explicit unsupported run has the wrong benchmark outcome")
     if run.get("supportStatus") != "impossible":
         raise VerificationError("explicit unsupported run must classify scientific support as impossible")
-    if run.get("artifactCompleteness") != "metadata_only_explicit_unsupported":
+    has_default_graph = "default_graph.svg" in present
+    expected_completeness = (
+        "metadata_only_explicit_unsupported_with_default_graph"
+        if has_default_graph
+        else "metadata_only_explicit_unsupported"
+    )
+    if run.get("artifactCompleteness") != expected_completeness:
         raise VerificationError("explicit unsupported artifact contract is not declared")
+    if has_default_graph and run.get("defaultGraphCaptured") is not True:
+        raise VerificationError("explicit unsupported default Graph declaration is inconsistent")
+    if not has_default_graph and run.get("defaultGraphCaptured") not in {None, False}:
+        raise VerificationError("explicit unsupported default Graph declaration is inconsistent")
     routes = run.get("attemptedRoutes")
     if not isinstance(routes, list) or not routes or any(
         not isinstance(route, str) or not route.strip() for route in routes
@@ -191,6 +209,23 @@ def verify_explicit_unsupported_run_directory(
         raise VerificationError("explicit unsupported completion timestamp ordering is invalid")
     if run.get("interactionCount") != len(events):
         raise VerificationError("run.json interactionCount does not match interaction_log.json")
+    if has_default_graph:
+        if "default_graph_captured" not in event_types:
+            raise VerificationError("explicit unsupported default Graph has no capture event")
+        captured = events[event_types.index("default_graph_captured")]
+        detail = captured.get("detail")
+        if not isinstance(detail, dict):
+            raise VerificationError("explicit unsupported default Graph capture has no provenance")
+        if sha256(path / "default_graph.svg") != detail.get("svgSha256"):
+            raise VerificationError("explicit unsupported default SVG hash does not match capture")
+        if sha256(path / "default_graph.png") != detail.get("pngSha256"):
+            raise VerificationError("explicit unsupported default PNG hash does not match capture")
+        if event_types.index("blind_case_delivered") > event_types.index("default_graph_captured"):
+            raise VerificationError("explicit unsupported default Graph was captured before case delivery")
+        if "<svg" not in (path / "default_graph.svg").read_text(encoding="utf-8")[:500]:
+            raise VerificationError("explicit unsupported default_graph.svg is not an SVG document")
+        if (path / "default_graph.png").read_bytes()[:8] != b"\x89PNG\r\n\x1a\n":
+            raise VerificationError("explicit unsupported default_graph.png is not a PNG document")
     return run
 
 

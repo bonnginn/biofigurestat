@@ -4243,11 +4243,10 @@ export function ExperimentGraphWorkbench({
                       }}
                     >
                       <option value="selected_timepoint">選んだ時点の値</option>
-                      <option
-                        value="full_time_course"
-                        disabled={draft.time.sampling !== "longitudinal"}
-                      >
-                        条件×時間（反復測定の全体モデル）
+                      <option value="full_time_course">
+                        {draft.time.sampling === "longitudinal"
+                          ? "条件×時間（反復測定の全体モデル）"
+                          : "条件×時間（時点ごとに独立な全体モデル）"}
                       </option>
                       <option value="endpoint" disabled={draft.time.sampling !== "longitudinal"}>
                         最後の時点（endpoint）
@@ -4381,7 +4380,9 @@ export function ExperimentGraphWorkbench({
                   ) : null}
                   {timeAnalysis.kind === "full_time_course" ? (
                     <p className="experiment-graph-help">
-                      全時点と実験単位identityを保持し、条件×時間の交互作用を最初に評価します。欠測のないbalanced設計に限定します。
+                      {draft.time.sampling === "longitudinal"
+                        ? "全時点と実験単位identityを保持し、条件×時間の交互作用を最初に評価します。欠測のないbalanced設計に限定します。"
+                        : "各条件×時点で別々の実験単位を使い、交互作用と両主効果を評価します。反復測定とは扱わず、欠測のないbalanced設計に限定します。"}
                     </p>
                   ) : null}
                   <p className="experiment-graph-help">
