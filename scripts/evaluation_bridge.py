@@ -24,7 +24,12 @@ from urllib.parse import parse_qs, urlparse
 
 from blind_benchmark_package import load_package
 from blind_batch_queue import BlindBatchQueue
-from verify_benchmark_runs import REQUIRED_ARTIFACTS, verify_run_directory
+from verify_benchmark_runs import (
+    EXPLICIT_UNSUPPORTED_ARTIFACTS,
+    REQUIRED_ARTIFACTS,
+    verify_explicit_unsupported_run_directory,
+    verify_run_directory,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -351,6 +356,28 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                         if self.config.blind_batch_queue is not None:
                             self.config.blind_batch_queue.pause(identity, str(error))
                         raise
+                run_artifact = next(
+                    (
+                        artifact for artifact in artifacts
+                        if isinstance(artifact, dict) and artifact.get("name") == "run.json"
+                    ),
+                    None,
+                )
+                recorded_run: dict[str, Any] = {}
+                if isinstance(run_artifact, dict) and run_artifact.get("encoding", "text") == "text":
+                    try:
+                        parsed_run = json.loads(run_artifact.get("content", ""))
+                        recorded_run = parsed_run if isinstance(parsed_run, dict) else {}
+                    except json.JSONDecodeError:
+                        pass
+                explicit_unsupported = recorded_run.get("outcome") == "explicit_unsupported"
+                if self.config.blind_batch_queue is not None and explicit_unsupported:
+                    if set(required_artifacts) != EXPLICIT_UNSUPPORTED_ARTIFACTS:
+                        error = ValueError(
+                            "Explicit unsupported requires its exact metadata-only artifact contract"
+                        )
+                        self.config.blind_batch_queue.pause(identity, str(error))
+                        raise error
                 try:
                     target, written, present = write_artifact_batch(
                         self.config.output_root,
@@ -363,26 +390,49 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                         self.config.blind_batch_queue.pause(identity, str(error))
                     raise
                 if self.config.blind_batch_queue is not None:
-                    run_artifact = next(
-                        (artifact for artifact in artifacts if artifact.get("name") == "run.json"),
-                        None,
-                    )
-                    if isinstance(run_artifact, dict) and run_artifact.get("encoding", "text") == "text":
-                        try:
-                            recorded_run = json.loads(run_artifact.get("content", ""))
-                        except json.JSONDecodeError:
-                            recorded_run = {}
-                        outcome_status = {
-                            "infrastructure_failure": "infrastructure_failure",
-                            "contaminated": "contaminated",
-                            "aborted_not_started": "aborted",
-                        }.get(recorded_run.get("outcome") if isinstance(recorded_run, dict) else None)
-                        if outcome_status:
-                            self.config.blind_batch_queue.pause(
-                                identity, f"Experimenter recorded {outcome_status}", outcome_status
-                            )
+                    outcome_status = {
+                        "infrastructure_failure": "infrastructure_failure",
+                        "contaminated": "contaminated",
+                        "aborted_not_started": "aborted",
+                    }.get(recorded_run.get("outcome"))
+                    if outcome_status:
+                        self.config.blind_batch_queue.pause(
+                            identity, f"Experimenter recorded {outcome_status}", outcome_status
+                        )
                 verified = False
-                if self.config.blind_batch_queue is not None and set(required_artifacts) == REQUIRED_ARTIFACTS:
+                if self.config.blind_batch_queue is not None and explicit_unsupported:
+                    try:
+                        package = load_package(
+                            self.config.blind_package_root, identity[0], identity[2]
+                        )
+                        manifest = json.loads(
+                            (
+                                self.config.blind_package_root / identity[2] / "manifest.json"
+                            ).read_text(encoding="utf-8")
+                        )
+                        verified_run = verify_explicit_unsupported_run_directory(
+                            target, identity[0], identity[1], identity[2], manifest["payloadSha256"]
+                        )
+                        if package.get("runId") != identity[2]:
+                            raise ValueError("Blind package identity mismatch")
+                        terminal_evidence = {
+                            key: verified_run[key]
+                            for key in (
+                                "supportStatus", "scientificReason", "experimentalUnit",
+                                "biologicalN", "attemptedRoutes", "scientificCompromiseReason",
+                                "completedAt",
+                            )
+                        }
+                        self.config.blind_batch_queue.mark_explicit_unsupported(
+                            identity, terminal_evidence
+                        )
+                        verified = True
+                    except Exception as error:
+                        self.config.blind_batch_queue.pause(identity, str(error))
+                        raise ValueError(
+                            f"Explicit unsupported terminal verification failed: {error}"
+                        ) from error
+                elif self.config.blind_batch_queue is not None and set(required_artifacts) == REQUIRED_ARTIFACTS:
                     try:
                         verify_run_directory(target, identity[0], identity[1], identity[2])
                         load_package(self.config.blind_package_root, identity[0], identity[2])

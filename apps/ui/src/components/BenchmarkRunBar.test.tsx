@@ -171,6 +171,121 @@ describe("BenchmarkRunBar case initialization", () => {
     });
   });
 
+  it("persists and rehydrates an explicit unsupported terminal run", async () => {
+    const terminalEvidence = {
+      supportStatus: "impossible",
+      scientificReason: "A one-group design cannot be represented.",
+      experimentalUnit: "independent patients",
+      biologicalN: 30,
+      attemptedRoutes: ["ordinary design", "long import", "wide import"],
+      scientificCompromiseReason: "A fictitious second condition would corrupt the design.",
+      completedAt: "2026-08-23T00:01:00Z",
+    };
+    const activeBatch = {
+      batchId: "batch_fixture",
+      benchmarkVersion: "LSA50_v1_1",
+      status: "running",
+      position: 2,
+      total: 6,
+      completed: 1,
+      current: {
+        position: 2,
+        caseId: "NC033",
+        track: "track_B",
+        runId: "batch_fixture_02_NC033_retry_01",
+        packageSha256: "b".repeat(64),
+        status: "active",
+      },
+    };
+    const persistedBatch = {
+      ...activeBatch,
+      status: "ready_to_advance",
+      completed: 2,
+      current: { ...activeBatch.current, status: "explicit_unsupported", terminalEvidence },
+    };
+    let persisted = false;
+    const ncCase = {
+      ...blindCase,
+      caseId: "NC033",
+      runId: activeBatch.current.runId,
+      researcherPacket: { ...blindCase.researcherPacket, case_id: "NC033" },
+      syntheticData: blindCase.syntheticData.map((row) => ({ ...row, case_id: "NC033" })),
+    };
+    const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/blind-batch/current")) {
+        return { ok: true, status: 200, json: async () => (persisted ? persistedBatch : activeBatch) };
+      }
+      if (url.endsWith("/literature/case?caseId=NC033&track=track_B&runId=batch_fixture_02_NC033_retry_01")) {
+        return { ok: true, status: 200, json: async () => ncCase };
+      }
+      if (url.endsWith("/artifacts") && init?.method === "POST") {
+        persisted = true;
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            written: ["run.json", "interaction_log.json"],
+            present: ["run.json", "interaction_log.json"],
+            verified: true,
+          }),
+        };
+      }
+      throw new Error(`unexpected request: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const rendered = render(<BenchmarkRunBar />);
+    await screen.findByText(/Blind case ready: NC033/);
+    fireEvent.change(screen.getByLabelText("Benchmark outcome"), {
+      target: { value: "explicit_unsupported" },
+    });
+    fireEvent.change(screen.getByLabelText("Scientific support"), {
+      target: { value: "impossible" },
+    });
+    fireEvent.change(screen.getByLabelText("Scientific reason"), {
+      target: { value: terminalEvidence.scientificReason },
+    });
+    fireEvent.change(screen.getByLabelText("Experimental unit"), {
+      target: { value: terminalEvidence.experimentalUnit },
+    });
+    fireEvent.change(screen.getByLabelText("Biological n (if determinable)"), {
+      target: { value: "30" },
+    });
+    fireEvent.change(screen.getByLabelText("Attempted routes"), {
+      target: { value: terminalEvidence.attemptedRoutes.join("\n") },
+    });
+    fireEvent.change(
+      screen.getByLabelText("Why continuation would require scientific compromise"),
+      { target: { value: terminalEvidence.scientificCompromiseReason } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "終了状態だけ記録" }));
+    await screen.findByText("Explicit unsupportedを検証・永続化しました。");
+    expect(screen.getByRole("button", { name: "次のケース" })).toBeEnabled();
+    const artifactCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/artifacts"));
+    const artifactBody = JSON.parse(String(artifactCall?.[1]?.body));
+    expect(artifactBody.requiredArtifacts).toEqual(["run.json", "interaction_log.json"]);
+    expect(artifactBody.artifacts.map(({ name }: { name: string }) => name)).toEqual([
+      "run.json",
+      "interaction_log.json",
+    ]);
+    expect(JSON.parse(artifactBody.artifacts[0].content)).toMatchObject({
+      outcome: "explicit_unsupported",
+      supportStatus: "impossible",
+      biologicalN: 30,
+      artifactCompleteness: "metadata_only_explicit_unsupported",
+    });
+
+    rendered.unmount();
+    resetBenchmarkRun();
+    render(<BenchmarkRunBar />);
+    await waitFor(() => expect(currentBenchmarkRun().outcome).toBe("explicit_unsupported"));
+    expect(currentBenchmarkRun().supportStatus).toBe("impossible");
+    expect(screen.getByLabelText("Scientific reason")).toHaveValue(
+      terminalEvidence.scientificReason,
+    );
+    expect(screen.getByRole("button", { name: "次のケース" })).toBeEnabled();
+  });
+
   it("requires scientific support only for explicit unsupported metadata outcomes", () => {
     expect(metadataOutcomeCanBeRecorded("infrastructure_failure", null)).toBe(true);
     expect(metadataOutcomeCanBeRecorded("aborted_not_started", null)).toBe(true);

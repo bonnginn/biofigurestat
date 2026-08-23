@@ -16,7 +16,9 @@ from blind_benchmark_package import ROOT, SAFE_ID, create_package, load_package
 
 SCHEMA_VERSION = "1.0.0"
 DEFAULT_CASES = ("JCB010", "NC033", "JCB023", "JCB024", "JCB015", "SA047")
-TERMINAL_STATUSES = {"completed", "infrastructure_failure", "contaminated", "aborted"}
+EVALUATED_STATUSES = {"completed", "explicit_unsupported"}
+FAILURE_STATUSES = {"infrastructure_failure", "contaminated", "aborted"}
+TERMINAL_STATUSES = {*EVALUATED_STATUSES, *FAILURE_STATUSES}
 JOB_STATUSES = {"queued", "active", *TERMINAL_STATUSES}
 BATCH_STATUSES = {"running", "ready_to_advance", "paused", "completed"}
 
@@ -71,9 +73,9 @@ class BlindBatchQueue:
             raise ValueError("Running blind batch must have exactly one active job")
         if active_count > 1:
             raise ValueError("Blind batch has multiple active jobs")
-        completed_positions = [job["position"] for job in jobs if job["status"] == "completed"]
-        if completed_positions != list(range(1, len(completed_positions) + 1)):
-            raise ValueError("Blind batch completed jobs are not a contiguous prefix")
+        evaluated_positions = [job["position"] for job in jobs if job["status"] in EVALUATED_STATUSES]
+        if evaluated_positions != list(range(1, len(evaluated_positions) + 1)):
+            raise ValueError("Blind batch evaluated jobs are not a contiguous prefix")
         return value
 
     def _write(self, value: dict[str, Any]) -> None:
@@ -97,36 +99,55 @@ class BlindBatchQueue:
             jobs = value["jobs"]
             current_job = next((job for job in jobs if job["status"] == "active"), None)
             if current_job is None and value["status"] == "ready_to_advance":
-                current_job = next((job for job in reversed(jobs) if job["status"] == "completed"), None)
+                current_job = next(
+                    (job for job in reversed(jobs) if job["status"] in EVALUATED_STATUSES), None
+                )
             if current_job is None and value["status"] == "paused":
-                current_job = next((job for job in jobs if job["status"] in TERMINAL_STATUSES - {"completed"}), None)
+                current_job = next((job for job in jobs if job["status"] in FAILURE_STATUSES), None)
             current = None if current_job is None else {
                 key: current_job[key]
                 for key in ("position", "caseId", "track", "runId", "packageSha256", "status")
             }
+            if current is not None and isinstance(current_job.get("terminalEvidence"), dict):
+                current["terminalEvidence"] = current_job["terminalEvidence"]
             return {
                 "batchId": value["batchId"],
                 "benchmarkVersion": value["benchmarkVersion"],
                 "status": value["status"],
                 "position": current_job["position"] if current_job else len(jobs),
                 "total": len(jobs),
-                "completed": sum(job["status"] == "completed" for job in jobs),
+                "completed": sum(job["status"] in EVALUATED_STATUSES for job in jobs),
                 "current": current,
             }
 
-    def mark_completed(self, identity: tuple[str, str, str]) -> None:
+    def mark_evaluated(
+        self, identity: tuple[str, str, str], status: str,
+        terminal_evidence: dict[str, Any] | None = None,
+    ) -> None:
+        if status not in EVALUATED_STATUSES:
+            raise ValueError("Blind batch evaluated status is invalid")
         with self._lock:
             value = self._read()
             active = next((job for job in value["jobs"] if job["status"] == "active"), None)
             if active is None or identity != (active["caseId"], active["track"], active["runId"]):
                 raise ValueError("Only the active blind batch job can be completed")
-            active["status"] = "completed"
+            active["status"] = status
+            if terminal_evidence is not None:
+                active["terminalEvidence"] = terminal_evidence
             value["status"] = "ready_to_advance"
             self._write(value)
 
+    def mark_completed(self, identity: tuple[str, str, str]) -> None:
+        self.mark_evaluated(identity, "completed")
+
+    def mark_explicit_unsupported(
+        self, identity: tuple[str, str, str], terminal_evidence: dict[str, Any]
+    ) -> None:
+        self.mark_evaluated(identity, "explicit_unsupported", terminal_evidence)
+
     def pause(self, identity: tuple[str, str, str], reason: str,
               status: str = "infrastructure_failure") -> None:
-        if status not in TERMINAL_STATUSES - {"completed"}:
+        if status not in FAILURE_STATUSES:
             raise ValueError("Blind batch pause status is invalid")
         with self._lock:
             value = self._read()
@@ -143,10 +164,12 @@ class BlindBatchQueue:
             if value["status"] != "ready_to_advance":
                 raise ValueError("Current blind batch job has not passed final verification")
             jobs = value["jobs"]
-            completed = [index for index, job in enumerate(jobs) if job["status"] == "completed"]
-            if not completed:
+            evaluated = [
+                index for index, job in enumerate(jobs) if job["status"] in EVALUATED_STATUSES
+            ]
+            if not evaluated:
                 raise ValueError("Blind batch has no verified completed job")
-            next_index = max(completed) + 1
+            next_index = max(evaluated) + 1
             if next_index >= len(jobs):
                 value["status"] = "completed"
             else:
@@ -156,6 +179,40 @@ class BlindBatchQueue:
                 value["status"] = "running"
             self._write(value)
             return self.snapshot()
+
+    def retry_active(
+        self, identity: tuple[str, str, str], new_run_id: str, package_sha256: str,
+        reason: str,
+    ) -> None:
+        if (
+            not SAFE_ID.fullmatch(new_run_id)
+            or len(package_sha256) != 64
+            or any(character not in "0123456789abcdef" for character in package_sha256)
+        ):
+            raise ValueError("Blind batch retry identity is invalid")
+        with self._lock:
+            value = self._read()
+            active = next((job for job in value["jobs"] if job["status"] == "active"), None)
+            if active is None or identity != (active["caseId"], active["track"], active["runId"]):
+                raise ValueError("Only the active blind batch job can be retried")
+            known_run_ids = {
+                attempt.get("runId")
+                for job in value["jobs"]
+                for attempt in job.get("priorAttempts", [])
+                if isinstance(attempt, dict)
+            } | {job["runId"] for job in value["jobs"]}
+            if new_run_id in known_run_ids:
+                raise ValueError("Blind batch retry run ID must be unique")
+            attempts = active.setdefault("priorAttempts", [])
+            attempts.append({
+                "runId": active["runId"],
+                "packageSha256": active["packageSha256"],
+                "status": "diagnostic_infrastructure_failure",
+                "reason": reason[:500],
+            })
+            active["runId"] = new_run_id
+            active["packageSha256"] = package_sha256
+            self._write(value)
 
 
 def prepare_batch(batch_id: str, queue_path: Path, package_root: Path,

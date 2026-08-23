@@ -29,6 +29,7 @@ REQUIRED_ARTIFACTS = {
     "graph_state.json",
     "interaction_log.json",
 }
+EXPLICIT_UNSUPPORTED_ARTIFACTS = {"run.json", "interaction_log.json"}
 SUPPORT_STATUSES = {
     "direct",
     "reasonable_workaround",
@@ -63,6 +64,101 @@ def read_json_object(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise VerificationError(f"{path.name} must contain a JSON object")
     return value
+
+
+def verify_explicit_unsupported_run_directory(
+    path: Path, case_id: str, track: str, run_id: str,
+    package_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Validate a deliberate scientific unsupported decision without fabricated analysis files."""
+    if not path.is_dir():
+        raise VerificationError(f"run folder is missing: {path}")
+    present = {item.name for item in path.iterdir() if item.is_file()}
+    if present != EXPLICIT_UNSUPPORTED_ARTIFACTS:
+        raise VerificationError(
+            "explicit unsupported run must contain only run.json and interaction_log.json"
+        )
+    run = read_json_object(path / "run.json")
+    for key, expected in {"caseId": case_id, "track": track, "runId": run_id}.items():
+        if run.get(key) != expected:
+            raise VerificationError(f"run.json {key} must be {expected!r}")
+    required_values = {
+        "benchmarkVersion": "benchmark version",
+        "appVersion": "app version",
+        "sourceRevision": "product revision",
+        "productRevision": "explicit product revision",
+        "benchmarkInfrastructureRevision": "benchmark infrastructure revision",
+        "startedAt": "start timestamp",
+        "completedAt": "completion timestamp",
+        "scientificReason": "scientific reason",
+        "experimentalUnit": "experimental unit",
+        "scientificCompromiseReason": "scientific compromise reason",
+    }
+    for key, label in required_values.items():
+        if not isinstance(run.get(key), str) or not run[key].strip():
+            raise VerificationError(f"explicit unsupported run has no {label}")
+    if run.get("outcome") != "explicit_unsupported":
+        raise VerificationError("explicit unsupported run has the wrong benchmark outcome")
+    if run.get("supportStatus") != "impossible":
+        raise VerificationError("explicit unsupported run must classify scientific support as impossible")
+    if run.get("artifactCompleteness") != "metadata_only_explicit_unsupported":
+        raise VerificationError("explicit unsupported artifact contract is not declared")
+    routes = run.get("attemptedRoutes")
+    if not isinstance(routes, list) or not routes or any(
+        not isinstance(route, str) or not route.strip() for route in routes
+    ):
+        raise VerificationError("explicit unsupported run has no attempted routes")
+    biological_n = run.get("biologicalN")
+    if biological_n is not None and (
+        isinstance(biological_n, bool) or not isinstance(biological_n, (int, float)) or biological_n <= 0
+    ):
+        raise VerificationError("explicit unsupported run has an invalid biological n")
+    blind_package = run.get("blindPackage")
+    if not isinstance(blind_package, dict) or any(
+        blind_package.get(key) != expected
+        for key, expected in {"caseId": case_id, "runId": run_id}.items()
+    ):
+        raise VerificationError("explicit unsupported run has the wrong blind package identity")
+    actual_package_sha = blind_package.get("sha256")
+    if not isinstance(actual_package_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", actual_package_sha):
+        raise VerificationError("explicit unsupported run has no valid blind package hash")
+    if package_sha256 is not None and actual_package_sha != package_sha256:
+        raise VerificationError("explicit unsupported run blind package hash does not match the queue")
+    try:
+        events = json.loads((path / "interaction_log.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise VerificationError(f"interaction_log.json is invalid: {error}") from error
+    if not isinstance(events, list) or [
+        event.get("sequence") for event in events if isinstance(event, dict)
+    ] != list(range(1, len(events) + 1)):
+        raise VerificationError("explicit unsupported interaction log is incomplete or unordered")
+    event_types = [event.get("type") for event in events if isinstance(event, dict)]
+    for required_event in (
+        "benchmark_run_started", "blind_case_delivered", "explicit_unsupported_finalized",
+        "benchmark_metadata_only_outcome_recorded",
+    ):
+        if required_event not in event_types:
+            raise VerificationError(f"explicit unsupported interaction log is missing {required_event}")
+    if "blind_case_delivery_failed" in event_types:
+        raise VerificationError("packet delivery failure cannot be scientific unsupported")
+    if event_types.index("blind_case_delivered") > event_types.index("explicit_unsupported_finalized"):
+        raise VerificationError("explicit unsupported was finalized before blind case delivery")
+    if not (
+        event_types.index("explicit_unsupported_finalized")
+        < event_types.index("benchmark_metadata_only_outcome_recorded")
+    ):
+        raise VerificationError("explicit unsupported terminal event ordering is invalid")
+    started_event = events[event_types.index("benchmark_run_started")]
+    finalized_event = events[event_types.index("explicit_unsupported_finalized")]
+    if started_event.get("occurredAt") != run["startedAt"]:
+        raise VerificationError("explicit unsupported start timestamp is inconsistent")
+    if not isinstance(finalized_event.get("occurredAt"), str) or not (
+        run["startedAt"] <= finalized_event["occurredAt"] <= run["completedAt"]
+    ):
+        raise VerificationError("explicit unsupported completion timestamp ordering is invalid")
+    if run.get("interactionCount") != len(events):
+        raise VerificationError("run.json interactionCount does not match interaction_log.json")
+    return run
 
 
 def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> None:

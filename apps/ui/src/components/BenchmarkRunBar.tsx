@@ -35,7 +35,7 @@ export function metadataOutcomeCanBeRecorded(
   supportStatus: BenchmarkSupportStatus | null,
 ): boolean {
   if (!outcome || outcome === "in_progress" || outcome === "completed") return false;
-  return outcome === "explicit_unsupported" ? supportStatus !== null : true;
+  return outcome === "explicit_unsupported" ? supportStatus === "impossible" : true;
 }
 
 export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => void }) {
@@ -51,6 +51,11 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
   >("idle");
   const [blindBatch, setBlindBatch] = useState<BlindBatchCurrent | null>(null);
   const [batchStatus, setBatchStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [scientificReason, setScientificReason] = useState("");
+  const [experimentalUnit, setExperimentalUnit] = useState("");
+  const [biologicalN, setBiologicalN] = useState("");
+  const [attemptedRoutes, setAttemptedRoutes] = useState("");
+  const [scientificCompromiseReason, setScientificCompromiseReason] = useState("");
   useEffect(() => {
     let cancelled = false;
     void fetchBlindBatchCurrent()
@@ -58,7 +63,7 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         if (cancelled) return;
         setBlindBatch(batch);
         setBatchStatus("ready");
-        if (!batch?.current || batch.current.status !== "active") return;
+        if (!batch?.current) return;
         const identity = {
           benchmarkVersion: batch.benchmarkVersion,
           caseId: batch.current.caseId,
@@ -69,10 +74,30 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         setCaseId(identity.caseId);
         setTrack(identity.track);
         setRunId(identity.runId);
+        const terminalEvidence = batch.current.terminalEvidence;
+        if (terminalEvidence) {
+          setScientificReason(terminalEvidence.scientificReason);
+          setExperimentalUnit(terminalEvidence.experimentalUnit);
+          setBiologicalN(
+            terminalEvidence.biologicalN === null ? "" : String(terminalEvidence.biologicalN),
+          );
+          setAttemptedRoutes(terminalEvidence.attemptedRoutes.join("\n"));
+          setScientificCompromiseReason(terminalEvidence.scientificCompromiseReason);
+        }
+        if (
+          batch.current.status !== "active" &&
+          batch.current.status !== "explicit_unsupported"
+        ) {
+          return;
+        }
         const existing = currentBenchmarkRun().identity;
         if (!existing || existing.runId !== identity.runId) {
           resetBenchmarkRun();
           startBenchmarkRun(identity);
+        }
+        if (batch.current.status === "explicit_unsupported") {
+          setBenchmarkSupportStatus("impossible");
+          setBenchmarkOutcome("explicit_unsupported");
         }
       })
       .catch(() => {
@@ -110,11 +135,43 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
   }, [run.identity]);
   const saveMetadataOnlyOutcome = async () => {
     if (!run.identity || !metadataOutcomeCanBeRecorded(run.outcome, run.supportStatus)) return;
+    const isExplicitUnsupported = run.outcome === "explicit_unsupported";
+    const parsedRoutes = attemptedRoutes
+      .split(/[\n,]/)
+      .map((route) => route.trim())
+      .filter(Boolean);
+    const parsedBiologicalN = biologicalN.trim() ? Number(biologicalN) : null;
+    if (
+      isExplicitUnsupported &&
+      (caseDeliveryStatus !== "ready" ||
+        !literatureCase ||
+        !blindBatch?.current ||
+        blindBatch.current.status !== "active" ||
+        blindBatch.current.runId !== run.identity.runId ||
+        !scientificReason.trim() ||
+        !experimentalUnit.trim() ||
+        !scientificCompromiseReason.trim() ||
+        parsedRoutes.length === 0 ||
+        (parsedBiologicalN !== null && (!Number.isFinite(parsedBiologicalN) || parsedBiologicalN <= 0)))
+    ) {
+      setSaveStatus("Explicit unsupportedには配信済みpacketと科学的根拠の入力が必要です。");
+      return;
+    }
     try {
+      if (isExplicitUnsupported) {
+        recordBenchmarkEvent("explicit_unsupported_finalized", {
+          scientificReason: scientificReason.trim(),
+          experimentalUnit: experimentalUnit.trim(),
+          biologicalN: parsedBiologicalN,
+          attemptedRoutes: parsedRoutes.join(" | "),
+          scientificCompromiseReason: scientificCompromiseReason.trim(),
+        });
+      }
       recordBenchmarkEvent("benchmark_metadata_only_outcome_recorded", {
         outcome: run.outcome,
       });
       const completed = currentBenchmarkRun();
+      const completedAt = new Date().toISOString();
       await writeBenchmarkArtifacts([
         {
           name: "run.json",
@@ -123,12 +180,30 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
               ...completed.identity,
               appVersion: "0.1.0",
               sourceRevision: evaluationMode.sourceRevision,
+              productRevision: evaluationMode.sourceRevision,
+              benchmarkInfrastructureRevision: evaluationMode.sourceRevision,
               engineVersion: null,
               startedAt: completed.startedAt,
-              completedAt: new Date().toISOString(),
+              completedAt,
               outcome: completed.outcome,
               supportStatus: completed.supportStatus,
-              artifactCompleteness: "metadata_only",
+              artifactCompleteness: isExplicitUnsupported
+                ? "metadata_only_explicit_unsupported"
+                : "metadata_only",
+              ...(isExplicitUnsupported
+                ? {
+                    blindPackage: {
+                      caseId: completed.identity?.caseId,
+                      runId: completed.identity?.runId,
+                      sha256: blindBatch?.current?.packageSha256,
+                    },
+                    scientificReason: scientificReason.trim(),
+                    experimentalUnit: experimentalUnit.trim(),
+                    biologicalN: parsedBiologicalN,
+                    attemptedRoutes: parsedRoutes,
+                    scientificCompromiseReason: scientificCompromiseReason.trim(),
+                  }
+                : {}),
               defaultGraphCaptured: completed.defaultGraphCaptured,
               interactionCount: completed.events.length,
               graphEditCount: completed.events.filter(
@@ -143,8 +218,14 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
           name: "interaction_log.json",
           content: JSON.stringify(completed.events, null, 2),
         },
-      ]);
-      setSaveStatus("対応状況と操作ログを保存しました。");
+      ], isExplicitUnsupported ? { requiredArtifacts: ["run.json", "interaction_log.json"] } : {});
+      if (isExplicitUnsupported) {
+        const persistedBatch = await fetchBlindBatchCurrent();
+        setBlindBatch(persistedBatch);
+        setSaveStatus("Explicit unsupportedを検証・永続化しました。");
+      } else {
+        setSaveStatus("対応状況と操作ログを保存しました。");
+      }
     } catch {
       setSaveStatus("対応状況を保存できませんでした。");
     }
@@ -262,10 +343,41 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
           </select>
         </label>
       ) : null}
+      {run.identity && run.outcome === "explicit_unsupported" ? (
+        <section className="benchmark-case-delivery" aria-label="Explicit unsupported evidence">
+          <label>
+            <span>Scientific reason</span>
+            <textarea value={scientificReason} onChange={(event) => setScientificReason(event.target.value)} />
+          </label>
+          <label>
+            <span>Experimental unit</span>
+            <input value={experimentalUnit} onChange={(event) => setExperimentalUnit(event.target.value)} />
+          </label>
+          <label>
+            <span>Biological n (if determinable)</span>
+            <input type="number" min="1" value={biologicalN} onChange={(event) => setBiologicalN(event.target.value)} />
+          </label>
+          <label>
+            <span>Attempted routes</span>
+            <textarea value={attemptedRoutes} onChange={(event) => setAttemptedRoutes(event.target.value)} />
+          </label>
+          <label>
+            <span>Why continuation would require scientific compromise</span>
+            <textarea
+              value={scientificCompromiseReason}
+              onChange={(event) => setScientificCompromiseReason(event.target.value)}
+            />
+          </label>
+        </section>
+      ) : null}
       {run.identity ? (
         <button
           type="button"
-          disabled={!metadataOutcomeCanBeRecorded(run.outcome, run.supportStatus)}
+          disabled={
+            !metadataOutcomeCanBeRecorded(run.outcome, run.supportStatus) ||
+            (run.outcome === "explicit_unsupported" && caseDeliveryStatus !== "ready") ||
+            blindBatch?.current?.status === "explicit_unsupported"
+          }
           onClick={saveMetadataOnlyOutcome}
         >
           終了状態だけ記録

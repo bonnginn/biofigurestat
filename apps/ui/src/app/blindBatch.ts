@@ -13,7 +13,22 @@ export type BlindBatchCurrent = Readonly<{
     track: "track_B";
     runId: string;
     packageSha256: string;
-    status: "active" | "completed" | "infrastructure_failure" | "contaminated" | "aborted";
+    status:
+      | "active"
+      | "completed"
+      | "explicit_unsupported"
+      | "infrastructure_failure"
+      | "contaminated"
+      | "aborted";
+    terminalEvidence?: Readonly<{
+      supportStatus: "impossible";
+      scientificReason: string;
+      experimentalUnit: string;
+      biologicalN: number | null;
+      attemptedRoutes: readonly string[];
+      scientificCompromiseReason: string;
+      completedAt: string;
+    }>;
   }> | null;
 }>;
 
