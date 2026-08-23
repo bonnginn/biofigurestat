@@ -38,6 +38,7 @@ import {
   svgToPngBlob,
 } from "../../app/graphExport";
 import { generateMethodsText } from "../../app/methodsText";
+import { formatExactPValue } from "../../app/statisticalFormat";
 import {
   beginDefaultGraphCapture,
   blobToBase64,
@@ -856,10 +857,9 @@ function ExperimentGraphSvg({
                     analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
                       analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
                   )
-                : `p = ${formatNumber(
+                : `p = ${formatExactPValue(
                     analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
                       analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
-                    3,
                   )}`}
             </text>
           </g>
@@ -876,10 +876,9 @@ function ExperimentGraphSvg({
                   analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
                     analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
                 )
-              : `全体 p = ${formatNumber(
+              : `全体 p = ${formatExactPValue(
                   analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
                     analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
-                  3,
                 )}`}
           </text>
         )
@@ -1725,7 +1724,7 @@ function CorrelationGraphSvg({
         >
           {statisticsAnnotation.mode === "symbol"
             ? significanceSymbol(annotationValue)
-            : `p = ${formatNumber(annotationValue, 3)}`}
+            : `p = ${formatExactPValue(annotationValue)}`}
         </text>
       ) : null}
     </svg>

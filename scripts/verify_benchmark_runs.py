@@ -222,6 +222,29 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
         raise VerificationError("statistics.json must contain a successful engine result")
     graph_state = read_json_object(path / "graph_state.json")
     annotation = graph_state.get("statisticsAnnotation")
+    if isinstance(annotation, dict) and annotation.get("mode") == "exact_p":
+        test_index = annotation.get("testIndex")
+        tests = result.get("tests")
+        if (
+            isinstance(test_index, int)
+            and isinstance(tests, list)
+            and 0 <= test_index < len(tests)
+            and isinstance(tests[test_index], dict)
+        ):
+            test = tests[test_index]
+            stored_p = test.get("adjustedPValue")
+            if stored_p is None:
+                stored_p = test.get("pValue")
+            final_svg = (path / "final_graph.svg").read_text(encoding="utf-8")
+            if (
+                isinstance(stored_p, (int, float))
+                and not isinstance(stored_p, bool)
+                and 0 < stored_p < float("inf")
+                and re.search(r"p\s*=\s*0(?=[^\.\d]|$)", final_svg)
+            ):
+                raise VerificationError(
+                    "final Graph renders a finite positive exact p-value as zero"
+                )
     if (
         isinstance(annotation, dict)
         and annotation.get("mode") not in {None, "hidden"}

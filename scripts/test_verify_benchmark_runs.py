@@ -294,6 +294,31 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
             with self.assertRaisesRegex(VerificationError, "visible final statistics annotation"):
                 verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
 
+    def test_finite_positive_exact_p_rendered_as_zero_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.make_complete_run(Path(temporary))
+            (path / "statistics.json").write_text(
+                json.dumps(
+                    {
+                        "state": "current",
+                        "result": {
+                            "status": "ok",
+                            "tests": [{"pValue": 3.5105210908680844e-6, "adjustedPValue": None}],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (path / "graph_state.json").write_text(
+                json.dumps({"statisticsAnnotation": {"mode": "exact_p", "testIndex": 0}}),
+                encoding="utf-8",
+            )
+            (path / "final_graph.svg").write_text(
+                "<svg><text>全体 p = 0</text></svg>", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(VerificationError, "finite positive exact p-value"):
+                verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
+
     def test_provenance_allows_annotation_and_multiple_visible_edits(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             path = self.make_complete_run(Path(temporary))

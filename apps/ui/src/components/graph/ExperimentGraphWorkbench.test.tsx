@@ -374,6 +374,43 @@ describe("ExperimentGraphWorkbench", () => {
     );
   });
 
+  it("keeps the finite JCB024-sized p-value non-zero in an exact Graph annotation", async () => {
+    const { draft, cells } = proportionFixture();
+    const runner = vi.fn<AnalysisRunner>(async () => ({
+      ...analysisResult,
+      tests: [
+        {
+          ...analysisResult.tests[0],
+          statistic: 35.104709034897084,
+          degreesOfFreedom: [2, 14],
+          pValue: 3.5105210908680844e-6,
+        },
+      ],
+    }));
+    render(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={cells}
+        analysisRunner={runner}
+        onClose={vi.fn()}
+      />,
+    );
+
+    selectInspectorTarget("statistics");
+    fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
+    fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+    await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
+    fireEvent.change(screen.getByRole("combobox", { name: "統計注釈の表示" }), {
+      target: { value: "exact_p" },
+    });
+
+    const annotation = screen
+      .getByRole("img", { name: /実験単位ごとのグラフ/ })
+      .querySelector('[data-graph-layer="statistics-annotation"]');
+    expect(annotation).toHaveTextContent("p = 3.51e-6");
+    expect(annotation).not.toHaveTextContent(/p = 0(?:\D|$)/);
+  });
+
   it("lets the researcher reject Recommended and executes the selected supported alternative", async () => {
     const { draft, cells } = proportionFixture();
     const runner = vi.fn<AnalysisRunner>(async (request) => ({
