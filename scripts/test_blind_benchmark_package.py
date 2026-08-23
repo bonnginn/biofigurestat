@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from blind_benchmark_package import CASE_KEYS, PACKET_KEYS, ROW_KEYS, create_package, load_package
+from blind_benchmark_package import CASE_KEYS, PACKET_KEYS, ROW_KEYS, RUNTIME, create_package, load_package, validate_hidden_reference_absence
 
 
 class BlindBenchmarkPackageTests(unittest.TestCase):
@@ -23,6 +23,8 @@ class BlindBenchmarkPackageTests(unittest.TestCase):
             manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["packageType"], "LSAA_TRACK_B_BLIND")
             self.assertEqual(len(manifest["payloadSha256"]), 64)
+            self.assertEqual(manifest["benchmarkVersion"], "LSA50_v1_1_runtime_hierarchy_2")
+            self.assertEqual(len(manifest["runtimeCorrectionSha256"]), 64)
 
     def test_manifest_detects_tampering(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -54,6 +56,21 @@ class BlindBenchmarkPackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             with self.assertRaisesRegex(ValueError, "safe identifiers"):
                 create_package("JCB010", "../escape", Path(temporary))
+
+    def test_hierarchy_excluded_case_cannot_be_packaged(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaisesRegex(ValueError, "excluded from automated packaging"):
+                create_package("JCB019", "excluded_JCB019_001", Path(temporary))
+
+    def test_hidden_paper_title_value_is_rejected_inside_allow_listed_packet(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            create_package("JCB010", "hidden_value_JCB010_001", root)
+            payload = load_package(root, "JCB010", "hidden_value_JCB010_001")
+            hidden = json.loads((RUNTIME / "JCB010" / "integrator.json").read_text(encoding="utf-8"))
+            payload["researcherPacket"]["blind_experiment_summary"] += " " + hidden["paperReference"]["title"]
+            with self.assertRaisesRegex(ValueError, "hidden reference value"):
+                validate_hidden_reference_absence(payload, hidden, "JCB010")
 
 
 if __name__ == "__main__":

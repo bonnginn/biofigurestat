@@ -16,7 +16,7 @@
     "timepoints_n": 6,
     "year": 2023
   },
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "case": {
     "article_url": "https://rupress.org/jcb/article/222/11/e202303138/276267/",
     "assay_context": "morphology",
@@ -36,6 +36,7 @@
     "year": 2023
   },
   "caseId": "JCB018",
+  "excludedFromAutomatedScoring": false,
   "goldAnalysis": {
     "analysis_scope_note": "Reference result is computed only from synthetic data; it is not a reproduction of the paper p-value.",
     "case_id": "JCB018",
@@ -96,6 +97,8 @@
     "synthetic_seed": "3706500849",
     "timepoints": "0 | 10 | 20 | 30 | 40 | 50"
   },
+  "runtimeHierarchyCorrection": null,
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "JCB018",

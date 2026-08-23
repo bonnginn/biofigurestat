@@ -16,7 +16,7 @@
     "timepoints_n": 0,
     "year": 2023
   },
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "case": {
     "article_url": "https://www.science.org/doi/10.1126/sciadv.adh1069",
     "assay_context": "single_molecule",
@@ -36,6 +36,7 @@
     "year": 2023
   },
   "caseId": "SA049",
+  "excludedFromAutomatedScoring": false,
   "goldAnalysis": {
     "analysis_scope_note": "Reference result is computed only from synthetic data; it is not a reproduction of the paper p-value.",
     "case_id": "SA049",
@@ -96,6 +97,8 @@
     "synthetic_seed": "3609576794",
     "timepoints": "(none)"
   },
+  "runtimeHierarchyCorrection": null,
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "SA049",

@@ -1,5 +1,5 @@
 {
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "caseId": "JCB025",
   "researcherPacket": {
     "blind_experiment_summary": "Synthetic paired ultrastructural measurement. Conditions: Pre, Post. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Inner/outer membrane values paired within tomogram.",
@@ -13,6 +13,7 @@
     "repeated_identity_note": "The same biological/statistical units are measured across paired conditions; identity must be preserved.",
     "timepoints": "(none)"
   },
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "JCB025",

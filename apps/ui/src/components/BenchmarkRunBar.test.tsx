@@ -132,13 +132,18 @@ describe("BenchmarkRunBar case initialization", () => {
     const second = batch(2, "JCB004", "batch_fixture_02_JCB004");
     const fetchMock = vi.fn(async (input: string | URL | Request) => {
       const url = String(input);
-      if (url.endsWith("/blind-batch/current")) return { ok: true, status: 200, json: async () => first };
-      if (url.endsWith("/blind-batch/next")) return { ok: true, status: 200, json: async () => second };
+      if (url.endsWith("/blind-batch/current"))
+        return { ok: true, status: 200, json: async () => first };
+      if (url.endsWith("/blind-batch/next"))
+        return { ok: true, status: 200, json: async () => second };
       return {
         ok: true,
         status: 200,
-        json: async () => ({ ...blindCase, caseId: url.includes("JCB004") ? "JCB004" : "JCB010",
-          runId: url.includes("JCB004") ? second.current.runId : first.current.runId }),
+        json: async () => ({
+          ...blindCase,
+          caseId: url.includes("JCB004") ? "JCB004" : "JCB010",
+          runId: url.includes("JCB004") ? second.current.runId : first.current.runId,
+        }),
       };
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -256,7 +261,11 @@ describe("BenchmarkRunBar case initialization", () => {
         advanced = true;
         return { ok: true, status: 200, json: async () => nextBatch };
       }
-      if (url.endsWith("/literature/case?caseId=NC033&track=track_B&runId=batch_fixture_02_NC033_retry_01")) {
+      if (
+        url.endsWith(
+          "/literature/case?caseId=NC033&track=track_B&runId=batch_fixture_02_NC033_retry_01",
+        )
+      ) {
         return { ok: true, status: 200, json: async () => ncCase };
       }
       if (url.endsWith("/artifacts") && init?.method === "POST") {
@@ -338,7 +347,9 @@ describe("BenchmarkRunBar case initialization", () => {
     );
     expect(screen.getByRole("button", { name: "次のケース" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "次のケース" }));
-    await waitFor(() => expect(currentBenchmarkRun().identity?.runId).toBe(nextBatch.current.runId));
+    await waitFor(() =>
+      expect(currentBenchmarkRun().identity?.runId).toBe(nextBatch.current.runId),
+    );
     expect(screen.queryByText(terminalEvidence.scientificReason)).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Benchmark outcome"), {
       target: { value: "explicit_unsupported" },

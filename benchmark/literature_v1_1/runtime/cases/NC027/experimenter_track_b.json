@@ -1,5 +1,5 @@
 {
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "caseId": "NC027",
   "researcherPacket": {
     "blind_experiment_summary": "Synthetic single-cell measurement. Conditions: Control, Treatment. Readout(s): value. Time structure: 0, 24, 48, 72. Experimental-unit structure: Time-point samples with cell-state proportions.",
@@ -13,6 +13,7 @@
     "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
     "timepoints": "0 | 24 | 48 | 72"
   },
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "NC027",

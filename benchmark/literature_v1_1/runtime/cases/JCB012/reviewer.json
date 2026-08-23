@@ -1,5 +1,5 @@
 {
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "caseId": "JCB012",
   "paperReference": {
     "article_url": "https://rupress.org/jcb/article/222/2/e202205096/213744/",
@@ -26,5 +26,6 @@
     "readouts": "cell_value",
     "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
     "timepoints": "(none)"
-  }
+  },
+  "sourceBenchmarkVersion": "LSA50_v1_1"
 }

@@ -1,15 +1,30 @@
 {
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "caseCount": 50,
   "correctedCases": [
-    "JCB003"
+    "EL050",
+    "JCB003",
+    "JCB008",
+    "JCB014",
+    "JCB019",
+    "JCB023",
+    "NC030",
+    "NC032",
+    "NC037"
+  ],
+  "excludedCases": [
+    "JCB019"
   ],
   "runtimeCorrectionFile": "runtime_corrections_v1_1_1.json",
-  "runtimeCorrectionSha256": "9794aa8d5903d42a1412a4e948e7e2cd1465b8771586e28ae18f3cc808f1c96c",
-  "runtimeCorrectionVersion": "LSA50_v1_1_runtime_hierarchy_1",
+  "runtimeCorrectionSha256": "ccb3a2e2b94e8e5675be49319aae616f958812348877dd4a1d8a823bcc6c249e",
+  "runtimeCorrectionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+  "runtimeSyntheticRowCount": 2577,
+  "scorableCaseCount": 49,
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "sourceFile": "LSA_Literature_Benchmark_50_v1_1.xlsx",
   "sourceSha256": "028c6f5639c98bf50e4a6a87c25b04defa1c89ddda8b063624d6746188aa5bf5",
-  "syntheticRowCount": 2691,
+  "sourceSyntheticRowCount": 2691,
+  "syntheticRowCount": 2577,
   "trackBExcludedSourceFields": [
     "coverage_tier",
     "scope_expectation",

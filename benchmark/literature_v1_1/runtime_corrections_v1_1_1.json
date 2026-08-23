@@ -1,11 +1,56 @@
 {
   "schemaVersion": "1.0.0",
-  "correctionVersion": "LSA50_v1_1_runtime_hierarchy_1",
+  "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "sourceSha256": "028c6f5639c98bf50e4a6a87c25b04defa1c89ddda8b063624d6746188aa5bf5",
   "cases": {
+    "EL050": {
+      "classification": "source_data_and_schema_conflict",
+      "originalStructure": "Five synthetic experiments per strain/state/readout conflict with three declared biological replicates.",
+      "correctedRuntimeStructure": "Retain Exp1-Exp3; experiment within condition is the biological identity shared across readouts.",
+      "scientificReason": "The paper specifies three biological replicates for every strain and metabolic state.",
+      "sourceEvidence": "https://elifesciences.org/articles/74602",
+      "oldBiologicalN": 5,
+      "correctedBiologicalN": 3,
+      "oldAnalysisLevel": "five experiment rows per feature",
+      "correctedAnalysisLevel": "three biological-replicate rows per feature",
+      "goldAnalysisChanges": "Recompute 20 Welch tests and BH adjustment; zero features pass q<=0.05 and minimum adjusted p is the reference p.",
+      "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+      "sourceFields": [
+        "Researcher_Packets.experimental_unit_description",
+        "Synthetic_Raw.experiment_id",
+        "Paper_Reference.target_figure_or_panel"
+      ],
+      "retainExperimentIds": ["Exp1", "Exp2", "Exp3"],
+      "researcherPacketOverrides": { "independent_session_count": 3 },
+      "goldMetadataOverrides": {
+        "reference_statistic": 0,
+        "reference_p_value": 0.1155356542273662,
+        "expected_decision": "no difference/signal expected"
+      },
+      "goldAnalysisOverrides": {
+        "reference_statistic": 0,
+        "reference_p_value": 0.1155356542273662,
+        "expected_decision": "no difference/signal expected",
+        "analysis_scope_note": "Corrected runtime reference retains three biological replicates, runs one Welch test per readout, and applies Benjamini-Hochberg across 20 readouts."
+      }
+    },
     "JCB003": {
       "classification": "source_data_and_schema_ambiguity",
-      "reason": "The source workbook declares three independent sessions and repeated experiments, but leaves every parent_unit_id null and computes Gold on eight row-level cell values per condition. The correction preserves rows while making experiment_id the explicit biological parent.",
+      "originalStructure": "Three sessions are declared but cell rows lack parents and source Gold treats cells as independent.",
+      "correctedRuntimeStructure": "Preserve rows and set experiment_id as biological parent.",
+      "scientificReason": "Cells are nested within three independent experimental sessions.",
+      "sourceEvidence": "Authoritative workbook packet and synthetic session identifiers.",
+      "oldBiologicalN": 8,
+      "correctedBiologicalN": 3,
+      "oldAnalysisLevel": "cell row",
+      "correctedAnalysisLevel": "experiment-session mean",
+      "goldAnalysisChanges": "Welch test recomputed on three session means per condition.",
+      "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+      "sourceFields": [
+        "Researcher_Packets.independent_session_count",
+        "Researcher_Packets.nested_observation_note",
+        "Synthetic_Raw.experiment_id"
+      ],
       "rowParentFrom": "experiment_id",
       "researcherPacketOverrides": {
         "blind_experiment_summary": "Synthetic cell/count measurement. Conditions: Control, Treatment. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: three independent experimental sessions per condition; cell observations are nested within session.",
@@ -25,7 +70,249 @@
         "reference_method": "Welch t test on experiment-session means",
         "reference_statistic": -5.653139674308264,
         "reference_p_value": 0.01370631241522072,
-        "analysis_scope_note": "Corrected runtime reference aggregates synthetic cell rows within each of three experiment sessions per condition. The unchanged source workbook used row-level values and is preserved as provenance."
+        "analysis_scope_note": "Corrected runtime reference aggregates cell rows within each of three experiment sessions per condition."
+      }
+    },
+    "JCB008": {
+      "classification": "nested_observation_without_parent",
+      "originalStructure": "Fifteen cell rows per group cycle across three experiments but lack parent IDs.",
+      "correctedRuntimeStructure": "Set parent_unit_id=experiment_id and analyze three experiment means per group.",
+      "scientificReason": "The packet declares at least three experiments and at least five cells per batch.",
+      "sourceEvidence": "https://pubmed.ncbi.nlm.nih.gov/38334958/",
+      "oldBiologicalN": 15,
+      "correctedBiologicalN": 3,
+      "oldAnalysisLevel": "cell row",
+      "correctedAnalysisLevel": "experiment mean",
+      "goldAnalysisChanges": "Kruskal-Wallis recomputed on three experiment means per group.",
+      "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+      "sourceFields": [
+        "Researcher_Packets.experimental_unit_description",
+        "Synthetic_Raw.experiment_id",
+        "Synthetic_Raw.parent_unit_id"
+      ],
+      "rowParentFrom": "experiment_id",
+      "researcherPacketOverrides": {
+        "experimental_unit_description": "Three independent experiments per group; at least five cell observations are nested within each experiment",
+        "nested_observation_note": "Cell-level observations are nested within three independent experiments; analyze one experiment-level summary per group."
+      },
+      "caseOverrides": {
+        "statistical_unit_and_nesting": "Independent experiment; cells nested within 3 experiments per group"
+      },
+      "goldMetadataOverrides": {
+        "experimental_unit_and_nesting": "Independent experiment; cells nested within 3 experiments per group",
+        "reference_method": "Kruskal-Wallis omnibus on experiment means",
+        "reference_statistic": 7.200000000000003,
+        "reference_p_value": 0.02732372244729252
+      },
+      "goldAnalysisOverrides": {
+        "reference_method": "Kruskal-Wallis omnibus on experiment means",
+        "reference_statistic": 7.200000000000003,
+        "reference_p_value": 0.02732372244729252,
+        "analysis_scope_note": "Corrected runtime reference averages nested cells within each of three experiments before testing."
+      }
+    },
+    "JCB014": {
+      "classification": "nested_observation_without_parent",
+      "originalStructure": "Cell rows cycle across three experiments but lack parent IDs.",
+      "correctedRuntimeStructure": "Set parent_unit_id=experiment_id and analyze three experiment means per condition.",
+      "scientificReason": "The paper reports three biological replicates with 20-30 cells per replicate.",
+      "sourceEvidence": "https://rupress.org/jcb/article/222/7/e202210078/214070/",
+      "oldBiologicalN": 8,
+      "correctedBiologicalN": 3,
+      "oldAnalysisLevel": "cell row",
+      "correctedAnalysisLevel": "biological-replicate mean",
+      "goldAnalysisChanges": "Welch test recomputed on three replicate means per condition.",
+      "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+      "sourceFields": [
+        "Researcher_Packets.experimental_unit_description",
+        "Synthetic_Raw.experiment_id",
+        "Paper_Reference.target_figure_or_panel"
+      ],
+      "rowParentFrom": "experiment_id",
+      "researcherPacketOverrides": {
+        "nested_observation_note": "Cell-level observations are nested within three biological replicates; analyze one replicate-level summary per condition."
+      },
+      "caseOverrides": {
+        "statistical_unit_and_nesting": "Biological replicate; cells nested within 3 replicates"
+      },
+      "goldMetadataOverrides": {
+        "experimental_unit_and_nesting": "Biological replicate; cells nested within 3 replicates",
+        "reference_method": "Welch t test on biological-replicate means",
+        "reference_statistic": -4.178906947641888,
+        "reference_p_value": 0.015447708097254537
+      },
+      "goldAnalysisOverrides": {
+        "reference_method": "Welch t test on biological-replicate means",
+        "reference_statistic": -4.178906947641888,
+        "reference_p_value": 0.015447708097254537,
+        "analysis_scope_note": "Corrected runtime reference averages cells within each biological replicate before testing."
+      }
+    },
+    "JCB019": {
+      "classification": "irreducible_source_hierarchy_ambiguity",
+      "originalStructure": "Five rows per construct are described as cells counted across biological replicates without replicate IDs or panel-specific provenance.",
+      "correctedRuntimeStructure": "Rows remain provenance-only; case is excluded from automated packaging and scoring.",
+      "scientificReason": "The paper has construct panels with different nested structures, so these rows cannot be mapped safely.",
+      "sourceEvidence": "https://doi.org/10.1083/jcb.202307146",
+      "oldBiologicalN": "indeterminate (five rows)",
+      "correctedBiologicalN": "indeterminate",
+      "oldAnalysisLevel": "row treated as independent",
+      "correctedAnalysisLevel": "unresolved; no automated analysis",
+      "goldAnalysisChanges": "Source Gold is provenance only and is not certified or scored.",
+      "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+      "excludeFromAutomatedScoring": true,
+      "exclusionReason": "Replicate-summary versus nested-cell identity cannot be resolved without guessing.",
+      "sourceFields": [
+        "Researcher_Packets.experimental_unit_description",
+        "Synthetic_Raw.parent_unit_id",
+        "Paper_Reference.target_figure_or_panel"
+      ]
+    },
+    "JCB023": {
+      "classification": "false_repeated_factor_identity",
+      "originalStructure": "Exp1-Exp6 repeat across four factor cells although the packet disclaims repeated identity; source Gold pairs changes.",
+      "correctedRuntimeStructure": "Qualify experiment_id by condition and factor level, preserving six independent observations per cell.",
+      "scientificReason": "Neither paper nor packet establishes matching across the four cells.",
+      "sourceEvidence": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13023085/",
+      "oldBiologicalN": "six falsely paired identities",
+      "correctedBiologicalN": 6,
+      "oldAnalysisLevel": "paired change scores",
+      "correctedAnalysisLevel": "independent 2x2 factorial observations",
+      "goldAnalysisChanges": "Replace paired change-score Welch with independent two-way ANOVA interaction F test.",
+      "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+      "sourceFields": [
+        "Researcher_Packets.repeated_identity_note",
+        "Synthetic_Raw.experiment_id",
+        "Gold_Analysis.analysis_scope_note"
+      ],
+      "rewriteExperimentIdTemplate": "{condition}-{time}-{experiment_id}",
+      "goldMetadataOverrides": {
+        "reference_method": "Independent two-way ANOVA interaction F test",
+        "reference_statistic": 10.50814367854677,
+        "reference_p_value": 0.004088241474649362
+      },
+      "goldAnalysisOverrides": {
+        "reference_method": "Independent two-way ANOVA interaction F test",
+        "reference_statistic": 10.50814367854677,
+        "reference_p_value": 0.004088241474649362,
+        "analysis_scope_note": "Corrected runtime reference fits an independent 2x2 factorial model; labels are factor-cell qualified and are not paired."
+      }
+    },
+    "NC030": {
+      "classification": "source_data_and_schema_conflict",
+      "originalStructure": "Four experiments per condition/time conflict with declared biological triplicates.",
+      "correctedRuntimeStructure": "Retain Exp1-Exp3 in every cross-sectional condition/time cell.",
+      "scientificReason": "The paper reports biological triplicates for the time course.",
+      "sourceEvidence": "https://www.nature.com/articles/s41467-022-29636-3",
+      "oldBiologicalN": 4,
+      "correctedBiologicalN": 3,
+      "oldAnalysisLevel": "four rows per condition/time",
+      "correctedAnalysisLevel": "three biological replicates per condition/time",
+      "goldAnalysisChanges": "Final-time Welch test recomputed on Exp1-Exp3.",
+      "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+      "sourceFields": [
+        "Researcher_Packets.experimental_unit_description",
+        "Researcher_Packets.independent_session_count",
+        "Synthetic_Raw.experiment_id"
+      ],
+      "retainExperimentIds": ["Exp1", "Exp2", "Exp3"],
+      "researcherPacketOverrides": { "independent_session_count": 3 },
+      "goldMetadataOverrides": {
+        "reference_statistic": -4.465534102942099,
+        "reference_p_value": 0.01563691285611424
+      },
+      "goldAnalysisOverrides": {
+        "reference_statistic": -4.465534102942099,
+        "reference_p_value": 0.01563691285611424,
+        "analysis_scope_note": "Corrected runtime reference uses three biological replicates at final time; identities remain cross-sectional."
+      }
+    },
+    "NC032": {
+      "classification": "matched_identity_and_count_conflict",
+      "originalStructure": "Five condition-specific unit IDs per method conflict with three matched ROIs.",
+      "correctedRuntimeStructure": "Retain Exp1-Exp3 and use experiment ID as stable ROI identity across methods.",
+      "scientificReason": "The paper compares methods on three equal-size ROIs.",
+      "sourceEvidence": "https://www.nature.com/articles/s41467-024-54609-z",
+      "oldBiologicalN": 5,
+      "correctedBiologicalN": 3,
+      "oldAnalysisLevel": "independent method rows",
+      "correctedAnalysisLevel": "matched ROI across methods",
+      "goldAnalysisChanges": "Replace one-way ANOVA with Friedman matched-block test.",
+      "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+      "sourceFields": [
+        "Researcher_Packets.experimental_unit_description",
+        "Synthetic_Raw.unit_id",
+        "Paper_Reference.target_figure_or_panel"
+      ],
+      "retainExperimentIds": ["Exp1", "Exp2", "Exp3"],
+      "rowUnitFrom": "experiment_id",
+      "researcherPacketOverrides": {
+        "independent_session_count": 3,
+        "repeated_identity_note": "The same three matched ROI identities are measured across multiple conditions."
+      },
+      "caseOverrides": {
+        "design_class": "friedman",
+        "statistical_unit_and_nesting": "Matched ROI; three identities shared across methods"
+      },
+      "benchmarkIndexOverrides": { "design_class": "friedman" },
+      "goldMetadataOverrides": {
+        "design_class": "friedman",
+        "experimental_unit_and_nesting": "Matched ROI; three identities shared across methods",
+        "reference_method": "Friedman matched-block test",
+        "acceptable_statistical_families": "Friedman matched-block test; repeated-measures rank-based alternatives where justified",
+        "acceptable_graph_families": "paired dot/line by ROI; dot plot with matched ROI identity visible",
+        "reference_statistic": 8.200000000000003,
+        "reference_p_value": 0.04205418289496618
+      },
+      "goldAnalysisOverrides": {
+        "reference_method": "Friedman matched-block test",
+        "reference_statistic": 8.200000000000003,
+        "reference_p_value": 0.04205418289496618,
+        "analysis_scope_note": "Corrected runtime reference treats three ROI identities as matched blocks across four methods."
+      }
+    },
+    "NC037": {
+      "classification": "source_data_and_schema_conflict",
+      "originalStructure": "Thirty patient rows conflict with the target analysis declaring n=12.",
+      "correctedRuntimeStructure": "Retain Sample1-Sample12.",
+      "scientificReason": "The target correlation uses 12 independent patient samples; a separate paper analysis uses a larger cohort.",
+      "sourceEvidence": "https://www.path-biobank.org/media/publikationen/2023_Tietscher%20et%20al_Nature%20Communications_.pdf",
+      "oldBiologicalN": 30,
+      "correctedBiologicalN": 12,
+      "oldAnalysisLevel": "thirty patient rows",
+      "correctedAnalysisLevel": "twelve independent patient rows",
+      "goldAnalysisChanges": "Spearman correlation recomputed on Sample1-Sample12 and no longer reaches p<=0.05.",
+      "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+      "sourceFields": [
+        "Researcher_Packets.experimental_unit_description",
+        "Researcher_Packets.independent_session_count",
+        "Synthetic_Raw.experiment_id"
+      ],
+      "retainExperimentIds": [
+        "Sample1",
+        "Sample2",
+        "Sample3",
+        "Sample4",
+        "Sample5",
+        "Sample6",
+        "Sample7",
+        "Sample8",
+        "Sample9",
+        "Sample10",
+        "Sample11",
+        "Sample12"
+      ],
+      "researcherPacketOverrides": { "independent_session_count": 12 },
+      "goldMetadataOverrides": {
+        "reference_statistic": 0.5244755244755246,
+        "reference_p_value": 0.08001937592027474,
+        "expected_decision": "no difference/signal expected"
+      },
+      "goldAnalysisOverrides": {
+        "reference_statistic": 0.5244755244755246,
+        "reference_p_value": 0.08001937592027474,
+        "expected_decision": "no difference/signal expected",
+        "analysis_scope_note": "Corrected runtime reference retains the 12 independent patient samples declared for the target analysis."
       }
     }
   }

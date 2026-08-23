@@ -194,6 +194,16 @@ def load_corrections(path: Path, source_hash: str) -> dict[str, Any]:
         or not isinstance(payload.get("cases"), dict)
     ):
         raise ValueError("Literature runtime correction metadata is invalid")
+    required_provenance = {
+        "originalStructure", "correctedRuntimeStructure", "scientificReason",
+        "sourceEvidence", "sourceFields", "oldBiologicalN", "correctedBiologicalN",
+        "oldAnalysisLevel", "correctedAnalysisLevel", "goldAnalysisChanges",
+        "correctionVersion",
+    }
+    for case_id, correction in payload["cases"].items():
+        missing = required_provenance - correction.keys()
+        if missing or correction.get("correctionVersion") != payload.get("correctionVersion"):
+            raise ValueError(f"{case_id}: incomplete runtime correction provenance: {sorted(missing)}")
     return payload
 
 
@@ -205,10 +215,18 @@ def apply_case_correction(
     packet: dict[str, Any],
     gold_analysis: dict[str, Any],
     gold_metadata: dict[str, Any],
+    benchmark_index: dict[str, Any],
     synthetic: list[dict[str, Any]],
 ) -> None:
     if correction is None:
         return
+    retain = correction.get("retainExperimentIds")
+    if retain is not None:
+        if not isinstance(retain, list) or not retain or not all(isinstance(value, str) for value in retain):
+            raise ValueError(f"{case_id}: invalid retained experiment IDs")
+        synthetic[:] = [row for row in synthetic if row.get("experiment_id") in retain]
+        if not synthetic:
+            raise ValueError(f"{case_id}: hierarchy correction removed every synthetic row")
     parent_source = correction.get("rowParentFrom")
     if parent_source is not None:
         if parent_source not in {"experiment_id", "unit_id"}:
@@ -218,11 +236,27 @@ def apply_case_correction(
             if not isinstance(parent, str) or not parent:
                 raise ValueError(f"{case_id}: hierarchy correction parent is missing")
             row["parent_unit_id"] = parent
+    unit_source = correction.get("rowUnitFrom")
+    if unit_source is not None:
+        if unit_source not in {"experiment_id"}:
+            raise ValueError(f"{case_id}: unsupported unit identity correction source")
+        for row in synthetic:
+            row["unit_id"] = row[unit_source]
+    experiment_template = correction.get("rewriteExperimentIdTemplate")
+    if experiment_template is not None:
+        if not isinstance(experiment_template, str):
+            raise ValueError(f"{case_id}: invalid experiment identity template")
+        for row in synthetic:
+            try:
+                row["experiment_id"] = experiment_template.format(**row)
+            except KeyError as error:
+                raise ValueError(f"{case_id}: experiment identity template field is missing") from error
     for target, key in (
         (case, "caseOverrides"),
         (packet, "researcherPacketOverrides"),
         (gold_analysis, "goldAnalysisOverrides"),
         (gold_metadata, "goldMetadataOverrides"),
+        (benchmark_index, "benchmarkIndexOverrides"),
     ):
         overrides = correction.get(key, {})
         if not isinstance(overrides, dict) or any(field not in target for field in overrides):
@@ -267,57 +301,78 @@ def convert(
         packet_source = dict(indexed["Researcher_Packets"][case_id])
         gold_analysis = dict(indexed["Gold_Analysis"][case_id])
         gold_metadata = dict(indexed["Gold_Metadata"][case_id])
+        benchmark_index = dict(indexed["Benchmark_Index_v1_1"][case_id])
         synthetic = [dict(row) for row in raw_by_case[case_id]]
+        correction = corrections["cases"].get(case_id)
         apply_case_correction(
             case_id,
-            corrections["cases"].get(case_id),
+            correction,
             case=case,
             packet=packet_source,
             gold_analysis=gold_analysis,
             gold_metadata=gold_metadata,
+            benchmark_index=benchmark_index,
             synthetic=synthetic,
         )
         packet = select(packet_source, TRACK_B_PACKET_FIELDS)
         paper = select(indexed["Paper_Reference"][case_id], TRACK_A_PAPER_FIELDS)
-        public_cases.append({"caseId": case_id})
+        excluded = bool(correction and correction.get("excludeFromAutomatedScoring"))
+        if not excluded:
+            public_cases.append({"caseId": case_id})
         case_dir = temporary / "cases" / case_id
         write_json(
             case_dir / "experimenter_track_b.json",
-            {"benchmarkVersion": BENCHMARK_VERSION, "caseId": case_id, "researcherPacket": packet, "syntheticData": synthetic},
+            {"benchmarkVersion": corrections["correctionVersion"], "sourceBenchmarkVersion": BENCHMARK_VERSION, "caseId": case_id, "researcherPacket": packet, "syntheticData": synthetic},
         )
         write_json(
             case_dir / "experimenter_track_a.json",
-            {"benchmarkVersion": BENCHMARK_VERSION, "caseId": case_id, "researcherPacket": packet, "paperReference": paper, "syntheticData": synthetic},
+            {"benchmarkVersion": corrections["correctionVersion"], "sourceBenchmarkVersion": BENCHMARK_VERSION, "caseId": case_id, "researcherPacket": packet, "paperReference": paper, "syntheticData": synthetic},
         )
         write_json(
             case_dir / "reviewer.json",
-            {"benchmarkVersion": BENCHMARK_VERSION, "caseId": case_id, "researcherPacket": packet, "paperReference": paper},
+            {"benchmarkVersion": corrections["correctionVersion"], "sourceBenchmarkVersion": BENCHMARK_VERSION, "caseId": case_id, "researcherPacket": packet, "paperReference": paper},
         )
         write_json(
             case_dir / "integrator.json",
             {
-                "benchmarkVersion": BENCHMARK_VERSION,
+                "benchmarkVersion": corrections["correctionVersion"],
+                "sourceBenchmarkVersion": BENCHMARK_VERSION,
                 "caseId": case_id,
                 "case": case,
                 "researcherPacketSource": packet_source,
                 "paperReference": indexed["Paper_Reference"][case_id],
                 "goldAnalysis": gold_analysis,
                 "goldMetadata": gold_metadata,
-                "benchmarkIndex": indexed["Benchmark_Index_v1_1"][case_id],
+                "benchmarkIndex": benchmark_index,
                 "syntheticData": synthetic,
+                "runtimeHierarchyCorrection": correction,
+                "excludedFromAutomatedScoring": excluded,
             },
         )
-    write_json(temporary / "public_index.json", {"benchmarkVersion": BENCHMARK_VERSION, "cases": public_cases})
+    runtime_row_count = sum(
+        len(json.loads((temporary / "cases" / case_id / "integrator.json").read_text(encoding="utf-8"))["syntheticData"])
+        for case_id in case_ids
+    )
+    excluded_cases = sorted(
+        case_id for case_id, correction in corrections["cases"].items()
+        if correction.get("excludeFromAutomatedScoring")
+    )
+    write_json(temporary / "public_index.json", {"benchmarkVersion": corrections["correctionVersion"], "sourceBenchmarkVersion": BENCHMARK_VERSION, "cases": public_cases})
     manifest = {
-        "benchmarkVersion": BENCHMARK_VERSION,
+        "benchmarkVersion": corrections["correctionVersion"],
+        "sourceBenchmarkVersion": BENCHMARK_VERSION,
         "caseCount": len(case_ids),
-        "syntheticRowCount": len(tables["Synthetic_Raw"]),
+        "scorableCaseCount": len(case_ids) - len(excluded_cases),
+        "syntheticRowCount": runtime_row_count,
+        "sourceSyntheticRowCount": len(tables["Synthetic_Raw"]),
+        "runtimeSyntheticRowCount": runtime_row_count,
         "sourceFile": source.name,
         "sourceSha256": source_hash,
         "runtimeCorrectionFile": corrections_path.name,
         "runtimeCorrectionSha256": hashlib.sha256(corrections_path.read_bytes()).hexdigest(),
         "runtimeCorrectionVersion": corrections["correctionVersion"],
         "correctedCases": sorted(corrections["cases"]),
+        "excludedCases": excluded_cases,
         "trackBExcludedSourceFields": [
             "coverage_tier", "scope_expectation", "synthetic_seed", "synthetic_data_location", "blind_packet_rule",
         ],

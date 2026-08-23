@@ -1,5 +1,5 @@
 {
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "caseId": "JCB008",
   "paperReference": {
     "article_url": "https://rupress.org/jcb/article/223/5/e202307121/276558/",
@@ -19,12 +19,13 @@
     "blind_experiment_summary": "Synthetic single-cell distribution measurement. Conditions: Control, Group A, Group B. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Mutant groups; >=3 experiments and >=5 cells/batch.",
     "case_id": "JCB008",
     "conditions": "Control | Group A | Group B",
-    "experimental_unit_description": "Mutant groups; >=3 experiments and >=5 cells/batch",
+    "experimental_unit_description": "Three independent experiments per group; at least five cell observations are nested within each experiment",
     "independent_session_count": 3,
     "measurement_context": "single-cell distribution measurement",
-    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "nested_observation_note": "Cell-level observations are nested within three independent experiments; analyze one experiment-level summary per group.",
     "readouts": "value",
     "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
     "timepoints": "(none)"
-  }
+  },
+  "sourceBenchmarkVersion": "LSA50_v1_1"
 }

@@ -28,10 +28,15 @@ from lsaa_engine.d01_d02 import run_request  # noqa: E402
 
 FIXTURES_PATH = ROOT / "benchmark/literature_v1_1/preflight_15_fixtures.json"
 RUNTIME = ROOT / "benchmark/literature_v1_1/runtime/cases"
+RUNTIME_MANIFEST = ROOT / "benchmark/literature_v1_1/runtime/manifest.json"
 EXPECTED_ORDER = (
     "JCB001", "JCB003", "JCB005", "JCB002", "JCB004", "JCB017", "NC027",
     "JCB011", "JCB018", "JCB010", "NC033", "JCB023", "JCB024", "NC028", "NC031",
 )
+
+
+def _runtime_benchmark_version() -> str:
+    return json.loads(RUNTIME_MANIFEST.read_text(encoding="utf-8"))["benchmarkVersion"]
 
 
 def _request_base(case_id: str, template: str, protocol: str, method: str) -> dict[str, Any]:
@@ -204,7 +209,7 @@ def _make_supported_artifacts(
         "defaultGraphCaptured": True,
         "supportStatus": "direct",
         "appVersion": "0.1.0",
-        "benchmarkVersion": "LSA50_v1_1",
+        "benchmarkVersion": _runtime_benchmark_version(),
         "engineVersion": result["engine"]["version"],
         "sourceRevision": "code-only-preflight",
         "interactionCount": len(events),
@@ -248,7 +253,7 @@ def _make_unsupported_artifacts(
         "caseId": case_id,
         "track": "track_B",
         "runId": run_id,
-        "benchmarkVersion": "LSA50_v1_1",
+        "benchmarkVersion": _runtime_benchmark_version(),
         "appVersion": "0.1.0",
         "sourceRevision": "code-only-preflight",
         "productRevision": "code-only-preflight",
@@ -430,7 +435,8 @@ def run_preflight() -> dict[str, Any]:
     return {
         "schemaVersion": "1.0.0",
         "selectionId": definition["selectionId"],
-        "benchmarkVersion": definition["benchmarkVersion"],
+        "benchmarkVersion": _runtime_benchmark_version(),
+        "sourceBenchmarkVersion": definition["benchmarkVersion"],
         "caseCount": len(results),
         "supportedEngineCaseCount": sum(item["statisticalEngineIntegrity"] == "pass" for item in results),
         "expectedUnsupportedCaseCount": sum(item["status"] == "READY_EXPECTED_UNSUPPORTED" for item in results),

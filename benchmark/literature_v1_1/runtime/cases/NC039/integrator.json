@@ -16,7 +16,7 @@
     "timepoints_n": 0,
     "year": 2022
   },
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "case": {
     "article_url": "https://www.nature.com/articles/s41467-022-34790-9",
     "assay_context": "infection_imaging",
@@ -36,6 +36,7 @@
     "year": 2022
   },
   "caseId": "NC039",
+  "excludedFromAutomatedScoring": false,
   "goldAnalysis": {
     "analysis_scope_note": "Reference result is computed only from synthetic data; it is not a reproduction of the paper p-value.",
     "case_id": "NC039",
@@ -96,6 +97,8 @@
     "synthetic_seed": "1470956615",
     "timepoints": "(none)"
   },
+  "runtimeHierarchyCorrection": null,
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "NC039",

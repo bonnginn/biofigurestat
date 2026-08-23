@@ -16,7 +16,7 @@
     "timepoints_n": 0,
     "year": 2024
   },
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "case": {
     "article_url": "https://rupress.org/jcb/article/223/10/e202307146/276856/",
     "assay_context": "positive_fraction",
@@ -36,6 +36,7 @@
     "year": 2024
   },
   "caseId": "JCB019",
+  "excludedFromAutomatedScoring": true,
   "goldAnalysis": {
     "analysis_scope_note": "Reference result is computed only from synthetic data; it is not a reproduction of the paper p-value.",
     "case_id": "JCB019",
@@ -96,6 +97,27 @@
     "synthetic_seed": "2134527616",
     "timepoints": "(none)"
   },
+  "runtimeHierarchyCorrection": {
+    "classification": "irreducible_source_hierarchy_ambiguity",
+    "correctedAnalysisLevel": "unresolved; no automated analysis",
+    "correctedBiologicalN": "indeterminate",
+    "correctedRuntimeStructure": "Rows remain provenance-only; case is excluded from automated packaging and scoring.",
+    "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+    "excludeFromAutomatedScoring": true,
+    "exclusionReason": "Replicate-summary versus nested-cell identity cannot be resolved without guessing.",
+    "goldAnalysisChanges": "Source Gold is provenance only and is not certified or scored.",
+    "oldAnalysisLevel": "row treated as independent",
+    "oldBiologicalN": "indeterminate (five rows)",
+    "originalStructure": "Five rows per construct are described as cells counted across biological replicates without replicate IDs or panel-specific provenance.",
+    "scientificReason": "The paper has construct panels with different nested structures, so these rows cannot be mapped safely.",
+    "sourceEvidence": "https://doi.org/10.1083/jcb.202307146",
+    "sourceFields": [
+      "Researcher_Packets.experimental_unit_description",
+      "Synthetic_Raw.parent_unit_id",
+      "Paper_Reference.target_figure_or_panel"
+    ]
+  },
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "JCB019",

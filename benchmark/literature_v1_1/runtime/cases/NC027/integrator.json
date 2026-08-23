@@ -16,7 +16,7 @@
     "timepoints_n": 4,
     "year": 2022
   },
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "case": {
     "article_url": "https://www.nature.com/articles/s41467-022-33015-3",
     "assay_context": "single_cell",
@@ -36,6 +36,7 @@
     "year": 2022
   },
   "caseId": "NC027",
+  "excludedFromAutomatedScoring": false,
   "goldAnalysis": {
     "analysis_scope_note": "Reference result is computed only from synthetic data; it is not a reproduction of the paper p-value.",
     "case_id": "NC027",
@@ -96,6 +97,8 @@
     "synthetic_seed": "2737664961",
     "timepoints": "0 | 24 | 48 | 72"
   },
+  "runtimeHierarchyCorrection": null,
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "NC027",

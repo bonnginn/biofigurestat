@@ -16,7 +16,7 @@
     "timepoints_n": 6,
     "year": 2025
   },
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "case": {
     "article_url": "https://www.science.org/doi/10.1126/sciadv.ads4609",
     "assay_context": "fluorescence_trace",
@@ -36,6 +36,7 @@
     "year": 2025
   },
   "caseId": "SA045",
+  "excludedFromAutomatedScoring": false,
   "goldAnalysis": {
     "analysis_scope_note": "Reference result is computed only from synthetic data; it is not a reproduction of the paper p-value.",
     "case_id": "SA045",
@@ -96,6 +97,8 @@
     "synthetic_seed": "1135148255",
     "timepoints": "0 | 4 | 8 | 16 | 24 | 48"
   },
+  "runtimeHierarchyCorrection": null,
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "SA045",

@@ -1,5 +1,5 @@
 {
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "caseId": "EL050",
   "paperReference": {
     "article_url": "https://elifesciences.org/articles/74602",
@@ -20,11 +20,12 @@
     "case_id": "EL050",
     "conditions": "Control | Treatment",
     "experimental_unit_description": "3 biological replicates per strain and metabolic state",
-    "independent_session_count": 5,
+    "independent_session_count": 3,
     "measurement_context": "lipidomics feature-level measurement",
     "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
     "readouts": "Feature 01 | Feature 02 | Feature 03 | Feature 04 | Feature 05 | Feature 06 | Feature 07 | Feature 08 | Feature 09 | Feature 10 | Feature 11 | Feature 12 | Feature 13 | Feature 14 | Feature 15 | Feature 16 | Feature 17 | Feature 18 | Feature 19 | Feature 20",
     "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
     "timepoints": "(none)"
-  }
+  },
+  "sourceBenchmarkVersion": "LSA50_v1_1"
 }

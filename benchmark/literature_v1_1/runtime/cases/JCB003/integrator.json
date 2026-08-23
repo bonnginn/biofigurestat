@@ -16,7 +16,7 @@
     "timepoints_n": 0,
     "year": 2024
   },
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "case": {
     "article_url": "https://rupress.org/jcb/article/223/8/e202402060/276705/",
     "assay_context": "cell_count",
@@ -36,8 +36,9 @@
     "year": 2024
   },
   "caseId": "JCB003",
+  "excludedFromAutomatedScoring": false,
   "goldAnalysis": {
-    "analysis_scope_note": "Corrected runtime reference aggregates synthetic cell rows within each of three experiment sessions per condition. The unchanged source workbook used row-level values and is preserved as provenance.",
+    "analysis_scope_note": "Corrected runtime reference aggregates cell rows within each of three experiment sessions per condition.",
     "case_id": "JCB003",
     "expected_decision": "difference/signal expected",
     "paper_reported_method": "unpaired two-tailed t test",
@@ -96,6 +97,46 @@
     "synthetic_seed": "3192481520",
     "timepoints": "(none)"
   },
+  "runtimeHierarchyCorrection": {
+    "caseOverrides": {
+      "statistical_unit_and_nesting": "Independent experimental session; cell observations nested within 3 sessions per condition"
+    },
+    "classification": "source_data_and_schema_ambiguity",
+    "correctedAnalysisLevel": "experiment-session mean",
+    "correctedBiologicalN": 3,
+    "correctedRuntimeStructure": "Preserve rows and set experiment_id as biological parent.",
+    "correctionVersion": "LSA50_v1_1_runtime_hierarchy_2",
+    "goldAnalysisChanges": "Welch test recomputed on three session means per condition.",
+    "goldAnalysisOverrides": {
+      "analysis_scope_note": "Corrected runtime reference aggregates cell rows within each of three experiment sessions per condition.",
+      "reference_method": "Welch t test on experiment-session means",
+      "reference_p_value": 0.01370631241522072,
+      "reference_statistic": -5.653139674308264
+    },
+    "goldMetadataOverrides": {
+      "experimental_unit_and_nesting": "Independent experimental session; cell observations nested within 3 sessions per condition",
+      "reference_method": "Welch t test on experiment-session means",
+      "reference_p_value": 0.01370631241522072,
+      "reference_statistic": -5.653139674308264
+    },
+    "oldAnalysisLevel": "cell row",
+    "oldBiologicalN": 8,
+    "originalStructure": "Three sessions are declared but cell rows lack parents and source Gold treats cells as independent.",
+    "researcherPacketOverrides": {
+      "blind_experiment_summary": "Synthetic cell/count measurement. Conditions: Control, Treatment. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: three independent experimental sessions per condition; cell observations are nested within session.",
+      "experimental_unit_description": "Independent experimental session; cell observations nested within each of 3 sessions per condition",
+      "nested_observation_note": "Cell-level observations are nested within independent experimental sessions; analyze one session-level summary per condition and do not count cells as biological n."
+    },
+    "rowParentFrom": "experiment_id",
+    "scientificReason": "Cells are nested within three independent experimental sessions.",
+    "sourceEvidence": "Authoritative workbook packet and synthetic session identifiers.",
+    "sourceFields": [
+      "Researcher_Packets.independent_session_count",
+      "Researcher_Packets.nested_observation_note",
+      "Synthetic_Raw.experiment_id"
+    ]
+  },
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "JCB003",

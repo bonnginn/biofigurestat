@@ -16,7 +16,7 @@
     "timepoints_n": 6,
     "year": 2024
   },
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "case": {
     "article_url": "https://rupress.org/jcb/article/223/12/e202310153/277044/",
     "assay_context": "migration",
@@ -36,6 +36,7 @@
     "year": 2024
   },
   "caseId": "JCB011",
+  "excludedFromAutomatedScoring": false,
   "goldAnalysis": {
     "analysis_scope_note": "Reference result is computed only from synthetic data; it is not a reproduction of the paper p-value.",
     "case_id": "JCB011",
@@ -96,6 +97,8 @@
     "synthetic_seed": "2145818414",
     "timepoints": "0 | 4 | 8 | 16 | 24 | 48"
   },
+  "runtimeHierarchyCorrection": null,
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "JCB011",

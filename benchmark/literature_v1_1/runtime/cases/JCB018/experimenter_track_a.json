@@ -1,5 +1,5 @@
 {
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "caseId": "JCB018",
   "paperReference": {
     "article_url": "https://rupress.org/jcb/article/222/11/e202303138/276267/",
@@ -27,6 +27,7 @@
     "repeated_identity_note": "The same biological/statistical units are followed across time; identity must be preserved.",
     "timepoints": "0 | 10 | 20 | 30 | 40 | 50"
   },
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "JCB018",

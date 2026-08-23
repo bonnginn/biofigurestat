@@ -13,6 +13,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "benchmark/literature_v1_1/runtime/cases"
+RUNTIME_MANIFEST = ROOT / "benchmark/literature_v1_1/runtime/manifest.json"
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 CASE_KEYS = {
     "schemaVersion",
@@ -118,6 +119,23 @@ def validate_case(payload: dict[str, Any], case_id: str, run_id: str) -> None:
         raise ValueError(f"Blind package leakage scanner rejected terms: {', '.join(leaked_terms)}")
 
 
+def validate_hidden_reference_absence(
+    payload: dict[str, Any], hidden: dict[str, Any], case_id: str
+) -> None:
+    paper = hidden.get("paperReference") or {}
+    gold_analysis = hidden.get("goldAnalysis") or {}
+    gold_metadata = hidden.get("goldMetadata") or {}
+    hidden_reference = {
+        "paper": {key: paper.get(key) for key in ("title", "doi", "article_url", "paper_reported_analysis", "curated_graph_reference")},
+        "goldAnalysis": {key: gold_analysis.get(key) for key in ("expected_decision", "paper_reported_method", "reference_method", "acceptable_graph_families", "acceptable_statistical_families")},
+        "goldMetadata": {key: gold_metadata.get(key) for key in ("expected_decision", "paper_method_preassessment", "paper_reported_method", "reference_method", "acceptable_graph_families", "acceptable_statistical_families", "scope_expectation")},
+    }
+    hidden_only = _strings(hidden_reference) - PUBLIC_CONTEXT_TERMS
+    serialized = canonical_bytes(payload).decode("utf-8")
+    if any(value in serialized for value in hidden_only):
+        raise ValueError(f"{case_id}: blind package contains a hidden reference value")
+
+
 def create_package(case_id: str, run_id: str, output_root: Path) -> Path:
     if not SAFE_ID.fullmatch(case_id) or not SAFE_ID.fullmatch(run_id):
         raise ValueError("Blind package case and run IDs must be safe identifiers")
@@ -144,22 +162,22 @@ def create_package(case_id: str, run_id: str, output_root: Path) -> Path:
     }
     validate_case(payload, case_id, run_id)
     hidden = json.loads(hidden_path.read_text(encoding="utf-8"))
-    safe_strings = _strings(payload)
-    hidden_only = _strings(hidden) - safe_strings - PUBLIC_CONTEXT_TERMS
-    serialized = canonical_bytes(payload).decode("utf-8")
-    leaked_values = sorted(value for value in hidden_only if value in serialized)
-    if leaked_values:
-        raise ValueError("Blind package contains a hidden reference value")
+    if hidden.get("excludedFromAutomatedScoring"):
+        raise ValueError(f"{case_id}: case is excluded from automated packaging and scoring")
+    validate_hidden_reference_absence(payload, hidden, case_id)
     target = output_root / run_id
     if target.exists():
         raise ValueError("Blind package run identity already exists; use a fresh run ID")
     target.mkdir(parents=True)
     case_bytes = canonical_bytes(payload)
     (target / "case.json").write_bytes(case_bytes)
+    runtime_manifest = json.loads(RUNTIME_MANIFEST.read_text(encoding="utf-8"))
     manifest = {
         "schemaVersion": "1.0.0",
         "packageType": "LSAA_TRACK_B_BLIND",
         "benchmarkVersion": payload["benchmarkVersion"],
+        "sourceBenchmarkVersion": runtime_manifest["sourceBenchmarkVersion"],
+        "runtimeCorrectionSha256": runtime_manifest["runtimeCorrectionSha256"],
         "caseId": case_id,
         "runId": run_id,
         "payload": "case.json",
@@ -183,6 +201,8 @@ def load_package(output_root: Path, case_id: str, run_id: str) -> dict[str, Any]
         "schemaVersion",
         "packageType",
         "benchmarkVersion",
+        "sourceBenchmarkVersion",
+        "runtimeCorrectionSha256",
         "caseId",
         "runId",
         "payload",
@@ -196,6 +216,13 @@ def load_package(output_root: Path, case_id: str, run_id: str) -> dict[str, Any]
         or manifest["runId"] != run_id
     ):
         raise ValueError("Blind package manifest identity mismatch")
+    runtime_manifest = json.loads(RUNTIME_MANIFEST.read_text(encoding="utf-8"))
+    if (
+        manifest["benchmarkVersion"] != runtime_manifest["benchmarkVersion"]
+        or manifest["sourceBenchmarkVersion"] != runtime_manifest["sourceBenchmarkVersion"]
+        or manifest["runtimeCorrectionSha256"] != runtime_manifest["runtimeCorrectionSha256"]
+    ):
+        raise ValueError("Blind package runtime correction provenance mismatch")
     expected_hash = hashlib.sha256(case_bytes).hexdigest()
     if manifest["payload"] != "case.json" or manifest["payloadSha256"] != expected_hash:
         raise ValueError("Blind package hash mismatch")

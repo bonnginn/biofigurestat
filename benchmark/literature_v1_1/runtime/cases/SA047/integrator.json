@@ -16,7 +16,7 @@
     "timepoints_n": 6,
     "year": 2023
   },
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "case": {
     "article_url": "https://www.science.org/doi/10.1126/sciadv.adg6231",
     "assay_context": "qpi",
@@ -36,6 +36,7 @@
     "year": 2023
   },
   "caseId": "SA047",
+  "excludedFromAutomatedScoring": false,
   "goldAnalysis": {
     "analysis_scope_note": "Reference result is computed only from synthetic data; it is not a reproduction of the paper p-value.",
     "case_id": "SA047",
@@ -96,6 +97,8 @@
     "synthetic_seed": "4151665194",
     "timepoints": "0 | 4 | 8 | 16 | 24 | 48"
   },
+  "runtimeHierarchyCorrection": null,
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "SA047",

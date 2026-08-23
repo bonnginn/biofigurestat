@@ -42,7 +42,10 @@ class LiteratureBenchmarkImportTests(unittest.TestCase):
             manifest = convert(DEFAULT_SOURCE, first)
             convert(DEFAULT_SOURCE, second)
             self.assertEqual(manifest["caseCount"], 50)
-            self.assertEqual(manifest["syntheticRowCount"], 2691)
+            self.assertEqual(manifest["sourceSyntheticRowCount"], 2691)
+            self.assertEqual(manifest["runtimeSyntheticRowCount"], 2577)
+            self.assertEqual(manifest["scorableCaseCount"], 49)
+            self.assertEqual(manifest["excludedCases"], ["JCB019"])
             first_files = sorted(path.relative_to(first) for path in first.rglob("*.json"))
             second_files = sorted(path.relative_to(second) for path in second.rglob("*.json"))
             self.assertEqual(first_files, second_files)
@@ -50,8 +53,11 @@ class LiteratureBenchmarkImportTests(unittest.TestCase):
                 self.assertEqual((first / relative).read_bytes(), (second / relative).read_bytes())
 
             track_b = json.loads((first / "cases/JCB003/experimenter_track_b.json").read_text())
-            self.assertEqual(manifest["runtimeCorrectionVersion"], "LSA50_v1_1_runtime_hierarchy_1")
-            self.assertEqual(manifest["correctedCases"], ["JCB003"])
+            self.assertEqual(manifest["runtimeCorrectionVersion"], "LSA50_v1_1_runtime_hierarchy_2")
+            self.assertEqual(
+                manifest["correctedCases"],
+                ["EL050", "JCB003", "JCB008", "JCB014", "JCB019", "JCB023", "NC030", "NC032", "NC037"],
+            )
             self.assertEqual(
                 {row["parent_unit_id"] for row in track_b["syntheticData"]},
                 {"Exp1", "Exp2", "Exp3"},

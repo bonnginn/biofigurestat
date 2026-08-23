@@ -1,5 +1,5 @@
 {
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "caseId": "JCB015",
   "researcherPacket": {
     "blind_experiment_summary": "Synthetic multivariate/compositional measurement. Conditions: Control, Treatment. Readout(s): Type A, Type B, Type C. Time structure: no explicit time axis. Experimental-unit structure: Animals/samples with cell-shape class proportions.",
@@ -13,6 +13,7 @@
     "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
     "timepoints": "(none)"
   },
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "JCB015",

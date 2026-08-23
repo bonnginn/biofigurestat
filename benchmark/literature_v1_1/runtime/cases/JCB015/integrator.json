@@ -16,7 +16,7 @@
     "timepoints_n": 0,
     "year": 2022
   },
-  "benchmarkVersion": "LSA50_v1_1",
+  "benchmarkVersion": "LSA50_v1_1_runtime_hierarchy_2",
   "case": {
     "article_url": "https://rupress.org/jcb/article/221/11/e202109100/213501/",
     "assay_context": "multivariate",
@@ -36,6 +36,7 @@
     "year": 2022
   },
   "caseId": "JCB015",
+  "excludedFromAutomatedScoring": false,
   "goldAnalysis": {
     "analysis_scope_note": "Reference result is computed only from synthetic data; it is not a reproduction of the paper p-value.",
     "case_id": "JCB015",
@@ -96,6 +97,8 @@
     "synthetic_seed": "2156333457",
     "timepoints": "(none)"
   },
+  "runtimeHierarchyCorrection": null,
+  "sourceBenchmarkVersion": "LSA50_v1_1",
   "syntheticData": [
     {
       "case_id": "JCB015",

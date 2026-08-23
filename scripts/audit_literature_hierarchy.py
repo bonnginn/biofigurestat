@@ -19,6 +19,7 @@ PASS = "HIERARCHY_PASS"
 AMBIGUOUS = "HIERARCHY_AMBIGUOUS"
 CONFLICT = "HIERARCHY_CONFLICT"
 NOT_APPLICABLE = "NOT_APPLICABLE"
+EXCLUDED = "HIERARCHY_EXCLUDED"
 
 
 def _group_counts(rows: list[dict[str, Any]], unit_field: str) -> dict[str, int]:
@@ -55,13 +56,16 @@ def audit_payload(payload: dict[str, Any]) -> dict[str, Any]:
     parents = {row.get("parent_unit_id") for row in rows if row.get("parent_unit_id")}
     experiment_ids = {row["experiment_id"] for row in rows}
     issues: list[str] = []
+    excluded = bool(payload.get("excludedFromAutomatedScoring"))
 
     if re.search(r"(?:cell|lower-level)-level observations are nested", nested_note, re.I):
         path = "parent_unit_id"
         if any(not row.get("parent_unit_id") for row in rows):
             issues.append("packet declares nested observations but one or more rows lack parent_unit_id")
         counts = _group_counts(rows, path) if not issues else _group_counts(rows, "unit_id")
-    elif design in {"paired", "friedman"}:
+    elif design in {"paired", "friedman"} or re.search(
+        r"matched.*across (?:paired|multiple) conditions", repeated_note, re.I
+    ):
         path = "unit_id_across_conditions"
         counts = _group_counts(rows, "unit_id")
         appearances: dict[str, set[str]] = collections.defaultdict(set)
@@ -168,8 +172,13 @@ def audit_payload(payload: dict[str, Any]) -> dict[str, Any]:
     else:
         packet_n = "varies_by_analysis_cell"
         gold_n = "varies_by_analysis_cell"
+    if excluded:
+        correction = payload.get("runtimeHierarchyCorrection") or {}
+        issues = [correction.get("exclusionReason", "case is excluded from automated scoring")]
+        status = EXCLUDED
     return {
         "caseId": case_id,
+        "benchmarkVersion": payload.get("benchmarkVersion", "LSA50_v1_1"),
         "designClass": design,
         "rowCount": len(rows),
         "packetIndependentSessionCount": packet["independent_session_count"],
@@ -182,6 +191,7 @@ def audit_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "parentUnitCount": len(parents),
         "status": status,
         "issues": issues,
+        "excludedFromAutomatedScoring": excluded,
     }
 
 
@@ -193,9 +203,9 @@ def audit_all() -> dict[str, Any]:
     counts = collections.Counter(case["status"] for case in cases)
     return {
         "schemaVersion": "1.0.0",
-        "benchmarkVersion": "LSA50_v1_1",
+        "benchmarkVersion": cases[0].get("benchmarkVersion", "LSA50_v1_1") if cases else "LSA50_v1_1",
         "caseCount": len(cases),
-        "counts": {status: counts[status] for status in (PASS, AMBIGUOUS, CONFLICT, NOT_APPLICABLE)},
+        "counts": {status: counts[status] for status in (PASS, AMBIGUOUS, CONFLICT, EXCLUDED, NOT_APPLICABLE)},
         "cases": cases,
     }
 
@@ -217,7 +227,7 @@ def main() -> None:
         counts = collections.Counter(case["status"] for case in report["cases"])
         report["caseCount"] = len(report["cases"])
         report["counts"] = {
-            status: counts[status] for status in (PASS, AMBIGUOUS, CONFLICT, NOT_APPLICABLE)
+            status: counts[status] for status in (PASS, AMBIGUOUS, CONFLICT, EXCLUDED, NOT_APPLICABLE)
         }
     text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.output:

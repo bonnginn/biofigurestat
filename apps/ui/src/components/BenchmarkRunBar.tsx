@@ -119,10 +119,7 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         } else {
           setUnsupportedEvidence(createFreshUnsupportedEvidence(evidenceOwner));
         }
-        if (
-          batch.current.status !== "active" &&
-          batch.current.status !== "explicit_unsupported"
-        ) {
+        if (batch.current.status !== "active" && batch.current.status !== "explicit_unsupported") {
           return;
         }
         const existing = currentBenchmarkRun().identity;
@@ -192,7 +189,8 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         !unsupportedEvidence.experimentalUnit.trim() ||
         !unsupportedEvidence.scientificCompromiseReason.trim() ||
         parsedRoutes.length === 0 ||
-        (parsedBiologicalN !== null && (!Number.isFinite(parsedBiologicalN) || parsedBiologicalN <= 0)))
+        (parsedBiologicalN !== null &&
+          (!Number.isFinite(parsedBiologicalN) || parsedBiologicalN <= 0)))
     ) {
       setSaveStatus("Explicit unsupportedには配信済みpacketと科学的根拠の入力が必要です。");
       return;
@@ -215,56 +213,59 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
       });
       const completed = currentBenchmarkRun();
       const completedAt = new Date().toISOString();
-      await writeBenchmarkArtifacts([
-        {
-          name: "run.json",
-          content: JSON.stringify(
-            {
-              ...completed.identity,
-              appVersion: "0.1.0",
-              sourceRevision: evaluationMode.sourceRevision,
-              productRevision: evaluationMode.sourceRevision,
-              benchmarkInfrastructureRevision: evaluationMode.sourceRevision,
-              engineVersion: null,
-              startedAt: completed.startedAt,
-              completedAt,
-              outcome: completed.outcome,
-              supportStatus: completed.supportStatus,
-              artifactCompleteness: isExplicitUnsupported
-                ? "metadata_only_explicit_unsupported"
-                : "metadata_only",
-              ...(isExplicitUnsupported
-                ? {
-                    blindPackage: {
-                      caseId: completed.identity?.caseId,
-                      runId: completed.identity?.runId,
-                      sha256: blindBatch?.current?.packageSha256,
-                    },
-                    evidenceProvenance: unsupportedEvidence.owner,
-                    unsupportedEvidenceProvenanceVersion: "1.0.0",
-                    scientificReason: unsupportedEvidence.scientificReason.trim(),
-                    experimentalUnit: unsupportedEvidence.experimentalUnit.trim(),
-                    biologicalN: parsedBiologicalN,
-                    attemptedRoutes: parsedRoutes,
-                    scientificCompromiseReason:
-                      unsupportedEvidence.scientificCompromiseReason.trim(),
-                  }
-                : {}),
-              defaultGraphCaptured: completed.defaultGraphCaptured,
-              interactionCount: completed.events.length,
-              graphEditCount: completed.events.filter(
-                ({ type }) => type === "graph_configuration_changed",
-              ).length,
-            },
-            null,
-            2,
-          ),
-        },
-        {
-          name: "interaction_log.json",
-          content: JSON.stringify(completed.events, null, 2),
-        },
-      ], isExplicitUnsupported ? { requiredArtifacts: ["run.json", "interaction_log.json"] } : {});
+      await writeBenchmarkArtifacts(
+        [
+          {
+            name: "run.json",
+            content: JSON.stringify(
+              {
+                ...completed.identity,
+                appVersion: "0.1.0",
+                sourceRevision: evaluationMode.sourceRevision,
+                productRevision: evaluationMode.sourceRevision,
+                benchmarkInfrastructureRevision: evaluationMode.sourceRevision,
+                engineVersion: null,
+                startedAt: completed.startedAt,
+                completedAt,
+                outcome: completed.outcome,
+                supportStatus: completed.supportStatus,
+                artifactCompleteness: isExplicitUnsupported
+                  ? "metadata_only_explicit_unsupported"
+                  : "metadata_only",
+                ...(isExplicitUnsupported
+                  ? {
+                      blindPackage: {
+                        caseId: completed.identity?.caseId,
+                        runId: completed.identity?.runId,
+                        sha256: blindBatch?.current?.packageSha256,
+                      },
+                      evidenceProvenance: unsupportedEvidence.owner,
+                      unsupportedEvidenceProvenanceVersion: "1.0.0",
+                      scientificReason: unsupportedEvidence.scientificReason.trim(),
+                      experimentalUnit: unsupportedEvidence.experimentalUnit.trim(),
+                      biologicalN: parsedBiologicalN,
+                      attemptedRoutes: parsedRoutes,
+                      scientificCompromiseReason:
+                        unsupportedEvidence.scientificCompromiseReason.trim(),
+                    }
+                  : {}),
+                defaultGraphCaptured: completed.defaultGraphCaptured,
+                interactionCount: completed.events.length,
+                graphEditCount: completed.events.filter(
+                  ({ type }) => type === "graph_configuration_changed",
+                ).length,
+              },
+              null,
+              2,
+            ),
+          },
+          {
+            name: "interaction_log.json",
+            content: JSON.stringify(completed.events, null, 2),
+          },
+        ],
+        isExplicitUnsupported ? { requiredArtifacts: ["run.json", "interaction_log.json"] } : {},
+      );
       if (isExplicitUnsupported) {
         const persistedBatch = await fetchBlindBatchCurrent();
         setBlindBatch(persistedBatch);
@@ -318,10 +319,13 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
       <strong>Benchmark</strong>
       {blindBatch ? (
         <strong role="status">
-          Blind benchmark batch: Case {blindBatch.position} / {blindBatch.total} · {blindBatch.status}
+          Blind benchmark batch: Case {blindBatch.position} / {blindBatch.total} ·{" "}
+          {blindBatch.status}
         </strong>
       ) : null}
-      {batchStatus === "error" ? <span role="alert">Blind batch queueを確認できません。</span> : null}
+      {batchStatus === "error" ? (
+        <span role="alert">Blind batch queueを確認できません。</span>
+      ) : null}
       <label>
         <span>Version</span>
         <input
@@ -332,18 +336,30 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
       </label>
       <label>
         <span>Case</span>
-        <input disabled={Boolean(blindBatch)} value={caseId} onChange={(event) => setCaseId(event.target.value)} />
+        <input
+          disabled={Boolean(blindBatch)}
+          value={caseId}
+          onChange={(event) => setCaseId(event.target.value)}
+        />
       </label>
       <label>
         <span>Track</span>
-        <select disabled={Boolean(blindBatch)} value={track} onChange={(event) => setTrack(event.target.value as typeof track)}>
+        <select
+          disabled={Boolean(blindBatch)}
+          value={track}
+          onChange={(event) => setTrack(event.target.value as typeof track)}
+        >
           <option value="track_A">Track A</option>
           <option value="track_B">Track B</option>
         </select>
       </label>
       <label>
         <span>Run</span>
-        <input disabled={Boolean(blindBatch)} value={runId} onChange={(event) => setRunId(event.target.value)} />
+        <input
+          disabled={Boolean(blindBatch)}
+          value={runId}
+          onChange={(event) => setRunId(event.target.value)}
+        />
       </label>
       <button
         type="button"
