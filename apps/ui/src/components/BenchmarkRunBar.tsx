@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   currentBenchmarkRun,
   recordBenchmarkEvent,
+  resetBenchmarkRun,
   setBenchmarkSupportStatus,
   startBenchmarkRun,
   useBenchmarkRun,
@@ -83,7 +84,11 @@ export function BenchmarkRunBar() {
       </label>
       <button
         type="button"
-        onClick={() => startBenchmarkRun({ benchmarkVersion, caseId, track, runId })}
+        onClick={() =>
+          run.identity
+            ? resetBenchmarkRun()
+            : startBenchmarkRun({ benchmarkVersion, caseId, track, runId })
+        }
       >
         {run.identity ? "Runをリセット" : "Runを開始"}
       </button>

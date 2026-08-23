@@ -39,11 +39,14 @@ import {
 } from "../../app/graphExport";
 import { generateMethodsText } from "../../app/methodsText";
 import {
+  beginDefaultGraphCapture,
   blobToBase64,
   COMPLETE_BENCHMARK_ARTIFACT_NAMES,
+  completeDefaultGraphCapture,
   currentBenchmarkRun,
-  markDefaultGraphCaptured,
+  recordFinalGraphCapture,
   recordBenchmarkEvent,
+  sha256Hex,
   useBenchmarkRun,
   writeBenchmarkArtifacts,
 } from "../../app/benchmarkEvaluation";
@@ -2380,7 +2383,7 @@ export function ExperimentGraphWorkbench({
     if (
       !evaluationModeIsConfigured(evaluationMode) ||
       !benchmarkRun.identity ||
-      benchmarkRun.defaultGraphCaptured ||
+      benchmarkRun.defaultGraphCapture ||
       !hasData ||
       workspaceMode === "statistics"
     )
@@ -2389,6 +2392,8 @@ export function ExperimentGraphWorkbench({
     if (!svg) return;
     const svgText = serializeGraphSvg(svg);
     const viewBox = svg.viewBox.baseVal;
+    const capturedAt = new Date().toISOString();
+    if (!beginDefaultGraphCapture(capturedAt)) return;
     void (async () => {
       try {
         const png = await svgToPngBlob(
@@ -2396,6 +2401,7 @@ export function ExperimentGraphWorkbench({
           viewBox.width || svg.width.baseVal.value || 900,
           viewBox.height || svg.height.baseVal.value || 520,
         );
+        const [svgSha256, pngSha256] = await Promise.all([sha256Hex(svgText), sha256Hex(png)]);
         await writeBenchmarkArtifacts([
           { name: "default_graph.svg", content: svgText, mediaType: "image/svg+xml" },
           {
@@ -2405,13 +2411,17 @@ export function ExperimentGraphWorkbench({
             mediaType: "image/png",
           },
         ]);
-        markDefaultGraphCaptured();
+        completeDefaultGraphCapture({
+          graphStateFingerprint: svgSha256,
+          svgSha256,
+          pngSha256,
+        });
         setBenchmarkCaptureStatus("Benchmarkの既定グラフを保存しました。");
       } catch {
         setBenchmarkCaptureStatus("既定グラフの評価artifactを保存できませんでした。");
       }
     })();
-  }, [benchmarkRun.defaultGraphCaptured, benchmarkRun.identity, hasData, workspaceMode]);
+  }, [benchmarkRun.defaultGraphCapture, benchmarkRun.identity, hasData, workspaceMode]);
   const varyingStatisticalAttributes = draft.attributes.filter(
     (attribute) =>
       new Set(
@@ -2545,6 +2555,14 @@ export function ExperimentGraphWorkbench({
         viewBox.width || svg.width.baseVal.value || 900,
         viewBox.height || svg.height.baseVal.value || 520,
       );
+      const capturedAt = new Date().toISOString();
+      const [svgSha256, pngSha256] = await Promise.all([sha256Hex(svgText), sha256Hex(png)]);
+      recordFinalGraphCapture({
+        capturedAt,
+        graphStateFingerprint: svgSha256,
+        svgSha256,
+        pngSha256,
+      });
       recordBenchmarkEvent("benchmark_run_finalized", {
         selectedGraph: graphType,
         selectedStatistics: analysis.request.method,
@@ -2593,6 +2611,19 @@ export function ExperimentGraphWorkbench({
                 supportStatus: finalRun.supportStatus,
                 artifactCompleteness: "complete",
                 defaultGraphCaptured: finalRun.defaultGraphCaptured,
+                captureProvenanceVersion: "1.0.0",
+                defaultCapturedAt: finalRun.defaultGraphCapture?.capturedAt ?? null,
+                defaultCapturedEventIndex: finalRun.defaultGraphCapture?.eventIndex ?? null,
+                finalCapturedAt: finalRun.finalGraphCapture?.capturedAt ?? null,
+                finalCapturedEventIndex: finalRun.finalGraphCapture?.eventIndex ?? null,
+                defaultGraphStateFingerprint:
+                  finalRun.defaultGraphCapture?.graphStateFingerprint ?? null,
+                finalGraphStateFingerprint:
+                  finalRun.finalGraphCapture?.graphStateFingerprint ?? null,
+                defaultSvgSha256: finalRun.defaultGraphCapture?.svgSha256 ?? null,
+                defaultPngSha256: finalRun.defaultGraphCapture?.pngSha256 ?? null,
+                finalSvgSha256: finalRun.finalGraphCapture?.svgSha256 ?? null,
+                finalPngSha256: finalRun.finalGraphCapture?.pngSha256 ?? null,
                 interactionCount: finalRun.events.length,
                 graphEditCount: finalRun.events.filter(
                   ({ type }) => type === "graph_configuration_changed",

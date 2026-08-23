@@ -19,11 +19,22 @@ export type BenchmarkEvent = Readonly<{
   detail: Readonly<Record<string, string | number | boolean | null>>;
 }>;
 
+export type BenchmarkGraphCapture = Readonly<{
+  status: "pending" | "complete";
+  capturedAt: string;
+  eventIndex: number;
+  graphStateFingerprint: string | null;
+  svgSha256: string | null;
+  pngSha256: string | null;
+}>;
+
 export type BenchmarkRunState = Readonly<{
   identity: BenchmarkIdentity | null;
   startedAt: string | null;
   supportStatus: BenchmarkSupportStatus | null;
   defaultGraphCaptured: boolean;
+  defaultGraphCapture: BenchmarkGraphCapture | null;
+  finalGraphCapture: BenchmarkGraphCapture | null;
   events: readonly BenchmarkEvent[];
 }>;
 
@@ -32,6 +43,8 @@ const EMPTY: BenchmarkRunState = {
   startedAt: null,
   supportStatus: null,
   defaultGraphCaptured: false,
+  defaultGraphCapture: null,
+  finalGraphCapture: null,
   events: [],
 };
 let state: BenchmarkRunState = EMPTY;
@@ -61,6 +74,8 @@ export function startBenchmarkRun(identity: BenchmarkIdentity): void {
     startedAt,
     supportStatus: null,
     defaultGraphCaptured: false,
+    defaultGraphCapture: null,
+    finalGraphCapture: null,
     events: [
       {
         sequence: 1,
@@ -70,6 +85,10 @@ export function startBenchmarkRun(identity: BenchmarkIdentity): void {
       },
     ],
   });
+}
+
+export function resetBenchmarkRun(): void {
+  publish(EMPTY);
 }
 
 export function recordBenchmarkEvent(
@@ -97,10 +116,108 @@ export function setBenchmarkSupportStatus(supportStatus: BenchmarkSupportStatus 
   recordBenchmarkEvent("support_status_selected", { supportStatus });
 }
 
-export function markDefaultGraphCaptured(): void {
-  if (!state.identity || state.defaultGraphCaptured) return;
-  publish({ ...state, defaultGraphCaptured: true });
-  recordBenchmarkEvent("default_graph_captured");
+export function beginDefaultGraphCapture(capturedAt: string): boolean {
+  if (!state.identity || state.defaultGraphCapture) return false;
+  const eventIndex = state.events.length + 1;
+  const capture: BenchmarkGraphCapture = {
+    status: "pending",
+    capturedAt,
+    eventIndex,
+    graphStateFingerprint: null,
+    svgSha256: null,
+    pngSha256: null,
+  };
+  publish({
+    ...state,
+    defaultGraphCapture: capture,
+    events: [
+      ...state.events,
+      {
+        sequence: eventIndex,
+        occurredAt: capturedAt,
+        type: "default_graph_capture_started",
+        detail: {},
+      },
+    ],
+  });
+  return true;
+}
+
+export function completeDefaultGraphCapture(input: {
+  graphStateFingerprint: string;
+  svgSha256: string;
+  pngSha256: string;
+}): void {
+  if (
+    !state.identity ||
+    !state.defaultGraphCapture ||
+    state.defaultGraphCapture.status !== "pending"
+  )
+    return;
+  const capture: BenchmarkGraphCapture = {
+    ...state.defaultGraphCapture,
+    status: "complete",
+    graphStateFingerprint: input.graphStateFingerprint,
+    svgSha256: input.svgSha256,
+    pngSha256: input.pngSha256,
+  };
+  const sequence = state.events.length + 1;
+  publish({
+    ...state,
+    defaultGraphCaptured: true,
+    defaultGraphCapture: capture,
+    events: [
+      ...state.events,
+      {
+        sequence,
+        occurredAt: new Date().toISOString(),
+        type: "default_graph_captured",
+        detail: {
+          defaultCapturedEventIndex: capture.eventIndex,
+          graphStateFingerprint: input.graphStateFingerprint,
+          svgSha256: input.svgSha256,
+          pngSha256: input.pngSha256,
+        },
+      },
+    ],
+  });
+}
+
+export function recordFinalGraphCapture(input: {
+  capturedAt: string;
+  graphStateFingerprint: string;
+  svgSha256: string;
+  pngSha256: string;
+}): BenchmarkRunState {
+  if (!state.identity) return state;
+  const eventIndex = state.events.length + 1;
+  const capture: BenchmarkGraphCapture = {
+    status: "complete",
+    capturedAt: input.capturedAt,
+    eventIndex,
+    graphStateFingerprint: input.graphStateFingerprint,
+    svgSha256: input.svgSha256,
+    pngSha256: input.pngSha256,
+  };
+  publish({
+    ...state,
+    finalGraphCapture: capture,
+    events: [
+      ...state.events,
+      {
+        sequence: eventIndex,
+        occurredAt: input.capturedAt,
+        type: "final_graph_captured",
+        detail: {
+          finalCapturedEventIndex: eventIndex,
+          graphStateFingerprint: input.graphStateFingerprint,
+          svgSha256: input.svgSha256,
+          pngSha256: input.pngSha256,
+        },
+      },
+    ],
+  });
+  return state;
 }
 
 export function currentBenchmarkRun(): BenchmarkRunState {
@@ -169,4 +286,13 @@ export async function blobToBase64(blob: Blob): Promise<string> {
     binary += String.fromCharCode(byte);
   });
   return btoa(binary);
+}
+
+export async function sha256Hex(value: string | Blob): Promise<string> {
+  const bytes =
+    typeof value === "string"
+      ? new TextEncoder().encode(value)
+      : new Uint8Array(await value.arrayBuffer());
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }

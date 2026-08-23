@@ -11,10 +11,13 @@ vi.mock("./evaluationMode", () => ({
 }));
 
 import {
+  beginDefaultGraphCapture,
   COMPLETE_BENCHMARK_ARTIFACT_NAMES,
+  completeDefaultGraphCapture,
   currentBenchmarkRun,
-  markDefaultGraphCaptured,
+  recordFinalGraphCapture,
   recordBenchmarkEvent,
+  resetBenchmarkRun,
   setBenchmarkSupportStatus,
   startBenchmarkRun,
   writeBenchmarkArtifacts,
@@ -34,8 +37,19 @@ describe("benchmark evaluation run store", () => {
   it("records ordered run identity, support status, and meaningful events", () => {
     setBenchmarkSupportStatus("direct");
     recordBenchmarkEvent("workspace_subroute_opened", { subroute: "statistics" });
-    markDefaultGraphCaptured();
-    markDefaultGraphCaptured();
+    expect(beginDefaultGraphCapture("2026-08-23T00:00:00.000Z")).toBe(true);
+    expect(beginDefaultGraphCapture("2026-08-23T00:00:01.000Z")).toBe(false);
+    completeDefaultGraphCapture({
+      graphStateFingerprint: "a".repeat(64),
+      svgSha256: "a".repeat(64),
+      pngSha256: "b".repeat(64),
+    });
+    recordFinalGraphCapture({
+      capturedAt: "2026-08-23T00:01:00.000Z",
+      graphStateFingerprint: "c".repeat(64),
+      svgSha256: "c".repeat(64),
+      pngSha256: "d".repeat(64),
+    });
 
     const run = currentBenchmarkRun();
     expect(run.identity).toEqual({
@@ -46,14 +60,36 @@ describe("benchmark evaluation run store", () => {
     });
     expect(run.supportStatus).toBe("direct");
     expect(run.defaultGraphCaptured).toBe(true);
-    expect(run.events.map(({ sequence }) => sequence)).toEqual([1, 2, 3, 4]);
+    expect(run.events.map(({ sequence }) => sequence)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(run.events.map(({ type }) => type)).toEqual([
       "benchmark_run_started",
       "support_status_selected",
       "workspace_subroute_opened",
+      "default_graph_capture_started",
       "default_graph_captured",
+      "final_graph_captured",
     ]);
+    expect(run.defaultGraphCapture).toMatchObject({
+      status: "complete",
+      eventIndex: 4,
+      graphStateFingerprint: "a".repeat(64),
+    });
+    expect(run.finalGraphCapture).toMatchObject({
+      status: "complete",
+      eventIndex: 6,
+      graphStateFingerprint: "c".repeat(64),
+    });
     expect(run.events[0]?.detail.sourceRevision).toBe("fixture-revision");
+  });
+
+  it("clears the active identity instead of rearming capture into the same run", () => {
+    resetBenchmarkRun();
+    expect(currentBenchmarkRun()).toMatchObject({
+      identity: null,
+      defaultGraphCaptured: false,
+      defaultGraphCapture: null,
+      finalGraphCapture: null,
+    });
   });
 
   it("sends synthetic-only artifacts to the token-authenticated evaluation bridge", async () => {

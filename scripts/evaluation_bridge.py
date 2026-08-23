@@ -41,6 +41,7 @@ ALLOWED_ARTIFACTS = {
     "graph_state.json",
     "interaction_log.json",
 }
+IMMUTABLE_ARTIFACTS = {"default_graph.png", "default_graph.svg"}
 MAX_REQUEST_BYTES = 16 * 1024 * 1024
 
 
@@ -123,14 +124,26 @@ def write_artifact_batch(
     if len(set(required_artifacts)) != len(required_artifacts):
         raise ValueError("Required artifact names must be unique")
     target = safe_run_directory(output_root, benchmark)
+    requested_names = [
+        artifact.get("name") if isinstance(artifact, dict) else None for artifact in artifacts
+    ]
+    if len(set(requested_names)) != len(requested_names):
+        raise ValueError("Artifact names must be unique within one request")
+    immutable_overwrites = sorted(
+        name
+        for name in requested_names
+        if name in IMMUTABLE_ARTIFACTS and (target / name).exists()
+    )
+    if immutable_overwrites:
+        raise ValueError(
+            f"Immutable benchmark artifact already exists: {', '.join(immutable_overwrites)}"
+        )
     written: list[str] = []
     artifact_names: set[str] = set()
     for artifact in artifacts:
         if not isinstance(artifact, dict) or artifact.get("name") not in ALLOWED_ARTIFACTS:
             raise ValueError("Artifact name is not allowed")
         name = artifact["name"]
-        if name in artifact_names:
-            raise ValueError("Artifact names must be unique within one request")
         artifact_names.add(name)
         content = artifact.get("content")
         if not isinstance(content, str):

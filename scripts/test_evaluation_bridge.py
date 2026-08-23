@@ -274,6 +274,15 @@ class EvaluationBoundaryTests(unittest.TestCase):
             self.assertEqual(
                 sorted(path.name for path in target.iterdir()), sorted(ALLOWED_ARTIFACTS)
             )
+            original_default = (target / "default_graph.svg").read_text()
+            with self.assertRaisesRegex(ValueError, "Immutable benchmark artifact"):
+                write_artifact_batch(
+                    root,
+                    benchmark,
+                    [{"name": "default_graph.svg", "content": "replacement"}],
+                    [],
+                )
+            self.assertEqual((target / "default_graph.svg").read_text(), original_default)
 
         with tempfile.TemporaryDirectory() as temporary:
             with self.assertRaisesRegex(ValueError, "default_graph.png"):

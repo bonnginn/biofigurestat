@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -39,6 +40,19 @@ SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 
 class VerificationError(ValueError):
     pass
+
+
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def event_at(events: list[Any], sequence: int, expected_type: str) -> dict[str, Any]:
+    if sequence < 1 or sequence > len(events):
+        raise VerificationError(f"{expected_type} event index is outside the interaction log")
+    event = events[sequence - 1]
+    if not isinstance(event, dict) or event.get("type") != expected_type:
+        raise VerificationError(f"event {sequence} must be {expected_type}")
+    return event
 
 
 def read_json_object(path: Path) -> dict[str, Any]:
@@ -130,6 +144,106 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
     graph_edit_count = sum(event.get("type") == "graph_configuration_changed" for event in events)
     if run.get("graphEditCount") != graph_edit_count:
         raise VerificationError("run.json graphEditCount does not match interaction_log.json")
+
+    if run.get("captureProvenanceVersion") == "1.0.0":
+        capture_fields = {
+            "defaultCapturedAt": str,
+            "defaultCapturedEventIndex": int,
+            "finalCapturedAt": str,
+            "finalCapturedEventIndex": int,
+            "defaultGraphStateFingerprint": str,
+            "finalGraphStateFingerprint": str,
+            "defaultSvgSha256": str,
+            "defaultPngSha256": str,
+            "finalSvgSha256": str,
+            "finalPngSha256": str,
+        }
+        for key, expected_type in capture_fields.items():
+            if not isinstance(run.get(key), expected_type):
+                raise VerificationError(f"run.json has no valid {key}")
+
+        default_index = run["defaultCapturedEventIndex"]
+        final_index = run["finalCapturedEventIndex"]
+        default_started = event_at(events, default_index, "default_graph_capture_started")
+        final_captured = event_at(events, final_index, "final_graph_captured")
+        default_completed = next(
+            (
+                event
+                for event in events
+                if isinstance(event, dict) and event.get("type") == "default_graph_captured"
+            ),
+            None,
+        )
+        finalized = next(
+            (
+                event
+                for event in events
+                if isinstance(event, dict) and event.get("type") == "benchmark_run_finalized"
+            ),
+            None,
+        )
+        if not isinstance(default_completed, dict) or not isinstance(finalized, dict):
+            raise VerificationError("capture completion/finalization events are missing")
+        if not (
+            default_index
+            < default_completed["sequence"]
+            < final_index
+            < finalized["sequence"]
+        ):
+            raise VerificationError("default/final capture event ordering is invalid")
+        if default_started.get("occurredAt") != run["defaultCapturedAt"]:
+            raise VerificationError("defaultCapturedAt does not match its capture event")
+        if final_captured.get("occurredAt") != run["finalCapturedAt"]:
+            raise VerificationError("finalCapturedAt does not match its capture event")
+
+        first_rendered_edit = next(
+            (
+                event
+                for event in events
+                if isinstance(event, dict) and event.get("type") == "graph_configuration_changed"
+            ),
+            None,
+        )
+        if (
+            isinstance(first_rendered_edit, dict)
+            and default_index >= first_rendered_edit["sequence"]
+        ):
+            raise VerificationError(
+                "immutable default Graph state was not captured before the first rendered edit"
+            )
+
+        expected_hashes = {
+            "defaultSvgSha256": "default_graph.svg",
+            "defaultPngSha256": "default_graph.png",
+            "finalSvgSha256": "final_graph.svg",
+            "finalPngSha256": "final_graph.png",
+        }
+        for field, name in expected_hashes.items():
+            if run[field] != sha256(path / name):
+                raise VerificationError(f"{field} does not match {name}")
+        if run["defaultGraphStateFingerprint"] != run["defaultSvgSha256"]:
+            raise VerificationError("default Graph-state fingerprint does not match default SVG")
+        if run["finalGraphStateFingerprint"] != run["finalSvgSha256"]:
+            raise VerificationError("final Graph-state fingerprint does not match final SVG")
+
+        visible_annotation = isinstance(annotation, dict) and annotation.get("mode") not in {
+            None,
+            "hidden",
+        }
+        rendered_edit_after_default = any(
+            isinstance(event, dict)
+            and event.get("type") == "graph_configuration_changed"
+            and event.get("sequence", 0) > default_completed["sequence"]
+            for event in events
+        )
+        meaningful_rendered_edit = rendered_edit_after_default or visible_annotation
+        if (
+            meaningful_rendered_edit
+            and run["defaultGraphStateFingerprint"] == run["finalGraphStateFingerprint"]
+        ):
+            raise VerificationError(
+                "rendered Graph edits occurred but default/final fingerprints are identical"
+            )
 
     methods = (path / "methods.txt").read_text(encoding="utf-8").strip()
     if not methods:
