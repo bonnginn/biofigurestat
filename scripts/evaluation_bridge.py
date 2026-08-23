@@ -22,6 +22,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from blind_benchmark_package import load_package
+
 
 ROOT = Path(__file__).resolve().parents[1]
 # Do not resolve this path: Unix virtual-environment launchers are commonly symlinks, and
@@ -29,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ENGINE_PYTHON = Path(sys.executable).absolute()
 ENGINE_SOURCE = ROOT / "engine/python"
 LITERATURE_RUNTIME = ROOT / "benchmark/literature_v1_1/runtime"
+DEFAULT_EXCLUSIONS = ROOT / "benchmark/literature_v1_1/excluded_runs.json"
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 ALLOWED_ARTIFACTS = {
     "run.json",
@@ -45,12 +48,18 @@ IMMUTABLE_ARTIFACTS = {"default_graph.png", "default_graph.svg"}
 MAX_REQUEST_BYTES = 16 * 1024 * 1024
 
 
-def load_literature_experimenter_view(case_id: str, track: str) -> dict[str, Any]:
+def load_literature_experimenter_view(
+    case_id: str, track: str, run_id: str, blind_package_root: Path
+) -> dict[str, Any]:
     if not SAFE_ID.fullmatch(case_id):
         raise ValueError("Invalid literature benchmark case ID")
     if track not in {"track_A", "track_B"}:
         raise ValueError("Invalid literature benchmark track")
-    suffix = "experimenter_track_a.json" if track == "track_A" else "experimenter_track_b.json"
+    if not SAFE_ID.fullmatch(run_id):
+        raise ValueError("Invalid literature benchmark run ID")
+    if track == "track_B":
+        return load_package(blind_package_root, case_id, run_id)
+    suffix = "experimenter_track_a.json"
     path = LITERATURE_RUNTIME / "cases" / case_id / suffix
     if not path.is_file():
         raise ValueError("Literature benchmark case is not available")
@@ -58,6 +67,29 @@ def load_literature_experimenter_view(case_id: str, track: str) -> dict[str, Any
     if not isinstance(payload, dict) or payload.get("caseId") != case_id:
         raise RuntimeError("Literature benchmark runtime identity mismatch")
     return payload
+
+
+def load_excluded_runs(path: Path) -> set[tuple[str, str, str]]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or payload.get("schemaVersion") != "1.0.0":
+        raise RuntimeError("Excluded-run ledger schema mismatch")
+    runs = payload.get("runs")
+    if not isinstance(runs, list):
+        raise RuntimeError("Excluded-run ledger has no runs")
+    result: set[tuple[str, str, str]] = set()
+    for run in runs:
+        if not isinstance(run, dict) or run.get("validity") != "invalid":
+            raise RuntimeError("Excluded-run ledger entry is invalid")
+        identity = (run.get("caseId"), run.get("track"), run.get("runId"))
+        if not all(isinstance(value, str) and SAFE_ID.fullmatch(value) for value in identity):
+            raise RuntimeError("Excluded-run ledger identity is invalid")
+        result.add(identity)  # type: ignore[arg-type]
+    return result
+
+
+def benchmark_identity(benchmark: dict[str, Any]) -> tuple[str, str, str]:
+    safe_run_directory(Path("."), benchmark)
+    return benchmark["caseId"], benchmark["track"], benchmark["runId"]
 
 
 def run_engine(request: dict[str, Any]) -> dict[str, Any]:
@@ -240,7 +272,16 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                 query = parse_qs(parsed.query, strict_parsing=True)
                 case_id = query.get("caseId", [""])[0]
                 track = query.get("track", [""])[0]
-                self._json(HTTPStatus.OK, load_literature_experimenter_view(case_id, track))
+                run_id = query.get("runId", [""])[0]
+                identity = (case_id, track, run_id)
+                if identity in self.config.excluded_runs:
+                    raise ValueError("Benchmark run is excluded because Track B was contaminated")
+                self._json(
+                    HTTPStatus.OK,
+                    load_literature_experimenter_view(
+                        case_id, track, run_id, self.config.blind_package_root
+                    ),
+                )
             except ValueError as error:
                 self._json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
             return
@@ -281,6 +322,11 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                     raise ValueError("Benchmark identity and artifacts are required")
                 if not isinstance(required_artifacts, list):
                     raise ValueError("Required artifact names are not allowed")
+                identity = benchmark_identity(benchmark)
+                if identity in self.config.excluded_runs:
+                    raise ValueError("Excluded contaminated benchmark evidence is read-only")
+                if identity[1] == "track_B":
+                    load_package(self.config.blind_package_root, identity[0], identity[2])
                 target, written, present = write_artifact_batch(
                     self.config.output_root,
                     benchmark,
@@ -309,11 +355,17 @@ class EvaluationServer(ThreadingHTTPServer):
         token: str,
         allowed_origin: str,
         output_root: Path,
+        blind_package_root: Path,
+        exclusions_path: Path = DEFAULT_EXCLUSIONS,
     ) -> None:
         super().__init__(address, EvaluationHandler)
         self.token = token
         self.allowed_origin = allowed_origin
         self.output_root = output_root
+        self.blind_package_root = blind_package_root.resolve()
+        if self.blind_package_root == ROOT or ROOT in self.blind_package_root.parents:
+            raise ValueError("Blind package root must be outside the full source tree")
+        self.excluded_runs = load_excluded_runs(exclusions_path)
 
 
 def main() -> None:
@@ -323,9 +375,11 @@ def main() -> None:
     parser.add_argument("--origin", default="http://127.0.0.1:1420")
     parser.add_argument("--token", default=os.environ.get("LSAA_EVALUATION_TOKEN") or secrets.token_urlsafe(32))
     parser.add_argument("--output-root", type=Path, default=ROOT / "benchmark_runs")
+    parser.add_argument("--blind-package-root", type=Path, required=True)
     args = parser.parse_args()
     server = EvaluationServer(
-        (args.host, args.port), args.token, args.origin, args.output_root.resolve()
+        (args.host, args.port), args.token, args.origin, args.output_root.resolve(),
+        args.blind_package_root.resolve(),
     )
     print("LSAA evaluation bridge (synthetic benchmark data only)", flush=True)
     print(f"URL=http://{args.host}:{args.port}", flush=True)

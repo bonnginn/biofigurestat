@@ -1,3 +1,5 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, type ProxyOptions } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -27,6 +29,7 @@ export function createEvaluationProxy(environment: NodeJS.ProcessEnv): ProxyOpti
 
 export default defineConfig(() => {
   const evaluationProxy = createEvaluationProxy(process.env);
+  const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
   return {
     base: "./",
     plugins: [react()],
@@ -36,6 +39,17 @@ export default defineConfig(() => {
       strictPort: true,
       allowedHosts: [".trycloudflare.com"],
       proxy: evaluationProxy ? { "/api/evaluation": evaluationProxy } : undefined,
+      fs: evaluationProxy
+        ? {
+            strict: true,
+            allow: [
+              path.join(repositoryRoot, "apps/ui"),
+              path.join(repositoryRoot, "packages"),
+              path.join(repositoryRoot, "node_modules"),
+            ],
+            deny: ["**/benchmark/**", "**/benchmark_runs/**", "**/.git/**", "**/scripts/**"],
+          }
+        : undefined,
     },
     preview: {
       host: "127.0.0.1",
@@ -43,5 +57,6 @@ export default defineConfig(() => {
       strictPort: true,
       allowedHosts: [".trycloudflare.com"],
     },
+    build: { sourcemap: false },
   };
 });

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "runs": [
+    {
+      "caseId": "JCB010",
+      "track": "track_B",
+      "runId": "pilot15_B_JCB010_001",
+      "validity": "invalid",
+      "reason": "track_b_information_leakage"
+    },
+    {
+      "caseId": "NC033",
+      "track": "track_B",
+      "runId": "pilot15_B_NC033_001",
+      "validity": "invalid",
+      "reason": "track_b_information_leakage"
+    },
+    {
+      "caseId": "JCB023",
+      "track": "track_B",
+      "runId": "pilot15_B_JCB023_001",
+      "validity": "invalid",
+      "reason": "track_b_information_leakage"
+    },
+    {
+      "caseId": "JCB024",
+      "track": "track_B",
+      "runId": "pilot15_B_JCB024_001",
+      "validity": "invalid",
+      "reason": "track_b_information_leakage"
+    },
+    {
+      "caseId": "JCB015",
+      "track": "track_B",
+      "runId": "pilot15_B_JCB015_001",
+      "validity": "invalid",
+      "reason": "track_b_information_leakage"
+    },
+    {
+      "caseId": "SA047",
+      "track": "track_B",
+      "runId": "pilot15_B_SA047_001",
+      "validity": "invalid",
+      "reason": "track_b_information_leakage"
+    }
+  ]
+}

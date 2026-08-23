@@ -33,7 +33,7 @@ if (pythonArguments.length === 0) {
 
 const child = spawn(python, pythonArguments, {
   cwd: root,
-  env: process.env,
+  env: { ...process.env, LSAA_NODE_EXECUTABLE: process.execPath },
   stdio: "inherit",
   windowsHide: false,
 });

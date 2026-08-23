@@ -109,10 +109,20 @@ def wait_for_bridge(process: subprocess.Popen[bytes], token: str) -> None:
 
 
 def main() -> None:
-    pnpm = shutil.which("pnpm.cmd") if os.name == "nt" else shutil.which("pnpm")
-    pnpm = pnpm or shutil.which("pnpm")
-    if not pnpm:
-        raise SystemExit("pnpm is required to start the evaluation UI")
+    node_value = os.environ.get("LSAA_NODE_EXECUTABLE")
+    node = Path(node_value).resolve() if node_value else None
+    if node is None or not node.is_file():
+        discovered_node = shutil.which("node.exe") if os.name == "nt" else shutil.which("node")
+        node = Path(discovered_node).resolve() if discovered_node else None
+    vite = ROOT / "apps/ui/node_modules/vite/bin/vite.js"
+    if node is None or not node.is_file() or not vite.is_file():
+        raise SystemExit("Node.js and the installed Vite dependency are required")
+    blind_package_value = os.environ.get("LSAA_BLIND_PACKAGE_ROOT")
+    if not blind_package_value:
+        raise SystemExit("LSAA_BLIND_PACKAGE_ROOT is required and must point outside the source tree")
+    blind_package_root = Path(blind_package_value).resolve()
+    if blind_package_root == ROOT or ROOT in blind_package_root.parents:
+        raise SystemExit("LSAA_BLIND_PACKAGE_ROOT must point outside the source tree")
     engine_status = pinned_engine_status()
     token = secrets.token_urlsafe(32)
     environment = create_evaluation_environment(dict(os.environ), token)
@@ -128,6 +138,8 @@ def main() -> None:
             f"http://127.0.0.1:{UI_PORT}",
             "--token",
             token,
+            "--blind-package-root",
+            str(blind_package_root),
         ],
         cwd=ROOT,
         env=environment,
@@ -139,8 +151,8 @@ def main() -> None:
         bridge.wait(timeout=10)
         raise SystemExit(f"Evaluation environment could not start: {error}") from error
     ui = subprocess.Popen(
-        [pnpm, "--filter", "@lsaa/ui", "dev", "--host", "127.0.0.1", "--port", str(UI_PORT)],
-        cwd=ROOT,
+        [str(node), str(vite), "--host", "127.0.0.1", "--port", str(UI_PORT)],
+        cwd=ROOT / "apps/ui",
         env=environment,
     )
 
@@ -154,6 +166,7 @@ def main() -> None:
     print(f"Pinned engine environment: ready ({engine_status})")
     print(f"Source revision: {environment['VITE_LSAA_SOURCE_REVISION']}")
     print(f"Benchmark artifact root: {ROOT / 'benchmark_runs'}")
+    print(f"Track B blind package root: {blind_package_root}")
     print("Stop UI, proxy and loopback bridge together with Ctrl+C.")
     print("External Work access: keep this process running, then run `pnpm evaluation:tunnel`.")
     print("Give Work only the HTTPS trycloudflare.com URL printed by that second process.")

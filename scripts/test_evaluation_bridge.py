@@ -10,6 +10,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from blind_benchmark_package import create_package
+
 from evaluation_bridge import (
     ALLOWED_ARTIFACTS,
     ROOT,
@@ -61,12 +63,16 @@ def welch_request() -> dict:
 class EvaluationBridgeTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
+        self.blind_temporary = tempfile.TemporaryDirectory()
+        create_package("JCB003", "fresh_B_JCB003_test", Path(self.blind_temporary.name))
         try:
             self.server = EvaluationServer(
-                ("127.0.0.1", 0), TOKEN, ORIGIN, Path(self.temporary.name)
+                ("127.0.0.1", 0), TOKEN, ORIGIN, Path(self.temporary.name),
+                Path(self.blind_temporary.name),
             )
         except PermissionError:
             self.temporary.cleanup()
+            self.blind_temporary.cleanup()
             self.skipTest("Current sandbox does not permit loopback socket binding")
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -77,6 +83,7 @@ class EvaluationBridgeTests(unittest.TestCase):
         self.server.server_close()
         self.thread.join(timeout=5)
         self.temporary.cleanup()
+        self.blind_temporary.cleanup()
 
     def post(
         self, path: str, payload: dict, token: str = TOKEN, origin: str = ORIGIN
@@ -103,18 +110,38 @@ class EvaluationBridgeTests(unittest.TestCase):
             return json.loads(response.read())
 
     def test_literature_case_endpoint_enforces_track_specific_blinding(self) -> None:
-        track_a = self.get("/api/evaluation/literature/case?caseId=JCB003&track=track_A")
-        track_b = self.get("/api/evaluation/literature/case?caseId=JCB003&track=track_B")
+        track_a = self.get("/api/evaluation/literature/case?caseId=JCB003&track=track_A&runId=fresh_A_JCB003_test")
+        track_b = self.get("/api/evaluation/literature/case?caseId=JCB003&track=track_B&runId=fresh_B_JCB003_test")
         self.assertIn("paperReference", track_a)
         self.assertNotIn("paperReference", track_b)
         serialized_b = json.dumps(track_b).lower()
         for forbidden in ("scope_expectation", "paper_reported", "gold", "recommended"):
             self.assertNotIn(forbidden, serialized_b)
         self.assertEqual(track_a["syntheticData"], track_b["syntheticData"])
+        self.assertEqual(track_b["role"], "track_B_experimenter")
+        self.assertEqual(track_b["runId"], "fresh_B_JCB003_test")
+
+    def test_track_b_never_falls_back_to_repository_runtime(self) -> None:
+        with self.assertRaises(urllib.error.HTTPError) as context:
+            self.get("/api/evaluation/literature/case?caseId=JCB003&track=track_B&runId=missing_fresh_run")
+        self.assertEqual(context.exception.code, 400)
+
+    def test_contaminated_run_is_invalid_and_read_only(self) -> None:
+        with self.assertRaises(urllib.error.HTTPError) as context:
+            self.get("/api/evaluation/literature/case?caseId=JCB010&track=track_B&runId=pilot15_B_JCB010_001")
+        self.assertEqual(context.exception.code, 400)
+        with self.assertRaises(urllib.error.HTTPError) as write_context:
+            self.post(
+                "/api/evaluation/artifacts",
+                {"mode": "evaluation", "syntheticOnly": True,
+                 "benchmark": {"caseId": "JCB010", "track": "track_B", "runId": "pilot15_B_JCB010_001"},
+                 "artifacts": [{"name": "run.json", "content": "{}"}]},
+            )
+        self.assertEqual(write_context.exception.code, 400)
 
     def test_literature_case_endpoint_rejects_invalid_identity(self) -> None:
         with self.assertRaises(urllib.error.HTTPError) as context:
-            self.get("/api/evaluation/literature/case?caseId=../escape&track=track_B")
+            self.get("/api/evaluation/literature/case?caseId=../escape&track=track_B&runId=fresh_B_JCB003_test")
         self.assertEqual(context.exception.code, 400)
 
     def test_browser_bridge_returns_same_engine_result_as_direct_protocol(self) -> None:
@@ -226,7 +253,12 @@ class EvaluationBridgeTests(unittest.TestCase):
 
 class EvaluationBoundaryTests(unittest.TestCase):
     def test_direct_literature_views_do_not_leak_gold_to_track_b(self) -> None:
-        track_b = load_literature_experimenter_view("JCB003", "track_B")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            create_package("JCB003", "fresh_boundary_001", root)
+            track_b = load_literature_experimenter_view(
+                "JCB003", "track_B", "fresh_boundary_001", root
+            )
         self.assertNotIn("paperReference", track_b)
         self.assertNotIn("gold", json.dumps(track_b).lower())
 

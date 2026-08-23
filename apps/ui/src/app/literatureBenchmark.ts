@@ -66,7 +66,11 @@ export async function fetchLiteratureExperimenterCase(
   if (!evaluationModeIsConfigured(evaluationMode) || !isLiteratureCaseId(identity.caseId)) {
     throw new Error("Literature benchmark case is not configured");
   }
-  const query = new URLSearchParams({ caseId: identity.caseId, track: identity.track });
+  const query = new URLSearchParams({
+    caseId: identity.caseId,
+    track: identity.track,
+    runId: identity.runId,
+  });
   const response = await fetch(`${evaluationMode.apiBasePath}/literature/case?${query}`);
   if (!response.ok) throw new Error("Literature benchmark case could not be loaded");
   return (await response.json()) as LiteratureExperimenterCase;

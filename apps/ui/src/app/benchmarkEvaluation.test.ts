@@ -97,6 +97,28 @@ describe("benchmark evaluation run store", () => {
     });
   });
 
+  it("starts Track B with no Track A analysis state, captures, or event history", () => {
+    setBenchmarkSupportStatus("direct");
+    recordBenchmarkEvent(
+      "analysis_configuration_changed",
+      { method: "paper-guided" },
+      "analysis_only",
+    );
+    expect(beginDefaultGraphCapture("2026-08-23T00:00:00.000Z")).toBe(true);
+    startBenchmarkRun({
+      benchmarkVersion: "LSA50_v1_1",
+      caseId: "JCB010",
+      track: "track_B",
+      runId: "fresh_blind_JCB010_001",
+    });
+    const run = currentBenchmarkRun();
+    expect(run.identity).toMatchObject({ track: "track_B", runId: "fresh_blind_JCB010_001" });
+    expect(run.supportStatus).toBeNull();
+    expect(run.defaultGraphCapture).toBeNull();
+    expect(run.finalGraphCapture).toBeNull();
+    expect(run.events.map((event) => event.type)).toEqual(["benchmark_run_started"]);
+  });
+
   it("sends synthetic-only artifacts to the token-authenticated evaluation bridge", async () => {
     const fetchMock = vi.fn(async (_input: string | URL | Request, _init?: RequestInit) => ({
       ok: true,
