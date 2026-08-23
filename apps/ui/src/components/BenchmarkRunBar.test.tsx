@@ -81,6 +81,7 @@ describe("BenchmarkRunBar case initialization", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<BenchmarkRunBar />);
 
+    await screen.findByRole("button", { name: "Runを開始" });
     fireEvent.change(screen.getByLabelText("Case"), { target: { value: "JCB010" } });
     fireEvent.change(screen.getByLabelText("Track"), { target: { value: "track_B" } });
     fireEvent.change(screen.getByLabelText("Run"), {
@@ -191,6 +192,27 @@ describe("BenchmarkRunBar case initialization", () => {
     expect(
       screen.getByLabelText("Why continuation would require scientific compromise"),
     ).toHaveValue("");
+  });
+
+  it("does not expose the manual run form while the blind batch queue is unresolved", async () => {
+    let resolveCurrent: ((response: { ok: false; status: number }) => void) | undefined;
+    const currentResponse = new Promise<{ ok: false; status: number }>((resolve) => {
+      resolveCurrent = resolve;
+    });
+    const fetchMock = vi.fn((input: string | URL | Request) => {
+      if (String(input).endsWith("/blind-batch/current")) return currentResponse;
+      throw new Error(`unexpected request: ${String(input)}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<BenchmarkRunBar />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Blind batch queueを確認中…");
+    expect(screen.queryByLabelText("Case")).not.toBeInTheDocument();
+    expect(screen.queryByText("pilot_independent_2group")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Runを開始" })).not.toBeInTheDocument();
+
+    resolveCurrent?.({ ok: false, status: 404 });
+    expect(await screen.findByRole("button", { name: "Runを開始" })).toBeVisible();
   });
 
   it("persists and rehydrates an explicit unsupported terminal run", async () => {

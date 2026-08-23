@@ -315,6 +315,18 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
       setSaveStatus("server-side verificationが未完了または失敗しました。停止します。");
     }
   };
+  if (batchStatus !== "ready") {
+    return (
+      <section className="benchmark-run-bar" aria-label="Benchmark run">
+        <strong>Benchmark</strong>
+        {batchStatus === "loading" ? (
+          <span role="status">Blind batch queueを確認中…</span>
+        ) : (
+          <span role="alert">Blind batch queueを確認できません。</span>
+        )}
+      </section>
+    );
+  }
   const terminalJob =
     blindBatch?.current && blindBatch.current.status !== "active" ? blindBatch.current : null;
   const terminalStatusLabel = terminalJob
@@ -344,9 +356,6 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
           Blind benchmark batch: Case {blindBatch.position} / {blindBatch.total} ·{" "}
           {blindBatch.status}
         </strong>
-      ) : null}
-      {batchStatus === "error" ? (
-        <span role="alert">Blind batch queueを確認できません。</span>
       ) : null}
       {terminalJob ? (
         <section className="benchmark-case-delivery" aria-label="Server-verified terminal run">
