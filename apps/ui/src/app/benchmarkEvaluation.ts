@@ -12,10 +12,13 @@ export type BenchmarkIdentity = Readonly<{
   runId: string;
 }>;
 
+export type BenchmarkEventEffect = "analysis_only" | "rendered_graph" | "both" | "non_rendering_ui";
+
 export type BenchmarkEvent = Readonly<{
   sequence: number;
   occurredAt: string;
   type: string;
+  effect: BenchmarkEventEffect;
   detail: Readonly<Record<string, string | number | boolean | null>>;
 }>;
 
@@ -24,6 +27,7 @@ export type BenchmarkGraphCapture = Readonly<{
   capturedAt: string;
   eventIndex: number;
   graphStateFingerprint: string | null;
+  analysisStateFingerprint: string | null;
   svgSha256: string | null;
   pngSha256: string | null;
 }>;
@@ -81,6 +85,7 @@ export function startBenchmarkRun(identity: BenchmarkIdentity): void {
         sequence: 1,
         occurredAt: startedAt,
         type: "benchmark_run_started",
+        effect: "non_rendering_ui",
         detail: { ...identity, sourceRevision: evaluationMode.sourceRevision },
       },
     ],
@@ -94,6 +99,7 @@ export function resetBenchmarkRun(): void {
 export function recordBenchmarkEvent(
   type: string,
   detail: Readonly<Record<string, string | number | boolean | null>> = {},
+  effect: BenchmarkEventEffect = "non_rendering_ui",
 ): void {
   if (!state.identity || !evaluationModeIsConfigured(evaluationMode)) return;
   publish({
@@ -104,6 +110,7 @@ export function recordBenchmarkEvent(
         sequence: state.events.length + 1,
         occurredAt: new Date().toISOString(),
         type,
+        effect,
         detail,
       },
     ],
@@ -124,6 +131,7 @@ export function beginDefaultGraphCapture(capturedAt: string): boolean {
     capturedAt,
     eventIndex,
     graphStateFingerprint: null,
+    analysisStateFingerprint: null,
     svgSha256: null,
     pngSha256: null,
   };
@@ -136,6 +144,7 @@ export function beginDefaultGraphCapture(capturedAt: string): boolean {
         sequence: eventIndex,
         occurredAt: capturedAt,
         type: "default_graph_capture_started",
+        effect: "non_rendering_ui",
         detail: {},
       },
     ],
@@ -145,6 +154,7 @@ export function beginDefaultGraphCapture(capturedAt: string): boolean {
 
 export function completeDefaultGraphCapture(input: {
   graphStateFingerprint: string;
+  analysisStateFingerprint: string;
   svgSha256: string;
   pngSha256: string;
 }): void {
@@ -158,6 +168,7 @@ export function completeDefaultGraphCapture(input: {
     ...state.defaultGraphCapture,
     status: "complete",
     graphStateFingerprint: input.graphStateFingerprint,
+    analysisStateFingerprint: input.analysisStateFingerprint,
     svgSha256: input.svgSha256,
     pngSha256: input.pngSha256,
   };
@@ -172,9 +183,11 @@ export function completeDefaultGraphCapture(input: {
         sequence,
         occurredAt: new Date().toISOString(),
         type: "default_graph_captured",
+        effect: "non_rendering_ui",
         detail: {
           defaultCapturedEventIndex: capture.eventIndex,
           graphStateFingerprint: input.graphStateFingerprint,
+          analysisStateFingerprint: input.analysisStateFingerprint,
           svgSha256: input.svgSha256,
           pngSha256: input.pngSha256,
         },
@@ -186,6 +199,7 @@ export function completeDefaultGraphCapture(input: {
 export function recordFinalGraphCapture(input: {
   capturedAt: string;
   graphStateFingerprint: string;
+  analysisStateFingerprint: string;
   svgSha256: string;
   pngSha256: string;
 }): BenchmarkRunState {
@@ -196,6 +210,7 @@ export function recordFinalGraphCapture(input: {
     capturedAt: input.capturedAt,
     eventIndex,
     graphStateFingerprint: input.graphStateFingerprint,
+    analysisStateFingerprint: input.analysisStateFingerprint,
     svgSha256: input.svgSha256,
     pngSha256: input.pngSha256,
   };
@@ -208,9 +223,11 @@ export function recordFinalGraphCapture(input: {
         sequence: eventIndex,
         occurredAt: input.capturedAt,
         type: "final_graph_captured",
+        effect: "non_rendering_ui",
         detail: {
           finalCapturedEventIndex: eventIndex,
           graphStateFingerprint: input.graphStateFingerprint,
+          analysisStateFingerprint: input.analysisStateFingerprint,
           svgSha256: input.svgSha256,
           pngSha256: input.pngSha256,
         },

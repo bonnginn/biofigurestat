@@ -2023,6 +2023,33 @@ export function ExperimentGraphWorkbench({
       timeAnalysis,
     ],
   );
+  const benchmarkRenderedState = JSON.stringify({
+    selectedReadoutId,
+    sourceMode,
+    selectedConditionIds,
+    selectedTimePointIds,
+    graphType,
+    layers,
+    appearance,
+    axes,
+    statisticsAnnotation,
+    displayedDerivedMetric: sourceMode === "derived_metric" ? timeAnalysis : null,
+  });
+  const benchmarkAnalysisState = JSON.stringify({
+    selectedReadoutId,
+    sourceMode,
+    selectedConditionIds,
+    selectedTimePointIds,
+    analysisTimePointId,
+    analysisMetric: timeAnalysis,
+    selectedStatisticalMethod,
+    correlationMethod: correlationMethod ?? null,
+    contrastIntent,
+    plannedContrastConditionIds,
+    executedMethod: analysis?.request.method ?? null,
+    executedProtocolVersion: analysis?.request.protocolVersion ?? null,
+    executedCorrection: analysis?.request.options.multiplicityMethod ?? null,
+  });
 
   useEffect(() => {
     setInspectorTarget(workspaceMode === "statistics" ? "statistics" : "data");
@@ -2042,89 +2069,84 @@ export function ExperimentGraphWorkbench({
     onStateChangeRef.current?.(graphStateSnapshot);
   }, [graphStateSnapshot]);
 
-  const firstGraphStateLogRef = useRef(true);
+  const benchmarkStateLogRef = useRef<{
+    identity: string;
+    rendered: string;
+    analysis: string;
+  } | null>(null);
   useEffect(() => {
     if (!evaluationModeIsConfigured(evaluationMode) || !benchmarkRun.identity) return;
-    if (firstGraphStateLogRef.current) {
-      firstGraphStateLogRef.current = false;
+    const identity = `${benchmarkRun.identity.caseId}:${benchmarkRun.identity.track}:${benchmarkRun.identity.runId}`;
+    const previous = benchmarkStateLogRef.current;
+    benchmarkStateLogRef.current = {
+      identity,
+      rendered: benchmarkRenderedState,
+      analysis: benchmarkAnalysisState,
+    };
+    if (!previous || previous.identity !== identity) {
       recordBenchmarkEvent("graph_workspace_opened", {
         selectedGraph: graphType,
         readoutId: selectedReadoutId,
       });
       return;
     }
-    recordBenchmarkEvent("graph_configuration_changed", {
-      graphType,
-      readoutId: selectedReadoutId,
-      sourceMode,
-      selectedConditions: selectedConditionIds.join("|"),
-      selectedTimes: selectedTimePointIds.join("|"),
-      timeMetric: timeAnalysis.kind,
-      pointSize: appearance.pointSize,
-      errorBar: appearance.errorBar,
-      spacing: axes.spacing,
-      legendPosition: appearance.legendPosition,
-      palette: appearance.palette,
-      fontFamily: appearance.fontFamily,
-      graphTitleFontSize: appearance.graphTitleFontSize,
-      axisTitleFontSize: appearance.axisTitleFontSize,
-      tickFontSize: appearance.tickFontSize,
-      hierarchyFontSize: appearance.hierarchyFontSize,
-      legendFontSize: appearance.legendFontSize,
-      axisTitle: axes.yTitle,
-      axisRangeMode: axes.yRangeMode,
-      axisMin: axes.yMin,
-      axisMax: axes.yMax,
-      axisScale: axes.yScale,
-      axisTickMode: axes.yTickMode,
-      axisTickInterval: axes.yTickInterval,
-      rawLayer: layers.raw,
-      distributionLayer: layers.distribution,
-      boxLayer: layers.box,
-      experimentLayer: layers.experiment,
-      overallLayer: layers.overall,
-      summaryLineWidth: appearance.summaryLineWidth,
-      axisLineWidth: appearance.axisLineWidth,
-      errorBarLineWidth: appearance.errorBarLineWidth,
-      connectingLineWidth: appearance.connectingLineWidth,
-      distributionLineWidth: appearance.distributionLineWidth,
-    });
+    const renderedChanged = previous.rendered !== benchmarkRenderedState;
+    const analysisChanged = previous.analysis !== benchmarkAnalysisState;
+    if (!renderedChanged && !analysisChanged) return;
+    recordBenchmarkEvent(
+      renderedChanged ? "graph_configuration_changed" : "analysis_configuration_changed",
+      {
+        graphType,
+        readoutId: selectedReadoutId,
+        sourceMode,
+        selectedConditions: selectedConditionIds.join("|"),
+        selectedTimes: selectedTimePointIds.join("|"),
+        timeMetric: timeAnalysis.kind,
+        selectedMethod: selectedStatisticalMethod ?? null,
+        annotationMode: statisticsAnnotation.mode,
+        pointSize: appearance.pointSize,
+        errorBar: appearance.errorBar,
+        spacing: axes.spacing,
+        legendPosition: appearance.legendPosition,
+        palette: appearance.palette,
+        fontFamily: appearance.fontFamily,
+        graphTitleFontSize: appearance.graphTitleFontSize,
+        axisTitleFontSize: appearance.axisTitleFontSize,
+        tickFontSize: appearance.tickFontSize,
+        hierarchyFontSize: appearance.hierarchyFontSize,
+        legendFontSize: appearance.legendFontSize,
+        axisTitle: axes.yTitle,
+        axisRangeMode: axes.yRangeMode,
+        axisMin: axes.yMin,
+        axisMax: axes.yMax,
+        axisScale: axes.yScale,
+        axisTickMode: axes.yTickMode,
+        axisTickInterval: axes.yTickInterval,
+        rawLayer: layers.raw,
+        distributionLayer: layers.distribution,
+        boxLayer: layers.box,
+        experimentLayer: layers.experiment,
+        overallLayer: layers.overall,
+        summaryLineWidth: appearance.summaryLineWidth,
+        axisLineWidth: appearance.axisLineWidth,
+        errorBarLineWidth: appearance.errorBarLineWidth,
+        connectingLineWidth: appearance.connectingLineWidth,
+        distributionLineWidth: appearance.distributionLineWidth,
+      },
+      renderedChanged && analysisChanged
+        ? "both"
+        : renderedChanged
+          ? "rendered_graph"
+          : "analysis_only",
+    );
   }, [
-    appearance.axisLineWidth,
-    appearance.axisTitleFontSize,
-    appearance.connectingLineWidth,
-    appearance.distributionLineWidth,
-    appearance.errorBar,
-    appearance.errorBarLineWidth,
-    appearance.fontFamily,
-    appearance.graphTitleFontSize,
-    appearance.hierarchyFontSize,
-    appearance.legendPosition,
-    appearance.legendFontSize,
-    appearance.palette,
-    appearance.pointSize,
-    appearance.summaryLineWidth,
-    appearance.tickFontSize,
-    axes.yMax,
-    axes.yMin,
-    axes.yRangeMode,
-    axes.yScale,
-    axes.yTickInterval,
-    axes.yTickMode,
-    axes.yTitle,
-    axes.spacing,
+    benchmarkAnalysisState,
+    benchmarkRenderedState,
     benchmarkRun.identity,
-    graphType,
-    layers.box,
-    layers.distribution,
-    layers.experiment,
-    layers.overall,
-    layers.raw,
-    selectedConditionIds,
     selectedReadoutId,
-    selectedTimePointIds,
-    sourceMode,
-    timeAnalysis.kind,
+    graphType,
+    selectedStatisticalMethod,
+    statisticsAnnotation.mode,
   ]);
 
   const readout = draft.readouts.find((item) => item.id === selectedReadoutId) ?? draft.readouts[0];
@@ -2401,7 +2423,11 @@ export function ExperimentGraphWorkbench({
           viewBox.width || svg.width.baseVal.value || 900,
           viewBox.height || svg.height.baseVal.value || 520,
         );
-        const [svgSha256, pngSha256] = await Promise.all([sha256Hex(svgText), sha256Hex(png)]);
+        const [svgSha256, pngSha256, analysisStateFingerprint] = await Promise.all([
+          sha256Hex(svgText),
+          sha256Hex(png),
+          sha256Hex(benchmarkAnalysisState),
+        ]);
         await writeBenchmarkArtifacts([
           { name: "default_graph.svg", content: svgText, mediaType: "image/svg+xml" },
           {
@@ -2413,6 +2439,7 @@ export function ExperimentGraphWorkbench({
         ]);
         completeDefaultGraphCapture({
           graphStateFingerprint: svgSha256,
+          analysisStateFingerprint,
           svgSha256,
           pngSha256,
         });
@@ -2421,7 +2448,13 @@ export function ExperimentGraphWorkbench({
         setBenchmarkCaptureStatus("既定グラフの評価artifactを保存できませんでした。");
       }
     })();
-  }, [benchmarkRun.defaultGraphCapture, benchmarkRun.identity, hasData, workspaceMode]);
+  }, [
+    benchmarkAnalysisState,
+    benchmarkRun.defaultGraphCapture,
+    benchmarkRun.identity,
+    hasData,
+    workspaceMode,
+  ]);
   const varyingStatisticalAttributes = draft.attributes.filter(
     (attribute) =>
       new Set(
@@ -2556,10 +2589,15 @@ export function ExperimentGraphWorkbench({
         viewBox.height || svg.height.baseVal.value || 520,
       );
       const capturedAt = new Date().toISOString();
-      const [svgSha256, pngSha256] = await Promise.all([sha256Hex(svgText), sha256Hex(png)]);
+      const [svgSha256, pngSha256, analysisStateFingerprint] = await Promise.all([
+        sha256Hex(svgText),
+        sha256Hex(png),
+        sha256Hex(benchmarkAnalysisState),
+      ]);
       recordFinalGraphCapture({
         capturedAt,
         graphStateFingerprint: svgSha256,
+        analysisStateFingerprint,
         svgSha256,
         pngSha256,
       });
@@ -2611,7 +2649,7 @@ export function ExperimentGraphWorkbench({
                 supportStatus: finalRun.supportStatus,
                 artifactCompleteness: "complete",
                 defaultGraphCaptured: finalRun.defaultGraphCaptured,
-                captureProvenanceVersion: "1.0.0",
+                captureProvenanceVersion: "1.1.0",
                 defaultCapturedAt: finalRun.defaultGraphCapture?.capturedAt ?? null,
                 defaultCapturedEventIndex: finalRun.defaultGraphCapture?.eventIndex ?? null,
                 finalCapturedAt: finalRun.finalGraphCapture?.capturedAt ?? null,
@@ -2620,6 +2658,10 @@ export function ExperimentGraphWorkbench({
                   finalRun.defaultGraphCapture?.graphStateFingerprint ?? null,
                 finalGraphStateFingerprint:
                   finalRun.finalGraphCapture?.graphStateFingerprint ?? null,
+                defaultAnalysisStateFingerprint:
+                  finalRun.defaultGraphCapture?.analysisStateFingerprint ?? null,
+                finalAnalysisStateFingerprint:
+                  finalRun.finalGraphCapture?.analysisStateFingerprint ?? null,
                 defaultSvgSha256: finalRun.defaultGraphCapture?.svgSha256 ?? null,
                 defaultPngSha256: finalRun.defaultGraphCapture?.pngSha256 ?? null,
                 finalSvgSha256: finalRun.finalGraphCapture?.svgSha256 ?? null,
@@ -2627,6 +2669,12 @@ export function ExperimentGraphWorkbench({
                 interactionCount: finalRun.events.length,
                 graphEditCount: finalRun.events.filter(
                   ({ type }) => type === "graph_configuration_changed",
+                ).length,
+                renderedGraphEditCount: finalRun.events.filter(
+                  ({ effect }) => effect === "rendered_graph" || effect === "both",
+                ).length,
+                analysisEditCount: finalRun.events.filter(
+                  ({ effect }) => effect === "analysis_only" || effect === "both",
                 ).length,
               },
               null,
@@ -4198,19 +4246,27 @@ export function ExperimentGraphWorkbench({
                     onCorrelationMethodChange={(method) => {
                       setCorrelationMethod(method);
                       setSelectedStatisticalMethod(method);
-                      recordBenchmarkEvent("statistics_method_selected", {
-                        recommended: analysisAssessment.recommendedMethod ?? method,
-                        selected: method,
-                      });
+                      recordBenchmarkEvent(
+                        "statistics_method_selected",
+                        {
+                          recommended: analysisAssessment.recommendedMethod ?? method,
+                          selected: method,
+                        },
+                        "analysis_only",
+                      );
                       setAnalysis(null);
                     }}
                     selectedMethod={selectedStatisticalMethod}
                     onSelectedMethodChange={(method) => {
                       setSelectedStatisticalMethod(method);
-                      recordBenchmarkEvent("statistics_method_selected", {
-                        recommended: analysisAssessment.recommendedMethod ?? method,
-                        selected: method,
-                      });
+                      recordBenchmarkEvent(
+                        "statistics_method_selected",
+                        {
+                          recommended: analysisAssessment.recommendedMethod ?? method,
+                          selected: method,
+                        },
+                        "analysis_only",
+                      );
                       setAnalysis(null);
                     }}
                     contrastIntent={contrastIntent}
@@ -4218,17 +4274,25 @@ export function ExperimentGraphWorkbench({
                     plannedContrastConditionIds={plannedContrastConditionIds}
                     onPlannedContrastConditionIdsChange={(pairs) => {
                       setPlannedContrastConditionIds([...pairs]);
-                      recordBenchmarkEvent("statistics_planned_comparisons_selected", {
-                        pairs: pairs
-                          .map(([firstId, secondId]) => `${firstId}:${secondId}`)
-                          .join("|"),
-                        count: pairs.length,
-                      });
+                      recordBenchmarkEvent(
+                        "statistics_planned_comparisons_selected",
+                        {
+                          pairs: pairs
+                            .map(([firstId, secondId]) => `${firstId}:${secondId}`)
+                            .join("|"),
+                          count: pairs.length,
+                        },
+                        "analysis_only",
+                      );
                       setAnalysis(null);
                     }}
                     onContrastIntentChange={(intent) => {
                       setContrastIntent(intent);
-                      recordBenchmarkEvent("statistics_contrast_selected", { intent });
+                      recordBenchmarkEvent(
+                        "statistics_contrast_selected",
+                        { intent },
+                        "analysis_only",
+                      );
                       if (intent === "all_pairs") setSelectedStatisticalMethod("welch_anova");
                       if (intent === "control_vs_many")
                         setSelectedStatisticalMethod("one_way_anova");

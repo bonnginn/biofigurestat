@@ -145,29 +145,33 @@ export function GraphStatisticsPanel({
         if (nextResult.status !== "ok") {
           setError("ローカル解析エンジンが入力を受理できませんでした。入力値は保持されています。");
         }
-        recordBenchmarkEvent("statistics_executed", {
-          method: request.method,
-          recommendedMethod: assessment.recommendedMethod ?? request.method,
-          recommendationDiffers:
-            Boolean(assessment.recommendedMethod) &&
-            assessment.recommendedMethod !== request.method,
-          contrast:
-            request.protocolVersion === "0.2.0"
-              ? request.contrastIntent === "planned_comparisons"
-                ? `${request.contrastIntent}:${(request.plannedContrastConditionIds ?? [])
-                    .map(([firstId, secondId]) => `${firstId}:${secondId}`)
-                    .join("|")}`
-                : request.contrastIntent
-              : request.protocolVersion === "0.1.0"
-                ? request.contrastConditionIds.join("|")
-                : request.protocolVersion === "0.5.0"
-                  ? request.variableConditionIds.join("|")
-                  : request.primaryContrastConditionIds.join("|"),
-          correction: request.options.multiplicityMethod,
-          protocolVersion: request.protocolVersion,
-          mode,
-          status: nextResult.status,
-        });
+        recordBenchmarkEvent(
+          "statistics_executed",
+          {
+            method: request.method,
+            recommendedMethod: assessment.recommendedMethod ?? request.method,
+            recommendationDiffers:
+              Boolean(assessment.recommendedMethod) &&
+              assessment.recommendedMethod !== request.method,
+            contrast:
+              request.protocolVersion === "0.2.0"
+                ? request.contrastIntent === "planned_comparisons"
+                  ? `${request.contrastIntent}:${(request.plannedContrastConditionIds ?? [])
+                      .map(([firstId, secondId]) => `${firstId}:${secondId}`)
+                      .join("|")}`
+                  : request.contrastIntent
+                : request.protocolVersion === "0.1.0"
+                  ? request.contrastConditionIds.join("|")
+                  : request.protocolVersion === "0.5.0"
+                    ? request.variableConditionIds.join("|")
+                    : request.primaryContrastConditionIds.join("|"),
+            correction: request.options.multiplicityMethod,
+            protocolVersion: request.protocolVersion,
+            mode,
+            status: nextResult.status,
+          },
+          "analysis_only",
+        );
       } catch (reason) {
         setError(reason instanceof Error ? reason.message : "ローカル解析を実行できませんでした。");
       } finally {

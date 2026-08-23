@@ -36,17 +36,19 @@ describe("benchmark evaluation run store", () => {
 
   it("records ordered run identity, support status, and meaningful events", () => {
     setBenchmarkSupportStatus("direct");
-    recordBenchmarkEvent("workspace_subroute_opened", { subroute: "statistics" });
+    recordBenchmarkEvent("analysis_configuration_changed", { timeMetric: "auc" }, "analysis_only");
     expect(beginDefaultGraphCapture("2026-08-23T00:00:00.000Z")).toBe(true);
     expect(beginDefaultGraphCapture("2026-08-23T00:00:01.000Z")).toBe(false);
     completeDefaultGraphCapture({
       graphStateFingerprint: "a".repeat(64),
+      analysisStateFingerprint: "e".repeat(64),
       svgSha256: "a".repeat(64),
       pngSha256: "b".repeat(64),
     });
     recordFinalGraphCapture({
       capturedAt: "2026-08-23T00:01:00.000Z",
       graphStateFingerprint: "c".repeat(64),
+      analysisStateFingerprint: "f".repeat(64),
       svgSha256: "c".repeat(64),
       pngSha256: "d".repeat(64),
     });
@@ -64,7 +66,7 @@ describe("benchmark evaluation run store", () => {
     expect(run.events.map(({ type }) => type)).toEqual([
       "benchmark_run_started",
       "support_status_selected",
-      "workspace_subroute_opened",
+      "analysis_configuration_changed",
       "default_graph_capture_started",
       "default_graph_captured",
       "final_graph_captured",
@@ -73,12 +75,15 @@ describe("benchmark evaluation run store", () => {
       status: "complete",
       eventIndex: 4,
       graphStateFingerprint: "a".repeat(64),
+      analysisStateFingerprint: "e".repeat(64),
     });
     expect(run.finalGraphCapture).toMatchObject({
       status: "complete",
       eventIndex: 6,
       graphStateFingerprint: "c".repeat(64),
+      analysisStateFingerprint: "f".repeat(64),
     });
+    expect(run.events[2]?.effect).toBe("analysis_only");
     expect(run.events[0]?.detail.sourceRevision).toBe("fixture-revision");
   });
 

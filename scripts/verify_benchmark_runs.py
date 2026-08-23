@@ -145,7 +145,8 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
     if run.get("graphEditCount") != graph_edit_count:
         raise VerificationError("run.json graphEditCount does not match interaction_log.json")
 
-    if run.get("captureProvenanceVersion") == "1.0.0":
+    provenance_version = run.get("captureProvenanceVersion")
+    if provenance_version in {"1.0.0", "1.1.0"}:
         capture_fields = {
             "defaultCapturedAt": str,
             "defaultCapturedEventIndex": int,
@@ -158,6 +159,15 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
             "finalSvgSha256": str,
             "finalPngSha256": str,
         }
+        if provenance_version == "1.1.0":
+            capture_fields.update(
+                {
+                    "defaultAnalysisStateFingerprint": str,
+                    "finalAnalysisStateFingerprint": str,
+                    "renderedGraphEditCount": int,
+                    "analysisEditCount": int,
+                }
+            )
         for key, expected_type in capture_fields.items():
             if not isinstance(run.get(key), expected_type):
                 raise VerificationError(f"run.json has no valid {key}")
@@ -196,11 +206,32 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
         if final_captured.get("occurredAt") != run["finalCapturedAt"]:
             raise VerificationError("finalCapturedAt does not match its capture event")
 
+        allowed_effects = {"analysis_only", "rendered_graph", "both", "non_rendering_ui"}
+        if provenance_version == "1.1.0":
+            for event in events:
+                if not isinstance(event, dict) or event.get("effect") not in allowed_effects:
+                    raise VerificationError("interaction event has no valid effect classification")
+            rendered_graph_edit_count = sum(
+                event.get("effect") in {"rendered_graph", "both"} for event in events
+            )
+            analysis_edit_count = sum(
+                event.get("effect") in {"analysis_only", "both"} for event in events
+            )
+            if run["renderedGraphEditCount"] != rendered_graph_edit_count:
+                raise VerificationError("run.json renderedGraphEditCount does not match events")
+            if run["analysisEditCount"] != analysis_edit_count:
+                raise VerificationError("run.json analysisEditCount does not match events")
+
         first_rendered_edit = next(
             (
                 event
                 for event in events
-                if isinstance(event, dict) and event.get("type") == "graph_configuration_changed"
+                if isinstance(event, dict)
+                and (
+                    event.get("effect") in {"rendered_graph", "both"}
+                    if provenance_version == "1.1.0"
+                    else event.get("type") == "graph_configuration_changed"
+                )
             ),
             None,
         )
@@ -226,14 +257,34 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
         if run["finalGraphStateFingerprint"] != run["finalSvgSha256"]:
             raise VerificationError("final Graph-state fingerprint does not match final SVG")
 
+        if provenance_version == "1.1.0":
+            if (
+                default_completed.get("detail", {}).get("analysisStateFingerprint")
+                != run["defaultAnalysisStateFingerprint"]
+            ):
+                raise VerificationError(
+                    "default analysis-state fingerprint does not match capture event"
+                )
+            if (
+                final_captured.get("detail", {}).get("analysisStateFingerprint")
+                != run["finalAnalysisStateFingerprint"]
+            ):
+                raise VerificationError(
+                    "final analysis-state fingerprint does not match capture event"
+                )
+
         visible_annotation = isinstance(annotation, dict) and annotation.get("mode") not in {
             None,
             "hidden",
         }
         rendered_edit_after_default = any(
             isinstance(event, dict)
-            and event.get("type") == "graph_configuration_changed"
             and event.get("sequence", 0) > default_completed["sequence"]
+            and (
+                event.get("effect") in {"rendered_graph", "both"}
+                if provenance_version == "1.1.0"
+                else event.get("type") == "graph_configuration_changed"
+            )
             for event in events
         )
         meaningful_rendered_edit = rendered_edit_after_default or visible_annotation
@@ -244,6 +295,21 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
             raise VerificationError(
                 "rendered Graph edits occurred but default/final fingerprints are identical"
             )
+        if provenance_version == "1.1.0":
+            analysis_edit_after_default = any(
+                isinstance(event, dict)
+                and event.get("sequence", 0) > default_completed["sequence"]
+                and event.get("effect") in {"analysis_only", "both"}
+                for event in events
+            )
+            if (
+                analysis_edit_after_default
+                and run["defaultAnalysisStateFingerprint"]
+                == run["finalAnalysisStateFingerprint"]
+            ):
+                raise VerificationError(
+                    "analysis-state edits occurred but default/final analysis fingerprints are identical"
+                )
 
     methods = (path / "methods.txt").read_text(encoding="utf-8").strip()
     if not methods:

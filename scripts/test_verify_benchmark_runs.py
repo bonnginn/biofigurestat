@@ -57,6 +57,8 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
         *,
         annotation: str = "hidden",
         rendered_edit: bool = False,
+        analysis_change: str | None = None,
+        mixed_edit: bool = False,
     ) -> None:
         default_svg = "<svg><text>default</text></svg>"
         final_svg = (
@@ -78,39 +80,68 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
             json.dumps({"statisticsAnnotation": {"mode": annotation, "testIndex": 0}}),
             encoding="utf-8",
         )
+        digest = lambda payload: hashlib.sha256(payload).hexdigest()
+        default_analysis = digest(b"analysis-default")
+        final_analysis = digest(b"analysis-final")
         events = [
             {
                 "sequence": 1,
                 "occurredAt": "2026-08-23T00:00:00.000Z",
                 "type": "benchmark_run_started",
+                "effect": "non_rendering_ui",
             },
             {
                 "sequence": 2,
                 "occurredAt": "2026-08-23T00:00:01.000Z",
                 "type": "benchmark_pilot_data_loaded",
+                "effect": "non_rendering_ui",
             },
             {
                 "sequence": 3,
                 "occurredAt": "2026-08-23T00:00:02.000Z",
                 "type": "default_graph_capture_started",
+                "effect": "non_rendering_ui",
             },
             {
                 "sequence": 4,
                 "occurredAt": "2026-08-23T00:00:03.000Z",
                 "type": "default_graph_captured",
+                "effect": "non_rendering_ui",
+                "detail": {"analysisStateFingerprint": default_analysis},
             },
             {
                 "sequence": 5,
                 "occurredAt": "2026-08-23T00:00:04.000Z",
                 "type": "statistics_executed",
+                "effect": "analysis_only",
             },
         ]
-        if rendered_edit:
+        if analysis_change:
+            events.append(
+                {
+                    "sequence": len(events) + 1,
+                    "occurredAt": "2026-08-23T00:00:04.500Z",
+                    "type": "analysis_configuration_changed",
+                    "effect": "analysis_only",
+                    "detail": {"change": analysis_change},
+                }
+            )
+        if mixed_edit:
             events.append(
                 {
                     "sequence": len(events) + 1,
                     "occurredAt": "2026-08-23T00:00:05.000Z",
                     "type": "graph_configuration_changed",
+                    "effect": "both",
+                }
+            )
+        elif rendered_edit or annotation != "hidden":
+            events.append(
+                {
+                    "sequence": len(events) + 1,
+                    "occurredAt": "2026-08-23T00:00:05.000Z",
+                    "type": "graph_configuration_changed",
+                    "effect": "rendered_graph",
                 }
             )
         final_index = len(events) + 1
@@ -120,36 +151,71 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
                     "sequence": final_index,
                     "occurredAt": "2026-08-23T00:01:00.000Z",
                     "type": "final_graph_captured",
+                    "effect": "non_rendering_ui",
+                    "detail": {"analysisStateFingerprint": final_analysis},
                 },
                 {
                     "sequence": final_index + 1,
                     "occurredAt": "2026-08-23T00:01:01.000Z",
                     "type": "benchmark_run_finalized",
+                    "effect": "non_rendering_ui",
                 },
             ]
         )
         (path / "interaction_log.json").write_text(json.dumps(events), encoding="utf-8")
         run_path = path / "run.json"
         run = json.loads(run_path.read_text())
-        digest = lambda payload: hashlib.sha256(payload).hexdigest()
         run.update(
             {
-                "captureProvenanceVersion": "1.0.0",
+                "captureProvenanceVersion": "1.1.0",
                 "defaultCapturedAt": "2026-08-23T00:00:02.000Z",
                 "defaultCapturedEventIndex": 3,
                 "finalCapturedAt": "2026-08-23T00:01:00.000Z",
                 "finalCapturedEventIndex": final_index,
                 "defaultGraphStateFingerprint": digest(default_svg.encode()),
                 "finalGraphStateFingerprint": digest(final_svg.encode()),
+                "defaultAnalysisStateFingerprint": default_analysis,
+                "finalAnalysisStateFingerprint": final_analysis,
                 "defaultSvgSha256": digest(default_svg.encode()),
                 "defaultPngSha256": digest(default_png),
                 "finalSvgSha256": digest(final_svg.encode()),
                 "finalPngSha256": digest(final_png),
                 "interactionCount": len(events),
-                "graphEditCount": int(rendered_edit),
+                "graphEditCount": sum(
+                    event["type"] == "graph_configuration_changed" for event in events
+                ),
+                "renderedGraphEditCount": sum(
+                    event["effect"] in {"rendered_graph", "both"} for event in events
+                ),
+                "analysisEditCount": sum(
+                    event["effect"] in {"analysis_only", "both"} for event in events
+                ),
             }
         )
         run_path.write_text(json.dumps(run), encoding="utf-8")
+
+    def make_final_graph_identical(self, path: Path) -> None:
+        (path / "final_graph.svg").write_bytes((path / "default_graph.svg").read_bytes())
+        (path / "final_graph.png").write_bytes((path / "default_graph.png").read_bytes())
+        run_path = path / "run.json"
+        run = json.loads(run_path.read_text())
+        run["finalGraphStateFingerprint"] = run["defaultGraphStateFingerprint"]
+        run["finalSvgSha256"] = run["defaultSvgSha256"]
+        run["finalPngSha256"] = run["defaultPngSha256"]
+        run_path.write_text(json.dumps(run), encoding="utf-8")
+
+    def make_final_analysis_identical(self, path: Path) -> None:
+        run_path = path / "run.json"
+        run = json.loads(run_path.read_text())
+        run["finalAnalysisStateFingerprint"] = run["defaultAnalysisStateFingerprint"]
+        run_path.write_text(json.dumps(run), encoding="utf-8")
+        events_path = path / "interaction_log.json"
+        events = json.loads(events_path.read_text())
+        final_capture = next(event for event in events if event["type"] == "final_graph_captured")
+        final_capture["detail"]["analysisStateFingerprint"] = run[
+            "defaultAnalysisStateFingerprint"
+        ]
+        events_path.write_text(json.dumps(events), encoding="utf-8")
 
     def test_complete_run_passes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -222,11 +288,48 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
             self.add_capture_provenance(path, annotation="exact_p", rendered_edit=True)
             verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
 
-    def test_provenance_allows_identical_default_and_final_without_edits(self) -> None:
+    def test_a_auc_analysis_only_allows_identical_rendered_graphs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             path = self.make_complete_run(Path(temporary))
-            self.add_capture_provenance(path)
+            self.add_capture_provenance(path, analysis_change="auc")
             verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
+
+    def test_b_endpoint_analysis_only_allows_identical_rendered_graphs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.make_complete_run(Path(temporary))
+            self.add_capture_provenance(path, analysis_change="endpoint")
+            verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
+
+    def test_c_statistics_method_only_allows_identical_rendered_graphs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.make_complete_run(Path(temporary))
+            self.add_capture_provenance(path, analysis_change="statistics_method")
+            verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
+
+    def test_d_visible_p_value_with_identical_rendered_graphs_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.make_complete_run(Path(temporary))
+            self.add_capture_provenance(path, annotation="exact_p")
+            self.make_final_graph_identical(path)
+            with self.assertRaisesRegex(VerificationError, "visible final statistics annotation"):
+                verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
+
+    def test_e_rendered_edit_with_identical_rendered_graphs_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.make_complete_run(Path(temporary))
+            self.add_capture_provenance(path, rendered_edit=True)
+            self.make_final_graph_identical(path)
+            with self.assertRaisesRegex(VerificationError, "rendered Graph edits"):
+                verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
+
+    def test_f_mixed_edit_requires_both_fingerprints_to_change(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.make_complete_run(Path(temporary))
+            self.add_capture_provenance(path, rendered_edit=True, mixed_edit=True)
+            verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
+            self.make_final_analysis_identical(path)
+            with self.assertRaisesRegex(VerificationError, "analysis-state edits"):
+                verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
 
     def test_provenance_ignores_initial_graph_sync_while_persistence_finishes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -239,6 +342,7 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
                 {
                     "occurredAt": "2026-08-23T00:00:02.500Z",
                     "type": "graph_configuration_changed",
+                    "effect": "rendered_graph",
                 },
             )
             for sequence, event in enumerate(events, start=1):
@@ -249,6 +353,7 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
             run["finalCapturedEventIndex"] = 7
             run["interactionCount"] = len(events)
             run["graphEditCount"] = 1
+            run["renderedGraphEditCount"] = 1
             run_path.write_text(json.dumps(run), encoding="utf-8")
             verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
 
