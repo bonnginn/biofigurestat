@@ -69,6 +69,7 @@ def read_json_object(path: Path) -> dict[str, Any]:
 def verify_explicit_unsupported_run_directory(
     path: Path, case_id: str, track: str, run_id: str,
     package_sha256: str | None = None,
+    require_evidence_provenance: bool = False,
 ) -> dict[str, Any]:
     """Validate a deliberate scientific unsupported decision without fabricated analysis files."""
     if not path.is_dir():
@@ -124,6 +125,17 @@ def verify_explicit_unsupported_run_directory(
         raise VerificationError("explicit unsupported run has no valid blind package hash")
     if package_sha256 is not None and actual_package_sha != package_sha256:
         raise VerificationError("explicit unsupported run blind package hash does not match the queue")
+    expected_provenance = {
+        "caseId": case_id,
+        "runId": run_id,
+        "packageSha256": actual_package_sha,
+    }
+    provenance_version = run.get("unsupportedEvidenceProvenanceVersion")
+    if require_evidence_provenance or provenance_version is not None or "evidenceProvenance" in run:
+        if provenance_version != "1.0.0":
+            raise VerificationError("explicit unsupported evidence provenance version is invalid")
+        if run.get("evidenceProvenance") != expected_provenance:
+            raise VerificationError("explicit unsupported evidence provenance belongs to another run")
     try:
         events = json.loads((path / "interaction_log.json").read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -150,6 +162,13 @@ def verify_explicit_unsupported_run_directory(
         raise VerificationError("explicit unsupported terminal event ordering is invalid")
     started_event = events[event_types.index("benchmark_run_started")]
     finalized_event = events[event_types.index("explicit_unsupported_finalized")]
+    if require_evidence_provenance or provenance_version is not None:
+        finalized_detail = finalized_event.get("detail")
+        if not isinstance(finalized_detail, dict) or any(
+            finalized_detail.get(key) != expected
+            for key, expected in expected_provenance.items()
+        ):
+            raise VerificationError("explicit unsupported terminal event has foreign run provenance")
     if started_event.get("occurredAt") != run["startedAt"]:
         raise VerificationError("explicit unsupported start timestamp is inconsistent")
     if not isinstance(finalized_event.get("occurredAt"), str) or not (

@@ -102,6 +102,13 @@ export default function App({ projectActions }: AppProps) {
     },
     [navigate],
   );
+  const resetEvaluationCase = useCallback(() => {
+    setActiveProject(null);
+    setSystemOpenError(null);
+    setReusedDraft(null);
+    setFavoriteDefaults([]);
+    navigate("home");
+  }, [navigate]);
 
   useEffect(() => {
     const openProjectTarget = activeProjectActions.openProjectTarget;
@@ -243,6 +250,7 @@ export default function App({ projectActions }: AppProps) {
     <AppShell
       route={route}
       onNavigate={navigateAsFreshStart}
+      onResetEvaluationCase={resetEvaluationCase}
       browserPreview={browserPreview}
       evaluationPreview={evaluationPreview}
     >

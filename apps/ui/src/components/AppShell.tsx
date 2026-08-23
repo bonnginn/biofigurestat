@@ -6,6 +6,7 @@ import { BenchmarkRunBar } from "./BenchmarkRunBar";
 type AppShellProps = PropsWithChildren<{
   route: AppRoute;
   onNavigate: (route: AppRoute) => void;
+  onResetEvaluationCase?: () => void;
   browserPreview?: boolean;
   evaluationPreview?: boolean;
 }>;
@@ -14,6 +15,7 @@ export function AppShell({
   children,
   route,
   onNavigate,
+  onResetEvaluationCase,
   browserPreview = false,
   evaluationPreview = false,
 }: AppShellProps) {
@@ -71,7 +73,9 @@ export function AppShell({
           </span>
         </div>
       ) : null}
-      {evaluationPreview ? <BenchmarkRunBar onNavigateHome={() => onNavigate("home")} /> : null}
+      {evaluationPreview ? (
+        <BenchmarkRunBar onNavigateHome={onResetEvaluationCase ?? (() => onNavigate("home"))} />
+      ) : null}
 
       <div className="shell-body">
         <main className="main-content">{children}</main>

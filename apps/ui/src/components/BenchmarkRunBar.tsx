@@ -30,6 +30,34 @@ const NON_SCIENTIFIC_OUTCOMES: readonly BenchmarkOutcome[] = [
   "aborted_not_started",
 ];
 
+type UnsupportedEvidenceOwner = Readonly<{
+  caseId: string;
+  runId: string;
+  packageSha256: string;
+}>;
+
+type UnsupportedEvidenceDraft = Readonly<{
+  owner: UnsupportedEvidenceOwner | null;
+  scientificReason: string;
+  experimentalUnit: string;
+  biologicalN: string;
+  attemptedRoutes: string;
+  scientificCompromiseReason: string;
+}>;
+
+export function createFreshUnsupportedEvidence(
+  owner: UnsupportedEvidenceOwner | null = null,
+): UnsupportedEvidenceDraft {
+  return {
+    owner,
+    scientificReason: "",
+    experimentalUnit: "",
+    biologicalN: "",
+    attemptedRoutes: "",
+    scientificCompromiseReason: "",
+  };
+}
+
 export function metadataOutcomeCanBeRecorded(
   outcome: BenchmarkOutcome | null,
   supportStatus: BenchmarkSupportStatus | null,
@@ -51,11 +79,9 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
   >("idle");
   const [blindBatch, setBlindBatch] = useState<BlindBatchCurrent | null>(null);
   const [batchStatus, setBatchStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [scientificReason, setScientificReason] = useState("");
-  const [experimentalUnit, setExperimentalUnit] = useState("");
-  const [biologicalN, setBiologicalN] = useState("");
-  const [attemptedRoutes, setAttemptedRoutes] = useState("");
-  const [scientificCompromiseReason, setScientificCompromiseReason] = useState("");
+  const [unsupportedEvidence, setUnsupportedEvidence] = useState<UnsupportedEvidenceDraft>(() =>
+    createFreshUnsupportedEvidence(),
+  );
   useEffect(() => {
     let cancelled = false;
     void fetchBlindBatchCurrent()
@@ -74,15 +100,24 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         setCaseId(identity.caseId);
         setTrack(identity.track);
         setRunId(identity.runId);
+        const evidenceOwner = {
+          caseId: batch.current.caseId,
+          runId: batch.current.runId,
+          packageSha256: batch.current.packageSha256,
+        };
         const terminalEvidence = batch.current.terminalEvidence;
         if (terminalEvidence) {
-          setScientificReason(terminalEvidence.scientificReason);
-          setExperimentalUnit(terminalEvidence.experimentalUnit);
-          setBiologicalN(
-            terminalEvidence.biologicalN === null ? "" : String(terminalEvidence.biologicalN),
-          );
-          setAttemptedRoutes(terminalEvidence.attemptedRoutes.join("\n"));
-          setScientificCompromiseReason(terminalEvidence.scientificCompromiseReason);
+          setUnsupportedEvidence({
+            owner: evidenceOwner,
+            scientificReason: terminalEvidence.scientificReason,
+            experimentalUnit: terminalEvidence.experimentalUnit,
+            biologicalN:
+              terminalEvidence.biologicalN === null ? "" : String(terminalEvidence.biologicalN),
+            attemptedRoutes: terminalEvidence.attemptedRoutes.join("\n"),
+            scientificCompromiseReason: terminalEvidence.scientificCompromiseReason,
+          });
+        } else {
+          setUnsupportedEvidence(createFreshUnsupportedEvidence(evidenceOwner));
         }
         if (
           batch.current.status !== "active" &&
@@ -136,11 +171,13 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
   const saveMetadataOnlyOutcome = async () => {
     if (!run.identity || !metadataOutcomeCanBeRecorded(run.outcome, run.supportStatus)) return;
     const isExplicitUnsupported = run.outcome === "explicit_unsupported";
-    const parsedRoutes = attemptedRoutes
+    const parsedRoutes = unsupportedEvidence.attemptedRoutes
       .split(/[\n,]/)
       .map((route) => route.trim())
       .filter(Boolean);
-    const parsedBiologicalN = biologicalN.trim() ? Number(biologicalN) : null;
+    const parsedBiologicalN = unsupportedEvidence.biologicalN.trim()
+      ? Number(unsupportedEvidence.biologicalN)
+      : null;
     if (
       isExplicitUnsupported &&
       (caseDeliveryStatus !== "ready" ||
@@ -148,9 +185,12 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         !blindBatch?.current ||
         blindBatch.current.status !== "active" ||
         blindBatch.current.runId !== run.identity.runId ||
-        !scientificReason.trim() ||
-        !experimentalUnit.trim() ||
-        !scientificCompromiseReason.trim() ||
+        unsupportedEvidence.owner?.caseId !== run.identity.caseId ||
+        unsupportedEvidence.owner.runId !== run.identity.runId ||
+        unsupportedEvidence.owner.packageSha256 !== blindBatch.current.packageSha256 ||
+        !unsupportedEvidence.scientificReason.trim() ||
+        !unsupportedEvidence.experimentalUnit.trim() ||
+        !unsupportedEvidence.scientificCompromiseReason.trim() ||
         parsedRoutes.length === 0 ||
         (parsedBiologicalN !== null && (!Number.isFinite(parsedBiologicalN) || parsedBiologicalN <= 0)))
     ) {
@@ -160,11 +200,14 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
     try {
       if (isExplicitUnsupported) {
         recordBenchmarkEvent("explicit_unsupported_finalized", {
-          scientificReason: scientificReason.trim(),
-          experimentalUnit: experimentalUnit.trim(),
+          caseId: unsupportedEvidence.owner?.caseId ?? null,
+          runId: unsupportedEvidence.owner?.runId ?? null,
+          packageSha256: unsupportedEvidence.owner?.packageSha256 ?? null,
+          scientificReason: unsupportedEvidence.scientificReason.trim(),
+          experimentalUnit: unsupportedEvidence.experimentalUnit.trim(),
           biologicalN: parsedBiologicalN,
           attemptedRoutes: parsedRoutes.join(" | "),
-          scientificCompromiseReason: scientificCompromiseReason.trim(),
+          scientificCompromiseReason: unsupportedEvidence.scientificCompromiseReason.trim(),
         });
       }
       recordBenchmarkEvent("benchmark_metadata_only_outcome_recorded", {
@@ -197,11 +240,14 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
                       runId: completed.identity?.runId,
                       sha256: blindBatch?.current?.packageSha256,
                     },
-                    scientificReason: scientificReason.trim(),
-                    experimentalUnit: experimentalUnit.trim(),
+                    evidenceProvenance: unsupportedEvidence.owner,
+                    unsupportedEvidenceProvenanceVersion: "1.0.0",
+                    scientificReason: unsupportedEvidence.scientificReason.trim(),
+                    experimentalUnit: unsupportedEvidence.experimentalUnit.trim(),
                     biologicalN: parsedBiologicalN,
                     attemptedRoutes: parsedRoutes,
-                    scientificCompromiseReason: scientificCompromiseReason.trim(),
+                    scientificCompromiseReason:
+                      unsupportedEvidence.scientificCompromiseReason.trim(),
                   }
                 : {}),
               defaultGraphCaptured: completed.defaultGraphCaptured,
@@ -234,11 +280,12 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
     setSaveStatus("server-side verifierを確認中…");
     try {
       const batch = await advanceBlindBatch();
-      setBlindBatch(batch);
       setLiteratureCase(null);
       setCaseDeliveryStatus("idle");
+      setUnsupportedEvidence(createFreshUnsupportedEvidence());
       resetBenchmarkRun();
       onNavigateHome?.();
+      setBlindBatch(batch);
       if (batch?.current) {
         const identity = {
           benchmarkVersion: batch.benchmarkVersion,
@@ -250,6 +297,13 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         setCaseId(identity.caseId);
         setTrack(identity.track);
         setRunId(identity.runId);
+        setUnsupportedEvidence(
+          createFreshUnsupportedEvidence({
+            caseId: batch.current.caseId,
+            runId: batch.current.runId,
+            packageSha256: batch.current.packageSha256,
+          }),
+        );
         startBenchmarkRun(identity);
         setSaveStatus(`Case ${batch.position} / ${batch.total} を開始しました。`);
       } else {
@@ -293,11 +347,24 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
       </label>
       <button
         type="button"
-        onClick={() =>
-          run.identity
-            ? resetBenchmarkRun()
-            : startBenchmarkRun({ benchmarkVersion, caseId, track, runId })
-        }
+        onClick={() => {
+          if (run.identity) {
+            resetBenchmarkRun();
+            setUnsupportedEvidence(
+              createFreshUnsupportedEvidence(
+                blindBatch?.current?.status === "active"
+                  ? {
+                      caseId: blindBatch.current.caseId,
+                      runId: blindBatch.current.runId,
+                      packageSha256: blindBatch.current.packageSha256,
+                    }
+                  : null,
+              ),
+            );
+          } else {
+            startBenchmarkRun({ benchmarkVersion, caseId, track, runId });
+          }
+        }}
       >
         {run.identity ? "Runをリセット" : blindBatch ? "Active caseを開始" : "Runを開始"}
       </button>
@@ -347,25 +414,64 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         <section className="benchmark-case-delivery" aria-label="Explicit unsupported evidence">
           <label>
             <span>Scientific reason</span>
-            <textarea value={scientificReason} onChange={(event) => setScientificReason(event.target.value)} />
+            <textarea
+              value={unsupportedEvidence.scientificReason}
+              onChange={(event) =>
+                setUnsupportedEvidence((current) => ({
+                  ...current,
+                  scientificReason: event.target.value,
+                }))
+              }
+            />
           </label>
           <label>
             <span>Experimental unit</span>
-            <input value={experimentalUnit} onChange={(event) => setExperimentalUnit(event.target.value)} />
+            <input
+              value={unsupportedEvidence.experimentalUnit}
+              onChange={(event) =>
+                setUnsupportedEvidence((current) => ({
+                  ...current,
+                  experimentalUnit: event.target.value,
+                }))
+              }
+            />
           </label>
           <label>
             <span>Biological n (if determinable)</span>
-            <input type="number" min="1" value={biologicalN} onChange={(event) => setBiologicalN(event.target.value)} />
+            <input
+              type="number"
+              min="1"
+              value={unsupportedEvidence.biologicalN}
+              onChange={(event) =>
+                setUnsupportedEvidence((current) => ({
+                  ...current,
+                  biologicalN: event.target.value,
+                }))
+              }
+            />
           </label>
           <label>
             <span>Attempted routes</span>
-            <textarea value={attemptedRoutes} onChange={(event) => setAttemptedRoutes(event.target.value)} />
+            <textarea
+              value={unsupportedEvidence.attemptedRoutes}
+              onChange={(event) =>
+                setUnsupportedEvidence((current) => ({
+                  ...current,
+                  attemptedRoutes: event.target.value,
+                }))
+              }
+            />
           </label>
           <label>
             <span>Why continuation would require scientific compromise</span>
             <textarea
-              value={scientificCompromiseReason}
-              onChange={(event) => setScientificCompromiseReason(event.target.value)}
+              value={unsupportedEvidence.scientificCompromiseReason}
+              onChange={(event) =>
+                setUnsupportedEvidence((current) => ({
+                  ...current,
+                  scientificCompromiseReason: event.target.value,
+                }))
+              }
             />
           </label>
         </section>

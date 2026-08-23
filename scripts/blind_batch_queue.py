@@ -182,7 +182,7 @@ class BlindBatchQueue:
 
     def retry_active(
         self, identity: tuple[str, str, str], new_run_id: str, package_sha256: str,
-        reason: str,
+        reason: str, prior_status: str = "diagnostic_infrastructure_failure",
     ) -> None:
         if (
             not SAFE_ID.fullmatch(new_run_id)
@@ -190,6 +190,10 @@ class BlindBatchQueue:
             or any(character not in "0123456789abcdef" for character in package_sha256)
         ):
             raise ValueError("Blind batch retry identity is invalid")
+        if prior_status not in {
+            "diagnostic_infrastructure_failure", "case_state_contamination", "aborted"
+        }:
+            raise ValueError("Blind batch retry prior status is invalid")
         with self._lock:
             value = self._read()
             active = next((job for job in value["jobs"] if job["status"] == "active"), None)
@@ -207,7 +211,7 @@ class BlindBatchQueue:
             attempts.append({
                 "runId": active["runId"],
                 "packageSha256": active["packageSha256"],
-                "status": "diagnostic_infrastructure_failure",
+                "status": prior_status,
                 "reason": reason[:500],
             })
             active["runId"] = new_run_id

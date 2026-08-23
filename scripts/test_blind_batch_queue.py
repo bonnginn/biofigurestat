@@ -64,11 +64,12 @@ class BlindBatchQueueTests(unittest.TestCase):
             queue = BlindBatchQueue(queue_path)
             old_identity = queue.active_identity()
             queue.retry_active(old_identity, "batch_retry_test_01_JCB003_retry_01", "a" * 64,
-                               "metadata persistence defect")
+                               "metadata persistence defect", "case_state_contamination")
             value = json.loads(queue_path.read_text())
             first = value["jobs"][0]
             self.assertEqual(first["runId"], "batch_retry_test_01_JCB003_retry_01")
             self.assertEqual(first["priorAttempts"][0]["runId"], old_identity[2])
+            self.assertEqual(first["priorAttempts"][0]["status"], "case_state_contamination")
             with self.assertRaisesRegex(ValueError, "active blind batch job"):
                 queue.assert_active(old_identity)
 
@@ -80,7 +81,10 @@ class BlindBatchBridgeTests(unittest.TestCase):
         self.output_root = root / "runs"
         self.package_root = root / "packages"
         self.queue_path = root / "queue.json"
-        prepare_batch("batch_bridge_test", self.queue_path, self.package_root, ("JCB003", "JCB004"))
+        prepare_batch(
+            "batch_bridge_test", self.queue_path, self.package_root,
+            ("JCB003", "JCB004", "JCB005"),
+        )
         try:
             self.server = EvaluationServer(
                 ("127.0.0.1", 0), TOKEN, ORIGIN, self.output_root,
@@ -117,6 +121,7 @@ class BlindBatchBridgeTests(unittest.TestCase):
 
     def explicit_unsupported_payload(self, current: dict, *, delivery_failed: bool = False) -> dict:
         job = current["current"]
+        biological_n = 10 + job["position"]
         events = [
             {"sequence": 1, "occurredAt": "2026-08-23T00:00:00Z",
              "type": "benchmark_run_started", "effect": "non_rendering_ui", "detail": {}},
@@ -125,7 +130,9 @@ class BlindBatchBridgeTests(unittest.TestCase):
              "effect": "non_rendering_ui", "detail": {"caseId": job["caseId"]}},
             {"sequence": 3, "occurredAt": "2026-08-23T00:01:00Z",
              "type": "explicit_unsupported_finalized", "effect": "non_rendering_ui",
-             "detail": {"scientificReason": "single group cannot be represented"}},
+             "detail": {"caseId": job["caseId"], "runId": job["runId"],
+                        "packageSha256": job["packageSha256"],
+                        "scientificReason": "single group cannot be represented"}},
             {"sequence": 4, "occurredAt": "2026-08-23T00:01:01Z",
              "type": "benchmark_metadata_only_outcome_recorded", "effect": "non_rendering_ui",
              "detail": {"outcome": "explicit_unsupported"}},
@@ -140,10 +147,13 @@ class BlindBatchBridgeTests(unittest.TestCase):
             "artifactCompleteness": "metadata_only_explicit_unsupported",
             "blindPackage": {"caseId": job["caseId"], "runId": job["runId"],
                              "sha256": job["packageSha256"]},
-            "scientificReason": "The one-group design cannot be represented.",
-            "experimentalUnit": "independent patients", "biologicalN": 30,
-            "attemptedRoutes": ["ordinary design", "long import", "wide import"],
-            "scientificCompromiseReason": "Adding a fictitious condition corrupts the design.",
+            "evidenceProvenance": {"caseId": job["caseId"], "runId": job["runId"],
+                                   "packageSha256": job["packageSha256"]},
+            "unsupportedEvidenceProvenanceVersion": "1.0.0",
+            "scientificReason": f"{job['caseId']} cannot be represented without compromise.",
+            "experimentalUnit": f"unit for {job['caseId']}", "biologicalN": biological_n,
+            "attemptedRoutes": [f"route for {job['caseId']}"],
+            "scientificCompromiseReason": f"workaround corrupts {job['caseId']}.",
             "interactionCount": len(events),
         }
         return {
@@ -278,6 +288,44 @@ class BlindBatchBridgeTests(unittest.TestCase):
         paused = self.get("/api/evaluation/blind-batch/current")
         self.assertEqual(paused["status"], "paused")
         self.assertEqual(paused["current"]["status"], "infrastructure_failure")
+
+    def test_three_unsupported_runs_keep_distinct_artifacts_and_provenance(self) -> None:
+        recorded: list[tuple[str, str, int]] = []
+        for expected_position in range(1, 4):
+            current = self.get("/api/evaluation/blind-batch/current")
+            job = current["current"]
+            self.post("/api/evaluation/artifacts", self.explicit_unsupported_payload(current))
+            run_path = self.output_root / job["caseId"] / job["track"] / job["runId"] / "run.json"
+            run = json.loads(run_path.read_text())
+            self.assertEqual(run["evidenceProvenance"], {
+                "caseId": job["caseId"], "runId": job["runId"],
+                "packageSha256": job["packageSha256"],
+            })
+            self.assertIn(job["caseId"], run["scientificReason"])
+            recorded.append((run["caseId"], run["experimentalUnit"], run["biologicalN"]))
+            advanced = self.post(
+                "/api/evaluation/blind-batch/next",
+                {"mode": "evaluation", "syntheticOnly": True},
+            )
+            self.assertEqual(advanced["completed"], expected_position)
+        self.assertEqual(len({value for _, value, _ in recorded}), 3)
+        self.assertEqual(len({value for _, _, value in recorded}), 3)
+        self.assertEqual(advanced["status"], "completed")
+
+    def test_foreign_unsupported_evidence_provenance_is_rejected(self) -> None:
+        current = self.get("/api/evaluation/blind-batch/current")
+        payload = self.explicit_unsupported_payload(current)
+        run_artifact = next(
+            artifact for artifact in payload["artifacts"] if artifact["name"] == "run.json"
+        )
+        run = json.loads(run_artifact["content"])
+        run["evidenceProvenance"]["caseId"] = "NC033"
+        run_artifact["content"] = json.dumps(run)
+        with self.assertRaises(urllib.error.HTTPError) as context:
+            self.post("/api/evaluation/artifacts", payload)
+        self.assertEqual(context.exception.code, 400)
+        paused = self.get("/api/evaluation/blind-batch/current")
+        self.assertEqual(paused["status"], "paused")
 
 
 if __name__ == "__main__":

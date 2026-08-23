@@ -16,3 +16,14 @@
   during the batch-infrastructure fix.
 - Later product question: should descriptive/single-group analysis and Graph creation be supported
   without requiring a comparison group?
+
+## JCB023 — categorical-time and hierarchical import constraints
+
+- Date observed: 2026-08-23
+- Source: fresh-blind Track B batch evaluation
+- Category: Core workflow/data-structure gap
+- Blind workflow constraints observed: categorical time representation, long-form import,
+  hierarchical conditions, and compatibility of 0/1 time-point encodings.
+- Disposition: preserve for the later Integrator/product-fix phase. The contaminated unfinished
+  attempt is not scientific benchmark evidence, and no product behavior was changed during the
+  batch state-isolation fix.

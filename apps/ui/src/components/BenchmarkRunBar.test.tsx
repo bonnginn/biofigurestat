@@ -19,7 +19,11 @@ import {
   resetBenchmarkRun,
   setBenchmarkOutcome,
 } from "../app/benchmarkEvaluation";
-import { BenchmarkRunBar, metadataOutcomeCanBeRecorded } from "./BenchmarkRunBar";
+import {
+  BenchmarkRunBar,
+  createFreshUnsupportedEvidence,
+  metadataOutcomeCanBeRecorded,
+} from "./BenchmarkRunBar";
 
 const blindCase = {
   schemaVersion: "1.0.0",
@@ -169,6 +173,19 @@ describe("BenchmarkRunBar case initialization", () => {
       supportStatus: null,
       outcome: "in_progress",
     });
+    fireEvent.change(screen.getByLabelText("Benchmark outcome"), {
+      target: { value: "explicit_unsupported" },
+    });
+    fireEvent.change(screen.getByLabelText("Scientific support"), {
+      target: { value: "impossible" },
+    });
+    expect(screen.getByLabelText("Scientific reason")).toHaveValue("");
+    expect(screen.getByLabelText("Experimental unit")).toHaveValue("");
+    expect(screen.getByLabelText("Biological n (if determinable)")).toHaveValue(null);
+    expect(screen.getByLabelText("Attempted routes")).toHaveValue("");
+    expect(
+      screen.getByLabelText("Why continuation would require scientific compromise"),
+    ).toHaveValue("");
   });
 
   it("persists and rehydrates an explicit unsupported terminal run", async () => {
@@ -203,7 +220,22 @@ describe("BenchmarkRunBar case initialization", () => {
       completed: 2,
       current: { ...activeBatch.current, status: "explicit_unsupported", terminalEvidence },
     };
+    const nextBatch = {
+      ...activeBatch,
+      status: "running",
+      position: 3,
+      completed: 2,
+      current: {
+        ...activeBatch.current,
+        position: 3,
+        caseId: "JCB023",
+        runId: "batch_fixture_03_JCB023_retry_01",
+        packageSha256: "c".repeat(64),
+        status: "active",
+      },
+    };
     let persisted = false;
+    let advanced = false;
     const ncCase = {
       ...blindCase,
       caseId: "NC033",
@@ -214,7 +246,15 @@ describe("BenchmarkRunBar case initialization", () => {
     const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input);
       if (url.endsWith("/blind-batch/current")) {
-        return { ok: true, status: 200, json: async () => (persisted ? persistedBatch : activeBatch) };
+        return {
+          ok: true,
+          status: 200,
+          json: async () => (advanced ? nextBatch : persisted ? persistedBatch : activeBatch),
+        };
+      }
+      if (url.endsWith("/blind-batch/next")) {
+        advanced = true;
+        return { ok: true, status: 200, json: async () => nextBatch };
       }
       if (url.endsWith("/literature/case?caseId=NC033&track=track_B&runId=batch_fixture_02_NC033_retry_01")) {
         return { ok: true, status: 200, json: async () => ncCase };
@@ -228,6 +268,19 @@ describe("BenchmarkRunBar case initialization", () => {
             written: ["run.json", "interaction_log.json"],
             present: ["run.json", "interaction_log.json"],
             verified: true,
+          }),
+        };
+      }
+      if (url.includes("/literature/case?caseId=JCB023")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            ...ncCase,
+            caseId: "JCB023",
+            runId: nextBatch.current.runId,
+            researcherPacket: { ...ncCase.researcherPacket, case_id: "JCB023" },
+            syntheticData: ncCase.syntheticData.map((row) => ({ ...row, case_id: "JCB023" })),
           }),
         };
       }
@@ -284,6 +337,56 @@ describe("BenchmarkRunBar case initialization", () => {
       terminalEvidence.scientificReason,
     );
     expect(screen.getByRole("button", { name: "次のケース" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "次のケース" }));
+    await waitFor(() => expect(currentBenchmarkRun().identity?.runId).toBe(nextBatch.current.runId));
+    expect(screen.queryByText(terminalEvidence.scientificReason)).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Benchmark outcome"), {
+      target: { value: "explicit_unsupported" },
+    });
+    fireEvent.change(screen.getByLabelText("Scientific support"), {
+      target: { value: "impossible" },
+    });
+    expect(screen.getByLabelText("Scientific reason")).toHaveValue("");
+    expect(screen.getByLabelText("Experimental unit")).toHaveValue("");
+    expect(screen.getByLabelText("Biological n (if determinable)")).toHaveValue(null);
+    expect(screen.getByLabelText("Attempted routes")).toHaveValue("");
+    expect(
+      screen.getByLabelText("Why continuation would require scientific compromise"),
+    ).toHaveValue("");
+  });
+
+  it("creates unsupported evidence as a fresh run-owned object", () => {
+    const first = createFreshUnsupportedEvidence({
+      caseId: "NC033",
+      runId: "run_nc033",
+      packageSha256: "a".repeat(64),
+    });
+    const populated = {
+      ...first,
+      scientificReason: "NC033 reason",
+      experimentalUnit: "patient",
+      biologicalN: "30",
+      attemptedRoutes: "long import",
+      scientificCompromiseReason: "NC033 compromise",
+    };
+    const second = createFreshUnsupportedEvidence({
+      caseId: "JCB023",
+      runId: "run_jcb023",
+      packageSha256: "b".repeat(64),
+    });
+    expect(second).not.toBe(populated);
+    expect(second).toEqual({
+      owner: {
+        caseId: "JCB023",
+        runId: "run_jcb023",
+        packageSha256: "b".repeat(64),
+      },
+      scientificReason: "",
+      experimentalUnit: "",
+      biologicalN: "",
+      attemptedRoutes: "",
+      scientificCompromiseReason: "",
+    });
   });
 
   it("requires scientific support only for explicit unsupported metadata outcomes", () => {

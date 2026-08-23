@@ -411,7 +411,8 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                             ).read_text(encoding="utf-8")
                         )
                         verified_run = verify_explicit_unsupported_run_directory(
-                            target, identity[0], identity[1], identity[2], manifest["payloadSha256"]
+                            target, identity[0], identity[1], identity[2],
+                            manifest["payloadSha256"], require_evidence_provenance=True,
                         )
                         if package.get("runId") != identity[2]:
                             raise ValueError("Blind package identity mismatch")
