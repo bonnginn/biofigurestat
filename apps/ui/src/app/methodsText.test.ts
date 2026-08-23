@@ -537,4 +537,74 @@ describe("Japanese Methods generation", () => {
     expect(text).toContain("元測定値を保持");
     expect(text).toContain("式version 0.1.0");
   });
+
+  it("uses the displayed numeric repeated-axis semantic in D06 Methods", () => {
+    const observations = ["condition.control", "condition.treatment"].flatMap(
+      (conditionId, conditionIndex) =>
+        [1, 2].flatMap((unitIndex) =>
+          [10, 20].map((axisValue, axisIndex) => ({
+            observationId: `observation.${conditionIndex}.${unitIndex}.${axisIndex}`,
+            conditionId,
+            value: conditionIndex + unitIndex + axisIndex,
+            experimentalUnitId: `unit.${conditionIndex}.${unitIndex}`,
+            pairId: `unit.${conditionIndex}.${unitIndex}`,
+            timePointId: `axis.${axisValue}`,
+          })),
+        ),
+    );
+    const d06Request: AnalysisEngineRequest = {
+      protocolVersion: "0.6.0",
+      requestId: "request.d06.radius",
+      projectId: "project.methods",
+      analysisId: "analysis.d06.radius",
+      templateId: "D06",
+      templateVersion: "0.1.0",
+      method: "mixed_anova",
+      conditionIds: ["condition.control", "condition.treatment"],
+      timePoints: [
+        { timePointId: "axis.10", value: 10 },
+        { timePointId: "axis.20", value: 20 },
+      ],
+      observations,
+      options: { alternative: "two_sided", confidenceLevel: 0.95, multiplicityMethod: null },
+    };
+    const d06Recommendation: AnalysisRecommendation = {
+      templateId: "D06",
+      templateVersion: "0.1.0",
+      recommendedMethod: "mixed_anova",
+      alternativeMethods: ["mixed_model"],
+      reasonCode: "balanced_condition_by_time_repeated_design",
+      explanation: "Balanced repeated-axis design",
+      statisticalNDefinition: "Stable biological units",
+    };
+    const d06Result: AnalysisEngineResult = {
+      ...result,
+      protocolVersion: "0.6.0",
+      requestId: d06Request.requestId,
+      estimates: [],
+      tests: ["interaction", "condition", "axis"].map((name) => ({
+        name,
+        statisticName: "F",
+        statistic: 4.2,
+        degreesOfFreedom: [1, 2],
+        pValue: 0.04,
+        adjustedPValue: null,
+        effectSizeName: "partial_eta_squared",
+        effectSize: 0.3,
+      })),
+    };
+    const text = generateMethodsText({
+      design,
+      recommendation: d06Recommendation,
+      request: d06Request,
+      result: d06Result,
+      repeatedAxis: { semantic: "numeric_covariate", title: "Radius", unit: "µm" },
+    });
+
+    expect(text).toContain("条件×Radiusの反復測定");
+    expect(text).toContain("条件 × Radius（交互作用）");
+    expect(text).toContain("Radius（実験単位内）");
+    expect(text).not.toContain("条件 × 時間");
+    expect(text).not.toContain("条件×時間、条件、時間");
+  });
 });

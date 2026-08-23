@@ -115,6 +115,16 @@ function methodShortLabel(method: AnalysisEngineRequest["method"]): string {
   return labels[method] ?? method;
 }
 
+export function repeatedAxisAnnotationLabel(input: Pick<AxisSettings, "xSemantic" | "xTitle">) {
+  if (input.xSemantic === "numeric_covariate") {
+    return input.xTitle.trim() || "numeric covariate";
+  }
+  if (input.xSemantic === "categorical") {
+    return input.xTitle.trim() || "repeated axis";
+  }
+  return input.xTitle.trim() || "time";
+}
+
 function graphAnnotationContext(input: {
   request: AnalysisEngineRequest;
   timeAnalysis: TimeAnalysisPlan;
@@ -124,7 +134,8 @@ function graphAnnotationContext(input: {
 }): string {
   const { request, timeAnalysis, draft, axes } = input;
   if (request.protocolVersion === "0.6.0") {
-    return "condition × time interaction · mixed ANOVA";
+    const repeatedAxis = repeatedAxisAnnotationLabel(axes);
+    return `condition × ${repeatedAxis} interaction · mixed ANOVA`;
   }
   const method = methodShortLabel(request.method);
   const unit = axes.xUnit.trim() || draft.time.unit;
@@ -2050,6 +2061,11 @@ export function ExperimentGraphWorkbench({
       result: analysis.result,
       graphSpec: null,
       outcomeId: selectedReadoutId,
+      repeatedAxis: {
+        semantic: axes.xSemantic,
+        title: axes.xTitle,
+        unit: axes.xUnit,
+      },
     });
     if (timeAnalysis.kind === "selected_timepoint" || timeAnalysis.kind === "full_time_course")
       return base;
@@ -2059,7 +2075,7 @@ export function ExperimentGraphWorkbench({
         ? `。baseline=${timeAnalysis.baselineTime ?? "最初の時点"} ${draft.time.unit}`
         : "";
     return `${base}\n時系列の派生値：${timeMetricLabel(timeAnalysis)}。解析window=${window}${baseline}。raw時系列と変換設定はプロジェクトに保持。`;
-  }, [analysis, draft, selectedReadoutId, timeAnalysis]);
+  }, [analysis, axes.xSemantic, axes.xTitle, axes.xUnit, draft, selectedReadoutId, timeAnalysis]);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const onStateChangeRef = useRef(onStateChange);
   const graphStateSnapshot = useMemo<Omit<WorkspaceGraphState, "id" | "displayName">>(

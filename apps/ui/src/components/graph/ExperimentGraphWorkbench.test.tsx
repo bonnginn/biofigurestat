@@ -18,7 +18,16 @@ import {
   type ExperimentSetDraft,
 } from "../../app/experimentDraft";
 
-import { ExperimentGraphWorkbench } from "./ExperimentGraphWorkbench";
+import { ExperimentGraphWorkbench, repeatedAxisAnnotationLabel } from "./ExperimentGraphWorkbench";
+
+describe("repeated-axis scientific wording", () => {
+  it("uses the explicit numeric axis title instead of time", () => {
+    expect(repeatedAxisAnnotationLabel({ xSemantic: "numeric_covariate", xTitle: "Radius" })).toBe(
+      "Radius",
+    );
+    expect(repeatedAxisAnnotationLabel({ xSemantic: "time", xTitle: "" })).toBe("time");
+  });
+});
 
 const analysisResult: AnalysisEngineResult = {
   protocolVersion: "0.1.0",

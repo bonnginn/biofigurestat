@@ -25,7 +25,29 @@ export type MethodsTextInput = Readonly<{
     values: DerivedScalarValue[];
   }> | null;
   outcomeId?: string;
+  repeatedAxis?: Readonly<{
+    semantic: "time" | "numeric_covariate" | "categorical";
+    title: string;
+    unit: string;
+  }>;
 }>;
+
+function repeatedAxisLabel(input: MethodsTextInput): string {
+  if (input.repeatedAxis?.semantic === "numeric_covariate") {
+    return input.repeatedAxis.title.trim() || "数値軸";
+  }
+  if (input.repeatedAxis?.semantic === "categorical") {
+    return input.repeatedAxis.title.trim() || "反復軸";
+  }
+  return input.repeatedAxis?.title.trim() || "時間";
+}
+
+function methodsTemplateLabel(input: MethodsTextInput): string {
+  if (input.recommendation.templateId !== "D06") {
+    return templateLabel(input.recommendation.templateId);
+  }
+  return `D06 · 条件×${repeatedAxisLabel(input)}の反復測定`;
+}
 
 function numberLabel(value: number | null | undefined): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return "—";
@@ -235,7 +257,12 @@ function executedResultLines(input: MethodsTextInput): string[] {
     ];
   }
   if (recommendation.templateId === "D06") {
-    const effectLabels = ["条件 × 時間（交互作用）", "条件（実験単位間）", "時間（実験単位内）"];
+    const axisLabel = repeatedAxisLabel(input);
+    const effectLabels = [
+      `条件 × ${axisLabel}（交互作用）`,
+      "条件（実験単位間）",
+      `${axisLabel}（実験単位内）`,
+    ];
     return [
       `結果：${result.status === "ok" ? "完了" : result.status}`,
       "balanced split-plot検定（交互作用を先に表示）：",
@@ -273,7 +300,7 @@ export function generateMethodsText(input: MethodsTextInput): string {
   const multiplicityNote = request.options.multiplicityMethod
     ? `多重性補正：${request.options.multiplicityMethod}を指定。`
     : request.protocolVersion === "0.6.0"
-      ? "多重性補正：条件×時間、条件、時間の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。"
+      ? `多重性補正：条件×${repeatedAxisLabel(input)}、条件、${repeatedAxisLabel(input)}の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
       : request.protocolVersion === "0.5.0"
         ? "多重性補正：単一の相関係数を評価したため指定なし。"
         : request.protocolVersion === "0.2.0"
@@ -293,7 +320,7 @@ export function generateMethodsText(input: MethodsTextInput): string {
 
   return [
     "【Methods】",
-    `解析テンプレート：${templateLabel(recommendation.templateId)}（${recommendation.templateVersion}）`,
+    `解析テンプレート：${methodsTemplateLabel(input)}（${recommendation.templateVersion}）`,
     `実行手法：${methodLabel(request.method)}（${request.method}）`,
     `推奨手法：${methodLabel(recommendation.recommendedMethod)}（選択と${recommendation.recommendedMethod === request.method ? "同じ" : "異なる"}）`,
     `実験デザイン：${design.name}／実験単位：${design.experimentalUnitLevelId}`,
