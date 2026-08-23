@@ -23,6 +23,8 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from blind_benchmark_package import load_package
+from blind_batch_queue import BlindBatchQueue
+from verify_benchmark_runs import REQUIRED_ARTIFACTS, verify_run_directory
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -267,6 +269,12 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                 },
             )
             return
+        if parsed.path == "/api/evaluation/blind-batch/current":
+            if self.config.blind_batch_queue is None:
+                self._json(HTTPStatus.NOT_FOUND, {"error": "Blind batch is not configured"})
+            else:
+                self._json(HTTPStatus.OK, self.config.blind_batch_queue.snapshot())
+            return
         if parsed.path == "/api/evaluation/literature/case":
             try:
                 query = parse_qs(parsed.query, strict_parsing=True)
@@ -274,6 +282,8 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                 track = query.get("track", [""])[0]
                 run_id = query.get("runId", [""])[0]
                 identity = (case_id, track, run_id)
+                if self.config.blind_batch_queue is not None:
+                    self.config.blind_batch_queue.assert_active(identity)
                 if identity in self.config.excluded_runs:
                     raise ValueError("Benchmark run is excluded because Track B was contaminated")
                 self._json(
@@ -302,7 +312,14 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                 request = body.get("request")
                 if not isinstance(request, dict):
                     raise ValueError("Analysis request is missing")
-                result = run_engine(request)
+                try:
+                    result = run_engine(request)
+                except Exception as error:
+                    if self.config.blind_batch_queue is not None:
+                        self.config.blind_batch_queue.pause(
+                            self.config.blind_batch_queue.active_identity(), str(error)
+                        )
+                    raise
                 self._json(
                     HTTPStatus.OK,
                     {
@@ -323,20 +340,67 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                 if not isinstance(required_artifacts, list):
                     raise ValueError("Required artifact names are not allowed")
                 identity = benchmark_identity(benchmark)
+                if self.config.blind_batch_queue is not None:
+                    self.config.blind_batch_queue.assert_active(identity)
                 if identity in self.config.excluded_runs:
                     raise ValueError("Excluded contaminated benchmark evidence is read-only")
                 if identity[1] == "track_B":
-                    load_package(self.config.blind_package_root, identity[0], identity[2])
-                target, written, present = write_artifact_batch(
-                    self.config.output_root,
-                    benchmark,
-                    artifacts,
-                    required_artifacts,
-                )
+                    try:
+                        load_package(self.config.blind_package_root, identity[0], identity[2])
+                    except Exception as error:
+                        if self.config.blind_batch_queue is not None:
+                            self.config.blind_batch_queue.pause(identity, str(error))
+                        raise
+                try:
+                    target, written, present = write_artifact_batch(
+                        self.config.output_root,
+                        benchmark,
+                        artifacts,
+                        required_artifacts,
+                    )
+                except Exception as error:
+                    if self.config.blind_batch_queue is not None:
+                        self.config.blind_batch_queue.pause(identity, str(error))
+                    raise
+                if self.config.blind_batch_queue is not None:
+                    run_artifact = next(
+                        (artifact for artifact in artifacts if artifact.get("name") == "run.json"),
+                        None,
+                    )
+                    if isinstance(run_artifact, dict) and run_artifact.get("encoding", "text") == "text":
+                        try:
+                            recorded_run = json.loads(run_artifact.get("content", ""))
+                        except json.JSONDecodeError:
+                            recorded_run = {}
+                        outcome_status = {
+                            "infrastructure_failure": "infrastructure_failure",
+                            "contaminated": "contaminated",
+                            "aborted_not_started": "aborted",
+                        }.get(recorded_run.get("outcome") if isinstance(recorded_run, dict) else None)
+                        if outcome_status:
+                            self.config.blind_batch_queue.pause(
+                                identity, f"Experimenter recorded {outcome_status}", outcome_status
+                            )
+                verified = False
+                if self.config.blind_batch_queue is not None and set(required_artifacts) == REQUIRED_ARTIFACTS:
+                    try:
+                        verify_run_directory(target, identity[0], identity[1], identity[2])
+                        load_package(self.config.blind_package_root, identity[0], identity[2])
+                        self.config.blind_batch_queue.mark_completed(identity)
+                        verified = True
+                    except Exception as error:
+                        self.config.blind_batch_queue.pause(identity, str(error))
+                        raise ValueError(f"Blind batch final verification failed: {error}") from error
                 self._json(
                     HTTPStatus.OK,
-                    {"written": written, "present": present, "directory": str(target)},
+                    {"written": written, "present": present, "directory": str(target),
+                     "verified": verified},
                 )
+                return
+            if self.path == "/api/evaluation/blind-batch/next":
+                if self.config.blind_batch_queue is None:
+                    raise ValueError("Blind batch is not configured")
+                self._json(HTTPStatus.OK, self.config.blind_batch_queue.advance())
                 return
             self._json(HTTPStatus.NOT_FOUND, {"error": "Not found"})
         except (ValueError, json.JSONDecodeError) as error:
@@ -356,6 +420,7 @@ class EvaluationServer(ThreadingHTTPServer):
         allowed_origin: str,
         output_root: Path,
         blind_package_root: Path,
+        blind_batch_queue: Path | None = None,
         exclusions_path: Path = DEFAULT_EXCLUSIONS,
     ) -> None:
         super().__init__(address, EvaluationHandler)
@@ -366,6 +431,7 @@ class EvaluationServer(ThreadingHTTPServer):
         if self.blind_package_root == ROOT or ROOT in self.blind_package_root.parents:
             raise ValueError("Blind package root must be outside the full source tree")
         self.excluded_runs = load_excluded_runs(exclusions_path)
+        self.blind_batch_queue = BlindBatchQueue(blind_batch_queue) if blind_batch_queue else None
 
 
 def main() -> None:
@@ -376,10 +442,11 @@ def main() -> None:
     parser.add_argument("--token", default=os.environ.get("LSAA_EVALUATION_TOKEN") or secrets.token_urlsafe(32))
     parser.add_argument("--output-root", type=Path, default=ROOT / "benchmark_runs")
     parser.add_argument("--blind-package-root", type=Path, required=True)
+    parser.add_argument("--blind-batch-queue", type=Path)
     args = parser.parse_args()
     server = EvaluationServer(
         (args.host, args.port), args.token, args.origin, args.output_root.resolve(),
-        args.blind_package_root.resolve(),
+        args.blind_package_root.resolve(), args.blind_batch_queue.resolve() if args.blind_batch_queue else None,
     )
     print("LSAA evaluation bridge (synthetic benchmark data only)", flush=True)
     print(f"URL=http://{args.host}:{args.port}", flush=True)

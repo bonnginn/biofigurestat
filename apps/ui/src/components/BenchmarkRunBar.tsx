@@ -14,6 +14,11 @@ import {
 } from "../app/benchmarkEvaluation";
 import { evaluationMode } from "../app/evaluationMode";
 import {
+  advanceBlindBatch,
+  fetchBlindBatchCurrent,
+  type BlindBatchCurrent,
+} from "../app/blindBatch";
+import {
   fetchLiteratureExperimenterCase,
   isLiteratureCaseId,
   type LiteratureExperimenterCase,
@@ -33,7 +38,7 @@ export function metadataOutcomeCanBeRecorded(
   return outcome === "explicit_unsupported" ? supportStatus !== null : true;
 }
 
-export function BenchmarkRunBar() {
+export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => void }) {
   const run = useBenchmarkRun();
   const [benchmarkVersion, setBenchmarkVersion] = useState("LSA50_v1_1");
   const [caseId, setCaseId] = useState("pilot_independent_2group");
@@ -44,6 +49,39 @@ export function BenchmarkRunBar() {
   const [caseDeliveryStatus, setCaseDeliveryStatus] = useState<
     "idle" | "loading" | "ready" | "error"
   >("idle");
+  const [blindBatch, setBlindBatch] = useState<BlindBatchCurrent | null>(null);
+  const [batchStatus, setBatchStatus] = useState<"loading" | "ready" | "error">("loading");
+  useEffect(() => {
+    let cancelled = false;
+    void fetchBlindBatchCurrent()
+      .then((batch) => {
+        if (cancelled) return;
+        setBlindBatch(batch);
+        setBatchStatus("ready");
+        if (!batch?.current || batch.current.status !== "active") return;
+        const identity = {
+          benchmarkVersion: batch.benchmarkVersion,
+          caseId: batch.current.caseId,
+          track: batch.current.track,
+          runId: batch.current.runId,
+        } as const;
+        setBenchmarkVersion(identity.benchmarkVersion);
+        setCaseId(identity.caseId);
+        setTrack(identity.track);
+        setRunId(identity.runId);
+        const existing = currentBenchmarkRun().identity;
+        if (!existing || existing.runId !== identity.runId) {
+          resetBenchmarkRun();
+          startBenchmarkRun(identity);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setBatchStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   useEffect(() => {
     const identity = run.identity;
     setLiteratureCase(null);
@@ -111,30 +149,66 @@ export function BenchmarkRunBar() {
       setSaveStatus("対応状況を保存できませんでした。");
     }
   };
+  const advanceToNextCase = async () => {
+    setSaveStatus("server-side verifierを確認中…");
+    try {
+      const batch = await advanceBlindBatch();
+      setBlindBatch(batch);
+      setLiteratureCase(null);
+      setCaseDeliveryStatus("idle");
+      resetBenchmarkRun();
+      onNavigateHome?.();
+      if (batch?.current) {
+        const identity = {
+          benchmarkVersion: batch.benchmarkVersion,
+          caseId: batch.current.caseId,
+          track: batch.current.track,
+          runId: batch.current.runId,
+        } as const;
+        setBenchmarkVersion(identity.benchmarkVersion);
+        setCaseId(identity.caseId);
+        setTrack(identity.track);
+        setRunId(identity.runId);
+        startBenchmarkRun(identity);
+        setSaveStatus(`Case ${batch.position} / ${batch.total} を開始しました。`);
+      } else {
+        setSaveStatus("Blind batchは全件完了しました。");
+      }
+    } catch {
+      setSaveStatus("server-side verificationが未完了または失敗しました。停止します。");
+    }
+  };
   return (
     <section className="benchmark-run-bar" aria-label="Benchmark run">
       <strong>Benchmark</strong>
+      {blindBatch ? (
+        <strong role="status">
+          Blind benchmark batch: Case {blindBatch.position} / {blindBatch.total} · {blindBatch.status}
+        </strong>
+      ) : null}
+      {batchStatus === "error" ? <span role="alert">Blind batch queueを確認できません。</span> : null}
       <label>
         <span>Version</span>
         <input
           value={benchmarkVersion}
+          disabled={Boolean(blindBatch)}
           onChange={(event) => setBenchmarkVersion(event.target.value)}
         />
       </label>
       <label>
         <span>Case</span>
-        <input value={caseId} onChange={(event) => setCaseId(event.target.value)} />
+        <input disabled={Boolean(blindBatch)} value={caseId} onChange={(event) => setCaseId(event.target.value)} />
       </label>
       <label>
         <span>Track</span>
-        <select value={track} onChange={(event) => setTrack(event.target.value as typeof track)}>
+        <select disabled={Boolean(blindBatch)} value={track} onChange={(event) => setTrack(event.target.value as typeof track)}>
           <option value="track_A">Track A</option>
           <option value="track_B">Track B</option>
         </select>
       </label>
       <label>
         <span>Run</span>
-        <input value={runId} onChange={(event) => setRunId(event.target.value)} />
+        <input disabled={Boolean(blindBatch)} value={runId} onChange={(event) => setRunId(event.target.value)} />
       </label>
       <button
         type="button"
@@ -144,8 +218,13 @@ export function BenchmarkRunBar() {
             : startBenchmarkRun({ benchmarkVersion, caseId, track, runId })
         }
       >
-        {run.identity ? "Runをリセット" : "Runを開始"}
+        {run.identity ? "Runをリセット" : blindBatch ? "Active caseを開始" : "Runを開始"}
       </button>
+      {blindBatch && (run.outcome === "completed" || blindBatch.status === "ready_to_advance") ? (
+        <button type="button" onClick={() => void advanceToNextCase()}>
+          次のケース
+        </button>
+      ) : null}
       {run.identity ? (
         <label>
           <span>Benchmark outcome</span>

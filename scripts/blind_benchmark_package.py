@@ -65,6 +65,10 @@ FORBIDDEN_TERMS = {
     "article_url",
     "paper_title",
 }
+# These are researcher-visible measurement-structure descriptors, not reference results or
+# method recommendations. JCB015 uses them inside an allow-listed packet sentence while its
+# trusted integrator also stores the same words as taxonomy labels.
+PUBLIC_CONTEXT_TERMS = {"multivariate", "compositional"}
 
 
 def canonical_bytes(value: Any) -> bytes:
@@ -141,7 +145,7 @@ def create_package(case_id: str, run_id: str, output_root: Path) -> Path:
     validate_case(payload, case_id, run_id)
     hidden = json.loads(hidden_path.read_text(encoding="utf-8"))
     safe_strings = _strings(payload)
-    hidden_only = _strings(hidden) - safe_strings
+    hidden_only = _strings(hidden) - safe_strings - PUBLIC_CONTEXT_TERMS
     serialized = canonical_bytes(payload).decode("utf-8")
     leaked_values = sorted(value for value in hidden_only if value in serialized)
     if leaked_values:

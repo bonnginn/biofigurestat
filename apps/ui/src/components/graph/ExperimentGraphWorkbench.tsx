@@ -2703,6 +2703,7 @@ export function ExperimentGraphWorkbench({
       );
       setBenchmarkCaptureStatus("Benchmark runのartifactを保存しました。");
     } catch {
+      setBenchmarkOutcome("infrastructure_failure");
       setBenchmarkCaptureStatus("Benchmark runのartifactを保存できませんでした。");
     }
   };

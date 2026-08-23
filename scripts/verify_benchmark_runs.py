@@ -141,6 +141,16 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
         "literature_benchmark_data_loaded",
     }.intersection(event_types):
         raise VerificationError("interaction log is missing a benchmark data-loaded event")
+    if re.fullmatch(r"(?:JCB|NC|SA|EL)\d{3}", case_id):
+        literature_loads = [
+            event for event in events
+            if isinstance(event, dict) and event.get("type") == "literature_benchmark_data_loaded"
+        ]
+        if not any(
+            isinstance(event.get("detail"), dict) and event["detail"].get("caseId") == case_id
+            for event in literature_loads
+        ):
+            raise VerificationError("literature data-loaded event does not match the run case")
     if run.get("interactionCount") != len(events):
         raise VerificationError("run.json interactionCount does not match interaction_log.json")
     graph_edit_count = sum(event.get("type") == "graph_configuration_changed" for event in events)

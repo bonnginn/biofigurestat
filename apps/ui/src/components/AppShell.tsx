@@ -71,7 +71,7 @@ export function AppShell({
           </span>
         </div>
       ) : null}
-      {evaluationPreview ? <BenchmarkRunBar /> : null}
+      {evaluationPreview ? <BenchmarkRunBar onNavigateHome={() => onNavigate("home")} /> : null}
 
       <div className="shell-body">
         <main className="main-content">{children}</main>

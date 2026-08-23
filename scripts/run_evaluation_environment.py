@@ -126,8 +126,7 @@ def main() -> None:
     engine_status = pinned_engine_status()
     token = secrets.token_urlsafe(32)
     environment = create_evaluation_environment(dict(os.environ), token)
-    bridge = subprocess.Popen(
-        [
+    bridge_command = [
             sys.executable,
             str(ROOT / "scripts/evaluation_bridge.py"),
             "--host",
@@ -140,7 +139,12 @@ def main() -> None:
             token,
             "--blind-package-root",
             str(blind_package_root),
-        ],
+        ]
+    blind_batch_value = os.environ.get("LSAA_BLIND_BATCH_QUEUE")
+    if blind_batch_value:
+        bridge_command.extend(["--blind-batch-queue", str(Path(blind_batch_value).resolve())])
+    bridge = subprocess.Popen(
+        bridge_command,
         cwd=ROOT,
         env=environment,
     )
@@ -167,6 +171,8 @@ def main() -> None:
     print(f"Source revision: {environment['VITE_LSAA_SOURCE_REVISION']}")
     print(f"Benchmark artifact root: {ROOT / 'benchmark_runs'}")
     print(f"Track B blind package root: {blind_package_root}")
+    if blind_batch_value:
+        print(f"Blind batch queue: {Path(blind_batch_value).resolve()}")
     print("Stop UI, proxy and loopback bridge together with Ctrl+C.")
     print("External Work access: keep this process running, then run `pnpm evaluation:tunnel`.")
     print("Give Work only the HTTPS trycloudflare.com URL printed by that second process.")

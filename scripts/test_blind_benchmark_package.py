@@ -32,6 +32,16 @@ class BlindBenchmarkPackageTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "hash mismatch"):
                 load_package(root, "JCB010", "fresh_blind_JCB010_002")
 
+    def test_public_compositional_context_is_not_misclassified_as_hidden_reference(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = create_package("JCB015", "fresh_blind_JCB015_001", root)
+            payload = load_package(root, "JCB015", "fresh_blind_JCB015_001")
+            self.assertEqual(payload["caseId"], "JCB015")
+            serialized = (target / "case.json").read_text(encoding="utf-8").lower()
+            for forbidden in ("reference_method", "mann-whitney", "paper", "gold"):
+                self.assertNotIn(forbidden, serialized)
+
     def test_fresh_identity_cannot_overwrite_and_repo_root_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

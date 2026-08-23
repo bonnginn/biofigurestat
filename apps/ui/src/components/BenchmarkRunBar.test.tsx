@@ -11,7 +11,14 @@ vi.mock("../app/evaluationMode", () => ({
     Boolean(config.enabled && config.apiBasePath?.startsWith("/")),
 }));
 
-import { resetBenchmarkRun } from "../app/benchmarkEvaluation";
+import {
+  beginDefaultGraphCapture,
+  completeDefaultGraphCapture,
+  currentBenchmarkRun,
+  recordFinalGraphCapture,
+  resetBenchmarkRun,
+  setBenchmarkOutcome,
+} from "../app/benchmarkEvaluation";
 import { BenchmarkRunBar, metadataOutcomeCanBeRecorded } from "./BenchmarkRunBar";
 
 const blindCase = {
@@ -56,6 +63,9 @@ describe("BenchmarkRunBar case initialization", () => {
 
   it("delivers the blind packet immediately after run arming on Home", async () => {
     const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).endsWith("/blind-batch/current")) {
+        return { ok: false, status: 404 };
+      }
       if (!init?.method) {
         return { ok: true, json: async () => blindCase };
       }
@@ -87,13 +97,77 @@ describe("BenchmarkRunBar case initialization", () => {
     });
     expect(screen.getByLabelText("Scientific support")).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "終了状態だけ記録" }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    const artifactRequest = fetchMock.mock.calls[1];
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    const artifactRequest = fetchMock.mock.calls[2];
     const body = JSON.parse(String(artifactRequest?.[1]?.body));
     expect(JSON.parse(body.artifacts[0].content)).toMatchObject({
       outcome: "infrastructure_failure",
       supportStatus: null,
       artifactCompleteness: "metadata_only",
+    });
+  });
+
+  it("arms one active batch case and resets run state before the next case", async () => {
+    const batch = (position: number, caseId: string, runId: string) => ({
+      batchId: "batch_fixture",
+      benchmarkVersion: "LSA50_v1_1",
+      status: "running",
+      position,
+      total: 6,
+      completed: position - 1,
+      current: {
+        position,
+        caseId,
+        track: "track_B",
+        runId,
+        packageSha256: "a".repeat(64),
+        status: "active",
+      },
+    });
+    const first = batch(1, "JCB010", "batch_fixture_01_JCB010");
+    const second = batch(2, "JCB004", "batch_fixture_02_JCB004");
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      if (url.endsWith("/blind-batch/current")) return { ok: true, status: 200, json: async () => first };
+      if (url.endsWith("/blind-batch/next")) return { ok: true, status: 200, json: async () => second };
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ ...blindCase, caseId: url.includes("JCB004") ? "JCB004" : "JCB010",
+          runId: url.includes("JCB004") ? second.current.runId : first.current.runId }),
+      };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const onNavigateHome = vi.fn();
+    render(<BenchmarkRunBar onNavigateHome={onNavigateHome} />);
+
+    await screen.findByText(/Blind benchmark batch: Case 1 \/ 6/);
+    await waitFor(() => expect(currentBenchmarkRun().identity?.runId).toBe(first.current.runId));
+    expect(beginDefaultGraphCapture("2026-08-23T00:00:00.000Z")).toBe(true);
+    completeDefaultGraphCapture({
+      graphStateFingerprint: "first-default",
+      analysisStateFingerprint: "first-analysis",
+      svgSha256: "first-default-svg",
+      pngSha256: "first-default-png",
+    });
+    recordFinalGraphCapture({
+      capturedAt: "2026-08-23T00:01:00.000Z",
+      graphStateFingerprint: "first-final",
+      analysisStateFingerprint: "first-final-analysis",
+      svgSha256: "first-final-svg",
+      pngSha256: "first-final-png",
+    });
+    setBenchmarkOutcome("completed");
+    fireEvent.click(await screen.findByRole("button", { name: "次のケース" }));
+
+    await waitFor(() => expect(currentBenchmarkRun().identity?.runId).toBe(second.current.runId));
+    expect(onNavigateHome).toHaveBeenCalledOnce();
+    expect(currentBenchmarkRun()).toMatchObject({
+      defaultGraphCaptured: false,
+      defaultGraphCapture: null,
+      finalGraphCapture: null,
+      supportStatus: null,
+      outcome: "in_progress",
     });
   });
 

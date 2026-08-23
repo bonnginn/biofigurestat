@@ -237,6 +237,7 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
             events_path = literature_path / "interaction_log.json"
             events = json.loads(events_path.read_text())
             events[1]["type"] = "literature_benchmark_data_loaded"
+            events[1]["detail"] = {"caseId": "JCB003", "mappedCells": 16}
             events_path.write_text(json.dumps(events), encoding="utf-8")
             verify_run_directory(literature_path, "JCB003", "track_A", "run_001")
 
