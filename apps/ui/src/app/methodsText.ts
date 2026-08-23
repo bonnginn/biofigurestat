@@ -49,6 +49,16 @@ function methodsTemplateLabel(input: MethodsTextInput): string {
   return `D06 · 条件×${repeatedAxisLabel(input)}の反復測定`;
 }
 
+function methodsMethodLabel(
+  input: MethodsTextInput,
+  method: AnalysisRecommendation["recommendedMethod"],
+): string {
+  if (input.recommendation.templateId === "D06" && method === "mixed_anova") {
+    return `条件×${repeatedAxisLabel(input)}の反復測定分散分析`;
+  }
+  return methodLabel(method);
+}
+
 function numberLabel(value: number | null | undefined): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return "—";
   return String(Number(value.toFixed(4)));
@@ -321,8 +331,8 @@ export function generateMethodsText(input: MethodsTextInput): string {
   return [
     "【Methods】",
     `解析テンプレート：${methodsTemplateLabel(input)}（${recommendation.templateVersion}）`,
-    `実行手法：${methodLabel(request.method)}（${request.method}）`,
-    `推奨手法：${methodLabel(recommendation.recommendedMethod)}（選択と${recommendation.recommendedMethod === request.method ? "同じ" : "異なる"}）`,
+    `実行手法：${methodsMethodLabel(input, request.method)}（${request.method}）`,
+    `推奨手法：${methodsMethodLabel(input, recommendation.recommendedMethod)}（選択と${recommendation.recommendedMethod === request.method ? "同じ" : "異なる"}）`,
     `実験デザイン：${design.name}／実験単位：${design.experimentalUnitLevelId}`,
     `解析した測定項目：${outcome ? `${outcome.label}${outcome.unit ? ` (${outcome.unit})` : ""}` : (input.outcomeId ?? "記録なし")}`,
     pairingLabel(design),

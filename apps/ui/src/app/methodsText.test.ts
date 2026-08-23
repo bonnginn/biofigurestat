@@ -602,9 +602,11 @@ describe("Japanese Methods generation", () => {
     });
 
     expect(text).toContain("条件×Radiusの反復測定");
+    expect(text).toContain("実行手法：条件×Radiusの反復測定分散分析");
+    expect(text).toContain("推奨手法：条件×Radiusの反復測定分散分析");
     expect(text).toContain("条件 × Radius（交互作用）");
     expect(text).toContain("Radius（実験単位内）");
     expect(text).not.toContain("条件 × 時間");
-    expect(text).not.toContain("条件×時間、条件、時間");
+    expect(text).not.toContain("条件×時間");
   });
 });
