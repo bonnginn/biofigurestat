@@ -300,12 +300,43 @@ export function mapLiteratureMeasurements(
       }
     }
   }
-  if (sourceReadouts.length !== 1 && !hasWbBands) {
-    return mismatch(
-      `このcaseは${sourceReadouts.length} readoutsを持ち、現在の安全なliterature loaderでは自動入力しません。対応状況だけ記録してください。`,
-    );
-  }
-  if (target.readouts.length !== 1 || target.readouts[0]?.shape !== expectedShape) {
+  const linkedMultiReadout = sourceReadouts.length > 1 && !hasWbBands;
+  if (linkedMultiReadout) {
+    if (hasRatios) {
+      return mismatch(
+        "複数readoutと割合入力が混在しているため、安全なlinked-readout loaderでは自動入力しません。",
+      );
+    }
+    const rowsByUnitAndAxis = new Map<string, LiteratureSyntheticRow[]>();
+    rows.forEach((row) => {
+      const key = JSON.stringify([row.condition, row.time, row.x_value, sourceUnit(row)]);
+      rowsByUnitAndAxis.set(key, [...(rowsByUnitAndAxis.get(key) ?? []), row]);
+    });
+    for (const unitRows of rowsByUnitAndAxis.values()) {
+      const observedReadouts = unitRows.map((row) => row.readout);
+      if (
+        observedReadouts.length !== sourceReadouts.length ||
+        new Set(observedReadouts).size !== observedReadouts.length ||
+        sourceReadouts.some((readout) => !observedReadouts.includes(readout))
+      ) {
+        return mismatch(
+          "各実験単位・測定軸水準には、重複のない同じreadout一式が必要です。不完全または曖昧なlinked readoutは自動入力しません。",
+        );
+      }
+    }
+    if (
+      target.readouts.length !== sourceReadouts.length ||
+      target.readouts.some(
+        (readout, index) =>
+          readout.shape !== "nested_continuous" ||
+          normalized(readout.label) !== normalized(sourceReadouts[index] ?? ""),
+      )
+    ) {
+      return mismatch(
+        `測定項目をこの順序・名前で作成してください：${sourceReadouts.join("、")}。すべて強度・サイズ・形態の数値として保持します。`,
+      );
+    }
+  } else if (target.readouts.length !== 1 || target.readouts[0]?.shape !== expectedShape) {
     return mismatch(`測定項目を${expectedShape}の1項目にしてください。`);
   }
   if (target.conditions.length !== sourceConditions.length) {
@@ -436,14 +467,14 @@ export function mapLiteratureMeasurements(
     const targetCondition = target.conditions[conditionIndex];
     const axisIndex = axisValue === null ? -1 : axisValues.indexOf(axisValue);
     const targetTime = axisIndex < 0 ? undefined : target.time.points[axisIndex];
-    const targetReadout = target.readouts[0];
+    const targetReadout = hasWbBands
+      ? target.readouts[0]
+      : target.readouts[sourceReadouts.indexOf(readoutLabel)];
     if (!targetCondition || !targetReadout) return mismatch("Target design mapping failed.");
     [...units.entries()].forEach(([unit, unitRows], groupExperimentIndex) => {
       const experimentIndex = matched
         ? matchedUnitOrder.indexOf(unit)
-        : usesSyntheticXValues
-          ? (unitOrderByCondition.get(conditionLabel)?.indexOf(unit) ?? -1)
-          : groupExperimentIndex;
+        : (unitOrderByCondition.get(conditionLabel)?.indexOf(unit) ?? groupExperimentIndex);
       const targetExperiment = target.experiments[experimentIndex];
       if (!targetExperiment) return;
       const key = experimentCellKey({
@@ -475,7 +506,8 @@ export function mapLiteratureMeasurements(
           source: "paste",
           rawValues: unitRows.map((row) => row.value as number),
           sourceLocations: unitRows.map(
-            (row) => `${source.caseId}:${row.experiment_id}:${row.unit_id}:${readoutLabel}`,
+            (row) =>
+              `${source.caseId}:${row.experiment_id}:${row.unit_id}:${readoutLabel}:${row.observation_id ?? "observation"}`,
           ),
         };
       }
@@ -483,7 +515,9 @@ export function mapLiteratureMeasurements(
   }
   return {
     compatible: true,
-    reason: `${source.caseId}の${rows.length} synthetic rowsを、確認済みの条件・時間・実験単位へ対応づけます。`,
+    reason: linkedMultiReadout
+      ? `${source.caseId}の${rows.length} synthetic rowsを、実験単位と${sourceReadouts.length} readoutsのidentityを分離したまま対応づけます。biological nはreadout数で増やしません。`
+      : `${source.caseId}の${rows.length} synthetic rowsを、確認済みの条件・時間・実験単位へ対応づけます。`,
     cells,
     ...(structuredXAxis(source) ? { xAxis: structuredXAxis(source) } : {}),
   };

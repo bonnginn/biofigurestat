@@ -1,4 +1,4 @@
-export const primaryRoutes = [
+export const workspaceRoutes = [
   {
     id: "favorites",
     path: "/favorites",
@@ -35,10 +35,13 @@ export const primaryRoutes = [
     eyebrow: "04",
     accent: "orange",
   },
+] as const;
+
+export const specializedAnalysisRoutes = [
   {
     id: "survival",
     path: "/survival",
-    title: "Survival解析",
+    title: "生存時間解析",
     description: "Event/Censoredを保ったKaplan–Meier解析です。",
     japaneseDescription: "log-rank検定とnumber-at-riskを表示します。",
     eyebrow: "05",
@@ -47,7 +50,7 @@ export const primaryRoutes = [
   {
     id: "heatmap",
     path: "/heatmap",
-    title: "Heatmap",
+    title: "ヒートマップ",
     description: "行列データを明示変換つきで可視化します。",
     japaneseDescription: "欠損値と生の行列を保持します。",
     eyebrow: "06",
@@ -56,7 +59,7 @@ export const primaryRoutes = [
   {
     id: "contingency",
     path: "/contingency",
-    title: "Categorical counts",
+    title: "カテゴリ集計",
     description: "独立countまたは対応binaryを解析します。",
     japaneseDescription: "Fisher・Chi-square・McNemarを構造で分離します。",
     eyebrow: "07",
@@ -83,13 +86,15 @@ export const primaryRoutes = [
   {
     id: "distribution",
     path: "/distribution",
-    title: "分布Graph",
+    title: "分布グラフ",
     description: "HistogramとECDFを作成します。",
     japaneseDescription: "元の個別値を保持し、検定を自動追加しません。",
     eyebrow: "10",
     accent: "violet",
   },
 ] as const;
+
+export const primaryRoutes = [...workspaceRoutes, ...specializedAnalysisRoutes] as const;
 
 export type PrimaryRouteId = (typeof primaryRoutes)[number]["id"];
 export type AppRoute = "home" | PrimaryRouteId;

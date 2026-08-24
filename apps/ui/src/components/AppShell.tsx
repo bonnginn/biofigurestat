@@ -52,7 +52,7 @@ export function AppShell({
             aria-current={route === "home" ? "page" : undefined}
             onClick={() => onNavigate("home")}
           >
-            <span aria-hidden="true">⌂</span> ホーム
+            <span aria-hidden="true">⌂</span> <span className="topbar-nav__label">ホーム</span>
           </button>
           <button
             className={route === "new-experiment" ? "is-active" : ""}
@@ -60,7 +60,7 @@ export function AppShell({
             aria-current={route === "new-experiment" ? "page" : undefined}
             onClick={() => onNavigate("new-experiment")}
           >
-            <span aria-hidden="true">＋</span> 新しい実験
+            <span aria-hidden="true">＋</span> <span className="topbar-nav__label">新しい実験</span>
           </button>
         </nav>
         <div className="topbar-status" aria-label="アプリケーションの状態">

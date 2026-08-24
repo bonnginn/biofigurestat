@@ -23,7 +23,7 @@ import {
   orderedAxisUnit,
   withActiveConditions,
 } from "../app/experimentDraft";
-import type { AppRoute } from "../app/routes";
+import { specializedAnalysisRoutes, type AppRoute } from "../app/routes";
 import type { SaveProjectAction } from "../app/projectActions";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
 import { ConditionTimePreview } from "../components/ConditionTimePreview";
@@ -457,6 +457,7 @@ function ContextStart({
   onRouteSelect,
   onContextBack,
   onDemoSelect,
+  onSpecializedNavigate,
   browserPreview = false,
   showDemos = true,
 }: {
@@ -465,6 +466,7 @@ function ContextStart({
   onRouteSelect: (route: ExperimentEntryRoute) => void;
   onContextBack: () => void;
   onDemoSelect: (fixture: SyntheticFixture) => void;
+  onSpecializedNavigate: (route: AppRoute) => void;
   browserPreview?: boolean;
   showDemos?: boolean;
 }) {
@@ -595,6 +597,22 @@ function ContextStart({
           ) : null}
         </section>
       ) : null}
+      <section className="experiment-start__specialized" aria-labelledby="specialized-heading">
+        <details>
+          <summary id="specialized-heading">特殊データ・解析から始める</summary>
+          <p>
+            生存時間、行列、カテゴリ集計など、通常の実験設計とは入力構造が異なるデータはこちらから始めます。
+          </p>
+          <div className="experiment-start__entry-route-grid">
+            {specializedAnalysisRoutes.map((route) => (
+              <button key={route.id} type="button" onClick={() => onSpecializedNavigate(route.id)}>
+                <strong>{route.title}</strong>
+                <span>{route.description}</span>
+              </button>
+            ))}
+          </div>
+        </details>
+      </section>
     </>
   );
 }
@@ -2133,6 +2151,7 @@ export function NewExperimentPage({
               recordWorkspaceStart(fixture.draft, `synthetic_fixture:${fixture.id}`);
               setStage("workspace");
             }}
+            onSpecializedNavigate={onNavigate}
           />
         </>
       )}

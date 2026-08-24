@@ -76,12 +76,31 @@ def assess_loader_contract(payload: dict[str, Any]) -> dict[str, Any]:
         }
     if has_wb:
         return {"status": "safe_refusal", "reason": "wb_lineage_not_supported"}
-    if len(readouts) != 1:
-        return {
-            "status": "safe_refusal",
-            "reason": "multiple_readouts_not_supported",
-            "readoutCount": len(readouts),
-        }
+    linked_multi_readout = len(readouts) > 1
+    if linked_multi_readout:
+        if has_ratios:
+            return {
+                "status": "safe_refusal",
+                "reason": "ambiguous_multi_readout_proportion_structure",
+                "readoutCount": len(readouts),
+            }
+        rows_by_unit_axis: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
+        for row in rows:
+            rows_by_unit_axis[
+                (row["condition"], row["time"], row.get("x_value"), source_unit(row))
+            ].append(row)
+        for unit_rows in rows_by_unit_axis.values():
+            observed = [row["readout"] for row in unit_rows]
+            if (
+                len(observed) != len(readouts)
+                or len(set(observed)) != len(observed)
+                or set(observed) != set(readouts)
+            ):
+                return {
+                    "status": "safe_refusal",
+                    "reason": "incomplete_or_ambiguous_linked_readouts",
+                    "readoutCount": len(readouts),
+                }
 
     groups: dict[tuple[Any, ...], set[str]] = defaultdict(set)
     for row in rows:
@@ -101,7 +120,13 @@ def assess_loader_contract(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "status": "compatible",
         "reason": "deterministic_loader_contract_representable",
-        "shape": "proportion" if has_ratios else "nested_continuous",
+        "shape": (
+            "proportion"
+            if has_ratios
+            else "linked_nested_continuous"
+            if linked_multi_readout
+            else "nested_continuous"
+        ),
         "conditionCount": len(conditions),
         "timeCount": len(times),
         "readoutCount": len(readouts),

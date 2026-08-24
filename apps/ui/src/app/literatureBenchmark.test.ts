@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createIndependentTwoGroupFixture } from "./syntheticFixtures";
+import { experimentCellKey } from "./experimentDraft";
 import {
   isLiteratureCaseId,
   literatureOrderedAxisSummary,
@@ -454,6 +455,91 @@ describe("literature benchmark experimenter boundary", () => {
       ),
     };
     expect(mapLiteratureMeasurements(broken, wbDraft).reason).toContain("lineageと一致しません");
+  });
+
+  it("maps complete linked readouts without inflating biological n", () => {
+    const linkedRows = source.syntheticData.flatMap((row) =>
+      [
+        ["primary_signal", row.value],
+        ["secondary_signal", (row.value as number) * 10],
+      ].map(([readout, value], readoutIndex) => ({
+        ...row,
+        case_id: "LSA135",
+        readout: String(readout),
+        value: Number(value),
+        observation_id: `${row.unit_id}.${readoutIndex}`,
+      })),
+    );
+    const multiReadoutSource: LiteratureExperimenterCase = {
+      ...source,
+      caseId: "LSA135",
+      researcherPacket: {
+        ...source.researcherPacket,
+        case_id: "LSA135",
+        readouts: "primary_signal | secondary_signal",
+      },
+      // Deliberately reverse the second readout's row order. Mapping must follow stable unit IDs,
+      // never incidental row order within a readout.
+      syntheticData: [
+        ...linkedRows.filter((row) => row.readout === "primary_signal"),
+        ...linkedRows.filter((row) => row.readout === "secondary_signal").reverse(),
+      ],
+    };
+    const base = compatibleDraft(2);
+    const draft = {
+      ...base,
+      readouts: ["primary_signal", "secondary_signal"].map((label, index) => ({
+        ...base.readouts[0],
+        id: `readout.${index + 1}`,
+        label,
+      })),
+    };
+
+    const result = mapLiteratureMeasurements(multiReadoutSource, draft);
+    expect(result.compatible).toBe(true);
+    expect(Object.values(result.cells)).toHaveLength(8);
+    expect(draft.experiments).toHaveLength(2);
+    expect(Object.keys(result.cells).filter((key) => key.includes("readout.2"))).toHaveLength(4);
+    expect(result.reason).toContain("biological nはreadout数で増やしません");
+    expect(
+      result.cells[
+        experimentCellKey({
+          experimentId: draft.experiments[0].id,
+          conditionId: draft.conditions[0].id,
+          readoutId: "readout.2",
+        })
+      ],
+    ).toMatchObject({ kind: "nested_continuous", rawValues: [10] });
+    expect(
+      Object.values(result.cells).every(
+        (cell) => cell.kind !== "nested_continuous" || cell.sourceLocations?.[0]?.includes("."),
+      ),
+    ).toBe(true);
+
+    const incomplete = {
+      ...multiReadoutSource,
+      syntheticData: multiReadoutSource.syntheticData.slice(1),
+    };
+    expect(mapLiteratureMeasurements(incomplete, draft).reason).toContain("不完全または曖昧");
+
+    const duplicate = {
+      ...multiReadoutSource,
+      syntheticData: [
+        ...multiReadoutSource.syntheticData,
+        { ...multiReadoutSource.syntheticData[0], observation_id: "duplicate" },
+      ],
+    };
+    expect(mapLiteratureMeasurements(duplicate, draft).reason).toContain("不完全または曖昧");
+
+    const mislabeledDraft = {
+      ...draft,
+      readouts: draft.readouts.map((readout, index) =>
+        index === 1 ? { ...readout, label: "wrong_readout" } : readout,
+      ),
+    };
+    expect(mapLiteratureMeasurements(multiReadoutSource, mislabeledDraft).reason).toContain(
+      "この順序・名前",
+    );
   });
 
   it("refuses a nested packet with a missing parent mapping", () => {

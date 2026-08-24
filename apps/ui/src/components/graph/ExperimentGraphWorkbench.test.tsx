@@ -480,6 +480,7 @@ describe("ExperimentGraphWorkbench", () => {
     await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
     expect(runner.mock.calls[0][0]).toMatchObject({ templateId: "D01", method: "welch_t" });
     expect(screen.getByRole("group", { name: "統計解析結果" })).toHaveTextContent("p = 0.042");
+    fireEvent.click(screen.getByText("診断と注意（1件）"));
     expect(screen.getByText(/少数例の有意差検定だけで正規性を断定/)).toBeVisible();
     fireEvent.click(screen.getByText("解析エンジンと再現情報"));
     expect(screen.getByText("fixture-engine 0.1.0")).toBeVisible();
@@ -493,6 +494,45 @@ describe("ExperimentGraphWorkbench", () => {
     expect(graph.querySelector('[data-graph-layer="statistics-annotation"]')).toHaveTextContent(
       "p = 0.042",
     );
+  });
+
+  it("edits a saved statistical annotation from Graph without rerunning analysis", async () => {
+    const { draft, cells } = proportionFixture();
+    const runner = vi.fn<AnalysisRunner>(async () => analysisResult);
+    const view = render(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={cells}
+        analysisRunner={runner}
+        onClose={vi.fn()}
+      />,
+    );
+    selectInspectorTarget("statistics");
+    fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
+    acceptRecommendedMethod();
+    fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+    await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
+
+    view.rerender(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={cells}
+        workspaceMode="graph"
+        analysisRunner={runner}
+        onClose={vi.fn()}
+      />,
+    );
+    selectInspectorTarget("annotation");
+    expect(screen.getByText(/ここでは再計算しません/)).toBeVisible();
+    fireEvent.change(screen.getByRole("combobox", { name: "統計注釈の表示" }), {
+      target: { value: "exact_p" },
+    });
+    expect(runner).toHaveBeenCalledTimes(1);
+    expect(
+      screen
+        .getByRole("img", { name: /実験単位ごとのグラフ/ })
+        .querySelector('[data-graph-layer="statistics-annotation"]'),
+    ).toHaveTextContent("p = 0.042");
   });
 
   it("keeps the finite JCB024-sized p-value non-zero in an exact Graph annotation", async () => {
@@ -635,6 +675,11 @@ describe("ExperimentGraphWorkbench", () => {
       plannedContrastConditionIds: [[draft.conditions[0].id, draft.conditions[2].id]],
       options: { multiplicityMethod: "holm_planned_comparisons" },
     });
+    expect(
+      within(screen.getByRole("group", { name: "統計解析結果" })).getByText(
+        "Control vs Treatment B",
+      ),
+    ).toBeVisible();
 
     const annotationComparison = screen.getByRole("combobox", {
       name: "統計注釈の比較",
@@ -774,6 +819,7 @@ describe("ExperimentGraphWorkbench", () => {
       expect(screen.queryByRole("group", { name: "統計解析結果" })).not.toBeInTheDocument();
     });
     expect(screen.getByRole("status")).toHaveTextContent("同じ解析を自動再実行します");
+    expect(screen.getByRole("checkbox", { name: /各条件は別々のdish/ })).toBeChecked();
     expect(
       screen
         .getByRole("img", { name: /実験単位ごとのグラフ/ })
@@ -818,6 +864,7 @@ describe("ExperimentGraphWorkbench", () => {
     );
 
     expect(await screen.findByRole("status")).toHaveTextContent("解析法は自動変更しません");
+    expect(screen.getByRole("checkbox", { name: /各条件は別々のdish/ })).not.toBeChecked();
     await new Promise((resolve) => window.setTimeout(resolve, 750));
     expect(runner).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("group", { name: "統計解析結果" })).toBeNull();

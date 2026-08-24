@@ -88,6 +88,7 @@ type InspectorTarget =
   | "error-bar"
   | "connecting-line"
   | "legend"
+  | "annotation"
   | "statistics";
 type GraphAppearance = WorkspaceGraphState["appearance"];
 type AxisSettings = WorkspaceGraphState["axes"];
@@ -223,7 +224,9 @@ export function analysisTestAnnotationLabel(
 }
 
 function isPairwiseComparisonTest(testName: string): boolean {
-  return /^(games_howell|tukey_hsd|dunnett|planned_holm|dunn_holm|holm_welch):/.test(testName);
+  return /^(games_howell|tukey_hsd|dunnett|planned_holm|dunn_holm|holm_welch|holm_paired|holm_wilcoxon):/.test(
+    testName,
+  );
 }
 
 type ProportionPoint = Readonly<{
@@ -3225,6 +3228,9 @@ export function ExperimentGraphWorkbench({
                   <option value="error-bar">誤差線</option>
                   <option value="connecting-line">接続線</option>
                   <option value="legend">凡例</option>
+                  {workspaceMode === "graph" && analysisResult?.status === "ok" ? (
+                    <option value="annotation">統計注釈</option>
+                  ) : null}
                   {workspaceMode === "combined" ? (
                     <option value="statistics">統計解析</option>
                   ) : null}
@@ -4052,6 +4058,57 @@ export function ExperimentGraphWorkbench({
                   }
                 />
               </label>
+            </section>
+          ) : null}
+
+          {inspectorTarget === "annotation" && analysisResult?.status === "ok" ? (
+            <section className="experiment-graph-statistics-section" aria-label="統計注釈">
+              <h3>グラフ上の注釈</h3>
+              <p className="experiment-graph-help">
+                Statisticsで保存した解析結果から、表示する比較を選びます。ここでは再計算しません。
+              </p>
+              {analysisResult.tests.length > 1 ? (
+                <label className="experiment-graph-field">
+                  <span>比較結果</span>
+                  <select
+                    aria-label="統計注釈の比較"
+                    value={statisticsAnnotation.testIndex}
+                    onChange={(event) =>
+                      setStatisticsAnnotation((current) => ({
+                        ...current,
+                        testIndex: Number(event.target.value),
+                      }))
+                    }
+                  >
+                    {analysisResult.tests.map((test, index) => (
+                      <option key={`${test.name}:${index}`} value={index}>
+                        {analysisTestAnnotationLabel(test, draft, baseAnnotationContext)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              <label className="experiment-graph-field">
+                <span>表示</span>
+                <select
+                  aria-label="統計注釈の表示"
+                  value={statisticsAnnotation.mode}
+                  onChange={(event) =>
+                    setStatisticsAnnotation((current) => ({
+                      ...current,
+                      mode: event.target.value as StatisticsAnnotation["mode"],
+                    }))
+                  }
+                >
+                  <option value="hidden">表示しない</option>
+                  <option value="exact_p">正確なp値</option>
+                  <option value="symbol">有意差記号</option>
+                </select>
+              </label>
+              <p className="experiment-graph-help">
+                表示内容：{annotationContext}
+                。保存済みのこのグラフの解析結果にだけリンクします。派生値の注釈はそのmetric/windowだけを表し、曲線全体の推論を意味しません。データや比較対象を変更すると注釈も外れます。
+              </p>
             </section>
           ) : null}
 

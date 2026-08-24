@@ -45,6 +45,23 @@ function formatP(value: number): string {
   return value < 0.0001 ? value.toExponential(2) : formatNumber(value);
 }
 
+function isPairwiseComparisonName(name: string): boolean {
+  return /^(games_howell|tukey_hsd|dunnett|planned_holm|dunn_holm|holm_welch|holm_paired|holm_wilcoxon):/.test(
+    name,
+  );
+}
+
+function comparisonDisplayLabel(
+  name: string,
+  conditionOptions: readonly Readonly<{ id: string; label: string }>[],
+): string {
+  const [, firstId, secondId] = name.split(":");
+  if (!firstId || !secondId) return "条件間比較";
+  const label = (id: string) =>
+    conditionOptions.find((condition) => condition.id === id)?.label ?? id;
+  return `${label(firstId)} vs ${label(secondId)}`;
+}
+
 function diagnosticLabel(code: string): string {
   if (code === "assumptions_not_fully_evaluated") {
     return "少数例の有意差検定だけで正規性を断定していません。実験単位の分布と実験設計も確認してください。";
@@ -90,7 +107,7 @@ export function GraphStatisticsPanel({
   onPlannedContrastConditionIdsChange,
   analysisContextKey,
 }: GraphStatisticsPanelProps) {
-  const [independenceConfirmed, setIndependenceConfirmed] = useState(false);
+  const [independenceConfirmed, setIndependenceConfirmed] = useState(Boolean(initialAnalysis));
   const [result, setResult] = useState<AnalysisEngineResult | null>(
     initialAnalysis?.result ?? null,
   );
@@ -268,7 +285,7 @@ export function GraphStatisticsPanel({
       );
     }
     executedRef.current = false;
-    setIndependenceConfirmed(false);
+    if (!automaticRerunIsSafe) setIndependenceConfirmed(false);
     setResult(null);
     onAnalysisChange?.(null);
     setError(null);
@@ -289,6 +306,16 @@ export function GraphStatisticsPanel({
       return;
     await executeRequest(assessment.request, "manual");
   };
+  const primaryTests =
+    result?.status === "ok"
+      ? result.tests.filter((test) => !isPairwiseComparisonName(test.name))
+      : [];
+  const comparisonTests =
+    result?.status === "ok"
+      ? result.tests.filter((test) => isPairwiseComparisonName(test.name))
+      : [];
+  const diagnosticItems =
+    result?.status === "ok" ? [...result.diagnostics, ...result.warnings] : [];
 
   return (
     <section className="experiment-graph-statistics-section" aria-label="このグラフの統計">
@@ -582,14 +609,16 @@ export function GraphStatisticsPanel({
 
       {result?.status === "ok" ? (
         <div className="experiment-graph-analysis-result" role="group" aria-label="統計解析結果">
-          <strong>解析完了（ローカル）</strong>
-          <p>
-            解析に用いた実験単位：
-            {assessment.nDisplay ??
-              assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join("、")}
-          </p>
+          <div className="experiment-graph-analysis-summary">
+            <strong>解析完了（ローカル）</strong>
+            <p>
+              解析に用いた実験単位：
+              {assessment.nDisplay ??
+                assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join("、")}
+            </p>
+          </div>
           {result.estimates.length > 0 ? (
-            <dl>
+            <dl aria-label="主要な推定値">
               {result.estimates.map((estimate) => (
                 <div key={estimate.name}>
                   <dt>{estimate.name}</dt>
@@ -608,16 +637,10 @@ export function GraphStatisticsPanel({
               ))}
             </dl>
           ) : null}
-          <dl>
-            {result.tests.map((test) => (
+          <dl aria-label="主要な検定結果">
+            {primaryTests.map((test) => (
               <div key={test.name}>
-                <dt>
-                  {/^(games_howell|tukey_hsd|dunnett|planned_holm|dunn_holm|holm_welch):/.test(
-                    test.name,
-                  )
-                    ? "条件間比較"
-                    : "全体／主解析"}
-                </dt>
+                <dt>全体／主解析</dt>
                 <dd>
                   {test.statisticName} = {formatNumber(test.statistic)}、p ={" "}
                   {formatP(test.adjustedPValue ?? test.pValue)}
@@ -630,9 +653,35 @@ export function GraphStatisticsPanel({
               </div>
             ))}
           </dl>
-          {[...result.diagnostics, ...result.warnings].map((item) => (
-            <p key={`${item.code}-${item.message}`}>{diagnosticLabel(item.code)}</p>
-          ))}
+          {comparisonTests.length > 0 ? (
+            <details className="experiment-graph-analysis-comparisons" open>
+              <summary>条件間比較（{comparisonTests.length}件）</summary>
+              <dl>
+                {comparisonTests.map((test) => (
+                  <div key={test.name}>
+                    <dt>{comparisonDisplayLabel(test.name, conditionOptions)}</dt>
+                    <dd>
+                      {test.statisticName} = {formatNumber(test.statistic)}、p ={" "}
+                      {formatP(test.adjustedPValue ?? test.pValue)}
+                      {test.adjustedPValue !== null ? "（多重比較調整済み）" : ""}
+                      {test.degreesOfFreedom ? `、df = ${test.degreesOfFreedom.join(", ")}` : ""}
+                      {test.effectSizeName && test.effectSize !== null
+                        ? `、${test.effectSizeName} = ${formatNumber(test.effectSize)}`
+                        : ""}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
+          ) : null}
+          {diagnosticItems.length > 0 ? (
+            <details className="experiment-graph-analysis-diagnostics">
+              <summary>診断と注意（{diagnosticItems.length}件）</summary>
+              {diagnosticItems.map((item) => (
+                <p key={`${item.code}-${item.message}`}>{diagnosticLabel(item.code)}</p>
+              ))}
+            </details>
+          ) : null}
           <details>
             <summary>解析エンジンと再現情報</summary>
             <dl>
