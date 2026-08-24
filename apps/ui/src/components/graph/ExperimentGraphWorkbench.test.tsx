@@ -548,11 +548,11 @@ describe("ExperimentGraphWorkbench", () => {
     expect(
       screen.getByText(/表示内容：Control vs Treatment B · planned comparison · Holm/),
     ).toBeVisible();
-    expect(
-      screen
-        .getByRole("img", { name: /実験単位ごとのグラフ/ })
-        .querySelector('[data-graph-layer="statistics-annotation"]'),
-    ).toHaveTextContent("p = 0.016");
+    const plannedAnnotation = screen
+      .getByRole("img", { name: /実験単位ごとのグラフ/ })
+      .querySelector('[data-graph-layer="statistics-annotation"]');
+    expect(plannedAnnotation).toHaveTextContent("p = 0.016");
+    expect(plannedAnnotation).not.toHaveTextContent("全体 p");
   });
 
   it("PearsonとSpearmanを検証済みの実行可能な選択として切り替える", async () => {

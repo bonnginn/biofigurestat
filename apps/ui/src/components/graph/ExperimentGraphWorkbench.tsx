@@ -195,6 +195,10 @@ function analysisTestAnnotationLabel(
   return fallback;
 }
 
+function isPairwiseComparisonTest(testName: string): boolean {
+  return /^(games_howell|tukey_hsd|dunnett|planned_holm|dunn_holm):/.test(testName);
+}
+
 type ProportionPoint = Readonly<{
   experimentId: string;
   experimentLabel: string;
@@ -1026,7 +1030,13 @@ function ExperimentGraphSvg({
                     analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
                       analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
                   )
-                : `全体 p = ${formatExactPValue(
+                : `${
+                    isPairwiseComparisonTest(
+                      analysisResult.tests[statisticsAnnotation.testIndex]!.name,
+                    )
+                      ? "p"
+                      : "全体 p"
+                  } = ${formatExactPValue(
                     analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
                       analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
                   )}`
