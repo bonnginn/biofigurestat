@@ -235,6 +235,51 @@ function hierarchicalProportionFixture(): {
   return { draft, cells };
 }
 
+function factorialContinuousFixture(): {
+  draft: ExperimentSetDraft;
+  cells: ExperimentCellMap;
+} {
+  const base = createExperimentSetDraft("animal", "nested_continuous");
+  const combinations = [
+    ["Wild type", "Vehicle"],
+    ["Wild type", "Stimulus"],
+    ["Gene-perturbed", "Vehicle"],
+    ["Gene-perturbed", "Stimulus"],
+  ] as const;
+  const draft: ExperimentSetDraft = {
+    ...base,
+    attributes: [
+      { id: "attribute.genotype", label: "Genotype" },
+      { id: "attribute.treatment", label: "Treatment" },
+    ],
+    conditions: combinations.map(([genotype, treatment], index) => ({
+      id: `condition.${index + 1}`,
+      label: `${genotype} / ${treatment}`,
+      attributes: {
+        "attribute.genotype": genotype,
+        "attribute.treatment": treatment,
+      },
+    })),
+  };
+  const cells: Record<string, ExperimentCellDraft> = {};
+  draft.experiments.forEach((experiment, experimentIndex) => {
+    draft.conditions.forEach((condition, conditionIndex) => {
+      cells[
+        experimentCellKey({
+          experimentId: experiment.id,
+          conditionId: condition.id,
+          readoutId: draft.readouts[0].id,
+        })
+      ] = {
+        kind: "nested_continuous",
+        source: "manual",
+        rawValues: [10 + experimentIndex + conditionIndex * 3],
+      };
+    });
+  });
+  return { draft, cells };
+}
+
 describe("ExperimentGraphWorkbench", () => {
   const selectInspectorTarget = (target: string) => {
     fireEvent.change(screen.getByRole("combobox", { name: "編集対象" }), {
@@ -553,6 +598,50 @@ describe("ExperimentGraphWorkbench", () => {
       .querySelector('[data-graph-layer="statistics-annotation"]');
     expect(plannedAnnotation).toHaveTextContent("p = 0.016");
     expect(plannedAnnotation).not.toHaveTextContent("全体 p");
+  });
+
+  it("names factorial effects and Holm-adjusted cell pairs distinctly in Graph annotations", async () => {
+    const { draft, cells } = factorialContinuousFixture();
+    const result: AnalysisEngineResult = {
+      ...analysisResult,
+      protocolVersion: "0.4.0",
+      tests: [
+        { ...analysisResult.tests[0], name: "type3_interaction", adjustedPValue: null },
+        { ...analysisResult.tests[0], name: "type3_factor_a", adjustedPValue: null },
+        { ...analysisResult.tests[0], name: "type3_factor_b", adjustedPValue: null },
+        {
+          ...analysisResult.tests[0],
+          name: "holm_welch:condition.1:condition.4",
+          pValue: 0.01,
+          adjustedPValue: 0.06,
+        },
+      ],
+    };
+    render(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={cells}
+        analysisRunner={vi.fn(async () => result)}
+        onClose={vi.fn()}
+      />,
+    );
+
+    selectInspectorTarget("statistics");
+    fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
+    fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+    await screen.findByRole("group", { name: "統計解析結果" });
+
+    const comparison = screen.getByRole("combobox", { name: "統計注釈の比較" });
+    expect(
+      within(comparison).getByRole("option", { name: /Genotype × Treatment interaction/ }),
+    ).toBeVisible();
+    expect(within(comparison).getByRole("option", { name: /Genotype main effect/ })).toBeVisible();
+    expect(within(comparison).getByRole("option", { name: /Treatment main effect/ })).toBeVisible();
+    expect(
+      within(comparison).getByRole("option", {
+        name: /Wild type \/ Vehicle vs Gene-perturbed \/ Stimulus · Welch pair · Holm/,
+      }),
+    ).toBeVisible();
   });
 
   it("PearsonとSpearmanを検証済みの実行可能な選択として切り替える", async () => {

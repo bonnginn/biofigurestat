@@ -612,7 +612,9 @@ export function GraphStatisticsPanel({
             {result.tests.map((test) => (
               <div key={test.name}>
                 <dt>
-                  {/^(games_howell|tukey_hsd|dunnett|planned_holm|dunn_holm):/.test(test.name)
+                  {/^(games_howell|tukey_hsd|dunnett|planned_holm|dunn_holm|holm_welch):/.test(
+                    test.name,
+                  )
                     ? "条件間比較"
                     : "全体／主解析"}
                 </dt>

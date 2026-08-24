@@ -174,10 +174,21 @@ function analysisTestAnnotationLabel(
   const [family, firstId, secondId] = test.name.split(":");
   const conditionLabel = (conditionId: string | undefined) =>
     draft.conditions.find(({ id }) => id === conditionId)?.label ?? conditionId ?? "condition";
+  const factorA = draft.attributes[0]?.label ?? "factor A";
+  const factorB = draft.attributes[1]?.label ?? "factor B";
+  if (test.name === "type3_interaction") {
+    return `${factorA} × ${factorB} interaction · two-way ANOVA`;
+  }
+  if (test.name === "type3_factor_a") {
+    return `${factorA} main effect · two-way ANOVA`;
+  }
+  if (test.name === "type3_factor_b") {
+    return `${factorB} main effect · two-way ANOVA`;
+  }
   if (
     firstId &&
     secondId &&
-    ["games_howell", "tukey_hsd", "planned_holm", "dunn_holm"].includes(family)
+    ["games_howell", "tukey_hsd", "planned_holm", "dunn_holm", "holm_welch"].includes(family)
   ) {
     const method =
       family === "games_howell"
@@ -186,7 +197,9 @@ function analysisTestAnnotationLabel(
           ? "Tukey"
           : family === "dunn_holm"
             ? "Dunn–Holm"
-            : "planned comparison · Holm";
+            : family === "holm_welch"
+              ? "Welch pair · Holm"
+              : "planned comparison · Holm";
     return `${conditionLabel(firstId)} vs ${conditionLabel(secondId)} · ${method}`;
   }
   if (family === "dunnett" && firstId && secondId) {
@@ -196,7 +209,7 @@ function analysisTestAnnotationLabel(
 }
 
 function isPairwiseComparisonTest(testName: string): boolean {
-  return /^(games_howell|tukey_hsd|dunnett|planned_holm|dunn_holm):/.test(testName);
+  return /^(games_howell|tukey_hsd|dunnett|planned_holm|dunn_holm|holm_welch):/.test(testName);
 }
 
 type ProportionPoint = Readonly<{
