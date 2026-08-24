@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   createD11EngineRequest,
   type AnalysisEngineResult,
@@ -15,8 +15,28 @@ import {
 } from "@lsaa/graph-spec";
 import { appendMatrixView, createInitialProjectState } from "@lsaa/project";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
+import {
+  COMPLETE_BENCHMARK_ARTIFACT_NAMES,
+  beginDefaultGraphCapture,
+  blobToBase64,
+  completeDefaultGraphCapture,
+  currentBenchmarkRun,
+  recordBenchmarkEvent,
+  recordFinalGraphCapture,
+  setBenchmarkOutcome,
+  sha256Hex,
+  useBenchmarkRun,
+  writeBenchmarkArtifacts,
+} from "../app/benchmarkEvaluation";
+import { evaluationMode } from "../app/evaluationMode";
 import { downloadTextFile, serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
+import {
+  fetchLiteratureExperimenterCase,
+  isLiteratureCaseId,
+  type LiteratureExperimenterCase,
+} from "../app/literatureBenchmark";
 import { generateMethodsText } from "../app/methodsText";
+import { PRODUCT_IDENTITY } from "../app/productIdentity";
 import type { SaveProjectAction } from "../app/projectActions";
 import { HeatmapGraph } from "../components/graph/HeatmapGraph";
 import { SurvivalGraph } from "../components/graph/SurvivalGraph";
@@ -57,7 +77,46 @@ export function SpecializedCorePage({
   const [showCellValues, setShowCellValues] = useState(false);
   const [result, setResult] = useState<AnalysisEngineResult | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [literatureCase, setLiteratureCase] = useState<LiteratureExperimenterCase | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const benchmarkRun = useBenchmarkRun();
+
+  useEffect(() => {
+    const identity = benchmarkRun.identity;
+    setLiteratureCase(null);
+    if (!identity || !isLiteratureCaseId(identity.caseId)) return;
+    let cancelled = false;
+    void fetchLiteratureExperimenterCase(identity).then((loaded) => {
+      if (!cancelled) setLiteratureCase(loaded);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [benchmarkRun.identity]);
+
+  const loadLiteratureSurvival = () => {
+    if (!literatureCase || mode !== "survival") return;
+    const rows = literatureCase.syntheticData;
+    if (!rows.length || rows.some(({ event, time }) => event === null || time === null)) {
+      setMessage("このcaseはevent/censoringとfollow-up timeを完全には保持していません。");
+      return;
+    }
+    const lines = [
+      "Unit ID\tGroup\tFollow-up time\tStatus",
+      ...rows.map((row) => {
+        const event = String(row.event).trim().toLowerCase();
+        const status = ["1", "event", "observed", "true"].includes(event) ? "Event" : "Censored";
+        return [row.unit_id, row.condition, row.time, status].join("\t");
+      }),
+    ];
+    setText(lines.join("\n"));
+    setResult(null);
+    setMessage(`${rows.length}件のevent/censoring identityをSurvival表へ入力しました。`);
+    recordBenchmarkEvent("literature_benchmark_data_loaded", {
+      caseId: literatureCase.caseId,
+      mappedCells: rows.length,
+    });
+  };
 
   const survival = useMemo(() => {
     if (mode !== "survival") return null;
@@ -405,6 +464,202 @@ export function SpecializedCorePage({
     rangeMin.trim() && Number.isFinite(Number(rangeMin)) ? Number(rangeMin) : undefined;
   const configuredMax =
     rangeMax.trim() && Number.isFinite(Number(rangeMax)) ? Number(rangeMax) : undefined;
+  const benchmarkAnalysisState = JSON.stringify({
+    mode,
+    text,
+    result,
+  });
+  const captureDefaultBenchmarkGraph = async () => {
+    const svg = svgRef.current;
+    if (!svg || !result || !benchmarkRun.identity || benchmarkRun.defaultGraphCapture) return;
+    const capturedAt = new Date().toISOString();
+    if (!beginDefaultGraphCapture(capturedAt)) return;
+    try {
+      const svgText = serializeGraphSvg(svg);
+      const viewBox = svg.viewBox.baseVal;
+      const png = await svgToPngBlob(
+        svgText,
+        viewBox.width || svg.width.baseVal.value || 900,
+        viewBox.height || svg.height.baseVal.value || 520,
+      );
+      const [svgSha256, pngSha256, analysisStateFingerprint] = await Promise.all([
+        sha256Hex(svgText),
+        sha256Hex(png),
+        sha256Hex(benchmarkAnalysisState),
+      ]);
+      await writeBenchmarkArtifacts([
+        { name: "default_graph.svg", content: svgText, mediaType: "image/svg+xml" },
+        {
+          name: "default_graph.png",
+          content: await blobToBase64(png),
+          encoding: "base64",
+          mediaType: "image/png",
+        },
+      ]);
+      completeDefaultGraphCapture({
+        graphStateFingerprint: svgSha256,
+        analysisStateFingerprint,
+        svgSha256,
+        pngSha256,
+      });
+      setMessage("Benchmarkの既定Survival Graphを保存しました。");
+    } catch {
+      setBenchmarkOutcome("infrastructure_failure");
+      setMessage("既定Graphの評価artifactを保存できませんでした。");
+    }
+  };
+
+  useLayoutEffect(() => {
+    if (
+      mode === "survival" &&
+      result &&
+      benchmarkRun.identity &&
+      !benchmarkRun.defaultGraphCapture
+    ) {
+      void captureDefaultBenchmarkGraph();
+    }
+  }, [
+    benchmarkAnalysisState,
+    benchmarkRun.defaultGraphCapture,
+    benchmarkRun.identity,
+    mode,
+    result,
+  ]);
+
+  const finalizeSpecializedBenchmark = async () => {
+    const svg = svgRef.current;
+    const run = currentBenchmarkRun();
+    if (
+      mode !== "survival" ||
+      !svg ||
+      !result ||
+      !methods ||
+      !run.identity ||
+      !run.supportStatus ||
+      !run.defaultGraphCaptured
+    ) {
+      setMessage(
+        "完了前にdata load、解析、Default Graph保存、Scientific support選択を完了してください。",
+      );
+      return;
+    }
+    try {
+      const prepared = createSurvivalState();
+      const svgText = serializeGraphSvg(svg);
+      const viewBox = svg.viewBox.baseVal;
+      const png = await svgToPngBlob(
+        svgText,
+        viewBox.width || svg.width.baseVal.value || 900,
+        viewBox.height || svg.height.baseVal.value || 520,
+      );
+      const capturedAt = new Date().toISOString();
+      const [svgSha256, pngSha256, analysisStateFingerprint] = await Promise.all([
+        sha256Hex(svgText),
+        sha256Hex(png),
+        sha256Hex(benchmarkAnalysisState),
+      ]);
+      recordFinalGraphCapture({
+        capturedAt,
+        graphStateFingerprint: svgSha256,
+        analysisStateFingerprint,
+        svgSha256,
+        pngSha256,
+      });
+      setBenchmarkOutcome("completed");
+      recordBenchmarkEvent("benchmark_run_finalized", {
+        selectedGraph: "kaplan_meier",
+        selectedStatistics: prepared.request.method,
+      });
+      const finalRun = currentBenchmarkRun();
+      const graphState = {
+        graphType: "kaplan_meier",
+        conditions: survival && !("error" in survival) ? survival.conditions : [],
+        censoringPreserved: true,
+        analysis: { request: prepared.request, result },
+      };
+      await writeBenchmarkArtifacts(
+        [
+          {
+            name: "run.json",
+            content: JSON.stringify(
+              {
+                ...finalRun.identity,
+                appVersion: PRODUCT_IDENTITY.version,
+                sourceRevision: evaluationMode.sourceRevision,
+                engineVersion: result.engine.version,
+                startedAt: finalRun.startedAt,
+                completedAt: capturedAt,
+                outcome: finalRun.outcome,
+                supportStatus: finalRun.supportStatus,
+                artifactCompleteness: "complete",
+                defaultGraphCaptured: finalRun.defaultGraphCaptured,
+                captureProvenanceVersion: "1.1.0",
+                defaultCapturedAt: finalRun.defaultGraphCapture?.capturedAt ?? null,
+                defaultCapturedEventIndex: finalRun.defaultGraphCapture?.eventIndex ?? null,
+                finalCapturedAt: finalRun.finalGraphCapture?.capturedAt ?? null,
+                finalCapturedEventIndex: finalRun.finalGraphCapture?.eventIndex ?? null,
+                defaultGraphStateFingerprint:
+                  finalRun.defaultGraphCapture?.graphStateFingerprint ?? null,
+                finalGraphStateFingerprint:
+                  finalRun.finalGraphCapture?.graphStateFingerprint ?? null,
+                defaultAnalysisStateFingerprint:
+                  finalRun.defaultGraphCapture?.analysisStateFingerprint ?? null,
+                finalAnalysisStateFingerprint:
+                  finalRun.finalGraphCapture?.analysisStateFingerprint ?? null,
+                defaultSvgSha256: finalRun.defaultGraphCapture?.svgSha256 ?? null,
+                defaultPngSha256: finalRun.defaultGraphCapture?.pngSha256 ?? null,
+                finalSvgSha256: finalRun.finalGraphCapture?.svgSha256 ?? null,
+                finalPngSha256: finalRun.finalGraphCapture?.pngSha256 ?? null,
+                interactionCount: finalRun.events.length,
+                graphEditCount: 0,
+                renderedGraphEditCount: 0,
+                analysisEditCount: finalRun.events.filter(
+                  ({ effect }) => effect === "analysis_only" || effect === "both",
+                ).length,
+              },
+              null,
+              2,
+            ),
+          },
+          { name: "final_graph.svg", content: svgText, mediaType: "image/svg+xml" },
+          {
+            name: "final_graph.png",
+            content: await blobToBase64(png),
+            encoding: "base64",
+            mediaType: "image/png",
+          },
+          {
+            name: "statistics.json",
+            content: JSON.stringify(
+              {
+                statisticalUnit: "biological unit",
+                recommendedMethod: "log_rank",
+                selectedMethod: prepared.request.method,
+                correction: prepared.request.options.multiplicityMethod,
+                request: prepared.request,
+                result,
+                state: "current",
+                applicationVersion: PRODUCT_IDENTITY.version,
+              },
+              null,
+              2,
+            ),
+          },
+          { name: "methods.txt", content: methods },
+          { name: "graph_state.json", content: JSON.stringify(graphState, null, 2) },
+          {
+            name: "interaction_log.json",
+            content: JSON.stringify(finalRun.events, null, 2),
+          },
+        ],
+        { requiredArtifacts: COMPLETE_BENCHMARK_ARTIFACT_NAMES },
+      );
+      setMessage("Survival benchmark runの9 artifactsを保存しました。");
+    } catch {
+      setBenchmarkOutcome("infrastructure_failure");
+      setMessage("Survival benchmark artifactを保存できませんでした。");
+    }
+  };
   return (
     <div className="page-stack">
       <button type="button" onClick={onBack}>
@@ -418,6 +673,19 @@ export function SpecializedCorePage({
             ? "Unit ID・Group・Follow-up time・Event/Censored を貼り付けます。censoringは欠損に変換しません。"
             : "1列目をfeature名、1行目をsample名として表を貼り付けます。空欄とNAは欠損のまま保持します。"}
         </p>
+        {mode === "survival" && literatureCase ? (
+          <section className="benchmark-pilot-loader" aria-label="Literature Survival合成値">
+            <div>
+              <strong>{literatureCase.caseId}</strong>
+              <span>
+                event/censoringとfollow-up timeをstable unit IDのままSurvival表へ入力します。
+              </span>
+            </div>
+            <button type="button" onClick={loadLiteratureSurvival}>
+              このLiterature caseをSurvival表へ入力
+            </button>
+          </section>
+        ) : null}
         <label>
           表
           <textarea
@@ -498,6 +766,11 @@ export function SpecializedCorePage({
           <button type="button" onClick={() => void save()}>
             プロジェクトを保存
           </button>
+          {mode === "survival" && benchmarkRun.identity ? (
+            <button type="button" onClick={() => void finalizeSpecializedBenchmark()}>
+              Benchmarkを9 artifactsで完了
+            </button>
+          ) : null}
         </div>
         {message ? <p role="status">{message}</p> : null}
       </section>

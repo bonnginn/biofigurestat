@@ -174,13 +174,19 @@ function analysisTestAnnotationLabel(
   const [family, firstId, secondId] = test.name.split(":");
   const conditionLabel = (conditionId: string | undefined) =>
     draft.conditions.find(({ id }) => id === conditionId)?.label ?? conditionId ?? "condition";
-  if (firstId && secondId && ["games_howell", "tukey_hsd", "planned_holm"].includes(family)) {
+  if (
+    firstId &&
+    secondId &&
+    ["games_howell", "tukey_hsd", "planned_holm", "dunn_holm"].includes(family)
+  ) {
     const method =
       family === "games_howell"
         ? "Games–Howell"
         : family === "tukey_hsd"
           ? "Tukey"
-          : "planned comparison · Holm";
+          : family === "dunn_holm"
+            ? "Dunn–Holm"
+            : "planned comparison · Holm";
     return `${conditionLabel(firstId)} vs ${conditionLabel(secondId)} · ${method}`;
   }
   if (family === "dunnett" && firstId && secondId) {
@@ -460,6 +466,22 @@ function splitParentLabel(label: string): readonly string[] {
   if (label.length <= 16) return [label];
   const parenthesis = label.indexOf("（");
   if (parenthesis > 0) return [label.slice(0, parenthesis), label.slice(parenthesis)];
+  const words = label.trim().split(/\s+/u);
+  if (words.length > 1) {
+    const lines: string[] = [];
+    let current = "";
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (current && candidate.length > 18) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = candidate;
+      }
+    }
+    if (current) lines.push(current);
+    return lines.length <= 3 ? lines : [lines[0]!, lines[1]!, lines.slice(2).join(" ")];
+  }
   return [label.slice(0, 16), label.slice(16, 32)];
 }
 

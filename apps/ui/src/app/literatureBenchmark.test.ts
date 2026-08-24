@@ -4,6 +4,7 @@ import { createIndependentTwoGroupFixture } from "./syntheticFixtures";
 import {
   isLiteratureCaseId,
   literatureOrderedAxisSummary,
+  literatureWorkflowSummary,
   mapLiteratureMeasurements,
   type LiteratureExperimenterCase,
 } from "./literatureBenchmark";
@@ -269,29 +270,23 @@ describe("literature benchmark experimenter boundary", () => {
       researcherPacket: {
         ...source.researcherPacket,
         case_id: "LSA216",
-        conditions: "Single observational cohort",
+        conditions: "Control || Treatment",
         timepoints: "none",
       },
-      syntheticData: [10, 20, 30].map((xValue, index) => ({
-        ...source.syntheticData[0],
-        case_id: "LSA216",
-        condition: "Single observational cohort",
-        experiment_id: `Exp${index + 1}`,
-        unit_id: `Unit${index + 1}`,
-        value: index + 1,
-        x_value: xValue,
-      })),
+      syntheticData: ["Control", "Treatment"].flatMap((condition, conditionIndex) =>
+        [10, 20, 30].map((xValue, index) => ({
+          ...source.syntheticData[0],
+          case_id: "LSA216",
+          condition,
+          experiment_id: `Exp${index + 1}`,
+          unit_id: `${condition}.Unit${index + 1}`,
+          value: conditionIndex * 10 + index + 1,
+          x_value: xValue,
+        })),
+      ),
     };
-    const fixture = createIndependentTwoGroupFixture();
     const result = mapLiteratureMeasurements(covariateSource, {
-      ...fixture.draft,
-      conditions: [
-        {
-          ...fixture.draft.conditions[0],
-          label: "Single observational cohort",
-          attributes: { "attribute.group": "Single observational cohort" },
-        },
-      ],
+      ...compatibleDraft(3),
       time: {
         sampling: "cross_sectional",
         axisSemantic: "numeric_covariate",
@@ -307,7 +302,7 @@ describe("literature benchmark experimenter boundary", () => {
     });
 
     expect(result.compatible).toBe(true);
-    expect(Object.values(result.cells)).toHaveLength(3);
+    expect(Object.values(result.cells)).toHaveLength(6);
     expect(result.xAxis).toMatchObject({
       semantic: "numeric_covariate",
       title: "Covariate",
@@ -316,6 +311,149 @@ describe("literature benchmark experimenter boundary", () => {
     expect(literatureOrderedAxisSummary(covariateSource)).toBe(
       "Numeric axis: Covariate (unitless); levels: 10, 20, 30. Do not enter this axis as time.",
     );
+  });
+
+  it("requires and maps a stable paired X/Y correlation workflow", () => {
+    const correlationSource: LiteratureExperimenterCase = {
+      ...source,
+      caseId: "LSA216",
+      researcherPacket: {
+        ...source.researcherPacket,
+        case_id: "LSA216",
+        conditions: "Single observational cohort",
+      },
+      syntheticData: [10, 20, 30].map((xValue, index) => ({
+        ...source.syntheticData[0],
+        case_id: "LSA216",
+        condition: "Single observational cohort",
+        unit_id: `unit.${index + 1}`,
+        value: index + 4,
+        x_value: xValue,
+      })),
+    };
+    const fixture = createIndependentTwoGroupFixture();
+    expect(mapLiteratureMeasurements(correlationSource, compatibleDraft(3)).reason).toContain(
+      "2つの測定値の関係",
+    );
+    const correlationDraft = {
+      ...fixture.draft,
+      analysisIntent: {
+        kind: "correlation" as const,
+        relationshipForm: "monotonic_or_ranked" as const,
+      },
+      conditionAssignment: { kind: "matched" as const, unitLabel: "sample" },
+      experiments: fixture.draft.experiments.slice(0, 3),
+    };
+    const result = mapLiteratureMeasurements(correlationSource, correlationDraft);
+    expect(result.compatible).toBe(true);
+    expect(Object.values(result.cells)).toHaveLength(6);
+    expect(
+      Object.values(result.cells).map((cell) =>
+        cell.kind === "nested_continuous" ? cell.rawValues[0] : null,
+      ),
+    ).toEqual([10, 4, 20, 5, 30, 6]);
+    expect(literatureWorkflowSummary(correlationSource)).toContain("paired X/Y");
+  });
+
+  it("describes pipe-delimited factorial cells as two factors", () => {
+    const factorialSource: LiteratureExperimenterCase = {
+      ...source,
+      syntheticData: [
+        "Wild type | Vehicle",
+        "Wild type | Stimulus",
+        "Gene-perturbed | Vehicle",
+        "Gene-perturbed | Stimulus",
+      ].map((condition, index) => ({
+        ...source.syntheticData[0],
+        condition,
+        unit_id: `unit.${index + 1}`,
+      })),
+    };
+    expect(literatureWorkflowSummary(factorialSource)).toContain("two-factor independent design");
+    const base = compatibleDraft(1);
+    const flatConditions = [
+      "Wild type | Vehicle",
+      "Wild type | Stimulus",
+      "Gene-perturbed | Vehicle",
+      "Gene-perturbed | Stimulus",
+    ].map((label, index) => ({
+      id: `condition.flat.${index + 1}`,
+      label,
+      attributes: { "attribute.group": label },
+    }));
+    expect(
+      mapLiteratureMeasurements(factorialSource, { ...base, conditions: flatConditions }).reason,
+    ).toContain("2つの要因");
+    const factorialDraft = {
+      ...base,
+      attributes: [
+        { id: "factor.genotype", label: "Genotype" },
+        { id: "factor.stimulus", label: "Stimulus" },
+      ],
+      conditions: [
+        ["Wild type", "Vehicle"],
+        ["Wild type", "Stimulus"],
+        ["Gene-perturbed", "Vehicle"],
+        ["Gene-perturbed", "Stimulus"],
+      ].map(([genotype, stimulus], index) => ({
+        id: `condition.factorial.${index + 1}`,
+        label: `${genotype} — ${stimulus}`,
+        attributes: { "factor.genotype": genotype, "factor.stimulus": stimulus },
+      })),
+    };
+    const mapped = mapLiteratureMeasurements(factorialSource, factorialDraft);
+    expect(mapped.compatible).toBe(true);
+    expect(Object.values(mapped.cells)).toHaveLength(4);
+  });
+
+  it("maps complete WB target/reference lineage and verifies the stored ratio", () => {
+    const wbSource: LiteratureExperimenterCase = {
+      ...source,
+      syntheticData: ["Control", "Treatment"].flatMap((condition, conditionIndex) =>
+        [1, 2].flatMap((unit) => {
+          const target = 10 + conditionIndex * 4 + unit;
+          const reference = 5 + unit;
+          return [
+            ["target_band_intensity", target],
+            ["loading_reference_intensity", reference],
+            ["normalized_target_ratio", Number((target / reference).toFixed(2))],
+          ].map(([readout, value]) => ({
+            ...source.syntheticData[0],
+            condition,
+            unit_id: `${condition}.${unit}`,
+            readout: String(readout),
+            value: Number(value),
+          }));
+        }),
+      ),
+    };
+    const fixture = createIndependentTwoGroupFixture();
+    const wbDraft = {
+      ...compatibleDraft(2),
+      readouts: [
+        {
+          ...fixture.draft.readouts[0],
+          shape: "wb_ratio" as const,
+          referenceLabel: "Loading reference",
+        },
+      ],
+    };
+    const result = mapLiteratureMeasurements(wbSource, wbDraft);
+    expect(result.compatible).toBe(true);
+    expect(Object.values(result.cells)).toHaveLength(4);
+    expect(Object.values(result.cells)[0]).toMatchObject({
+      kind: "wb_ratio",
+      target: 11,
+      reference: 6,
+    });
+
+    const broken = {
+      ...wbSource,
+      syntheticData: wbSource.syntheticData.map((row, index) =>
+        index === 2 ? { ...row, value: 9 } : row,
+      ),
+    };
+    expect(mapLiteratureMeasurements(broken, wbDraft).reason).toContain("lineageと一致しません");
   });
 
   it("refuses a nested packet with a missing parent mapping", () => {

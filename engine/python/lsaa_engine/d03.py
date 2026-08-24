@@ -433,10 +433,14 @@ def run_classical_one_way(request: dict[str, Any]) -> dict[str, Any]:
 
 def run_kruskal_wallis(request: dict[str, Any]) -> dict[str, Any]:
     condition_ids, samples = _validated_groups(request)
-    if request.get("contrastIntent", "omnibus_only") != "omnibus_only":
-        raise ValueError("Kruskal-Wallis is currently available as an omnibus-only workflow")
-    if request.get("options", {}).get("multiplicityMethod") is not None:
+    contrast_intent = request.get("contrastIntent", "omnibus_only")
+    multiplicity = request.get("options", {}).get("multiplicityMethod")
+    if contrast_intent not in {"omnibus_only", "all_pairs"}:
+        raise ValueError("Kruskal-Wallis supports omnibus-only or Dunn-Holm all-pairs workflows")
+    if contrast_intent == "omnibus_only" and multiplicity is not None:
         raise ValueError("Kruskal-Wallis omnibus-only workflow must not declare post-hoc adjustment")
+    if contrast_intent == "all_pairs" and multiplicity != "dunn_holm_all_pairs":
+        raise ValueError("Kruskal-Wallis all-pairs workflow requires Dunn comparisons with Holm adjustment")
     try:
         test = stats.kruskal(*samples)
     except ValueError as error:
@@ -454,10 +458,61 @@ def run_kruskal_wallis(request: dict[str, Any]) -> dict[str, Any]:
             "effectSize": None,
         }
     ]
-    result["diagnostics"] = [
-        {
-            "code": "omnibus_only_no_posthoc",
-            "message": "Kruskal-Wallis is reported as an omnibus rank test only; no unvalidated pairwise post-hoc tests were generated.",
-        }
-    ]
+    if contrast_intent == "all_pairs":
+        pooled = np.concatenate(samples)
+        ranks = stats.rankdata(pooled)
+        _, tie_counts = np.unique(pooled, return_counts=True)
+        total_n = len(pooled)
+        rank_variance = total_n * (total_n + 1.0) / 12.0
+        if total_n > 1:
+            rank_variance -= float(np.sum(tie_counts**3 - tie_counts)) / (
+                12.0 * (total_n - 1.0)
+            )
+        mean_ranks: list[float] = []
+        cursor = 0
+        for sample in samples:
+            mean_ranks.append(float(np.mean(ranks[cursor : cursor + len(sample)])))
+            cursor += len(sample)
+        pair_results: list[tuple[str, str, float, float]] = []
+        raw_p_values: list[float] = []
+        for first_index, first_id in enumerate(condition_ids):
+            for second_index in range(first_index + 1, len(condition_ids)):
+                second_id = condition_ids[second_index]
+                standard_error = math.sqrt(
+                    rank_variance
+                    * (1.0 / len(samples[first_index]) + 1.0 / len(samples[second_index]))
+                )
+                statistic = (mean_ranks[first_index] - mean_ranks[second_index]) / standard_error
+                p_value = float(2.0 * stats.norm.sf(abs(statistic)))
+                pair_results.append((first_id, second_id, float(statistic), p_value))
+                raw_p_values.append(p_value)
+        adjusted = multipletests(raw_p_values, method="holm")[1]
+        result["engine"]["packages"]["statsmodels"] = statsmodels.__version__
+        for pair, adjusted_p_value in zip(pair_results, adjusted, strict=True):
+            first_id, second_id, statistic, p_value = pair
+            result["tests"].append(
+                {
+                    "name": f"dunn_holm:{first_id}:{second_id}",
+                    "statisticName": "z",
+                    "statistic": statistic,
+                    "degreesOfFreedom": None,
+                    "pValue": p_value,
+                    "adjustedPValue": float(adjusted_p_value),
+                    "effectSizeName": None,
+                    "effectSize": None,
+                }
+            )
+        result["diagnostics"] = [
+            {
+                "code": "dunn_holm_posthoc",
+                "message": "All condition pairs were compared using pooled-rank Dunn tests with Holm-adjusted p-values after the Kruskal-Wallis omnibus test.",
+            }
+        ]
+    else:
+        result["diagnostics"] = [
+            {
+                "code": "omnibus_only_no_posthoc",
+                "message": "Kruskal-Wallis is reported as an omnibus rank test only because no pairwise comparison question was selected.",
+            }
+        ]
     return result

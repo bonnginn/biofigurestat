@@ -156,15 +156,24 @@ class D03EngineTests(unittest.TestCase):
         self.assertAlmostEqual(result["tests"][0]["pValue"], 0.047166828608461144, places=12)
         self.assertEqual(result["diagnostics"][0]["code"], "omnibus_only_no_posthoc")
 
-    def test_kruskal_wallis_rejects_unimplemented_pairwise_workflow(self):
-        with self.assertRaisesRegex(ValueError, "omnibus-only"):
-            run_request(
-                d03_request(
-                    method="kruskal_wallis",
-                    contrast_intent="all_pairs",
-                    multiplicity=None,
-                )
+    def test_kruskal_wallis_all_pairs_uses_dunn_with_holm_adjustment(self):
+        result = run_request(
+            d03_request(
+                method="kruskal_wallis",
+                contrast_intent="all_pairs",
+                multiplicity="dunn_holm_all_pairs",
             )
+        )
+        self.assertEqual(len(result["tests"]), 4)
+        self.assertEqual(
+            result["tests"][1]["name"],
+            "dunn_holm:condition.control:condition.low",
+        )
+        self.assertTrue(all(test["adjustedPValue"] is not None for test in result["tests"][1:]))
+        self.assertTrue(
+            all(test["adjustedPValue"] >= test["pValue"] for test in result["tests"][1:])
+        )
+        self.assertEqual(result["diagnostics"][0]["code"], "dunn_holm_posthoc")
 
     def test_selected_planned_pairs_use_pooled_variance_and_holm_adjustment(self):
         result = run_request(

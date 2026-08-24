@@ -27,6 +27,7 @@ import {
   fetchLiteratureExperimenterCase,
   isLiteratureCaseId,
   literatureOrderedAxisSummary,
+  literatureWorkflowSummary,
   type LiteratureExperimenterCase,
 } from "../app/literatureBenchmark";
 
@@ -654,6 +655,9 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
           <span>Time: {literatureCase.researcherPacket.timepoints}</span>
           {literatureOrderedAxisSummary(literatureCase) ? (
             <span>{literatureOrderedAxisSummary(literatureCase)}</span>
+          ) : null}
+          {literatureWorkflowSummary(literatureCase) ? (
+            <span>{literatureWorkflowSummary(literatureCase)}</span>
           ) : null}
           <span>Readouts: {literatureCase.researcherPacket.readouts}</span>
           <span>

@@ -1006,14 +1006,20 @@ export function assessDraftGraphAnalysis(input: {
   if (contrastIntent === "control_vs_many") method = "one_way_anova";
   if (contrastIntent === "planned_comparisons") method = "one_way_anova";
   if (method === "welch_anova" && contrastIntent !== "all_pairs") method = "one_way_anova";
-  if (method === "kruskal_wallis" && contrastIntent !== "omnibus_only") method = "welch_anova";
-  const effectiveIntent: ContrastIntent =
-    method === "kruskal_wallis" ? "omnibus_only" : contrastIntent;
+  if (
+    method === "kruskal_wallis" &&
+    contrastIntent !== "omnibus_only" &&
+    contrastIntent !== "all_pairs"
+  )
+    method = "one_way_anova";
+  const effectiveIntent: ContrastIntent = contrastIntent;
   const multiplicityMethod =
     method === "welch_anova"
       ? "games_howell_all_pairs"
       : method === "kruskal_wallis"
-        ? null
+        ? effectiveIntent === "all_pairs"
+          ? "dunn_holm_all_pairs"
+          : null
         : effectiveIntent === "control_vs_many"
           ? "dunnett_control_vs_many"
           : effectiveIntent === "planned_comparisons"
@@ -1092,12 +1098,20 @@ export function assessDraftGraphAnalysis(input: {
       {
         method: "kruskal_wallis",
         level: "alternative",
-        label: "Kruskal–Wallis検定（全体比較のみ）",
-        explanation: "順位に基づく全体検定です。未検証の事後比較は自動生成しません。",
-        enabled: effectiveIntent === "omnibus_only",
-        ...(effectiveIntent === "omnibus_only"
+        label:
+          effectiveIntent === "all_pairs"
+            ? "Kruskal–Wallis + Dunn（Holm補正）"
+            : "Kruskal–Wallis検定（全体比較のみ）",
+        explanation:
+          effectiveIntent === "all_pairs"
+            ? "順位に基づく全体検定後、全条件ペアをDunn法で比較しHolm補正します。"
+            : "順位に基づく全体検定です。比較目的として全体差のみを選んだ場合に使います。",
+        enabled: effectiveIntent === "omnibus_only" || effectiveIntent === "all_pairs",
+        ...(effectiveIntent === "omnibus_only" || effectiveIntent === "all_pairs"
           ? {}
-          : { unavailableReason: "現在は全体比較のみ実行できます。" }),
+          : {
+              unavailableReason: "対照対多または事前ペアには対応するパラメトリック比較を選びます。",
+            }),
       },
     ],
     contrastIntent: effectiveIntent,

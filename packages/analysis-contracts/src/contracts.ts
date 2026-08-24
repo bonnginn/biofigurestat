@@ -114,6 +114,7 @@ export const MultiGroupAnalysisEngineRequestSchema = z.object({
         "tukey_hsd_all_pairs",
         "dunnett_control_vs_many",
         "holm_planned_comparisons",
+        "dunn_holm_all_pairs",
       ])
       .nullable(),
   }),

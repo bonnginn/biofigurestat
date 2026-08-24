@@ -313,7 +313,7 @@ describe("temporary experiment-first analysis adapter", () => {
     });
   });
 
-  it("keeps Kruskal–Wallis omnibus-only and does not invent pairwise tests", () => {
+  it("shapes Kruskal–Wallis with Dunn-Holm all-pairs comparisons", () => {
     const { draft, cells } = fixture(["Control", "siRNA #1", "siRNA #2"]);
     const assessment = assessDraftGraphAnalysis({
       draft,
@@ -321,12 +321,12 @@ describe("temporary experiment-first analysis adapter", () => {
       readoutId: draft.readouts[0].id,
       conditionIds: draft.conditions.map(({ id }) => id),
       selectedMethod: "kruskal_wallis",
-      contrastIntent: "omnibus_only",
+      contrastIntent: "all_pairs",
     });
     expect(assessment.request).toMatchObject({
       method: "kruskal_wallis",
-      contrastIntent: "omnibus_only",
-      options: { multiplicityMethod: null },
+      contrastIntent: "all_pairs",
+      options: { multiplicityMethod: "dunn_holm_all_pairs" },
     });
   });
 

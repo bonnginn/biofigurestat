@@ -287,6 +287,14 @@ describe("ExperimentGraphWorkbench", () => {
     expect(svg).toHaveTextContent("Control");
     expect(svg).toHaveTextContent("Treatment A");
     expect(svg).toHaveTextContent("Treatment B");
+    const longLabelLines = [
+      ...svg
+        .querySelector(
+          '[data-condition-parent-label="Very long condition name for label geometry"]',
+        )!
+        .querySelectorAll("tspan"),
+    ].map((line) => line.textContent);
+    expect(longLabelLines).toEqual(["Very long", "condition name for", "label geometry"]);
 
     selectInspectorTarget("x-axis");
     fireEvent.change(screen.getByRole("slider", { name: "階層ラベルの文字サイズ" }), {

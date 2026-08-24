@@ -56,8 +56,12 @@ export function createD03EngineRequest(input: D03RequestInput): AnalysisEngineRe
   if (method === "welch_anova" && contrastIntent !== "all_pairs") {
     throw new Error("Welch ANOVA + Games-Howell currently requires all-pairs intent");
   }
-  if (method === "kruskal_wallis" && contrastIntent !== "omnibus_only") {
-    throw new Error("Kruskal-Wallis is currently an omnibus-only workflow");
+  if (
+    method === "kruskal_wallis" &&
+    contrastIntent !== "omnibus_only" &&
+    contrastIntent !== "all_pairs"
+  ) {
+    throw new Error("Kruskal-Wallis supports omnibus-only or Dunn-Holm all-pairs workflows");
   }
   if (contrastIntent === "planned_comparisons") {
     if (!input.plannedContrastConditionIds?.length) {
@@ -81,13 +85,17 @@ export function createD03EngineRequest(input: D03RequestInput): AnalysisEngineRe
   const multiplicityMethod =
     method === "welch_anova"
       ? "games_howell_all_pairs"
-      : method === "kruskal_wallis" || contrastIntent === "omnibus_only"
-        ? null
-        : contrastIntent === "control_vs_many"
-          ? "dunnett_control_vs_many"
-          : contrastIntent === "planned_comparisons"
-            ? "holm_planned_comparisons"
-            : "tukey_hsd_all_pairs";
+      : method === "kruskal_wallis"
+        ? contrastIntent === "all_pairs"
+          ? "dunn_holm_all_pairs"
+          : null
+        : contrastIntent === "omnibus_only"
+          ? null
+          : contrastIntent === "control_vs_many"
+            ? "dunnett_control_vs_many"
+            : contrastIntent === "planned_comparisons"
+              ? "holm_planned_comparisons"
+              : "tukey_hsd_all_pairs";
   const unitById = new Map(input.unitInstances.map((unit) => [unit.id, unit]));
   const seenUnits = new Set<string>();
   const countByCondition = new Map(conditionIds.map((conditionId) => [conditionId, 0]));

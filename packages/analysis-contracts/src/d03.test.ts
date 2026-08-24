@@ -208,12 +208,12 @@ describe("D03 independent multi-group contract", () => {
       createD03EngineRequest({
         ...common,
         selectedMethod: "kruskal_wallis",
-        contrastIntent: "omnibus_only",
+        contrastIntent: "all_pairs",
       }),
     ).toMatchObject({
       method: "kruskal_wallis",
-      contrastIntent: "omnibus_only",
-      options: { multiplicityMethod: null },
+      contrastIntent: "all_pairs",
+      options: { multiplicityMethod: "dunn_holm_all_pairs" },
     });
   });
 

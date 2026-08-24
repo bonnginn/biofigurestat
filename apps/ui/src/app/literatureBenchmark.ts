@@ -150,6 +150,29 @@ export function literatureOrderedAxisSummary(source: LiteratureExperimenterCase)
   return `Numeric axis: ${axis.title}${axis.unit ? ` (${axis.unit})` : " (unitless)"}; levels: ${values.join(", ")}. Do not enter this axis as time.`;
 }
 
+export function literatureWorkflowSummary(source: LiteratureExperimenterCase): string | null {
+  const rows = source.syntheticData;
+  if (rows.length && rows.every(({ x_value }) => x_value !== null)) {
+    return "Workflow: paired X/Y relationship. Use the 2-measurement relationship route; each x_value and value belongs to the same stable unit.";
+  }
+  const conditions = uniqueInOrder(rows.map(({ condition }) => condition));
+  const factorialCells = conditions.map((condition) =>
+    condition.split("|").map((part) => part.trim()),
+  );
+  if (
+    factorialCells.length >= 4 &&
+    factorialCells.every((parts) => parts.length === 2 && parts.every(Boolean)) &&
+    uniqueInOrder(factorialCells.map(([first]) => first)).length >= 2 &&
+    uniqueInOrder(factorialCells.map(([, second]) => second)).length >= 2
+  ) {
+    return "Workflow: two-factor independent design. Preserve the two condition components as separate factors and evaluate their interaction; do not flatten the cells into a one-way group list.";
+  }
+  if (rows.length && rows.every(({ event, time }) => event !== null && time !== null)) {
+    return "Workflow: Survival / time-to-event. Preserve event/censoring status and use the Survival route.";
+  }
+  return null;
+}
+
 export function mapLiteratureMeasurements(
   source: LiteratureExperimenterCase,
   target: ExperimentSetDraft,
@@ -183,19 +206,99 @@ export function mapLiteratureMeasurements(
     );
   }
   const sourceConditions = uniqueInOrder(rows.map((row) => row.condition));
+  const sourceFactorCells = sourceConditions.map((condition) =>
+    condition.split("|").map((part) => part.trim()),
+  );
+  const factorialSource =
+    sourceFactorCells.length >= 4 &&
+    sourceFactorCells.every((parts) => parts.length === 2 && parts.every(Boolean)) &&
+    uniqueInOrder(sourceFactorCells.map(([first]) => first)).length >= 2 &&
+    uniqueInOrder(sourceFactorCells.map(([, second]) => second)).length >= 2;
   const sourceTimes = uniqueInOrder(
     rows.map((row) => row.time).filter((value): value is number => value !== null),
   );
   const sourceReadouts = uniqueInOrder(rows.map((row) => row.readout));
+  const correlationPairs =
+    sourceConditions.length === 1 &&
+    sourceReadouts.length === 1 &&
+    rows.every((row) => row.x_value !== null);
+  if (correlationPairs) {
+    if (
+      target.analysisIntent.kind !== "correlation" ||
+      target.readouts.length !== 1 ||
+      target.readouts[0]?.shape !== "nested_continuous" ||
+      target.conditions.length !== 2 ||
+      target.conditionAssignment.kind !== "matched" ||
+      target.time.sampling !== "none"
+    ) {
+      return mismatch(
+        "x_valueとvalueは同じ実験単位のX/Yペアです。「2つの測定値の関係」を選び、対応するX/Yの2列として設計してください。",
+      );
+    }
+    const units = uniqueInOrder(rows.map((row) => sourceUnit(row)));
+    if (target.experiments.length !== units.length) {
+      return mismatch(`X/Yがそろった統計上の実験単位を${units.length}個作成してください。`);
+    }
+    const cells: Record<string, ExperimentCellMap[string]> = {};
+    rows.forEach((row) => {
+      const experiment = target.experiments[units.indexOf(sourceUnit(row))];
+      const readout = target.readouts[0];
+      if (!experiment || !readout) return;
+      [row.x_value, row.value].forEach((value, conditionIndex) => {
+        const condition = target.conditions[conditionIndex];
+        if (!condition) return;
+        cells[
+          experimentCellKey({
+            experimentId: experiment.id,
+            conditionId: condition.id,
+            readoutId: readout.id,
+          })
+        ] = {
+          kind: "nested_continuous",
+          source: "paste",
+          rawValues: [value as number],
+          sourceLocations: [
+            `${source.caseId}:${row.experiment_id}:${row.unit_id}:${conditionIndex === 0 ? "x_value" : row.readout}`,
+          ],
+        };
+      });
+    });
+    return {
+      compatible: true,
+      reason: `${source.caseId}の${rows.length}組のsynthetic X/Y値を、同じ安定IDのペアとして対応づけます。`,
+      cells,
+    };
+  }
   const hasRatios = rows.some((row) => row.numerator !== null || row.denominator !== null);
-  const hasWbBands = sourceReadouts.some((readout) =>
-    /target_raw|reference_raw|target_ratio/.test(readout),
-  );
+  const isWbTarget = (readout: string) =>
+    /(?:^|_)(?:target)(?:_|$)/i.test(readout) && !/(?:ratio|normalized)/i.test(readout);
+  const isWbReference = (readout: string) => /(?:reference|loading_control)/i.test(readout);
+  const isWbRatio = (readout: string) => /(?:ratio|normalized_target)/i.test(readout);
+  const hasWbBands =
+    sourceReadouts.some(isWbTarget) &&
+    sourceReadouts.some(isWbReference) &&
+    sourceReadouts.some(isWbRatio);
   const expectedShape = hasRatios ? "proportion" : hasWbBands ? "wb_ratio" : "nested_continuous";
   if (hasWbBands) {
-    return mismatch(
-      "WB source rowsはtarget/reference lineageを持つため、現在の安全なliterature loaderでは自動入力しません。対応状況だけ記録してください。",
-    );
+    const rowsByUnit = new Map<string, LiteratureSyntheticRow[]>();
+    rows.forEach((row) => {
+      const key = `${row.condition}\u0000${sourceUnit(row)}`;
+      rowsByUnit.set(key, [...(rowsByUnit.get(key) ?? []), row]);
+    });
+    for (const unitRows of rowsByUnit.values()) {
+      const targetRow = unitRows.find((row) => isWbTarget(row.readout));
+      const referenceRow = unitRows.find((row) => isWbReference(row.readout));
+      const ratioRow = unitRows.find((row) => isWbRatio(row.readout));
+      if (!targetRow || !referenceRow || !ratioRow || !referenceRow.value) {
+        return mismatch(
+          "WBの各実験単位にtarget・loading reference・normalized ratioの完全なlineageが必要です。",
+        );
+      }
+      const derivedRatio = (targetRow.value as number) / referenceRow.value;
+      if (Math.abs(derivedRatio - (ratioRow.value as number)) > 0.02) {
+        return mismatch("WBの保存済みnormalized ratioがtarget/reference lineageと一致しません。");
+      }
+    }
   }
   if (sourceReadouts.length !== 1 && !hasWbBands) {
     return mismatch(
@@ -208,13 +311,26 @@ export function mapLiteratureMeasurements(
   if (target.conditions.length !== sourceConditions.length) {
     return mismatch(`条件数を${sourceConditions.length}にしてください。`);
   }
+  if (factorialSource && target.attributes.length !== 2) {
+    return mismatch(
+      "このcaseは区切られた2要因の全組合せです。2つの要因を別々に定義し、interactionを評価するfactorial designにしてください。",
+    );
+  }
   const targetConditionLabels = target.conditions.map((condition) =>
     normalized(conditionDisplayLabel(condition, target.attributes) || condition.label),
   );
   if (
-    sourceConditions.some(
-      (condition, index) => normalized(condition) !== targetConditionLabels[index],
-    )
+    sourceConditions.some((condition, index) => {
+      if (!factorialSource) return normalized(condition) !== targetConditionLabels[index];
+      const targetCondition = target.conditions[index];
+      const sourceParts = sourceFactorCells[index];
+      const targetParts = target.attributes.map(
+        (attribute) => targetCondition?.attributes[attribute.id] ?? "",
+      );
+      return sourceParts.some(
+        (part, partIndex) => normalized(part) !== normalized(targetParts[partIndex] ?? ""),
+      );
+    })
   ) {
     return mismatch(`条件をこの順序で作成してください：${sourceConditions.join("、")}`);
   }
@@ -282,7 +398,11 @@ export function mapLiteratureMeasurements(
 
   const cellGroups = new Map<string, Map<string, LiteratureSyntheticRow[]>>();
   for (const row of rows) {
-    const groupKey = JSON.stringify([row.condition, rowAxisValue(row), row.readout]);
+    const groupKey = JSON.stringify([
+      row.condition,
+      rowAxisValue(row),
+      hasWbBands ? "normalized_target_ratio" : row.readout,
+    ]);
     const units = cellGroups.get(groupKey) ?? new Map<string, LiteratureSyntheticRow[]>();
     const unit = sourceUnit(row);
     units.set(unit, [...(units.get(unit) ?? []), row]);
@@ -338,6 +458,16 @@ export function mapLiteratureMeasurements(
           kind: "proportion",
           positive: row?.numerator ?? null,
           eligible: row?.denominator ?? null,
+        };
+      } else if (expectedShape === "wb_ratio") {
+        const targetRow = unitRows.find((row) => isWbTarget(row.readout));
+        const referenceRow = unitRows.find((row) => isWbReference(row.readout));
+        if (!targetRow || !referenceRow) return;
+        cells[key] = {
+          kind: "wb_ratio",
+          target: targetRow.value,
+          reference: referenceRow.value,
+          inputMode: "corrected_value",
         };
       } else if (expectedShape === "nested_continuous") {
         cells[key] = {
