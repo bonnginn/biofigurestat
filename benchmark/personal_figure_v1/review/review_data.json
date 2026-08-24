@@ -1,5 +1,48 @@
 {
   "schemaVersion": "1.0.0",
-  "updatedAt": null,
-  "reviews": {}
+  "updatedAt": "2026-08-24T14:49:03.982Z",
+  "reviews": {
+    "PFR002": {
+      "readability": "insufficient",
+      "preference": "dislike",
+      "flags": ["statistics", "structure"],
+      "comment": "この実験では、Ndel1-mycとNde1-mycの２種類の細胞株を使い、ndel1 siRNAによって形成されるciliaのphenotypeがrescueされているかをみている。したがって、Doxの有無でrescueされるかを知りたい実験である。また、このようなcilia率は棒グラフ＋ドットで描写するのが一般的。",
+      "reviewedAt": "2026-08-24T14:40:03.823Z"
+    },
+    "PFR004": {
+      "readability": "insufficient",
+      "preference": "dislike",
+      "flags": ["structure"],
+      "comment": "このグラフでは0h 24hは固定細胞のために別のdishである。si cont, si Ndel1#1, siNdel1#2, siNDE1#1, siNDE1#2の5条件でみている。先ほどと同様に棒グラフ＋ドットにしたい。\n統計は、コントロールと比較して。",
+      "reviewedAt": "2026-08-24T14:42:31.540Z"
+    },
+    "PFR025": {
+      "readability": "ok",
+      "preference": "dislike",
+      "flags": ["scale", "structure"],
+      "comment": "統計は不要である。２系統の蛍光値の変化を重ねてみている。変化がよりみやすくなるような、横軸と縦軸の設定をすべき。",
+      "reviewedAt": "2026-08-24T14:43:48.008Z"
+    },
+    "PFR046": {
+      "readability": "ok",
+      "preference": "dislike",
+      "flags": ["labels", "statistics", "structure"],
+      "comment": "これはdark/Litの比較であるから、対応する群ではあるが、細胞数が多すぎるので、線でつなぐことはreadability的に不適切か。多分細胞数の設定が少なすぎて、この形になっているので、論文に書かれている数のときにどう表現するか？darkを黒または白、Litは青色光なので水色にしている。多群比較ではあるが、それぞれがそれぞれと差があるかまで検定すべき。",
+      "reviewedAt": "2026-08-24T14:46:43.723Z"
+    },
+    "PFR049": {
+      "readability": "ok",
+      "preference": "neutral",
+      "flags": ["labels", "statistics"],
+      "comment": "AX2がWTなので、WTとの比較をしたい。\n箱ひげ図やviolin plotが黒塗りなのが好きではない。",
+      "reviewedAt": "2026-08-24T14:48:00.380Z"
+    },
+    "PFR069": {
+      "readability": "ok",
+      "preference": "dislike",
+      "flags": ["scale"],
+      "comment": "これも横軸を間延びさせすぎて、変化が見にくいのだけがもったいない。縦軸のスケールも変化が小さいのかもしれないけど。統計は不要である。",
+      "reviewedAt": "2026-08-24T14:49:03.982Z"
+    }
+  }
 }

@@ -1,0 +1,31 @@
+【Methods】
+解析テンプレート：D03 · 3条件以上の独立群（0.1.0）
+実行手法：一元配置分散分析（ANOVA）（one_way_anova）
+推奨手法：Welchの分散分析（選択と異なる）
+推奨判断：推奨法を明示的に採用
+実験デザイン：PFR002 personal published-Figure validation／実験単位：unit-level.experimental-unit
+解析した測定項目：ciliated_fraction
+対応構造：条件間で別々の独立した実験単位。
+統計上のn：Ndel1-Myc; siNdel1; Dox− n=3, Ndel1-Myc; siNdel1; Dox+ n=3, Ndel1-Myc; baseline reference n=3, NDE1-Myc; siNdel1; Dox− n=3, NDE1-Myc; siNdel1; Dox+ n=3, NDE1-Myc; baseline reference n=3
+解析条件：Ndel1-Myc; siNdel1; Dox−、Ndel1-Myc; siNdel1; Dox+、Ndel1-Myc; baseline reference、NDE1-Myc; siNdel1; Dox−、NDE1-Myc; siNdel1; Dox+、NDE1-Myc; baseline reference
+主比較：Ndel1-Myc; siNdel1; Dox− vs Ndel1-Myc; siNdel1; Dox+
+エラーバー：平均±SEM（SD/√n）
+
+解析結果
+結果：完了
+全体検定：classical_one_way_anova、F=208.4533、自由度 5, 12、p=3.14e-11
+全体効果量：—=—
+補正済み条件間比較：
+・Ndel1-Myc; siNdel1; Dox− vs Ndel1-Myc; siNdel1; Dox+：平均値の差 34.1276（信頼区間なし）、p=2.07e-10、調整済みp=4.13e-10、hedges_g=10.9437
+・NDE1-Myc; siNdel1; Dox− vs NDE1-Myc; siNdel1; Dox+：平均値の差 8.2808（信頼区間なし）、p=0.0005、調整済みp=0.0005、hedges_g=2.6633
+
+実行エンジン：lsaa-python 0.13.0
+使用パッケージ：numpy 2.3.5, scipy 1.18.0, statsmodels 0.14.6
+アプリケーション：Life Science Analysis App 0.1.0
+完了日時：2026-08-24T15:21:28.067043+00:00
+
+注意事項
+・除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。
+・正規化：実行設定に正規化計画がありません（該当なし／未設定）。
+・比較意図：事前に明示した条件ペアのみ（Ndel1-Myc; siNdel1; Dox− vs Ndel1-Myc; siNdel1; Dox+、NDE1-Myc; siNdel1; Dox− vs NDE1-Myc; siNdel1; Dox+）。任意の線形対比や未選択のペアは含めていません。
+・多重性補正：holm_planned_comparisonsを指定。

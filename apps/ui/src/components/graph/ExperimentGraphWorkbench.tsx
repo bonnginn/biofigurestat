@@ -256,6 +256,7 @@ type GraphSeries = Readonly<{
   conditionLabel: string;
   timePointId?: string;
   timeLabel?: string;
+  xValue?: number;
   proportionPoints: readonly ProportionPoint[];
   experimentPoints: readonly ExperimentPoint[];
   rawPoints: readonly RawPoint[];
@@ -587,6 +588,13 @@ function ExperimentGraphSvg({
   onInspect: (target: InspectorTarget) => void;
   activeInspectorTarget: InspectorTarget;
 }) {
+  const continuousXValues = series
+    .map((item) => item.xValue)
+    .filter((value): value is number => value !== undefined && Number.isFinite(value));
+  const continuousLine =
+    graphType === "line" &&
+    (axes.xSemantic === "time" || axes.xSemantic === "numeric_covariate") &&
+    continuousXValues.length > 1;
   const gapWeights = axisLabels.slice(1).map((label, index) => {
     const previous = axisLabels[index];
     if (previous?.conditionId === label.conditionId) return 1;
@@ -645,10 +653,10 @@ function ExperimentGraphSvg({
     top: CHART_MARGIN.top + topLegendHeight,
     right: CHART_MARGIN.right + (showLegend && appearance.legendPosition === "right" ? 190 : 0),
   };
-  const width = margin.left + margin.right + categoryLayout.innerWidth;
-  const hierarchyDepth = axes.showCategoryLabels
-    ? Math.max(0, axisLabels[0]?.levels.length ?? 0)
-    : 0;
+  const graphInnerWidth = continuousLine ? 880 : categoryLayout.innerWidth;
+  const width = margin.left + margin.right + graphInnerWidth;
+  const hierarchyDepth =
+    axes.showCategoryLabels && !continuousLine ? Math.max(0, axisLabels[0]?.levels.length ?? 0) : 0;
   const extraLabelHeight = Math.max(0, hierarchyDepth - 1) * 27;
   const xAxisTitleHeight = renderedXAxisTitle ? 34 : 0;
   const height = CHART_HEIGHT + extraLabelHeight + topLegendHeight + xAxisTitleHeight;
@@ -702,8 +710,39 @@ function ExperimentGraphSvg({
     }
     return margin.top + ((domainMax - value) / domainRange) * plotHeight;
   };
-  const xFor = (index: number) =>
-    margin.left + categoryLayout.sidePadding + (categoryLayout.offsets[index] ?? 0);
+  const continuousXMin = continuousXValues.length ? Math.min(...continuousXValues) : 0;
+  const continuousXMax = continuousXValues.length ? Math.max(...continuousXValues) : 1;
+  const continuousXRange = Math.max(continuousXMax - continuousXMin, Number.EPSILON);
+  const xFor = (index: number) => {
+    if (continuousLine) {
+      const value = series[index]?.xValue ?? continuousXMin;
+      return (
+        margin.left +
+        appearance.sidePadding +
+        ((value - continuousXMin) / continuousXRange) *
+          Math.max(1, graphInnerWidth - appearance.sidePadding * 2)
+      );
+    }
+    return margin.left + categoryLayout.sidePadding + (categoryLayout.offsets[index] ?? 0);
+  };
+  const continuousTickIndices = continuousLine
+    ? (() => {
+        const firstIndexByValue = new Map<number, number>();
+        series.forEach((item, index) => {
+          if (item.xValue !== undefined && !firstIndexByValue.has(item.xValue)) {
+            firstIndexByValue.set(item.xValue, index);
+          }
+        });
+        const ordered = [...firstIndexByValue.entries()].sort(([a], [b]) => a - b);
+        const stride = Math.max(1, Math.ceil(ordered.length / 8));
+        const selected = ordered
+          .filter((_, index) => index % stride === 0)
+          .map(([, index]) => index);
+        const last = ordered.at(-1)?.[1];
+        if (last !== undefined && !selected.includes(last)) selected.push(last);
+        return new Set(selected);
+      })()
+    : null;
   const hierarchyGroups = Array.from({ length: hierarchyDepth }, (_, levelIndex) =>
     axisLabels.reduce<Array<{ key: string; label: string; start: number; end: number }>>(
       (groups, label, index) => {
@@ -737,6 +776,7 @@ function ExperimentGraphSvg({
           shape === "proportion" ? 5 : 5,
           axes.yTickMode === "manual" ? axes.yTickInterval : null,
         );
+  const yTickFractionDigits = domainRange < 1 ? 2 : 1;
   const defaultYLabel = defaultGraphYTitle({
     id: "preview-readout",
     label: readoutLabel,
@@ -762,7 +802,7 @@ function ExperimentGraphSvg({
     conditionId: string;
     points: readonly { x: number; y: number }[];
   }> =
-    timeSampling === "longitudinal" && (graphType === "line" || layers.connectingLine)
+    timeSampling === "longitudinal" && layers.connectingLine
       ? conditionIds.flatMap((conditionId) =>
           [
             ...new Set(
@@ -814,7 +854,7 @@ function ExperimentGraphSvg({
       role="img"
       aria-label={`${yLabel}の実験単位ごとのグラフ`}
       data-graph-shape={shape}
-      data-category-slot-width={categoryLayout.baseSlot}
+      data-category-slot-width={continuousLine ? 0 : categoryLayout.baseSlot}
       data-side-padding={categoryLayout.sidePadding}
       style={{
         fontFamily:
@@ -906,7 +946,7 @@ function ExperimentGraphSvg({
               className="experiment-graph-axis-label"
               style={{ fontSize: appearance.tickFontSize, fill: "#000" }}
             >
-              {formatNumber(tick, 1)}
+              {formatNumber(tick, yTickFractionDigits)}
             </text>
           </g>
         );
@@ -961,17 +1001,19 @@ function ExperimentGraphSvg({
           onInspect("x-axis");
         }}
       />
-      {axisLabels.map((label, index) => (
-        <line
-          key={`category-tick-${label.conditionId}-${label.timeLabel || "none"}-${index}`}
-          x1={xFor(index)}
-          x2={xFor(index)}
-          y1={height - margin.bottom}
-          y2={height - margin.bottom - 6}
-          className="experiment-graph-category-tick"
-          data-inspector-target="x-axis"
-        />
-      ))}
+      {axisLabels.map((label, index) =>
+        continuousTickIndices && !continuousTickIndices.has(index) ? null : (
+          <line
+            key={`category-tick-${label.conditionId}-${label.timeLabel || "none"}-${index}`}
+            x1={xFor(index)}
+            x2={xFor(index)}
+            y1={height - margin.bottom}
+            y2={height - margin.bottom - 6}
+            className="experiment-graph-category-tick"
+            data-inspector-target="x-axis"
+          />
+        ),
+      )}
       <text
         x={17}
         y={margin.top + plotHeight / 2}
@@ -1248,7 +1290,8 @@ function ExperimentGraphSvg({
             data-condition-index={seriesIndex}
             data-condition-parent={axisLabel.levels[0]?.value ?? item.conditionLabel}
           >
-            {axes.showCategoryLabels ? (
+            {axes.showCategoryLabels &&
+            (!continuousTickIndices || continuousTickIndices.has(seriesIndex)) ? (
               <text
                 x={x}
                 y={height - margin.bottom + 25}
@@ -2481,6 +2524,7 @@ export function ExperimentGraphWorkbench({
           timeLabel: timePoint
             ? `${timePoint.value} ${axes.xUnit.trim() || draft.time.unit}`
             : undefined,
+          xValue: timePoint?.value,
           proportionPoints,
           experimentPoints,
           rawPoints,
@@ -2804,10 +2848,24 @@ export function ExperimentGraphWorkbench({
       "text/csv;charset=utf-8",
     );
   };
+  const descriptiveBenchmarkRun = draft.analysisIntent.kind === "single_cohort";
+  const descriptiveMethodsText = [
+    "Descriptive Figure workflow (no inferential test).",
+    `Readout: ${readout?.label ?? activeReadoutId}.`,
+    `Displayed conditions: ${activeConditions.map(({ label }) => label).join(", ")}.`,
+    `Statistical unit retained as: ${draft.conditionAssignment.unitLabel}.`,
+    "Reason: the approved Gold brief specifies a descriptive panel and does not define an inferential comparator or null hypothesis.",
+  ].join("\n");
   const finalizeBenchmarkRun = async () => {
     const svg = svgRef.current;
     const run = currentBenchmarkRun();
-    if (!svg || !run.identity || !run.supportStatus || !analysis || !methodsText) {
+    if (
+      !svg ||
+      !run.identity ||
+      !run.supportStatus ||
+      (!analysis && !descriptiveBenchmarkRun) ||
+      (analysis && !methodsText)
+    ) {
       setBenchmarkCaptureStatus(
         "完了前にBenchmark runを開始し、対応状況を選び、統計解析を実行してください。",
       );
@@ -2838,66 +2896,77 @@ export function ExperimentGraphWorkbench({
       setBenchmarkOutcome("completed");
       recordBenchmarkEvent("benchmark_run_finalized", {
         selectedGraph: graphType,
-        selectedStatistics: analysis.request.method,
+        selectedStatistics: analysis?.request.method ?? "none_descriptive",
       });
       const finalRun = currentBenchmarkRun();
-      const statisticsArtifact = {
-        selectedReadoutId,
-        selectedConditionIds,
-        statisticalUnit: draft.conditionAssignment.unitLabel,
-        recommendation:
-          analysis.recommendation ??
-          createWorkspaceRecommendation(
-            analysis.request,
-            createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
-          ),
-        recommendedMethod:
-          analysis.recommendation?.recommendedMethod ??
-          analysis.recommendedMethod ??
-          analysisAssessment.recommendedMethod,
-        selectedMethod: analysis.request.method,
-        recommendationDiffers:
-          (analysis.recommendation?.recommendedMethod ??
-            analysis.recommendedMethod ??
-            analysisAssessment.recommendedMethod) !== analysis.request.method,
-        contrast:
-          analysis.request.protocolVersion === "0.1.0"
-            ? analysis.request.contrastConditionIds
-            : analysis.request.protocolVersion === "0.2.0"
-              ? {
-                  intent: analysis.request.contrastIntent,
-                  controlConditionId: analysis.request.controlConditionId ?? null,
-                  plannedConditionPairs: analysis.request.plannedContrastConditionIds ?? [],
-                }
-              : analysis.request.protocolVersion === "0.5.0"
-                ? analysis.request.variableConditionIds
-                : analysis.request.protocolVersion === "0.11.0"
+      const statisticsArtifact = analysis
+        ? {
+            selectedReadoutId,
+            selectedConditionIds,
+            statisticalUnit: draft.conditionAssignment.unitLabel,
+            recommendation:
+              analysis.recommendation ??
+              createWorkspaceRecommendation(
+                analysis.request,
+                createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
+              ),
+            recommendedMethod:
+              analysis.recommendation?.recommendedMethod ??
+              analysis.recommendedMethod ??
+              analysisAssessment.recommendedMethod,
+            selectedMethod: analysis.request.method,
+            recommendationDiffers:
+              (analysis.recommendation?.recommendedMethod ??
+                analysis.recommendedMethod ??
+                analysisAssessment.recommendedMethod) !== analysis.request.method,
+            contrast:
+              analysis.request.protocolVersion === "0.1.0"
+                ? analysis.request.contrastConditionIds
+                : analysis.request.protocolVersion === "0.2.0"
                   ? {
-                      rows: analysis.request.rowCategoryIds,
-                      columns: analysis.request.columnCategoryIds,
+                      intent: analysis.request.contrastIntent,
+                      controlConditionId: analysis.request.controlConditionId ?? null,
+                      plannedConditionPairs: analysis.request.plannedContrastConditionIds ?? [],
                     }
-                  : analysis.request.protocolVersion === "0.12.0"
-                    ? analysis.request.conditionIds
-                    : analysis.request.protocolVersion === "0.13.0"
-                      ? { x: analysis.request.xLabel, y: analysis.request.yLabel }
-                      : analysis.request.protocolVersion === "0.6.0" ||
-                          analysis.request.protocolVersion === "0.7.0" ||
-                          analysis.request.protocolVersion === "0.8.0" ||
-                          analysis.request.protocolVersion === "0.10.0"
+                  : analysis.request.protocolVersion === "0.5.0"
+                    ? analysis.request.variableConditionIds
+                    : analysis.request.protocolVersion === "0.11.0"
+                      ? {
+                          rows: analysis.request.rowCategoryIds,
+                          columns: analysis.request.columnCategoryIds,
+                        }
+                      : analysis.request.protocolVersion === "0.12.0"
                         ? analysis.request.conditionIds
-                        : analysis.request.protocolVersion === "0.9.0"
-                          ? {
-                              conditionId: analysis.request.conditionId,
-                              referenceValue: analysis.request.nullValue,
-                            }
-                          : analysis.request.primaryContrastConditionIds,
-        nByCondition: analysisAssessment.nByCondition,
-        correction: analysis.request.options.multiplicityMethod,
-        request: analysis.request,
-        result: analysis.result,
-        state: "current",
-        applicationVersion: PRODUCT_IDENTITY.version,
-      };
+                        : analysis.request.protocolVersion === "0.13.0"
+                          ? { x: analysis.request.xLabel, y: analysis.request.yLabel }
+                          : analysis.request.protocolVersion === "0.6.0" ||
+                              analysis.request.protocolVersion === "0.7.0" ||
+                              analysis.request.protocolVersion === "0.8.0" ||
+                              analysis.request.protocolVersion === "0.10.0"
+                            ? analysis.request.conditionIds
+                            : analysis.request.protocolVersion === "0.9.0"
+                              ? {
+                                  conditionId: analysis.request.conditionId,
+                                  referenceValue: analysis.request.nullValue,
+                                }
+                              : analysis.request.primaryContrastConditionIds,
+            nByCondition: analysisAssessment.nByCondition,
+            correction: analysis.request.options.multiplicityMethod,
+            request: analysis.request,
+            result: analysis.result,
+            state: "current",
+            applicationVersion: PRODUCT_IDENTITY.version,
+          }
+        : {
+            selectedReadoutId,
+            selectedConditionIds,
+            statisticalUnit: draft.conditionAssignment.unitLabel,
+            selectedMethod: null,
+            state: "not_performed",
+            reason:
+              "Approved Gold brief specifies a descriptive panel without an inferential comparator or null hypothesis.",
+            applicationVersion: PRODUCT_IDENTITY.version,
+          };
       await writeBenchmarkArtifacts(
         [
           {
@@ -2907,7 +2976,7 @@ export function ExperimentGraphWorkbench({
                 ...finalRun.identity,
                 appVersion: PRODUCT_IDENTITY.version,
                 sourceRevision: evaluationMode.sourceRevision,
-                engineVersion: analysis.result.engine.version,
+                engineVersion: analysis?.result.engine.version ?? "not_applicable",
                 startedAt: finalRun.startedAt,
                 completedAt: new Date().toISOString(),
                 outcome: finalRun.outcome,
@@ -2954,7 +3023,7 @@ export function ExperimentGraphWorkbench({
             mediaType: "image/png",
           },
           { name: "statistics.json", content: JSON.stringify(statisticsArtifact, null, 2) },
-          { name: "methods.txt", content: methodsText },
+          { name: "methods.txt", content: analysis ? methodsText! : descriptiveMethodsText },
           { name: "graph_state.json", content: JSON.stringify(graphStateSnapshot, null, 2) },
           {
             name: "interaction_log.json",
@@ -3072,7 +3141,7 @@ export function ExperimentGraphWorkbench({
                       !benchmarkRun.identity ||
                       !benchmarkRun.supportStatus ||
                       !benchmarkRun.defaultGraphCaptured ||
-                      !analysis
+                      (!analysis && !descriptiveBenchmarkRun)
                     }
                     onClick={() => void finalizeBenchmarkRun()}
                   >

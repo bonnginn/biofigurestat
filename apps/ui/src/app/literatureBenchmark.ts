@@ -49,6 +49,8 @@ export type LiteratureExperimenterCase = Readonly<{
     repeated_identity_note: string;
     nested_observation_note: string;
     missingness_note?: string | null;
+    control_condition?: string | null;
+    descriptive_only?: boolean;
   }>;
   paperReference?: Readonly<{
     title: string;
@@ -195,6 +197,12 @@ export function createLiteratureExperimentDraft(
       attributes: conditionAttributes,
     };
   });
+  const declaredControlIndex = source.researcherPacket.control_condition
+    ? sourceConditions.findIndex(
+        (condition) =>
+          normalized(condition) === normalized(source.researcherPacket.control_condition ?? ""),
+      )
+    : -1;
   const conditionsByRawUnit = new Map<string, Set<string>>();
   rows.forEach((row) => {
     const conditionsForUnit = conditionsByRawUnit.get(row.unit_id) ?? new Set<string>();
@@ -222,16 +230,24 @@ export function createLiteratureExperimentDraft(
         ? "longitudinal"
         : "cross_sectional";
   const unitOrderByCondition = new Map<string, string[]>();
+  const unitOrderByConditionAndAxis = new Map<string, string[]>();
   rows.forEach((row) => {
     const units = unitOrderByCondition.get(row.condition) ?? [];
     const unit = sourceUnit(row);
     if (!units.includes(unit)) units.push(unit);
     unitOrderByCondition.set(row.condition, units);
+    const axisValue = expectedAxis?.semantic === "numeric_covariate" ? row.x_value : row.time;
+    const cellKey = JSON.stringify([row.condition, axisValue]);
+    const cellUnits = unitOrderByConditionAndAxis.get(cellKey) ?? [];
+    if (!cellUnits.includes(unit)) cellUnits.push(unit);
+    unitOrderByConditionAndAxis.set(cellKey, cellUnits);
   });
   const matchedUnits = uniqueInOrder(rows.map((row) => sourceUnit(row)));
   const experimentCount = matched
     ? matchedUnits.length
-    : Math.max(...[...unitOrderByCondition.values()].map((units) => units.length));
+    : sampling === "cross_sectional"
+      ? Math.max(...[...unitOrderByConditionAndAxis.values()].map((units) => units.length))
+      : Math.max(...[...unitOrderByCondition.values()].map((units) => units.length));
   const timeUnit = expectedAxis?.unit === "s" ? "sec" : expectedAxis?.unit;
   return {
     ...base,
@@ -245,8 +261,10 @@ export function createLiteratureExperimentDraft(
     })),
     attributes,
     conditions,
+    controlConditionId:
+      declaredControlIndex >= 0 ? conditions[declaredControlIndex]?.id : undefined,
     analysisIntent:
-      conditions.length === 1
+      source.researcherPacket.descriptive_only || conditions.length === 1
         ? { kind: "single_cohort", mode: "descriptive" }
         : { kind: "group_comparison" },
     conditionAssignment: {
@@ -623,7 +641,9 @@ export function mapLiteratureMeasurements(
     [...units.entries()].forEach(([unit, unitRows], groupExperimentIndex) => {
       const experimentIndex = matched
         ? matchedUnitOrder.indexOf(unit)
-        : (unitOrderByCondition.get(conditionLabel)?.indexOf(unit) ?? groupExperimentIndex);
+        : expectedSampling === "cross_sectional"
+          ? groupExperimentIndex
+          : (unitOrderByCondition.get(conditionLabel)?.indexOf(unit) ?? groupExperimentIndex);
       const targetExperiment = target.experiments[experimentIndex];
       if (!targetExperiment) return;
       const key = experimentCellKey({

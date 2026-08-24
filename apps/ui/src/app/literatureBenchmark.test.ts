@@ -581,6 +581,52 @@ describe("literature benchmark experimenter boundary", () => {
     expect(mapLiteratureMeasurements(personalTrace, draft).compatible).toBe(true);
   });
 
+  it("maps separate cross-sectional units at every time point into the same n experiment slots", () => {
+    const crossSectional: LiteratureExperimenterCase = {
+      ...source,
+      caseId: "PFR004",
+      researcherPacket: {
+        ...source.researcherPacket,
+        case_id: "PFR004",
+        conditions: "Control | Knockdown",
+        timepoints: "0 h and 24 h",
+        repeated_identity_note: "No repeated identity is implied across conditions or time.",
+      },
+      syntheticData: ["Control", "Knockdown"].flatMap((condition, conditionIndex) =>
+        [0, 24].flatMap((time, timeIndex) =>
+          [1, 2, 3].map((replicate) => ({
+            ...source.syntheticData[0],
+            case_id: "PFR004",
+            condition,
+            time,
+            time_unit: "h",
+            experiment_id: `${condition}.${time}.${replicate}`,
+            unit_id: `${condition}.${time}.${replicate}`,
+            value: conditionIndex * 100 + timeIndex * 10 + replicate,
+          })),
+        ),
+      ),
+    };
+
+    const draft = createLiteratureExperimentDraft(crossSectional);
+    expect(draft.time.sampling).toBe("cross_sectional");
+    expect(draft.experiments).toHaveLength(3);
+    const result = mapLiteratureMeasurements(crossSectional, draft);
+    expect(result.compatible).toBe(true);
+    expect(Object.values(result.cells)).toHaveLength(12);
+    const lastCell =
+      result.cells[
+        experimentCellKey({
+          experimentId: "experiment.3",
+          conditionId: "condition.2",
+          readoutId: "readout.1",
+          timePointId: "time.2",
+        })
+      ];
+    expect(lastCell?.kind).toBe("nested_continuous");
+    expect(lastCell?.kind === "nested_continuous" ? lastCell.rawValues : []).toEqual([113]);
+  });
+
   it("refuses a nested packet with a missing parent mapping", () => {
     const broken = nestedSource.syntheticData.map((row, index) =>
       index === 0 ? { ...row, parent_unit_id: null } : row,

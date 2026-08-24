@@ -1,0 +1,12 @@
+{
+  "selectedReadoutId": "readout.1",
+  "selectedConditionIds": [
+    "condition.1",
+    "condition.2"
+  ],
+  "statisticalUnit": "representative cell",
+  "selectedMethod": null,
+  "state": "not_performed",
+  "reason": "Approved Gold brief specifies a descriptive panel without an inferential comparator or null hypothesis.",
+  "applicationVersion": "0.1.0"
+}

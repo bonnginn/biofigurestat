@@ -1,0 +1,462 @@
+[
+  {
+    "sequence": 1,
+    "occurredAt": "2026-08-24T15:35:31.847Z",
+    "type": "benchmark_run_started",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0_ROUND_2",
+      "caseId": "PFR025",
+      "track": "track_A",
+      "runId": "round2_PFR025_002",
+      "sourceRevision": "6e4168b23072-dirty"
+    }
+  },
+  {
+    "sequence": 2,
+    "occurredAt": "2026-08-24T15:35:31.872Z",
+    "type": "blind_case_delivered",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR025",
+      "syntheticRows": 92
+    }
+  },
+  {
+    "sequence": 3,
+    "occurredAt": "2026-08-24T15:35:35.246Z",
+    "type": "route_changed",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "from": "home",
+      "to": "new-experiment"
+    }
+  },
+  {
+    "sequence": 4,
+    "occurredAt": "2026-08-24T15:35:35.246Z",
+    "type": "literature_design_created",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR025",
+      "source": "researcher_packet"
+    }
+  },
+  {
+    "sequence": 5,
+    "occurredAt": "2026-08-24T15:35:38.595Z",
+    "type": "experiment_workspace_started",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "source": "design_wizard",
+      "context": "microscopy_imaging",
+      "entryRoute": "unspecified",
+      "timeSampling": "longitudinal",
+      "orderedAxisSemantic": "time",
+      "orderedAxisTitle": "Time",
+      "orderedAxisUnit": "s",
+      "unitStructure": "matched",
+      "unitLabel": "representative cell",
+      "readout": "nested_continuous",
+      "conditionCount": 2
+    }
+  },
+  {
+    "sequence": 6,
+    "occurredAt": "2026-08-24T15:35:38.605Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "overview"
+    }
+  },
+  {
+    "sequence": 7,
+    "occurredAt": "2026-08-24T15:35:38.605Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "overview"
+    }
+  },
+  {
+    "sequence": 8,
+    "occurredAt": "2026-08-24T15:35:39.304Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 9,
+    "occurredAt": "2026-08-24T15:35:39.766Z",
+    "type": "literature_benchmark_data_loaded",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR025",
+      "mappedCells": 92
+    }
+  },
+  {
+    "sequence": 10,
+    "occurredAt": "2026-08-24T15:35:40.724Z",
+    "type": "graph_created_from_choice",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "recommendedGraph": "line",
+      "selectedGraph": "line",
+      "recommendationDiffers": false,
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout"
+    }
+  },
+  {
+    "sequence": 11,
+    "occurredAt": "2026-08-24T15:35:40.783Z",
+    "type": "default_graph_capture_started",
+    "effect": "non_rendering_ui",
+    "detail": {}
+  },
+  {
+    "sequence": 12,
+    "occurredAt": "2026-08-24T15:35:40.786Z",
+    "type": "graph_workspace_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "selectedGraph": "line",
+      "readoutId": "readout.1"
+    }
+  },
+  {
+    "sequence": 13,
+    "occurredAt": "2026-08-24T15:35:40.794Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "graph",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 14,
+    "occurredAt": "2026-08-24T15:35:41.045Z",
+    "type": "default_graph_captured",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "defaultCapturedEventIndex": 11,
+      "graphStateFingerprint": "62a1285f0719df0a0ab21b8152222293c3e9d234265ab2b607f66e74b90a7343",
+      "analysisStateFingerprint": "e32e0eee30a5df541e853cf9d0650ede3df7866c7af39879fe8970267e7c118b",
+      "svgSha256": "62a1285f0719df0a0ab21b8152222293c3e9d234265ab2b607f66e74b90a7343",
+      "pngSha256": "ddd044fb6c9b4f9363b7d1cd9132b95522ef5194a37282a083b156c7235b84b7"
+    }
+  },
+  {
+    "sequence": 15,
+    "occurredAt": "2026-08-24T15:35:41.529Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2",
+      "selectedTimes": "time.1|time.2|time.3|time.4|time.5|time.6|time.7|time.8|time.9|time.10|time.11|time.12|time.13|time.14|time.15|time.16|time.17|time.18|time.19|time.20|time.21|time.22|time.23|time.24|time.25|time.26|time.27|time.28|time.29|time.30|time.31|time.32|time.33|time.34|time.35|time.36|time.37|time.38|time.39|time.40|time.41|time.42|time.43|time.44|time.45|time.46",
+      "timeMetric": "selected_timepoint",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sd",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "normalized_fluorescence (a.u.)",
+      "axisRangeMode": "manual",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 16,
+    "occurredAt": "2026-08-24T15:35:41.583Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2",
+      "selectedTimes": "time.1|time.2|time.3|time.4|time.5|time.6|time.7|time.8|time.9|time.10|time.11|time.12|time.13|time.14|time.15|time.16|time.17|time.18|time.19|time.20|time.21|time.22|time.23|time.24|time.25|time.26|time.27|time.28|time.29|time.30|time.31|time.32|time.33|time.34|time.35|time.36|time.37|time.38|time.39|time.40|time.41|time.42|time.43|time.44|time.45|time.46",
+      "timeMetric": "selected_timepoint",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sd",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "normalized_fluorescence (a.u.)",
+      "axisRangeMode": "manual",
+      "axisMin": 0.8,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 17,
+    "occurredAt": "2026-08-24T15:35:41.641Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2",
+      "selectedTimes": "time.1|time.2|time.3|time.4|time.5|time.6|time.7|time.8|time.9|time.10|time.11|time.12|time.13|time.14|time.15|time.16|time.17|time.18|time.19|time.20|time.21|time.22|time.23|time.24|time.25|time.26|time.27|time.28|time.29|time.30|time.31|time.32|time.33|time.34|time.35|time.36|time.37|time.38|time.39|time.40|time.41|time.42|time.43|time.44|time.45|time.46",
+      "timeMetric": "selected_timepoint",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sd",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "normalized_fluorescence (a.u.)",
+      "axisRangeMode": "manual",
+      "axisMin": 0.8,
+      "axisMax": 1.4,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 18,
+    "occurredAt": "2026-08-24T15:35:41.722Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2",
+      "selectedTimes": "time.1|time.2|time.3|time.4|time.5|time.6|time.7|time.8|time.9|time.10|time.11|time.12|time.13|time.14|time.15|time.16|time.17|time.18|time.19|time.20|time.21|time.22|time.23|time.24|time.25|time.26|time.27|time.28|time.29|time.30|time.31|time.32|time.33|time.34|time.35|time.36|time.37|time.38|time.39|time.40|time.41|time.42|time.43|time.44|time.45|time.46",
+      "timeMetric": "selected_timepoint",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "none",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "normalized_fluorescence (a.u.)",
+      "axisRangeMode": "manual",
+      "axisMin": 0.8,
+      "axisMax": 1.4,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 19,
+    "occurredAt": "2026-08-24T15:35:41.834Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2",
+      "selectedTimes": "time.1|time.2|time.3|time.4|time.5|time.6|time.7|time.8|time.9|time.10|time.11|time.12|time.13|time.14|time.15|time.16|time.17|time.18|time.19|time.20|time.21|time.22|time.23|time.24|time.25|time.26|time.27|time.28|time.29|time.30|time.31|time.32|time.33|time.34|time.35|time.36|time.37|time.38|time.39|time.40|time.41|time.42|time.43|time.44|time.45|time.46",
+      "timeMetric": "selected_timepoint",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "none",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "normalized_fluorescence (a.u.)",
+      "axisRangeMode": "manual",
+      "axisMin": 0.8,
+      "axisMax": 1.4,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": false,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 20,
+    "occurredAt": "2026-08-24T15:35:42.112Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2",
+      "selectedTimes": "time.1|time.2|time.3|time.4|time.5|time.6|time.7|time.8|time.9|time.10|time.11|time.12|time.13|time.14|time.15|time.16|time.17|time.18|time.19|time.20|time.21|time.22|time.23|time.24|time.25|time.26|time.27|time.28|time.29|time.30|time.31|time.32|time.33|time.34|time.35|time.36|time.37|time.38|time.39|time.40|time.41|time.42|time.43|time.44|time.45|time.46",
+      "timeMetric": "selected_timepoint",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "none",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "normalized_fluorescence (a.u.)",
+      "axisRangeMode": "manual",
+      "axisMin": 0.8,
+      "axisMax": 1.4,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": false,
+      "overallLayer": false,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 21,
+    "occurredAt": "2026-08-24T15:35:47.880Z",
+    "type": "support_status_selected",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "supportStatus": "direct"
+    }
+  },
+  {
+    "sequence": 22,
+    "occurredAt": "2026-08-24T15:35:53.078Z",
+    "type": "final_graph_captured",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "finalCapturedEventIndex": 22,
+      "graphStateFingerprint": "1f57748d0ca5ae716fc3f57f7d570aeaa3f1ab182a35c66f717899fc00b971df",
+      "analysisStateFingerprint": "e32e0eee30a5df541e853cf9d0650ede3df7866c7af39879fe8970267e7c118b",
+      "svgSha256": "1f57748d0ca5ae716fc3f57f7d570aeaa3f1ab182a35c66f717899fc00b971df",
+      "pngSha256": "b368c7f0cdea39d24ed270ee144ef6806f5ce28a1c74e1e3dd571103d6ce1916"
+    }
+  },
+  {
+    "sequence": 23,
+    "occurredAt": "2026-08-24T15:35:53.079Z",
+    "type": "benchmark_outcome_selected",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "outcome": "completed"
+    }
+  },
+  {
+    "sequence": 24,
+    "occurredAt": "2026-08-24T15:35:53.079Z",
+    "type": "benchmark_run_finalized",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "selectedGraph": "line",
+      "selectedStatistics": "none_descriptive"
+    }
+  }
+]

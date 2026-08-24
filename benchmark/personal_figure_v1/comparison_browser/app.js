@@ -1,6 +1,7 @@
 const readabilityOptions = ["Good", "OK", "Insufficient"];
 const preferenceOptions = ["Like", "Neutral", "Dislike"];
 let manifest;
+const round = new URLSearchParams(window.location.search).get("round") === "1" ? "1" : "2";
 let reviewData = { schemaVersion: "1.0.0", updatedAt: null, reviews: {} };
 let index = 0;
 
@@ -47,7 +48,7 @@ function render() {
   $("progressText").textContent =
     `${Object.keys(reviewData.reviews).length} reviewed / ${manifest.cases.length}`;
   $("caseMeta").textContent =
-    `${item.caseId} · ${item.paperCode} · ${item.panel} · ${item.support}`;
+    `Round ${round} · ${item.caseId} · ${item.paperCode} · ${item.panel} · ${item.support}`;
   $("caseTitle").textContent = item.paperTitle;
   $("caseNote").textContent = item.note;
   $("referenceImage").src = `../${item.reference}`;
@@ -88,7 +89,7 @@ function render() {
 async function save() {
   reviewData.reviews[manifest.cases[index].caseId] = collect();
   reviewData.updatedAt = new Date().toISOString();
-  const response = await fetch("/api/personal-review", {
+  const response = await fetch(`/api/personal-review?round=${round}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(reviewData),
@@ -101,15 +102,17 @@ function exportJson() {
   const blob = new Blob([JSON.stringify(reviewData, null, 2) + "\n"], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "personal_figure_reviews.json";
+  a.download = `personal_figure_reviews_round_${round}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
 
 async function init() {
-  manifest = await fetch("../comparison_manifest.json").then((r) => r.json());
+  manifest = await fetch(
+    round === "1" ? "../comparison_manifest.json" : "../comparison_manifest_round_2.json",
+  ).then((r) => r.json());
   try {
-    reviewData = await fetch("/api/personal-review").then((r) => r.json());
+    reviewData = await fetch(`/api/personal-review?round=${round}`).then((r) => r.json());
   } catch {}
   segmented("readability", readabilityOptions);
   segmented("preference", preferenceOptions);
