@@ -1,0 +1,2422 @@
+{
+  "schemaVersion": "1.0.0",
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "round": "round_1",
+  "reviewMode": "track_A_reference_review_of_immutable_track_B_product_evidence",
+  "protocolNote": "No Track B run was reset, replayed, or rewritten. Track A/reviewer references were used only after Track B discovery completed.",
+  "trackB": {
+    "cases": 89,
+    "outcomes": {
+      "completed": 61,
+      "explicit_unsupported": 28
+    },
+    "reportedSupport": {
+      "direct": 59,
+      "impossible": 28,
+      "reasonable_workaround": 2
+    }
+  },
+  "trackAReview": {
+    "stratifiedPreselected": 30,
+    "escalationCases": 43,
+    "uniqueReviewed": 56
+  },
+  "comparisonCompleteness": {
+    "comparisonComplete": 1,
+    "comparisonIncomplete": 9,
+    "comparisonRequired": 10,
+    "graphAnnotationMismatchOrOmnibusOnly": 10,
+    "multiGroupCases": 17
+  },
+  "failureClusters": {
+    "nonparametric_multi_group_posthoc_missing": 9,
+    "high_dimensional_multiple_testing_unsupported": 8,
+    "literature_loader_survival_route_missing": 7,
+    "literature_loader_correlation_route_missing": 7,
+    "factorial_structure_flattened_to_one_way": 6,
+    "western_blot_lineage_loader_missing": 5,
+    "factorial_structure_loader_rejected": 1
+  },
+  "cases": [
+    {
+      "caseId": "LSA070",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_04_LSA070",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "multi_group_nonparam",
+      "referenceMethod": "Kruskal–Wallis omnibus",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": true,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 3,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": true,
+        "workflowComplete": false,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": false
+      },
+      "scientificReviewer": {
+        "scientificValidity": 4,
+        "statisticalAppropriateness": 3,
+        "informationFidelity": 4,
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": true,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": true,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "failureCluster": "nonparametric_multi_group_posthoc_missing"
+      }
+    },
+    {
+      "caseId": "LSA075",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_05_LSA075",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "western_blot",
+      "referenceMethod": "Welch t test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "western_blot_lineage_loader_missing"
+      }
+    },
+    {
+      "caseId": "LSA084",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_07_LSA084",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "multi_group_nonparam",
+      "referenceMethod": "Kruskal–Wallis omnibus",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": true,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 3,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": true,
+        "workflowComplete": false,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": false
+      },
+      "scientificReviewer": {
+        "scientificValidity": 4,
+        "statisticalAppropriateness": 3,
+        "informationFidelity": 4,
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": true,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": true,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "failureCluster": "nonparametric_multi_group_posthoc_missing"
+      }
+    },
+    {
+      "caseId": "LSA087",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_001_08_LSA087",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "two_group_nonparam",
+      "referenceMethod": "Mann–Whitney U test",
+      "selectedMethod": "welch_t",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_two_sample_t_test",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA097",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_001_09_LSA097",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "longitudinal",
+      "referenceMethod": "AUC per longitudinal unit followed by Welch t test",
+      "selectedMethod": "mixed_anova",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "condition_by_within_factor_interaction",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA098",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_001_10_LSA098",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "proportion",
+      "referenceMethod": "Welch t test on biological-unit proportions",
+      "selectedMethod": "welch_t",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_two_sample_t_test",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA103",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_11_LSA103",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "survival",
+      "referenceMethod": "log-rank test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_survival_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA111",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_14_LSA111",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "multi_group_nonparam",
+      "referenceMethod": "Kruskal–Wallis omnibus",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": true,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 3,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": true,
+        "workflowComplete": false,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": false
+      },
+      "scientificReviewer": {
+        "scientificValidity": 4,
+        "statisticalAppropriateness": 3,
+        "informationFidelity": 4,
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": true,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": true,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "failureCluster": "nonparametric_multi_group_posthoc_missing"
+      }
+    },
+    {
+      "caseId": "LSA121",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_15_LSA121",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "multi_group_nonparam",
+      "referenceMethod": "Kruskal–Wallis omnibus",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": true,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 3,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": true,
+        "workflowComplete": false,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": false
+      },
+      "scientificReviewer": {
+        "scientificValidity": 4,
+        "statisticalAppropriateness": 3,
+        "informationFidelity": 4,
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": true,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": true,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "failureCluster": "nonparametric_multi_group_posthoc_missing"
+      }
+    },
+    {
+      "caseId": "LSA127",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_16_LSA127",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "correlation",
+      "referenceMethod": "Spearman correlation",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_correlation_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA128",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_17_LSA128",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "multi_group_nonparam",
+      "referenceMethod": "Kruskal–Wallis omnibus",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": true,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 3,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": true,
+        "workflowComplete": false,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": false
+      },
+      "scientificReviewer": {
+        "scientificValidity": 4,
+        "statisticalAppropriateness": 3,
+        "informationFidelity": 4,
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": true,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": true,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "failureCluster": "nonparametric_multi_group_posthoc_missing"
+      }
+    },
+    {
+      "caseId": "LSA142",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_20_LSA142",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "multiple_testing",
+      "referenceMethod": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "high_dimensional_multiple_testing_unsupported"
+      }
+    },
+    {
+      "caseId": "LSA144",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_21_LSA144",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "factorial",
+      "referenceMethod": "difference-in-differences Welch contrast",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "factorial_structure_loader_rejected"
+      }
+    },
+    {
+      "caseId": "LSA150",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_22_LSA150",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "reasonable_workaround",
+      "designClass": "factorial",
+      "referenceMethod": "difference-in-differences Welch contrast",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": false,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 6,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 2,
+        "statisticalAppropriateness": 2,
+        "informationFidelity": 2,
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "factorialStructureFlattened": true
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "failureCluster": "factorial_structure_flattened_to_one_way"
+      }
+    },
+    {
+      "caseId": "LSA151",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_23_LSA151",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "multi_group_nonparam",
+      "referenceMethod": "Kruskal–Wallis omnibus",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": true,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 3,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": true,
+        "workflowComplete": false,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": false
+      },
+      "scientificReviewer": {
+        "scientificValidity": 4,
+        "statisticalAppropriateness": 3,
+        "informationFidelity": 4,
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": true,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": true,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "failureCluster": "nonparametric_multi_group_posthoc_missing"
+      }
+    },
+    {
+      "caseId": "LSA156",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_001_24_LSA156",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "nested",
+      "referenceMethod": "Welch t test on experiment-level means",
+      "selectedMethod": "welch_t",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_two_sample_t_test",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA180",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_25_LSA180",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "western_blot",
+      "referenceMethod": "Welch t test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "western_blot_lineage_loader_missing"
+      }
+    },
+    {
+      "caseId": "LSA193",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_27_LSA193",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "survival",
+      "referenceMethod": "log-rank test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_survival_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA198",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_29_LSA198",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "western_blot",
+      "referenceMethod": "Welch t test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "western_blot_lineage_loader_missing"
+      }
+    },
+    {
+      "caseId": "LSA200",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_31_LSA200",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "multi_group_nonparam",
+      "referenceMethod": "Kruskal–Wallis omnibus",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": true,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 3,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": true,
+        "workflowComplete": false,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": false
+      },
+      "scientificReviewer": {
+        "scientificValidity": 4,
+        "statisticalAppropriateness": 3,
+        "informationFidelity": 4,
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": true,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": true,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "failureCluster": "nonparametric_multi_group_posthoc_missing"
+      }
+    },
+    {
+      "caseId": "LSA204",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_32_LSA204",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "reasonable_workaround",
+      "designClass": "factorial",
+      "referenceMethod": "difference-in-differences Welch contrast",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": false,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 6,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 2,
+        "statisticalAppropriateness": 2,
+        "informationFidelity": 2,
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "factorialStructureFlattened": true
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "failureCluster": "factorial_structure_flattened_to_one_way"
+      }
+    },
+    {
+      "caseId": "LSA206",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_001_33_LSA206",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "western_blot",
+      "referenceMethod": "Welch t test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "western_blot_lineage_loader_missing"
+      }
+    },
+    {
+      "caseId": "LSA216",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_002_01_LSA216",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "correlation",
+      "referenceMethod": "Spearman correlation",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_correlation_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA221",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_002_02_LSA221",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "survival",
+      "referenceMethod": "log-rank test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_survival_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA230",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_002_04_LSA230",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "proportion",
+      "referenceMethod": "Welch t test on biological-unit proportions",
+      "selectedMethod": "welch_t",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_two_sample_t_test",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA242",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_003_01_LSA242",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "correlation",
+      "referenceMethod": "Spearman correlation",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_correlation_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA248",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_003_02_LSA248",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "factorial",
+      "referenceMethod": "difference-in-differences Welch contrast",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": false,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 6,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 2,
+        "statisticalAppropriateness": 2,
+        "informationFidelity": 2,
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "factorialStructureFlattened": true
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "failureCluster": "factorial_structure_flattened_to_one_way"
+      }
+    },
+    {
+      "caseId": "LSA261",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_02_LSA261",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "multiple_testing",
+      "referenceMethod": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "high_dimensional_multiple_testing_unsupported"
+      }
+    },
+    {
+      "caseId": "LSA264",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_04_LSA264",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "multiple_testing",
+      "referenceMethod": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "high_dimensional_multiple_testing_unsupported"
+      }
+    },
+    {
+      "caseId": "LSA274",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_004_05_LSA274",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "two_group_nonparam",
+      "referenceMethod": "Mann–Whitney U test",
+      "selectedMethod": "welch_t",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_two_sample_t_test",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA281",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_07_LSA281",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "survival",
+      "referenceMethod": "log-rank test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_survival_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA282",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_004_08_LSA282",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "longitudinal",
+      "referenceMethod": "AUC per longitudinal unit followed by Welch t test",
+      "selectedMethod": "mixed_anova",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "condition_by_within_factor_interaction",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA288",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_004_09_LSA288",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "multi_group",
+      "referenceMethod": "one-way ANOVA omnibus",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": true,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 3,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": false
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": true,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA295",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_10_LSA295",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "correlation",
+      "referenceMethod": "Spearman correlation",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_correlation_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA302",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_004_11_LSA302",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "nested",
+      "referenceMethod": "Welch t test on experiment-level means",
+      "selectedMethod": "welch_t",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_two_sample_t_test",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA303",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_12_LSA303",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "factorial",
+      "referenceMethod": "difference-in-differences Welch contrast",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": false,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 6,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 2,
+        "statisticalAppropriateness": 2,
+        "informationFidelity": 2,
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "factorialStructureFlattened": true
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "failureCluster": "factorial_structure_flattened_to_one_way"
+      }
+    },
+    {
+      "caseId": "LSA339",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_16_LSA339",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "survival",
+      "referenceMethod": "log-rank test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_survival_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA346",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_004_17_LSA346",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "proportion",
+      "referenceMethod": "Welch t test on biological-unit proportions",
+      "selectedMethod": "welch_t",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_two_sample_t_test",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA348",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_18_LSA348",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "multiple_testing",
+      "referenceMethod": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "high_dimensional_multiple_testing_unsupported"
+      }
+    },
+    {
+      "caseId": "LSA367",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_24_LSA367",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "survival",
+      "referenceMethod": "log-rank test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_survival_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA379",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_25_LSA379",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "correlation",
+      "referenceMethod": "Spearman correlation",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_correlation_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA385",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_004_26_LSA385",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "proportion",
+      "referenceMethod": "Welch t test on biological-unit proportions",
+      "selectedMethod": "welch_t",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_two_sample_t_test",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA397",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_28_LSA397",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "multiple_testing",
+      "referenceMethod": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "high_dimensional_multiple_testing_unsupported"
+      }
+    },
+    {
+      "caseId": "LSA412",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_32_LSA412",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "multiple_testing",
+      "referenceMethod": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "high_dimensional_multiple_testing_unsupported"
+      }
+    },
+    {
+      "caseId": "LSA415",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_33_LSA415",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "correlation",
+      "referenceMethod": "Spearman correlation",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_correlation_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA417",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_34_LSA417",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "western_blot",
+      "referenceMethod": "Welch t test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "western_blot_lineage_loader_missing"
+      }
+    },
+    {
+      "caseId": "LSA428",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_35_LSA428",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "survival",
+      "referenceMethod": "log-rank test",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_survival_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA442",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_004_36_LSA442",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "correlation",
+      "referenceMethod": "Spearman correlation",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "literature_loader_correlation_route_missing"
+      }
+    },
+    {
+      "caseId": "LSA448",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_005_01_LSA448",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "two_group_nonparam",
+      "referenceMethod": "Mann–Whitney U test",
+      "selectedMethod": "welch_t",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_two_sample_t_test",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA455",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_005_02_LSA455",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "multi_group_nonparam",
+      "referenceMethod": "Kruskal–Wallis omnibus",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": true,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 3,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": true,
+        "workflowComplete": false,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": false
+      },
+      "scientificReviewer": {
+        "scientificValidity": 4,
+        "statisticalAppropriateness": 3,
+        "informationFidelity": 4,
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": true,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": true,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "failureCluster": "nonparametric_multi_group_posthoc_missing"
+      }
+    },
+    {
+      "caseId": "LSA456",
+      "selectionReason": ["stratified_preselection", "track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_005_03_LSA456",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "multi_group_nonparam",
+      "referenceMethod": "Kruskal–Wallis omnibus",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": true,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 3,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": true,
+        "workflowComplete": false,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": false
+      },
+      "scientificReviewer": {
+        "scientificValidity": 4,
+        "statisticalAppropriateness": 3,
+        "informationFidelity": 4,
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": true,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": true,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "reasonable_workaround",
+        "failureCluster": "nonparametric_multi_group_posthoc_missing"
+      }
+    },
+    {
+      "caseId": "LSA460",
+      "selectionReason": ["stratified_preselection"],
+      "trackBRunId": "expanded_r1_B_20260824_005_04_LSA460",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "paired",
+      "referenceMethod": "paired t test",
+      "selectedMethod": "paired_t",
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "paired_t_test",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 5,
+        "statisticalAppropriateness": 5,
+        "informationFidelity": 5,
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "factorialStructureFlattened": false
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "pass",
+        "calibratedSupport": "direct",
+        "failureCluster": null
+      }
+    },
+    {
+      "caseId": "LSA468",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_005_05_LSA468",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "multiple_testing",
+      "referenceMethod": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "high_dimensional_multiple_testing_unsupported"
+      }
+    },
+    {
+      "caseId": "LSA471",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_005_06_LSA471",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "factorial",
+      "referenceMethod": "difference-in-differences Welch contrast",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": false,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 6,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 2,
+        "statisticalAppropriateness": 2,
+        "informationFidelity": 2,
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "factorialStructureFlattened": true
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "failureCluster": "factorial_structure_flattened_to_one_way"
+      }
+    },
+    {
+      "caseId": "LSA474",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_005_07_LSA474",
+      "trackBOutcome": "completed",
+      "trackBReportedSupport": "direct",
+      "designClass": "factorial",
+      "referenceMethod": "difference-in-differences Welch contrast",
+      "selectedMethod": "welch_anova",
+      "comparisonCompleteness": {
+        "multiGroup": true,
+        "comparisonRequired": false,
+        "contrastIntent": "all_pairs",
+        "pairwiseResultCount": 6,
+        "adjustedResultsAvailable": true,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": "welch_one_way_anova",
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": 2,
+        "statisticalAppropriateness": 2,
+        "informationFidelity": 2,
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "factorialStructureFlattened": true
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": true,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "concern",
+        "calibratedSupport": "scientifically_compromising_workaround",
+        "failureCluster": "factorial_structure_flattened_to_one_way"
+      }
+    },
+    {
+      "caseId": "LSA493",
+      "selectionReason": ["track_b_escalation"],
+      "trackBRunId": "expanded_r1_B_20260824_005_11_LSA493",
+      "trackBOutcome": "explicit_unsupported",
+      "trackBReportedSupport": "impossible",
+      "designClass": "multiple_testing",
+      "referenceMethod": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+      "selectedMethod": null,
+      "comparisonCompleteness": {
+        "multiGroup": false,
+        "comparisonRequired": false,
+        "contrastIntent": null,
+        "pairwiseResultCount": 0,
+        "adjustedResultsAvailable": false,
+        "rankPostHocCapabilityGap": false,
+        "workflowComplete": true,
+        "graphAnnotationTest": null,
+        "graphAnnotationMatchesPairwiseComparison": true
+      },
+      "scientificReviewer": {
+        "scientificValidity": null,
+        "statisticalAppropriateness": null,
+        "informationFidelity": null,
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible"
+      },
+      "uxReviewer": {
+        "comparisonDiscoverabilityConcern": false,
+        "systematicCommercialUxAuditDeferred": true
+      },
+      "figureReviewer": {
+        "defaultAndFinalPresent": false,
+        "annotationSemanticConcern": false,
+        "humanVisualPreferenceNotScored": true
+      },
+      "integrator": {
+        "scientificGate": "cannot_determine_explicit_unsupported",
+        "calibratedSupport": "impossible",
+        "failureCluster": "high_dimensional_multiple_testing_unsupported"
+      }
+    }
+  ]
+}
