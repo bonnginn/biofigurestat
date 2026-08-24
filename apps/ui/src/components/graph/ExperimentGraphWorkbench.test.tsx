@@ -18,7 +18,11 @@ import {
   type ExperimentSetDraft,
 } from "../../app/experimentDraft";
 
-import { ExperimentGraphWorkbench, repeatedAxisAnnotationLabel } from "./ExperimentGraphWorkbench";
+import {
+  analysisTestAnnotationLabel,
+  ExperimentGraphWorkbench,
+  repeatedAxisAnnotationLabel,
+} from "./ExperimentGraphWorkbench";
 
 describe("repeated-axis scientific wording", () => {
   it("uses the explicit numeric axis title instead of time", () => {
@@ -26,6 +30,49 @@ describe("repeated-axis scientific wording", () => {
       "Radius",
     );
     expect(repeatedAxisAnnotationLabel({ xSemantic: "time", xTitle: "" })).toBe("time");
+  });
+
+  it("names mixed-ANOVA interaction and both main effects distinctly", () => {
+    const draft = createLongitudinalFixture().draft;
+    const test = (name: string): AnalysisEngineResult["tests"][number] => ({
+      name,
+      statisticName: "F",
+      statistic: 4.2,
+      degreesOfFreedom: [1, 12],
+      pValue: 0.03,
+      adjustedPValue: null,
+      effectSizeName: "partial_eta_squared",
+      effectSize: 0.2,
+    });
+
+    expect(
+      analysisTestAnnotationLabel(
+        test("condition_by_time_interaction"),
+        draft,
+        "condition × Time interaction · mixed ANOVA",
+      ),
+    ).toBe("condition × Time interaction · mixed ANOVA");
+    expect(
+      analysisTestAnnotationLabel(
+        test("condition_between_units"),
+        draft,
+        "condition × Time interaction · mixed ANOVA",
+      ),
+    ).toBe("condition main effect · mixed ANOVA");
+    expect(
+      analysisTestAnnotationLabel(
+        test("time_within_units"),
+        draft,
+        "condition × Time interaction · mixed ANOVA",
+      ),
+    ).toBe("Time main effect · mixed ANOVA");
+    expect(
+      analysisTestAnnotationLabel(
+        test("within_factor_main_effect"),
+        draft,
+        "condition × Radius interaction · mixed ANOVA",
+      ),
+    ).toBe("Radius main effect · mixed ANOVA");
   });
 });
 

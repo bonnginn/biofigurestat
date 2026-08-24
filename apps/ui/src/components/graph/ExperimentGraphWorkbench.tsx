@@ -166,7 +166,7 @@ function graphAnnotationContext(input: {
   return `per-unit ${timeAnalysis.kind} · ${method}`;
 }
 
-function analysisTestAnnotationLabel(
+export function analysisTestAnnotationLabel(
   test: AnalysisEngineResult["tests"][number],
   draft: ExperimentSetDraft,
   fallback: string,
@@ -176,6 +176,20 @@ function analysisTestAnnotationLabel(
     draft.conditions.find(({ id }) => id === conditionId)?.label ?? conditionId ?? "condition";
   const factorA = draft.attributes[0]?.label ?? "factor A";
   const factorB = draft.attributes[1]?.label ?? "factor B";
+  const mixedAxisMatch = /^condition × (.+) interaction · mixed ANOVA$/.exec(fallback);
+  const mixedAxis = mixedAxisMatch?.[1] ?? "repeated axis";
+  if (
+    test.name === "condition_by_time_interaction" ||
+    test.name === "condition_by_within_factor_interaction"
+  ) {
+    return `condition × ${mixedAxis} interaction · mixed ANOVA`;
+  }
+  if (test.name === "condition_between_units") {
+    return "condition main effect · mixed ANOVA";
+  }
+  if (test.name === "time_within_units" || test.name === "within_factor_main_effect") {
+    return `${mixedAxis} main effect · mixed ANOVA`;
+  }
   if (test.name === "type3_interaction") {
     return `${factorA} × ${factorB} interaction · two-way ANOVA`;
   }
