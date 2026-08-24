@@ -60,6 +60,12 @@ import {
   useBenchmarkRun,
   writeBenchmarkArtifacts,
 } from "../../app/benchmarkEvaluation";
+import {
+  diagnosticFingerprint,
+  recordDiagnosticError,
+  recordDiagnosticEvent,
+} from "../../app/diagnostics";
+import { PRODUCT_IDENTITY } from "../../app/productIdentity";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { createCategoryLayout, createNiceTicks } from "./graphLayout";
@@ -2176,6 +2182,14 @@ export function ExperimentGraphWorkbench({
     onStateChangeRef.current?.(graphStateSnapshot);
   }, [graphStateSnapshot]);
 
+  const diagnosticGraphStateRef = useRef<string | null>(null);
+  useEffect(() => {
+    const fingerprint = diagnosticFingerprint(benchmarkRenderedState);
+    if (diagnosticGraphStateRef.current === fingerprint) return;
+    diagnosticGraphStateRef.current = fingerprint;
+    recordDiagnosticEvent("graph_state_changed", { graphType, graphFingerprint: fingerprint });
+  }, [benchmarkRenderedState, graphType]);
+
   const benchmarkStateLogRef = useRef<{
     identity: string;
     rendered: string;
@@ -2570,7 +2584,8 @@ export function ExperimentGraphWorkbench({
           pngSha256,
         });
         setBenchmarkCaptureStatus("Benchmarkの既定グラフを保存しました。");
-      } catch {
+      } catch (error) {
+        recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
         setBenchmarkCaptureStatus("既定グラフの評価artifactを保存できませんでした。");
       }
     })();
@@ -2773,7 +2788,7 @@ export function ExperimentGraphWorkbench({
         request: analysis.request,
         result: analysis.result,
         state: "current",
-        applicationVersion: "0.1.0",
+        applicationVersion: PRODUCT_IDENTITY.version,
       };
       await writeBenchmarkArtifacts(
         [
@@ -2782,7 +2797,7 @@ export function ExperimentGraphWorkbench({
             content: JSON.stringify(
               {
                 ...finalRun.identity,
-                appVersion: "0.1.0",
+                appVersion: PRODUCT_IDENTITY.version,
                 sourceRevision: evaluationMode.sourceRevision,
                 engineVersion: analysis.result.engine.version,
                 startedAt: finalRun.startedAt,
@@ -2841,7 +2856,8 @@ export function ExperimentGraphWorkbench({
         { requiredArtifacts: COMPLETE_BENCHMARK_ARTIFACT_NAMES },
       );
       setBenchmarkCaptureStatus("Benchmark runのartifactを保存しました。");
-    } catch {
+    } catch (error) {
+      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
       setBenchmarkOutcome("infrastructure_failure");
       setBenchmarkCaptureStatus("Benchmark runのartifactを保存できませんでした。");
     }
@@ -2858,7 +2874,8 @@ export function ExperimentGraphWorkbench({
             ? "透明背景のPNGでコピーしました。"
             : "SVGテキストでコピーしました。",
       );
-    } catch {
+    } catch (error) {
+      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
       setCopyStatus(
         "この環境ではクリップボードへコピーできませんでした。SVG書き出しを利用してください。",
       );

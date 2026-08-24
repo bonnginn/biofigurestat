@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { KeyboardEvent } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -50,14 +59,15 @@ import {
 } from "../app/projectActions";
 import "./ExperimentWorkspace.css";
 import type { FavoriteGraphDefault } from "../app/favoriteDesigns";
-import { recordBenchmarkEvent, useBenchmarkRun } from "../app/benchmarkEvaluation";
-import { BENCHMARK_PILOT_CASES, mapBenchmarkPilotMeasurements } from "../app/benchmarkPilotCases";
-import {
-  fetchLiteratureExperimenterCase,
-  isLiteratureCaseId,
-  mapLiteratureMeasurements,
-  type LiteratureExperimenterCase,
-} from "../app/literatureBenchmark";
+import { recordBenchmarkEvent } from "../app/benchmarkEvaluation";
+
+const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
+  ? lazy(() =>
+      import("../components/EvaluationWorkspaceLoader").then(({ EvaluationWorkspaceLoader }) => ({
+        default: EvaluationWorkspaceLoader,
+      })),
+    )
+  : null;
 
 export type ExperimentWorkspaceProps = {
   initialDraft: ExperimentSetDraft;
@@ -1642,45 +1652,51 @@ export function ExperimentWorkspace({
   const [analysisInvalidationMessage, setAnalysisInvalidationMessage] = useState<string | null>(
     null,
   );
-  const [benchmarkPilotLoadMessage, setBenchmarkPilotLoadMessage] = useState<string | null>(null);
-  const [literatureCase, setLiteratureCase] = useState<LiteratureExperimenterCase | null>(null);
-  const [literatureLoadError, setLiteratureLoadError] = useState<string | null>(null);
-  const benchmarkRun = useBenchmarkRun();
-  const benchmarkPilot = BENCHMARK_PILOT_CASES.find(
-    ({ caseId }) => caseId === benchmarkRun.identity?.caseId,
-  );
-  const benchmarkPilotLoad = useMemo(
-    () => (benchmarkPilot ? mapBenchmarkPilotMeasurements(benchmarkPilot, draft) : null),
-    [benchmarkPilot, draft],
-  );
-  useEffect(() => {
-    const identity = benchmarkRun.identity;
-    setLiteratureCase(null);
-    setLiteratureLoadError(null);
-    if (!identity || !isLiteratureCaseId(identity.caseId)) return;
-    let cancelled = false;
-    void fetchLiteratureExperimenterCase(identity)
-      .then((loaded) => {
-        if (!cancelled) setLiteratureCase(loaded);
-      })
-      .catch(() => {
-        if (!cancelled) setLiteratureLoadError("Literature benchmark caseを読み込めませんでした。");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [benchmarkRun.identity]);
-  const literatureLoad = useMemo(
-    () => (literatureCase ? mapLiteratureMeasurements(literatureCase, draft) : null),
-    [literatureCase, draft],
-  );
   const scientificSourceSnapshot = JSON.stringify({ draft, cells });
   const previousScientificSourceRef = useRef(scientificSourceSnapshot);
   const currentSnapshot = JSON.stringify({ draft, cells, graphs });
   const savedSnapshotRef = useRef(initialProject ? currentSnapshot : "");
   const graphWorkspaceRef = useRef<HTMLDivElement | null>(null);
+  const graphChoiceDialogRef = useRef<HTMLElement | null>(null);
+  const graphChoiceReturnFocusRef = useRef<HTMLElement | null>(null);
   const focusCreatedGraphRef = useRef(false);
   const isDirty = currentSnapshot !== savedSnapshotRef.current;
+
+  useEffect(() => {
+    if (!showGraphTypeChoice) {
+      graphChoiceReturnFocusRef.current?.focus();
+      graphChoiceReturnFocusRef.current = null;
+      return;
+    }
+    const dialog = graphChoiceDialogRef.current;
+    const focusable = () => [
+      ...(dialog?.querySelectorAll<HTMLElement>(
+        "button:not([disabled]), input:not([disabled]), select:not([disabled])",
+      ) ?? []),
+    ];
+    focusable()[0]?.focus();
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setShowGraphTypeChoice(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items.at(-1)!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showGraphTypeChoice]);
 
   useEffect(() => {
     if (previousScientificSourceRef.current === scientificSourceSnapshot) return;
@@ -2161,23 +2177,9 @@ export function ExperimentWorkspace({
           }
         : {
             xSemantic:
-              literatureLoad?.compatible && literatureLoad.xAxis
-                ? literatureLoad.xAxis.semantic
-                : draft.time.points.length > 0
-                  ? orderedAxisSemantic(draft.time)
-                  : "categorical",
-            xTitle:
-              literatureLoad?.compatible && literatureLoad.xAxis
-                ? literatureLoad.xAxis.title
-                : draft.time.points.length > 0
-                  ? orderedAxisTitle(draft.time)
-                  : "",
-            xUnit:
-              literatureLoad?.compatible && literatureLoad.xAxis
-                ? literatureLoad.xAxis.unit
-                : draft.time.points.length > 0
-                  ? orderedAxisUnit(draft.time)
-                  : "",
+              draft.time.points.length > 0 ? orderedAxisSemantic(draft.time) : "categorical",
+            xTitle: draft.time.points.length > 0 ? orderedAxisTitle(draft.time) : "",
+            xUnit: draft.time.points.length > 0 ? orderedAxisUnit(draft.time) : "",
             yTitle:
               draft.analysisIntent.kind === "correlation"
                 ? (draft.conditions[1]?.label ?? "Y")
@@ -2218,6 +2220,8 @@ export function ExperimentWorkspace({
   }, [activeTab, graphWorkspaceMode, showGraph]);
 
   const openGraph = () => {
+    graphChoiceReturnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setGraphCreateMessage(null);
     setSelectedGraphType(recommendedGraphType);
     setSelectedInitialLayers(
@@ -2370,6 +2374,27 @@ export function ExperimentWorkspace({
     };
   }, [handleSave]);
 
+  const workspaceTabs: WorkspaceTab[] = [
+    "overview",
+    ...draft.experiments.map(({ id }) => `experiment:${id}` as WorkspaceTab),
+  ];
+  const handleWorkspaceTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (!(["ArrowLeft", "ArrowRight", "Home", "End"] as string[]).includes(event.key)) return;
+    event.preventDefault();
+    const nextIndex =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? workspaceTabs.length - 1
+          : (index + (event.key === "ArrowRight" ? 1 : -1) + workspaceTabs.length) %
+            workspaceTabs.length;
+    const nextTab = workspaceTabs[nextIndex];
+    setActiveTab(nextTab);
+    window.requestAnimationFrame(() =>
+      document.getElementById(`workspace-tab-${nextIndex}`)?.focus(),
+    );
+  };
+
   return (
     <div className="experiment-workspace">
       <header className="experiment-workspace-header">
@@ -2392,81 +2417,38 @@ export function ExperimentWorkspace({
 
       {draft.dataOrigin === "synthetic_demo" ? (
         <div className="experiment-workspace-demo-banner" role="status">
-          <strong>ブラウザレビュー用データ</strong>
+          <strong>合成デモデータ</strong>
           <span>
-            合成fixtureまたは一時入力だけを扱います。実測・未発表データを入力せず、正式な研究データとして使用しないでください。
+            学習・画面確認用の人工データです。実測・未発表データではなく、正式な研究結果として使用しないでください。
           </span>
         </div>
       ) : null}
 
-      {benchmarkPilot && benchmarkPilotLoad && activeTab !== "overview" && !showGraph ? (
-        <section className="benchmark-pilot-loader" aria-label="Benchmark Pilot合成値">
-          <div>
-            <strong>{benchmarkPilot.title}</strong>
-            <span>{benchmarkPilotLoad.reason}</span>
-          </div>
-          <button
-            type="button"
-            disabled={!benchmarkPilotLoad.compatible}
-            onClick={() => {
-              if (!benchmarkPilotLoad.compatible) return;
-              setCells((current) => ({ ...current, ...benchmarkPilotLoad.cells }));
-              setDraft((current) => ({ ...current, dataOrigin: "synthetic_demo" }));
-              setBenchmarkPilotLoadMessage("合成値をすべての実験タブへ入力しました。");
-              recordBenchmarkEvent("benchmark_pilot_data_loaded", {
-                caseId: benchmarkPilot.caseId,
-                mappedCells: Object.keys(benchmarkPilotLoad.cells).length,
-              });
+      {DevelopmentEvaluationWorkspaceLoader ? (
+        <Suspense fallback={null}>
+          <DevelopmentEvaluationWorkspaceLoader
+            draft={draft}
+            activeTab={activeTab}
+            showGraph={showGraph}
+            onLoad={(loadedCells, axis) => {
+              setCells((current) => ({ ...current, ...loadedCells }));
+              setDraft((current) => ({
+                ...current,
+                dataOrigin: "synthetic_demo",
+                ...(axis && axis.semantic !== "categorical"
+                  ? {
+                      time: {
+                        ...current.time,
+                        axisSemantic: axis.semantic,
+                        axisTitle: axis.title,
+                        axisUnit: axis.unit,
+                      },
+                    }
+                  : {}),
+              }));
             }}
-          >
-            このPilotの合成値を一括入力
-          </button>
-          {benchmarkPilotLoadMessage ? (
-            <span role="status">{benchmarkPilotLoadMessage}</span>
-          ) : null}
-        </section>
-      ) : null}
-
-      {literatureLoadError && activeTab !== "overview" && !showGraph ? (
-        <div className="experiment-workspace-demo-banner" role="alert">
-          {literatureLoadError}
-        </div>
-      ) : null}
-
-      {literatureCase && literatureLoad && activeTab !== "overview" && !showGraph ? (
-        <section className="benchmark-pilot-loader" aria-label="Literature Benchmark合成値">
-          <div>
-            <strong>{literatureCase.caseId}</strong>
-            <span>{literatureCase.researcherPacket.blind_experiment_summary}</span>
-            <span>{literatureLoad.reason}</span>
-            {literatureCase.paperReference ? (
-              <span>
-                Paper: {literatureCase.paperReference.target_figure_or_panel}；
-                {literatureCase.paperReference.curated_graph_reference}；
-                {literatureCase.paperReference.paper_reported_analysis}
-              </span>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            disabled={!literatureLoad.compatible}
-            onClick={() => {
-              if (!literatureLoad.compatible) return;
-              setCells((current) => ({ ...current, ...literatureLoad.cells }));
-              setDraft((current) => ({ ...current, dataOrigin: "synthetic_demo" }));
-              setBenchmarkPilotLoadMessage("Literature benchmark合成値を入力しました。");
-              recordBenchmarkEvent("literature_benchmark_data_loaded", {
-                caseId: literatureCase.caseId,
-                mappedCells: Object.keys(literatureLoad.cells).length,
-              });
-            }}
-          >
-            このLiterature caseの合成値を一括入力
-          </button>
-          {benchmarkPilotLoadMessage ? (
-            <span role="status">{benchmarkPilotLoadMessage}</span>
-          ) : null}
-        </section>
+          />
+        </Suspense>
       ) : null}
 
       <nav className="experiment-workspace-project-nav" aria-label="プロジェクト内の移動">
@@ -2571,6 +2553,7 @@ export function ExperimentWorkspace({
       {showGraphTypeChoice ? (
         <div className="experiment-workspace-graph-choice-backdrop" role="presentation">
           <section
+            ref={graphChoiceDialogRef}
             className="experiment-workspace-graph-choice"
             role="dialog"
             aria-modal="true"
@@ -2912,30 +2895,40 @@ export function ExperimentWorkspace({
 
       {!showGraph ? (
         <nav className="experiment-workspace-tabs" aria-label="実験の表示切り替え">
-          <button
-            className={`experiment-workspace-tab ${activeTab === "overview" ? "is-active" : ""}`}
-            type="button"
-            aria-selected={activeTab === "overview"}
-            role="tab"
-            onClick={() => setActiveTab("overview")}
-          >
-            Overview
-          </button>
-          {draft.experiments.map((experiment) => {
-            const tabId: WorkspaceTab = `experiment:${experiment.id}`;
-            return (
-              <button
-                className={`experiment-workspace-tab ${activeTab === tabId ? "is-active" : ""}`}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tabId}
-                key={experiment.id}
-                onClick={() => setActiveTab(tabId)}
-              >
-                {experiment.label}
-              </button>
-            );
-          })}
+          <div role="tablist" aria-label="実験タブ">
+            <button
+              id="workspace-tab-0"
+              className={`experiment-workspace-tab ${activeTab === "overview" ? "is-active" : ""}`}
+              type="button"
+              aria-selected={activeTab === "overview"}
+              aria-controls="workspace-panel-0"
+              tabIndex={activeTab === "overview" ? 0 : -1}
+              role="tab"
+              onKeyDown={(event) => handleWorkspaceTabKeyDown(event, 0)}
+              onClick={() => setActiveTab("overview")}
+            >
+              Overview
+            </button>
+            {draft.experiments.map((experiment, index) => {
+              const tabId: WorkspaceTab = `experiment:${experiment.id}`;
+              return (
+                <button
+                  id={`workspace-tab-${index + 1}`}
+                  className={`experiment-workspace-tab ${activeTab === tabId ? "is-active" : ""}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tabId}
+                  aria-controls={`workspace-panel-${index + 1}`}
+                  tabIndex={activeTab === tabId ? 0 : -1}
+                  key={experiment.id}
+                  onKeyDown={(event) => handleWorkspaceTabKeyDown(event, index + 1)}
+                  onClick={() => setActiveTab(tabId)}
+                >
+                  {experiment.label}
+                </button>
+              );
+            })}
+          </div>
           <button
             className="experiment-workspace-tab experiment-workspace-tab--add"
             type="button"
@@ -3030,27 +3023,35 @@ export function ExperimentWorkspace({
       <div className="experiment-workspace-body" hidden={showGraph}>
         <main className="experiment-workspace-main">
           {activeTab === "overview" ? (
-            <OverviewPanel draft={draft} cells={cells} />
+            <div id="workspace-panel-0" role="tabpanel" aria-labelledby="workspace-tab-0">
+              <OverviewPanel draft={draft} cells={cells} />
+            </div>
           ) : (
-            draft.experiments.map((experiment) => {
+            draft.experiments.map((experiment, index) => {
               if (activeTab !== `experiment:${experiment.id}`) return null;
               return (
-                <ExperimentPanel
-                  draft={draft}
-                  experiment={experiment}
-                  cells={cells}
+                <div
+                  id={`workspace-panel-${index + 1}`}
+                  role="tabpanel"
+                  aria-labelledby={`workspace-tab-${index + 1}`}
                   key={experiment.id}
-                  onExperimentChange={(patch) => updateExperiment(experiment.id, patch)}
-                  onProportionChange={updateProportion}
-                  onProportionPaste={applyProportionPaste}
-                  onNestedSelect={setSelectedCellKey}
-                  onNestedScalarChange={updateNestedScalar}
-                  onCategoricalChange={updateCategoricalCount}
-                  onWbRatioChange={updateWbRatio}
-                  onToggleNotPlanned={toggleNotPlanned}
-                  canRemove={draft.experiments.length > 1}
-                  onRemove={() => removeExperiment(experiment.id)}
-                />
+                >
+                  <ExperimentPanel
+                    draft={draft}
+                    experiment={experiment}
+                    cells={cells}
+                    onExperimentChange={(patch) => updateExperiment(experiment.id, patch)}
+                    onProportionChange={updateProportion}
+                    onProportionPaste={applyProportionPaste}
+                    onNestedSelect={setSelectedCellKey}
+                    onNestedScalarChange={updateNestedScalar}
+                    onCategoricalChange={updateCategoricalCount}
+                    onWbRatioChange={updateWbRatio}
+                    onToggleNotPlanned={toggleNotPlanned}
+                    canRemove={draft.experiments.length > 1}
+                    onRemove={() => removeExperiment(experiment.id)}
+                  />
+                </div>
               );
             })
           )}

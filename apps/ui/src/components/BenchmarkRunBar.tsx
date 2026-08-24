@@ -16,6 +16,7 @@ import {
   SUPPORT_CLASSIFICATION_MINOR_NOTE,
   SUPPORT_CLASSIFICATION_RUBRIC,
 } from "../app/supportClassification";
+import { PRODUCT_IDENTITY } from "../app/productIdentity";
 import { evaluationMode } from "../app/evaluationMode";
 import {
   advanceBlindBatch,
@@ -250,7 +251,7 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
             content: JSON.stringify(
               {
                 ...completed.identity,
-                appVersion: "0.1.0",
+                appVersion: PRODUCT_IDENTITY.version,
                 sourceRevision: evaluationMode.sourceRevision,
                 productRevision: evaluationMode.sourceRevision,
                 benchmarkInfrastructureRevision: evaluationMode.sourceRevision,

@@ -16,7 +16,7 @@ import { createIndependentTwoGroupFixture } from "../app/syntheticFixtures";
 import { ExperimentWorkspace } from "./ExperimentWorkspace";
 
 describe("ExperimentWorkspace benchmark pilot loader", () => {
-  it("loads values only after a matching researcher design reaches an Exp data tab", () => {
+  it("loads values only after a matching researcher design reaches an Exp data tab", async () => {
     const fixture = createIndependentTwoGroupFixture();
     startBenchmarkRun({
       benchmarkVersion: "LSA50_v1_1",
@@ -33,12 +33,12 @@ describe("ExperimentWorkspace benchmark pilot loader", () => {
 
     expect(screen.queryByRole("button", { name: "このPilotの合成値を一括入力" })).toBeNull();
     fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
-    const load = screen.getByRole("button", { name: "このPilotの合成値を一括入力" });
+    const load = await screen.findByRole("button", { name: "このPilotの合成値を一括入力" });
     expect(load).toBeEnabled();
     fireEvent.click(load);
 
     expect(screen.getByText("合成値をすべての実験タブへ入力しました。")).toBeVisible();
-    expect(screen.getByText("ブラウザレビュー用データ")).toBeVisible();
+    expect(screen.getByText("合成デモデータ")).toBeVisible();
     expect(screen.getByRole("button", { name: "Controlの生データを開く" })).toHaveTextContent(
       "n=1 / 平均 10",
     );

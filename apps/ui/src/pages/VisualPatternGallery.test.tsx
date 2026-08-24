@@ -355,7 +355,7 @@ describe("新しい実験の入口", () => {
     expect(screen.getByText("Exp 1 ／ Exp 2 ／ Exp 3")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "この設計で入力を始める" }));
 
-    expect(screen.getByText("ブラウザレビュー用データ", { selector: "strong" })).toBeVisible();
+    expect(screen.getByText("合成デモデータ", { selector: "strong" })).toBeVisible();
     expect(screen.getByRole("tab", { name: "Exp 1" })).toBeVisible();
     fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
     expect(screen.getByRole("columnheader", { name: "siRNA" })).toBeVisible();

@@ -1,7 +1,19 @@
-import type { PropsWithChildren } from "react";
+import { Suspense, lazy, type PropsWithChildren } from "react";
+import type { ProjectState } from "@lsaa/project";
 
 import type { AppRoute } from "../app/routes";
-import { BenchmarkRunBar } from "./BenchmarkRunBar";
+import { PRODUCT_IDENTITY } from "../app/productIdentity";
+import { DiagnosticPanel } from "./DiagnosticPanel";
+import { ContextualHelp } from "./ContextualHelp";
+import { AboutPanel } from "./AboutPanel";
+import "./DiagnosticPanel.css";
+import "./AboutPanel.css";
+
+const DevelopmentBenchmarkRunBar = import.meta.env.DEV
+  ? lazy(() =>
+      import("./BenchmarkRunBar").then(({ BenchmarkRunBar }) => ({ default: BenchmarkRunBar })),
+    )
+  : null;
 
 type AppShellProps = PropsWithChildren<{
   route: AppRoute;
@@ -9,6 +21,7 @@ type AppShellProps = PropsWithChildren<{
   onResetEvaluationCase?: () => void;
   browserPreview?: boolean;
   evaluationPreview?: boolean;
+  activeProject?: ProjectState | null;
 }>;
 
 export function AppShell({
@@ -18,16 +31,17 @@ export function AppShell({
   onResetEvaluationCase,
   browserPreview = false,
   evaluationPreview = false,
+  activeProject = null,
 }: AppShellProps) {
   return (
     <div className="app-shell">
       <header className="topbar">
         <button className="brand" type="button" onClick={() => onNavigate("home")}>
           <span className="brand-mark" aria-hidden="true">
-            LS
+            {PRODUCT_IDENTITY.shortMark}
           </span>
           <span>
-            <span className="brand-title">ライフサイエンス解析</span>
+            <span className="brand-title">{PRODUCT_IDENTITY.displayNameJa}</span>
             <span className="brand-subtitle">ローカル研究ワークスペース</span>
           </span>
         </button>
@@ -59,6 +73,14 @@ export function AppShell({
                 : "ローカルのみ"}
           </span>
         </div>
+        <ContextualHelp
+          context={{
+            surface:
+              route === "new-experiment" ? "design" : route === "open-project" ? "data" : "home",
+          }}
+        />
+        <AboutPanel />
+        <DiagnosticPanel route={route} project={activeProject} />
       </header>
 
       {browserPreview ? (
@@ -73,8 +95,12 @@ export function AppShell({
           </span>
         </div>
       ) : null}
-      {evaluationPreview ? (
-        <BenchmarkRunBar onNavigateHome={onResetEvaluationCase ?? (() => onNavigate("home"))} />
+      {evaluationPreview && DevelopmentBenchmarkRunBar ? (
+        <Suspense fallback={null}>
+          <DevelopmentBenchmarkRunBar
+            onNavigateHome={onResetEvaluationCase ?? (() => onNavigate("home"))}
+          />
+        </Suspense>
       ) : null}
 
       <div className="shell-body">

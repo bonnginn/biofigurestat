@@ -463,8 +463,7 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                         raise ValueError(f"Blind batch final verification failed: {error}") from error
                 self._json(
                     HTTPStatus.OK,
-                    {"written": written, "present": present, "directory": str(target),
-                     "verified": verified},
+                    {"written": written, "present": present, "verified": verified},
                 )
                 return
             if self.path == "/api/evaluation/blind-batch/next":
@@ -474,9 +473,11 @@ class EvaluationHandler(BaseHTTPRequestHandler):
                 return
             self._json(HTTPStatus.NOT_FOUND, {"error": "Not found"})
         except (ValueError, json.JSONDecodeError) as error:
-            self._json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
+            print(f"[evaluation-bridge] rejected request: {type(error).__name__}")
+            self._json(HTTPStatus.BAD_REQUEST, {"error": "EVALUATION_REQUEST_REJECTED"})
         except Exception as error:  # pragma: no cover - defensive bridge boundary
-            self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(error)})
+            print(f"[evaluation-bridge] internal error: {type(error).__name__}")
+            self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "EVALUATION_INTERNAL_ERROR"})
 
     def log_message(self, format: str, *args: object) -> None:
         print(f"[evaluation-bridge] {self.address_string()} {format % args}")
@@ -520,7 +521,7 @@ def main() -> None:
     )
     print("LSAA evaluation bridge (synthetic benchmark data only)", flush=True)
     print(f"URL=http://{args.host}:{args.port}", flush=True)
-    print(f"TOKEN={args.token}", flush=True)
+    print("Authentication token configured (value not printed)", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -1,0 +1,41 @@
+.diagnostic-menu {
+  position: relative;
+}
+
+.diagnostic-panel {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 10px);
+  right: 0;
+  display: grid;
+  width: min(440px, calc(100vw - 32px));
+  gap: 14px;
+  padding: 18px;
+  color: var(--ink, #18222e);
+  background: #fff;
+  border: 1px solid rgba(24, 34, 46, 0.18);
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(24, 34, 46, 0.2);
+}
+
+.diagnostic-panel p {
+  margin: 5px 0 0;
+  line-height: 1.55;
+}
+
+.diagnostic-expanded-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.diagnostic-expanded-option small {
+  display: block;
+  margin-top: 3px;
+}
+
+.diagnostic-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

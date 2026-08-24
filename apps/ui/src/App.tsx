@@ -27,6 +27,8 @@ import {
 } from "./app/recentProjects";
 import { evaluationModeIsConfigured, evaluationMode } from "./app/evaluationMode";
 import { recordBenchmarkEvent } from "./app/benchmarkEvaluation";
+import { recordDiagnosticError, recordDiagnosticEvent } from "./app/diagnostics";
+import { researcherError } from "./app/errorCatalog";
 
 type AppProps = {
   projectActions?: ProjectActions;
@@ -66,9 +68,20 @@ export default function App({ projectActions }: AppProps) {
   const saveProject = useCallback<NonNullable<ProjectActions["saveProject"]>>(
     async (request, existingTarget) => {
       if (!activeProjectActions.saveProject) return null;
-      const saved = await activeProjectActions.saveProject(request, existingTarget);
-      if (saved) recordRecentProject(saved);
-      return saved;
+      try {
+        const saved = await activeProjectActions.saveProject(request, existingTarget);
+        if (saved) {
+          recordRecentProject(saved);
+          recordDiagnosticEvent("project_saved", { state: "success" });
+        }
+        return saved;
+      } catch (error) {
+        recordDiagnosticError("PROJECT_SAVE_FAILED", error);
+        const message = researcherError("PROJECT_SAVE_FAILED");
+        throw new Error(`${message.title}（${message.code}）。${message.nextAction}`, {
+          cause: error,
+        });
+      }
     },
     [activeProjectActions, recordRecentProject],
   );
@@ -89,6 +102,7 @@ export default function App({ projectActions }: AppProps) {
       window.history.pushState({}, "", nextPath);
     }
     setRoute(nextRoute);
+    recordDiagnosticEvent("route_changed", { route: nextRoute });
   }, []);
   const navigateAsFreshStart = useCallback(
     (nextRoute: AppRoute) => {
@@ -126,10 +140,12 @@ export default function App({ projectActions }: AppProps) {
         setSystemOpenError(null);
         setActiveProject(project);
         recordRecentProject(project);
+        recordDiagnosticEvent("project_opened", { state: "success", source: "system" });
         navigate("open-project");
       } catch (error) {
         if (disposed) return;
         setActiveProject(null);
+        recordDiagnosticError("PROJECT_OPEN_FAILED", error);
         setSystemOpenError(
           error instanceof Error && error.message.trim()
             ? error.message
@@ -201,8 +217,13 @@ export default function App({ projectActions }: AppProps) {
                   setActiveProject(project);
                   setSystemOpenError(null);
                   recordRecentProject(project);
+                  recordDiagnosticEvent("project_opened", {
+                    state: "success",
+                    source: "recent",
+                  });
                   navigate("open-project");
                 } catch (error) {
+                  recordDiagnosticError("PROJECT_OPEN_FAILED", error);
                   setSystemOpenError(
                     error instanceof Error && error.message.trim()
                       ? error.message
@@ -224,7 +245,13 @@ export default function App({ projectActions }: AppProps) {
             persistedProject={activeProject}
             onProjectOpened={(project) => {
               setActiveProject(project);
-              if (project) recordRecentProject(project);
+              if (project) {
+                recordRecentProject(project);
+                recordDiagnosticEvent("project_opened", {
+                  state: "success",
+                  source: "dialog",
+                });
+              }
             }}
             saveProject={browserPreview ? undefined : saveProject}
             onReuseDesign={(draft) => {
@@ -253,6 +280,7 @@ export default function App({ projectActions }: AppProps) {
       onResetEvaluationCase={resetEvaluationCase}
       browserPreview={browserPreview}
       evaluationPreview={evaluationPreview}
+      activeProject={activeProject?.state ?? null}
     >
       {page}
     </AppShell>

@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod clipboard;
+mod diagnostic;
 mod engine;
 mod project_database;
 mod project_open;
@@ -44,6 +45,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             clipboard::copy_graph_png,
+            diagnostic::write_diagnostic_report,
             engine::run_analysis,
             project_open::take_pending_project_open,
             project_storage::begin_atomic_project_write,

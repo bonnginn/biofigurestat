@@ -77,7 +77,8 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("tab", { name: "Exp 2" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Exp 3" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Overview" }), { key: "ArrowRight" });
+    expect(screen.getByRole("tab", { name: "Exp 1" })).toHaveAttribute("aria-selected", "true");
     fireEvent.change(screen.getByRole("spinbutton", { name: "Controlの陽性数" }), {
       target: { value: "5" },
     });
@@ -93,6 +94,18 @@ describe("ExperimentWorkspace", () => {
     expect(document.querySelector(".experiment-workspace-col-derived")).toBeInTheDocument();
     expect(screen.queryByText("Exp番号について")).not.toBeInTheDocument();
     expect(screen.getByText(/実験情報（/)).toBeInTheDocument();
+  });
+
+  it("closes the graph-choice dialog with Escape and restores trigger focus", () => {
+    const draft = draftWithTwoConditions("continuous");
+    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+    const trigger = screen.getByRole("button", { name: "＋ グラフを作成" });
+    trigger.focus();
+    fireEvent.click(trigger);
+    expect(screen.getByRole("dialog", { name: "グラフの基本形を選ぶ" })).toBeVisible();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "グラフの基本形を選ぶ" })).toBeNull();
+    expect(trigger).toHaveFocus();
   });
 
   it("保存済みprojectから測定値を渡さずに設計再利用を開始できる", () => {

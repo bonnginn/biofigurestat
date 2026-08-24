@@ -58,6 +58,12 @@
   border-bottom: 1px solid #dfe5ef;
 }
 
+.experiment-workspace-tabs > [role="tablist"] {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+}
+
 .experiment-workspace-project-nav {
   position: sticky;
   z-index: 6;

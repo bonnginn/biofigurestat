@@ -9,20 +9,28 @@ import {
   evaluationModeIsConfigured,
   type EvaluationModeConfig,
 } from "./evaluationMode";
+import type { AppErrorCode } from "./errorCatalog";
+import { recordDiagnosticError } from "./diagnostics";
 
 export type AnalysisRunner = (request: AnalysisEngineRequest) => Promise<AnalysisEngineResult>;
 
 export class AnalysisClientError extends Error {
-  constructor(message: string, options?: { cause?: unknown }) {
+  readonly code: AppErrorCode;
+
+  constructor(code: AppErrorCode, message: string, options?: { cause?: unknown }) {
     super(message, options);
     this.name = "AnalysisClientError";
+    this.code = code;
   }
 }
 
 export function createEvaluationAnalysisRunner(config: EvaluationModeConfig): AnalysisRunner {
   return async (request) => {
     if (!evaluationModeIsConfigured(config)) {
-      throw new AnalysisClientError("評価用統計ブリッジが明示的に設定されていません。");
+      throw new AnalysisClientError(
+        "ENGINE_EXECUTION_FAILED",
+        "評価用統計ブリッジが明示的に設定されていません。",
+      );
     }
     try {
       const response = await fetch(`${config.apiBasePath}/analysis`, {
@@ -48,7 +56,9 @@ export function createEvaluationAnalysisRunner(config: EvaluationModeConfig): An
       return AnalysisEngineResultSchema.parse((payload as { result: unknown }).result);
     } catch (error) {
       if (error instanceof AnalysisClientError) throw error;
+      recordDiagnosticError("ENGINE_EXECUTION_FAILED", error);
       throw new AnalysisClientError(
+        "ENGINE_EXECUTION_FAILED",
         "評価用ブラウザから同一のローカル統計エンジンを実行できませんでした。",
         { cause: error },
       );
@@ -62,6 +72,7 @@ export const defaultAnalysisRunner: AnalysisRunner = async (request) => {
       return createEvaluationAnalysisRunner(evaluationMode)(request);
     }
     throw new AnalysisClientError(
+      "ENGINE_EXECUTION_FAILED",
       "標準解析はローカルのデスクトップアプリでのみ実行できます。Tauriでプロジェクトを開いて推奨解析を実行してください。",
     );
   }
@@ -71,7 +82,9 @@ export const defaultAnalysisRunner: AnalysisRunner = async (request) => {
     return AnalysisEngineResultSchema.parse(rawResult);
   } catch (error) {
     if (error instanceof AnalysisClientError) throw error;
+    recordDiagnosticError("ENGINE_EXECUTION_FAILED", error);
     throw new AnalysisClientError(
+      "ENGINE_EXECUTION_FAILED",
       "ローカル解析エンジンが有効な結果を返せませんでした。入力したデータは保持されています。",
       { cause: error },
     );

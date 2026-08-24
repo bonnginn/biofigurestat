@@ -11,6 +11,11 @@ import type { WorkspaceGraphAnalysis } from "../../app/experimentWorkspaceProjec
 import { copyMethodsText } from "../../app/methodsText";
 import { canSafelyAutomaticallyRerun } from "../../app/analysisRequestFingerprint";
 import { recordBenchmarkEvent } from "../../app/benchmarkEvaluation";
+import { diagnosticFingerprint, recordDiagnosticEvent } from "../../app/diagnostics";
+import { researcherError } from "../../app/errorCatalog";
+import { analysisRequestStructuralFingerprint } from "../../app/analysisRequestFingerprint";
+import { ContextualHelp } from "../ContextualHelp";
+import { PRODUCT_IDENTITY } from "../../app/productIdentity";
 
 type GraphStatisticsPanelProps = Readonly<{
   assessment: DraftAnalysisAssessment;
@@ -167,7 +172,21 @@ export function GraphStatisticsPanel({
             : null,
         );
         if (nextResult.status !== "ok") {
-          setError("ローカル解析エンジンが入力を受理できませんでした。入力値は保持されています。");
+          const researcherMessage = researcherError("ENGINE_INPUT_INVALID");
+          setError(
+            `${researcherMessage.title}（${researcherMessage.code}）。${researcherMessage.nextAction}`,
+          );
+        } else {
+          recordDiagnosticEvent("analysis_executed", {
+            templateId: request.templateId,
+            methodId: request.method,
+            protocolVersion: request.protocolVersion,
+            engineVersion: nextResult.engine.version,
+            packageVersions: JSON.stringify(nextResult.engine.packages),
+            requestFingerprint: diagnosticFingerprint(
+              analysisRequestStructuralFingerprint(request),
+            ),
+          });
         }
         recordBenchmarkEvent(
           "statistics_executed",
@@ -202,7 +221,13 @@ export function GraphStatisticsPanel({
           "analysis_only",
         );
       } catch (reason) {
-        setError(reason instanceof Error ? reason.message : "ローカル解析を実行できませんでした。");
+        const errorCode = reason instanceof Error && "code" in reason ? String(reason.code) : null;
+        const researcherMessage = researcherError(
+          errorCode === "ENGINE_INPUT_INVALID" ? "ENGINE_INPUT_INVALID" : "ENGINE_EXECUTION_FAILED",
+        );
+        setError(
+          `${researcherMessage.title}（${researcherMessage.code}）。${researcherMessage.nextAction}`,
+        );
       } finally {
         if (executionGenerationRef.current === generation) setRunning(false);
       }
@@ -259,6 +284,21 @@ export function GraphStatisticsPanel({
       <div>
         <p className="experiment-graph-overline">実データ確認後</p>
         <h3>このグラフの統計</h3>
+        <ContextualHelp
+          label="この統計のHelp"
+          context={{
+            surface: "statistics",
+            ...(assessment.method ? { selectedMethod: assessment.method } : {}),
+            ...(assessment.request?.protocolVersion === "0.6.0"
+              ? {
+                  timeStructure:
+                    assessment.request.withinFactor?.role === "time"
+                      ? ("longitudinal" as const)
+                      : ("repeated_state" as const),
+                }
+              : {}),
+          }}
+        />
       </div>
       <div className={`experiment-graph-recommendation is-${assessment.state}`}>
         <strong>{assessment.title}</strong>
@@ -601,7 +641,9 @@ export function GraphStatisticsPanel({
               ))}
               <div>
                 <dt>アプリケーション</dt>
-                <dd>Life Science Analysis App 0.1.0</dd>
+                <dd>
+                  {PRODUCT_IDENTITY.developmentName} {PRODUCT_IDENTITY.version}
+                </dd>
               </div>
               <div>
                 <dt>多重性の調整</dt>

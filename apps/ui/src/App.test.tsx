@@ -268,8 +268,8 @@ describe("workspace home", () => {
     expect(document.querySelector('[data-review-entry="phase-b"]')).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /複雑な割合データ/ }));
 
-    expect(screen.getByText("ブラウザレビュー用データ", { selector: "strong" })).toBeVisible();
-    expect(screen.getByText(/正式な研究データとして使用しない/)).toBeVisible();
+    expect(screen.getByText("合成デモデータ", { selector: "strong" })).toBeVisible();
+    expect(screen.getByText(/学習・画面確認用の人工データ/)).toBeVisible();
     expect(screen.getByRole("tab", { name: "Exp 1" })).toBeVisible();
     expect(screen.getByText(/測定予定なし：1セル/)).toBeVisible();
 

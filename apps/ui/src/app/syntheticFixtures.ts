@@ -47,11 +47,11 @@ export function createIndependentTwoGroupFixture(): SyntheticFixture {
   return {
     ...source,
     id: "independent_two_group",
-    title: "Pilot：独立2群",
-    description: "Benchmark pilot用の3実験回・2独立群の連続値です。",
+    title: "独立2群（連続値）",
+    description: "3実験回・2独立群の基本的な連続値デモです。",
     draft: {
       ...source.draft,
-      name: "Benchmark pilot：独立2群",
+      name: "合成デモ：独立2群",
       conditions,
       controlConditionId: conditions[0]?.id,
     },

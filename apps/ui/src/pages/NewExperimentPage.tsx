@@ -448,6 +448,16 @@ function ContextStart({
   showDemos?: boolean;
 }) {
   const demos = syntheticFixtures();
+  const fiveMinuteDemoIds = new Set([
+    "independent_two_group",
+    "simple_independent_continuous",
+    "paired_two_condition",
+    "nested_continuous",
+    "longitudinal",
+    "wb_reference",
+  ]);
+  const fiveMinuteDemos = demos.filter(({ id }) => fiveMinuteDemoIds.has(id));
+  const additionalDemos = demos.filter(({ id }) => !fiveMinuteDemoIds.has(id));
   if (selectedContext) {
     return (
       <section className="experiment-start__context-card" aria-labelledby="entry-route-heading">
@@ -532,7 +542,7 @@ function ContextStart({
         >
           <div>
             <p className="experiment-start__eyebrow">
-              {browserPreview ? "Phase B · 詳細確認用" : "UX・動作確認用"}
+              {browserPreview ? "Phase B · 詳細確認用" : "5分で試す"}
             </p>
             <h2 id="demo-heading">合成デモデータですぐ試す</h2>
             <p>
@@ -542,13 +552,26 @@ function ContextStart({
             </p>
           </div>
           <div className="experiment-start__demo-options">
-            {demos.map((fixture) => (
+            {fiveMinuteDemos.map((fixture) => (
               <button key={fixture.id} type="button" onClick={() => onDemoSelect(fixture)}>
                 <strong>{fixture.title}</strong>
                 <span>{fixture.description}</span>
               </button>
             ))}
           </div>
+          {additionalDemos.length > 0 ? (
+            <details>
+              <summary>ほかの合成デモを見る</summary>
+              <div className="experiment-start__demo-options">
+                {additionalDemos.map((fixture) => (
+                  <button key={fixture.id} type="button" onClick={() => onDemoSelect(fixture)}>
+                    <strong>{fixture.title}</strong>
+                    <span>{fixture.description}</span>
+                  </button>
+                ))}
+              </div>
+            </details>
+          ) : null}
         </section>
       ) : null}
     </>

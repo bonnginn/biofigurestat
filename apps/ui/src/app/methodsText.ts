@@ -12,6 +12,7 @@ import type {
 import type { GraphSpec } from "@lsaa/graph-spec";
 
 import { methodLabel, templateLabel } from "./recommendationLabels";
+import { PRODUCT_IDENTITY } from "./productIdentity";
 
 export type MethodsTextInput = Readonly<{
   design: ExperimentDesign;
@@ -393,7 +394,7 @@ export function generateMethodsText(input: MethodsTextInput): string {
     "",
     `実行エンジン：${result.engine.name} ${result.engine.version}`,
     `使用パッケージ：${packages || "記録なし"}`,
-    "アプリケーション：Life Science Analysis App 0.1.0",
+    `アプリケーション：${PRODUCT_IDENTITY.developmentName} ${PRODUCT_IDENTITY.version}`,
     `完了日時：${result.completedAt}`,
     "",
     "注意事項",

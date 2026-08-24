@@ -267,7 +267,8 @@ class EvaluationBridgeTests(unittest.TestCase):
                 ],
             },
         )
-        target = Path(result["directory"])
+        self.assertNotIn("directory", result)
+        target = Path(self.temporary.name) / "case_001" / "track_A" / "run_001"
         self.assertEqual(target.relative_to(self.temporary.name).as_posix(), "case_001/track_A/run_001")
         self.assertEqual((target / "methods.txt").read_text(), "fixture methods")
 
