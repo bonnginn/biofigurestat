@@ -644,6 +644,20 @@ describe("ExperimentGraphWorkbench", () => {
     ).toBeVisible();
   });
 
+  it("serializes a two-factor Graph without invalid numeric SVG attributes", () => {
+    const { draft, cells } = factorialContinuousFixture();
+    render(<ExperimentGraphWorkbench draft={draft} cells={cells} onClose={vi.fn()} />);
+
+    const svg = screen.getByRole("img", {
+      name: /実験単位ごとのグラフ/,
+    }) as unknown as SVGSVGElement;
+    const serialized = serializeGraphSvg(svg);
+    expect(serialized).not.toMatch(/(?:NaN|Infinity|undefined)/);
+    expect(
+      new DOMParser().parseFromString(serialized, "image/svg+xml").querySelector("parsererror"),
+    ).toBeNull();
+  });
+
   it("PearsonとSpearmanを検証済みの実行可能な選択として切り替える", async () => {
     const fixture = createXyCorrelationFixture();
     const runner = vi.fn<AnalysisRunner>(async (request) => ({

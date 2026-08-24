@@ -109,6 +109,9 @@ describe("publication graph exports", () => {
     expect(serialized).toContain('r="8"');
     expect(serialized).toContain('fill="#0072b2"');
     expect(serialized).toContain('data-graph-point="observation.1"');
+    expect(
+      new DOMParser().parseFromString(serialized, "image/svg+xml").querySelector("parsererror"),
+    ).toBeNull();
   });
 
   it("exports the exact analyzed observations with Japanese labels and units", () => {

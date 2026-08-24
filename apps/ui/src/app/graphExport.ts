@@ -31,7 +31,6 @@ const PUBLICATION_SVG_STYLE = `
 /** Serializes the currently rendered SVG, including inline Inspector appearance attributes. */
 export function serializeGraphSvg(svg: SVGSVGElement): string {
   const clone = svg.cloneNode(true) as SVGSVGElement;
-  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   clone.setAttribute("version", "1.1");
   const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
   style.textContent = PUBLICATION_SVG_STYLE;

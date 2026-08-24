@@ -1136,7 +1136,7 @@ function ExperimentGraphSvg({
                   <g
                     key={`level-${levelIndex}-${group.key}`}
                     data-condition-level-index={levelIndex}
-                    data-condition-group={group.key}
+                    data-condition-group={encodeURIComponent(group.key)}
                     data-inspector-target="x-axis"
                     data-selected={activeInspectorTarget === "x-axis" || undefined}
                     onDoubleClick={(event) => {
