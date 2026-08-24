@@ -154,6 +154,62 @@ button:hover {
   color: #9b4b34;
   margin: 5px 3px 0;
 }
+.method-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+.method-comparison article {
+  padding: 16px;
+  border: 1px solid #d3ddd9;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 3px 14px #173c3210;
+}
+.method-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-bottom: 11px;
+}
+.method-heading span {
+  color: #1e755e;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+.method-heading strong {
+  font-size: 15px;
+}
+.method-comparison dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+.method-comparison dl > div {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 8px;
+}
+.method-comparison dt {
+  color: #52645e;
+  font-size: 12px;
+  font-weight: 800;
+}
+.method-comparison dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.change-reason {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid #e0e8e4;
+  color: #3f514b;
+  font-size: 12px;
+  line-height: 1.55;
+}
 .review-card {
   margin-top: 18px;
   padding: 16px;
@@ -257,6 +313,9 @@ button:hover {
     margin-top: 12px;
   }
   .figures {
+    grid-template-columns: 1fr;
+  }
+  .method-comparison {
     grid-template-columns: 1fr;
   }
   .image-frame {

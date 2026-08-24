@@ -9,6 +9,24 @@ from scripts.import_personal_figure_benchmark import DEFAULT_MASTER, DEFAULT_TRA
 
 
 class PersonalFigureBenchmarkImportTest(unittest.TestCase):
+    def test_comparison_manifest_documents_method_changes(self) -> None:
+        manifest_path = Path("benchmark/personal_figure_v1/comparison_manifest.json")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        required = {
+            "paperGraph",
+            "appGraph",
+            "graphChangeReason",
+            "paperStatistics",
+            "appStatistics",
+            "statisticsChangeReason",
+        }
+
+        self.assertEqual(len(manifest["cases"]), 6)
+        for case in manifest["cases"]:
+            self.assertTrue(required.issubset(case), case["caseId"])
+            for field in required:
+                self.assertTrue(case[field].strip(), f'{case["caseId"]}: {field}')
+
     def test_builds_separated_personal_runtime(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "runtime"

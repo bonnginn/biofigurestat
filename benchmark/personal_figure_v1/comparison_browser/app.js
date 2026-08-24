@@ -60,6 +60,12 @@ function render() {
   $("finalFallback").textContent = finalAvailable
     ? ""
     : "Finalなし：明示的unsupportedのためDefaultを再掲";
+  $("paperGraph").textContent = item.paperGraph;
+  $("appGraph").textContent = item.appGraph;
+  $("graphChangeReason").textContent = `理由：${item.graphChangeReason}`;
+  $("paperStatistics").textContent = item.paperStatistics;
+  $("appStatistics").textContent = item.appStatistics;
+  $("statisticsChangeReason").textContent = `理由：${item.statisticsChangeReason}`;
   $("methodsLink").href = finalAvailable
     ? join(`../${item.runRoot}`, "methods.txt")
     : join(`../${item.runRoot}`, "run.json");
