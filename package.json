@@ -12,6 +12,7 @@
     "engine:test": "node scripts/run_with_engine_python.mjs -m unittest discover -s engine/python/tests -p test_*.py",
     "engine:reference": "node scripts/run_with_engine_python.mjs scripts/verify_engine_reference.py",
     "benchmark:verify": "node scripts/run_with_engine_python.mjs scripts/verify_benchmark_runs.py",
+    "release:verify": "node scripts/run_with_engine_python.mjs scripts/verify_release_bundle.py",
     "preview:ux": "pnpm --filter @lsaa/ui build && pnpm --filter @lsaa/ui preview --host 127.0.0.1 --port 4173 --strictPort",
     "preview:tunnel": "cloudflared tunnel --url http://127.0.0.1:4173 --no-autoupdate",
     "engine:build:mac": "engine/python/.venv/bin/python engine/python/build_sidecar.py && engine/python/.venv/bin/python engine/python/smoke_sidecar.py",
