@@ -49,7 +49,7 @@ export function recommendD06(design: D06LongitudinalDesign): D06MatchResult {
       alternativeMethods: ["mixed_model"],
       reasonCode: "balanced_condition_by_time_repeated_design",
       explanation:
-        "Condition is evaluated between biological units, while time and condition-by-time interaction preserve repeated measurements within each stable unit.",
+        "Condition is evaluated between biological units, while the repeated axis and condition-by-axis interaction preserve measurements within each stable unit.",
       statisticalNDefinition: "Complete stable biological units within each condition",
       multiplicityMethod: null,
     },

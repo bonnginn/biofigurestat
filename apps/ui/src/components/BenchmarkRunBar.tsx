@@ -12,6 +12,10 @@ import {
   type BenchmarkOutcome,
   type BenchmarkSupportStatus,
 } from "../app/benchmarkEvaluation";
+import {
+  SUPPORT_CLASSIFICATION_MINOR_NOTE,
+  SUPPORT_CLASSIFICATION_RUBRIC,
+} from "../app/supportClassification";
 import { evaluationMode } from "../app/evaluationMode";
 import {
   advanceBlindBatch,
@@ -518,23 +522,37 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
         </label>
       ) : null}
       {run.identity ? (
-        <label>
-          <span>Scientific support</span>
-          <select
-            value={run.supportStatus ?? ""}
-            disabled={Boolean(run.outcome && NON_SCIENTIFIC_OUTCOMES.includes(run.outcome))}
-            onChange={(event) => {
-              const value = event.target.value;
-              setBenchmarkSupportStatus(value ? (value as BenchmarkSupportStatus) : null);
-            }}
-          >
-            <option value="">未評価</option>
-            <option value="direct">Direct support</option>
-            <option value="reasonable_workaround">Reasonable workaround</option>
-            <option value="scientifically_compromising">Scientifically compromising</option>
-            <option value="impossible">Impossible</option>
-          </select>
-        </label>
+        <div>
+          <label>
+            <span>Scientific support</span>
+            <select
+              value={run.supportStatus ?? ""}
+              disabled={Boolean(run.outcome && NON_SCIENTIFIC_OUTCOMES.includes(run.outcome))}
+              onChange={(event) => {
+                const value = event.target.value;
+                setBenchmarkSupportStatus(value ? (value as BenchmarkSupportStatus) : null);
+              }}
+            >
+              <option value="">未評価</option>
+              {SUPPORT_CLASSIFICATION_RUBRIC.map(({ status, label }) => (
+                <option key={status} value={status}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <details className="benchmark-support-rubric">
+            <summary>Scientific support 判定基準</summary>
+            <ul>
+              {SUPPORT_CLASSIFICATION_RUBRIC.map(({ status, label, description }) => (
+                <li key={status}>
+                  <strong>{label}:</strong> {description}
+                </li>
+              ))}
+            </ul>
+            <p>{SUPPORT_CLASSIFICATION_MINOR_NOTE}</p>
+          </details>
+        </div>
       ) : null}
       {run.identity && run.outcome === "explicit_unsupported" ? (
         <section className="benchmark-case-delivery" aria-label="Explicit unsupported evidence">

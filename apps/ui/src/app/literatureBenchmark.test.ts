@@ -158,8 +158,8 @@ describe("literature benchmark experimenter boundary", () => {
       },
     });
     expect(timeCoercion.compatible).toBe(false);
-    expect(timeCoercion.message).toContain("時間以外の数値軸");
-    expect(timeCoercion.message).toContain("時間として入力しません");
+    expect(timeCoercion.reason).toContain("時間以外の数値軸");
+    expect(timeCoercion.reason).toContain("時間として入力しません");
 
     const result = mapLiteratureMeasurements(radiusSource, {
       ...draft,

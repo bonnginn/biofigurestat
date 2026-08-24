@@ -42,6 +42,7 @@ import {
   type ExperimentCellMap,
   type ExperimentSetDraft,
 } from "./experimentDraft";
+import { repeatedFactorCanonicalExplanation } from "./repeatedFactorTerminology";
 
 type PersistedWorkspaceGraphState = ExperimentWorkspaceState["graphs"][number];
 
@@ -545,8 +546,9 @@ export function createWorkspaceRecommendation(
       recommendedMethod: "mixed_anova",
       alternativeMethods: ["mixed_model"],
       reasonCode: "balanced_condition_by_time_repeated_design",
-      explanation:
-        "Conditions use independent experimental units while repeated time observations preserve stable unit identity; the interaction is evaluated first.",
+      explanation: repeatedFactorCanonicalExplanation(
+        request.protocolVersion === "0.6.0" ? request.withinFactor : undefined,
+      ),
       statisticalNDefinition: `Complete stable units at level ${design.experimentalUnitLevelId} within each condition`,
       multiplicityMethod: null,
     };

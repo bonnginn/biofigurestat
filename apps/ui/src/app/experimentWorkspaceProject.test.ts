@@ -1302,7 +1302,7 @@ describe("experiment workspace project adapter", () => {
     });
   });
 
-  it("D06の全時点identityと軸semanticを派生1値へ潰さず保存する", () => {
+  it("JCB018 deterministic provenance: Radius identityと軸semanticを時間へ偽装せず保存する", () => {
     const longitudinal = createLongitudinalFixture();
     const draft = {
       ...longitudinal.draft,
@@ -1370,6 +1370,11 @@ describe("experiment workspace project adapter", () => {
     expect(state.derivedDatasetRevisions).toHaveLength(1);
     expect(state.derivedValues).toHaveLength(assessment.request.observations.length);
     expect(state.analysisRuns[0]?.request).toMatchObject({ protocolVersion: "0.6.0" });
+    expect(state.analysisRuns[0]?.recommendation.explanation).toContain("Radius");
+    expect(state.analysisRuns[0]?.recommendation.explanation.toLowerCase()).not.toMatch(/\btime\b/);
+    expect(assessment.title).toContain("条件×Radius");
+    expect(assessment.reason).toContain("Radius");
+    expect(`${assessment.title}${assessment.reason}`).not.toContain("時間");
     const persistedRequest = state.analysisRuns[0]?.request;
     expect(
       persistedRequest?.protocolVersion === "0.6.0" &&

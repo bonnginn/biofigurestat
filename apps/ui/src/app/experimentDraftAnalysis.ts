@@ -14,6 +14,7 @@ import {
   type ExperimentSetDraft,
   type TimeAnalysisPlan,
 } from "./experimentDraft";
+import { repeatedFactorAssessmentText } from "./repeatedFactorTerminology";
 
 type StatisticalMethod = AnalysisRecommendation["recommendedMethod"];
 export type ContrastIntent =
@@ -466,10 +467,14 @@ export function assessDraftGraphAnalysis(input: {
       observations,
       options: { alternative: "two_sided", confidenceLevel: 0.95, multiplicityMethod: null },
     });
+    const recommendationText = repeatedFactorAssessmentText(
+      withinFactor,
+      input.draft.conditionAssignment.unitLabel,
+    );
     return {
       state: "ready",
-      title: "条件×時間の反復測定分散分析を推奨",
-      reason: `条件間は独立、時間内は同じ${input.draft.conditionAssignment.unitLabel}を追跡します。まず条件×時間の交互作用を評価し、次に条件と時間の全体効果を示します。`,
+      title: recommendationText.title,
+      reason: recommendationText.reason,
       method: "mixed_anova",
       recommendedMethod: "mixed_anova",
       commonAlternative: "欠測や不均衡を扱えるmixed-effects model（未接続）",

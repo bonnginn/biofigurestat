@@ -93,6 +93,9 @@ describe("BenchmarkRunBar case initialization", () => {
       await screen.findByRole("region", { name: "Blinded researcher packet" }),
     ).toHaveTextContent(/Blind case ready: JCB010 \/ 16\s*synthetic rows/);
     expect(screen.getByText("Synthetic two-condition microscopy measurement.")).toBeVisible();
+    fireEvent.click(screen.getByText("Scientific support 判定基準"));
+    expect(screen.getByText(/endpoint・AUC・maximumへの縮約/)).toBeVisible();
+    expect(screen.getByText(/軽微なUX摩擦だけではDirectから下げません/)).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/evaluation/literature/case?caseId=JCB010&track=track_B&runId=fresh_B_JCB010_001",
     );
