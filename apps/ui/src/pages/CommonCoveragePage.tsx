@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnalysisEngineRequestSchema, type AnalysisEngineResult } from "@lsaa/analysis-contracts";
 import {
   parseContingencyPaste,
@@ -15,8 +15,23 @@ import {
   validateGraphScale,
 } from "@lsaa/graph-spec";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
-import { downloadTextFile, serializeGraphSvg } from "../app/graphExport";
+import {
+  COMPLETE_BENCHMARK_ARTIFACT_NAMES,
+  beginDefaultGraphCapture,
+  blobToBase64,
+  completeDefaultGraphCapture,
+  currentBenchmarkRun,
+  recordBenchmarkEvent,
+  recordFinalGraphCapture,
+  setBenchmarkOutcome,
+  sha256Hex,
+  useBenchmarkRun,
+  writeBenchmarkArtifacts,
+} from "../app/benchmarkEvaluation";
+import { evaluationMode } from "../app/evaluationMode";
+import { downloadTextFile, serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
 import { generateCommonCoverageMethods } from "../app/commonCoverageMethods";
+import { PRODUCT_IDENTITY } from "../app/productIdentity";
 import {
   CountGraph,
   DistributionGraph,
@@ -68,6 +83,7 @@ export function CommonCoveragePage({
   const [distributionType, setDistributionType] = useState<"histogram" | "ecdf">("histogram"),
     [binCount, setBinCount] = useState(""),
     svgRef = useRef<SVGSVGElement>(null);
+  const benchmarkRun = useBenchmarkRun();
   const parsed = useMemo(() => {
     try {
       if (mode === "contingency") return { kind: mode, data: parseContingencyPaste(text) } as const;
@@ -218,6 +234,211 @@ export function CommonCoveragePage({
   } catch (error) {
     graph = <p role="alert">{error instanceof Error ? error.message : "Graphを表示できません"}</p>;
   }
+  const methods =
+    result && executedRequest ? generateCommonCoverageMethods(executedRequest, result) : null;
+  const benchmarkAnalysisState = JSON.stringify({
+    mode,
+    request: executedRequest,
+    result,
+    graph: { xLabel, yLabel, xScale, yScale, showBand },
+  });
+
+  useLayoutEffect(() => {
+    if (
+      mode !== "regression" ||
+      !result ||
+      !executedRequest ||
+      !benchmarkRun.identity ||
+      benchmarkRun.defaultGraphCapture ||
+      !svgRef.current
+    )
+      return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const capturedAt = new Date().toISOString();
+        if (!beginDefaultGraphCapture(capturedAt)) return;
+        const svg = svgRef.current;
+        if (!svg) return;
+        const svgText = serializeGraphSvg(svg);
+        const viewBox = svg.viewBox.baseVal;
+        const png = await svgToPngBlob(
+          svgText,
+          viewBox.width || svg.width.baseVal.value || 900,
+          viewBox.height || svg.height.baseVal.value || 520,
+        );
+        const [svgSha256, pngSha256, analysisStateFingerprint] = await Promise.all([
+          sha256Hex(svgText),
+          sha256Hex(png),
+          sha256Hex(benchmarkAnalysisState),
+        ]);
+        await writeBenchmarkArtifacts([
+          { name: "default_graph.svg", content: svgText, mediaType: "image/svg+xml" },
+          {
+            name: "default_graph.png",
+            content: await blobToBase64(png),
+            encoding: "base64",
+            mediaType: "image/png",
+          },
+        ]);
+        if (!cancelled)
+          completeDefaultGraphCapture({
+            graphStateFingerprint: svgSha256,
+            analysisStateFingerprint,
+            svgSha256,
+            pngSha256,
+          });
+      } catch {
+        if (!cancelled) {
+          setBenchmarkOutcome("infrastructure_failure");
+          setMessage("既定Regression Graphの評価artifactを保存できませんでした。");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    benchmarkAnalysisState,
+    benchmarkRun.defaultGraphCapture,
+    benchmarkRun.identity,
+    executedRequest,
+    mode,
+    result,
+  ]);
+
+  const finalizeRegressionBenchmark = async () => {
+    const svg = svgRef.current;
+    const runState = currentBenchmarkRun();
+    if (
+      mode !== "regression" ||
+      !svg ||
+      !result ||
+      !executedRequest ||
+      !methods ||
+      !runState.identity ||
+      !runState.supportStatus ||
+      !runState.defaultGraphCaptured
+    ) {
+      setMessage("完了前に解析、Default Graph保存、Scientific support選択を完了してください。");
+      return;
+    }
+    try {
+      const svgText = serializeGraphSvg(svg);
+      const viewBox = svg.viewBox.baseVal;
+      const png = await svgToPngBlob(
+        svgText,
+        viewBox.width || svg.width.baseVal.value || 900,
+        viewBox.height || svg.height.baseVal.value || 520,
+      );
+      const capturedAt = new Date().toISOString();
+      const [svgSha256, pngSha256, analysisStateFingerprint] = await Promise.all([
+        sha256Hex(svgText),
+        sha256Hex(png),
+        sha256Hex(benchmarkAnalysisState),
+      ]);
+      recordFinalGraphCapture({
+        capturedAt,
+        graphStateFingerprint: svgSha256,
+        analysisStateFingerprint,
+        svgSha256,
+        pngSha256,
+      });
+      setBenchmarkOutcome("completed");
+      recordBenchmarkEvent("benchmark_run_finalized", {
+        selectedGraph: "simple_linear_regression",
+        selectedStatistics: executedRequest.method,
+      });
+      const finalRun = currentBenchmarkRun();
+      const graphState = {
+        graphType: "simple_linear_regression",
+        xLabel,
+        yLabel,
+        xScale,
+        yScale,
+        showBand,
+        analysis: { request: executedRequest, result },
+      };
+      await writeBenchmarkArtifacts(
+        [
+          {
+            name: "run.json",
+            content: JSON.stringify(
+              {
+                ...finalRun.identity,
+                appVersion: PRODUCT_IDENTITY.version,
+                sourceRevision: evaluationMode.sourceRevision,
+                engineVersion: result.engine.version,
+                startedAt: finalRun.startedAt,
+                completedAt: capturedAt,
+                outcome: finalRun.outcome,
+                supportStatus: finalRun.supportStatus,
+                artifactCompleteness: "complete",
+                defaultGraphCaptured: finalRun.defaultGraphCaptured,
+                captureProvenanceVersion: "1.1.0",
+                defaultCapturedAt: finalRun.defaultGraphCapture?.capturedAt ?? null,
+                defaultCapturedEventIndex: finalRun.defaultGraphCapture?.eventIndex ?? null,
+                finalCapturedAt: finalRun.finalGraphCapture?.capturedAt ?? null,
+                finalCapturedEventIndex: finalRun.finalGraphCapture?.eventIndex ?? null,
+                defaultGraphStateFingerprint:
+                  finalRun.defaultGraphCapture?.graphStateFingerprint ?? null,
+                finalGraphStateFingerprint:
+                  finalRun.finalGraphCapture?.graphStateFingerprint ?? null,
+                defaultAnalysisStateFingerprint:
+                  finalRun.defaultGraphCapture?.analysisStateFingerprint ?? null,
+                finalAnalysisStateFingerprint:
+                  finalRun.finalGraphCapture?.analysisStateFingerprint ?? null,
+                defaultSvgSha256: finalRun.defaultGraphCapture?.svgSha256 ?? null,
+                defaultPngSha256: finalRun.defaultGraphCapture?.pngSha256 ?? null,
+                finalSvgSha256: finalRun.finalGraphCapture?.svgSha256 ?? null,
+                finalPngSha256: finalRun.finalGraphCapture?.pngSha256 ?? null,
+                interactionCount: finalRun.events.length,
+                graphEditCount: 0,
+                renderedGraphEditCount: 0,
+                analysisEditCount: finalRun.events.filter(
+                  ({ effect }) => effect === "analysis_only" || effect === "both",
+                ).length,
+              },
+              null,
+              2,
+            ),
+          },
+          { name: "final_graph.svg", content: svgText, mediaType: "image/svg+xml" },
+          {
+            name: "final_graph.png",
+            content: await blobToBase64(png),
+            encoding: "base64",
+            mediaType: "image/png",
+          },
+          {
+            name: "statistics.json",
+            content: JSON.stringify(
+              {
+                statisticalUnit: "biological unit",
+                recommendedMethod: "simple_linear_regression",
+                selectedMethod: executedRequest.method,
+                correction: executedRequest.options.multiplicityMethod,
+                request: executedRequest,
+                result,
+                state: "current",
+                applicationVersion: PRODUCT_IDENTITY.version,
+              },
+              null,
+              2,
+            ),
+          },
+          { name: "methods.txt", content: methods },
+          { name: "graph_state.json", content: JSON.stringify(graphState, null, 2) },
+          { name: "interaction_log.json", content: JSON.stringify(finalRun.events, null, 2) },
+        ],
+        { requiredArtifacts: COMPLETE_BENCHMARK_ARTIFACT_NAMES },
+      );
+      setMessage("Regression benchmark runの9 artifactsを保存しました。");
+    } catch {
+      setBenchmarkOutcome("infrastructure_failure");
+      setMessage("Regression benchmark artifactを保存できませんでした。");
+    }
+  };
   return (
     <div className="page-stack">
       <button type="button" onClick={onBack}>
@@ -355,6 +576,11 @@ export function CommonCoveragePage({
         >
           SVGを書き出す
         </button>
+        {mode === "regression" && benchmarkRun.identity ? (
+          <button type="button" onClick={() => void finalizeRegressionBenchmark()}>
+            Benchmark runを完了
+          </button>
+        ) : null}
         {message ? <p role="status">{message}</p> : null}
         {"error" in parsed ? <p role="alert">{parsed.error}</p> : null}
       </section>
@@ -369,12 +595,10 @@ export function CommonCoveragePage({
             )}
           </pre>
         ) : null}
-        {result && executedRequest ? (
+        {methods ? (
           <details>
             <summary>Methods</summary>
-            <pre style={{ whiteSpace: "pre-wrap" }}>
-              {generateCommonCoverageMethods(executedRequest, result)}
-            </pre>
+            <pre style={{ whiteSpace: "pre-wrap" }}>{methods}</pre>
           </details>
         ) : null}
       </section>
