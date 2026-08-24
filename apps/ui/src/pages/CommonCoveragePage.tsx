@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnalysisEngineRequestSchema, type AnalysisEngineResult } from "@lsaa/analysis-contracts";
 import {
   parseContingencyPaste,
@@ -31,6 +31,11 @@ import {
 import { evaluationMode } from "../app/evaluationMode";
 import { downloadTextFile, serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
 import { generateCommonCoverageMethods } from "../app/commonCoverageMethods";
+import {
+  fetchLiteratureExperimenterCase,
+  isLiteratureCaseId,
+  type LiteratureExperimenterCase,
+} from "../app/literatureBenchmark";
 import { PRODUCT_IDENTITY } from "../app/productIdentity";
 import {
   CountGraph,
@@ -70,6 +75,7 @@ export function CommonCoveragePage({
       typeof AnalysisEngineRequestSchema.parse
     > | null>(null),
     [message, setMessage] = useState<string | null>(null);
+  const [literatureCase, setLiteratureCase] = useState<LiteratureExperimenterCase | null>(null);
   const [contingencyMethod, setContingencyMethod] = useState<
       "fisher_exact" | "pearson_chi_square" | "mcnemar_exact"
     >("fisher_exact"),
@@ -84,6 +90,43 @@ export function CommonCoveragePage({
     [binCount, setBinCount] = useState(""),
     svgRef = useRef<SVGSVGElement>(null);
   const benchmarkRun = useBenchmarkRun();
+  useEffect(() => {
+    const identity = benchmarkRun.identity;
+    setLiteratureCase(null);
+    if (!identity || !isLiteratureCaseId(identity.caseId)) return;
+    let cancelled = false;
+    void fetchLiteratureExperimenterCase(identity).then((loaded) => {
+      if (!cancelled) setLiteratureCase(loaded);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [benchmarkRun.identity]);
+
+  const loadLiteratureRegression = () => {
+    if (!literatureCase || mode !== "regression") return;
+    const rows = literatureCase.syntheticData;
+    if (!rows.length || rows.some(({ x_value }) => x_value === null)) {
+      setMessage("このcaseはstable unitごとのX/Y関係を完全には保持していません。");
+      return;
+    }
+    setText(
+      [
+        "Unit ID\tX\tY",
+        ...rows.map((row) => [row.unit_id, row.x_value, row.value].join("\t")),
+      ].join("\n"),
+    );
+    setXLabel("Numeric covariate");
+    setYLabel(literatureCase.researcherPacket.readouts.split("||")[0]?.trim() || "Outcome");
+    setResult(null);
+    setExecutedRequest(null);
+    setMessage(`${rows.length}件のstable X/Y identityを単回帰表へ入力しました。`);
+    recordBenchmarkEvent("literature_benchmark_data_loaded", {
+      caseId: literatureCase.caseId,
+      mappedCells: rows.length,
+      route: "simple_linear_regression",
+    });
+  };
   const parsed = useMemo(() => {
     try {
       if (mode === "contingency") return { kind: mode, data: parseContingencyPaste(text) } as const;
@@ -466,6 +509,17 @@ export function CommonCoveragePage({
                 ? "相関とは別にOLS回帰を実行します。切片は既定で推定します。"
                 : "元の個別値を保持した探索的Graphです。検定は自動追加しません。"}
         </p>
+        {mode === "regression" && literatureCase ? (
+          <section className="benchmark-pilot-loader" aria-label="Literature単回帰合成値">
+            <div>
+              <strong>{literatureCase.caseId}</strong>
+              <span>stable unitごとのX/Y関係を単回帰表へ入力します。</span>
+            </div>
+            <button type="button" onClick={loadLiteratureRegression}>
+              このLiterature caseを単回帰表へ入力
+            </button>
+          </section>
+        ) : null}
         <textarea
           aria-label={`${titles[mode]} data`}
           rows={9}
