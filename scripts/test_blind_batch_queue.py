@@ -81,6 +81,28 @@ class BlindBatchQueueTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "active blind batch job"):
                 queue.assert_active(old_identity)
 
+    def test_retry_rearms_a_paused_infrastructure_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            queue_path = root / "queue.json"
+            prepare_batch("batch_retry_paused", queue_path, root / "packages", ("JCB003",))
+            queue = BlindBatchQueue(queue_path)
+            old_identity = queue.active_identity()
+            queue.pause(old_identity, "fixture provenance failure")
+
+            new_run_id = "batch_retry_paused_01_JCB003_retry_01"
+            queue.retry_active(
+                old_identity,
+                new_run_id,
+                "b" * 64,
+                "fixture provenance failure",
+            )
+
+            snapshot = queue.snapshot()
+            self.assertEqual(snapshot["status"], "running")
+            self.assertEqual(snapshot["current"]["runId"], new_run_id)
+            self.assertEqual(queue.active_identity(), ("JCB003", "track_B", new_run_id))
+
 
 class BlindBatchBridgeTests(unittest.TestCase):
     def setUp(self) -> None:

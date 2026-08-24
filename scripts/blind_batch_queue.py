@@ -203,8 +203,15 @@ class BlindBatchQueue:
             raise ValueError("Blind batch retry prior status is invalid")
         with self._lock:
             value = self._read()
-            active = next((job for job in value["jobs"] if job["status"] == "active"), None)
-            if active is None or identity != (active["caseId"], active["track"], active["runId"]):
+            active = next(
+                (
+                    job for job in value["jobs"]
+                    if identity == (job["caseId"], job["track"], job["runId"])
+                    and job["status"] in {"active", *FAILURE_STATUSES}
+                ),
+                None,
+            )
+            if active is None:
                 raise ValueError("Only the active blind batch job can be retried")
             known_run_ids = {
                 attempt.get("runId")
@@ -223,6 +230,9 @@ class BlindBatchQueue:
             })
             active["runId"] = new_run_id
             active["packageSha256"] = package_sha256
+            active["status"] = "active"
+            active.pop("failureReason", None)
+            value["status"] = "running"
             self._write(value)
 
 
