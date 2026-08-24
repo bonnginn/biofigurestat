@@ -11,11 +11,17 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from blind_benchmark_package import ROOT, SAFE_ID, create_package, load_package
+from blind_benchmark_package import (
+    ROOT,
+    RUNTIME_MANIFEST as PACKAGE_RUNTIME_MANIFEST,
+    SAFE_ID,
+    create_package,
+    load_package,
+)
 
 
 SCHEMA_VERSION = "1.0.0"
-RUNTIME_MANIFEST = ROOT / "benchmark/literature_v1_1/runtime/manifest.json"
+RUNTIME_MANIFEST = PACKAGE_RUNTIME_MANIFEST
 DEFAULT_CASES = ("JCB010", "NC033", "JCB023", "JCB024", "JCB015", "SA047")
 EVALUATED_STATUSES = {"completed", "explicit_unsupported"}
 FAILURE_STATUSES = {"infrastructure_failure", "contaminated", "aborted"}

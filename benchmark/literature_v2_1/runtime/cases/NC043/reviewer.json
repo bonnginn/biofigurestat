@@ -1,0 +1,35 @@
+{
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "caseId": "NC043",
+  "paperReference": {
+    "article_url": "https://www.nature.com/articles/s41467-024-53683-7",
+    "assay_context": "proteomics",
+    "case_id": "NC043",
+    "curated_graph_reference": "volcano/feature table",
+    "doi": "10.1038/s41467-024-53683-7",
+    "journal": "Nature Communications",
+    "main_or_supplementary": "Main/unspecified",
+    "panel_verification": "Exact where panel is explicitly named; otherwise select the stated quantitative panel and confirm once before automated browser execution",
+    "paper_reported_analysis": "two-sided Welch t tests with Benjamini-Hochberg",
+    "reference_visibility_rule": "Visible to Track A and reviewers; hidden from blind Track B experimenter.",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Differential-protein panel",
+    "title": "Spatial proteomics of single cells and organelles on tissue slides",
+    "year": 2024
+  },
+  "researcherPacket": {
+    "biological_question": null,
+    "blind_experiment_summary": "Synthetic proteomics feature-level measurement. Conditions: Control, Treatment. Readout(s): Feature 01, Feature 02, Feature 03, Feature 04, Feature 05, Feature 06, Feature 07, Feature 08, Feature 09, Feature 10, Feature 11, Feature 12, Feature 13, Feature 14, Feature 15, Feature 16, Feature 17, Feature 18, Feature 19, Feature 20. Time structure: no explicit time axis. Experimental-unit structure: Region/sample-level protein intensities.",
+    "case_id": "NC043",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "Region/sample-level protein intensities",
+    "independent_session_count": 5,
+    "measurement_context": "proteomics feature-level measurement",
+    "missingness_note": "Not specified in v1.1 packet.",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "Feature 01 | Feature 02 | Feature 03 | Feature 04 | Feature 05 | Feature 06 | Feature 07 | Feature 08 | Feature 09 | Feature 10 | Feature 11 | Feature 12 | Feature 13 | Feature 14 | Feature 15 | Feature 16 | Feature 17 | Feature 18 | Feature 19 | Feature 20",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  },
+  "sourceBenchmarkVersion": "LSA495_v2_1"
+}

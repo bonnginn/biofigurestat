@@ -100,7 +100,9 @@ def cell_value(cell: ET.Element, strings: list[str]) -> Any:
     return int(number) if number.is_integer() else number
 
 
-def read_workbook(path: Path) -> dict[str, list[dict[str, Any]]]:
+def read_workbook(
+    path: Path, required_sheets: set[str] | frozenset[str] = REQUIRED_SHEETS
+) -> dict[str, list[dict[str, Any]]]:
     with zipfile.ZipFile(path) as archive:
         strings = shared_strings(archive)
         workbook = ET.fromstring(archive.read("xl/workbook.xml"))
@@ -129,7 +131,7 @@ def read_workbook(path: Path) -> dict[str, list[dict[str, Any]]]:
                     values.extend([None] * (index + 1 - len(values)))
                     values[index] = cell_value(cell, strings)
                 rows.append(values)
-            if not rows or name not in REQUIRED_SHEETS:
+            if not rows or name not in required_sheets:
                 continue
             headers = [str(value) if value is not None else "" for value in rows[0]]
             tables[name] = [
@@ -137,7 +139,7 @@ def read_workbook(path: Path) -> dict[str, list[dict[str, Any]]]:
                 for values in rows[1:]
                 if values and values[0] is not None
             ]
-    missing = REQUIRED_SHEETS - tables.keys()
+    missing = set(required_sheets) - tables.keys()
     if missing:
         raise ValueError(f"Workbook is missing required sheets: {', '.join(sorted(missing))}")
     return tables

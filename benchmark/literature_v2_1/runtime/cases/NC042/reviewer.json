@@ -1,0 +1,35 @@
+{
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "caseId": "NC042",
+  "paperReference": {
+    "article_url": "https://www.nature.com/articles/s41467-022-34133-8",
+    "assay_context": "rna_fish",
+    "case_id": "NC042",
+    "curated_graph_reference": "cell distribution plus experiment summaries",
+    "doi": "10.1038/s41467-022-34133-8",
+    "journal": "Nature Communications",
+    "main_or_supplementary": "Main/unspecified",
+    "panel_verification": "Exact where panel is explicitly named; otherwise select the stated quantitative panel and confirm once before automated browser execution",
+    "paper_reported_analysis": "test reported in figure legend",
+    "reference_visibility_rule": "Visible to Track A and reviewers; hidden from blind Track B experimenter.",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "RNA-FISH quantification panel",
+    "title": "Termination of the unfolded protein response is guided by ER stress resolution",
+    "year": 2022
+  },
+  "researcherPacket": {
+    "biological_question": null,
+    "blind_experiment_summary": "Synthetic RNA-FISH measurement with nested observations. Conditions: Control, Treatment. Readout(s): cell_value. Time structure: no explicit time axis. Experimental-unit structure: Transcripts/cells nested within experiments.",
+    "case_id": "NC042",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "Transcripts/cells nested within experiments",
+    "independent_session_count": 3,
+    "measurement_context": "RNA-FISH measurement with nested observations",
+    "missingness_note": "Not specified in v1.1 packet.",
+    "nested_observation_note": "Lower-level observations are nested within biological/statistical units; do not treat lower-level rows as biological n.",
+    "readouts": "cell_value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  },
+  "sourceBenchmarkVersion": "LSA495_v2_1"
+}

@@ -1,0 +1,35 @@
+{
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "caseId": "JCB001",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/221/7/e202108015/213272/",
+    "assay_context": "positive_fraction",
+    "case_id": "JCB001",
+    "curated_graph_reference": "dot of experiment fractions; raw numerator/denominator retained",
+    "doi": "10.1083/jcb.202108015",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "panel_verification": "Exact where panel is explicitly named; otherwise select the stated quantitative panel and confirm once before automated browser execution",
+    "paper_reported_analysis": "two-tailed unpaired Student t test",
+    "reference_visibility_rule": "Visible to Track A and reviewers; hidden from blind Track B experimenter.",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Fig. 3B",
+    "title": "SARS-CoV-2 ORF10 impairs cilia by enhancing CUL2ZYG11B activity",
+    "year": 2022
+  },
+  "researcherPacket": {
+    "biological_question": null,
+    "blind_experiment_summary": "Synthetic positive/total proportion measurement. Conditions: Control, Treatment. Readout(s): fraction. Time structure: no explicit time axis. Experimental-unit structure: Ciliated cells / total cells; n=5 independent experiments.",
+    "case_id": "JCB001",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "Ciliated cells / total cells; n=5 independent experiments",
+    "independent_session_count": 5,
+    "measurement_context": "positive/total proportion measurement",
+    "missingness_note": "Not specified in v1.1 packet.",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "fraction",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  },
+  "sourceBenchmarkVersion": "LSA495_v2_1"
+}

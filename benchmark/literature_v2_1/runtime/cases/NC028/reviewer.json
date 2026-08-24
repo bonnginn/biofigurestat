@@ -1,0 +1,35 @@
+{
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "caseId": "NC028",
+  "paperReference": {
+    "article_url": "https://www.nature.com/articles/s41467-021-27150-6",
+    "assay_context": "compositional",
+    "case_id": "NC028",
+    "curated_graph_reference": "composition plot + sample dots",
+    "doi": "10.1038/s41467-021-27150-6",
+    "journal": "Nature Communications",
+    "main_or_supplementary": "Main/unspecified",
+    "panel_verification": "Exact where panel is explicitly named; otherwise select the stated quantitative panel and confirm once before automated browser execution",
+    "paper_reported_analysis": "Bayesian compositional model",
+    "reference_visibility_rule": "Visible to Track A and reviewers; hidden from blind Track B experimenter.",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Benchmark composition panel",
+    "title": "scCODA is a Bayesian model for compositional single-cell data analysis",
+    "year": 2021
+  },
+  "researcherPacket": {
+    "biological_question": null,
+    "blind_experiment_summary": "Synthetic compositional/category measurement. Conditions: Control, Treatment. Readout(s): Type A, Type B, Type C. Time structure: no explicit time axis. Experimental-unit structure: Sample-level cell-type composition vectors.",
+    "case_id": "NC028",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "Sample-level cell-type composition vectors",
+    "independent_session_count": 8,
+    "measurement_context": "compositional/category measurement",
+    "missingness_note": "Not specified in v1.1 packet.",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "Type A | Type B | Type C",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  },
+  "sourceBenchmarkVersion": "LSA495_v2_1"
+}

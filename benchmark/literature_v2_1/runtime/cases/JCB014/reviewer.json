@@ -1,0 +1,35 @@
+{
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "caseId": "JCB014",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/222/7/e202210078/214070/",
+    "assay_context": "nested_imaging",
+    "case_id": "JCB014",
+    "curated_graph_reference": "dot + mean/CI",
+    "doi": "10.1083/jcb.202210078",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "panel_verification": "Exact where panel is explicitly named; otherwise select the stated quantitative panel and confirm once before automated browser execution",
+    "paper_reported_analysis": "two-tailed t test",
+    "reference_visibility_rule": "Visible to Track A and reviewers; hidden from blind Track B experimenter.",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Fig. 7 quantitative panel",
+    "title": "Quantitative analysis of autophagy reveals the role of ATG9 and ATG2",
+    "year": 2023
+  },
+  "researcherPacket": {
+    "biological_question": null,
+    "blind_experiment_summary": "Synthetic microscopy with nested Cell/ROI observations. Conditions: Control, Treatment. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: 3 biological replicates; 20-30 cells per replicate.",
+    "case_id": "JCB014",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "3 biological replicates; 20-30 cells per replicate",
+    "independent_session_count": 3,
+    "measurement_context": "microscopy with nested Cell/ROI observations",
+    "missingness_note": "Not specified in v1.1 packet.",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  },
+  "sourceBenchmarkVersion": "LSA495_v2_1"
+}

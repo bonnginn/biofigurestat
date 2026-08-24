@@ -1,0 +1,35 @@
+{
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "caseId": "JCB002",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/223/4/e202305023/276563/",
+    "assay_context": "live_cell_rate",
+    "case_id": "JCB002",
+    "curated_graph_reference": "paired dot",
+    "doi": "10.1083/jcb.202305023",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "panel_verification": "Exact where panel is explicitly named; otherwise select the stated quantitative panel and confirm once before automated browser execution",
+    "paper_reported_analysis": "Wilcoxon matched-pairs signed-rank test",
+    "reference_visibility_rule": "Visible to Track A and reviewers; hidden from blind Track B experimenter.",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Fig. 1D",
+    "title": "Local monomer levels and established filaments potentiate non-muscle myosin 2 assembly",
+    "year": 2024
+  },
+  "researcherPacket": {
+    "biological_question": null,
+    "blind_experiment_summary": "Synthetic live-cell rate measurement. Conditions: Pre, Post. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Pre/post filament appearance rate in the same cell.",
+    "case_id": "JCB002",
+    "conditions": "Pre | Post",
+    "experimental_unit_description": "Pre/post filament appearance rate in the same cell",
+    "independent_session_count": 3,
+    "measurement_context": "live-cell rate measurement",
+    "missingness_note": "Not specified in v1.1 packet.",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "The same biological/statistical units are measured across paired conditions; identity must be preserved.",
+    "timepoints": "(none)"
+  },
+  "sourceBenchmarkVersion": "LSA495_v2_1"
+}

@@ -38,7 +38,12 @@ ROOT = Path(__file__).resolve().parents[1]
 # resolving one to the base interpreter discards the venv's scientific packages.
 ENGINE_PYTHON = Path(sys.executable).absolute()
 ENGINE_SOURCE = ROOT / "engine/python"
-LITERATURE_RUNTIME = ROOT / "benchmark/literature_v1_1/runtime"
+LITERATURE_RUNTIME = Path(
+    os.environ.get(
+        "LSAA_LITERATURE_RUNTIME",
+        str(ROOT / "benchmark/literature_v1_1/runtime"),
+    )
+).resolve()
 DEFAULT_EXCLUSIONS = ROOT / "benchmark/literature_v1_1/excluded_runs.json"
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 ALLOWED_ARTIFACTS = {

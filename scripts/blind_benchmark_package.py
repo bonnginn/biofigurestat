@@ -6,14 +6,19 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / "benchmark/literature_v1_1/runtime/cases"
-RUNTIME_MANIFEST = ROOT / "benchmark/literature_v1_1/runtime/manifest.json"
+DEFAULT_RUNTIME_ROOT = ROOT / "benchmark/literature_v1_1/runtime"
+RUNTIME_ROOT = Path(
+    os.environ.get("LSAA_LITERATURE_RUNTIME", str(DEFAULT_RUNTIME_ROOT))
+).resolve()
+RUNTIME = RUNTIME_ROOT / "cases"
+RUNTIME_MANIFEST = RUNTIME_ROOT / "manifest.json"
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 CASE_KEYS = {
     "schemaVersion",
@@ -24,7 +29,7 @@ CASE_KEYS = {
     "researcherPacket",
     "syntheticData",
 }
-PACKET_KEYS = {
+V1_PACKET_KEYS = {
     "case_id",
     "blind_experiment_summary",
     "measurement_context",
@@ -36,7 +41,12 @@ PACKET_KEYS = {
     "repeated_identity_note",
     "nested_observation_note",
 }
-ROW_KEYS = {
+EXPANDED_PACKET_KEYS = {
+    *V1_PACKET_KEYS,
+    "biological_question",
+    "missingness_note",
+}
+V1_ROW_KEYS = {
     "case_id",
     "experiment_id",
     "unit_id",
@@ -52,6 +62,16 @@ ROW_KEYS = {
     "synthetic",
     "seed",
 }
+EXPANDED_ROW_KEYS = {
+    *V1_ROW_KEYS,
+    "observation_id",
+    "time_unit",
+    "missingness_state",
+    "technical_replicate_id",
+}
+# Backward-compatible names used by the frozen v1.1 test suite.
+PACKET_KEYS = V1_PACKET_KEYS
+ROW_KEYS = V1_ROW_KEYS
 FORBIDDEN_TERMS = {
     "paperreference",
     "gold",
@@ -104,12 +124,18 @@ def validate_case(payload: dict[str, Any], case_id: str, run_id: str) -> None:
         raise ValueError("Blind package identity mismatch")
     packet = payload.get("researcherPacket")
     rows = payload.get("syntheticData")
-    if not isinstance(packet, dict) or set(packet) != PACKET_KEYS:
+    if not isinstance(packet, dict) or frozenset(packet) not in {
+        frozenset(V1_PACKET_KEYS),
+        frozenset(EXPANDED_PACKET_KEYS),
+    }:
         raise ValueError("Researcher packet keys are not exactly allow-listed")
     if not isinstance(rows, list) or not rows:
         raise ValueError("Synthetic data is missing")
     for row in rows:
-        if not isinstance(row, dict) or set(row) != ROW_KEYS:
+        if not isinstance(row, dict) or frozenset(row) not in {
+            frozenset(V1_ROW_KEYS),
+            frozenset(EXPANDED_ROW_KEYS),
+        }:
             raise ValueError("Synthetic row keys are not exactly allow-listed")
         if row.get("case_id") != case_id or row.get("synthetic") is not True:
             raise ValueError("Synthetic row identity mismatch")
@@ -126,9 +152,23 @@ def validate_hidden_reference_absence(
     gold_analysis = hidden.get("goldAnalysis") or {}
     gold_metadata = hidden.get("goldMetadata") or {}
     hidden_reference = {
-        "paper": {key: paper.get(key) for key in ("title", "doi", "article_url", "paper_reported_analysis", "curated_graph_reference")},
-        "goldAnalysis": {key: gold_analysis.get(key) for key in ("expected_decision", "paper_reported_method", "reference_method", "acceptable_graph_families", "acceptable_statistical_families")},
-        "goldMetadata": {key: gold_metadata.get(key) for key in ("expected_decision", "paper_method_preassessment", "paper_reported_method", "reference_method", "acceptable_graph_families", "acceptable_statistical_families", "scope_expectation")},
+        "paper": {key: paper.get(key) for key in (
+            "title", "doi", "article_url", "oa_source", "paper_reported_analysis",
+            "paper_statistical_method", "curated_graph_reference", "graph_representation",
+            "figure_description", "target_figure_or_panel",
+        )},
+        "goldAnalysis": {key: gold_analysis.get(key) for key in (
+            "expected_decision", "paper_reported_method", "paper_reported_method_separate",
+            "reference_method", "acceptable_graph_families", "acceptable_statistical_families",
+            "reference_p_value", "reference_statistic",
+        )},
+        "goldMetadata": {key: gold_metadata.get(key) for key in (
+            "expected_decision", "synthetic_expected_decision", "paper_method_preassessment",
+            "paper_reported_method", "paper_statistical_method_paper_specific", "reference_method",
+            "synthetic_reference_method", "acceptable_graph_families",
+            "scientifically_acceptable_graph_families", "acceptable_statistical_families",
+            "scientifically_acceptable_statistical_families", "scope_expectation",
+        )},
     }
     hidden_only = _strings(hidden_reference) - PUBLIC_CONTEXT_TERMS
     serialized = canonical_bytes(payload).decode("utf-8")
@@ -147,6 +187,12 @@ def create_package(case_id: str, run_id: str, output_root: Path) -> Path:
     if not source_path.is_file() or not hidden_path.is_file():
         raise ValueError("Literature benchmark case is not available")
     source = json.loads(source_path.read_text(encoding="utf-8"))
+    packet_keys = set(source.get("researcherPacket", {}))
+    row_keys = set(source.get("syntheticData", [{}])[0])
+    if packet_keys not in (V1_PACKET_KEYS, EXPANDED_PACKET_KEYS):
+        raise ValueError("Runtime researcher packet schema is not allow-listed")
+    if row_keys not in (V1_ROW_KEYS, EXPANDED_ROW_KEYS):
+        raise ValueError("Runtime synthetic row schema is not allow-listed")
     payload = {
         "schemaVersion": "1.0.0",
         "benchmarkVersion": source["benchmarkVersion"],
@@ -154,10 +200,10 @@ def create_package(case_id: str, run_id: str, output_root: Path) -> Path:
         "runId": run_id,
         "role": "track_B_experimenter",
         "researcherPacket": {
-            key: source["researcherPacket"][key] for key in sorted(PACKET_KEYS)
+            key: source["researcherPacket"][key] for key in sorted(packet_keys)
         },
         "syntheticData": [
-            {key: row[key] for key in sorted(ROW_KEYS)} for row in source["syntheticData"]
+            {key: row[key] for key in sorted(row_keys)} for row in source["syntheticData"]
         ],
     }
     validate_case(payload, case_id, run_id)
@@ -172,12 +218,18 @@ def create_package(case_id: str, run_id: str, output_root: Path) -> Path:
     case_bytes = canonical_bytes(payload)
     (target / "case.json").write_bytes(case_bytes)
     runtime_manifest = json.loads(RUNTIME_MANIFEST.read_text(encoding="utf-8"))
+    runtime_provenance_sha = runtime_manifest.get(
+        "runtimeCorrectionSha256",
+        runtime_manifest.get("trackBValidationManifestSha256"),
+    )
+    if not isinstance(runtime_provenance_sha, str) or len(runtime_provenance_sha) != 64:
+        raise ValueError("Runtime provenance SHA-256 is unavailable")
     manifest = {
         "schemaVersion": "1.0.0",
         "packageType": "LSAA_TRACK_B_BLIND",
         "benchmarkVersion": payload["benchmarkVersion"],
         "sourceBenchmarkVersion": runtime_manifest["sourceBenchmarkVersion"],
-        "runtimeCorrectionSha256": runtime_manifest["runtimeCorrectionSha256"],
+        "runtimeCorrectionSha256": runtime_provenance_sha,
         "caseId": case_id,
         "runId": run_id,
         "payload": "case.json",
@@ -217,10 +269,14 @@ def load_package(output_root: Path, case_id: str, run_id: str) -> dict[str, Any]
     ):
         raise ValueError("Blind package manifest identity mismatch")
     runtime_manifest = json.loads(RUNTIME_MANIFEST.read_text(encoding="utf-8"))
+    runtime_provenance_sha = runtime_manifest.get(
+        "runtimeCorrectionSha256",
+        runtime_manifest.get("trackBValidationManifestSha256"),
+    )
     if (
         manifest["benchmarkVersion"] != runtime_manifest["benchmarkVersion"]
         or manifest["sourceBenchmarkVersion"] != runtime_manifest["sourceBenchmarkVersion"]
-        or manifest["runtimeCorrectionSha256"] != runtime_manifest["runtimeCorrectionSha256"]
+        or manifest["runtimeCorrectionSha256"] != runtime_provenance_sha
     ):
         raise ValueError("Blind package runtime correction provenance mismatch")
     expected_hash = hashlib.sha256(case_bytes).hexdigest()

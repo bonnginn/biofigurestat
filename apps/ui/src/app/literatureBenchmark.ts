@@ -15,14 +15,18 @@ export type LiteratureSyntheticRow = Readonly<{
   experiment_id: string;
   unit_id: string;
   parent_unit_id: string | null;
+  observation_id?: string | null;
   condition: string;
   time: number | null;
+  time_unit?: string | null;
   readout: string;
-  value: number;
+  value: number | null;
   numerator: number | null;
   denominator: number | null;
   x_value: number | null;
   event: string | null;
+  missingness_state?: "observed" | "missing" | "not_planned";
+  technical_replicate_id?: string | null;
   synthetic: true;
   seed: number;
 }>;
@@ -35,6 +39,7 @@ export type LiteratureExperimenterCase = Readonly<{
     case_id: string;
     blind_experiment_summary: string;
     measurement_context: string;
+    biological_question?: string | null;
     conditions: string;
     timepoints: string;
     readouts: string;
@@ -42,6 +47,7 @@ export type LiteratureExperimenterCase = Readonly<{
     independent_session_count: number;
     repeated_identity_note: string;
     nested_observation_note: string;
+    missingness_note?: string | null;
   }>;
   paperReference?: Readonly<{
     title: string;
@@ -67,7 +73,7 @@ export type LiteratureLoadAssessment = Readonly<{
 }>;
 
 export function isLiteratureCaseId(caseId: string | undefined): boolean {
-  return Boolean(caseId && /^(?:JCB|NC|SA|EL)\d{3}$/.test(caseId));
+  return Boolean(caseId && /^(?:(?:JCB|NC|SA|EL)\d{3}|LSA\d{3})$/.test(caseId));
 }
 
 export async function fetchLiteratureExperimenterCase(
@@ -137,6 +143,16 @@ export function mapLiteratureMeasurements(
   const rows = source.syntheticData;
   if (!rows.length || rows.some((row) => row.case_id !== source.caseId || row.synthetic !== true)) {
     return mismatch("Runtimeのcase identityまたはsynthetic flagが一致しません。");
+  }
+  if (
+    rows.some(
+      (row) =>
+        row.value === null || (row.missingness_state && row.missingness_state !== "observed"),
+    )
+  ) {
+    return mismatch(
+      "欠測または未計画観測のidentityを安全に保持する必要があるため、現在のliterature loaderでは自動入力しません。対応状況だけ記録してください。",
+    );
   }
   const packetDeclaresNestedObservations =
     /(?:cell|lower-level)-level observations are nested/i.test(
@@ -277,7 +293,7 @@ export function mapLiteratureMeasurements(
         cells[key] = {
           kind: "nested_continuous",
           source: "paste",
-          rawValues: unitRows.map((row) => row.value),
+          rawValues: unitRows.map((row) => row.value as number),
           sourceLocations: unitRows.map(
             (row) => `${source.caseId}:${row.experiment_id}:${row.unit_id}:${readoutLabel}`,
           ),

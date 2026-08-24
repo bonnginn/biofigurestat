@@ -1,0 +1,35 @@
+{
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "caseId": "NC039",
+  "paperReference": {
+    "article_url": "https://www.nature.com/articles/s41467-022-34790-9",
+    "assay_context": "infection_imaging",
+    "case_id": "NC039",
+    "curated_graph_reference": "dot + mean/CI",
+    "doi": "10.1038/s41467-022-34790-9",
+    "journal": "Nature Communications",
+    "main_or_supplementary": "Main/unspecified",
+    "panel_verification": "Exact where panel is explicitly named; otherwise select the stated quantitative panel and confirm once before automated browser execution",
+    "paper_reported_analysis": "analysis detailed in Supplementary Data 3",
+    "reference_visibility_rule": "Visible to Track A and reviewers; hidden from blind Track B experimenter.",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Phenotype box-plot panel",
+    "title": "Microscopy-based phenotypic profiling of infection by clinical bacterial isolates",
+    "year": 2022
+  },
+  "researcherPacket": {
+    "biological_question": null,
+    "blind_experiment_summary": "Synthetic infection imaging measurement. Conditions: Control, Treatment A, Treatment B, Treatment C. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Mean of three biological experiments per isolate.",
+    "case_id": "NC039",
+    "conditions": "Control | Treatment A | Treatment B | Treatment C",
+    "experimental_unit_description": "Mean of three biological experiments per isolate",
+    "independent_session_count": 5,
+    "measurement_context": "infection imaging measurement",
+    "missingness_note": "Not specified in v1.1 packet.",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "No repeated identity is implied beyond what is explicitly present in the synthetic rows.",
+    "timepoints": "(none)"
+  },
+  "sourceBenchmarkVersion": "LSA495_v2_1"
+}

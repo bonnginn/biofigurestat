@@ -1,0 +1,35 @@
+{
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "caseId": "SA045",
+  "paperReference": {
+    "article_url": "https://www.science.org/doi/10.1126/sciadv.ads4609",
+    "assay_context": "fluorescence_trace",
+    "case_id": "SA045",
+    "curated_graph_reference": "line trajectories",
+    "doi": "10.1126/sciadv.ads4609",
+    "journal": "Science Advances",
+    "main_or_supplementary": "Main/unspecified",
+    "panel_verification": "Exact where panel is explicitly named; otherwise select the stated quantitative panel and confirm once before automated browser execution",
+    "paper_reported_analysis": "Bayesian fluorescence-trace model",
+    "reference_visibility_rule": "Visible to Track A and reviewers; hidden from blind Track B experimenter.",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Trace benchmark panel",
+    "title": "Statistical analysis of fluorescence intensity transients with FITSA",
+    "year": 2025
+  },
+  "researcherPacket": {
+    "biological_question": null,
+    "blind_experiment_summary": "Synthetic fluorescence time-trace measurement. Conditions: Control, Treatment. Readout(s): value. Time structure: 0, 4, 8, 16, 24, 48. Experimental-unit structure: Repeated intensity trace per cell/event.",
+    "case_id": "SA045",
+    "conditions": "Control | Treatment",
+    "experimental_unit_description": "Repeated intensity trace per cell/event",
+    "independent_session_count": 3,
+    "measurement_context": "fluorescence time-trace measurement",
+    "missingness_note": "Not specified in v1.1 packet.",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "The same biological/statistical units are followed across time; identity must be preserved.",
+    "timepoints": "0 | 4 | 8 | 16 | 24 | 48"
+  },
+  "sourceBenchmarkVersion": "LSA495_v2_1"
+}

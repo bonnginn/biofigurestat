@@ -1,0 +1,35 @@
+{
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "caseId": "JCB025",
+  "paperReference": {
+    "article_url": "https://rupress.org/jcb/article/225/1/e202504053/278443/",
+    "assay_context": "paired_ultrastructure",
+    "case_id": "JCB025",
+    "curated_graph_reference": "paired dot",
+    "doi": "10.1083/jcb.202504053",
+    "journal": "Journal of Cell Biology",
+    "main_or_supplementary": "Main/unspecified",
+    "panel_verification": "Exact where panel is explicitly named; otherwise select the stated quantitative panel and confirm once before automated browser execution",
+    "paper_reported_analysis": "paired t test",
+    "reference_visibility_rule": "Visible to Track A and reviewers; hidden from blind Track B experimenter.",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "Fig. 5B",
+    "title": "Systematic membrane thickness variation across cellular organelles",
+    "year": 2026
+  },
+  "researcherPacket": {
+    "biological_question": null,
+    "blind_experiment_summary": "Synthetic paired ultrastructural measurement. Conditions: Pre, Post. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Inner/outer membrane values paired within tomogram.",
+    "case_id": "JCB025",
+    "conditions": "Pre | Post",
+    "experimental_unit_description": "Inner/outer membrane values paired within tomogram",
+    "independent_session_count": 3,
+    "measurement_context": "paired ultrastructural measurement",
+    "missingness_note": "Not specified in v1.1 packet.",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "The same biological/statistical units are measured across paired conditions; identity must be preserved.",
+    "timepoints": "(none)"
+  },
+  "sourceBenchmarkVersion": "LSA495_v2_1"
+}

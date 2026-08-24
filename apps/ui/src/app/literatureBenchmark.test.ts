@@ -84,8 +84,31 @@ const nestedSource: LiteratureExperimenterCase = {
 describe("literature benchmark experimenter boundary", () => {
   it("recognizes only stable literature IDs", () => {
     expect(isLiteratureCaseId("JCB003")).toBe(true);
+    expect(isLiteratureCaseId("LSA051")).toBe(true);
+    expect(isLiteratureCaseId("LSA495")).toBe(true);
+    expect(isLiteratureCaseId("LSA0500")).toBe(false);
     expect(isLiteratureCaseId("../JCB003")).toBe(false);
     expect(isLiteratureCaseId("pilot_independent_2group")).toBe(false);
+  });
+
+  it("safely refuses expanded rows with preserved missingness", () => {
+    const result = mapLiteratureMeasurements(
+      {
+        ...source,
+        caseId: "LSA051",
+        researcherPacket: { ...source.researcherPacket, case_id: "LSA051" },
+        syntheticData: source.syntheticData.map((row, index) => ({
+          ...row,
+          case_id: "LSA051",
+          value: index === 0 ? null : row.value,
+          missingness_state: index === 0 ? ("missing" as const) : ("observed" as const),
+        })),
+      },
+      compatibleDraft(2),
+    );
+    expect(result.compatible).toBe(false);
+    expect(result.reason).toContain("欠測");
+    expect(result.cells).toEqual({});
   });
 
   it("maps values only after design compatibility", () => {

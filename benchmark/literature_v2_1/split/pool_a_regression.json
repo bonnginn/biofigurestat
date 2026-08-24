@@ -1,0 +1,22 @@
+{
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "schemaVersion": "1.0.0",
+  "splitSha256": "710d3208481a67d8475a5856ddaa55033a306ce0b223052ecc88f00a2713f39e",
+  "trackBCases": [
+    "JCB002",
+    "JCB005",
+    "JCB007",
+    "JCB012",
+    "JCB013",
+    "JCB014",
+    "JCB016",
+    "JCB020",
+    "NC029",
+    "NC038",
+    "NC040",
+    "NC042",
+    "SA047",
+    "SA048",
+    "SA049"
+  ]
+}

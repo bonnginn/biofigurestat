@@ -1,0 +1,49 @@
+{
+  "overall": "PASS",
+  "workbook": "C:\\Users\\hnori\\OneDrive\\ドキュメント\\ChatGPT\\統計ソフト開発\\life-science-analysis-app\\outputs\\expanded_benchmark_v2_1\\LSA_Literature_Benchmark_490_v2_1_TrackB.xlsx",
+  "manifest": "C:\\Users\\hnori\\OneDrive\\ドキュメント\\ChatGPT\\統計ソフト開発\\life-science-analysis-app\\outputs\\expanded_benchmark_v2_1\\LSA_Literature_Benchmark_490_v2_1_TrackB.sha256_manifest.json",
+  "manifest_version": "1.0",
+  "benchmark_version": "LSA495_v2_1_repaired_1",
+  "track": "Track B",
+  "authoritative_source": {
+    "file": "LSA_Literature_Benchmark_495_v2_1_Repaired_Master.xlsx",
+    "sha256": "e9c0fb3881191d450fdd04c13f7eb57c64448d3606c3c9024a71879b9bdb9dee"
+  },
+  "superseded_track_b": {
+    "file": "LSA_Literature_Benchmark_495_v2_TrackB.xlsx",
+    "sha256": "9b60a8adbb68a43d8901934c1cf92db82e7fd1e0cf5c502d4b8f6842df26786e"
+  },
+  "output": {
+    "file": "LSA_Literature_Benchmark_490_v2_1_TrackB.xlsx",
+    "bytes": 2203807,
+    "sha256": "99c20f4ceb30632a6b390e54cef7c154fae43788cd721420dd7a26be99322715"
+  },
+  "counts": {
+    "indexed_cases": 495,
+    "scorable_cases": 490,
+    "excluded_cases": 5,
+    "researcher_packets": 490,
+    "synthetic_rows": 28015,
+    "leakage_qc_rows": 495
+  },
+  "excluded_case_ids": [
+    "JCB019",
+    "LSA138",
+    "LSA360",
+    "LSA403",
+    "LSA473"
+  ],
+  "checks": {
+    "sheet_allow_list": "PASS",
+    "master_packet_equality": "PASS",
+    "master_synthetic_equality": "PASS",
+    "hierarchy_scoring_gate": "PASS",
+    "per_case_row_count": "PASS",
+    "seed_identity": "PASS",
+    "forbidden_field_scan": "PASS",
+    "forbidden_term_scan": "PASS",
+    "paper_identifier_scan": "PASS",
+    "filename_metadata_scan": "PASS",
+    "sha256_manifest": "PASS"
+  }
+}

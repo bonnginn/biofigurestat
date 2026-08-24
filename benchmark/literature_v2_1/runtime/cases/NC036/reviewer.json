@@ -1,0 +1,35 @@
+{
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "caseId": "NC036",
+  "paperReference": {
+    "article_url": "https://www.nature.com/articles/s41467-021-24377-1",
+    "assay_context": "flow_cytometry",
+    "case_id": "NC036",
+    "curated_graph_reference": "paired dot",
+    "doi": "10.1038/s41467-021-24377-1",
+    "journal": "Nature Communications",
+    "main_or_supplementary": "Main/unspecified",
+    "panel_verification": "Exact where panel is explicitly named; otherwise select the stated quantitative panel and confirm once before automated browser execution",
+    "paper_reported_analysis": "Wilcoxon signed-rank test",
+    "reference_visibility_rule": "Visible to Track A and reviewers; hidden from blind Track B experimenter.",
+    "source_access": "Open article page; Methods/figure legend and supplementary/source data links available",
+    "target_figure_or_panel": "T-cell subset comparison panel",
+    "title": "SARS-CoV-2-specific T cell memory is sustained in COVID-19 convalescent patients",
+    "year": 2021
+  },
+  "researcherPacket": {
+    "biological_question": null,
+    "blind_experiment_summary": "Synthetic flow-cytometry measurement. Conditions: Pre, Post. Readout(s): value. Time structure: no explicit time axis. Experimental-unit structure: Paired percentages within donor.",
+    "case_id": "NC036",
+    "conditions": "Pre | Post",
+    "experimental_unit_description": "Paired percentages within donor",
+    "independent_session_count": 3,
+    "measurement_context": "flow-cytometry measurement",
+    "missingness_note": "Not specified in v1.1 packet.",
+    "nested_observation_note": "No special nested-observation rule beyond the stated experimental unit.",
+    "readouts": "value",
+    "repeated_identity_note": "The same biological/statistical units are measured across paired conditions; identity must be preserved.",
+    "timepoints": "(none)"
+  },
+  "sourceBenchmarkVersion": "LSA495_v2_1"
+}
