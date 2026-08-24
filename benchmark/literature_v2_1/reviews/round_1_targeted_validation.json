@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "1.0.0",
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "round": "round_1",
+  "validationMode": "fresh_track_B_targeted_validation_after_clustered_fixes",
+  "protocolNote": "Discovery runs and diagnostic attempts remain immutable. Only fresh run IDs were used for targeted validation.",
+  "batchId": "expanded_targeted_e779450_001",
+  "batchOutcome": "completed",
+  "summary": {
+    "cases": 5,
+    "completed": 5,
+    "artifactVerifierPassed": 5,
+    "blindPackageLeakageAndManifestPassed": 5,
+    "multiGroupCases": 2,
+    "casesRequiringMultipleComparisons": 2,
+    "completeComparisonWorkflows": 2,
+    "omnibusOnlyIncompleteWorkflows": 0,
+    "graphStatisticsAnnotationMismatches": 0
+  },
+  "resolvedClustersValidated": [
+    "nonparametric_multi_group_posthoc_missing",
+    "western_blot_lineage_loader_missing",
+    "literature_loader_correlation_route_missing",
+    "factorial_structure_flattened_to_one_way",
+    "literature_loader_survival_route_missing"
+  ],
+  "cases": [
+    {
+      "caseId": "LSA070",
+      "runId": "expanded_targeted_2411a8c_001_01_LSA070",
+      "sourceRevision": "2411a8c",
+      "blindPackageSha256": "c8293b8a81bb8c654a53b447705ff6aff9ff5dae61094515158550247703e105",
+      "outcome": "completed",
+      "support": "direct",
+      "comparisonCompleteness": {
+        "required": true,
+        "workflowComplete": true,
+        "method": "Kruskal-Wallis with Dunn-Holm all-pairs comparisons",
+        "adjustedResultsAvailable": true,
+        "graphAnnotationMatchesSelectedComparison": true
+      }
+    },
+    {
+      "caseId": "LSA075",
+      "runId": "expanded_targeted_e779450_001_02_LSA075",
+      "sourceRevision": "2411a8c",
+      "blindPackageSha256": "c7ee1aab6b06c1095322501549202cf24b117be4f375e221d3f94ad3853262be",
+      "outcome": "completed",
+      "support": "direct",
+      "comparisonCompleteness": {
+        "required": false,
+        "workflowComplete": true,
+        "graphAnnotationMatchesSelectedComparison": true
+      }
+    },
+    {
+      "caseId": "LSA216",
+      "runId": "expanded_targeted_e779450_001_03_LSA216",
+      "sourceRevision": "2411a8c",
+      "blindPackageSha256": "bb134da4cd3598e0bb6ff12063449f60df3529af4e430f08d3ec591fe7ab1eda",
+      "outcome": "completed",
+      "support": "direct",
+      "comparisonCompleteness": {
+        "required": false,
+        "workflowComplete": true,
+        "graphAnnotationMatchesSelectedComparison": true
+      }
+    },
+    {
+      "caseId": "LSA248",
+      "runId": "expanded_targeted_1d33655_003_04_LSA248",
+      "sourceRevision": "1d33655",
+      "blindPackageSha256": "94271bb1d4d3425f677e6a4064e0212dcabc5728027837806073ffcfd09e4816",
+      "outcome": "completed",
+      "support": "direct",
+      "comparisonCompleteness": {
+        "required": true,
+        "workflowComplete": true,
+        "method": "two-way ANOVA interaction and Holm-adjusted cell comparisons",
+        "adjustedResultsAvailable": true,
+        "graphAnnotationMatchesSelectedComparison": true
+      }
+    },
+    {
+      "caseId": "LSA281",
+      "runId": "expanded_targeted_e744373_001_05_LSA281",
+      "sourceRevision": "97263e7",
+      "blindPackageSha256": "31e72fed8534b3731102c4c8791f1b9eafd6baeca432115f4269cb212771a102",
+      "outcome": "completed",
+      "support": "direct",
+      "comparisonCompleteness": {
+        "required": false,
+        "workflowComplete": true,
+        "method": "Kaplan-Meier with log-rank comparison",
+        "graphAnnotationMatchesSelectedComparison": true
+      }
+    }
+  ],
+  "diagnosticAttemptsPreserved": true
+}
