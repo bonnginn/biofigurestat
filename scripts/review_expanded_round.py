@@ -80,10 +80,14 @@ def comparison_review(
     ]
     adjusted_complete = bool(pairwise) and all(test.get("adjustedPValue") is not None for test in pairwise)
     selected_method = statistics.get("selectedMethod")
+    # Method-name equality is not a scientific Gold standard.  A nonparametric
+    # reference case is still comparison-complete when the researcher-facing
+    # workflow produced a scientifically valid set of multiplicity-adjusted
+    # pairwise results by another supported route.
     rank_post_hoc_gap = (
         design_class == "multi_group_nonparam"
         and required
-        and selected_method != "kruskal_wallis"
+        and not adjusted_complete
     )
     annotation = graph_state.get("statisticsAnnotation", {})
     test_index = annotation.get("testIndex") if isinstance(annotation, dict) else None
@@ -152,13 +156,25 @@ def scientific_review(
     }
 
 
-def failure_cluster(design_class: str, outcome: str, scientific: dict[str, Any], comparison: dict[str, Any]) -> str | None:
+def failure_cluster(
+    design_class: str,
+    outcome: str,
+    scientific: dict[str, Any],
+    comparison: dict[str, Any],
+    scientific_reason: str = "",
+) -> str | None:
     if scientific.get("factorialStructureFlattened"):
         return "factorial_structure_flattened_to_one_way"
     if comparison.get("rankPostHocCapabilityGap"):
         return "nonparametric_multi_group_posthoc_missing"
     if outcome != "explicit_unsupported":
         return None
+    lowered_reason = scientific_reason.lower()
+    if (
+        "multiple distinct readouts" in lowered_reason
+        or "two distinct readouts" in lowered_reason
+    ):
+        return "multi_readout_loader_missing"
     return {
         "correlation": "literature_loader_correlation_route_missing",
         "survival": "literature_loader_survival_route_missing",
@@ -169,7 +185,12 @@ def failure_cluster(design_class: str, outcome: str, scientific: dict[str, Any],
 
 
 def review_round(round_name: str, update_ledger: bool) -> dict[str, Any]:
-    allocation = load(ROOT / "benchmark" / "literature_v2_1" / "split" / f"{round_name}.json")
+    allocation_name = (
+        "pool_c_validation_sealed.json"
+        if round_name == "pool_c_validation"
+        else f"{round_name}.json"
+    )
+    allocation = load(ROOT / "benchmark" / "literature_v2_1" / "split" / allocation_name)
     preselected = set(allocation["trackAPreselectedCases"])
     track_b_cases = allocation["trackBCases"]
     evidence: dict[str, tuple[Path, dict[str, Any]]] = {
@@ -199,7 +220,13 @@ def review_round(round_name: str, update_ledger: bool) -> dict[str, Any]:
         graph_state = load(directory / "graph_state.json") if (directory / "graph_state.json").is_file() else {}
         comparison = comparison_review(design_class, integrator["goldAnalysis"], statistics, graph_state)
         scientific = scientific_review(design_class, run, statistics, comparison)
-        cluster = failure_cluster(design_class, str(run.get("outcome")), scientific, comparison)
+        cluster = failure_cluster(
+            design_class,
+            str(run.get("outcome")),
+            scientific,
+            comparison,
+            str(run.get("scientificReason") or ""),
+        )
         if cluster:
             clusters[cluster] += 1
         if comparison["multiGroup"]:
@@ -298,7 +325,11 @@ def review_round(round_name: str, update_ledger: bool) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--round", choices=("round_1", "round_2", "round_3"), required=True)
+    parser.add_argument(
+        "--round",
+        choices=("round_1", "round_2", "round_3", "pool_c_validation"),
+        required=True,
+    )
     parser.add_argument("--update-ledger", action="store_true")
     args = parser.parse_args()
     report = review_round(args.round, args.update_ledger)
