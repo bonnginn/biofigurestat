@@ -61,6 +61,13 @@ describe("repeated-axis scientific wording", () => {
     ).toBe("condition main effect · mixed ANOVA");
     expect(
       analysisTestAnnotationLabel(
+        test("condition_main_effect"),
+        draft,
+        "condition × Radius interaction · mixed ANOVA",
+      ),
+    ).toBe("condition main effect · mixed ANOVA");
+    expect(
+      analysisTestAnnotationLabel(
         test("time_within_units"),
         draft,
         "condition × Time interaction · mixed ANOVA",

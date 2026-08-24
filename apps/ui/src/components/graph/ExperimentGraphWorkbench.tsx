@@ -184,7 +184,7 @@ export function analysisTestAnnotationLabel(
   ) {
     return `condition × ${mixedAxis} interaction · mixed ANOVA`;
   }
-  if (test.name === "condition_between_units") {
+  if (test.name === "condition_between_units" || test.name === "condition_main_effect") {
     return "condition main effect · mixed ANOVA";
   }
   if (test.name === "time_within_units" || test.name === "within_factor_main_effect") {
