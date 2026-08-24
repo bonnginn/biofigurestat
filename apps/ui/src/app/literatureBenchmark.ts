@@ -131,6 +131,25 @@ function structuredXAxis(source: LiteratureExperimenterCase): LiteratureLoadAsse
     : undefined;
 }
 
+function sourceAxisValues(source: LiteratureExperimenterCase): number[] {
+  const xValues = uniqueInOrder(
+    source.syntheticData
+      .map(({ x_value }) => x_value)
+      .filter((value): value is number => value !== null),
+  );
+  if (xValues.length) return xValues;
+  return uniqueInOrder(
+    source.syntheticData.map(({ time }) => time).filter((value): value is number => value !== null),
+  );
+}
+
+export function literatureOrderedAxisSummary(source: LiteratureExperimenterCase): string | null {
+  const axis = structuredXAxis(source);
+  if (!axis || axis.semantic !== "numeric_covariate") return null;
+  const values = sourceAxisValues(source);
+  return `Numeric axis: ${axis.title}${axis.unit ? ` (${axis.unit})` : " (unitless)"}; levels: ${values.join(", ")}. Do not enter this axis as time.`;
+}
+
 export function mapLiteratureMeasurements(
   source: LiteratureExperimenterCase,
   target: ExperimentSetDraft,
@@ -210,28 +229,36 @@ export function mapLiteratureMeasurements(
         : "条件ごとに別々の実験単位を用いる設計にしてください。",
     );
   }
-  const unitTimes = new Map<string, Set<number>>();
+  const expectedAxis = structuredXAxis(source);
+  const usesSyntheticXValues = rows.some(({ x_value }) => x_value !== null);
+  const axisValues =
+    expectedAxis?.semantic === "numeric_covariate" ? sourceAxisValues(source) : sourceTimes;
+  const rowAxisValue = (row: LiteratureSyntheticRow): number | null =>
+    expectedAxis?.semantic === "numeric_covariate" && row.x_value !== null ? row.x_value : row.time;
+  const unitAxisValues = new Map<string, Set<number>>();
   for (const row of rows) {
-    if (row.time === null) continue;
+    const axisValue = rowAxisValue(row);
+    if (axisValue === null) continue;
     const unit = `${row.condition}:${sourceUnit(row)}`;
-    const seen = unitTimes.get(unit) ?? new Set<number>();
-    seen.add(row.time);
-    unitTimes.set(unit, seen);
+    const seen = unitAxisValues.get(unit) ?? new Set<number>();
+    seen.add(axisValue);
+    unitAxisValues.set(unit, seen);
   }
   const expectedSampling =
-    sourceTimes.length === 0
+    axisValues.length === 0
       ? "none"
-      : [...unitTimes.values()].some((times) => times.size > 1)
+      : [...unitAxisValues.values()].some((values) => values.size > 1)
         ? "longitudinal"
         : "cross_sectional";
-  const expectedAxis = structuredXAxis(source);
   if (
     target.time.sampling !== expectedSampling ||
-    target.time.points.length !== sourceTimes.length ||
-    target.time.points.some((point, index) => point.value !== sourceTimes[index])
+    target.time.points.length !== axisValues.length ||
+    target.time.points.some((point, index) => point.value !== axisValues[index])
   ) {
     return mismatch(
-      `時間構造を${expectedSampling}、時点 ${sourceTimes.length ? sourceTimes.join("、") : "なし"}にしてください。`,
+      expectedAxis?.semantic === "numeric_covariate"
+        ? `数値軸の測定構造を${expectedSampling}、水準 ${axisValues.join("、")}にしてください。`
+        : `時間構造を${expectedSampling}、時点 ${sourceTimes.length ? sourceTimes.join("、") : "なし"}にしてください。`,
     );
   }
   if (
@@ -249,31 +276,43 @@ export function mapLiteratureMeasurements(
 
   const cellGroups = new Map<string, Map<string, LiteratureSyntheticRow[]>>();
   for (const row of rows) {
-    const groupKey = JSON.stringify([row.condition, row.time, row.readout]);
+    const groupKey = JSON.stringify([row.condition, rowAxisValue(row), row.readout]);
     const units = cellGroups.get(groupKey) ?? new Map<string, LiteratureSyntheticRow[]>();
     const unit = sourceUnit(row);
     units.set(unit, [...(units.get(unit) ?? []), row]);
     cellGroups.set(groupKey, units);
   }
-  const expectedExperimentCount = Math.max(...[...cellGroups.values()].map((units) => units.size));
+  const unitOrderByCondition = new Map<string, string[]>();
+  for (const row of rows) {
+    const units = unitOrderByCondition.get(row.condition) ?? [];
+    const unit = sourceUnit(row);
+    if (!units.includes(unit)) units.push(unit);
+    unitOrderByCondition.set(row.condition, units);
+  }
+  const expectedExperimentCount = usesSyntheticXValues
+    ? Math.max(...[...unitOrderByCondition.values()].map((units) => units.length))
+    : Math.max(...[...cellGroups.values()].map((units) => units.size));
   if (target.experiments.length !== expectedExperimentCount) {
     return mismatch(`統計上の実験単位を${expectedExperimentCount}個作成してください。`);
   }
 
   const cells: Record<string, ExperimentCellMap[string]> = {};
   for (const [groupKey, units] of cellGroups) {
-    const [conditionLabel, timeValue, readoutLabel] = JSON.parse(groupKey) as [
+    const [conditionLabel, axisValue, readoutLabel] = JSON.parse(groupKey) as [
       string,
       number | null,
       string,
     ];
     const conditionIndex = sourceConditions.indexOf(conditionLabel);
     const targetCondition = target.conditions[conditionIndex];
-    const timeIndex = timeValue === null ? -1 : sourceTimes.indexOf(timeValue);
-    const targetTime = timeIndex < 0 ? undefined : target.time.points[timeIndex];
+    const axisIndex = axisValue === null ? -1 : axisValues.indexOf(axisValue);
+    const targetTime = axisIndex < 0 ? undefined : target.time.points[axisIndex];
     const targetReadout = target.readouts[0];
     if (!targetCondition || !targetReadout) return mismatch("Target design mapping failed.");
-    [...units.values()].forEach((unitRows, experimentIndex) => {
+    [...units.entries()].forEach(([unit, unitRows], groupExperimentIndex) => {
+      const experimentIndex = usesSyntheticXValues
+        ? (unitOrderByCondition.get(conditionLabel)?.indexOf(unit) ?? -1)
+        : groupExperimentIndex;
       const targetExperiment = target.experiments[experimentIndex];
       if (!targetExperiment) return;
       const key = experimentCellKey({

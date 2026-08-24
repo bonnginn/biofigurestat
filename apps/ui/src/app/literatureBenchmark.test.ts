@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createIndependentTwoGroupFixture } from "./syntheticFixtures";
 import {
   isLiteratureCaseId,
+  literatureOrderedAxisSummary,
   mapLiteratureMeasurements,
   type LiteratureExperimenterCase,
 } from "./literatureBenchmark";
@@ -206,6 +207,62 @@ describe("literature benchmark experimenter boundary", () => {
       unit: "µm",
       source: "researcher_packet",
     });
+  });
+
+  it("maps a cross-sectional numeric covariate without coercing it to time", () => {
+    const covariateSource: LiteratureExperimenterCase = {
+      ...source,
+      caseId: "LSA216",
+      researcherPacket: {
+        ...source.researcherPacket,
+        case_id: "LSA216",
+        conditions: "Single observational cohort",
+        timepoints: "none",
+      },
+      syntheticData: [10, 20, 30].map((xValue, index) => ({
+        ...source.syntheticData[0],
+        case_id: "LSA216",
+        condition: "Single observational cohort",
+        experiment_id: `Exp${index + 1}`,
+        unit_id: `Unit${index + 1}`,
+        value: index + 1,
+        x_value: xValue,
+      })),
+    };
+    const fixture = createIndependentTwoGroupFixture();
+    const result = mapLiteratureMeasurements(covariateSource, {
+      ...fixture.draft,
+      conditions: [
+        {
+          ...fixture.draft.conditions[0],
+          label: "Single observational cohort",
+          attributes: { "attribute.group": "Single observational cohort" },
+        },
+      ],
+      time: {
+        sampling: "cross_sectional",
+        axisSemantic: "numeric_covariate",
+        axisTitle: "Covariate",
+        axisUnit: "",
+        unit: "h",
+        points: [
+          { id: "axis.10", value: 10 },
+          { id: "axis.20", value: 20 },
+          { id: "axis.30", value: 30 },
+        ],
+      },
+    });
+
+    expect(result.compatible).toBe(true);
+    expect(Object.values(result.cells)).toHaveLength(3);
+    expect(result.xAxis).toMatchObject({
+      semantic: "numeric_covariate",
+      title: "Covariate",
+      unit: "",
+    });
+    expect(literatureOrderedAxisSummary(covariateSource)).toBe(
+      "Numeric axis: Covariate (unitless); levels: 10, 20, 30. Do not enter this axis as time.",
+    );
   });
 
   it("refuses a nested packet with a missing parent mapping", () => {
