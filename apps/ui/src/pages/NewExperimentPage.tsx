@@ -2016,8 +2016,7 @@ export function NewExperimentPage({
       return (
         draft.time.sampling === "none" ||
         (draft.time.points.length > 0 &&
-          (orderedAxisSemantic(draft.time) === "time" ||
-            Boolean(draft.time.axisTitle?.trim() && draft.time.axisUnit?.trim())))
+          (orderedAxisSemantic(draft.time) === "time" || Boolean(draft.time.axisTitle?.trim())))
       );
     return draft.experiments.length > 0 && draft.experiments.every((experiment) => experiment.date);
   };
@@ -2038,8 +2037,7 @@ export function NewExperimentPage({
         Number.isFinite(draft.analysisIntent.referenceValue)) &&
       (draft.time.sampling === "none" ||
         (draft.time.points.length > 0 &&
-          (orderedAxisSemantic(draft.time) === "time" ||
-            Boolean(draft.time.axisTitle?.trim() && draft.time.axisUnit?.trim())))) &&
+          (orderedAxisSemantic(draft.time) === "time" || Boolean(draft.time.axisTitle?.trim())))) &&
       draft.experiments.length > 0 &&
       draft.experiments.every((experiment) => experiment.date)
     );

@@ -169,6 +169,26 @@ describe("新しい実験の入口", () => {
     expect(screen.queryByText(/Radius.*時間/)).toBeNull();
   });
 
+  it("単位のない数値covariate軸を有効な設計として扱う", () => {
+    const draft = createExperimentSetDraft("cell_culture", "nested_continuous");
+    render(<NewExperimentPage initialDraft={draft} onNavigate={() => undefined} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "3. 測定軸" }));
+    fireEvent.click(screen.getByRole("radio", { name: "順序のある測定軸を追加する" }));
+    fireEvent.click(screen.getByRole("radio", { name: /時間以外の数値軸/ }));
+    fireEvent.change(screen.getByRole("textbox", { name: "数値軸の名前" }), {
+      target: { value: "Covariate" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "数値軸の単位" }), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "数値軸の水準" }), {
+      target: { value: "10, 20, 30" },
+    });
+
+    expect(screen.getByRole("button", { name: "次へ" })).toBeEnabled();
+  });
+
   it("同じ実験セットへ複数の測定項目を追加・削除できる", () => {
     render(<NewExperimentPage onNavigate={() => undefined} />);
     fireEvent.click(document.querySelector('[data-context="cell_culture"]')!);
