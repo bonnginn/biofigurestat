@@ -1,0 +1,1709 @@
+{
+  "schemaVersion": "1.0.0",
+  "benchmarkVersion": "LSA495_v2_1_repaired_1",
+  "allocation": "round_3",
+  "allocationSha256": "8162278e5690718297138211ad85b8feb8b97c3b838463e8c933a0906bf33bc7",
+  "caseCount": 88,
+  "checks": {
+    "runtimeIdentity": "PASS",
+    "hierarchyAcceptance": "PASS",
+    "syntheticIdentity": "PASS",
+    "blindPackageAllowList": "PASS",
+    "blindLeakageScan": "PASS",
+    "packageManifest": "PASS",
+    "packageDeterminism": "PASS",
+    "queueTransition": "PASS",
+    "loaderCriticalContract": "PASS"
+  },
+  "loaderSummary": {
+    "statusCounts": {
+      "compatible": 72,
+      "safe_refusal": 16
+    },
+    "safeRefusalReasons": {
+      "missingness_identity_not_supported": 1,
+      "multiple_readouts_not_supported": 8,
+      "wb_lineage_not_supported": 7
+    }
+  },
+  "queueSmoke": {
+    "sampleCases": ["LSA053", "LSA073", "LSA074", "LSA078", "LSA088"],
+    "completedTransitions": 5,
+    "final": {
+      "batchId": "expanded_preflight_queue",
+      "benchmarkVersion": "LSA495_v2_1_repaired_1",
+      "status": "ready_to_advance",
+      "position": 5,
+      "total": 5,
+      "completed": 5,
+      "current": {
+        "position": 5,
+        "caseId": "LSA088",
+        "track": "track_B",
+        "runId": "expanded_preflight_queue_05_LSA088",
+        "packageSha256": "c9aa82eb73b90cc2f0b478daf3dba21a976a88ad654c80ca1e749c195f17d450",
+        "status": "completed"
+      }
+    }
+  },
+  "cases": [
+    {
+      "position": 1,
+      "caseId": "LSA053",
+      "runId": "preflight_r3_001_LSA053",
+      "packageSha256": "e3a05149c414c5a65982690f9b026425e7e76d856a358e98ea64c84a5c0b7521",
+      "rows": 42,
+      "seed": 3172499833,
+      "runtimeSha256": "d549c5374c8ac1144d0d233fbbddfa31ef6837245b37a3402ce49e3a7028181f",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 2,
+      "caseId": "LSA073",
+      "runId": "preflight_r3_002_LSA073",
+      "packageSha256": "e0a4e7ddfcc7e1ee84ee8e40c0dbdd0f940222735b9638c3539e412fa3b49511",
+      "rows": 112,
+      "seed": 1128362203,
+      "runtimeSha256": "ac0c9335c1744a0b66c2acea304999f8865f74ee8f61916506a55c7efa74ce53",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 4,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "longitudinal",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 3,
+      "caseId": "LSA074",
+      "runId": "preflight_r3_003_LSA074",
+      "packageSha256": "bc51921468fbc6a3e2ba5b8100d217fc57e50a9802cb3114761207c4cb76b440",
+      "rows": 28,
+      "seed": 4175722486,
+      "runtimeSha256": "1f772caedc549870670bbb2b7c7445b0579382e56c3d361de975851eb92f04df",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 4,
+      "caseId": "LSA078",
+      "runId": "preflight_r3_004_LSA078",
+      "packageSha256": "33ade87431e53d547e3acb82449b86b99442aed16264c68c8578d2d71d949780",
+      "rows": 16,
+      "seed": 1500965747,
+      "runtimeSha256": "89355d895dcb0e393be2e4c2fc9b804f061b84944680e2eeb824280ae22de503",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 4,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 5,
+      "caseId": "LSA088",
+      "runId": "preflight_r3_005_LSA088",
+      "packageSha256": "3c921f9cea2549795199adcb55a942342988f8be0066cfc480d59b1094ef3d8f",
+      "rows": 12,
+      "seed": 3184511590,
+      "runtimeSha256": "1b83b090a412640c00e7837fa8734e43b3bc3de1cffccbb1614a4d44adfc4203",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 1,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 12,
+        "sampling": "none",
+        "numericCovariate": true
+      }
+    },
+    {
+      "position": 6,
+      "caseId": "LSA090",
+      "runId": "preflight_r3_006_LSA090",
+      "packageSha256": "714f4c0191f2f8c42f207df90a2346841d5012b6196e7fcea9f3cd4a437c5577",
+      "rows": 64,
+      "seed": 26386273,
+      "runtimeSha256": "db2ff97aef13ee71c6345d2ff667930b7841c94bbccba9831aa0386e5249f49f",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 4,
+        "readoutCount": 1,
+        "experimentCount": 8,
+        "sampling": "longitudinal",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 7,
+      "caseId": "LSA094",
+      "runId": "preflight_r3_007_LSA094",
+      "packageSha256": "3e1bba202ccbf71f3d582c43e12622e2ca78e7ea178a0a4f306d9ec61a5819aa",
+      "rows": 24,
+      "seed": 4274273520,
+      "runtimeSha256": "7285df7077707e200652ed18e4a072045e638601896e04fc5eadfc0ca10d9a19",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "wb_lineage_not_supported"
+      }
+    },
+    {
+      "position": 8,
+      "caseId": "LSA095",
+      "runId": "preflight_r3_008_LSA095",
+      "packageSha256": "a119246a9b9f31d9f390bd8ffa113ffe0cc272cf8d560f506da251fc23b14d1e",
+      "rows": 28,
+      "seed": 3578282081,
+      "runtimeSha256": "8f1aa03375ac51f57e499b4f74932bec3c0e8cd1bb6ddd3630a53053b8d6cf28",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "missingness_identity_not_supported",
+        "missingRows": 1
+      }
+    },
+    {
+      "position": 9,
+      "caseId": "LSA099",
+      "runId": "preflight_r3_009_LSA099",
+      "packageSha256": "a34ff5293fba246146fe5ca9971a387aa538d1620732e3ee9dcf9df9e3ac6ee3",
+      "rows": 8,
+      "seed": 3648375563,
+      "runtimeSha256": "4d346ca7427982ec6558cda2cb135e02926d3ce940587415b7ea5d0528e74ddd",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 10,
+      "caseId": "LSA102",
+      "runId": "preflight_r3_010_LSA102",
+      "packageSha256": "107f73bb3b5cb0bd52acdad39156bb37b4d6d0137c8c453edbba046fd7ce8357",
+      "rows": 18,
+      "seed": 4280943972,
+      "runtimeSha256": "42b7d84b6b8f1d3e5d4d887205c20aabae6d0170047d3e72858a68930e49117b",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 9,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 11,
+      "caseId": "LSA108",
+      "runId": "preflight_r3_011_LSA108",
+      "packageSha256": "71b8d8cc03d4aafade536c54f5a839d7e62b4a918175677c401d70525bea3c66",
+      "rows": 28,
+      "seed": 825143032,
+      "runtimeSha256": "20857761fdc19754764b45c33741b8fb44db5b53651eb4d2ea5a21108282b3b6",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "proportion",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 12,
+      "caseId": "LSA110",
+      "runId": "preflight_r3_012_LSA110",
+      "packageSha256": "b9684c5654bbe7995a5b8c0c34d6e199121ba9ba3aebd2e590289218b14e4e82",
+      "rows": 28,
+      "seed": 1790909856,
+      "runtimeSha256": "e048ad70620c53d18c25dd1a318d81d687d5c921edfff3ab381aa5a0b14553ff",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 13,
+      "caseId": "LSA115",
+      "runId": "preflight_r3_013_LSA115",
+      "packageSha256": "67c5453684a635bc879ba16dadc84077e6dd60cbcded3ea9af23b0cc76377879",
+      "rows": 8,
+      "seed": 4126225038,
+      "runtimeSha256": "5561b0e50a955a1a20d8f009c5476a51cb507b67348d0a021f3d7db9255758ac",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "proportion",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 14,
+      "caseId": "LSA119",
+      "runId": "preflight_r3_014_LSA119",
+      "packageSha256": "a8e62088ec961c5a24f0c589901edd88f6a39832eb2735849a443e03210e743f",
+      "rows": 16,
+      "seed": 729161686,
+      "runtimeSha256": "a44aa63e0cf6be9c8e4c1818b4277d69bec63346f02896c7bb027e0ae81658a5",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 4,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 15,
+      "caseId": "LSA120",
+      "runId": "preflight_r3_015_LSA120",
+      "packageSha256": "fda0cd5a1380200de004bffc3f0433697348646e711b8f95d05c771360d76fe6",
+      "rows": 24,
+      "seed": 3480281496,
+      "runtimeSha256": "cf7934bf1c2747f804b35d8fd55f1e34579932ad2668d6013e304e05e59ea6a4",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 24,
+        "readoutCount": 1,
+        "experimentCount": 1,
+        "sampling": "cross_sectional",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 16,
+      "caseId": "LSA124",
+      "runId": "preflight_r3_016_LSA124",
+      "packageSha256": "1568f3d6d340a113a2c313014c5e22eb86915503c5f1044b73d8d41147ad0ad5",
+      "rows": 12,
+      "seed": 3882652355,
+      "runtimeSha256": "9903c8d957c5b0d44d64a011f5e3185ec3c9dabeb68b9edd341744795622f5a3",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 6,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 17,
+      "caseId": "LSA139",
+      "runId": "preflight_r3_017_LSA139",
+      "packageSha256": "4eff0195952a0a8765540096247dbe152b6853b8c3fdb25d7aca8112947d4536",
+      "rows": 40,
+      "seed": 1838324218,
+      "runtimeSha256": "fc1f92a0038ee108b871e1e58b78ac3bfb52ad64a3e834c98791521093865332",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 4,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 10,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 18,
+      "caseId": "LSA141",
+      "runId": "preflight_r3_018_LSA141",
+      "packageSha256": "ae0b5c8373abf776917d61eb333ee669dba4f1c7369b84cf7826b7cd4dfeb485",
+      "rows": 112,
+      "seed": 2600114056,
+      "runtimeSha256": "e6c942d2bdf950e74f6d17c3c18208a452ef5d3aad082202661ffd63be2cba60",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 4,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "longitudinal",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 19,
+      "caseId": "LSA143",
+      "runId": "preflight_r3_019_LSA143",
+      "packageSha256": "7d7c4f8374f1451fa3f541932c164f6685be891a3957ed9e9007a9fabd203873",
+      "rows": 12,
+      "seed": 2286521028,
+      "runtimeSha256": "27a125ba4bce58f1b2764e69b06f473a122c4a7b7fc1d0024c17973ca71b5360",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 20,
+      "caseId": "LSA147",
+      "runId": "preflight_r3_020_LSA147",
+      "packageSha256": "b1ff7b4167eb42cfc83839a0fc279722877218e4f8454890ba2502c90228a02d",
+      "rows": 16,
+      "seed": 603175069,
+      "runtimeSha256": "d3e01355c290f2e8031adb02d07a95345b7d966d5dbc1a13066c4089b9b4f359",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 4,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 21,
+      "caseId": "LSA148",
+      "runId": "preflight_r3_021_LSA148",
+      "packageSha256": "e11377915099bde70e86035d3d42c4f38daa1dd81cd67e7841aa2bddd35ba633",
+      "rows": 40,
+      "seed": 2228176681,
+      "runtimeSha256": "333871319a6553e5a6def57b672f2683abbbeec7a1b7fe07d4756878b4113dea",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 4,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 10,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 22,
+      "caseId": "LSA152",
+      "runId": "preflight_r3_022_LSA152",
+      "packageSha256": "5e86b0e5791edcc0aea7b3b4d886da748702060e7b905b6ad4b0f0fc410093b5",
+      "rows": 15,
+      "seed": 3339363372,
+      "runtimeSha256": "a7c08872a1afd6e74c3b438aa4b9136663d4eec4365333315da731dec2a7ef7d",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 5,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 23,
+      "caseId": "LSA153",
+      "runId": "preflight_r3_023_LSA153",
+      "packageSha256": "0a01cfd1b07668a2957cea1f93d1af18c5a32487a4115f550372a762cdad551f",
+      "rows": 42,
+      "seed": 3887361201,
+      "runtimeSha256": "82e32e00a9321da12c0badc203ded535cc6e223ed8c92f188b0585765d9a6737",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 24,
+      "caseId": "LSA157",
+      "runId": "preflight_r3_024_LSA157",
+      "packageSha256": "56cd2eb91538c188df56d76692ab0ee0b6f32d245e95c4b7352d2ad196033822",
+      "rows": 76,
+      "seed": 330123697,
+      "runtimeSha256": "fd22f9f51e4d773149b1b54948e4f9081650c7f16698d1e53f5c72d1b9d3f4a4",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 3,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 25,
+      "caseId": "LSA161",
+      "runId": "preflight_r3_025_LSA161",
+      "packageSha256": "5a5e1894795255637b9461b96a783ec03d436f01f3191391ce0d2224140c3147",
+      "rows": 400,
+      "seed": 1495599377,
+      "runtimeSha256": "3740f0ac9b0efe35ba0b24eff61d8d86f60e319b66f097c8b65ce915eb03bc28",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "multiple_readouts_not_supported",
+        "readoutCount": 40
+      }
+    },
+    {
+      "position": 26,
+      "caseId": "LSA165",
+      "runId": "preflight_r3_026_LSA165",
+      "packageSha256": "7c6be089fdd6ca11d28b161a998985826172134d633f2da2c80ca371b2eb6d63",
+      "rows": 28,
+      "seed": 3556635299,
+      "runtimeSha256": "7d9528f31a8abb844343a9c48f6190b8fd70116c10f603a39a47d3501e172030",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 27,
+      "caseId": "LSA169",
+      "runId": "preflight_r3_027_LSA169",
+      "packageSha256": "cf462a855aa5a3afdeb9cbedb7355f4c82173205f5d3627f628068a1044ed85c",
+      "rows": 159,
+      "seed": 1294724990,
+      "runtimeSha256": "83baa8d821066c540d4bf940b2173d999058bba1d5d04ff53b725ba84f0c7a7e",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 6,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 28,
+      "caseId": "LSA176",
+      "runId": "preflight_r3_028_LSA176",
+      "packageSha256": "1df5e437810dde70dd29cdb9e97e19d5ff4ae1db7df68885fe110c5f1583474f",
+      "rows": 32,
+      "seed": 2499691110,
+      "runtimeSha256": "7d734650ff3c091b82ad07d019386fa88f38b50b2591013b2c66bfe1683d8802",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 4,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "longitudinal",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 29,
+      "caseId": "LSA186",
+      "runId": "preflight_r3_029_LSA186",
+      "packageSha256": "489b0b49c5ce677a433d11c53708690b356905799b0444ab044f3643099fc70c",
+      "rows": 480,
+      "seed": 3243439143,
+      "runtimeSha256": "1d66fd85f5db7f9452eb4ae3b68bbc724757ee0004d48cf153ac726770907d54",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "multiple_readouts_not_supported",
+        "readoutCount": 40
+      }
+    },
+    {
+      "position": 30,
+      "caseId": "LSA188",
+      "runId": "preflight_r3_030_LSA188",
+      "packageSha256": "d9c15985b0cba21218a49c39b5faf15ee1e06f2b105be78707c56e754c108f8b",
+      "rows": 8,
+      "seed": 3896086477,
+      "runtimeSha256": "866b27c47a2ee0d5e6041782e46b73c38759db30166368126d35503aff9b51ad",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "proportion",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 31,
+      "caseId": "LSA189",
+      "runId": "preflight_r3_031_LSA189",
+      "packageSha256": "3219763be14aaf125078bc7bbe2e15538ced89f7ba3906746120dd70a7dceb9f",
+      "rows": 8,
+      "seed": 3765902021,
+      "runtimeSha256": "23fcf2ab519386b3049c6111686d09fd9c0e723f6af2e9077550812bb1e4173b",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 32,
+      "caseId": "LSA194",
+      "runId": "preflight_r3_032_LSA194",
+      "packageSha256": "9740ad6321f70df3cb690e93a2e514750690798cff41f54cd4c8031b57dbd756",
+      "rows": 30,
+      "seed": 1012962606,
+      "runtimeSha256": "f7eb26d7d4550fd28ac96913c89afc33cfbfc7c5239798d6ac88d96a6dc9330f",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "wb_lineage_not_supported"
+      }
+    },
+    {
+      "position": 33,
+      "caseId": "LSA203",
+      "runId": "preflight_r3_033_LSA203",
+      "packageSha256": "666f7d5e5f8645b11d6baa434459a78a31c26faec996919f4ab9d3fb4194bf43",
+      "rows": 20,
+      "seed": 2901594616,
+      "runtimeSha256": "34db534c60a92a32d5d6d89232bb7b034ca201391adef256f760a639940e2d14",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 4,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 5,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 34,
+      "caseId": "LSA213",
+      "runId": "preflight_r3_034_LSA213",
+      "packageSha256": "6f8a9ea69f20742cbe99fe57a53723bbc55df6ece51084ab009a652071eabcc9",
+      "rows": 12,
+      "seed": 3902280241,
+      "runtimeSha256": "6d49ee7e7ebce3b8e637749bf2bfa8021edfe31c7474e7a453915f4b5fa73ebd",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 35,
+      "caseId": "LSA214",
+      "runId": "preflight_r3_035_LSA214",
+      "packageSha256": "dd6df92c3829fa2171885b89807606efe43a7d3d0ba6d01ab59a5f478c9d7e26",
+      "rows": 8,
+      "seed": 3256801543,
+      "runtimeSha256": "574433144c8124be4f5ac4591fd27f96e71427160545532e516ae0c167487210",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 36,
+      "caseId": "LSA215",
+      "runId": "preflight_r3_036_LSA215",
+      "packageSha256": "f4b4776faa79a7c8e2fdc85194bc49b47084ba042993de14caa7a7151f2be81e",
+      "rows": 800,
+      "seed": 3326618010,
+      "runtimeSha256": "b099a2d31b9ff477d4d375570e097986944ab765cdb178af06b64f57fd170a40",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "multiple_readouts_not_supported",
+        "readoutCount": 40
+      }
+    },
+    {
+      "position": 37,
+      "caseId": "LSA218",
+      "runId": "preflight_r3_037_LSA218",
+      "packageSha256": "58018e72261126a5ffe52970e4b62bf2bcead82471bd220990c7ac89193cc8ab",
+      "rows": 24,
+      "seed": 4075922000,
+      "runtimeSha256": "c2fcc9de2a00bf82025bf94f2be83cc8c12a05b85ba4def02581e8afbafc17ab",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 24,
+        "readoutCount": 1,
+        "experimentCount": 1,
+        "sampling": "cross_sectional",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 38,
+      "caseId": "LSA225",
+      "runId": "preflight_r3_038_LSA225",
+      "packageSha256": "ace05e01de52ddf0f3b47392fe2c66aaf9fff481272cb438b6f87b0f69720c1c",
+      "rows": 82,
+      "seed": 3341458111,
+      "runtimeSha256": "1fe5bf169579ba292cfd8d4aad94a60093a479fb8b7718f5fee6ba901548ec17",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 3,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 39,
+      "caseId": "LSA229",
+      "runId": "preflight_r3_039_LSA229",
+      "packageSha256": "dfb23179e9306ed99b184066b7c40cd22880eca21799b9cfb231d23301a559e4",
+      "rows": 22,
+      "seed": 3091102789,
+      "runtimeSha256": "52d814f250640d0aa4224696b4bb5a385ea3205d18690f5a1522bd548209538c",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 11,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 40,
+      "caseId": "LSA241",
+      "runId": "preflight_r3_040_LSA241",
+      "packageSha256": "5edc6c767c3eb6e10c5791bd6f6c25862a0a8c94ec53cc196a71528bb8fcd639",
+      "rows": 12,
+      "seed": 606882065,
+      "runtimeSha256": "0224e4484794f17d5098cf4a906ef779d09577a7a4ca9eb8ebe745f1ab48d44c",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 1,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 12,
+        "sampling": "none",
+        "numericCovariate": true
+      }
+    },
+    {
+      "position": 41,
+      "caseId": "LSA247",
+      "runId": "preflight_r3_041_LSA247",
+      "packageSha256": "8cb3bf6601d6f7e93fb1ad118d7acd840a617b8e43514cde939b96aa737cacb7",
+      "rows": 12,
+      "seed": 3424863084,
+      "runtimeSha256": "455d2e88dc8594621e175f0283bcfd838feb83bec57c940b8d78d365530d2dca",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 42,
+      "caseId": "LSA249",
+      "runId": "preflight_r3_042_LSA249",
+      "packageSha256": "16857d89535541e708d7bb924cc658736a14620cc030a6c4de06142f554165b3",
+      "rows": 86,
+      "seed": 3486566787,
+      "runtimeSha256": "e764ba805765e9781a039e21c0854d334ef3d3d55621f5c751db634a137fa327",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 3,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 43,
+      "caseId": "LSA252",
+      "runId": "preflight_r3_043_LSA252",
+      "packageSha256": "20da072a49dff143530824001bacbe9cbabab97000378e0302309c0e7ef7a9de",
+      "rows": 12,
+      "seed": 1882822922,
+      "runtimeSha256": "5c5443457524d6e41e4d65faead4aff9a5910077d40b0f2d6d7d68b4414abdd9",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 44,
+      "caseId": "LSA255",
+      "runId": "preflight_r3_044_LSA255",
+      "packageSha256": "63c23a3da93493086e2e1274ec84d8a2e5e50dc6cd25cebcf4d3fa852906e090",
+      "rows": 29,
+      "seed": 1562888491,
+      "runtimeSha256": "dd5b0da36d380d14b1901b884e6456447fe2107563e49c83a9529879ac6f6113",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 1,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 29,
+        "sampling": "none",
+        "numericCovariate": true
+      }
+    },
+    {
+      "position": 45,
+      "caseId": "LSA256",
+      "runId": "preflight_r3_045_LSA256",
+      "packageSha256": "5d5d8c24be7e366670392a44853eda9ed7ae71dbd6ce2f29d4ccafd59b7d7512",
+      "rows": 28,
+      "seed": 2411815589,
+      "runtimeSha256": "13933ed8f49371c3ec28036f277b92966a36259afe107667cf53a24f1eef9ded",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 46,
+      "caseId": "LSA263",
+      "runId": "preflight_r3_046_LSA263",
+      "packageSha256": "ac803e334affa7f81311782f680838b26723cfb390a61806461a5dc736105f34",
+      "rows": 400,
+      "seed": 2786845764,
+      "runtimeSha256": "01ba21196d11fdea2b4b5861057ef38f7eda5cb3ea37f038b02bde89f5013a5b",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "multiple_readouts_not_supported",
+        "readoutCount": 40
+      }
+    },
+    {
+      "position": 47,
+      "caseId": "LSA269",
+      "runId": "preflight_r3_047_LSA269",
+      "packageSha256": "9f0f55c54c0d62ce2f21e719a7575dfa1899841ad34e240191c3e6ab3cb63549",
+      "rows": 42,
+      "seed": 1320818566,
+      "runtimeSha256": "e2c7d50cf7e616379ab58a033525e3e7e96fb864603aa02e5c6faa0ce25cb360",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 48,
+      "caseId": "LSA270",
+      "runId": "preflight_r3_048_LSA270",
+      "packageSha256": "c2f27c95f7b4f38c10f5c692adb941fdd2ad4f0ed21c7c65f7eba8cebea120cb",
+      "rows": 8,
+      "seed": 4285116119,
+      "runtimeSha256": "50d47622ac4bff842329e56afc17df1484c14d52338ddcf99ecfa620d60b87e5",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 49,
+      "caseId": "LSA272",
+      "runId": "preflight_r3_049_LSA272",
+      "packageSha256": "fd174cc744004ae179ff6a54a8a7d617880e7851a2463ad91d730e9a0f0ab555",
+      "rows": 28,
+      "seed": 263050807,
+      "runtimeSha256": "1a4b3d17648f8125c328998dc0a849d656ec7f1f738e3b3c1e2ec7290e7109e6",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "proportion",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 50,
+      "caseId": "LSA287",
+      "runId": "preflight_r3_050_LSA287",
+      "packageSha256": "b6d7cf7da1d49ee45c64b8df62d9df40dcfeedae719f5e18d7e10fe2d70935e5",
+      "rows": 400,
+      "seed": 1240202883,
+      "runtimeSha256": "357468238f0d00be7e37b9b12233c1b49f1e8f0924e9ef39ade5e2201d807a57",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "multiple_readouts_not_supported",
+        "readoutCount": 40
+      }
+    },
+    {
+      "position": 51,
+      "caseId": "LSA291",
+      "runId": "preflight_r3_051_LSA291",
+      "packageSha256": "79a287dea79162c180cc7ab7fdfac469533d0b84cce69da7c12615a791509ac0",
+      "rows": 12,
+      "seed": 353706165,
+      "runtimeSha256": "9df687346d85296e1379ab7342b5992124a3fb5e3e19416fa28c2a01f02600cd",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 52,
+      "caseId": "LSA306",
+      "runId": "preflight_r3_052_LSA306",
+      "packageSha256": "03f6ff725a36b91f7a966bfe78baf7731f2ca82837c0e554e543081548a49b4d",
+      "rows": 76,
+      "seed": 1859865172,
+      "runtimeSha256": "d2ed407e76b86e0ba905b4de0ad1cd287ea1683788e16f6f51f9ba457309cff3",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 3,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 53,
+      "caseId": "LSA309",
+      "runId": "preflight_r3_053_LSA309",
+      "packageSha256": "6348b0da6308d3f0a5957b059429f656d0b14424bf1e24d7e543386e466cf036",
+      "rows": 32,
+      "seed": 1762036613,
+      "runtimeSha256": "f8c30009a4f5010d74ce78c63d54ff50a3107c97116f8081e9dbd66d4885bc03",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 4,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "longitudinal",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 54,
+      "caseId": "LSA310",
+      "runId": "preflight_r3_054_LSA310",
+      "packageSha256": "04929551d00e5f7ee053cb6147c7ec379162fdf9dd78b1b54d3c9ef35ee02b02",
+      "rows": 42,
+      "seed": 3598664818,
+      "runtimeSha256": "6ac7871cf3a804c42ba2e76f45d8007d6fb149eb614eba011473516f59d71ffb",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 55,
+      "caseId": "LSA313",
+      "runId": "preflight_r3_055_LSA313",
+      "packageSha256": "b047d269aaedf9be0b6c99d76ffbc613599b1ee70bcdbe820be288d5d479d59d",
+      "rows": 48,
+      "seed": 355649448,
+      "runtimeSha256": "2751469cf426c8fc07ca3588983362fadfbc92bfe453ee4fb0a96dda11afd8c1",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "wb_lineage_not_supported"
+      }
+    },
+    {
+      "position": 56,
+      "caseId": "LSA317",
+      "runId": "preflight_r3_056_LSA317",
+      "packageSha256": "e085714bdfdb5ff54626f39a4fb07686ad3c32c6ecd3797af5d0581faa4145d5",
+      "rows": 28,
+      "seed": 1593753522,
+      "runtimeSha256": "cdd23adffb0ec060bab3c5121222845bfcaf98d7bbab1a1ca95319199f1fe449",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "proportion",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 57,
+      "caseId": "LSA325",
+      "runId": "preflight_r3_057_LSA325",
+      "packageSha256": "5c8cf783fefdd89cd61f2e11ab364697108582886f768fa2e542f3ed623b859d",
+      "rows": 28,
+      "seed": 1118310256,
+      "runtimeSha256": "b84b7848ec22b79b202043fff3c0e6face178c90cd42e4fa6cafd511a6eea55e",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 58,
+      "caseId": "LSA333",
+      "runId": "preflight_r3_058_LSA333",
+      "packageSha256": "ead9620e5671cd1fb2a68ea894ab6effb8a52764c55a7dc91997efe5f26e8869",
+      "rows": 24,
+      "seed": 2242353693,
+      "runtimeSha256": "80c4255e5a0ce6fcee7ce5d27284e5e94d7e863a40a2dfd247682d10b702e948",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 24,
+        "readoutCount": 1,
+        "experimentCount": 1,
+        "sampling": "cross_sectional",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 59,
+      "caseId": "LSA350",
+      "runId": "preflight_r3_059_LSA350",
+      "packageSha256": "458dce6e9582b2f9bb41c99db294a58dc33786814f37e240069e74853871c60f",
+      "rows": 400,
+      "seed": 229813821,
+      "runtimeSha256": "ec8f3bafca787c508120e34d7f7868028937ae4e491c3776230b9a4e380abb58",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "multiple_readouts_not_supported",
+        "readoutCount": 40
+      }
+    },
+    {
+      "position": 60,
+      "caseId": "LSA353",
+      "runId": "preflight_r3_060_LSA353",
+      "packageSha256": "c770122bf31f2cedcf61588d2f2844f25fd804feef233f2b988581f8534a8d23",
+      "rows": 28,
+      "seed": 4039795453,
+      "runtimeSha256": "3b2fce0f0d4ba31d8139932df3d0178dd67261b502ea7dddebc36fe85a0c8a4a",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 61,
+      "caseId": "LSA355",
+      "runId": "preflight_r3_061_LSA355",
+      "packageSha256": "279aca0735f693094640a626a7f8a7ddec30d32cb65a4feaccf2185ccf6f0faf",
+      "rows": 12,
+      "seed": 2874669283,
+      "runtimeSha256": "e924f1efef4735836ccc9c563aaa8a2fc5bdade3d3161d3c13cefecce88c2b7e",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 1,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 12,
+        "sampling": "none",
+        "numericCovariate": true
+      }
+    },
+    {
+      "position": 62,
+      "caseId": "LSA361",
+      "runId": "preflight_r3_062_LSA361",
+      "packageSha256": "d59578b3c98ab9b127f664f50f05730da4bcf4b4676efe8e1300d0a99d7b28dc",
+      "rows": 105,
+      "seed": 4182332440,
+      "runtimeSha256": "0a65fba154058fd2b80838ae01bc675a37fcfe173d1e439810436dbddb885767",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 63,
+      "caseId": "LSA362",
+      "runId": "preflight_r3_063_LSA362",
+      "packageSha256": "1e770bba109cd01f9b195f630808ec885bf4daf2222f3aae04767593af9394ff",
+      "rows": 8,
+      "seed": 2612538023,
+      "runtimeSha256": "87a8a96dc87d3c570b0b3c0d63da84a5cadf9a491a88239085dc14ebe3ab47f7",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "proportion",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 64,
+      "caseId": "LSA368",
+      "runId": "preflight_r3_064_LSA368",
+      "packageSha256": "ef688cd66e8eee3e9e5c9ec1f24854e20cef730cc027b2c674e441bc54ac6840",
+      "rows": 16,
+      "seed": 53946589,
+      "runtimeSha256": "aed0c8cb97cae5c0dfbbc01509a4ef4eea8749c604c7537180be54346aecde6a",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 4,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 65,
+      "caseId": "LSA371",
+      "runId": "preflight_r3_065_LSA371",
+      "packageSha256": "ec389005fa52ce3a4353f85b078141be6ba2b5cbdf8d7a281ea22ea4806db926",
+      "rows": 24,
+      "seed": 2394071877,
+      "runtimeSha256": "e3e322ec1233689764f7ed7c3fa08190aac76f71da3f1ecfcf0493426d3315cc",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 24,
+        "readoutCount": 1,
+        "experimentCount": 1,
+        "sampling": "cross_sectional",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 66,
+      "caseId": "LSA374",
+      "runId": "preflight_r3_066_LSA374",
+      "packageSha256": "6d7e589fe47421fac318494b6b586ca301dde3fda5eee70e4fcd375c7beea533",
+      "rows": 8,
+      "seed": 2862783900,
+      "runtimeSha256": "379a4165c8610ec093f44033eb11914485daf22995b7a7286df1686aae881792",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 67,
+      "caseId": "LSA378",
+      "runId": "preflight_r3_067_LSA378",
+      "packageSha256": "b0ae4058b7468ff11eeaa81691fc37f0d5946bc4b4ecf28bc6ab33b49b69ef3a",
+      "rows": 24,
+      "seed": 1047952895,
+      "runtimeSha256": "797ed248c98f216bdf2c670b6bc35e785a45c328b74b9daaa7b00afc4ab98a23",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "multiple_readouts_not_supported",
+        "readoutCount": 2
+      }
+    },
+    {
+      "position": 68,
+      "caseId": "LSA380",
+      "runId": "preflight_r3_068_LSA380",
+      "packageSha256": "740e1a47167d74030b1d052969934171dddbb6b475c41358b24e767c7a1f0dd6",
+      "rows": 24,
+      "seed": 4191951750,
+      "runtimeSha256": "a7938d3605d817c729664e9561d1da4ddd6a8be29dbbb4c2feec5f24ff2325ee",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 24,
+        "readoutCount": 1,
+        "experimentCount": 1,
+        "sampling": "cross_sectional",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 69,
+      "caseId": "LSA387",
+      "runId": "preflight_r3_069_LSA387",
+      "packageSha256": "5d446361c5fa00abd7b717010873c904d1c20df48c20a81c2a72aa454f0038b7",
+      "rows": 15,
+      "seed": 1115803960,
+      "runtimeSha256": "9780e15373f7590f5775e2010136b4a3e9754f96324d11cb203077be6f5edff4",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 5,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 70,
+      "caseId": "LSA396",
+      "runId": "preflight_r3_070_LSA396",
+      "packageSha256": "e53d8be240a9aeb53926fab356676929d00fc35d62fee849dd91d95f7e3f6914",
+      "rows": 18,
+      "seed": 3156081629,
+      "runtimeSha256": "3a5e6bc880a9d4a89f9b4abef868261c7912e144a72467343ed061f0efac0643",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 1,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 18,
+        "sampling": "none",
+        "numericCovariate": true
+      }
+    },
+    {
+      "position": 71,
+      "caseId": "LSA413",
+      "runId": "preflight_r3_071_LSA413",
+      "packageSha256": "498abba29405131169ccb67b4584c67d71f6787e387af380afa313ae880ac416",
+      "rows": 400,
+      "seed": 3064452844,
+      "runtimeSha256": "03f1148954a1e569db6227d4c44e522dae917207440417a4f2b8fcab1000806f",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "wb_lineage_not_supported"
+      }
+    },
+    {
+      "position": 72,
+      "caseId": "LSA419",
+      "runId": "preflight_r3_072_LSA419",
+      "packageSha256": "fe8b7f76eb22b4aa03ebe495cc181929293f4dd63c2abc9aa20a1a7cc5f7ee83",
+      "rows": 30,
+      "seed": 3958001444,
+      "runtimeSha256": "a455e7f62442dbc6ab49fb023e1d2f6a7b64149a80a03373719567a7dff3f0a3",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 1,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 30,
+        "sampling": "none",
+        "numericCovariate": true
+      }
+    },
+    {
+      "position": 73,
+      "caseId": "LSA422",
+      "runId": "preflight_r3_073_LSA422",
+      "packageSha256": "ab4eb0848561cde6044855e9d048ce4a19b5012d59a658b244871f05729d9d5d",
+      "rows": 32,
+      "seed": 1807013580,
+      "runtimeSha256": "74bfae41b30726d2c28bf1268fc7626afe234feac096b520e36278e4cb7732bd",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 4,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "longitudinal",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 74,
+      "caseId": "LSA423",
+      "runId": "preflight_r3_074_LSA423",
+      "packageSha256": "6e5b894b82322d96ef9dd2fa077ac6e6344fdd9ba650fe3a9a1f5e060f8b15ed",
+      "rows": 24,
+      "seed": 505350954,
+      "runtimeSha256": "7c5baec5b73a78fc59bf74a8c130eade04763c8cf32c290a3a8d23dec66194d4",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 24,
+        "readoutCount": 1,
+        "experimentCount": 1,
+        "sampling": "cross_sectional",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 75,
+      "caseId": "LSA424",
+      "runId": "preflight_r3_075_LSA424",
+      "packageSha256": "9282f4f3da4c667e16c87f3168990d6556e3d196268c5c60a7017afa76a1eef9",
+      "rows": 24,
+      "seed": 799609861,
+      "runtimeSha256": "02d174232e62c542ddd392a4fa4ab9eb66df3ef3be9c99e6543d5a62181201fe",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "wb_lineage_not_supported"
+      }
+    },
+    {
+      "position": 76,
+      "caseId": "LSA427",
+      "runId": "preflight_r3_076_LSA427",
+      "packageSha256": "a9e9705daceb33fdbc7c9923d5fbf74ae56708d806a5ea7400887b5743213afe",
+      "rows": 400,
+      "seed": 1985688378,
+      "runtimeSha256": "8069a8976a8ed32e09cb1c7f8af59765ffafb449a3094b294dede2650deaacc4",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "multiple_readouts_not_supported",
+        "readoutCount": 40
+      }
+    },
+    {
+      "position": 77,
+      "caseId": "LSA430",
+      "runId": "preflight_r3_077_LSA430",
+      "packageSha256": "0f1ad70093b4b6dc2bfdc88c74f800fef4dfb67911362b669e54ee3bb602e975",
+      "rows": 80,
+      "seed": 208302670,
+      "runtimeSha256": "11436448bb6c0ef6bcf06452527714073f2361b5fd62041bbabcd0eedf2515f8",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 4,
+        "readoutCount": 1,
+        "experimentCount": 10,
+        "sampling": "longitudinal",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 78,
+      "caseId": "LSA434",
+      "runId": "preflight_r3_078_LSA434",
+      "packageSha256": "5f347fb45d86aac5eeaa819d0f26af35a007b9437e271294b092b46b80e6e11a",
+      "rows": 24,
+      "seed": 3174769699,
+      "runtimeSha256": "aeeffb4a819f863ccf6220130cc28d88c61e31b6436a36005d641587025ae7ca",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "wb_lineage_not_supported"
+      }
+    },
+    {
+      "position": 79,
+      "caseId": "LSA436",
+      "runId": "preflight_r3_079_LSA436",
+      "packageSha256": "551e0436b15f61fc8ed548c998591f4224bfb0759d31d3fc7341478431ec8e42",
+      "rows": 12,
+      "seed": 922715165,
+      "runtimeSha256": "7a9bf1a01fe9eaf7b49c6172a0930f7f57f8f6856d34b3062e21f11e4f4c89dc",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 3,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 4,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 80,
+      "caseId": "LSA459",
+      "runId": "preflight_r3_080_LSA459",
+      "packageSha256": "94dd53b41e696892046b5e65448164415f87c8d22596d1d84e2fef0151ddc459",
+      "rows": 28,
+      "seed": 213302611,
+      "runtimeSha256": "bb132a40655bc327172b0d39bc92cbc0b31dbaed374a38a66bb82139efc735f4",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "proportion",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 14,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 81,
+      "caseId": "LSA462",
+      "runId": "preflight_r3_081_LSA462",
+      "packageSha256": "2e9cbbea9b728143cde5cd9a06a22a8d5a4148abd5f19cbd535a458c3d9e7171",
+      "rows": 84,
+      "seed": 1454664921,
+      "runtimeSha256": "02f00affbc97e1b3ab8fe541862bf0c86f7d8baa3963150b05d9fe806e7b5c03",
+      "loader": {
+        "status": "safe_refusal",
+        "reason": "wb_lineage_not_supported"
+      }
+    },
+    {
+      "position": 82,
+      "caseId": "LSA467",
+      "runId": "preflight_r3_082_LSA467",
+      "packageSha256": "4959351543a3bd9f7af4c1400089b8fafccd68dc53c4cce86c9135f1beec1ca8",
+      "rows": 18,
+      "seed": 3166923766,
+      "runtimeSha256": "ef45790b11aad638f8835423a775cccb03be8259c2ea17f2a6a630255558a9cd",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "proportion",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 9,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 83,
+      "caseId": "LSA472",
+      "runId": "preflight_r3_083_LSA472",
+      "packageSha256": "cf117729c245d22e4df628b0e8c99e79c4d36319af4181a67dda2c77e9103cb6",
+      "rows": 30,
+      "seed": 3828354163,
+      "runtimeSha256": "897c97ca77b57e8ea9fdbfd36133d6f9214bc6a58b3680e3c4bbaead2f5a20ee",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 1,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 30,
+        "sampling": "none",
+        "numericCovariate": true
+      }
+    },
+    {
+      "position": 84,
+      "caseId": "LSA487",
+      "runId": "preflight_r3_084_LSA487",
+      "packageSha256": "1a6f17fef7c705f0803b6db0c2950e8999b1990cc3426bdc6ee5caba7e380e39",
+      "rows": 24,
+      "seed": 640536332,
+      "runtimeSha256": "9433cdabb792134a154d85b7680eed79029b613b7757d8d8e0fea9420ced09e5",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 24,
+        "readoutCount": 1,
+        "experimentCount": 1,
+        "sampling": "cross_sectional",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 85,
+      "caseId": "LSA488",
+      "runId": "preflight_r3_085_LSA488",
+      "packageSha256": "fcbdde3901136f00b37af760b804fb533eeba0a052c27c91f86f83a8a5e99d63",
+      "rows": 48,
+      "seed": 1234673583,
+      "runtimeSha256": "a4f5975957ebd25a04f4c75ddb0d2d8b36e013e3d0e87cce757751920d5931e0",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 48,
+        "readoutCount": 1,
+        "experimentCount": 1,
+        "sampling": "cross_sectional",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 86,
+      "caseId": "LSA489",
+      "runId": "preflight_r3_086_LSA489",
+      "packageSha256": "9a83214cdf552d5343c6e05fa1733de5310f865bd5f1224c033fcc377ea4422a",
+      "rows": 10,
+      "seed": 972897514,
+      "runtimeSha256": "18924b6049a767b5cdf7541337405846ed37a6d2050c17da186563bd304d0348",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 5,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 87,
+      "caseId": "LSA490",
+      "runId": "preflight_r3_087_LSA490",
+      "packageSha256": "5015f7bdae5fef1d94d0a03c0ad739932d22a793bab8dbaf0afaa5e27e82b24a",
+      "rows": 20,
+      "seed": 66756410,
+      "runtimeSha256": "eadc65deb04802d29e3985697fad7890d5555d8516ad88f80a137ae7871727f2",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 2,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 10,
+        "sampling": "none",
+        "numericCovariate": false
+      }
+    },
+    {
+      "position": 88,
+      "caseId": "LSA495",
+      "runId": "preflight_r3_088_LSA495",
+      "packageSha256": "7d3e34c5616f297a4ac689682cc7fd851ec24d27415f430a85e72d95f1d3b7b5",
+      "rows": 30,
+      "seed": 3632257099,
+      "runtimeSha256": "652df02cdad2e4e8b9a6428c03c863eb6e2cf378a4b0d7f7133eec8b9e0b78c3",
+      "loader": {
+        "status": "compatible",
+        "reason": "deterministic_loader_contract_representable",
+        "shape": "nested_continuous",
+        "conditionCount": 1,
+        "timeCount": 0,
+        "readoutCount": 1,
+        "experimentCount": 30,
+        "sampling": "none",
+        "numericCovariate": true
+      }
+    }
+  ],
+  "overall": "PASS"
+}
