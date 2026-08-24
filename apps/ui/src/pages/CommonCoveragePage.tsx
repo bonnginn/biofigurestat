@@ -173,6 +173,22 @@ export function CommonCoveragePage({
       const next = await analysisRunner(validated);
       setExecutedRequest(validated);
       setResult(next);
+      recordBenchmarkEvent("statistics_executed", {
+        method: validated.method,
+        recommendedMethod: validated.method,
+        recommendationDiffers: false,
+        recommendationReasonCode:
+          parsed.kind === "regression" ? "explicit_numeric_covariate" : "explicit_core_route",
+        recommendationExplanation:
+          parsed.kind === "regression"
+            ? `The paired ${xLabel || "numeric covariate"} and ${yLabel || "outcome"} values are modeled at the stable experimental-unit level.`
+            : "The explicitly selected Core route matches the entered data structure.",
+        recommendationDecision: null,
+        recommendationSelectedMethod: validated.method,
+        contrast: parsed.kind === "regression" ? "slope" : null,
+        protocolVersion: validated.protocolVersion,
+        engineVersion: next.engine.version,
+      });
       setMessage("解析とprovenance記録が完了しました。");
     } catch (error) {
       setExecutedRequest(null);
