@@ -1,6 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type * as BenchmarkEvaluation from "../app/benchmarkEvaluation";
 import { SpecializedCorePage } from "./SpecializedCorePage";
+
+const recordBenchmarkEvent = vi.hoisted(() => vi.fn());
+vi.mock("../app/benchmarkEvaluation", async (importOriginal) => ({
+  ...(await importOriginal<typeof BenchmarkEvaluation>()),
+  recordBenchmarkEvent,
+}));
 
 describe("specialized Core entry pages", () => {
   it("shows a matrix paste as a heatmap and keeps an explicit transform control", () => {
@@ -55,5 +62,13 @@ describe("specialized Core entry pages", () => {
     );
     expect(await screen.findByText(/log-rank検定が完了/u)).toBeVisible();
     expect(screen.getByText(/event=1、censored=1/u)).toBeInTheDocument();
+    expect(recordBenchmarkEvent).toHaveBeenCalledWith(
+      "statistics_executed",
+      expect.objectContaining({
+        method: "log_rank",
+        contrast: "condition.1|condition.2",
+        protocolVersion: "0.8.0",
+      }),
+    );
   });
 });

@@ -250,6 +250,22 @@ export function SpecializedCorePage({
       const prepared = createSurvivalState();
       const next = await analysisRunner(prepared.request);
       setResult(next);
+      recordBenchmarkEvent("statistics_executed", {
+        method: prepared.request.method,
+        recommendedMethod: "log_rank",
+        recommendationDiffers: false,
+        recommendationReasonCode: "explicit_time_to_event_groups",
+        recommendationExplanation:
+          "Follow-up time and censoring are explicit for independent groups.",
+        recommendationDecision: null,
+        recommendationSelectedMethod: prepared.request.method,
+        contrast:
+          prepared.request.protocolVersion === "0.8.0"
+            ? prepared.request.conditionIds.join("|")
+            : null,
+        protocolVersion: prepared.request.protocolVersion,
+        engineVersion: next.engine.version,
+      });
       setMessage("Kaplan–Meier推定とlog-rank検定が完了しました。");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "解析できませんでした");
