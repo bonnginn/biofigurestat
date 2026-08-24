@@ -151,7 +151,11 @@ export function createD03EngineRequest(input: D03RequestInput): AnalysisEngineRe
     contrastIntent,
     plannedContrastConditionIds:
       contrastIntent === "planned_comparisons" ? input.plannedContrastConditionIds : undefined,
-    primaryContrastConditionIds: input.design.primaryContrast.conditionIds,
+    primaryContrastConditionIds:
+      input.design.primaryContrast?.conditionIds ??
+      (() => {
+        throw new Error("D03 requires an explicit primary contrast");
+      })(),
     observations: engineObservations,
     options: {
       alternative: "two_sided",

@@ -36,7 +36,7 @@ export type MethodsTextInput = Readonly<{
 
 function repeatedAxisLabel(input: MethodsTextInput): string {
   const requestFactor =
-    input.request.protocolVersion === "0.7.0"
+    input.request.protocolVersion === "0.7.0" || input.request.protocolVersion === "0.10.0"
       ? input.request.withinFactor
       : input.request.protocolVersion === "0.6.0"
         ? input.request.withinFactor
@@ -54,6 +54,9 @@ function methodsTemplateLabel(input: MethodsTextInput): string {
   if (input.recommendation.templateId === "D07") {
     return `D07 · 独立条件×${repeatedAxisLabel(input)}の二因子解析`;
   }
+  if (input.recommendation.templateId === "D13") {
+    return `D13 · 条件×${repeatedAxisLabel(input)}の反復カテゴリ状態`;
+  }
   if (input.recommendation.templateId !== "D06") {
     return templateLabel(input.recommendation.templateId);
   }
@@ -69,6 +72,9 @@ function methodsMethodLabel(
   }
   if (input.recommendation.templateId === "D07" && method === "two_way_anova") {
     return `独立条件×${repeatedAxisLabel(input)}の二因子分散分析`;
+  }
+  if (input.recommendation.templateId === "D13" && method === "mixed_anova") {
+    return `条件×${repeatedAxisLabel(input)}の反復カテゴリ状態分散分析`;
   }
   return methodLabel(method);
 }
@@ -110,11 +116,16 @@ function conditionLabels(input: MethodsTextInput): string {
   const contrastIds =
     input.request.protocolVersion === "0.1.0"
       ? input.request.contrastConditionIds
-      : input.request.protocolVersion === "0.5.0"
-        ? input.request.variableConditionIds
-        : input.request.protocolVersion === "0.6.0" || input.request.protocolVersion === "0.7.0"
-          ? input.request.conditionIds
-          : input.request.primaryContrastConditionIds;
+      : input.request.protocolVersion === "0.9.0"
+        ? [input.request.conditionId]
+        : input.request.protocolVersion === "0.5.0"
+          ? input.request.variableConditionIds
+          : input.request.protocolVersion === "0.6.0" ||
+              input.request.protocolVersion === "0.7.0" ||
+              input.request.protocolVersion === "0.8.0" ||
+              input.request.protocolVersion === "0.10.0"
+            ? input.request.conditionIds
+            : input.request.primaryContrastConditionIds;
   return contrastIds
     .map((conditionId) => labels.get(conditionId) ?? conditionId)
     .join(input.request.protocolVersion === "0.5.0" ? " と " : " vs ");
@@ -127,11 +138,13 @@ function allConditionLabels(input: MethodsTextInput): string {
   const conditionIds =
     input.request.protocolVersion === "0.1.0"
       ? input.request.contrastConditionIds
-      : input.request.protocolVersion === "0.5.0"
-        ? input.request.variableConditionIds
-        : "conditionIds" in input.request
-          ? input.request.conditionIds
-          : input.request.conditions.map((condition) => condition.conditionId);
+      : input.request.protocolVersion === "0.9.0"
+        ? [input.request.conditionId]
+        : input.request.protocolVersion === "0.5.0"
+          ? input.request.variableConditionIds
+          : "conditionIds" in input.request
+            ? input.request.conditionIds
+            : input.request.conditions.map((condition) => condition.conditionId);
   return conditionIds.map((conditionId) => labels.get(conditionId) ?? conditionId).join("、");
 }
 
@@ -255,6 +268,18 @@ function pairwiseResultLines(input: MethodsTextInput, testOffset: number): strin
 
 function executedResultLines(input: MethodsTextInput): string[] {
   const { recommendation, result, design } = input;
+  if (recommendation.templateId === "D11") {
+    const test = result.tests[0];
+    const labels = new Map(design.conditions.map((condition) => [condition.id, condition.label]));
+    return [
+      `結果：${result.status === "ok" ? "完了" : result.status}`,
+      ...(result.survival?.groups.map(
+        (group) =>
+          `・${labels.get(group.conditionId) ?? group.conditionId}：n=${group.n}、event=${group.events}、censored=${group.censored}`,
+      ) ?? ["・Kaplan–Meier群要約：報告なし"]),
+      `log-rank検定：${test ? `${test.statisticName}=${numberLabel(test.statistic)}、自由度 ${degreesLabel(test.degreesOfFreedom)}、p=${pValueLabel(test.pValue)}` : "報告なし"}`,
+    ];
+  }
   if (recommendation.templateId === "D03" || recommendation.templateId === "D04") {
     const omnibus = result.tests[0];
     return [
@@ -286,7 +311,7 @@ function executedResultLines(input: MethodsTextInput): string[] {
       ...pairwiseResultLines(input, 3),
     ];
   }
-  if (recommendation.templateId === "D06") {
+  if (recommendation.templateId === "D06" || recommendation.templateId === "D13") {
     const axisLabel = repeatedAxisLabel(input);
     const effectLabels = [
       `条件 × ${axisLabel}（交互作用）`,
@@ -295,7 +320,7 @@ function executedResultLines(input: MethodsTextInput): string[] {
     ];
     return [
       `結果：${result.status === "ok" ? "完了" : result.status}`,
-      "balanced split-plot検定（交互作用を先に表示）：",
+      `${recommendation.templateId === "D13" ? "反復カテゴリ状態" : "balanced split-plot"}検定（交互作用を先に表示）：`,
       ...result.tests
         .slice(0, 3)
         .map(
@@ -352,11 +377,17 @@ export function generateMethodsText(input: MethodsTextInput): string {
       ? `多重性補正：条件×${repeatedAxisLabel(input)}、条件、${repeatedAxisLabel(input)}の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
       : request.protocolVersion === "0.7.0"
         ? `多重性補正：独立条件×${repeatedAxisLabel(input)}の3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
-        : request.protocolVersion === "0.5.0"
-          ? "多重性補正：単一の相関係数を評価したため指定なし。"
-          : request.protocolVersion === "0.2.0"
-            ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
-            : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
+        : request.protocolVersion === "0.10.0"
+          ? `多重性補正：条件×${repeatedAxisLabel(input)}の3つの事前指定omnibus効果のみを報告し、事後比較は実行していないため指定なし。`
+          : request.protocolVersion === "0.5.0"
+            ? "多重性補正：単一の相関係数を評価したため指定なし。"
+            : request.protocolVersion === "0.8.0"
+              ? "多重性補正：事前指定した単一のlog-rank全体検定のため指定なし。"
+              : request.protocolVersion === "0.9.0"
+                ? "多重性補正：明示した単一の基準値との比較のため指定なし。"
+                : request.protocolVersion === "0.2.0"
+                  ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
+                  : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
   const warnings = [
     "除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。",
     normalizationWarning(design),
@@ -386,7 +417,7 @@ export function generateMethodsText(input: MethodsTextInput): string {
     pairingLabel(design),
     `統計上のn：${recommendation.statisticalNDefinition}`,
     `解析条件：${allConditionLabels(input)}`,
-    `${request.protocolVersion === "0.5.0" ? "解析対象" : request.protocolVersion === "0.6.0" || request.protocolVersion === "0.7.0" ? "解析条件" : "主比較"}：${conditionLabels(input)}`,
+    `${request.protocolVersion === "0.5.0" ? "解析対象" : request.protocolVersion === "0.6.0" || request.protocolVersion === "0.7.0" || request.protocolVersion === "0.8.0" || request.protocolVersion === "0.10.0" ? "解析条件" : request.protocolVersion === "0.9.0" ? "単一コホート／基準値" : "主比較"}：${conditionLabels(input)}${request.protocolVersion === "0.9.0" ? `／${request.nullValue}` : ""}`,
     `エラーバー：${errorBarLabel(input.graphSpec, input.graphErrorBar)}`,
     "",
     "解析結果",

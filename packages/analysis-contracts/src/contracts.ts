@@ -14,6 +14,7 @@ export const AnalysisTemplateIdSchema = z.enum([
   "D10",
   "D11",
   "D12",
+  "D13",
 ]);
 
 export const StatisticalMethodSchema = z.enum([
@@ -32,6 +33,8 @@ export const StatisticalMethodSchema = z.enum([
   "mixed_model",
   "pearson",
   "spearman",
+  "one_sample_t",
+  "log_rank",
 ]);
 
 export const AnalysisRecommendationSchema = z.object({
@@ -251,6 +254,79 @@ export const IndependentRepeatedAxisAnalysisEngineRequestSchema = z.object({
   }),
 });
 
+export const SurvivalObservationSchema = z.object({
+  observationId: EntityIdSchema,
+  conditionId: EntityIdSchema,
+  experimentalUnitId: EntityIdSchema,
+  followUpTime: z.number().finite().nonnegative(),
+  eventObserved: z.boolean(),
+  value: z.never().optional(),
+  pairId: z.never().optional(),
+  blockId: z.never().optional(),
+});
+
+export const SurvivalAnalysisEngineRequestSchema = z.object({
+  protocolVersion: z.literal("0.8.0"),
+  requestId: EntityIdSchema,
+  projectId: EntityIdSchema,
+  analysisId: EntityIdSchema,
+  templateId: z.literal("D11"),
+  templateVersion: z.string().min(1),
+  method: z.literal("log_rank"),
+  conditionIds: z.array(EntityIdSchema).min(2),
+  observations: z.array(SurvivalObservationSchema).min(2),
+  options: AnalysisOptionsSchema.extend({
+    alternative: z.literal("two_sided").default("two_sided"),
+    multiplicityMethod: z.null(),
+  }),
+});
+
+export const OneSampleAnalysisEngineRequestSchema = z.object({
+  protocolVersion: z.literal("0.9.0"),
+  requestId: EntityIdSchema,
+  projectId: EntityIdSchema,
+  analysisId: EntityIdSchema,
+  templateId: z.literal("D12"),
+  templateVersion: z.string().min(1),
+  method: z.literal("one_sample_t"),
+  conditionId: EntityIdSchema,
+  nullValue: z.number().finite(),
+  observations: z.array(EngineObservationSchema).min(2),
+  options: AnalysisOptionsSchema.extend({ multiplicityMethod: z.null() }),
+});
+
+export const CategoricalRepeatedStateAnalysisEngineRequestSchema = z.object({
+  protocolVersion: z.literal("0.10.0"),
+  requestId: EntityIdSchema,
+  projectId: EntityIdSchema,
+  analysisId: EntityIdSchema,
+  templateId: z.literal("D13"),
+  templateVersion: z.string().min(1),
+  method: z.literal("mixed_anova"),
+  conditionIds: z.array(EntityIdSchema).min(2),
+  withinFactor: z.object({
+    role: z.literal("categorical"),
+    title: z.string().min(1),
+    unit: z.literal(""),
+  }),
+  stateLevels: z
+    .array(
+      z.object({
+        levelId: EntityIdSchema,
+        label: z.string().min(1),
+        order: z.number().int().nonnegative(),
+      }),
+    )
+    .min(2),
+  observations: z
+    .array(EngineObservationSchema.extend({ pairId: EntityIdSchema, stateLevelId: EntityIdSchema }))
+    .min(8),
+  options: AnalysisOptionsSchema.extend({
+    alternative: z.literal("two_sided").default("two_sided"),
+    multiplicityMethod: z.null(),
+  }),
+});
+
 export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion", [
   TwoConditionAnalysisEngineRequestSchema,
   MultiGroupAnalysisEngineRequestSchema,
@@ -259,6 +335,9 @@ export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion
   CorrelationAnalysisEngineRequestSchema,
   LongitudinalMixedAnalysisEngineRequestSchema,
   IndependentRepeatedAxisAnalysisEngineRequestSchema,
+  SurvivalAnalysisEngineRequestSchema,
+  OneSampleAnalysisEngineRequestSchema,
+  CategoricalRepeatedStateAnalysisEngineRequestSchema,
 ]);
 
 export const EstimateSchema = z.object({
@@ -286,7 +365,18 @@ export const TestResultSchema = z.object({
 });
 
 export const AnalysisEngineResultSchema = z.object({
-  protocolVersion: z.enum(["0.1.0", "0.2.0", "0.3.0", "0.4.0", "0.5.0", "0.6.0", "0.7.0"]),
+  protocolVersion: z.enum([
+    "0.1.0",
+    "0.2.0",
+    "0.3.0",
+    "0.4.0",
+    "0.5.0",
+    "0.6.0",
+    "0.7.0",
+    "0.8.0",
+    "0.9.0",
+    "0.10.0",
+  ]),
   requestId: EntityIdSchema,
   status: z.enum(["ok", "validation_error", "engine_error"]),
   engine: z.object({
@@ -309,6 +399,28 @@ export const AnalysisEngineResultSchema = z.object({
         withinFactor: z.literal("within_factor_main_effect"),
       }),
       legacyEffectAliases: z.record(z.string(), z.string()),
+    })
+    .optional(),
+  survival: z
+    .object({
+      groups: z.array(
+        z.object({
+          conditionId: EntityIdSchema,
+          n: z.number().int().positive(),
+          events: z.number().int().nonnegative(),
+          censored: z.number().int().nonnegative(),
+          curve: z.array(
+            z.object({
+              time: z.number().finite().nonnegative(),
+              survival: z.number().min(0).max(1),
+              atRisk: z.number().int().nonnegative(),
+              events: z.number().int().nonnegative(),
+              censored: z.number().int().nonnegative(),
+            }),
+          ),
+          censorTimes: z.array(z.number().finite().nonnegative()),
+        }),
+      ),
     })
     .optional(),
   diagnostics: z.array(z.object({ code: z.string(), message: z.string() })),

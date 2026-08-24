@@ -9,6 +9,8 @@ export const GraphTypeSchema = z.enum([
   "scatter",
   "time_course",
   "dose_response",
+  "survival_curve",
+  "heatmap",
 ]);
 
 export const GraphSpecSchema = z
@@ -47,6 +49,16 @@ export const GraphSpecSchema = z
       xLabel: z.string(),
       yLabel: z.string(),
     }),
+    heatmap: z
+      .object({
+        transform: z.enum(["none", "row_z_score", "column_z_score", "log10"]),
+        transformVersion: z.literal("0.1.0"),
+        min: z.number().finite().nullable(),
+        max: z.number().finite().nullable(),
+        missingColor: z.string().min(1),
+        showCellValues: z.boolean(),
+      })
+      .optional(),
   })
   .superRefine((spec, ctx) => {
     if (spec.type === "paired_dot" && !spec.mappings.pair) {
@@ -87,11 +99,89 @@ export const GraphSpecSchema = z
         message: "A confidence interval requires an explicit confidence level",
       });
     }
+    if (spec.type === "heatmap" && !spec.heatmap) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["heatmap"],
+        message: "Heatmap graphs require explicit transform and missing-value settings",
+      });
+    }
   });
 
 export type GraphSpec = z.infer<typeof GraphSpecSchema>;
 
 export * from "./core-model";
+export * from "./heatmap";
+export * from "./survival";
+
+export function createHeatmapGraphSpec(
+  input: Readonly<{
+    graphId: string;
+    dataSource: GraphSpec["dataSource"];
+    transform: "none" | "row_z_score" | "column_z_score" | "log10";
+    range?: Readonly<{ min: number; max: number }> | null;
+    missingColor?: string;
+    showCellValues?: boolean;
+  }>,
+): GraphSpec {
+  return GraphSpecSchema.parse({
+    id: input.graphId,
+    version: "0.1.0",
+    type: "heatmap",
+    dataSource: input.dataSource,
+    analysisResultId: null,
+    mappings: { x: "columnId", y: "rowId", color: "value" },
+    summary: { center: "none", interval: "none" },
+    appearance: {
+      palette: ["#3b4cc0", "#f7f7f7", "#b40426"],
+      pointSize: 1,
+      opacity: 1,
+      showRawPoints: false,
+      showPairedLines: false,
+    },
+    axes: { yStartAtZero: false, yScale: "linear", xLabel: "Samples", yLabel: "Features" },
+    heatmap: {
+      transform: input.transform,
+      transformVersion: "0.1.0",
+      min: input.range?.min ?? null,
+      max: input.range?.max ?? null,
+      missingColor: input.missingColor ?? "#d1d5db",
+      showCellValues: input.showCellValues ?? false,
+    },
+  });
+}
+
+export function createSurvivalGraphSpec(
+  input: Readonly<{
+    graphId: string;
+    dataSource: GraphSpec["dataSource"];
+    analysisResultId: string;
+    timeLabel: string;
+  }>,
+): GraphSpec {
+  return GraphSpecSchema.parse({
+    id: input.graphId,
+    version: "0.1.0",
+    type: "survival_curve",
+    dataSource: input.dataSource,
+    analysisResultId: input.analysisResultId,
+    mappings: { x: "followUpTime", y: "survivalProbability", color: "conditionId" },
+    summary: { center: "none", interval: "none" },
+    appearance: {
+      palette: ["#4477AA", "#CC6677", "#228833"],
+      pointSize: 5,
+      opacity: 1,
+      showRawPoints: false,
+      showPairedLines: false,
+    },
+    axes: {
+      yStartAtZero: true,
+      yScale: "linear",
+      xLabel: input.timeLabel,
+      yLabel: "Survival probability",
+    },
+  });
+}
 
 export type CoreTwoConditionGraphInput = {
   graphId: string;

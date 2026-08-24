@@ -7,6 +7,7 @@ import { CollectionPage } from "./pages/CollectionPage";
 import { HomePage } from "./pages/HomePage";
 import { NewExperimentPage } from "./pages/NewExperimentPage";
 import { OpenProjectPage } from "./pages/OpenProjectPage";
+import { SpecializedCorePage } from "./pages/SpecializedCorePage";
 import { defaultProjectActions } from "./app/desktopProjectActions";
 import type { ProjectActions } from "./app/projectActions";
 import { pathForRoute, routeFromPath, type AppRoute } from "./app/routes";
@@ -169,6 +170,22 @@ export default function App({ projectActions }: AppProps) {
 
   const page = (() => {
     switch (route) {
+      case "survival":
+        return (
+          <SpecializedCorePage
+            mode="survival"
+            onBack={() => navigate("home")}
+            saveProject={browserPreview ? undefined : saveProject}
+          />
+        );
+      case "heatmap":
+        return (
+          <SpecializedCorePage
+            mode="heatmap"
+            onBack={() => navigate("home")}
+            saveProject={browserPreview ? undefined : saveProject}
+          />
+        );
       case "favorites":
         return (
           <CollectionPage

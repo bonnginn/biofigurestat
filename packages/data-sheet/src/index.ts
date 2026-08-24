@@ -1,4 +1,7 @@
 import { z } from "zod";
+
+export * from "./matrix";
+export * from "./survival";
 import {
   EntityIdSchema,
   type ExperimentDesign,
@@ -302,6 +305,9 @@ function draftMeasurement(observation: Observation): DraftMeasurement {
   }
   if (observation.measurement.kind === "categorical_counts") {
     throw new Error("Categorical composition is edited in the experiment workspace");
+  }
+  if (observation.measurement.kind === "time_to_event") {
+    throw new Error("Time-to-event data is edited in the survival workspace");
   }
   return {
     kind: "loading_control_ratio",

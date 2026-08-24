@@ -97,7 +97,7 @@ describe("ExperimentWorkspace", () => {
   });
 
   it("closes the graph-choice dialog with Escape and restores trigger focus", () => {
-    const draft = draftWithTwoConditions("continuous");
+    const draft = draftWithTwoConditions("nested_continuous");
     render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
     const trigger = screen.getByRole("button", { name: "＋ グラフを作成" });
     trigger.focus();

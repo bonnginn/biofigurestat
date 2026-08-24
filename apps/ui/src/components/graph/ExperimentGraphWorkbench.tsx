@@ -2780,9 +2780,16 @@ export function ExperimentGraphWorkbench({
               : analysis.request.protocolVersion === "0.5.0"
                 ? analysis.request.variableConditionIds
                 : analysis.request.protocolVersion === "0.6.0" ||
-                    analysis.request.protocolVersion === "0.7.0"
+                    analysis.request.protocolVersion === "0.7.0" ||
+                    analysis.request.protocolVersion === "0.8.0" ||
+                    analysis.request.protocolVersion === "0.10.0"
                   ? analysis.request.conditionIds
-                  : analysis.request.primaryContrastConditionIds,
+                  : analysis.request.protocolVersion === "0.9.0"
+                    ? {
+                        conditionId: analysis.request.conditionId,
+                        referenceValue: analysis.request.nullValue,
+                      }
+                    : analysis.request.primaryContrastConditionIds,
         nByCondition: analysisAssessment.nByCondition,
         correction: analysis.request.options.multiplicityMethod,
         request: analysis.request,

@@ -25,7 +25,12 @@ import {
   type UnitInstance,
   type ExperimentDesign,
 } from "@lsaa/domain";
-import { GraphSpecSchema, type GraphSpec } from "@lsaa/graph-spec";
+import {
+  GraphSpecSchema,
+  MatrixDataSchema,
+  type GraphSpec,
+  type MatrixData,
+} from "@lsaa/graph-spec";
 
 export const PROJECT_STATE_SCHEMA_VERSION = "0.3.0" as const;
 
@@ -80,11 +85,16 @@ export const ExperimentWorkspaceStateSchema = z
           attributes: z.record(EntityIdSchema, z.string()),
         }),
       )
-      .min(2),
+      .min(1),
     controlConditionId: EntityIdSchema.optional(),
     analysisIntent: z
       .discriminatedUnion("kind", [
         z.object({ kind: z.literal("group_comparison") }),
+        z.object({
+          kind: z.literal("single_cohort"),
+          mode: z.enum(["descriptive", "one_sample"]),
+          referenceValue: z.number().finite().optional(),
+        }),
         z.object({
           kind: z.literal("correlation"),
           relationshipForm: z.enum(["linear", "monotonic_or_ranked"]),
@@ -290,6 +300,32 @@ export const PersistedGraphSchema = z.object({
   staleReason: z.string().min(1).nullable(),
 });
 
+export const PersistedMatrixViewSchema = z
+  .object({
+    id: EntityIdSchema,
+    rawMatrix: MatrixDataSchema,
+    spec: GraphSpecSchema,
+    createdAt: IsoDateTimeSchema,
+    createdBy: z.string().min(1),
+  })
+  .superRefine((view, ctx) => {
+    if (view.spec.type !== "heatmap" || !view.spec.heatmap) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["spec"],
+        message: "Matrix views require a heatmap Graph spec",
+      });
+      return;
+    }
+    if (view.spec.heatmap.transform !== "none" && view.spec.heatmap.transformVersion !== "0.1.0") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["spec", "heatmap", "transformVersion"],
+        message: "Heatmap transform version must be explicit",
+      });
+    }
+  });
+
 export const ProvenanceEventSchema = z.object({
   id: EntityIdSchema,
   kind: z.enum([
@@ -368,6 +404,7 @@ export const ProjectStateSchema = z
     derivedValues: z.array(DerivedScalarValueSchema).default([]),
     analysisRuns: z.array(PersistedAnalysisRunSchema),
     graphs: z.array(PersistedGraphSchema),
+    matrixViews: z.array(PersistedMatrixViewSchema).optional(),
     experimentWorkspace: ExperimentWorkspaceStateSchema.nullable().default(null),
     provenanceEvents: z.array(ProvenanceEventSchema).min(1),
   })
@@ -665,15 +702,31 @@ export const ProjectStateSchema = z
       run.request.observations.forEach((engineObservation, observationIndex) => {
         const raw = persistedRawById.get(engineObservation.observationId);
         const derived = persistedDerivedById.get(engineObservation.observationId);
+        const rawMeasurementMatches =
+          raw !== undefined && engineObservation.value !== undefined
+            ? raw.measurement.kind !== "time_to_event" &&
+              numericallyEquivalent(
+                measurementNumericValue(raw.measurement),
+                engineObservation.value,
+              )
+            : raw !== undefined &&
+              raw.measurement.kind === "time_to_event" &&
+              "followUpTime" in engineObservation &&
+              "eventObserved" in engineObservation &&
+              engineObservation.followUpTime !== undefined &&
+              engineObservation.eventObserved !== undefined &&
+              numericallyEquivalent(raw.measurement.followUpTime, engineObservation.followUpTime) &&
+              raw.measurement.eventObserved === engineObservation.eventObserved;
         const matchesRaw =
           run.inputDerivedDatasetRevisionId === null &&
           raw !== undefined &&
           raw.conditionId === engineObservation.conditionId &&
           raw.unitInstanceId === engineObservation.experimentalUnitId &&
-          numericallyEquivalent(measurementNumericValue(raw.measurement), engineObservation.value);
+          rawMeasurementMatches;
         const matchesDerived =
           run.inputDerivedDatasetRevisionId !== null &&
           derived !== undefined &&
+          engineObservation.value !== undefined &&
           derived.conditionId === engineObservation.conditionId &&
           derived.experimentalUnitId === engineObservation.experimentalUnitId &&
           numericallyEquivalent(derived.value, engineObservation.value);
@@ -840,6 +893,7 @@ export const ProjectStateSchema = z
 
 export type ProjectState = z.infer<typeof ProjectStateSchema>;
 export type ExperimentWorkspaceState = z.infer<typeof ExperimentWorkspaceStateSchema>;
+export type PersistedMatrixView = z.infer<typeof PersistedMatrixViewSchema>;
 
 export function migrateProjectState(input: unknown): unknown {
   if (!input || typeof input !== "object") return input;
@@ -924,6 +978,7 @@ export function createInitialProjectState(input: CreateInitialProjectStateInput)
             },
           ]
         : [],
+    matrixViews: [],
     experimentWorkspace: null,
     provenanceEvents: [
       {
@@ -970,6 +1025,37 @@ export function createInitialProjectState(input: CreateInitialProjectStateInput)
         actor: input.actor,
         detail: `Derived dataset created from ${revision.sourceRawRevisionId} using ${revision.transformationId}.`,
       })),
+    ],
+  });
+}
+
+/** Adds a visualization-only matrix while keeping the immutable raw matrix beside its Graph spec. */
+export function appendMatrixView(
+  stateInput: ProjectState,
+  input: Readonly<{
+    id: string;
+    rawMatrix: MatrixData;
+    spec: GraphSpec;
+    createdAt: string;
+    actor: string;
+  }>,
+): ProjectState {
+  const state = ProjectStateSchema.parse(stateInput);
+  if ((state.matrixViews ?? []).some((view) => view.id === input.id)) {
+    throw new Error(`Matrix view ${input.id} already exists`);
+  }
+  return ProjectStateSchema.parse({
+    ...state,
+    metadata: { ...state.metadata, updatedAt: input.createdAt },
+    matrixViews: [
+      ...(state.matrixViews ?? []),
+      {
+        id: input.id,
+        rawMatrix: input.rawMatrix,
+        spec: input.spec,
+        createdAt: input.createdAt,
+        createdBy: input.actor,
+      },
     ],
   });
 }

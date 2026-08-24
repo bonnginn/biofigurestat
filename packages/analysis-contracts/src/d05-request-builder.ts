@@ -130,7 +130,11 @@ export function createD05EngineRequest(input: D05RequestInput): AnalysisEngineRe
       },
     ],
     conditions,
-    primaryContrastConditionIds: design.primaryContrast.conditionIds,
+    primaryContrastConditionIds:
+      design.primaryContrast?.conditionIds ??
+      (() => {
+        throw new Error("D05 requires an explicit primary contrast");
+      })(),
     observations: engineObservations,
     options: {
       alternative: "two_sided",

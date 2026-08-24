@@ -16,6 +16,11 @@ export type ConditionAssignmentKind = "independent" | "matched";
 export type AnalysisIntent =
   | Readonly<{ kind: "group_comparison" }>
   | Readonly<{
+      kind: "single_cohort";
+      mode: "descriptive" | "one_sample";
+      referenceValue?: number;
+    }>
+  | Readonly<{
       kind: "correlation";
       relationshipForm: "linear" | "monotonic_or_ranked";
     }>;
@@ -476,6 +481,11 @@ export function parseNumericPaste(text: string): number[] {
 }
 
 export function expectedAnalysisLabel(draft: ExperimentSetDraft): string {
+  if (draft.analysisIntent.kind === "single_cohort") {
+    return draft.analysisIntent.mode === "descriptive"
+      ? "単一コホートの分布と記述統計（比較なし）"
+      : `単一コホートを明示した基準値 ${draft.analysisIntent.referenceValue ?? "未入力"} と比較`;
+  }
   if (draft.analysisIntent.kind === "correlation") {
     return draft.analysisIntent.relationshipForm === "linear"
       ? "同じ実験単位から得たXとYの直線的な関係"

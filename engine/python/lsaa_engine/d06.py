@@ -165,6 +165,7 @@ def run_mixed_anova(request: dict[str, Any]) -> dict[str, Any]:
                     None,
                 )
             )
+    axis_title = within_factor.get("title", "Time") if isinstance(within_factor, dict) else "Time"
     result["diagnostics"] = [
         {
             "code": "stable_unit_identity_preserved",
@@ -172,7 +173,7 @@ def run_mixed_anova(request: dict[str, Any]) -> dict[str, Any]:
         },
         {
             "code": "balanced_complete_split_plot",
-            "message": "Condition used the subject-within-condition error stratum; time and interaction used the within-subject error stratum.",
+            "message": f"Condition used the subject-within-condition error stratum; {axis_title} and interaction used the within-subject error stratum.",
         },
         {
             "code": "sphericity_not_estimated",
@@ -191,11 +192,15 @@ def run_mixed_anova(request: dict[str, Any]) -> dict[str, Any]:
                 "condition": "condition_main_effect",
                 "withinFactor": "within_factor_main_effect",
             },
-            "legacyEffectAliases": {
-                "condition_by_time_interaction": "condition_by_within_factor_interaction",
-                "condition_between_units": "condition_main_effect",
-                "time_within_units": "within_factor_main_effect",
-            },
+            "legacyEffectAliases": (
+                {
+                    "condition_by_time_interaction": "condition_by_within_factor_interaction",
+                    "condition_between_units": "condition_main_effect",
+                    "time_within_units": "within_factor_main_effect",
+                }
+                if within_factor["role"] == "time"
+                else {}
+            ),
         }
     if unit_count < 4:
         result["warnings"].append(

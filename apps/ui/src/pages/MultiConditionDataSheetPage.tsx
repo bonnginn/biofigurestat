@@ -94,6 +94,17 @@ type AnalysisRun = {
   graphModel: CoreGraphModel | null;
 };
 
+type EngineObservation = AnalysisEngineRequest["observations"][number];
+
+function numericEngineObservations(
+  observations: readonly EngineObservation[],
+): Array<EngineObservation & { value: number }> {
+  return observations.filter(
+    (observation): observation is EngineObservation & { value: number } =>
+      typeof observation.value === "number",
+  );
+}
+
 type CanonicalData = Omit<Extract<CanonicalSheetResult, { success: true }>, "success"> & {
   rawObservations?: Observation[];
   transformation?: TransformationSpec;
@@ -377,7 +388,7 @@ export function MultiConditionDataSheetPage({
         const graphInput =
           persisted.inputDerivedDatasetRevisionId && initialCanonicalData?.rawObservations
             ? [
-                ...persisted.request.observations.map((observation) => ({
+                ...numericEngineObservations(persisted.request.observations).map((observation) => ({
                   ...observation,
                   layer: "replicate_summary" as const,
                 })),
@@ -394,7 +405,7 @@ export function MultiConditionDataSheetPage({
                     layer: "raw" as const,
                   })),
               ]
-            : persisted.request.observations;
+            : numericEngineObservations(persisted.request.observations);
         graphModel = createCoreGraphModel(graph.spec, design.conditions, graphInput);
       } catch {
         graphModel = null;
@@ -790,7 +801,7 @@ export function MultiConditionDataSheetPage({
         : baseGraphSpec;
       const unitById = new Map(canonicalData.unitInstances.map((unit) => [unit.id, unit]));
       const graphInput = [
-        ...request.observations.map((observation) => ({
+        ...numericEngineObservations(request.observations).map((observation) => ({
           ...observation,
           ...(canonicalData.derivedRevision ? { layer: "replicate_summary" as const } : {}),
         })),
@@ -827,7 +838,7 @@ export function MultiConditionDataSheetPage({
       const graphSpec = GraphSpecSchema.parse(nextSpec);
       const unitById = new Map(canonicalData?.unitInstances.map((unit) => [unit.id, unit]) ?? []);
       const graphInput = [
-        ...analysisRun.request.observations.map((observation) => ({
+        ...numericEngineObservations(analysisRun.request.observations).map((observation) => ({
           ...observation,
           ...(canonicalData?.derivedRevision ? { layer: "replicate_summary" as const } : {}),
         })),

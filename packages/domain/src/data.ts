@@ -55,11 +55,18 @@ export const CategoricalCountsMeasurementSchema = z
     path: ["counts"],
   });
 
+export const TimeToEventMeasurementSchema = z.object({
+  kind: z.literal("time_to_event"),
+  followUpTime: z.number().finite().nonnegative(),
+  eventObserved: z.boolean(),
+});
+
 export const MeasurementValueSchema = z.discriminatedUnion("kind", [
   ScalarMeasurementSchema,
   ProportionMeasurementSchema,
   LoadingControlRatioMeasurementSchema,
   CategoricalCountsMeasurementSchema,
+  TimeToEventMeasurementSchema,
 ]);
 
 export const RawDatasetRevisionSchema = z.object({
@@ -116,6 +123,9 @@ export const TransformationSpecSchema = z.object({
     "per_unit_maximum",
     "replicate_summary",
     "time_series_metric",
+    "matrix_row_z_score",
+    "matrix_column_z_score",
+    "matrix_log10",
     "custom",
   ]),
   inputRevisionIds: z.array(EntityIdSchema).min(1),
@@ -164,5 +174,7 @@ export function measurementNumericValue(measurement: MeasurementValue): number {
   if (measurement.kind === "loading_control_ratio") {
     return measurement.target / measurement.loadingControl;
   }
-  throw new Error("Categorical counts do not have one implicit scalar value");
+  throw new Error(
+    "Categorical counts and time-to-event data do not have one implicit scalar value",
+  );
 }

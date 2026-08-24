@@ -360,6 +360,22 @@ def run_wilcoxon(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def run_request(request: dict[str, Any]) -> dict[str, Any]:
+    if request.get("protocolVersion") == "0.9.0":
+        from .d12 import run_one_sample
+
+        if request.get("templateId") == "D12" and request.get("method") == "one_sample_t":
+            return run_one_sample(request)
+        raise ValueError(
+            f"Unsupported template/method combination: {request.get('templateId')}/{request.get('method')}"
+        )
+    if request.get("protocolVersion") == "0.8.0":
+        from .d11 import run_survival
+
+        if request.get("templateId") == "D11" and request.get("method") == "log_rank":
+            return run_survival(request)
+        raise ValueError(
+            f"Unsupported template/method combination: {request.get('templateId')}/{request.get('method')}"
+        )
     if request.get("protocolVersion") == "0.7.0":
         if request.get("templateId") == "D07" and request.get("method") == "two_way_anova":
             return run_independent_factorial(request)
@@ -369,6 +385,21 @@ def run_request(request: dict[str, Any]) -> dict[str, Any]:
     if request.get("protocolVersion") == "0.6.0":
         if request.get("templateId") == "D06" and request.get("method") == "mixed_anova":
             return run_mixed_anova(request)
+        raise ValueError(
+            f"Unsupported template/method combination: {request.get('templateId')}/{request.get('method')}"
+        )
+    if request.get("protocolVersion") == "0.10.0":
+        if request.get("templateId") == "D13" and request.get("method") == "mixed_anova":
+            categorical_request = dict(request)
+            categorical_request["timePoints"] = [
+                {"timePointId": level["levelId"], "value": level["order"]}
+                for level in request.get("stateLevels", [])
+            ]
+            categorical_request["observations"] = [
+                {**observation, "timePointId": observation["stateLevelId"]}
+                for observation in request.get("observations", [])
+            ]
+            return run_mixed_anova(categorical_request)
         raise ValueError(
             f"Unsupported template/method combination: {request.get('templateId')}/{request.get('method')}"
         )

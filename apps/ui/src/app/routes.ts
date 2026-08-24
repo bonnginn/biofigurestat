@@ -35,6 +35,24 @@ export const primaryRoutes = [
     eyebrow: "04",
     accent: "orange",
   },
+  {
+    id: "survival",
+    path: "/survival",
+    title: "Survival解析",
+    description: "Event/Censoredを保ったKaplan–Meier解析です。",
+    japaneseDescription: "log-rank検定とnumber-at-riskを表示します。",
+    eyebrow: "05",
+    accent: "green",
+  },
+  {
+    id: "heatmap",
+    path: "/heatmap",
+    title: "Heatmap",
+    description: "行列データを明示変換つきで可視化します。",
+    japaneseDescription: "欠損値と生の行列を保持します。",
+    eyebrow: "06",
+    accent: "violet",
+  },
 ] as const;
 
 export type PrimaryRouteId = (typeof primaryRoutes)[number]["id"];

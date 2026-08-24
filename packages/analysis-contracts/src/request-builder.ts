@@ -44,6 +44,7 @@ export function createD01D02EngineRequest(input: D01D02RequestInput): AnalysisEn
     throw new Error(`Method ${method} is not executable for ${recommendation.templateId}`);
   }
 
+  if (!design.primaryContrast) throw new Error("D01/D02 requires an explicit primary contrast");
   const conditionIds = design.primaryContrast.conditionIds;
   const allowedConditions = new Set(conditionIds);
   const unitById = new Map(input.unitInstances.map((unit) => [unit.id, unit]));

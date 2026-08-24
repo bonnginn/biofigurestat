@@ -210,9 +210,14 @@ export function GraphStatisticsPanel({
                   ? request.contrastConditionIds.join("|")
                   : request.protocolVersion === "0.5.0"
                     ? request.variableConditionIds.join("|")
-                    : request.protocolVersion === "0.6.0" || request.protocolVersion === "0.7.0"
+                    : request.protocolVersion === "0.6.0" ||
+                        request.protocolVersion === "0.7.0" ||
+                        request.protocolVersion === "0.8.0" ||
+                        request.protocolVersion === "0.10.0"
                       ? request.conditionIds.join("|")
-                      : request.primaryContrastConditionIds.join("|"),
+                      : request.protocolVersion === "0.9.0"
+                        ? `${request.conditionId}|reference:${request.nullValue}`
+                        : request.primaryContrastConditionIds.join("|"),
             correction: request.options.multiplicityMethod,
             protocolVersion: request.protocolVersion,
             mode,
@@ -526,11 +531,13 @@ export function GraphStatisticsPanel({
               onChange={(event) => setIndependenceConfirmed(event.target.checked)}
             />
             <span>
-              {correlationAnalysis
-                ? "各行のXとYが、同じ実験単位から得た1組として正しく対応づけられています。"
-                : matchedAnalysis
-                  ? `同じ実験単位の${conditionOptions.length || "複数"}条件が、入力シート上で同じ実験回として正しく対応づけられています。`
-                  : "各条件は別々のdish・試料・動物などの実験単位です。同じ個体や同じ試料を両条件で測った対応データではありません。"}
+              {assessment.request?.protocolVersion === "0.9.0"
+                ? `各値が別々の${assessment.nByCondition[0]?.label ?? "実験単位"}から得られ、1つの実験単位が複数回数えられていません。`
+                : correlationAnalysis
+                  ? "各行のXとYが、同じ実験単位から得た1組として正しく対応づけられています。"
+                  : matchedAnalysis
+                    ? `同じ実験単位の${conditionOptions.length || "複数"}条件が、入力シート上で同じ実験回として正しく対応づけられています。`
+                    : "各条件は別々のdish・試料・動物などの実験単位です。同じ個体や同じ試料を両条件で測った対応データではありません。"}
             </span>
           </label>
           <p className="experiment-graph-help">

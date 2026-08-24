@@ -114,6 +114,7 @@ type ExperimentEntryRoute = Readonly<{
   shape: ReadoutShape;
   correlation?: boolean;
   longitudinal?: boolean;
+  singleCohort?: boolean;
 }>;
 
 export const ENTRY_ROUTES: Readonly<
@@ -241,6 +242,13 @@ export const ENTRY_ROUTES: Readonly<
   ],
   general_assay: [
     {
+      id: "general_single_cohort",
+      title: "単一コホート・1群",
+      description: "1群の分布表示、記述統計、明示した基準値との比較",
+      shape: "nested_continuous",
+      singleCohort: true,
+    },
+    {
       id: "general_continuous",
       title: "連続値",
       description: "条件ごとの数値を入力",
@@ -285,7 +293,20 @@ export function createDraftForEntryRoute(
         analysisIntent: { kind: "correlation", relationshipForm: "linear" },
         conditionAssignment: { kind: "matched", unitLabel: "実験単位" },
       }
-    : baseDraft;
+    : route.singleCohort
+      ? {
+          ...baseDraft,
+          conditions: [
+            {
+              id: "condition.cohort",
+              label: "Cohort",
+              attributes: { "attribute.1": "Cohort" },
+            },
+          ],
+          analysisIntent: { kind: "single_cohort", mode: "descriptive" },
+          conditionAssignment: { kind: "independent", unitLabel: "試料" },
+        }
+      : baseDraft;
   return {
     ...routedDraft,
     readouts: routedDraft.readouts.map((readout) => ({
@@ -1184,6 +1205,74 @@ function ConditionsStep({
         表計算ソフトから矩形のまま貼り付けられます。「Gene A
         #1」は1セルのままで構いません。階層表示したい場合だけGeneとSequenceのように列を分けます。
       </p>
+      {draft.analysisIntent.kind === "single_cohort" ? (
+        <fieldset className="experiment-start__fieldset">
+          <legend>この1群で何を行いますか？</legend>
+          <label className="experiment-start__radio-card">
+            <input
+              type="radio"
+              name="single-cohort-mode"
+              checked={draft.analysisIntent.mode === "descriptive"}
+              onChange={() =>
+                onUpdate((current) => ({
+                  ...current,
+                  analysisIntent: { kind: "single_cohort", mode: "descriptive" },
+                }))
+              }
+            />
+            <span>
+              <strong>分布と記述統計のみ</strong>
+              <small>比較群や基準値を作らず、Graphと要約を表示します。</small>
+            </span>
+          </label>
+          <label className="experiment-start__radio-card">
+            <input
+              type="radio"
+              name="single-cohort-mode"
+              checked={draft.analysisIntent.mode === "one_sample"}
+              onChange={() =>
+                onUpdate((current) => ({
+                  ...current,
+                  analysisIntent: {
+                    kind: "single_cohort",
+                    mode: "one_sample",
+                    referenceValue:
+                      current.analysisIntent.kind === "single_cohort"
+                        ? current.analysisIntent.referenceValue
+                        : undefined,
+                  },
+                }))
+              }
+            />
+            <span>
+              <strong>既知の基準値と比較</strong>
+              <small>基準値を明示してone-sample t-testを実行できます。</small>
+            </span>
+          </label>
+          {draft.analysisIntent.mode === "one_sample" ? (
+            <label className="experiment-start__field">
+              <span>基準値（必須）</span>
+              <input
+                aria-label="one-sample基準値"
+                type="number"
+                value={draft.analysisIntent.referenceValue ?? ""}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  onUpdate((current) => ({
+                    ...current,
+                    analysisIntent: {
+                      kind: "single_cohort",
+                      mode: "one_sample",
+                      ...(value === "" ? {} : { referenceValue: Number(value) }),
+                    },
+                  }));
+                }}
+              />
+              <small>0を暗黙には使いません。科学的に定義された値を入力してください。</small>
+            </label>
+          ) : null}
+        </fieldset>
+      ) : null}
       <div className="experiment-start__condition-table-wrap">
         <table className="experiment-start__condition-table">
           <thead>
@@ -1916,7 +2005,12 @@ export function NewExperimentPage({
       );
     }
     if (designStep === 1) {
-      return activeConditions(draft).length >= 2;
+      return (
+        activeConditions(draft).length >= (draft.analysisIntent.kind === "single_cohort" ? 1 : 2) &&
+        (draft.analysisIntent.kind !== "single_cohort" ||
+          draft.analysisIntent.mode === "descriptive" ||
+          Number.isFinite(draft.analysisIntent.referenceValue))
+      );
     }
     if (designStep === 2)
       return (
@@ -1938,7 +2032,10 @@ export function NewExperimentPage({
           (shape !== "categorical_counts" || (categories?.length ?? 0) >= 2) &&
           (shape !== "wb_ratio" || Boolean(referenceLabel?.trim())),
       ) &&
-      activeConditions(draft).length >= 2 &&
+      activeConditions(draft).length >= (draft.analysisIntent.kind === "single_cohort" ? 1 : 2) &&
+      (draft.analysisIntent.kind !== "single_cohort" ||
+        draft.analysisIntent.mode === "descriptive" ||
+        Number.isFinite(draft.analysisIntent.referenceValue)) &&
       (draft.time.sampling === "none" ||
         (draft.time.points.length > 0 &&
           (orderedAxisSemantic(draft.time) === "time" ||

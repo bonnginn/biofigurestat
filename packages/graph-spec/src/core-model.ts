@@ -121,8 +121,8 @@ export function createCoreGraphModel(
   ) {
     throw new Error(`Core renderer does not support graph type ${spec.type}`);
   }
-  if (conditions.length < 2) {
-    throw new Error("Core group graph model requires at least two conditions");
+  if (conditions.length < 1) {
+    throw new Error("Core group graph model requires at least one condition");
   }
   const data = input.map((datum) => GraphDatumSchema.parse(datum));
   const groups = conditions.map((condition) => {

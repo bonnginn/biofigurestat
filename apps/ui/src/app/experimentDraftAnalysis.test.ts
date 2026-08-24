@@ -36,6 +36,58 @@ function fixture(conditionLabels: readonly string[]) {
 }
 
 describe("temporary experiment-first analysis adapter", () => {
+  it("supports one cohort without inventing a second group", () => {
+    const base = createExperimentSetDraft("general_assay", "nested_continuous");
+    const condition = {
+      ...base.conditions[0]!,
+      label: "Patient cohort",
+      attributes: { "attribute.1": "Patient cohort" },
+    };
+    const cells: ExperimentCellMap = Object.fromEntries(
+      base.experiments.map((experiment, index) => [
+        experimentCellKey({
+          experimentId: experiment.id,
+          conditionId: condition.id,
+          readoutId: base.readouts[0]!.id,
+        }),
+        { kind: "nested_continuous" as const, rawValues: [4 + index], source: "manual" as const },
+      ]),
+    );
+    const descriptive = assessDraftGraphAnalysis({
+      draft: {
+        ...base,
+        conditions: [condition],
+        analysisIntent: { kind: "single_cohort", mode: "descriptive" },
+      },
+      cells,
+      readoutId: base.readouts[0]!.id,
+      conditionIds: [condition.id],
+    });
+    expect(descriptive).toMatchObject({
+      state: "descriptive",
+      request: null,
+      nByCondition: [{ n: 3 }],
+    });
+
+    const inferential = assessDraftGraphAnalysis({
+      draft: {
+        ...base,
+        conditions: [condition],
+        analysisIntent: { kind: "single_cohort", mode: "one_sample", referenceValue: 3.5 },
+      },
+      cells,
+      readoutId: base.readouts[0]!.id,
+      conditionIds: [condition.id],
+    });
+    expect(inferential.request).toMatchObject({
+      protocolVersion: "0.9.0",
+      templateId: "D12",
+      conditionId: condition.id,
+      nullValue: 3.5,
+    });
+    expect("contrastConditionIds" in inferential.request!).toBe(false);
+  });
+
   it("routes three same-unit conditions to the existing repeated-measures backend", () => {
     const { draft: independent, cells } = fixture(["Baseline", "6 h", "24 h"]);
     const draft = {
@@ -365,7 +417,8 @@ describe("temporary experiment-first analysis adapter", () => {
     const byPair = new Map<string, Map<string, number>>();
     observations.forEach(({ pairId, conditionId, value }) => {
       const pair = byPair.get(pairId ?? "") ?? new Map<string, number>();
-      pair.set(conditionId, value);
+      expect(value).toBeTypeOf("number");
+      pair.set(conditionId, value!);
       byPair.set(pairId ?? "", pair);
     });
     expect(byPair.size).toBe(4);

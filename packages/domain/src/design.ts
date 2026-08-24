@@ -58,7 +58,7 @@ export const FactorDefinitionSchema = z
     key: EntityIdSchema,
     label: z.string().min(1),
     levelGroups: z.array(FactorLevelGroupSchema).optional(),
-    levels: z.array(FactorLevelSchema).min(2),
+    levels: z.array(FactorLevelSchema).min(1),
   })
   .superRefine((factor, ctx) => {
     const groups = factor.levelGroups ?? [];
@@ -160,13 +160,13 @@ export const ExperimentDesignSchema = z
     purpose: ExperimentPurposeSchema,
     outcomes: z.array(OutcomeDefinitionSchema).min(1),
     factors: z.array(FactorDefinitionSchema).min(1),
-    conditions: z.array(ConditionDefinitionSchema).min(2),
+    conditions: z.array(ConditionDefinitionSchema).min(1),
     unitLevels: z.array(UnitLevelDefinitionSchema).min(1),
     experimentalUnitLevelId: EntityIdSchema,
     pairing: PairingDefinitionSchema,
     plannedN: z.number().int().positive(),
     normalizationPlans: z.array(NormalizationPlanSchema).default([]),
-    primaryContrast: PrimaryContrastSchema,
+    primaryContrast: PrimaryContrastSchema.nullable(),
     wizardRuleVersion: z.string().min(1),
     wizardDecisions: z.array(WizardDecisionSchema),
     createdAt: IsoDateTimeSchema,
@@ -213,7 +213,7 @@ export const ExperimentDesignSchema = z
     }
 
     const conditionIds = new Set(design.conditions.map((condition) => condition.id));
-    for (const [index, conditionId] of design.primaryContrast.conditionIds.entries()) {
+    design.primaryContrast?.conditionIds.forEach((conditionId, index) => {
       if (!conditionIds.has(conditionId)) {
         ctx.addIssue({
           code: "custom",
@@ -221,6 +221,20 @@ export const ExperimentDesignSchema = z
           message: "Primary contrast references an unknown condition",
         });
       }
+    });
+    if (design.conditions.length >= 2 && design.primaryContrast === null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["primaryContrast"],
+        message: "Multi-condition designs require an explicit primary contrast",
+      });
+    }
+    if (design.conditions.length === 1 && design.primaryContrast !== null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["primaryContrast"],
+        message: "A single-cohort design must not invent a two-condition contrast",
+      });
     }
 
     if (design.pairing.kind === "matched" && !levelById.has(design.pairing.matchLevelId)) {

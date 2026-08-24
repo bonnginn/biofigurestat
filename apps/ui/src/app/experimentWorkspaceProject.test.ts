@@ -1132,7 +1132,7 @@ describe("experiment workspace project adapter", () => {
     });
     expect(state.analysisRuns[0]?.inputDerivedDatasetRevisionId).toBeNull();
     const reopened = structuredClone(state);
-    reopened.analysisRuns[0]!.request.observations[5]!.value += Number.EPSILON * 4;
+    reopened.analysisRuns[0]!.request.observations[5]!.value! += Number.EPSILON * 4;
     expect(ProjectStateSchema.safeParse(reopened).success).toBe(true);
   });
 

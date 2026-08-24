@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createInitialProjectState } from "./state";
+import { appendMatrixView, createInitialProjectState } from "./state";
+import { createHeatmapGraphSpec } from "@lsaa/graph-spec";
 import {
   openProjectStatePackage,
   saveProjectStatePackage,
@@ -174,5 +175,107 @@ describe("populated project round trip", () => {
     expect(reopened).toEqual(saved);
     expect(storage.packages.get("/projects/wb.lsa")?.has("project.sqlite")).toBe(true);
     expect(storage.packages.get("/projects/wb.lsa")?.has("raw/exports/canonical.csv")).toBe(true);
+  });
+
+  it("reopens immutable raw heatmap data, transform provenance, and missing values", async () => {
+    const storage = new MemoryStorage();
+    const rawMatrix = {
+      version: "0.1.0" as const,
+      rowIds: ["feature.1", "feature.2"],
+      rowLabels: ["Feature one", "Feature two"],
+      columnIds: ["sample.1", "sample.2"],
+      columnLabels: ["Sample one", "Sample two"],
+      values: [
+        [1, null],
+        [2, 4],
+      ],
+    };
+    const state = appendMatrixView(fixtureState(), {
+      id: "matrix-view.1",
+      rawMatrix,
+      createdAt: "2026-08-20T00:30:00Z",
+      actor: "researcher",
+      spec: createHeatmapGraphSpec({
+        graphId: "graph.heatmap.1",
+        dataSource: { kind: "raw_revision", id: "raw.1", revision: "raw.1" },
+        transform: "row_z_score",
+        missingColor: "#cccccc",
+      }),
+    });
+    const saved = await saveProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/heatmap.lsa",
+      state,
+      sha256,
+      appVersion: "0.1.0",
+      savedAt: "2026-08-20T01:00:00Z",
+    });
+    const reopened = await openProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/heatmap.lsa",
+      sha256,
+    });
+    expect(reopened).toEqual(saved);
+    expect(reopened.matrixViews?.[0]?.rawMatrix.values[0]?.[1]).toBeNull();
+    expect(reopened.matrixViews?.[0]?.spec.heatmap).toMatchObject({
+      transform: "row_z_score",
+      transformVersion: "0.1.0",
+    });
+  });
+
+  it("reopens event and censor status as scientific data, not missing values", async () => {
+    const storage = new MemoryStorage();
+    const base = fixtureState();
+    const survivalState = createInitialProjectState({
+      metadata: { ...base.metadata, projectId: "project.survival", projectName: "Survival" },
+      design: {
+        ...base.designRevisions[0]!.design,
+        id: "design.survival",
+        outcomes: [
+          {
+            id: "outcome.survival",
+            key: "survival",
+            label: "Survival",
+            type: "time_to_event",
+            unit: "days",
+          },
+        ],
+      },
+      rawRevision: { ...base.rawRevisions[0]!, id: "raw.survival" },
+      unitInstances: base.unitInstances,
+      observations: base.observations.map((observation, index) => ({
+        ...observation,
+        id: `survival.${index}`,
+        rawRevisionId: "raw.survival",
+        outcomeId: "outcome.survival",
+        measurement: {
+          kind: "time_to_event" as const,
+          followUpTime: index + 3,
+          eventObserved: index === 0,
+        },
+      })),
+      actor: "researcher",
+    });
+    await saveProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/survival.lsa",
+      state: survivalState,
+      sha256,
+      appVersion: "0.1.0",
+      savedAt: "2026-08-20T01:00:00Z",
+    });
+    const reopened = await openProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/survival.lsa",
+      sha256,
+    });
+    expect(reopened.observations.map(({ measurement }) => measurement)).toEqual([
+      { kind: "time_to_event", followUpTime: 3, eventObserved: true },
+      { kind: "time_to_event", followUpTime: 4, eventObserved: false },
+    ]);
   });
 });

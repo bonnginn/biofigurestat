@@ -94,10 +94,10 @@ class D06Tests(unittest.TestCase):
             ],
         )
         self.assertEqual(result["factorMetadata"]["withinFactor"]["title"], "Radius")
-        self.assertEqual(
-            result["factorMetadata"]["legacyEffectAliases"]["condition_by_time_interaction"],
-            "condition_by_within_factor_interaction",
-        )
+        self.assertEqual(result["factorMetadata"]["legacyEffectAliases"], {})
+        provenance = str(result["factorMetadata"]) + str(result["diagnostics"])
+        self.assertIn("Radius", provenance)
+        self.assertNotIn("time", provenance.lower())
 
     def test_refuses_stable_unit_crossing_conditions(self) -> None:
         broken = request()

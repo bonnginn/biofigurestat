@@ -95,6 +95,17 @@ type AnalysisRun = {
   graphModel: CoreGraphModel | null;
 };
 
+type EngineObservation = AnalysisEngineRequest["observations"][number];
+
+function numericEngineObservations(
+  observations: readonly EngineObservation[],
+): Array<EngineObservation & { value: number }> {
+  return observations.filter(
+    (observation): observation is EngineObservation & { value: number } =>
+      typeof observation.value === "number",
+  );
+}
+
 type WorkspaceIdentity = Readonly<{
   projectId: string;
   rawRevisionId: string;
@@ -799,7 +810,7 @@ export function DataSheetPage({
       try {
         const unitById = new Map(initialProject.state.unitInstances.map((unit) => [unit.id, unit]));
         const restoredGraphInput = [
-          ...persisted.request.observations.map((observation) => ({
+          ...numericEngineObservations(persisted.request.observations).map((observation) => ({
             ...observation,
             ...(persisted.inputDerivedDatasetRevisionId
               ? { layer: "replicate_summary" as const }
@@ -833,7 +844,7 @@ export function DataSheetPage({
           graphModel = createCoreCorrelationGraphModel(
             graph.spec,
             variables,
-            persisted.request.observations.map((observation) => ({
+            numericEngineObservations(persisted.request.observations).map((observation) => ({
               observationId: observation.observationId,
               conditionId: observation.conditionId,
               value: observation.value,
@@ -1362,7 +1373,7 @@ export function DataSheetPage({
         const graphModel = createCoreCorrelationGraphModel(
           baseGraphSpec,
           variables,
-          request.observations.map((observation) => ({
+          numericEngineObservations(request.observations).map((observation) => ({
             observationId: observation.observationId,
             conditionId: observation.conditionId,
             value: observation.value,
@@ -1387,7 +1398,7 @@ export function DataSheetPage({
         : baseGraphSpec;
       const unitById = new Map(canonicalData.unitInstances.map((unit) => [unit.id, unit]));
       const graphInput = [
-        ...request.observations.map((observation) => ({
+        ...numericEngineObservations(request.observations).map((observation) => ({
           ...observation,
           layer: "replicate_summary" as const,
         })),
@@ -1433,7 +1444,7 @@ export function DataSheetPage({
         const graphModel = createCoreCorrelationGraphModel(
           graphSpec,
           variables,
-          analysisRun.request.observations.map((observation) => ({
+          numericEngineObservations(analysisRun.request.observations).map((observation) => ({
             observationId: observation.observationId,
             conditionId: observation.conditionId,
             value: observation.value,
@@ -1450,7 +1461,7 @@ export function DataSheetPage({
       }
       const unitById = new Map(canonicalData?.unitInstances.map((unit) => [unit.id, unit]) ?? []);
       const graphInput = [
-        ...analysisRun.request.observations.map((observation) => ({
+        ...numericEngineObservations(analysisRun.request.observations).map((observation) => ({
           ...observation,
           ...(canonicalData?.derivedRevision ? { layer: "replicate_summary" as const } : {}),
         })),

@@ -40,12 +40,19 @@ describe("workspace home", () => {
   it("shows exactly the four primary starting points", () => {
     render(<App />);
 
-    expect(document.querySelectorAll("[data-primary-route]")).toHaveLength(4);
+    expect(document.querySelectorAll("[data-primary-route]")).toHaveLength(6);
     expect(screen.getByText("実験の内容を先に整理")).toBeVisible();
     expect(screen.getByText(/背景、測定項目、条件、時間、実験回を短い質問/)).toBeVisible();
     expect(screen.queryByText(/対応のある生物学的単位/)).not.toBeInTheDocument();
     expect(screen.queryByText(/解析前に推定された構造/)).not.toBeInTheDocument();
-    for (const route of ["favorites", "new-experiment", "recent", "open-project"]) {
+    for (const route of [
+      "favorites",
+      "new-experiment",
+      "recent",
+      "open-project",
+      "survival",
+      "heatmap",
+    ]) {
       expect(document.querySelector(`[data-primary-route="${route}"]`)).toBeVisible();
     }
   });

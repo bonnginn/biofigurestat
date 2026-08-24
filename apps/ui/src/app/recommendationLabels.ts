@@ -16,6 +16,8 @@ const METHOD_LABELS: Record<AnalysisRecommendation["recommendedMethod"], string>
   mixed_model: "混合効果モデル",
   pearson: "Pearsonの相関",
   spearman: "Spearmanの順位相関",
+  one_sample_t: "one-sample t-test",
+  log_rank: "log-rank検定",
 };
 
 export function methodLabel(method: AnalysisRecommendation["recommendedMethod"]) {
@@ -30,6 +32,9 @@ export function templateLabel(templateId: AnalysisRecommendation["templateId"]) 
   if (templateId === "D05") return "D05 · 2因子の要因配置";
   if (templateId === "D06") return "D06 · 条件×反復軸の反復測定";
   if (templateId === "D09") return "D09 · 2つの測定値の相関";
+  if (templateId === "D11") return "D11 · 生存・time-to-event";
+  if (templateId === "D12") return "D12 · 単一コホートと基準値";
+  if (templateId === "D13") return "D13 · 条件×反復カテゴリ状態";
   return `${templateId} · 解析テンプレート`;
 }
 

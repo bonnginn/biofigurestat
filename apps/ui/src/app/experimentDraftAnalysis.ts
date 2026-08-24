@@ -30,7 +30,7 @@ export type StatisticalMethodChoice = Readonly<{
 }>;
 
 export type DraftAnalysisAssessment = Readonly<{
-  state: "ready" | "insufficient" | "unsupported";
+  state: "ready" | "descriptive" | "insufficient" | "unsupported";
   title: string;
   reason: string;
   method: StatisticalMethod | null;
@@ -135,11 +135,25 @@ export function assessDraftGraphAnalysis(input: {
 }): DraftAnalysisAssessment {
   const selected = new Set(input.conditionIds);
   const conditions = input.draft.conditions.filter((condition) => selected.has(condition.id));
-  if (conditions.length < 2) {
+  if (conditions.length < 1) {
     return {
       state: "unsupported",
-      title: "2条件以上を選択してください",
-      reason: "統計的な群比較には、少なくとも2つの条件が必要です。グラフだけの表示は続けられます。",
+      title: "条件を1つ以上選択してください",
+      reason: "Graphまたは解析に使用するコホート・条件を選択してください。",
+      method: null,
+      commonAlternative: null,
+      nByCondition: [],
+      missingCount: 0,
+      notPlannedCount: 0,
+      request: null,
+    };
+  }
+  if (conditions.length < 2 && input.draft.analysisIntent.kind !== "single_cohort") {
+    return {
+      state: "unsupported",
+      title: "群比較には2条件以上が必要です",
+      reason:
+        "比較群を追加するか、比較を行わない単一コホートworkflowとして実験を作成してください。Graphだけの表示は続けられます。",
       method: null,
       commonAlternative: null,
       nByCondition: [],
@@ -577,6 +591,84 @@ export function assessDraftGraphAnalysis(input: {
     : nByCondition;
   const insufficient = effectiveNByCondition.some(({ n }) => n < 2);
   const nText = effectiveNByCondition.map(({ label, n }) => `${label}: ${n}`).join("、");
+
+  if (input.draft.analysisIntent.kind === "single_cohort") {
+    const n = effectiveNByCondition[0]?.n ?? 0;
+    if (input.draft.analysisIntent.mode === "descriptive") {
+      return {
+        state: "descriptive",
+        title: "記述統計とGraphのみ",
+        reason: `この単一コホートは比較群や基準値を仮定しません（${nText}）。分布、平均、中央値、SDを確認できます。`,
+        method: null,
+        commonAlternative: null,
+        nByCondition: effectiveNByCondition,
+        missingCount,
+        notPlannedCount,
+        request: null,
+      };
+    }
+    if (n < 2) {
+      return {
+        state: "insufficient",
+        title: "one-sample t-testに必要な実験単位が不足しています",
+        reason: `現在のbiological nは${n}です。Graphは利用できますが、推定には2つ以上の独立した実験単位が必要です。`,
+        method: null,
+        commonAlternative: null,
+        nByCondition: effectiveNByCondition,
+        missingCount,
+        notPlannedCount,
+        request: null,
+      };
+    }
+    const referenceValue = input.draft.analysisIntent.referenceValue;
+    if (referenceValue === undefined || !Number.isFinite(referenceValue)) {
+      return {
+        state: "unsupported",
+        title: "基準値を明示してください",
+        reason: "one-sample推論ではnull/reference値を暗黙に0とせず、実験設計で明示します。",
+        method: null,
+        commonAlternative: null,
+        nByCondition: effectiveNByCondition,
+        missingCount,
+        notPlannedCount,
+        request: null,
+      };
+    }
+    const request = AnalysisEngineRequestSchema.parse({
+      protocolVersion: "0.9.0",
+      requestId: "request.draft.graph",
+      projectId: "project.draft",
+      analysisId: "analysis.draft.graph",
+      templateId: "D12",
+      templateVersion: "0.1.0",
+      method: "one_sample_t",
+      conditionId: conditions[0].id,
+      nullValue: referenceValue,
+      observations: requestObservations,
+      options: { alternative: "two_sided", confidenceLevel: 0.95, multiplicityMethod: null },
+    });
+    return {
+      state: "ready",
+      title: "one-sample t-test",
+      reason: `${conditions[0].label}の独立した実験単位（n=${n}）の平均を、明示した基準値 ${referenceValue} と比較します。`,
+      method: "one_sample_t",
+      recommendedMethod: "one_sample_t",
+      methodChoices: [
+        {
+          method: "one_sample_t",
+          level: "recommended",
+          label: "one-sample t-test",
+          explanation: `平均と基準値 ${referenceValue} の差を95%信頼区間とともに評価します。`,
+          enabled: true,
+        },
+      ],
+      commonAlternative: null,
+      nByCondition: effectiveNByCondition,
+      missingCount,
+      notPlannedCount,
+      request,
+    };
+  }
 
   if (input.draft.analysisIntent.kind === "correlation") {
     const pairCount = completePairIds?.size ?? 0;

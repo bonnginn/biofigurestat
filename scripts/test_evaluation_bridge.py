@@ -11,6 +11,7 @@ import urllib.request
 from pathlib import Path
 
 from blind_benchmark_package import create_package
+from lsaa_engine import ENGINE_VERSION
 
 from evaluation_bridge import (
     ALLOWED_ARTIFACTS,
@@ -214,7 +215,7 @@ class EvaluationBridgeTests(unittest.TestCase):
         self.assertRegex(direct_completed_at, r"^\d{4}-\d{2}-\d{2}T")
         self.assertRegex(bridged_completed_at, r"^\d{4}-\d{2}-\d{2}T")
         self.assertEqual(bridged, direct)
-        self.assertEqual(bridged["engine"]["version"], "0.7.0")
+        self.assertEqual(bridged["engine"]["version"], ENGINE_VERSION)
 
     def test_browser_bridge_uses_utf8_for_unicode_factor_metadata(self) -> None:
         request = unicode_mixed_request()
@@ -388,7 +389,7 @@ class EvaluationBoundaryTests(unittest.TestCase):
         result = run_engine(welch_request())
         self.assertEqual(result["status"], "ok")
         self.assertEqual(result["protocolVersion"], "0.1.0")
-        self.assertEqual(result["engine"]["version"], "0.7.0")
+        self.assertEqual(result["engine"]["version"], ENGINE_VERSION)
         self.assertAlmostEqual(result["tests"][0]["pValue"], 0.004002714883968111, places=12)
 
     def test_run_directory_validation_is_deterministic_without_network(self) -> None:

@@ -103,7 +103,11 @@ export function createD04EngineRequest(input: D04RequestInput): AnalysisEngineRe
     templateVersion: input.recommendation.templateVersion,
     method: "repeated_measures_anova",
     conditionIds,
-    primaryContrastConditionIds: design.primaryContrast.conditionIds,
+    primaryContrastConditionIds:
+      design.primaryContrast?.conditionIds ??
+      (() => {
+        throw new Error("D04 requires an explicit primary contrast");
+      })(),
     observations: engineObservations,
     options: {
       alternative: "two_sided",

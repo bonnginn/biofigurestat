@@ -33,7 +33,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <p className="overline">ここから開始</p>
             <h2 id="route-heading">ワークスペース</h2>
           </div>
-          <span className="section-hint">4つの入口</span>
+          <span className="section-hint">6つの入口</span>
         </div>
         <div className="route-grid">
           {primaryRoutes.map((route) => (

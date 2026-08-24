@@ -12,6 +12,7 @@ import {
   rehydrateRepeatedConditionDataSheet,
   rehydrateTwoConditionDataSheet,
 } from "@lsaa/data-sheet";
+import { createHeatmapModel, createKaplanMeierGraphModel } from "@lsaa/graph-spec";
 
 import {
   actionErrorMessage,
@@ -25,6 +26,8 @@ import { rehydrateExperimentWorkspace } from "../app/experimentWorkspaceProject"
 import { DataSheetPage } from "./DataSheetPage";
 import { ExperimentWorkspace } from "./ExperimentWorkspace";
 import { MultiConditionDataSheetPage } from "./MultiConditionDataSheetPage";
+import { HeatmapGraph } from "../components/graph/HeatmapGraph";
+import { SurvivalGraph } from "../components/graph/SurvivalGraph";
 
 type OpenProjectPageProps = {
   onNavigate: (route: AppRoute) => void;
@@ -74,8 +77,81 @@ function PersistedProjectView({
   if (!design) {
     return <p role="alert">有効な実験デザインを復元できません。</p>;
   }
+  const matrixView = state.matrixViews?.at(-1);
+  if (matrixView?.spec.heatmap) {
+    const model = createHeatmapModel(matrixView.rawMatrix, matrixView.spec.heatmap.transform);
+    return (
+      <div className="page-stack">
+        <button type="button" onClick={onBack}>
+          ← 戻る
+        </button>
+        <h1>{state.metadata.projectName}</h1>
+        <p>
+          保存済みのraw matrixとtransform {matrixView.spec.heatmap.transform} (
+          {matrixView.spec.heatmap.transformVersion}) を復元しました。
+        </p>
+        <HeatmapGraph
+          model={model}
+          min={matrixView.spec.heatmap.min}
+          max={matrixView.spec.heatmap.max}
+          missingColor={matrixView.spec.heatmap.missingColor}
+          showCellValues={matrixView.spec.heatmap.showCellValues}
+        />
+      </div>
+    );
+  }
   const outcome = design.outcomes[0];
   if (!outcome) return <p role="alert">解析項目を復元できません。</p>;
+  if (outcome.type === "time_to_event") {
+    try {
+      const model = createKaplanMeierGraphModel(
+        design.conditions,
+        state.observations
+          .filter(
+            (observation) =>
+              observation.rawRevisionId === state.activeRawRevisionId &&
+              observation.outcomeId === outcome.id,
+          )
+          .map((observation) => {
+            if (observation.measurement.kind !== "time_to_event")
+              throw new Error("Survival project contains a non-survival measurement");
+            return {
+              observationId: observation.id,
+              experimentalUnitId: observation.unitInstanceId,
+              conditionId: observation.conditionId,
+              followUpTime: observation.measurement.followUpTime,
+              eventObserved: observation.measurement.eventObserved,
+            };
+          }),
+      );
+      const run = state.analysisRuns.find(
+        (analysis) => analysis.state === "current" && analysis.request.protocolVersion === "0.8.0",
+      );
+      return (
+        <div className="page-stack">
+          <button type="button" onClick={onBack}>
+            ← 戻る
+          </button>
+          <h1>{state.metadata.projectName}</h1>
+          <p>{run ? "Kaplan–Meier / log-rank解析済み" : "Survivalデータを復元しました"}</p>
+          <SurvivalGraph model={model} timeLabel={outcome.unit ?? "Follow-up time"} />
+          {run?.result.tests[0] ? (
+            <p>
+              log-rank {run.result.tests[0].statisticName}={run.result.tests[0].statistic}、p=
+              {run.result.tests[0].pValue}
+            </p>
+          ) : null}
+        </div>
+      );
+    } catch (error) {
+      return (
+        <p role="alert">
+          Survival projectを復元できません：
+          {error instanceof Error ? error.message : "不明なエラー"}
+        </p>
+      );
+    }
+  }
   const activeDerivedRevision = state.derivedDatasetRevisions.find(
     (revision) =>
       revision.sourceRawRevisionId === state.activeRawRevisionId &&

@@ -9,4 +9,7 @@ export * from "./d05-request-builder";
 export * from "./d06";
 export * from "./d09";
 export * from "./d09-request-builder";
+export * from "./d11-request-builder";
+export * from "./d12-request-builder";
+export * from "./d13-request-builder";
 export * from "./request-builder";

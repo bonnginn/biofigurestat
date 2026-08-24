@@ -268,10 +268,10 @@ describe("project state lineage", () => {
 
     expect(state.analysisRuns[0].inputDerivedDatasetRevisionId).toBe("derived.1");
     const machineRoundoff = structuredClone(state);
-    machineRoundoff.analysisRuns[0].request.observations[0].value += Number.EPSILON * 4;
+    machineRoundoff.analysisRuns[0]!.request.observations[0]!.value! += Number.EPSILON * 4;
     expect(ProjectStateSchema.safeParse(machineRoundoff).success).toBe(true);
     const materiallyDifferent = structuredClone(state);
-    materiallyDifferent.analysisRuns[0].request.observations[0].value += 1e-8;
+    materiallyDifferent.analysisRuns[0]!.request.observations[0]!.value! += 1e-8;
     expect(ProjectStateSchema.safeParse(materiallyDifferent).success).toBe(false);
     const broken = structuredClone(state);
     broken.derivedValues[0].sourceObservationIds = ["observation.missing"];

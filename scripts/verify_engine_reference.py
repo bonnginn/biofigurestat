@@ -16,7 +16,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 ENGINE_ROOT = ROOT / "engine/python"
-REFERENCE = ENGINE_ROOT / "reference/macos-arm64-engine-0.7.0.json"
+REFERENCE = ENGINE_ROOT / "reference/macos-arm64-engine-0.10.0.json"
 sys.path.insert(0, str(ENGINE_ROOT))
 
 from smoke_sidecar import smoke_requests  # noqa: E402

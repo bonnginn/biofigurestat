@@ -227,11 +227,14 @@ export function createExperimentWorkspaceDesign(
           ]
         : []),
     ]),
-    primaryContrast: {
-      id: "contrast.primary",
-      label: `${draft.conditions[0].label} vs ${draft.conditions[1].label}`,
-      conditionIds: [draft.conditions[0].id, draft.conditions[1].id],
-    },
+    primaryContrast:
+      draft.conditions.length >= 2
+        ? {
+            id: "contrast.primary",
+            label: `${draft.conditions[0].label} vs ${draft.conditions[1].label}`,
+            conditionIds: [draft.conditions[0].id, draft.conditions[1].id],
+          }
+        : null,
     wizardRuleVersion: "experiment-workspace.0.1.0",
     wizardDecisions: [
       ...(draft.analysisIntent.kind === "correlation"
@@ -242,7 +245,20 @@ export function createExperimentWorkspaceDesign(
               answer: draft.analysisIntent.relationshipForm,
             },
           ]
-        : [{ questionId: "workspace.analysis.intent", answer: "group_comparison" }]),
+        : draft.analysisIntent.kind === "single_cohort"
+          ? [
+              { questionId: "workspace.analysis.intent", answer: "single_cohort" },
+              { questionId: "workspace.single_cohort.mode", answer: draft.analysisIntent.mode },
+              ...(draft.analysisIntent.referenceValue === undefined
+                ? []
+                : [
+                    {
+                      questionId: "workspace.single_cohort.reference_value",
+                      answer: draft.analysisIntent.referenceValue,
+                    },
+                  ]),
+            ]
+          : [{ questionId: "workspace.analysis.intent", answer: "group_comparison" }]),
       { questionId: "workspace.time.sampling", answer: draft.time.sampling },
       { questionId: "workspace.ordered_axis.semantic", answer: orderedAxisSemantic(draft.time) },
       { questionId: "workspace.ordered_axis.title", answer: orderedAxisTitle(draft.time) },

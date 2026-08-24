@@ -249,6 +249,9 @@ export function rehydrateRepeatedConditionDataSheet(
         if (observation.measurement.kind === "categorical_counts") {
           throw new Error("Categorical composition is edited in the experiment workspace");
         }
+        if (observation.measurement.kind === "time_to_event") {
+          throw new Error("Time-to-event data is edited in the survival workspace");
+        }
         return {
           id: `entry.rehydrated.${condition.id}.${index + 1}`,
           label: unit.label,
