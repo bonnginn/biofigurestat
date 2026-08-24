@@ -492,6 +492,15 @@ describe("ExperimentGraphWorkbench", () => {
       ...analysisResult,
       protocolVersion: request.protocolVersion,
       requestId: request.requestId,
+      tests: [
+        analysisResult.tests[0],
+        {
+          ...analysisResult.tests[0],
+          name: `planned_holm:${draft.conditions[0].id}:${draft.conditions[2].id}`,
+          pValue: 0.008,
+          adjustedPValue: 0.016,
+        },
+      ],
     }));
     render(
       <ExperimentGraphWorkbench
@@ -519,6 +528,23 @@ describe("ExperimentGraphWorkbench", () => {
       plannedContrastConditionIds: [[draft.conditions[0].id, draft.conditions[2].id]],
       options: { multiplicityMethod: "holm_planned_comparisons" },
     });
+
+    const annotationComparison = screen.getByRole("combobox", {
+      name: "統計注釈の比較",
+    });
+    expect(annotationComparison).toBeVisible();
+    fireEvent.change(annotationComparison, { target: { value: "1" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "統計注釈の表示" }), {
+      target: { value: "exact_p" },
+    });
+    expect(
+      screen.getByText(/表示内容：Control vs Treatment B · planned comparison · Holm/),
+    ).toBeVisible();
+    expect(
+      screen
+        .getByRole("img", { name: /実験単位ごとのグラフ/ })
+        .querySelector('[data-graph-layer="statistics-annotation"]'),
+    ).toHaveTextContent("p = 0.016");
   });
 
   it("PearsonとSpearmanを検証済みの実行可能な選択として切り替える", async () => {

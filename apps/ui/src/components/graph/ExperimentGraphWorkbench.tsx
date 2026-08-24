@@ -166,6 +166,29 @@ function graphAnnotationContext(input: {
   return `per-unit ${timeAnalysis.kind} · ${method}`;
 }
 
+function analysisTestAnnotationLabel(
+  test: AnalysisEngineResult["tests"][number],
+  draft: ExperimentSetDraft,
+  fallback: string,
+): string {
+  const [family, firstId, secondId] = test.name.split(":");
+  const conditionLabel = (conditionId: string | undefined) =>
+    draft.conditions.find(({ id }) => id === conditionId)?.label ?? conditionId ?? "condition";
+  if (firstId && secondId && ["games_howell", "tukey_hsd", "planned_holm"].includes(family)) {
+    const method =
+      family === "games_howell"
+        ? "Games–Howell"
+        : family === "tukey_hsd"
+          ? "Tukey"
+          : "planned comparison · Holm";
+    return `${conditionLabel(firstId)} vs ${conditionLabel(secondId)} · ${method}`;
+  }
+  if (family === "dunnett" && firstId && secondId) {
+    return `${conditionLabel(secondId)} vs ${conditionLabel(firstId)} · Dunnett`;
+  }
+  return fallback;
+}
+
 type ProportionPoint = Readonly<{
   experimentId: string;
   experimentLabel: string;
@@ -2467,7 +2490,7 @@ export function ExperimentGraphWorkbench({
       timeLabel: item.timeLabel ?? "",
     }));
   }, [appearance.hierarchicalLabels, axes.hierarchyOrder, draft, series]);
-  const annotationContext = analysis
+  const baseAnnotationContext = analysis
     ? graphAnnotationContext({
         request: analysis.request,
         timeAnalysis,
@@ -2476,6 +2499,13 @@ export function ExperimentGraphWorkbench({
         axes,
       })
     : "selected analysis";
+  const annotationContext = analysisResult?.tests[statisticsAnnotation.testIndex]
+    ? analysisTestAnnotationLabel(
+        analysisResult.tests[statisticsAnnotation.testIndex],
+        draft,
+        baseAnnotationContext,
+      )
+    : baseAnnotationContext;
   const compositionHasData =
     shape === "categorical_counts" &&
     Object.values(cells).some(
@@ -4546,6 +4576,27 @@ export function ExperimentGraphWorkbench({
               {analysisResult?.status === "ok" ? (
                 <section className="experiment-graph-statistics-section" aria-label="統計注釈">
                   <h3>グラフ上の注釈</h3>
+                  {analysisResult.tests.length > 1 ? (
+                    <label className="experiment-graph-field">
+                      <span>比較結果</span>
+                      <select
+                        aria-label="統計注釈の比較"
+                        value={statisticsAnnotation.testIndex}
+                        onChange={(event) =>
+                          setStatisticsAnnotation((current) => ({
+                            ...current,
+                            testIndex: Number(event.target.value),
+                          }))
+                        }
+                      >
+                        {analysisResult.tests.map((test, index) => (
+                          <option key={`${test.name}:${index}`} value={index}>
+                            {analysisTestAnnotationLabel(test, draft, baseAnnotationContext)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
                   <label className="experiment-graph-field">
                     <span>表示</span>
                     <select
