@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export * from "./matrix";
 export * from "./survival";
+export * from "./common-methods";
 import {
   EntityIdSchema,
   type ExperimentDesign,

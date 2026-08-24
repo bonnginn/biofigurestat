@@ -210,14 +210,20 @@ export function GraphStatisticsPanel({
                   ? request.contrastConditionIds.join("|")
                   : request.protocolVersion === "0.5.0"
                     ? request.variableConditionIds.join("|")
-                    : request.protocolVersion === "0.6.0" ||
-                        request.protocolVersion === "0.7.0" ||
-                        request.protocolVersion === "0.8.0" ||
-                        request.protocolVersion === "0.10.0"
-                      ? request.conditionIds.join("|")
-                      : request.protocolVersion === "0.9.0"
-                        ? `${request.conditionId}|reference:${request.nullValue}`
-                        : request.primaryContrastConditionIds.join("|"),
+                    : request.protocolVersion === "0.11.0"
+                      ? `${request.rowCategoryIds.join("|")}::${request.columnCategoryIds.join("|")}`
+                      : request.protocolVersion === "0.12.0"
+                        ? request.conditionIds.join("|")
+                        : request.protocolVersion === "0.13.0"
+                          ? `${request.xLabel}|${request.yLabel}`
+                          : request.protocolVersion === "0.6.0" ||
+                              request.protocolVersion === "0.7.0" ||
+                              request.protocolVersion === "0.8.0" ||
+                              request.protocolVersion === "0.10.0"
+                            ? request.conditionIds.join("|")
+                            : request.protocolVersion === "0.9.0"
+                              ? `${request.conditionId}|reference:${request.nullValue}`
+                              : request.primaryContrastConditionIds.join("|"),
             correction: request.options.multiplicityMethod,
             protocolVersion: request.protocolVersion,
             mode,

@@ -53,6 +53,42 @@ export const primaryRoutes = [
     eyebrow: "06",
     accent: "violet",
   },
+  {
+    id: "contingency",
+    path: "/contingency",
+    title: "Categorical counts",
+    description: "独立countまたは対応binaryを解析します。",
+    japaneseDescription: "Fisher・Chi-square・McNemarを構造で分離します。",
+    eyebrow: "07",
+    accent: "orange",
+  },
+  {
+    id: "repeated-nonparametric",
+    path: "/repeated-nonparametric",
+    title: "反復ノンパラメトリック",
+    description: "対応IDを保持したrank解析です。",
+    japaneseDescription: "Friedman + Holm-Wilcoxonを実行します。",
+    eyebrow: "08",
+    accent: "blue",
+  },
+  {
+    id: "regression",
+    path: "/regression",
+    title: "単回帰",
+    description: "相関とは別のOLS回帰です。",
+    japaneseDescription: "回帰線・傾きCI・R²を表示します。",
+    eyebrow: "09",
+    accent: "green",
+  },
+  {
+    id: "distribution",
+    path: "/distribution",
+    title: "分布Graph",
+    description: "HistogramとECDFを作成します。",
+    japaneseDescription: "元の個別値を保持し、検定を自動追加しません。",
+    eyebrow: "10",
+    accent: "violet",
+  },
 ] as const;
 
 export type PrimaryRouteId = (typeof primaryRoutes)[number]["id"];

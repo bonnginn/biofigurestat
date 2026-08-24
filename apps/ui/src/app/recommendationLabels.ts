@@ -18,6 +18,10 @@ const METHOD_LABELS: Record<AnalysisRecommendation["recommendedMethod"], string>
   spearman: "Spearmanの順位相関",
   one_sample_t: "one-sample t-test",
   log_rank: "log-rank検定",
+  fisher_exact: "Fisherの正確確率検定",
+  pearson_chi_square: "Pearsonのカイ二乗検定",
+  mcnemar_exact: "正確McNemar検定",
+  simple_linear_regression: "単回帰（OLS）",
 };
 
 export function methodLabel(method: AnalysisRecommendation["recommendedMethod"]) {
@@ -35,6 +39,9 @@ export function templateLabel(templateId: AnalysisRecommendation["templateId"]) 
   if (templateId === "D11") return "D11 · 生存・time-to-event";
   if (templateId === "D12") return "D12 · 単一コホートと基準値";
   if (templateId === "D13") return "D13 · 条件×反復カテゴリ状態";
+  if (templateId === "D14") return "D14 · カテゴリcount";
+  if (templateId === "D15") return "D15 · 反復ノンパラメトリック";
+  if (templateId === "D16") return "D16 · 単回帰";
   return `${templateId} · 解析テンプレート`;
 }
 

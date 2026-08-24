@@ -8,6 +8,7 @@ import { HomePage } from "./pages/HomePage";
 import { NewExperimentPage } from "./pages/NewExperimentPage";
 import { OpenProjectPage } from "./pages/OpenProjectPage";
 import { SpecializedCorePage } from "./pages/SpecializedCorePage";
+import { CommonCoveragePage } from "./pages/CommonCoveragePage";
 import { defaultProjectActions } from "./app/desktopProjectActions";
 import type { ProjectActions } from "./app/projectActions";
 import { pathForRoute, routeFromPath, type AppRoute } from "./app/routes";
@@ -170,6 +171,11 @@ export default function App({ projectActions }: AppProps) {
 
   const page = (() => {
     switch (route) {
+      case "contingency":
+      case "repeated-nonparametric":
+      case "regression":
+      case "distribution":
+        return <CommonCoveragePage mode={route} onBack={() => navigate("home")} />;
       case "survival":
         return (
           <SpecializedCorePage

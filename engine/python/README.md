@@ -30,6 +30,12 @@ The initial engine pins NumPy 2.3.5 and SciPy 1.18.0. Engine and package version
 - D04 complete repeated groups using one-factor repeated-measures ANOVA, Holm-adjusted paired comparisons, and Bonferroni simultaneous pairwise intervals;
 - D05 complete independent two-factor designs using sum-coded Type III interaction/main-effect tests and Holm-adjusted all-cell comparisons;
 - D09 Pearson correlation with a Fisher confidence interval, or Spearman rank correlation without an asserted Core confidence interval; pairs are joined by explicit experimental-unit IDs rather than row order;
+- D11 Kaplan–Meier estimation and log-rank comparison with explicit event/censor status;
+- D12 one-sample t inference against an explicit finite reference value;
+- D13 ordered categorical repeated-state analysis without fabricated time semantics;
+- D14 Fisher exact / Pearson Chi-square for independent integer count tables and exact McNemar for paired binary transitions;
+- D15 Friedman omnibus analysis with pairwise Wilcoxon signed-rank comparisons and Holm correction while retaining stable matched-unit identity;
+- D16 ordinary least-squares simple linear regression with slope, intercept, R², slope confidence interval/test, and fitted-line confidence band;
 - two-sided or directional alternatives;
 - estimate, standard error, confidence interval, t statistic, degrees of freedom, p-value, and effect size;
 - explicit rejection of incomplete pairs, non-finite inputs, undefined zero-variance cases, duplicate independent units, and undeclared multi-group observations.

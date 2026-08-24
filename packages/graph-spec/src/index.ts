@@ -11,6 +11,8 @@ export const GraphTypeSchema = z.enum([
   "dose_response",
   "survival_curve",
   "heatmap",
+  "histogram",
+  "ecdf",
 ]);
 
 export const GraphSpecSchema = z
@@ -46,9 +48,16 @@ export const GraphSpecSchema = z
     axes: z.object({
       yStartAtZero: z.boolean(),
       yScale: z.enum(["linear", "log10"]),
+      xScale: z.enum(["linear", "log10"]).optional(),
       xLabel: z.string(),
       yLabel: z.string(),
     }),
+    distribution: z
+      .object({
+        binCount: z.number().int().min(1).max(200).nullable(),
+        binWidth: z.number().positive().nullable(),
+      })
+      .optional(),
     heatmap: z
       .object({
         transform: z.enum(["none", "row_z_score", "column_z_score", "log10"]),
@@ -106,6 +115,13 @@ export const GraphSpecSchema = z
         message: "Heatmap graphs require explicit transform and missing-value settings",
       });
     }
+    if ((spec.type === "histogram" || spec.type === "ecdf") && !spec.distribution) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["distribution"],
+        message: "Distribution graphs require explicit bin metadata",
+      });
+    }
   });
 
 export type GraphSpec = z.infer<typeof GraphSpecSchema>;
@@ -113,6 +129,8 @@ export type GraphSpec = z.infer<typeof GraphSpecSchema>;
 export * from "./core-model";
 export * from "./heatmap";
 export * from "./survival";
+export * from "./distribution";
+export * from "./regression";
 
 export function createHeatmapGraphSpec(
   input: Readonly<{

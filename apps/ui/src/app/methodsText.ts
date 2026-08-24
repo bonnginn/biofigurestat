@@ -110,6 +110,10 @@ function errorBarLabel(
 }
 
 function conditionLabels(input: MethodsTextInput): string {
+  if (input.request.protocolVersion === "0.11.0") return input.request.rowCategoryIds.join(" vs ");
+  if (input.request.protocolVersion === "0.12.0") return input.request.conditionIds.join(" vs ");
+  if (input.request.protocolVersion === "0.13.0")
+    return `${input.request.xLabel} → ${input.request.yLabel}`;
   const labels = new Map(
     input.design.conditions.map((condition) => [condition.id, condition.label]),
   );
@@ -132,6 +136,10 @@ function conditionLabels(input: MethodsTextInput): string {
 }
 
 function allConditionLabels(input: MethodsTextInput): string {
+  if (input.request.protocolVersion === "0.11.0") return input.request.rowCategoryIds.join("、");
+  if (input.request.protocolVersion === "0.12.0") return input.request.conditionIds.join("、");
+  if (input.request.protocolVersion === "0.13.0")
+    return `${input.request.xLabel}、${input.request.yLabel}`;
   const labels = new Map(
     input.design.conditions.map((condition) => [condition.id, condition.label]),
   );

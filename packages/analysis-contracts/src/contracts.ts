@@ -15,6 +15,9 @@ export const AnalysisTemplateIdSchema = z.enum([
   "D11",
   "D12",
   "D13",
+  "D14",
+  "D15",
+  "D16",
 ]);
 
 export const StatisticalMethodSchema = z.enum([
@@ -35,6 +38,10 @@ export const StatisticalMethodSchema = z.enum([
   "spearman",
   "one_sample_t",
   "log_rank",
+  "fisher_exact",
+  "pearson_chi_square",
+  "mcnemar_exact",
+  "simple_linear_regression",
 ]);
 
 export const AnalysisRecommendationSchema = z.object({
@@ -327,6 +334,114 @@ export const CategoricalRepeatedStateAnalysisEngineRequestSchema = z.object({
   }),
 });
 
+const CountCellSchema = z.object({
+  rowCategoryId: EntityIdSchema,
+  columnCategoryId: EntityIdSchema,
+  count: z.number().int().nonnegative(),
+});
+
+export const ContingencyAnalysisEngineRequestSchema = z
+  .object({
+    protocolVersion: z.literal("0.11.0"),
+    requestId: EntityIdSchema,
+    projectId: EntityIdSchema,
+    analysisId: EntityIdSchema,
+    templateId: z.literal("D14"),
+    templateVersion: z.string().min(1),
+    method: z.enum(["fisher_exact", "pearson_chi_square", "mcnemar_exact"]),
+    structure: z.enum(["independent", "paired_binary"]),
+    experimentalUnit: z.string().min(1),
+    rowCategoryIds: z.array(EntityIdSchema).min(2),
+    columnCategoryIds: z.array(EntityIdSchema).min(2),
+    cells: z.array(CountCellSchema).min(4),
+    /** Generic history compatibility; categorical source data remain exclusively in cells. */
+    observations: z.array(EngineObservationSchema).max(0).default([]),
+    options: AnalysisOptionsSchema.extend({
+      alternative: z.literal("two_sided").default("two_sided"),
+      multiplicityMethod: z.null(),
+    }),
+  })
+  .superRefine((request, context) => {
+    const expected = request.rowCategoryIds.length * request.columnCategoryIds.length;
+    const keys = new Set(
+      request.cells.map((cell) => `${cell.rowCategoryId}\u0000${cell.columnCategoryId}`),
+    );
+    if (request.cells.length !== expected || keys.size !== expected) {
+      context.addIssue({
+        code: "custom",
+        path: ["cells"],
+        message: "Every contingency cell must be supplied exactly once",
+      });
+    }
+    const isTwoByTwo =
+      request.rowCategoryIds.length === 2 && request.columnCategoryIds.length === 2;
+    if ((request.method === "fisher_exact" || request.method === "mcnemar_exact") && !isTwoByTwo) {
+      context.addIssue({
+        code: "custom",
+        path: ["method"],
+        message: "Fisher and McNemar require a 2 by 2 table",
+      });
+    }
+    if (request.method === "mcnemar_exact" && request.structure !== "paired_binary") {
+      context.addIssue({
+        code: "custom",
+        path: ["structure"],
+        message: "McNemar requires paired binary outcomes",
+      });
+    }
+    if (request.method !== "mcnemar_exact" && request.structure !== "independent") {
+      context.addIssue({
+        code: "custom",
+        path: ["structure"],
+        message: "Fisher and Chi-square require independent groups",
+      });
+    }
+  });
+
+export const FriedmanAnalysisEngineRequestSchema = z.object({
+  protocolVersion: z.literal("0.12.0"),
+  requestId: EntityIdSchema,
+  projectId: EntityIdSchema,
+  analysisId: EntityIdSchema,
+  templateId: z.literal("D15"),
+  templateVersion: z.string().min(1),
+  method: z.literal("friedman"),
+  conditionIds: z.array(EntityIdSchema).min(3),
+  observations: z.array(EngineObservationSchema.extend({ pairId: EntityIdSchema })).min(6),
+  options: AnalysisOptionsSchema.extend({
+    alternative: z.literal("two_sided").default("two_sided"),
+    multiplicityMethod: z.literal("holm_wilcoxon_all_pairs"),
+  }),
+});
+
+export const SimpleLinearRegressionEngineRequestSchema = z.object({
+  protocolVersion: z.literal("0.13.0"),
+  requestId: EntityIdSchema,
+  projectId: EntityIdSchema,
+  analysisId: EntityIdSchema,
+  templateId: z.literal("D16"),
+  templateVersion: z.string().min(1),
+  method: z.literal("simple_linear_regression"),
+  xLabel: z.string().min(1),
+  yLabel: z.string().min(1),
+  xUnit: z.string(),
+  yUnit: z.string(),
+  includeIntercept: z.boolean(),
+  points: z
+    .array(
+      z.object({
+        observationId: EntityIdSchema,
+        experimentalUnitId: EntityIdSchema,
+        x: z.number().finite(),
+        y: z.number().finite(),
+      }),
+    )
+    .min(3),
+  /** Generic history compatibility; XY source data remain exclusively in points. */
+  observations: z.array(EngineObservationSchema).max(0).default([]),
+  options: AnalysisOptionsSchema.extend({ multiplicityMethod: z.null() }),
+});
+
 export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion", [
   TwoConditionAnalysisEngineRequestSchema,
   MultiGroupAnalysisEngineRequestSchema,
@@ -338,6 +453,9 @@ export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion
   SurvivalAnalysisEngineRequestSchema,
   OneSampleAnalysisEngineRequestSchema,
   CategoricalRepeatedStateAnalysisEngineRequestSchema,
+  ContingencyAnalysisEngineRequestSchema,
+  FriedmanAnalysisEngineRequestSchema,
+  SimpleLinearRegressionEngineRequestSchema,
 ]);
 
 export const EstimateSchema = z.object({
@@ -376,6 +494,9 @@ export const AnalysisEngineResultSchema = z.object({
     "0.8.0",
     "0.9.0",
     "0.10.0",
+    "0.11.0",
+    "0.12.0",
+    "0.13.0",
   ]),
   requestId: EntityIdSchema,
   status: z.enum(["ok", "validation_error", "engine_error"]),
@@ -421,6 +542,25 @@ export const AnalysisEngineResultSchema = z.object({
           censorTimes: z.array(z.number().finite().nonnegative()),
         }),
       ),
+    })
+    .optional(),
+  regression: z
+    .object({
+      slope: z.number().finite(),
+      intercept: z.number().finite(),
+      rSquared: z.number().min(0).max(1),
+      xRange: z.tuple([z.number().finite(), z.number().finite()]),
+      confidenceLevel: z.number().gt(0).lt(1),
+      fittedLine: z
+        .array(
+          z.object({
+            x: z.number().finite(),
+            y: z.number().finite(),
+            lower: z.number().finite().nullable(),
+            upper: z.number().finite().nullable(),
+          }),
+        )
+        .min(2),
     })
     .optional(),
   diagnostics: z.array(z.object({ code: z.string(), message: z.string() })),

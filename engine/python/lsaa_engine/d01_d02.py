@@ -360,6 +360,21 @@ def run_wilcoxon(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def run_request(request: dict[str, Any]) -> dict[str, Any]:
+    if request.get("protocolVersion") == "0.13.0":
+        from .d16 import run_simple_regression
+        if request.get("templateId") == "D16" and request.get("method") == "simple_linear_regression":
+            return run_simple_regression(request)
+        raise ValueError(f"Unsupported template/method combination: {request.get('templateId')}/{request.get('method')}")
+    if request.get("protocolVersion") == "0.12.0":
+        from .d15 import run_friedman
+        if request.get("templateId") == "D15" and request.get("method") == "friedman":
+            return run_friedman(request)
+        raise ValueError(f"Unsupported template/method combination: {request.get('templateId')}/{request.get('method')}")
+    if request.get("protocolVersion") == "0.11.0":
+        from .d14 import run_contingency
+        if request.get("templateId") == "D14" and request.get("method") in {"fisher_exact", "pearson_chi_square", "mcnemar_exact"}:
+            return run_contingency(request)
+        raise ValueError(f"Unsupported template/method combination: {request.get('templateId')}/{request.get('method')}")
     if request.get("protocolVersion") == "0.9.0":
         from .d12 import run_one_sample
 
