@@ -264,11 +264,22 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
             raise VerificationError(f"run.json has no {label}")
 
     statistics = read_json_object(path / "statistics.json")
-    if statistics.get("state") != "current":
-        raise VerificationError("statistics.json must contain a current result")
-    result = statistics.get("result")
-    if not isinstance(result, dict) or result.get("status") != "ok":
-        raise VerificationError("statistics.json must contain a successful engine result")
+    descriptive_only = statistics.get("state") == "not_performed"
+    if descriptive_only:
+        if statistics.get("selectedMethod") is not None or not isinstance(
+            statistics.get("reason"), str
+        ) or not statistics["reason"].strip():
+            raise VerificationError(
+                "descriptive statistics.json must record no method and a scientific reason"
+            )
+        result: dict[str, Any] = {}
+    else:
+        if statistics.get("state") != "current":
+            raise VerificationError("statistics.json must contain a current result")
+        candidate_result = statistics.get("result")
+        if not isinstance(candidate_result, dict) or candidate_result.get("status") != "ok":
+            raise VerificationError("statistics.json must contain a successful engine result")
+        result = candidate_result
     graph_state = read_json_object(path / "graph_state.json")
     annotation = graph_state.get("statisticsAnnotation")
     if isinstance(annotation, dict) and annotation.get("mode") == "exact_p":
@@ -316,10 +327,11 @@ def verify_run_directory(path: Path, case_id: str, track: str, run_id: str) -> N
     event_types = {event.get("type") for event in events if isinstance(event, dict)}
     required_events = {
         "benchmark_run_started",
-        "statistics_executed",
         "default_graph_captured",
         "benchmark_run_finalized",
     }
+    if not descriptive_only:
+        required_events.add("statistics_executed")
     missing_events = sorted(required_events - event_types)
     if missing_events:
         raise VerificationError(f"interaction log is missing: {', '.join(missing_events)}")

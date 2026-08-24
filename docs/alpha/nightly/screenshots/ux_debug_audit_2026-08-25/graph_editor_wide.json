@@ -1,0 +1,18 @@
+{
+  "docHeight": 1379,
+  "docWidth": 1985,
+  "innerHeight": 1056,
+  "innerWidth": 2000,
+  "overflow": [
+    {
+      "client": 145,
+      "cls": "experiment-graph-axis-title",
+      "left": 581,
+      "right": 602,
+      "scroll": 257,
+      "tag": "text",
+      "text": "Fluorescence intensity (a.u.)"
+    }
+  ],
+  "tiny": []
+}

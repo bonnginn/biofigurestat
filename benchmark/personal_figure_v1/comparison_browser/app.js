@@ -1,7 +1,8 @@
 const readabilityOptions = ["Good", "OK", "Insufficient"];
 const preferenceOptions = ["Like", "Neutral", "Dislike"];
 let manifest;
-const round = new URLSearchParams(window.location.search).get("round") === "1" ? "1" : "2";
+const requestedRound = new URLSearchParams(window.location.search).get("round");
+const round = requestedRound === "1" || requestedRound === "3" ? requestedRound : "2";
 let reviewData = { schemaVersion: "1.0.0", updatedAt: null, reviews: {} };
 let index = 0;
 
@@ -108,9 +109,9 @@ function exportJson() {
 }
 
 async function init() {
-  manifest = await fetch(
-    round === "1" ? "../comparison_manifest.json" : "../comparison_manifest_round_2.json",
-  ).then((r) => r.json());
+  const manifestPath =
+    round === "1" ? "../comparison_manifest.json" : `../comparison_manifest_round_${round}.json`;
+  manifest = await fetch(manifestPath).then((r) => r.json());
   try {
     reviewData = await fetch(`/api/personal-review?round=${round}`).then((r) => r.json());
   } catch {}

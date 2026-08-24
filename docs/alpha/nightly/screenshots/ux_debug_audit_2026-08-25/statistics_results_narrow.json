@@ -1,0 +1,62 @@
+{
+  "docHeight": 2889,
+  "docWidth": 705,
+  "innerHeight": 1056,
+  "innerWidth": 720,
+  "overflow": [
+    {
+      "client": 669,
+      "cls": "experiment-workspace",
+      "left": 18,
+      "right": 687,
+      "scroll": 682,
+      "tag": "DIV",
+      "text": "← 戻る実験ワークスペースブラウザレビュー用の一時実験細胞・培養 · 細胞強度合成デモデータ学習・画面確認用の人工データです。実測・未発表データではなく、正式な研究結果として使用しないでください。ファ"
+    },
+    {
+      "client": 669,
+      "cls": "experiment-workspace-graph-view",
+      "left": 18,
+      "right": 687,
+      "scroll": 682,
+      "tag": "DIV",
+      "text": "グラフ 1✎統計細胞強度実験単位ごとの値を比較閉じる解析対象測定項目細胞強度条件ControlTreatment統計上の単位実験単位（Exp）設計の解釈条件ごとに別の実験単位対照群未指定（表示名からは"
+    },
+    {
+      "client": 669,
+      "cls": "",
+      "left": 18,
+      "right": 687,
+      "scroll": 682,
+      "tag": "DIV",
+      "text": "統計細胞強度実験単位ごとの値を比較閉じる解析対象測定項目細胞強度条件ControlTreatment統計上の単位実験単位（Exp）設計の解釈条件ごとに別の実験単位対照群未指定（表示名からは推測しません"
+    },
+    {
+      "client": 667,
+      "cls": "experiment-graph-workbench experiment-graph-workbench--statistics",
+      "left": 18,
+      "right": 687,
+      "scroll": 681,
+      "tag": "SECTION",
+      "text": "統計細胞強度実験単位ごとの値を比較閉じる解析対象測定項目細胞強度条件ControlTreatment統計上の単位実験単位（Exp）設計の解釈条件ごとに別の実験単位対照群未指定（表示名からは推測しません"
+    },
+    {
+      "client": 647,
+      "cls": "experiment-graph-workbench-layout",
+      "left": 29,
+      "right": 676,
+      "scroll": 671,
+      "tag": "DIV",
+      "text": "解析対象測定項目細胞強度条件ControlTreatment統計上の単位実験単位（Exp）設計の解釈条件ごとに別の実験単位対照群未指定（表示名からは推測しません）実データ確認後このグラフの統計? この"
+    },
+    {
+      "client": 645,
+      "cls": "experiment-graph-inspector",
+      "left": 29,
+      "right": 676,
+      "scroll": 670,
+      "tag": "ASIDE",
+      "text": "解析対象測定項目細胞強度条件ControlTreatment統計上の単位実験単位（Exp）設計の解釈条件ごとに別の実験単位対照群未指定（表示名からは推測しません）実データ確認後このグラフの統計? この"
+    }
+  ]
+}

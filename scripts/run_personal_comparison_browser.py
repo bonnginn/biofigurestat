@@ -15,6 +15,7 @@ from urllib.parse import parse_qs, urlparse
 ROOT = Path(__file__).resolve().parents[1]
 REVIEW_PATH = ROOT / "benchmark/personal_figure_v1/review/review_data.json"
 ROUND_2_REVIEW_PATH = ROOT / "benchmark/personal_figure_v1/review/review_round_2.json"
+ROUND_3_REVIEW_PATH = ROOT / "benchmark/personal_figure_v1/review/review_round_3.json"
 UI_PATH = "/benchmark/personal_figure_v1/comparison_browser/index.html"
 
 
@@ -24,7 +25,12 @@ class ReviewHandler(SimpleHTTPRequestHandler):
 
     def review_path(self) -> Path:
         query = parse_qs(urlparse(self.path).query)
-        return REVIEW_PATH if query.get("round") == ["1"] else ROUND_2_REVIEW_PATH
+        round_number = query.get("round")
+        if round_number == ["1"]:
+            return REVIEW_PATH
+        if round_number == ["3"]:
+            return ROUND_3_REVIEW_PATH
+        return ROUND_2_REVIEW_PATH
 
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)

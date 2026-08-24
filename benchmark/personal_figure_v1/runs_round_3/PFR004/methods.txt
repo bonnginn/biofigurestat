@@ -1,0 +1,34 @@
+【Methods】
+解析テンプレート：D03 · 3条件以上の独立群（0.1.0）
+実行手法：一元配置分散分析（ANOVA）（one_way_anova）
+推奨手法：Welchの分散分析（選択と異なる）
+推奨判断：推奨法を上書きしてone_way_anovaを選択
+実験デザイン：PFR004 personal published-Figure validation／実験単位：unit-level.experimental-unit
+解析した測定項目：ciliated_fraction
+対応構造：条件間で別々の独立した実験単位。
+統計上のn：si control n=3, siNdel1 #1 n=3, siNdel1 #2 n=3, siNDE1 #1 n=3, siNDE1 #2 n=3
+解析条件：si control、siNdel1 #1、siNdel1 #2、siNDE1 #1、siNDE1 #2
+主比較：si control vs siNdel1 #1
+エラーバー：平均±SD（標本標準偏差）
+
+解析結果
+結果：完了
+全体検定：classical_one_way_anova、F=230.7531、自由度 4, 10、p=8.41e-10
+全体効果量：—=—
+補正済み条件間比較：
+・siNdel1 #1 vs si control：平均値の差 60.8821（95%信頼区間 54.4195～67.3448）、p=0、調整済みp=0、hedges_g=17.6855
+・siNdel1 #2 vs si control：平均値の差 51.8749（95%信頼区間 45.4123～58.3376）、p=3.33e-16、調整済みp=3.33e-16、hedges_g=14.3505
+・siNDE1 #1 vs si control：平均値の差 23.8574（95%信頼区間 17.3948～30.32）、p=1.05e-6、調整済みp=1.05e-6、hedges_g=7.1566
+・siNDE1 #2 vs si control：平均値の差 30.8886（95%信頼区間 24.426～37.3513）、p=8.17e-9、調整済みp=8.17e-9、hedges_g=9.0341
+
+実行エンジン：lsaa-python 0.13.0
+使用パッケージ：numpy 2.3.5, scipy 1.18.0
+アプリケーション：Life Science Analysis App 0.1.0
+完了日時：2026-08-24T17:24:55.307651+00:00
+
+注意事項
+・除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。
+・正規化：実行設定に正規化計画がありません（該当なし／未設定）。
+・対照群：研究者がsi controlを明示指定（条件ID condition.1）。表示名から推測していません。
+・比較意図：明示した対照群と各処置。
+・多重性補正：dunnett_control_vs_manyを指定。

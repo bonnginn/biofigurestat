@@ -229,6 +229,35 @@ class BenchmarkRunVerifierTests(unittest.TestCase):
             path = self.make_complete_run(Path(temporary))
             verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
 
+    def test_completed_descriptive_run_without_engine_result_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.make_complete_run(Path(temporary))
+            (path / "statistics.json").write_text(
+                json.dumps(
+                    {
+                        "state": "not_performed",
+                        "selectedMethod": None,
+                        "reason": "Approved descriptive panel has no inferential comparator.",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            events_path = path / "interaction_log.json"
+            events = [
+                event
+                for event in json.loads(events_path.read_text(encoding="utf-8"))
+                if event["type"] != "statistics_executed"
+            ]
+            for sequence, event in enumerate(events, start=1):
+                event["sequence"] = sequence
+            events_path.write_text(json.dumps(events), encoding="utf-8")
+            run_path = path / "run.json"
+            run = json.loads(run_path.read_text(encoding="utf-8"))
+            run["interactionCount"] = len(events)
+            run_path.write_text(json.dumps(run), encoding="utf-8")
+
+            verify_run_directory(path, "pilot_independent_2group", "track_A", "run_001")
+
     def test_literature_data_loaded_event_passes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

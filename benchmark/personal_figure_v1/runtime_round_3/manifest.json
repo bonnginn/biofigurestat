@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0_ROUND_3_GRAPH_CORE_V1",
+  "sourceRuntime": "runtime_round_2",
+  "syntheticValues": "byte-equivalent numeric values after identity-only copy",
+  "seed": 20260825,
+  "goldBrief": "docs/alpha/PERSONAL_FIGURE_GOLD_BRIEFS_2026-08-25.md",
+  "graphCoreAdr": "docs/adr/0047-graph-core-v1-visual-grammar.md",
+  "caseIds": [
+    "PFR002",
+    "PFR004",
+    "PFR025",
+    "PFR046",
+    "PFR049",
+    "PFR069"
+  ]
+}

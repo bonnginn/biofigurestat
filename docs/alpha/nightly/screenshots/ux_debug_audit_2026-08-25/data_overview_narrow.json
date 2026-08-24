@@ -1,0 +1,27 @@
+{
+  "docHeight": 1773,
+  "docWidth": 534,
+  "innerHeight": 800,
+  "innerWidth": 545,
+  "overflow": [
+    {
+      "client": 1,
+      "cls": "topbar-nav__label",
+      "left": 245,
+      "right": 246,
+      "scroll": 41,
+      "tag": "SPAN",
+      "text": "ホーム"
+    },
+    {
+      "client": 1,
+      "cls": "topbar-nav__label",
+      "left": 290,
+      "right": 291,
+      "scroll": 82,
+      "tag": "SPAN",
+      "text": "新しい実験"
+    }
+  ],
+  "tiny": []
+}

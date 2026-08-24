@@ -1,0 +1,18 @@
+{
+  "docHeight": 914,
+  "docWidth": 1504,
+  "innerHeight": 800,
+  "innerWidth": 1515,
+  "overflow": [
+    {
+      "client": 150,
+      "cls": "hero-orbit",
+      "left": 1067,
+      "right": 1217,
+      "scroll": 190,
+      "tag": "DIV",
+      "text": "LS"
+    }
+  ],
+  "tiny": []
+}

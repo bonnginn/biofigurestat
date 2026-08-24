@@ -1,0 +1,44 @@
+{
+  "docHeight": 2554,
+  "docWidth": 530,
+  "innerHeight": 1056,
+  "innerWidth": 545,
+  "overflow": [
+    {
+      "client": 1,
+      "cls": "topbar-nav__label",
+      "left": 236,
+      "right": 237,
+      "scroll": 41,
+      "tag": "SPAN",
+      "text": "ホーム"
+    },
+    {
+      "client": 1,
+      "cls": "topbar-nav__label",
+      "left": 282,
+      "right": 283,
+      "scroll": 82,
+      "tag": "SPAN",
+      "text": "新しい実験"
+    },
+    {
+      "client": 248,
+      "cls": "",
+      "left": 27,
+      "right": 277,
+      "scroll": 273,
+      "tag": "DIV",
+      "text": "保存 Ctrl/⌘S名前を付けて保存 Shift+Ctrl/⌘Sこの設計をお気に入りに保存"
+    },
+    {
+      "client": 236,
+      "cls": "",
+      "left": 34,
+      "right": 270,
+      "scroll": 267,
+      "tag": "BUTTON",
+      "text": "名前を付けて保存 Shift+Ctrl/⌘S"
+    }
+  ]
+}

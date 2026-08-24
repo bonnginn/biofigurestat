@@ -1,0 +1,36 @@
+【Methods】
+解析テンプレート：D05 · 2因子の要因配置（0.1.0）
+実行手法：二元配置分散分析（two_way_anova）
+推奨手法：二元配置分散分析（選択と同じ）
+推奨判断：過去データのため明示記録なし
+実験デザイン：PFR002 personal published-Figure validation／実験単位：unit-level.experimental-unit
+解析した測定項目：ciliated_fraction
+対応構造：条件間で別々の独立した実験単位。
+統計上のn：Ndel1-Myc; siNdel1; Dox− n=3, Ndel1-Myc; siNdel1; Dox+ n=3, NDE1-Myc; siNdel1; Dox− n=3, NDE1-Myc; siNdel1; Dox+ n=3
+解析条件：Ndel1-Myc; siNdel1; Dox−、Ndel1-Myc; siNdel1; Dox+、NDE1-Myc; siNdel1; Dox−、NDE1-Myc; siNdel1; Dox+
+主比較：Ndel1-Myc; siNdel1; Dox− vs Ndel1-Myc; siNdel1; Dox+
+エラーバー：平均±SD（標本標準偏差）
+
+解析結果
+結果：完了
+Type III検定（交互作用を先に表示）：
+・Rescue cell line × Dox / reference（交互作用）：F=81.1717、自由度 1, 8、p=1.84e-5、partial_eta_squared=0.9103
+・Rescue cell line：F=64.3582、自由度 1, 8、p=4.28e-5、partial_eta_squared=0.8894
+・Dox / reference：F=218.5221、自由度 1, 8、p=4.32e-7、partial_eta_squared=0.9647
+Holm補正済み条件間比較：
+・Ndel1-Myc; siNdel1; Dox− vs Ndel1-Myc; siNdel1; Dox+：平均値の差 34.1276（99.1667%信頼区間 23.5864～44.6687）、p=0.0001、調整済みp=0.0007、hedges_g=10.9728
+・Ndel1-Myc; siNdel1; Dox− vs NDE1-Myc; siNdel1; Dox−：平均値の差 1.416（99.1667%信頼区間 -9.1695～12.0015）、p=0.5428、調整済みp=0.5428、hedges_g=0.4354
+・Ndel1-Myc; siNdel1; Dox− vs NDE1-Myc; siNdel1; Dox+：平均値の差 9.6968（99.1667%信頼区間 -1.1725～20.5662）、p=0.0124、調整済みp=0.0371、hedges_g=2.8408
+・Ndel1-Myc; siNdel1; Dox+ vs NDE1-Myc; siNdel1; Dox−：平均値の差 -32.7115（99.1667%信頼区間 -41.5577～-23.8654）、p=6.04e-5、調整済みp=0.0004、hedges_g=-11.8364
+・Ndel1-Myc; siNdel1; Dox+ vs NDE1-Myc; siNdel1; Dox+：平均値の差 -24.4307（99.1667%信頼区間 -34.1383～-14.7232）、p=0.0003、調整済みp=0.0012、hedges_g=-8.2778
+・NDE1-Myc; siNdel1; Dox− vs NDE1-Myc; siNdel1; Dox+：平均値の差 8.2808（99.1667%信頼区間 -1.6335～18.1951）、p=0.0154、調整済みp=0.0371、hedges_g=2.6704
+
+実行エンジン：lsaa-python 0.13.0
+使用パッケージ：numpy 2.3.5, scipy 1.18.0
+アプリケーション：Life Science Analysis App 0.1.0
+完了日時：2026-08-24T17:35:16.643787+00:00
+
+注意事項
+・除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。
+・正規化：実行設定に正規化計画がありません（該当なし／未設定）。
+・多重性補正：holm_all_cell_pairsを指定。

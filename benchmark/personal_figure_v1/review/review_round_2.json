@@ -1,6 +1,49 @@
 {
   "schemaVersion": "1.0.0",
   "round": 2,
-  "updatedAt": null,
-  "reviews": {}
+  "updatedAt": "2026-08-24T16:02:18.934Z",
+  "reviews": {
+    "PFR002": {
+      "readability": "ok",
+      "preference": "neutral",
+      "flags": ["labels", "statistics", "structure"],
+      "comment": "Doxのプラス、マイナスは凡例として付加する。つまり、プラスマイナスは横軸ラベルとしてはつけず、２つの棒グラフをくっつけて表示する。Doxプラスとマイナスの統計情報がグラフ上にみえない。",
+      "reviewedAt": "2026-08-24T15:57:50.721Z"
+    },
+    "PFR004": {
+      "readability": "ok",
+      "preference": "dislike",
+      "flags": ["statistics", "structure"],
+      "comment": "先ほどと同様で、系列として０ｈ２４ｈがあるので、これらは違う色で表現し、グラフをくっつけ、凡例をつける。統計情報もみえない。",
+      "reviewedAt": "2026-08-24T15:58:46.711Z"
+    },
+    "PFR025": {
+      "readability": "ok",
+      "preference": "dislike",
+      "flags": ["labels", "structure"],
+      "comment": "Time (min)とかいてあるので横軸ラベルにminがあるのはおかしい。Time pointが最初のところは縦軸と交わる。Time (min)の位置がしたすぎる。もう少し横幅を縮小する。",
+      "reviewedAt": "2026-08-24T16:00:07.179Z"
+    },
+    "PFR046": {
+      "readability": "ok",
+      "preference": "dislike",
+      "flags": ["labels", "structure"],
+      "comment": "これもdark/litで比較しているので、その２系列のペア同市は近づけて表示する。凡例をつける。",
+      "reviewedAt": "2026-08-24T16:01:11.527Z"
+    },
+    "PFR049": {
+      "readability": "ok",
+      "preference": "neutral",
+      "flags": ["statistics"],
+      "comment": "boxがやはり黒塗り。統計情報が表示されていないようにみえる。",
+      "reviewedAt": "2026-08-24T16:01:52.391Z"
+    },
+    "PFR069": {
+      "readability": "ok",
+      "preference": "dislike",
+      "flags": ["structure"],
+      "comment": "PFR025と同じ点について改善が必要。",
+      "reviewedAt": "2026-08-24T16:02:18.934Z"
+    }
+  }
 }

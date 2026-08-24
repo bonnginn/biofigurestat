@@ -1,0 +1,17 @@
+{
+  "docHeight": 2248,
+  "docWidth": 705,
+  "innerHeight": 1056,
+  "innerWidth": 720,
+  "overflow": [
+    {
+      "client": 236,
+      "cls": "",
+      "left": 34,
+      "right": 270,
+      "scroll": 267,
+      "tag": "BUTTON",
+      "text": "名前を付けて保存 Shift+Ctrl/⌘S"
+    }
+  ]
+}

@@ -1,0 +1,475 @@
+{
+  "selectedReadoutId": "readout.1",
+  "sourceMode": "raw_readout",
+  "selectedConditionIds": [
+    "condition.1",
+    "condition.2",
+    "condition.4",
+    "condition.5"
+  ],
+  "selectedTimePointIds": [],
+  "analysisTimePointId": null,
+  "analysisMetric": {
+    "kind": "selected_timepoint"
+  },
+  "graphType": "bar",
+  "grouping": {
+    "x": {
+      "source": "factor",
+      "factorId": "rescue_cell_line"
+    },
+    "series": {
+      "source": "factor",
+      "factorId": "dox"
+    },
+    "facet": null
+  },
+  "layers": {
+    "raw": false,
+    "distribution": false,
+    "experiment": true,
+    "overall": true,
+    "violin": false,
+    "box": false,
+    "errorBar": true,
+    "connectingLine": false
+  },
+  "appearance": {
+    "errorBar": "sd",
+    "palette": "condition",
+    "pointSize": 6,
+    "pointOpacity": 0.9,
+    "axisLineWidth": 1.4,
+    "hierarchicalLabels": true,
+    "jitter": 12,
+    "fontFamily": "arial",
+    "graphTitleFontSize": 20,
+    "axisTitleFontSize": 19,
+    "tickFontSize": 17,
+    "hierarchyFontSize": 17,
+    "legendFontSize": 16,
+    "legendPosition": "top",
+    "seriesColors": {},
+    "seriesStyles": {},
+    "distributionFill": "white",
+    "distributionFillColor": "#ffffff",
+    "distributionOutlineColor": "#111111",
+    "barWidth": 0.72,
+    "withinGroupSpacing": 0.72,
+    "betweenGroupSpacing": 1.35,
+    "rawPointColor": "#8a96a3",
+    "summaryColor": "#111111",
+    "errorBarColor": "#111111",
+    "connectingLineColor": "#4b5563",
+    "summaryLineWidth": 2,
+    "errorBarLineWidth": 1.5,
+    "connectingLineWidth": 1.5,
+    "distributionLineWidth": 1.2,
+    "canvasPreset": "standard",
+    "sidePadding": 72
+  },
+  "axes": {
+    "xSemantic": "categorical",
+    "xTitle": "",
+    "xUnit": "",
+    "yTitle": "ciliated_fraction",
+    "yRangeMode": "auto",
+    "yMin": null,
+    "yMax": null,
+    "yScale": "linear",
+    "showCategoryLabels": true,
+    "hierarchyOrder": [
+      "rescue_cell_line",
+      "dox"
+    ],
+    "spacing": 1,
+    "yTickMode": "auto",
+    "yTickInterval": null
+  },
+  "statisticsAnnotation": {
+    "mode": "symbol",
+    "testIndex": 8
+  },
+  "statisticsAnnotations": [
+    {
+      "id": "annotation.3",
+      "analysisId": "request.draft.graph",
+      "comparisonId": "holm_welch:condition.1:condition.2",
+      "testIndex": 3,
+      "mode": "symbol",
+      "showNonSignificant": true,
+      "endpoints": [
+        {
+          "conditionId": "condition.1"
+        },
+        {
+          "conditionId": "condition.2"
+        }
+      ],
+      "pValueStatus": "adjusted",
+      "lineage": {}
+    },
+    {
+      "id": "annotation.8",
+      "analysisId": "request.draft.graph",
+      "comparisonId": "holm_welch:condition.4:condition.5",
+      "testIndex": 8,
+      "mode": "symbol",
+      "showNonSignificant": true,
+      "endpoints": [
+        {
+          "conditionId": "condition.4"
+        },
+        {
+          "conditionId": "condition.5"
+        }
+      ],
+      "pValueStatus": "adjusted",
+      "lineage": {}
+    }
+  ],
+  "analysisRunId": null,
+  "analysis": {
+    "request": {
+      "protocolVersion": "0.4.0",
+      "requestId": "request.draft.graph",
+      "projectId": "project.draft",
+      "analysisId": "analysis.draft.graph",
+      "templateId": "D05",
+      "templateVersion": "0.1.0",
+      "method": "two_way_anova",
+      "factors": [
+        {
+          "factorId": "factor.rescue_cell_line",
+          "levelIds": [
+            "level.rescue_cell_line.1",
+            "level.rescue_cell_line.2"
+          ]
+        },
+        {
+          "factorId": "factor.dox",
+          "levelIds": [
+            "level.dox.1",
+            "level.dox.2"
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "conditionId": "condition.1",
+          "factorALevelId": "level.rescue_cell_line.1",
+          "factorBLevelId": "level.dox.1"
+        },
+        {
+          "conditionId": "condition.2",
+          "factorALevelId": "level.rescue_cell_line.1",
+          "factorBLevelId": "level.dox.2"
+        },
+        {
+          "conditionId": "condition.4",
+          "factorALevelId": "level.rescue_cell_line.2",
+          "factorBLevelId": "level.dox.1"
+        },
+        {
+          "conditionId": "condition.5",
+          "factorALevelId": "level.rescue_cell_line.2",
+          "factorBLevelId": "level.dox.2"
+        }
+      ],
+      "primaryContrastConditionIds": [
+        "condition.1",
+        "condition.2"
+      ],
+      "observations": [
+        {
+          "observationId": "observation.draft.1.1",
+          "conditionId": "condition.1",
+          "value": 46.15384615384615,
+          "experimentalUnitId": "PFR002_C1_E1.condition.1"
+        },
+        {
+          "observationId": "observation.draft.2.1",
+          "conditionId": "condition.1",
+          "value": 51.82481751824818,
+          "experimentalUnitId": "PFR002_C1_E2.condition.1"
+        },
+        {
+          "observationId": "observation.draft.3.1",
+          "conditionId": "condition.1",
+          "value": 49.30555555555556,
+          "experimentalUnitId": "PFR002_C1_E3.condition.1"
+        },
+        {
+          "observationId": "observation.draft.1.2",
+          "conditionId": "condition.2",
+          "value": 15.037593984962406,
+          "experimentalUnitId": "PFR002_C1_E1.condition.2"
+        },
+        {
+          "observationId": "observation.draft.2.2",
+          "conditionId": "condition.2",
+          "value": 12.857142857142856,
+          "experimentalUnitId": "PFR002_C1_E2.condition.2"
+        },
+        {
+          "observationId": "observation.draft.3.2",
+          "conditionId": "condition.2",
+          "value": 17.006802721088434,
+          "experimentalUnitId": "PFR002_C1_E3.condition.2"
+        },
+        {
+          "observationId": "observation.draft.1.3",
+          "conditionId": "condition.4",
+          "value": 45.32374100719424,
+          "experimentalUnitId": "PFR002_C1_E1.condition.4"
+        },
+        {
+          "observationId": "observation.draft.2.3",
+          "conditionId": "condition.4",
+          "value": 50,
+          "experimentalUnitId": "PFR002_C1_E2.condition.4"
+        },
+        {
+          "observationId": "observation.draft.3.3",
+          "conditionId": "condition.4",
+          "value": 47.712418300653596,
+          "experimentalUnitId": "PFR002_C1_E3.condition.4"
+        },
+        {
+          "observationId": "observation.draft.1.4",
+          "conditionId": "condition.5",
+          "value": 38.732394366197184,
+          "experimentalUnitId": "PFR002_C1_E1.condition.5"
+        },
+        {
+          "observationId": "observation.draft.2.4",
+          "conditionId": "condition.5",
+          "value": 42.281879194630875,
+          "experimentalUnitId": "PFR002_C1_E2.condition.5"
+        },
+        {
+          "observationId": "observation.draft.3.4",
+          "conditionId": "condition.5",
+          "value": 37.17948717948718,
+          "experimentalUnitId": "PFR002_C1_E3.condition.5"
+        }
+      ],
+      "options": {
+        "alternative": "two_sided",
+        "confidenceLevel": 0.95,
+        "multiplicityMethod": "holm_all_cell_pairs"
+      }
+    },
+    "result": {
+      "protocolVersion": "0.4.0",
+      "requestId": "request.draft.graph",
+      "status": "ok",
+      "engine": {
+        "name": "lsaa-python",
+        "version": "0.13.0",
+        "packages": {
+          "numpy": "2.3.5",
+          "scipy": "1.18.0"
+        }
+      },
+      "estimates": [
+        {
+          "name": "condition.1_minus_condition.2",
+          "value": 34.127559888152064,
+          "standardError": 2.0315797952311585,
+          "confidenceInterval": {
+            "level": 0.9916666666666667,
+            "lower": 23.58642332579889,
+            "upper": 44.66869645050524
+          }
+        },
+        {
+          "name": "condition.1_minus_condition.4",
+          "value": 1.4160199732673462,
+          "standardError": 2.1245401674588673,
+          "confidenceInterval": {
+            "level": 0.9916666666666667,
+            "lower": -9.169476300677367,
+            "upper": 12.00151624721206
+          }
+        },
+        {
+          "name": "condition.1_minus_condition.5",
+          "value": 9.696819495778215,
+          "standardError": 2.2296566347432134,
+          "confidenceInterval": {
+            "level": 0.9916666666666667,
+            "lower": -1.1725190263815897,
+            "upper": 20.56615801793802
+          }
+        },
+        {
+          "name": "condition.2_minus_condition.4",
+          "value": -32.71153991488472,
+          "standardError": 1.8052090455271539,
+          "confidenceInterval": {
+            "level": 0.9916666666666667,
+            "lower": -41.557688063630465,
+            "upper": -23.86539176613897
+          }
+        },
+        {
+          "name": "condition.2_minus_condition.5",
+          "value": -24.43074039237385,
+          "standardError": 1.9278167661272525,
+          "confidenceInterval": {
+            "level": 0.9916666666666667,
+            "lower": -34.138293900223616,
+            "upper": -14.72318688452408
+          }
+        },
+        {
+          "name": "condition.4_minus_condition.5",
+          "value": 8.280799522510868,
+          "standardError": 2.025544850778677,
+          "confidenceInterval": {
+            "level": 0.9916666666666667,
+            "lower": -1.6335437456529913,
+            "upper": 18.19514279067473
+          }
+        }
+      ],
+      "tests": [
+        {
+          "name": "type3_interaction",
+          "statisticName": "F",
+          "statistic": 81.17168590036455,
+          "degreesOfFreedom": [
+            1,
+            8
+          ],
+          "pValue": 0.00001838750206599291,
+          "adjustedPValue": null,
+          "effectSizeName": "partial_eta_squared",
+          "effectSize": 0.9102854239075535
+        },
+        {
+          "name": "type3_factor_a",
+          "statisticName": "F",
+          "statistic": 64.35817797952267,
+          "degreesOfFreedom": [
+            1,
+            8
+          ],
+          "pValue": 0.00004279961487062506,
+          "adjustedPValue": null,
+          "effectSizeName": "partial_eta_squared",
+          "effectSize": 0.8894388965644768
+        },
+        {
+          "name": "type3_factor_b",
+          "statisticName": "F",
+          "statistic": 218.52205561621756,
+          "degreesOfFreedom": [
+            1,
+            8
+          ],
+          "pValue": 4.315242641363676e-7,
+          "adjustedPValue": null,
+          "effectSizeName": "partial_eta_squared",
+          "effectSize": 0.9646833506863723
+        },
+        {
+          "name": "holm_welch:condition.1:condition.2",
+          "statisticName": "t",
+          "statistic": 16.79853283058908,
+          "degreesOfFreedom": [
+            3.6615164161127973
+          ],
+          "pValue": 0.00013425536824430046,
+          "adjustedPValue": 0.0006712768412215023,
+          "effectSizeName": "hedges_g",
+          "effectSize": 10.972755696622512
+        },
+        {
+          "name": "holm_welch:condition.1:condition.4",
+          "statisticName": "t",
+          "statistic": 0.6665065669062062,
+          "degreesOfFreedom": [
+            3.857180790708518
+          ],
+          "pValue": 0.5428308390328286,
+          "adjustedPValue": 0.5428308390328286,
+          "effectSizeName": "hedges_g",
+          "effectSize": 0.4353602664358353
+        },
+        {
+          "name": "holm_welch:condition.1:condition.5",
+          "statisticName": "t",
+          "statistic": 4.349019191869866,
+          "degreesOfFreedom": [
+            3.9728671521093104
+          ],
+          "pValue": 0.012350042658925742,
+          "adjustedPValue": 0.03705012797677723,
+          "effectSizeName": "hedges_g",
+          "effectSize": 2.8407674404406458
+        },
+        {
+          "name": "holm_welch:condition.2:condition.4",
+          "statisticName": "t",
+          "statistic": -18.120638158741528,
+          "degreesOfFreedom": [
+            3.944555317096027
+          ],
+          "pValue": 0.000060355987360357856,
+          "adjustedPValue": 0.0003621359241621471,
+          "effectSizeName": "hedges_g",
+          "effectSize": -11.836351280672757
+        },
+        {
+          "name": "holm_welch:condition.2:condition.5",
+          "statisticName": "t",
+          "statistic": -12.672750243505876,
+          "degreesOfFreedom": [
+            3.8038024413502454
+          ],
+          "pValue": 0.00029922334831950723,
+          "adjustedPValue": 0.001196893393278029,
+          "effectSizeName": "hedges_g",
+          "effectSize": -8.277805795818844
+        },
+        {
+          "name": "holm_welch:condition.4:condition.5",
+          "statisticName": "t",
+          "statistic": 4.088183739465208,
+          "degreesOfFreedom": [
+            3.9508324264396006
+          ],
+          "pValue": 0.015378161906309681,
+          "adjustedPValue": 0.03705012797677723,
+          "effectSizeName": "hedges_g",
+          "effectSize": 2.6703904363821347
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "sum_coded_type3_factorial_model",
+          "message": "D05 used sum-to-zero contrasts and Type III tests; inspect the interaction before interpreting averaged main effects."
+        },
+        {
+          "code": "simultaneous_cell_intervals",
+          "message": "All-cell confidence intervals use a Bonferroni simultaneous level while pairwise p-values use Holm adjustment."
+        }
+      ],
+      "warnings": [],
+      "completedAt": "2026-08-24T17:35:16.643787+00:00"
+    },
+    "recommendedMethod": "two_way_anova",
+    "recommendation": {
+      "templateId": "D05",
+      "templateVersion": "0.1.0",
+      "recommendedMethod": "two_way_anova",
+      "alternativeMethods": [],
+      "reasonCode": "draft_d05_design_assessment",
+      "explanation": "2種類の処置の主効果と交互作用を先に評価し、条件間比較はHolm法で調整します（Ndel1-Myc; siNdel1; Dox−: 3、Ndel1-Myc; siNdel1; Dox+: 3、NDE1-Myc; siNdel1; Dox−: 3、NDE1-Myc; siNdel1; Dox+: 3）。",
+      "statisticalNDefinition": "Ndel1-Myc; siNdel1; Dox− n=3, Ndel1-Myc; siNdel1; Dox+ n=3, NDE1-Myc; siNdel1; Dox− n=3, NDE1-Myc; siNdel1; Dox+ n=3",
+      "multiplicityMethod": "holm_all_cell_pairs"
+    }
+  }
+}

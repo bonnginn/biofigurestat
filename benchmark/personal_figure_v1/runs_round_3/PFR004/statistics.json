@@ -1,0 +1,311 @@
+{
+  "selectedReadoutId": "readout.1",
+  "selectedConditionIds": [
+    "condition.1",
+    "condition.2",
+    "condition.3",
+    "condition.4",
+    "condition.5"
+  ],
+  "statisticalUnit": "independent fixed-cell dish/experiment",
+  "recommendation": {
+    "templateId": "D03",
+    "templateVersion": "0.1.0",
+    "recommendedMethod": "welch_anova",
+    "alternativeMethods": [
+      "one_way_anova",
+      "kruskal_wallis"
+    ],
+    "reasonCode": "draft_d03_design_assessment",
+    "explanation": "独立した5条件を比較します（si control: 3、siNdel1 #1: 3、siNdel1 #2: 3、siNDE1 #1: 3、siNDE1 #2: 3）。全体比較後の条件間比較にはGames–Howell法を使い、多重比較を扱います。明示した対照群との比較を結果内で識別できます。",
+    "statisticalNDefinition": "si control n=3, siNdel1 #1 n=3, siNdel1 #2 n=3, siNDE1 #1 n=3, siNDE1 #2 n=3",
+    "multiplicityMethod": "dunnett_control_vs_many",
+    "decision": {
+      "kind": "overridden",
+      "selectedMethod": "one_way_anova"
+    }
+  },
+  "recommendedMethod": "welch_anova",
+  "selectedMethod": "one_way_anova",
+  "recommendationDiffers": true,
+  "contrast": {
+    "intent": "control_vs_many",
+    "controlConditionId": "condition.1",
+    "plannedConditionPairs": []
+  },
+  "nByCondition": [
+    {
+      "conditionId": "condition.1",
+      "label": "si control",
+      "n": 3
+    },
+    {
+      "conditionId": "condition.2",
+      "label": "siNdel1 #1",
+      "n": 3
+    },
+    {
+      "conditionId": "condition.3",
+      "label": "siNdel1 #2",
+      "n": 3
+    },
+    {
+      "conditionId": "condition.4",
+      "label": "siNDE1 #1",
+      "n": 3
+    },
+    {
+      "conditionId": "condition.5",
+      "label": "siNDE1 #2",
+      "n": 3
+    }
+  ],
+  "correction": "dunnett_control_vs_many",
+  "request": {
+    "protocolVersion": "0.2.0",
+    "requestId": "request.draft.graph",
+    "projectId": "project.draft",
+    "analysisId": "analysis.draft.graph",
+    "templateId": "D03",
+    "templateVersion": "0.1.0",
+    "method": "one_way_anova",
+    "conditionIds": [
+      "condition.1",
+      "condition.2",
+      "condition.3",
+      "condition.4",
+      "condition.5"
+    ],
+    "controlConditionId": "condition.1",
+    "contrastIntent": "control_vs_many",
+    "primaryContrastConditionIds": [
+      "condition.1",
+      "condition.2"
+    ],
+    "observations": [
+      {
+        "observationId": "observation.draft.1.1",
+        "conditionId": "condition.1",
+        "value": 6.976744186046512,
+        "experimentalUnitId": "PFR004_0H_C1_E1.condition.1"
+      },
+      {
+        "observationId": "observation.draft.2.1",
+        "conditionId": "condition.1",
+        "value": 11.194029850746269,
+        "experimentalUnitId": "PFR004_0H_C1_E2.condition.1"
+      },
+      {
+        "observationId": "observation.draft.3.1",
+        "conditionId": "condition.1",
+        "value": 12.23021582733813,
+        "experimentalUnitId": "PFR004_0H_C1_E3.condition.1"
+      },
+      {
+        "observationId": "observation.draft.1.2",
+        "conditionId": "condition.2",
+        "value": 67.93893129770993,
+        "experimentalUnitId": "PFR004_0H_C1_E1.condition.2"
+      },
+      {
+        "observationId": "observation.draft.2.2",
+        "conditionId": "condition.2",
+        "value": 72.05882352941177,
+        "experimentalUnitId": "PFR004_0H_C1_E2.condition.2"
+      },
+      {
+        "observationId": "observation.draft.3.2",
+        "conditionId": "condition.2",
+        "value": 73.04964539007092,
+        "experimentalUnitId": "PFR004_0H_C1_E3.condition.2"
+      },
+      {
+        "observationId": "observation.draft.1.3",
+        "conditionId": "condition.3",
+        "value": 58.64661654135338,
+        "experimentalUnitId": "PFR004_0H_C1_E1.condition.3"
+      },
+      {
+        "observationId": "observation.draft.2.3",
+        "conditionId": "condition.3",
+        "value": 63.04347826086957,
+        "experimentalUnitId": "PFR004_0H_C1_E2.condition.3"
+      },
+      {
+        "observationId": "observation.draft.3.3",
+        "conditionId": "condition.3",
+        "value": 64.33566433566433,
+        "experimentalUnitId": "PFR004_0H_C1_E3.condition.3"
+      },
+      {
+        "observationId": "observation.draft.1.4",
+        "conditionId": "condition.4",
+        "value": 31.11111111111111,
+        "experimentalUnitId": "PFR004_0H_C1_E1.condition.4"
+      },
+      {
+        "observationId": "observation.draft.2.4",
+        "conditionId": "condition.4",
+        "value": 35,
+        "experimentalUnitId": "PFR004_0H_C1_E2.condition.4"
+      },
+      {
+        "observationId": "observation.draft.3.4",
+        "conditionId": "condition.4",
+        "value": 35.86206896551724,
+        "experimentalUnitId": "PFR004_0H_C1_E3.condition.4"
+      },
+      {
+        "observationId": "observation.draft.1.5",
+        "conditionId": "condition.5",
+        "value": 37.95620437956204,
+        "experimentalUnitId": "PFR004_0H_C1_E1.condition.5"
+      },
+      {
+        "observationId": "observation.draft.2.5",
+        "conditionId": "condition.5",
+        "value": 42.25352112676056,
+        "experimentalUnitId": "PFR004_0H_C1_E2.condition.5"
+      },
+      {
+        "observationId": "observation.draft.3.5",
+        "conditionId": "condition.5",
+        "value": 42.857142857142854,
+        "experimentalUnitId": "PFR004_0H_C1_E3.condition.5"
+      }
+    ],
+    "options": {
+      "alternative": "two_sided",
+      "confidenceLevel": 0.95,
+      "multiplicityMethod": "dunnett_control_vs_many"
+    }
+  },
+  "result": {
+    "protocolVersion": "0.2.0",
+    "requestId": "request.draft.graph",
+    "status": "ok",
+    "engine": {
+      "name": "lsaa-python",
+      "version": "0.13.0",
+      "packages": {
+        "numpy": "2.3.5",
+        "scipy": "1.18.0"
+      }
+    },
+    "estimates": [
+      {
+        "name": "condition.2_minus_condition.1",
+        "value": 60.882136784353904,
+        "standardError": null,
+        "confidenceInterval": {
+          "level": 0.95,
+          "lower": 54.41950490738652,
+          "upper": 67.3447686613213
+        }
+      },
+      {
+        "name": "condition.3_minus_condition.1",
+        "value": 51.87492309125213,
+        "standardError": null,
+        "confidenceInterval": {
+          "level": 0.95,
+          "lower": 45.41229121428474,
+          "upper": 58.337554968219514
+        }
+      },
+      {
+        "name": "condition.4_minus_condition.1",
+        "value": 23.85739673749915,
+        "standardError": null,
+        "confidenceInterval": {
+          "level": 0.95,
+          "lower": 17.394764860531765,
+          "upper": 30.320028614466537
+        }
+      },
+      {
+        "name": "condition.5_minus_condition.1",
+        "value": 30.88862616644485,
+        "standardError": null,
+        "confidenceInterval": {
+          "level": 0.95,
+          "lower": 24.425994289477465,
+          "upper": 37.35125804341224
+        }
+      }
+    ],
+    "tests": [
+      {
+        "name": "classical_one_way_anova",
+        "statisticName": "F",
+        "statistic": 230.75310458413315,
+        "degreesOfFreedom": [
+          4,
+          10
+        ],
+        "pValue": 8.410421074860565e-10,
+        "adjustedPValue": null,
+        "effectSizeName": null,
+        "effectSize": null
+      },
+      {
+        "name": "dunnett:condition.2:condition.1",
+        "statisticName": "t",
+        "statistic": 27.215897437014412,
+        "degreesOfFreedom": [
+          10
+        ],
+        "pValue": 0,
+        "adjustedPValue": 0,
+        "effectSizeName": "hedges_g",
+        "effectSize": 17.685511975557244
+      },
+      {
+        "name": "dunnett:condition.3:condition.1",
+        "statisticName": "t",
+        "statistic": 23.189438823496626,
+        "degreesOfFreedom": [
+          10
+        ],
+        "pValue": 3.3306690738754696e-16,
+        "adjustedPValue": 3.3306690738754696e-16,
+        "effectSizeName": "hedges_g",
+        "effectSize": 14.350508879482259
+      },
+      {
+        "name": "dunnett:condition.4:condition.1",
+        "statisticName": "t",
+        "statistic": 10.66487638273568,
+        "degreesOfFreedom": [
+          10
+        ],
+        "pValue": 0.0000010496882399957386,
+        "adjustedPValue": 0.0000010496882399957386,
+        "effectSizeName": "hedges_g",
+        "effectSize": 7.156640327860928
+      },
+      {
+        "name": "dunnett:condition.5:condition.1",
+        "statisticName": "t",
+        "statistic": 13.808018675393868,
+        "degreesOfFreedom": [
+          10
+        ],
+        "pValue": 8.169838583427236e-9,
+        "adjustedPValue": 8.169838583427236e-9,
+        "effectSizeName": "hedges_g",
+        "effectSize": 9.034051408108539
+      }
+    ],
+    "diagnostics": [
+      {
+        "code": "equal_variance_assumption_selected",
+        "message": "Conventional one-way ANOVA and its pooled-variance comparisons assume equal population variances."
+      }
+    ],
+    "warnings": [],
+    "completedAt": "2026-08-24T17:24:55.307651+00:00"
+  },
+  "state": "current",
+  "applicationVersion": "0.1.0"
+}
