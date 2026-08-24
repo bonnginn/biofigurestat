@@ -219,9 +219,15 @@ export function mapLiteratureMeasurements(
     return mismatch(`条件をこの順序で作成してください：${sourceConditions.join("、")}`);
   }
 
-  const matched = /across (?:paired|multiple) conditions/i.test(
-    source.researcherPacket.repeated_identity_note,
-  );
+  const conditionsByRawUnit = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const conditions = conditionsByRawUnit.get(row.unit_id) ?? new Set<string>();
+    conditions.add(row.condition);
+    conditionsByRawUnit.set(row.unit_id, conditions);
+  }
+  const matched =
+    [...conditionsByRawUnit.values()].some((conditions) => conditions.size > 1) ||
+    /across (?:paired|multiple) conditions/i.test(source.researcherPacket.repeated_identity_note);
   if (target.conditionAssignment.kind !== (matched ? "matched" : "independent")) {
     return mismatch(
       matched
@@ -289,9 +295,12 @@ export function mapLiteratureMeasurements(
     if (!units.includes(unit)) units.push(unit);
     unitOrderByCondition.set(row.condition, units);
   }
-  const expectedExperimentCount = usesSyntheticXValues
-    ? Math.max(...[...unitOrderByCondition.values()].map((units) => units.length))
-    : Math.max(...[...cellGroups.values()].map((units) => units.size));
+  const matchedUnitOrder = matched ? uniqueInOrder(rows.map((row) => sourceUnit(row))) : [];
+  const expectedExperimentCount = matched
+    ? matchedUnitOrder.length
+    : usesSyntheticXValues
+      ? Math.max(...[...unitOrderByCondition.values()].map((units) => units.length))
+      : Math.max(...[...cellGroups.values()].map((units) => units.size));
   if (target.experiments.length !== expectedExperimentCount) {
     return mismatch(`統計上の実験単位を${expectedExperimentCount}個作成してください。`);
   }
@@ -310,9 +319,11 @@ export function mapLiteratureMeasurements(
     const targetReadout = target.readouts[0];
     if (!targetCondition || !targetReadout) return mismatch("Target design mapping failed.");
     [...units.entries()].forEach(([unit, unitRows], groupExperimentIndex) => {
-      const experimentIndex = usesSyntheticXValues
-        ? (unitOrderByCondition.get(conditionLabel)?.indexOf(unit) ?? -1)
-        : groupExperimentIndex;
+      const experimentIndex = matched
+        ? matchedUnitOrder.indexOf(unit)
+        : usesSyntheticXValues
+          ? (unitOrderByCondition.get(conditionLabel)?.indexOf(unit) ?? -1)
+          : groupExperimentIndex;
       const targetExperiment = target.experiments[experimentIndex];
       if (!targetExperiment) return;
       const key = experimentCellKey({

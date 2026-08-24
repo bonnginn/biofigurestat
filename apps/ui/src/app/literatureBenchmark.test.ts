@@ -124,6 +124,59 @@ describe("literature benchmark experimenter boundary", () => {
     ).toEqual([1, 2, 3, 4]);
   });
 
+  it("infers matched conditions from shared runtime unit identities", () => {
+    const pairedSource: LiteratureExperimenterCase = {
+      ...source,
+      caseId: "LSA260",
+      researcherPacket: {
+        ...source.researcherPacket,
+        case_id: "LSA260",
+        conditions: "Saline administered || Agonist administered",
+        repeated_identity_note:
+          "The same biological_unit_id is retained across repeated observations.",
+      },
+      syntheticData: ["PAIR01", "PAIR02"].flatMap((unit, unitIndex) =>
+        ["Saline administered", "Agonist administered"].map((condition, conditionIndex) => ({
+          ...source.syntheticData[0],
+          case_id: "LSA260",
+          condition,
+          unit_id: unit,
+          experiment_id: `Exp${unitIndex + 1}`,
+          value: unitIndex * 10 + conditionIndex,
+        })),
+      ),
+    };
+    const fixture = createIndependentTwoGroupFixture();
+    const matchedDraft = {
+      ...fixture.draft,
+      experiments: fixture.draft.experiments.slice(0, 2),
+      conditions: fixture.draft.conditions.map((condition, index) => ({
+        ...condition,
+        label: index === 0 ? "Saline administered" : "Agonist administered",
+        attributes: {
+          "attribute.group": index === 0 ? "Saline administered" : "Agonist administered",
+        },
+      })),
+      conditionAssignment: { kind: "matched" as const, unitLabel: "animal" },
+    };
+
+    const result = mapLiteratureMeasurements(pairedSource, matchedDraft);
+    expect(result.compatible).toBe(true);
+    expect(Object.values(result.cells)).toHaveLength(4);
+    expect(
+      Object.values(result.cells).flatMap((cell) =>
+        cell.kind === "nested_continuous" ? cell.rawValues : [],
+      ),
+    ).toEqual([0, 10, 1, 11]);
+
+    expect(
+      mapLiteratureMeasurements(pairedSource, {
+        ...matchedDraft,
+        conditionAssignment: { kind: "independent", unitLabel: "animal" },
+      }).reason,
+    ).toContain("同じ安定した実験単位");
+  });
+
   it("maps nested observations to session-level statistical units", () => {
     const result = mapLiteratureMeasurements(nestedSource, compatibleDraft(3));
     expect(result.compatible).toBe(true);
