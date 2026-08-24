@@ -1,0 +1,341 @@
+{
+  "selectedReadoutId": "readout.1",
+  "sourceMode": "raw_readout",
+  "selectedConditionIds": [
+    "condition.1",
+    "condition.2"
+  ],
+  "selectedTimePointIds": [
+    "time.1",
+    "time.2"
+  ],
+  "analysisTimePointId": null,
+  "analysisMetric": {
+    "kind": "full_time_course"
+  },
+  "graphType": "line",
+  "layers": {
+    "raw": false,
+    "distribution": false,
+    "experiment": true,
+    "overall": true,
+    "violin": false,
+    "box": false,
+    "errorBar": true,
+    "connectingLine": true
+  },
+  "appearance": {
+    "errorBar": "sem",
+    "palette": "single",
+    "pointSize": 6,
+    "axisLineWidth": 1.4,
+    "hierarchicalLabels": true,
+    "jitter": 12,
+    "fontFamily": "arial",
+    "graphTitleFontSize": 20,
+    "axisTitleFontSize": 19,
+    "tickFontSize": 17,
+    "hierarchyFontSize": 17,
+    "legendFontSize": 16,
+    "legendPosition": "hidden",
+    "seriesColors": {},
+    "rawPointColor": "#8a96a3",
+    "summaryColor": "#111111",
+    "errorBarColor": "#111111",
+    "connectingLineColor": "#4b5563",
+    "summaryLineWidth": 2,
+    "errorBarLineWidth": 1.5,
+    "connectingLineWidth": 1.5,
+    "distributionLineWidth": 1.2,
+    "canvasPreset": "standard",
+    "sidePadding": 72
+  },
+  "axes": {
+    "xSemantic": "time",
+    "xTitle": "Time",
+    "xUnit": "h after serum addition",
+    "yTitle": "ciliated_fraction",
+    "yRangeMode": "auto",
+    "yMin": null,
+    "yMax": null,
+    "yScale": "linear",
+    "showCategoryLabels": true,
+    "hierarchyOrder": [
+      "attribute.1"
+    ],
+    "spacing": 1,
+    "yTickMode": "auto",
+    "yTickInterval": null
+  },
+  "statisticsAnnotation": {
+    "mode": "exact_p",
+    "testIndex": 0
+  },
+  "analysisRunId": null,
+  "analysis": {
+    "request": {
+      "protocolVersion": "0.6.0",
+      "requestId": "request.draft.graph",
+      "projectId": "project.draft",
+      "analysisId": "analysis.draft.graph",
+      "templateId": "D06",
+      "templateVersion": "0.1.0",
+      "method": "mixed_anova",
+      "withinFactor": {
+        "role": "time",
+        "title": "Time",
+        "unit": "h after serum addition"
+      },
+      "conditionIds": [
+        "condition.1",
+        "condition.2"
+      ],
+      "timePoints": [
+        {
+          "timePointId": "time.1",
+          "value": 0
+        },
+        {
+          "timePointId": "time.2",
+          "value": 24
+        }
+      ],
+      "observations": [
+        {
+          "observationId": "observation.draft.1.1.1",
+          "conditionId": "condition.1",
+          "value": 82.17821782178217,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E01.condition.1",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E01.condition.1",
+          "timePointId": "time.1"
+        },
+        {
+          "observationId": "observation.draft.1.1.2",
+          "conditionId": "condition.1",
+          "value": 17.391304347826086,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E01.condition.1",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E01.condition.1",
+          "timePointId": "time.2"
+        },
+        {
+          "observationId": "observation.draft.2.1.1",
+          "conditionId": "condition.1",
+          "value": 80.83333333333333,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E02.condition.1",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E02.condition.1",
+          "timePointId": "time.1"
+        },
+        {
+          "observationId": "observation.draft.2.1.2",
+          "conditionId": "condition.1",
+          "value": 23.57142857142857,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E02.condition.1",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E02.condition.1",
+          "timePointId": "time.2"
+        },
+        {
+          "observationId": "observation.draft.3.1.1",
+          "conditionId": "condition.1",
+          "value": 80.99173553719008,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E03.condition.1",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E03.condition.1",
+          "timePointId": "time.1"
+        },
+        {
+          "observationId": "observation.draft.3.1.2",
+          "conditionId": "condition.1",
+          "value": 21.374045801526716,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E03.condition.1",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E03.condition.1",
+          "timePointId": "time.2"
+        },
+        {
+          "observationId": "observation.draft.1.2.1",
+          "conditionId": "condition.2",
+          "value": 73.38129496402878,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E01.condition.2",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E01.condition.2",
+          "timePointId": "time.1"
+        },
+        {
+          "observationId": "observation.draft.1.2.2",
+          "conditionId": "condition.2",
+          "value": 41.732283464566926,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E01.condition.2",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E01.condition.2",
+          "timePointId": "time.2"
+        },
+        {
+          "observationId": "observation.draft.2.2.1",
+          "conditionId": "condition.2",
+          "value": 84.375,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E02.condition.2",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E02.condition.2",
+          "timePointId": "time.1"
+        },
+        {
+          "observationId": "observation.draft.2.2.2",
+          "conditionId": "condition.2",
+          "value": 53.84615384615385,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E02.condition.2",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E02.condition.2",
+          "timePointId": "time.2"
+        },
+        {
+          "observationId": "observation.draft.3.2.1",
+          "conditionId": "condition.2",
+          "value": 84,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E03.condition.2",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E03.condition.2",
+          "timePointId": "time.1"
+        },
+        {
+          "observationId": "observation.draft.3.2.2",
+          "conditionId": "condition.2",
+          "value": 46.92307692307692,
+          "experimentalUnitId": "condition.88e7f4a80ecd:PFR004_E03.condition.2",
+          "pairId": "condition.88e7f4a80ecd:PFR004_E03.condition.2",
+          "timePointId": "time.2"
+        }
+      ],
+      "options": {
+        "alternative": "two_sided",
+        "confidenceLevel": 0.95,
+        "multiplicityMethod": null
+      }
+    },
+    "result": {
+      "protocolVersion": "0.6.0",
+      "requestId": "request.draft.graph",
+      "status": "ok",
+      "engine": {
+        "name": "lsaa-python",
+        "version": "0.13.0",
+        "packages": {
+          "numpy": "2.3.5",
+          "scipy": "1.18.0"
+        }
+      },
+      "estimates": [
+        {
+          "name": "cell_mean:condition.1:time.1",
+          "value": 81.3344288974352,
+          "standardError": 0.4243652617673599,
+          "confidenceInterval": null
+        },
+        {
+          "name": "cell_mean:condition.1:time.2",
+          "value": 20.778926240260457,
+          "standardError": 1.8086928359030323,
+          "confidenceInterval": null
+        },
+        {
+          "name": "cell_mean:condition.2:time.1",
+          "value": 80.58543165467626,
+          "standardError": 3.6036946477723806,
+          "confidenceInterval": null
+        },
+        {
+          "name": "cell_mean:condition.2:time.2",
+          "value": 47.50050474459923,
+          "standardError": 3.508871189441281,
+          "confidenceInterval": null
+        }
+      ],
+      "tests": [
+        {
+          "name": "condition_by_within_factor_interaction",
+          "statisticName": "F",
+          "statistic": 83.59487041108808,
+          "degreesOfFreedom": [
+            1,
+            4
+          ],
+          "pValue": 0.0007941951647547496,
+          "adjustedPValue": null,
+          "effectSizeName": "partial_eta_squared",
+          "effectSize": 0.9543352255534171
+        },
+        {
+          "name": "condition_main_effect",
+          "statisticName": "F",
+          "statistic": 13.916441785786331,
+          "degreesOfFreedom": [
+            1,
+            4
+          ],
+          "pValue": 0.020288489277637226,
+          "adjustedPValue": null,
+          "effectSizeName": "partial_eta_squared",
+          "effectSize": 0.776741383818001
+        },
+        {
+          "name": "within_factor_main_effect",
+          "statisticName": "F",
+          "statistic": 971.3391647239813,
+          "degreesOfFreedom": [
+            1,
+            4
+          ],
+          "pValue": 0.00000631589046566257,
+          "adjustedPValue": null,
+          "effectSizeName": "partial_eta_squared",
+          "effectSize": 0.9958988625242666
+        }
+      ],
+      "factorMetadata": {
+        "withinFactor": {
+          "role": "time",
+          "title": "Time",
+          "unit": "h after serum addition"
+        },
+        "effectIds": {
+          "interaction": "condition_by_within_factor_interaction",
+          "condition": "condition_main_effect",
+          "withinFactor": "within_factor_main_effect"
+        },
+        "legacyEffectAliases": {
+          "condition_by_time_interaction": "condition_by_within_factor_interaction",
+          "condition_between_units": "condition_main_effect",
+          "time_within_units": "within_factor_main_effect"
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "stable_unit_identity_preserved",
+          "message": "D06 used explicit stable-unit IDs and never inferred repeated identity from row order."
+        },
+        {
+          "code": "balanced_complete_split_plot",
+          "message": "Condition used the subject-within-condition error stratum; Time and interaction used the within-subject error stratum."
+        },
+        {
+          "code": "sphericity_not_estimated",
+          "message": "The initial balanced D06 model does not estimate a sphericity correction; use a validated mixed-effects model when this assumption is not defensible."
+        }
+      ],
+      "warnings": [
+        {
+          "code": "small_biological_n_per_condition",
+          "message": "Fewer than four complete biological units are available per condition; interaction estimates are especially uncertain."
+        }
+      ],
+      "completedAt": "2026-08-24T13:27:13.848192+00:00"
+    },
+    "recommendedMethod": "mixed_anova",
+    "recommendation": {
+      "templateId": "D06",
+      "templateVersion": "0.1.0",
+      "recommendedMethod": "mixed_anova",
+      "alternativeMethods": [],
+      "reasonCode": "draft_d06_design_assessment",
+      "explanation": "条件間は独立、Time軸内は同じindependent experimentを追跡します。まず条件×Timeの交互作用を評価し、次に条件とTimeの全体効果を示します。",
+      "statisticalNDefinition": "Control siRNA n=3, Ndel1 siRNA n=3",
+      "multiplicityMethod": null,
+      "decision": {
+        "kind": "accepted",
+        "selectedMethod": "mixed_anova"
+      }
+    }
+  }
+}

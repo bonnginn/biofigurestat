@@ -1,0 +1,57 @@
+{
+  "assets": [
+    {
+      "paperCode": "NDEL1",
+      "figure": "Figure 1",
+      "pmcid": "PMC4754717",
+      "sourceUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4754717/fullTextXML",
+      "packageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4754717/supplementaryFiles",
+      "localPath": "NDEL1_Figure_1.jpg",
+      "sourceType": "open_access_published_figure"
+    },
+    {
+      "paperCode": "NDEL1",
+      "figure": "Figure 2",
+      "pmcid": "PMC4754717",
+      "sourceUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4754717/fullTextXML",
+      "packageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4754717/supplementaryFiles",
+      "localPath": "NDEL1_Figure_2.jpg",
+      "sourceType": "open_access_published_figure"
+    },
+    {
+      "paperCode": "OPTO",
+      "figure": "Figure 1",
+      "pmcid": "PMC7949103",
+      "sourceUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC7949103/fullTextXML",
+      "packageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC7949103/supplementaryFiles",
+      "localPath": "OPTO_Figure_1.jpg",
+      "sourceType": "open_access_published_figure"
+    },
+    {
+      "paperCode": "OPTO",
+      "figure": "Figure 7",
+      "pmcid": "PMC7949103",
+      "sourceUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC7949103/fullTextXML",
+      "packageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC7949103/supplementaryFiles",
+      "localPath": "OPTO_Figure_7.jpg",
+      "sourceType": "open_access_published_figure"
+    },
+    {
+      "paperCode": "CRYO",
+      "figure": "Figure 1",
+      "pmcid": "PMC12136925",
+      "sourceUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12136925/fullTextXML",
+      "packageUrl": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12136925/supplementaryFiles",
+      "localPath": "CRYO_Figure_1.jpg",
+      "sourceType": "open_access_published_figure"
+    },
+    {
+      "paperCode": "GFLB",
+      "figure": "Figure 1",
+      "doi": "10.1242/jcs.194126",
+      "sourceUrl": "https://doi.org/10.1242/jcs.194126",
+      "localPath": "GFLB_Figure_1.jpeg",
+      "sourceType": "publisher_published_figure"
+    }
+  ]
+}

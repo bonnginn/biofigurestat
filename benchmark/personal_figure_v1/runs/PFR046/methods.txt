@@ -1,0 +1,33 @@
+【Methods】
+解析テンプレート：D03 · 3条件以上の独立群（0.1.0）
+実行手法：Welchの分散分析（welch_anova）
+推奨手法：Welchの分散分析（選択と同じ）
+推奨判断：推奨法を明示的に採用
+実験デザイン：PFR046 personal published-Figure validation／実験単位：unit-level.experimental-unit
+解析した測定項目：NFAT_nuclear_to_cytosol_ratio (a.u.)
+対応構造：条件間で別々の独立した実験単位。
+統計上のn：Control siRNA n=3, PLCε siRNA #1 n=3, PLCε siRNA #2 n=3
+解析条件：Control siRNA、PLCε siRNA #1、PLCε siRNA #2
+主比較：Control siRNA vs PLCε siRNA #1
+エラーバー：平均±SEM（SD/√n）
+
+解析結果
+結果：完了
+全体検定：welch_one_way_anova、F=86.5652、自由度 2, 3.6988、p=0.0008
+全体効果量：cohen_f_welch=4.7649
+補正済み条件間比較：
+・Control siRNA vs PLCε siRNA #1：平均値の差 0.3431（95%信頼区間 0.1379～0.5482）、p=0.0072、調整済みp=0.0142、hedges_g=4.9975
+・Control siRNA vs PLCε siRNA #2：平均値の差 0.3604（95%信頼区間 0.2633～0.4575）、p=0.0002、調整済みp=0.0005、hedges_g=8.8077
+・PLCε siRNA #1 vs PLCε siRNA #2：平均値の差 0.0174（95%信頼区間 -0.179～0.2137）、p=0.7336、調整済みp=0.9276、hedges_g=0.2437
+
+実行エンジン：lsaa-python 0.13.0
+使用パッケージ：numpy 2.3.5, scipy 1.18.0
+アプリケーション：Life Science Analysis App 0.1.0
+完了日時：2026-08-24T13:29:27.130431+00:00
+
+注意事項
+・除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。
+・正規化：実行設定に正規化計画がありません（該当なし／未設定）。
+・比較意図：すべての条件ペア。
+・多重性補正：games_howell_all_pairsを指定。
+時系列の派生値：baselineからの変化量。解析window=最初～最後 min。baseline=最初の時点 min。raw時系列と変換設定はプロジェクトに保持。

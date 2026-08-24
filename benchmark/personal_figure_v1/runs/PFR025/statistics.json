@@ -1,0 +1,1312 @@
+{
+  "selectedReadoutId": "readout.1",
+  "selectedConditionIds": [
+    "condition.1",
+    "condition.2"
+  ],
+  "statisticalUnit": "cell",
+  "recommendation": {
+    "templateId": "D06",
+    "templateVersion": "0.1.0",
+    "recommendedMethod": "mixed_anova",
+    "alternativeMethods": [],
+    "reasonCode": "draft_d06_design_assessment",
+    "explanation": "条件間は独立、Time軸内は同じcellを追跡します。まず条件×Timeの交互作用を評価し、次に条件とTimeの全体効果を示します。",
+    "statisticalNDefinition": "Activated region n=7, Non-activated region n=7",
+    "multiplicityMethod": null,
+    "decision": {
+      "kind": "accepted",
+      "selectedMethod": "mixed_anova"
+    }
+  },
+  "recommendedMethod": "mixed_anova",
+  "selectedMethod": "mixed_anova",
+  "recommendationDiffers": false,
+  "contrast": [
+    "condition.1",
+    "condition.2"
+  ],
+  "nByCondition": [
+    {
+      "conditionId": "condition.1",
+      "label": "Activated region",
+      "n": 7
+    },
+    {
+      "conditionId": "condition.2",
+      "label": "Non-activated region",
+      "n": 7
+    }
+  ],
+  "correction": null,
+  "request": {
+    "protocolVersion": "0.6.0",
+    "requestId": "request.draft.graph",
+    "projectId": "project.draft",
+    "analysisId": "analysis.draft.graph",
+    "templateId": "D06",
+    "templateVersion": "0.1.0",
+    "method": "mixed_anova",
+    "withinFactor": {
+      "role": "time",
+      "title": "Time",
+      "unit": "s"
+    },
+    "conditionIds": [
+      "condition.1",
+      "condition.2"
+    ],
+    "timePoints": [
+      {
+        "timePointId": "time.1",
+        "value": 0
+      },
+      {
+        "timePointId": "time.2",
+        "value": 100
+      },
+      {
+        "timePointId": "time.3",
+        "value": 300
+      },
+      {
+        "timePointId": "time.4",
+        "value": 400
+      },
+      {
+        "timePointId": "time.5",
+        "value": 500
+      },
+      {
+        "timePointId": "time.6",
+        "value": 600
+      },
+      {
+        "timePointId": "time.7",
+        "value": 700
+      },
+      {
+        "timePointId": "time.8",
+        "value": 800
+      },
+      {
+        "timePointId": "time.9",
+        "value": 900
+      }
+    ],
+    "observations": [
+      {
+        "observationId": "observation.draft.1.1.1",
+        "conditionId": "condition.1",
+        "value": 0.862784,
+        "experimentalUnitId": "PFR025_E01.condition.1",
+        "pairId": "PFR025_E01.condition.1",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.1.1.2",
+        "conditionId": "condition.1",
+        "value": 1.022279,
+        "experimentalUnitId": "PFR025_E01.condition.1",
+        "pairId": "PFR025_E01.condition.1",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.1.1.3",
+        "conditionId": "condition.1",
+        "value": 1.21846,
+        "experimentalUnitId": "PFR025_E01.condition.1",
+        "pairId": "PFR025_E01.condition.1",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.1.1.4",
+        "conditionId": "condition.1",
+        "value": 1.421423,
+        "experimentalUnitId": "PFR025_E01.condition.1",
+        "pairId": "PFR025_E01.condition.1",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.1.1.5",
+        "conditionId": "condition.1",
+        "value": 2.131978,
+        "experimentalUnitId": "PFR025_E01.condition.1",
+        "pairId": "PFR025_E01.condition.1",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.1.1.6",
+        "conditionId": "condition.1",
+        "value": 2.140309,
+        "experimentalUnitId": "PFR025_E01.condition.1",
+        "pairId": "PFR025_E01.condition.1",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.1.1.7",
+        "conditionId": "condition.1",
+        "value": 1.669881,
+        "experimentalUnitId": "PFR025_E01.condition.1",
+        "pairId": "PFR025_E01.condition.1",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.1.1.8",
+        "conditionId": "condition.1",
+        "value": 1.313588,
+        "experimentalUnitId": "PFR025_E01.condition.1",
+        "pairId": "PFR025_E01.condition.1",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.1.1.9",
+        "conditionId": "condition.1",
+        "value": 1.207917,
+        "experimentalUnitId": "PFR025_E01.condition.1",
+        "pairId": "PFR025_E01.condition.1",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.2.1.1",
+        "conditionId": "condition.1",
+        "value": 1.110037,
+        "experimentalUnitId": "PFR025_E02.condition.1",
+        "pairId": "PFR025_E02.condition.1",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.2.1.2",
+        "conditionId": "condition.1",
+        "value": 1.204867,
+        "experimentalUnitId": "PFR025_E02.condition.1",
+        "pairId": "PFR025_E02.condition.1",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.2.1.3",
+        "conditionId": "condition.1",
+        "value": 1.506585,
+        "experimentalUnitId": "PFR025_E02.condition.1",
+        "pairId": "PFR025_E02.condition.1",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.2.1.4",
+        "conditionId": "condition.1",
+        "value": 1.751004,
+        "experimentalUnitId": "PFR025_E02.condition.1",
+        "pairId": "PFR025_E02.condition.1",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.2.1.5",
+        "conditionId": "condition.1",
+        "value": 2.092981,
+        "experimentalUnitId": "PFR025_E02.condition.1",
+        "pairId": "PFR025_E02.condition.1",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.2.1.6",
+        "conditionId": "condition.1",
+        "value": 2.019189,
+        "experimentalUnitId": "PFR025_E02.condition.1",
+        "pairId": "PFR025_E02.condition.1",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.2.1.7",
+        "conditionId": "condition.1",
+        "value": 1.839773,
+        "experimentalUnitId": "PFR025_E02.condition.1",
+        "pairId": "PFR025_E02.condition.1",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.2.1.8",
+        "conditionId": "condition.1",
+        "value": 1.295628,
+        "experimentalUnitId": "PFR025_E02.condition.1",
+        "pairId": "PFR025_E02.condition.1",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.2.1.9",
+        "conditionId": "condition.1",
+        "value": 1.215432,
+        "experimentalUnitId": "PFR025_E02.condition.1",
+        "pairId": "PFR025_E02.condition.1",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.3.1.1",
+        "conditionId": "condition.1",
+        "value": 0.97021,
+        "experimentalUnitId": "PFR025_E03.condition.1",
+        "pairId": "PFR025_E03.condition.1",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.3.1.2",
+        "conditionId": "condition.1",
+        "value": 1.007787,
+        "experimentalUnitId": "PFR025_E03.condition.1",
+        "pairId": "PFR025_E03.condition.1",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.3.1.3",
+        "conditionId": "condition.1",
+        "value": 1.371756,
+        "experimentalUnitId": "PFR025_E03.condition.1",
+        "pairId": "PFR025_E03.condition.1",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.3.1.4",
+        "conditionId": "condition.1",
+        "value": 1.737264,
+        "experimentalUnitId": "PFR025_E03.condition.1",
+        "pairId": "PFR025_E03.condition.1",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.3.1.5",
+        "conditionId": "condition.1",
+        "value": 2.099217,
+        "experimentalUnitId": "PFR025_E03.condition.1",
+        "pairId": "PFR025_E03.condition.1",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.3.1.6",
+        "conditionId": "condition.1",
+        "value": 2.225745,
+        "experimentalUnitId": "PFR025_E03.condition.1",
+        "pairId": "PFR025_E03.condition.1",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.3.1.7",
+        "conditionId": "condition.1",
+        "value": 1.861153,
+        "experimentalUnitId": "PFR025_E03.condition.1",
+        "pairId": "PFR025_E03.condition.1",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.3.1.8",
+        "conditionId": "condition.1",
+        "value": 1.290553,
+        "experimentalUnitId": "PFR025_E03.condition.1",
+        "pairId": "PFR025_E03.condition.1",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.3.1.9",
+        "conditionId": "condition.1",
+        "value": 1.04505,
+        "experimentalUnitId": "PFR025_E03.condition.1",
+        "pairId": "PFR025_E03.condition.1",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.4.1.1",
+        "conditionId": "condition.1",
+        "value": 1.092995,
+        "experimentalUnitId": "PFR025_E04.condition.1",
+        "pairId": "PFR025_E04.condition.1",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.4.1.2",
+        "conditionId": "condition.1",
+        "value": 1.182218,
+        "experimentalUnitId": "PFR025_E04.condition.1",
+        "pairId": "PFR025_E04.condition.1",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.4.1.3",
+        "conditionId": "condition.1",
+        "value": 1.487015,
+        "experimentalUnitId": "PFR025_E04.condition.1",
+        "pairId": "PFR025_E04.condition.1",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.4.1.4",
+        "conditionId": "condition.1",
+        "value": 1.839558,
+        "experimentalUnitId": "PFR025_E04.condition.1",
+        "pairId": "PFR025_E04.condition.1",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.4.1.5",
+        "conditionId": "condition.1",
+        "value": 1.907146,
+        "experimentalUnitId": "PFR025_E04.condition.1",
+        "pairId": "PFR025_E04.condition.1",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.4.1.6",
+        "conditionId": "condition.1",
+        "value": 2.127507,
+        "experimentalUnitId": "PFR025_E04.condition.1",
+        "pairId": "PFR025_E04.condition.1",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.4.1.7",
+        "conditionId": "condition.1",
+        "value": 1.8927,
+        "experimentalUnitId": "PFR025_E04.condition.1",
+        "pairId": "PFR025_E04.condition.1",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.4.1.8",
+        "conditionId": "condition.1",
+        "value": 1.439676,
+        "experimentalUnitId": "PFR025_E04.condition.1",
+        "pairId": "PFR025_E04.condition.1",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.4.1.9",
+        "conditionId": "condition.1",
+        "value": 1.267525,
+        "experimentalUnitId": "PFR025_E04.condition.1",
+        "pairId": "PFR025_E04.condition.1",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.5.1.1",
+        "conditionId": "condition.1",
+        "value": 0.945735,
+        "experimentalUnitId": "PFR025_E05.condition.1",
+        "pairId": "PFR025_E05.condition.1",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.5.1.2",
+        "conditionId": "condition.1",
+        "value": 0.998706,
+        "experimentalUnitId": "PFR025_E05.condition.1",
+        "pairId": "PFR025_E05.condition.1",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.5.1.3",
+        "conditionId": "condition.1",
+        "value": 1.283835,
+        "experimentalUnitId": "PFR025_E05.condition.1",
+        "pairId": "PFR025_E05.condition.1",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.5.1.4",
+        "conditionId": "condition.1",
+        "value": 1.814371,
+        "experimentalUnitId": "PFR025_E05.condition.1",
+        "pairId": "PFR025_E05.condition.1",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.5.1.5",
+        "conditionId": "condition.1",
+        "value": 2.09894,
+        "experimentalUnitId": "PFR025_E05.condition.1",
+        "pairId": "PFR025_E05.condition.1",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.5.1.6",
+        "conditionId": "condition.1",
+        "value": 2.064432,
+        "experimentalUnitId": "PFR025_E05.condition.1",
+        "pairId": "PFR025_E05.condition.1",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.5.1.7",
+        "conditionId": "condition.1",
+        "value": 1.946527,
+        "experimentalUnitId": "PFR025_E05.condition.1",
+        "pairId": "PFR025_E05.condition.1",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.5.1.8",
+        "conditionId": "condition.1",
+        "value": 1.448417,
+        "experimentalUnitId": "PFR025_E05.condition.1",
+        "pairId": "PFR025_E05.condition.1",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.5.1.9",
+        "conditionId": "condition.1",
+        "value": 1.227535,
+        "experimentalUnitId": "PFR025_E05.condition.1",
+        "pairId": "PFR025_E05.condition.1",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.6.1.1",
+        "conditionId": "condition.1",
+        "value": 1.014929,
+        "experimentalUnitId": "PFR025_E06.condition.1",
+        "pairId": "PFR025_E06.condition.1",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.6.1.2",
+        "conditionId": "condition.1",
+        "value": 1.070542,
+        "experimentalUnitId": "PFR025_E06.condition.1",
+        "pairId": "PFR025_E06.condition.1",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.6.1.3",
+        "conditionId": "condition.1",
+        "value": 1.308386,
+        "experimentalUnitId": "PFR025_E06.condition.1",
+        "pairId": "PFR025_E06.condition.1",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.6.1.4",
+        "conditionId": "condition.1",
+        "value": 1.776445,
+        "experimentalUnitId": "PFR025_E06.condition.1",
+        "pairId": "PFR025_E06.condition.1",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.6.1.5",
+        "conditionId": "condition.1",
+        "value": 2.012135,
+        "experimentalUnitId": "PFR025_E06.condition.1",
+        "pairId": "PFR025_E06.condition.1",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.6.1.6",
+        "conditionId": "condition.1",
+        "value": 2.33541,
+        "experimentalUnitId": "PFR025_E06.condition.1",
+        "pairId": "PFR025_E06.condition.1",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.6.1.7",
+        "conditionId": "condition.1",
+        "value": 1.897857,
+        "experimentalUnitId": "PFR025_E06.condition.1",
+        "pairId": "PFR025_E06.condition.1",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.6.1.8",
+        "conditionId": "condition.1",
+        "value": 1.45354,
+        "experimentalUnitId": "PFR025_E06.condition.1",
+        "pairId": "PFR025_E06.condition.1",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.6.1.9",
+        "conditionId": "condition.1",
+        "value": 1.067347,
+        "experimentalUnitId": "PFR025_E06.condition.1",
+        "pairId": "PFR025_E06.condition.1",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.7.1.1",
+        "conditionId": "condition.1",
+        "value": 1.055042,
+        "experimentalUnitId": "PFR025_E07.condition.1",
+        "pairId": "PFR025_E07.condition.1",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.7.1.2",
+        "conditionId": "condition.1",
+        "value": 1.138353,
+        "experimentalUnitId": "PFR025_E07.condition.1",
+        "pairId": "PFR025_E07.condition.1",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.7.1.3",
+        "conditionId": "condition.1",
+        "value": 1.322771,
+        "experimentalUnitId": "PFR025_E07.condition.1",
+        "pairId": "PFR025_E07.condition.1",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.7.1.4",
+        "conditionId": "condition.1",
+        "value": 1.876238,
+        "experimentalUnitId": "PFR025_E07.condition.1",
+        "pairId": "PFR025_E07.condition.1",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.7.1.5",
+        "conditionId": "condition.1",
+        "value": 2.180366,
+        "experimentalUnitId": "PFR025_E07.condition.1",
+        "pairId": "PFR025_E07.condition.1",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.7.1.6",
+        "conditionId": "condition.1",
+        "value": 2.212836,
+        "experimentalUnitId": "PFR025_E07.condition.1",
+        "pairId": "PFR025_E07.condition.1",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.7.1.7",
+        "conditionId": "condition.1",
+        "value": 1.783366,
+        "experimentalUnitId": "PFR025_E07.condition.1",
+        "pairId": "PFR025_E07.condition.1",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.7.1.8",
+        "conditionId": "condition.1",
+        "value": 1.497559,
+        "experimentalUnitId": "PFR025_E07.condition.1",
+        "pairId": "PFR025_E07.condition.1",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.7.1.9",
+        "conditionId": "condition.1",
+        "value": 1.162687,
+        "experimentalUnitId": "PFR025_E07.condition.1",
+        "pairId": "PFR025_E07.condition.1",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.1.2.1",
+        "conditionId": "condition.2",
+        "value": 0.937968,
+        "experimentalUnitId": "PFR025_E01.condition.2",
+        "pairId": "PFR025_E01.condition.2",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.1.2.2",
+        "conditionId": "condition.2",
+        "value": 0.916593,
+        "experimentalUnitId": "PFR025_E01.condition.2",
+        "pairId": "PFR025_E01.condition.2",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.1.2.3",
+        "conditionId": "condition.2",
+        "value": 1.020801,
+        "experimentalUnitId": "PFR025_E01.condition.2",
+        "pairId": "PFR025_E01.condition.2",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.1.2.4",
+        "conditionId": "condition.2",
+        "value": 1.116946,
+        "experimentalUnitId": "PFR025_E01.condition.2",
+        "pairId": "PFR025_E01.condition.2",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.1.2.5",
+        "conditionId": "condition.2",
+        "value": 1.142195,
+        "experimentalUnitId": "PFR025_E01.condition.2",
+        "pairId": "PFR025_E01.condition.2",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.1.2.6",
+        "conditionId": "condition.2",
+        "value": 1.021069,
+        "experimentalUnitId": "PFR025_E01.condition.2",
+        "pairId": "PFR025_E01.condition.2",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.1.2.7",
+        "conditionId": "condition.2",
+        "value": 1.16559,
+        "experimentalUnitId": "PFR025_E01.condition.2",
+        "pairId": "PFR025_E01.condition.2",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.1.2.8",
+        "conditionId": "condition.2",
+        "value": 0.938325,
+        "experimentalUnitId": "PFR025_E01.condition.2",
+        "pairId": "PFR025_E01.condition.2",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.1.2.9",
+        "conditionId": "condition.2",
+        "value": 1.003077,
+        "experimentalUnitId": "PFR025_E01.condition.2",
+        "pairId": "PFR025_E01.condition.2",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.2.2.1",
+        "conditionId": "condition.2",
+        "value": 1.076905,
+        "experimentalUnitId": "PFR025_E02.condition.2",
+        "pairId": "PFR025_E02.condition.2",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.2.2.2",
+        "conditionId": "condition.2",
+        "value": 1.005462,
+        "experimentalUnitId": "PFR025_E02.condition.2",
+        "pairId": "PFR025_E02.condition.2",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.2.2.3",
+        "conditionId": "condition.2",
+        "value": 1.069688,
+        "experimentalUnitId": "PFR025_E02.condition.2",
+        "pairId": "PFR025_E02.condition.2",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.2.2.4",
+        "conditionId": "condition.2",
+        "value": 0.889836,
+        "experimentalUnitId": "PFR025_E02.condition.2",
+        "pairId": "PFR025_E02.condition.2",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.2.2.5",
+        "conditionId": "condition.2",
+        "value": 0.97326,
+        "experimentalUnitId": "PFR025_E02.condition.2",
+        "pairId": "PFR025_E02.condition.2",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.2.2.6",
+        "conditionId": "condition.2",
+        "value": 0.958892,
+        "experimentalUnitId": "PFR025_E02.condition.2",
+        "pairId": "PFR025_E02.condition.2",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.2.2.7",
+        "conditionId": "condition.2",
+        "value": 0.922467,
+        "experimentalUnitId": "PFR025_E02.condition.2",
+        "pairId": "PFR025_E02.condition.2",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.2.2.8",
+        "conditionId": "condition.2",
+        "value": 0.883656,
+        "experimentalUnitId": "PFR025_E02.condition.2",
+        "pairId": "PFR025_E02.condition.2",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.2.2.9",
+        "conditionId": "condition.2",
+        "value": 0.939937,
+        "experimentalUnitId": "PFR025_E02.condition.2",
+        "pairId": "PFR025_E02.condition.2",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.3.2.1",
+        "conditionId": "condition.2",
+        "value": 0.98084,
+        "experimentalUnitId": "PFR025_E03.condition.2",
+        "pairId": "PFR025_E03.condition.2",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.3.2.2",
+        "conditionId": "condition.2",
+        "value": 0.980134,
+        "experimentalUnitId": "PFR025_E03.condition.2",
+        "pairId": "PFR025_E03.condition.2",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.3.2.3",
+        "conditionId": "condition.2",
+        "value": 0.956668,
+        "experimentalUnitId": "PFR025_E03.condition.2",
+        "pairId": "PFR025_E03.condition.2",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.3.2.4",
+        "conditionId": "condition.2",
+        "value": 1.056724,
+        "experimentalUnitId": "PFR025_E03.condition.2",
+        "pairId": "PFR025_E03.condition.2",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.3.2.5",
+        "conditionId": "condition.2",
+        "value": 1.052061,
+        "experimentalUnitId": "PFR025_E03.condition.2",
+        "pairId": "PFR025_E03.condition.2",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.3.2.6",
+        "conditionId": "condition.2",
+        "value": 0.999573,
+        "experimentalUnitId": "PFR025_E03.condition.2",
+        "pairId": "PFR025_E03.condition.2",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.3.2.7",
+        "conditionId": "condition.2",
+        "value": 0.926915,
+        "experimentalUnitId": "PFR025_E03.condition.2",
+        "pairId": "PFR025_E03.condition.2",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.3.2.8",
+        "conditionId": "condition.2",
+        "value": 1.035841,
+        "experimentalUnitId": "PFR025_E03.condition.2",
+        "pairId": "PFR025_E03.condition.2",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.3.2.9",
+        "conditionId": "condition.2",
+        "value": 1.016206,
+        "experimentalUnitId": "PFR025_E03.condition.2",
+        "pairId": "PFR025_E03.condition.2",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.4.2.1",
+        "conditionId": "condition.2",
+        "value": 1.093273,
+        "experimentalUnitId": "PFR025_E04.condition.2",
+        "pairId": "PFR025_E04.condition.2",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.4.2.2",
+        "conditionId": "condition.2",
+        "value": 1.056752,
+        "experimentalUnitId": "PFR025_E04.condition.2",
+        "pairId": "PFR025_E04.condition.2",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.4.2.3",
+        "conditionId": "condition.2",
+        "value": 0.977792,
+        "experimentalUnitId": "PFR025_E04.condition.2",
+        "pairId": "PFR025_E04.condition.2",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.4.2.4",
+        "conditionId": "condition.2",
+        "value": 0.95672,
+        "experimentalUnitId": "PFR025_E04.condition.2",
+        "pairId": "PFR025_E04.condition.2",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.4.2.5",
+        "conditionId": "condition.2",
+        "value": 1.01741,
+        "experimentalUnitId": "PFR025_E04.condition.2",
+        "pairId": "PFR025_E04.condition.2",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.4.2.6",
+        "conditionId": "condition.2",
+        "value": 1.072807,
+        "experimentalUnitId": "PFR025_E04.condition.2",
+        "pairId": "PFR025_E04.condition.2",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.4.2.7",
+        "conditionId": "condition.2",
+        "value": 0.93322,
+        "experimentalUnitId": "PFR025_E04.condition.2",
+        "pairId": "PFR025_E04.condition.2",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.4.2.8",
+        "conditionId": "condition.2",
+        "value": 1.10571,
+        "experimentalUnitId": "PFR025_E04.condition.2",
+        "pairId": "PFR025_E04.condition.2",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.4.2.9",
+        "conditionId": "condition.2",
+        "value": 1.056474,
+        "experimentalUnitId": "PFR025_E04.condition.2",
+        "pairId": "PFR025_E04.condition.2",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.5.2.1",
+        "conditionId": "condition.2",
+        "value": 0.930728,
+        "experimentalUnitId": "PFR025_E05.condition.2",
+        "pairId": "PFR025_E05.condition.2",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.5.2.2",
+        "conditionId": "condition.2",
+        "value": 0.962712,
+        "experimentalUnitId": "PFR025_E05.condition.2",
+        "pairId": "PFR025_E05.condition.2",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.5.2.3",
+        "conditionId": "condition.2",
+        "value": 0.925229,
+        "experimentalUnitId": "PFR025_E05.condition.2",
+        "pairId": "PFR025_E05.condition.2",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.5.2.4",
+        "conditionId": "condition.2",
+        "value": 0.900511,
+        "experimentalUnitId": "PFR025_E05.condition.2",
+        "pairId": "PFR025_E05.condition.2",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.5.2.5",
+        "conditionId": "condition.2",
+        "value": 0.982427,
+        "experimentalUnitId": "PFR025_E05.condition.2",
+        "pairId": "PFR025_E05.condition.2",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.5.2.6",
+        "conditionId": "condition.2",
+        "value": 0.963028,
+        "experimentalUnitId": "PFR025_E05.condition.2",
+        "pairId": "PFR025_E05.condition.2",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.5.2.7",
+        "conditionId": "condition.2",
+        "value": 0.944201,
+        "experimentalUnitId": "PFR025_E05.condition.2",
+        "pairId": "PFR025_E05.condition.2",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.5.2.8",
+        "conditionId": "condition.2",
+        "value": 1.02293,
+        "experimentalUnitId": "PFR025_E05.condition.2",
+        "pairId": "PFR025_E05.condition.2",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.5.2.9",
+        "conditionId": "condition.2",
+        "value": 0.910372,
+        "experimentalUnitId": "PFR025_E05.condition.2",
+        "pairId": "PFR025_E05.condition.2",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.6.2.1",
+        "conditionId": "condition.2",
+        "value": 1.019873,
+        "experimentalUnitId": "PFR025_E06.condition.2",
+        "pairId": "PFR025_E06.condition.2",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.6.2.2",
+        "conditionId": "condition.2",
+        "value": 1.06854,
+        "experimentalUnitId": "PFR025_E06.condition.2",
+        "pairId": "PFR025_E06.condition.2",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.6.2.3",
+        "conditionId": "condition.2",
+        "value": 0.918364,
+        "experimentalUnitId": "PFR025_E06.condition.2",
+        "pairId": "PFR025_E06.condition.2",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.6.2.4",
+        "conditionId": "condition.2",
+        "value": 0.938964,
+        "experimentalUnitId": "PFR025_E06.condition.2",
+        "pairId": "PFR025_E06.condition.2",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.6.2.5",
+        "conditionId": "condition.2",
+        "value": 0.964625,
+        "experimentalUnitId": "PFR025_E06.condition.2",
+        "pairId": "PFR025_E06.condition.2",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.6.2.6",
+        "conditionId": "condition.2",
+        "value": 0.810437,
+        "experimentalUnitId": "PFR025_E06.condition.2",
+        "pairId": "PFR025_E06.condition.2",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.6.2.7",
+        "conditionId": "condition.2",
+        "value": 0.952116,
+        "experimentalUnitId": "PFR025_E06.condition.2",
+        "pairId": "PFR025_E06.condition.2",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.6.2.8",
+        "conditionId": "condition.2",
+        "value": 0.95618,
+        "experimentalUnitId": "PFR025_E06.condition.2",
+        "pairId": "PFR025_E06.condition.2",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.6.2.9",
+        "conditionId": "condition.2",
+        "value": 1.005068,
+        "experimentalUnitId": "PFR025_E06.condition.2",
+        "pairId": "PFR025_E06.condition.2",
+        "timePointId": "time.9"
+      },
+      {
+        "observationId": "observation.draft.7.2.1",
+        "conditionId": "condition.2",
+        "value": 1.008632,
+        "experimentalUnitId": "PFR025_E07.condition.2",
+        "pairId": "PFR025_E07.condition.2",
+        "timePointId": "time.1"
+      },
+      {
+        "observationId": "observation.draft.7.2.2",
+        "conditionId": "condition.2",
+        "value": 1.156365,
+        "experimentalUnitId": "PFR025_E07.condition.2",
+        "pairId": "PFR025_E07.condition.2",
+        "timePointId": "time.2"
+      },
+      {
+        "observationId": "observation.draft.7.2.3",
+        "conditionId": "condition.2",
+        "value": 1.099903,
+        "experimentalUnitId": "PFR025_E07.condition.2",
+        "pairId": "PFR025_E07.condition.2",
+        "timePointId": "time.3"
+      },
+      {
+        "observationId": "observation.draft.7.2.4",
+        "conditionId": "condition.2",
+        "value": 1.080305,
+        "experimentalUnitId": "PFR025_E07.condition.2",
+        "pairId": "PFR025_E07.condition.2",
+        "timePointId": "time.4"
+      },
+      {
+        "observationId": "observation.draft.7.2.5",
+        "conditionId": "condition.2",
+        "value": 0.946331,
+        "experimentalUnitId": "PFR025_E07.condition.2",
+        "pairId": "PFR025_E07.condition.2",
+        "timePointId": "time.5"
+      },
+      {
+        "observationId": "observation.draft.7.2.6",
+        "conditionId": "condition.2",
+        "value": 1.120996,
+        "experimentalUnitId": "PFR025_E07.condition.2",
+        "pairId": "PFR025_E07.condition.2",
+        "timePointId": "time.6"
+      },
+      {
+        "observationId": "observation.draft.7.2.7",
+        "conditionId": "condition.2",
+        "value": 1.117122,
+        "experimentalUnitId": "PFR025_E07.condition.2",
+        "pairId": "PFR025_E07.condition.2",
+        "timePointId": "time.7"
+      },
+      {
+        "observationId": "observation.draft.7.2.8",
+        "conditionId": "condition.2",
+        "value": 1.011659,
+        "experimentalUnitId": "PFR025_E07.condition.2",
+        "pairId": "PFR025_E07.condition.2",
+        "timePointId": "time.8"
+      },
+      {
+        "observationId": "observation.draft.7.2.9",
+        "conditionId": "condition.2",
+        "value": 1.120927,
+        "experimentalUnitId": "PFR025_E07.condition.2",
+        "pairId": "PFR025_E07.condition.2",
+        "timePointId": "time.9"
+      }
+    ],
+    "options": {
+      "alternative": "two_sided",
+      "confidenceLevel": 0.95,
+      "multiplicityMethod": null
+    }
+  },
+  "result": {
+    "protocolVersion": "0.6.0",
+    "requestId": "request.draft.graph",
+    "status": "ok",
+    "engine": {
+      "name": "lsaa-python",
+      "version": "0.13.0",
+      "packages": {
+        "numpy": "2.3.5",
+        "scipy": "1.18.0"
+      }
+    },
+    "estimates": [
+      {
+        "name": "cell_mean:condition.1:time.1",
+        "value": 1.0073902857142856,
+        "standardError": 0.03319737472388174,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.1:time.2",
+        "value": 1.0892502857142858,
+        "standardError": 0.03240039121288968,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.1:time.3",
+        "value": 1.3569725714285714,
+        "standardError": 0.04011255028093845,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.1:time.4",
+        "value": 1.7451861428571431,
+        "standardError": 0.05706376503753062,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.1:time.5",
+        "value": 2.0746804285714284,
+        "standardError": 0.03379125279520408,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.1:time.6",
+        "value": 2.1607754285714282,
+        "standardError": 0.040321038426051246,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.1:time.7",
+        "value": 1.8416081428571427,
+        "standardError": 0.03452052749171313,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.1:time.8",
+        "value": 1.3912801428571429,
+        "standardError": 0.03313379210286149,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.1:time.9",
+        "value": 1.170499,
+        "standardError": 0.03181982207681243,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.2:time.1",
+        "value": 1.0068884285714288,
+        "standardError": 0.02378735687478613,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.2:time.2",
+        "value": 1.0209368571428572,
+        "standardError": 0.030107618246825823,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.2:time.3",
+        "value": 0.9954921428571428,
+        "standardError": 0.026616079702591333,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.2:time.4",
+        "value": 0.9914294285714286,
+        "standardError": 0.03466211358643486,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.2:time.5",
+        "value": 1.011187,
+        "standardError": 0.025594093988559906,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.2:time.6",
+        "value": 0.9924002857142857,
+        "standardError": 0.0374711362477932,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.2:time.7",
+        "value": 0.9945187142857144,
+        "standardError": 0.03846645325828868,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.2:time.8",
+        "value": 0.9934715714285713,
+        "standardError": 0.027638172474950325,
+        "confidenceInterval": null
+      },
+      {
+        "name": "cell_mean:condition.2:time.9",
+        "value": 1.0074372857142857,
+        "standardError": 0.02644130463580678,
+        "confidenceInterval": null
+      }
+    ],
+    "tests": [
+      {
+        "name": "condition_by_within_factor_interaction",
+        "statisticName": "F",
+        "statistic": 95.85042073284339,
+        "degreesOfFreedom": [
+          8,
+          96
+        ],
+        "pValue": 2.474489550531279e-42,
+        "adjustedPValue": null,
+        "effectSizeName": "partial_eta_squared",
+        "effectSize": 0.8887347873243329
+      },
+      {
+        "name": "condition_main_effect",
+        "statisticName": "F",
+        "statistic": 457.64900196900817,
+        "degreesOfFreedom": [
+          1,
+          12
+        ],
+        "pValue": 6.347012189095626e-11,
+        "adjustedPValue": null,
+        "effectSizeName": "partial_eta_squared",
+        "effectSize": 0.9744490035117931
+      },
+      {
+        "name": "within_factor_main_effect",
+        "statisticName": "F",
+        "statistic": 91.76171186013259,
+        "degreesOfFreedom": [
+          8,
+          96
+        ],
+        "pValue": 1.559039962460073e-41,
+        "adjustedPValue": null,
+        "effectSizeName": "partial_eta_squared",
+        "effectSize": 0.8843504045483019
+      }
+    ],
+    "factorMetadata": {
+      "withinFactor": {
+        "role": "time",
+        "title": "Time",
+        "unit": "s"
+      },
+      "effectIds": {
+        "interaction": "condition_by_within_factor_interaction",
+        "condition": "condition_main_effect",
+        "withinFactor": "within_factor_main_effect"
+      },
+      "legacyEffectAliases": {
+        "condition_by_time_interaction": "condition_by_within_factor_interaction",
+        "condition_between_units": "condition_main_effect",
+        "time_within_units": "within_factor_main_effect"
+      }
+    },
+    "diagnostics": [
+      {
+        "code": "stable_unit_identity_preserved",
+        "message": "D06 used explicit stable-unit IDs and never inferred repeated identity from row order."
+      },
+      {
+        "code": "balanced_complete_split_plot",
+        "message": "Condition used the subject-within-condition error stratum; Time and interaction used the within-subject error stratum."
+      },
+      {
+        "code": "sphericity_not_estimated",
+        "message": "The initial balanced D06 model does not estimate a sphericity correction; use a validated mixed-effects model when this assumption is not defensible."
+      }
+    ],
+    "warnings": [],
+    "completedAt": "2026-08-24T13:28:44.146856+00:00"
+  },
+  "state": "current",
+  "applicationVersion": "0.1.0"
+}

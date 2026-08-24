@@ -1,0 +1,32 @@
+【Methods】
+解析テンプレート：D06 · 条件×Timeの反復測定（0.1.0）
+実行手法：条件×Timeの反復測定分散分析（mixed_anova）
+推奨手法：条件×Timeの反復測定分散分析（選択と同じ）
+推奨判断：推奨法を明示的に採用
+実験デザイン：PFR004 personal published-Figure validation／実験単位：unit-level.experimental-unit
+解析した測定項目：ciliated_fraction
+対応構造：条件間で別々の独立した実験単位。
+統計上のn：Control siRNA n=3, Ndel1 siRNA n=3
+解析条件：Control siRNA、Ndel1 siRNA
+解析条件：Control siRNA vs Ndel1 siRNA
+エラーバー：平均±SEM（SD/√n）
+
+解析結果
+結果：完了
+balanced split-plot検定（交互作用を先に表示）：
+・条件 × Time（交互作用）：F=83.5949、自由度 1, 4、p=0.0008、partial_eta_squared=0.9543
+・条件（実験単位間）：F=13.9164、自由度 1, 4、p=0.0203、partial_eta_squared=0.7767
+・Time（実験単位内）：F=971.3392、自由度 1, 4、p=6.32e-6、partial_eta_squared=0.9959
+条件間の事後比較：実行せず
+
+実行エンジン：lsaa-python 0.13.0
+使用パッケージ：numpy 2.3.5, scipy 1.18.0
+アプリケーション：Life Science Analysis App 0.1.0
+完了日時：2026-08-24T13:27:13.848192+00:00
+
+注意事項
+・除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。
+・正規化：実行設定に正規化計画がありません（該当なし／未設定）。
+・多重性補正：条件×Time、条件、Timeの事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。
+・エンジン診断（sphericity_not_estimated）：The initial balanced D06 model does not estimate a sphericity correction; use a validated mixed-effects model when this assumption is not defensible. 球面性補正を必要とする場合は検証済みmixed-effects modelを使用してください。
+・エンジン警告（small_biological_n_per_condition）：Fewer than four complete biological units are available per condition; interaction estimates are especially uncertain.

@@ -74,7 +74,13 @@ export function metadataOutcomeCanBeRecorded(
   return outcome === "explicit_unsupported" ? supportStatus === "impossible" : true;
 }
 
-export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => void }) {
+export function BenchmarkRunBar({
+  onNavigateHome,
+  onUseLiteratureCase,
+}: {
+  onNavigateHome?: () => void;
+  onUseLiteratureCase?: (source: LiteratureExperimenterCase) => void;
+}) {
   const run = useBenchmarkRun();
   const [benchmarkVersion, setBenchmarkVersion] = useState("LSA50_v1_1");
   const [caseId, setCaseId] = useState("pilot_independent_2group");
@@ -672,6 +678,20 @@ export function BenchmarkRunBar({ onNavigateHome }: { onNavigateHome?: () => voi
             Synthetic dataset is armed. After constructing a compatible design, use the Literature
             Benchmark loader in the experiment workspace.
           </span>
+          {onUseLiteratureCase ? (
+            <button
+              type="button"
+              onClick={() => {
+                onUseLiteratureCase(literatureCase);
+                recordBenchmarkEvent("literature_design_created", {
+                  caseId: literatureCase.caseId,
+                  source: "researcher_packet",
+                });
+              }}
+            >
+              このcaseの設計を自動作成
+            </button>
+          ) : null}
         </section>
       ) : null}
       {saveStatus ? <span role="status">{saveStatus}</span> : null}

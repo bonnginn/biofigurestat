@@ -1,0 +1,32 @@
+【Methods】
+解析テンプレート：D03 · 3条件以上の独立群（0.1.0）
+実行手法：Welchの分散分析（welch_anova）
+推奨手法：Welchの分散分析（選択と同じ）
+推奨判断：推奨法を明示的に採用
+実験デザイン：PFR002 personal published-Figure validation／実験単位：unit-level.experimental-unit
+解析した測定項目：ciliated_fraction
+対応構造：条件間で別々の独立した実験単位。
+統計上のn：Control siRNA / Dox− n=3, Ndel1 siRNA / Dox− n=3, Ndel1 siRNA / Dox+ n=3
+解析条件：Control siRNA / Dox−、Ndel1 siRNA / Dox−、Ndel1 siRNA / Dox+
+主比較：Control siRNA / Dox− vs Ndel1 siRNA / Dox−
+エラーバー：エラーバーなし
+
+解析結果
+結果：完了
+全体検定：welch_one_way_anova、F=23.7389、自由度 2, 3.0696、p=0.0136
+全体効果量：cohen_f_welch=2.534
+補正済み条件間比較：
+・Control siRNA / Dox− vs Ndel1 siRNA / Dox−：平均値の差 -32.7003（95%信頼区間 -56.7904～-8.6101）、p=0.0146、調整済みp=0.027、hedges_g=-4.9313
+・Control siRNA / Dox− vs Ndel1 siRNA / Dox+：平均値の差 0.4954（95%信頼区間 -8.4901～9.4808）、p=0.817、調整済みp=0.965、hedges_g=0.1667
+・Ndel1 siRNA / Dox− vs Ndel1 siRNA / Dox+：平均値の差 33.1956（95%信頼区間 12.3443～54.047）、p=0.0079、調整済みp=0.0157、hedges_g=4.6719
+
+実行エンジン：lsaa-python 0.13.0
+使用パッケージ：numpy 2.3.5, scipy 1.18.0
+アプリケーション：Life Science Analysis App 0.1.0
+完了日時：2026-08-24T13:27:48.099924+00:00
+
+注意事項
+・除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。
+・正規化：実行設定に正規化計画がありません（該当なし／未設定）。
+・比較意図：すべての条件ペア。
+・多重性補正：games_howell_all_pairsを指定。

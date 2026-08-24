@@ -1,0 +1,11 @@
+{
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0",
+  "master": {
+    "file": "LSA_Personal_Figure_Benchmark_v1_Master.xlsx",
+    "sha256": "d2b1c3ca48e9d9a38ac5e81e98fb1b2052bb924b3dccac254737f1e62090b760"
+  },
+  "trackB": {
+    "file": "LSA_Personal_Figure_Benchmark_v1_TrackB.xlsx",
+    "sha256": "c4da43b97c76b8e91e14b09f6f1abf7e743f562a3820904cafd86757b6ff1846"
+  }
+}

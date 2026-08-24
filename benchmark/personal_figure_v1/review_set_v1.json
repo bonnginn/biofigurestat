@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0.0",
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0",
+  "selectionPolicy": "Small representative set spanning the author's recurring graph and scientific-structure families; the complete 69-case dataset remains available for later expansion.",
+  "cases": [
+    { "caseId": "PFR002", "paperCode": "NDEL1", "panel": "Fig. 1F", "focus": "proportion rescue" },
+    {
+      "caseId": "PFR004",
+      "paperCode": "NDEL1",
+      "panel": "Fig. 2A",
+      "focus": "cross-sectional time course"
+    },
+    {
+      "caseId": "PFR025",
+      "paperCode": "OPTO",
+      "panel": "Fig. 1D top",
+      "focus": "longitudinal trace"
+    },
+    {
+      "caseId": "PFR046",
+      "paperCode": "OPTO",
+      "panel": "Fig. 7C,D",
+      "focus": "paired cells nested in experiments"
+    },
+    {
+      "caseId": "PFR049",
+      "paperCode": "GFLB",
+      "panel": "Fig. 1 quantitative morphology",
+      "focus": "nested cell measurements"
+    },
+    {
+      "caseId": "PFR069",
+      "paperCode": "CRYO",
+      "panel": "Fig. 1F",
+      "focus": "longitudinal cell-area trace"
+    }
+  ]
+}

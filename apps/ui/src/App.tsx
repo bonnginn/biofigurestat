@@ -31,6 +31,10 @@ import { evaluationModeIsConfigured, evaluationMode } from "./app/evaluationMode
 import { recordBenchmarkEvent } from "./app/benchmarkEvaluation";
 import { recordDiagnosticError, recordDiagnosticEvent } from "./app/diagnostics";
 import { researcherError } from "./app/errorCatalog";
+import {
+  createLiteratureExperimentDraft,
+  type LiteratureExperimenterCase,
+} from "./app/literatureBenchmark";
 
 type AppProps = {
   projectActions?: ProjectActions;
@@ -125,6 +129,16 @@ export default function App({ projectActions }: AppProps) {
     setFavoriteDefaults([]);
     navigate("home");
   }, [navigate]);
+  const useLiteratureCase = useCallback(
+    (source: LiteratureExperimenterCase) => {
+      setActiveProject(null);
+      setSystemOpenError(null);
+      setFavoriteDefaults([]);
+      setReusedDraft(createLiteratureExperimentDraft(source));
+      navigate("new-experiment");
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     const openProjectTarget = activeProjectActions.openProjectTarget;
@@ -301,6 +315,7 @@ export default function App({ projectActions }: AppProps) {
       route={route}
       onNavigate={navigateAsFreshStart}
       onResetEvaluationCase={resetEvaluationCase}
+      onUseLiteratureCase={useLiteratureCase}
       browserPreview={browserPreview}
       evaluationPreview={evaluationPreview}
       activeProject={activeProject?.state ?? null}

@@ -1,0 +1,424 @@
+[
+  {
+    "sequence": 1,
+    "occurredAt": "2026-08-24T13:28:57.921Z",
+    "type": "benchmark_run_started",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0",
+      "caseId": "PFR046",
+      "track": "track_A",
+      "runId": "personal_004",
+      "sourceRevision": "607ea8c58410-dirty"
+    }
+  },
+  {
+    "sequence": 2,
+    "occurredAt": "2026-08-24T13:28:57.947Z",
+    "type": "blind_case_delivered",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR046",
+      "syntheticRows": 354
+    }
+  },
+  {
+    "sequence": 3,
+    "occurredAt": "2026-08-24T13:28:58.796Z",
+    "type": "route_changed",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "from": "home",
+      "to": "new-experiment"
+    }
+  },
+  {
+    "sequence": 4,
+    "occurredAt": "2026-08-24T13:28:58.796Z",
+    "type": "literature_design_created",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR046",
+      "source": "researcher_packet"
+    }
+  },
+  {
+    "sequence": 5,
+    "occurredAt": "2026-08-24T13:29:02.256Z",
+    "type": "experiment_workspace_started",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "source": "design_wizard",
+      "context": "microscopy_imaging",
+      "entryRoute": "unspecified",
+      "timeSampling": "longitudinal",
+      "orderedAxisSemantic": "time",
+      "orderedAxisTitle": "Time",
+      "orderedAxisUnit": "min",
+      "unitStructure": "independent",
+      "unitLabel": "cell nested in one of three experiments",
+      "readout": "nested_continuous",
+      "conditionCount": 3
+    }
+  },
+  {
+    "sequence": 6,
+    "occurredAt": "2026-08-24T13:29:02.264Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "overview"
+    }
+  },
+  {
+    "sequence": 7,
+    "occurredAt": "2026-08-24T13:29:02.265Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "overview"
+    }
+  },
+  {
+    "sequence": 8,
+    "occurredAt": "2026-08-24T13:29:03.074Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 9,
+    "occurredAt": "2026-08-24T13:29:03.333Z",
+    "type": "literature_benchmark_data_loaded",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR046",
+      "mappedCells": 18
+    }
+  },
+  {
+    "sequence": 10,
+    "occurredAt": "2026-08-24T13:29:04.620Z",
+    "type": "graph_created_from_choice",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "recommendedGraph": "line",
+      "selectedGraph": "line",
+      "recommendationDiffers": false,
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout"
+    }
+  },
+  {
+    "sequence": 11,
+    "occurredAt": "2026-08-24T13:29:04.644Z",
+    "type": "default_graph_capture_started",
+    "effect": "non_rendering_ui",
+    "detail": {}
+  },
+  {
+    "sequence": 12,
+    "occurredAt": "2026-08-24T13:29:04.645Z",
+    "type": "graph_workspace_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "selectedGraph": "line",
+      "readoutId": "readout.1"
+    }
+  },
+  {
+    "sequence": 13,
+    "occurredAt": "2026-08-24T13:29:04.650Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "graph",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 14,
+    "occurredAt": "2026-08-24T13:29:04.808Z",
+    "type": "default_graph_captured",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "defaultCapturedEventIndex": 11,
+      "graphStateFingerprint": "4a887e300ed193f75f0aa194478fc17cca770ba17704b9cee5b66743b27900c1",
+      "analysisStateFingerprint": "cf85c47648e8078fb8b62fda51f325cd73bac8a49a967209c9279745d569a5e8",
+      "svgSha256": "4a887e300ed193f75f0aa194478fc17cca770ba17704b9cee5b66743b27900c1",
+      "pngSha256": "983e85274201f90714198de9e9c6d025fcf89ab5b62bd010ed52a7c52aad4cb3"
+    }
+  },
+  {
+    "sequence": 15,
+    "occurredAt": "2026-08-24T13:29:06.147Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "statistics",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 16,
+    "occurredAt": "2026-08-24T13:29:12.800Z",
+    "type": "analysis_configuration_changed",
+    "effect": "analysis_only",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2|condition.3",
+      "selectedTimes": "time.1|time.2",
+      "timeMetric": "change_from_baseline",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sd",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "NFAT_nuclear_to_cytosol_ratio (a.u.)",
+      "axisRangeMode": "auto",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 17,
+    "occurredAt": "2026-08-24T13:29:24.357Z",
+    "type": "recommendation_decision_recorded",
+    "effect": "analysis_only",
+    "detail": {
+      "decision": "accepted",
+      "recommendedMethod": "welch_anova"
+    }
+  },
+  {
+    "sequence": 18,
+    "occurredAt": "2026-08-24T13:29:26.978Z",
+    "type": "support_status_selected",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "supportStatus": "reasonable_workaround"
+    }
+  },
+  {
+    "sequence": 19,
+    "occurredAt": "2026-08-24T13:29:27.072Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "graph",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 20,
+    "occurredAt": "2026-08-24T13:29:27.348Z",
+    "type": "statistics_executed",
+    "effect": "analysis_only",
+    "detail": {
+      "method": "welch_anova",
+      "recommendedMethod": "welch_anova",
+      "recommendationDiffers": false,
+      "recommendationReasonCode": "draft_d03_design_assessment",
+      "recommendationExplanation": "独立した3条件を比較します（Control siRNA: 3、PLCε siRNA #1: 3、PLCε siRNA #2: 3）。全体比較後の条件間比較にはGames–Howell法を使い、多重比較を扱います。対照群は未指定です。",
+      "recommendationDecision": "accepted",
+      "recommendationSelectedMethod": "welch_anova",
+      "contrast": "all_pairs",
+      "correction": "games_howell_all_pairs",
+      "protocolVersion": "0.2.0",
+      "mode": "manual",
+      "status": "ok"
+    }
+  },
+  {
+    "sequence": 21,
+    "occurredAt": "2026-08-24T13:29:27.364Z",
+    "type": "analysis_configuration_changed",
+    "effect": "analysis_only",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2|condition.3",
+      "selectedTimes": "time.1|time.2",
+      "timeMetric": "change_from_baseline",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sd",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "NFAT_nuclear_to_cytosol_ratio (a.u.)",
+      "axisRangeMode": "auto",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 22,
+    "occurredAt": "2026-08-24T13:29:27.397Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2|condition.3",
+      "selectedTimes": "time.1|time.2",
+      "timeMetric": "change_from_baseline",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sem",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "NFAT_nuclear_to_cytosol_ratio (a.u.)",
+      "axisRangeMode": "auto",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 23,
+    "occurredAt": "2026-08-24T13:29:27.472Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2|condition.3",
+      "selectedTimes": "time.1|time.2",
+      "timeMetric": "change_from_baseline",
+      "selectedMethod": null,
+      "annotationMode": "exact_p",
+      "pointSize": 6,
+      "errorBar": "sem",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "NFAT_nuclear_to_cytosol_ratio (a.u.)",
+      "axisRangeMode": "auto",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 24,
+    "occurredAt": "2026-08-24T13:29:27.623Z",
+    "type": "final_graph_captured",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "finalCapturedEventIndex": 24,
+      "graphStateFingerprint": "bea14d7f2d272a2c47f5dba7632f09a180809159f683906ef4139ad18f573fa8",
+      "analysisStateFingerprint": "b5c5d3ec81566570f59235632803389aca5c79cd11a10e9d1e13f600d1cabc31",
+      "svgSha256": "bea14d7f2d272a2c47f5dba7632f09a180809159f683906ef4139ad18f573fa8",
+      "pngSha256": "64c7b77dd1b9ffe14299a78d8b8c25038a1f18a64317842b83b640d2a973a535"
+    }
+  },
+  {
+    "sequence": 25,
+    "occurredAt": "2026-08-24T13:29:27.624Z",
+    "type": "benchmark_outcome_selected",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "outcome": "completed"
+    }
+  },
+  {
+    "sequence": 26,
+    "occurredAt": "2026-08-24T13:29:27.624Z",
+    "type": "benchmark_run_finalized",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "selectedGraph": "line",
+      "selectedStatistics": "welch_anova"
+    }
+  }
+]

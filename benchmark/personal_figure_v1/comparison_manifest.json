@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0.0",
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0",
+  "generatedAt": "2026-08-24T22:35:00+09:00",
+  "cases": [
+    {
+      "caseId": "PFR002",
+      "paperCode": "NDEL1",
+      "paperTitle": "Ndel1 suppresses ciliogenesis in proliferating cells by regulating the trichoplein-Aurora A pathway",
+      "doi": "10.1083/jcb.201507046",
+      "panel": "Fig. 1F",
+      "reference": "references/NDEL1_Figure_1.jpg",
+      "runRoot": "runs/PFR002",
+      "support": "direct",
+      "outcome": "completed",
+      "note": "Independent experimental units preserved after condition-qualified runtime identity normalization."
+    },
+    {
+      "caseId": "PFR004",
+      "paperCode": "NDEL1",
+      "paperTitle": "Ndel1 suppresses ciliogenesis in proliferating cells by regulating the trichoplein-Aurora A pathway",
+      "doi": "10.1083/jcb.201507046",
+      "panel": "Fig. 2A",
+      "reference": "references/NDEL1_Figure_2.jpg",
+      "runRoot": "runs/PFR004",
+      "support": "direct",
+      "outcome": "completed",
+      "note": "Independent conditions with within-condition repeated time; condition-by-time model completed."
+    },
+    {
+      "caseId": "PFR025",
+      "paperCode": "OPTO",
+      "paperTitle": "Optogenetic control of small GTPases reveals RhoA mediates intracellular calcium signaling",
+      "doi": "10.1016/j.jbc.2021.100290",
+      "panel": "Fig. 1D top",
+      "reference": "references/OPTO_Figure_1.jpg",
+      "runRoot": "runs/PFR025",
+      "support": "scientifically_compromising",
+      "outcome": "completed",
+      "note": "Region-level condition pairing was not recoverable from runtime IDs; graph is useful, inference treats regions as independent groups."
+    },
+    {
+      "caseId": "PFR046",
+      "paperCode": "OPTO",
+      "paperTitle": "Optogenetic control of small GTPases reveals RhoA mediates intracellular calcium signaling",
+      "doi": "10.1016/j.jbc.2021.100290",
+      "panel": "Fig. 7C,D",
+      "reference": "references/OPTO_Figure_7.jpg",
+      "runRoot": "runs/PFR046",
+      "support": "reasonable_workaround",
+      "outcome": "completed",
+      "note": "Within-cell change is summarized at the independent experiment level before the three-condition comparison."
+    },
+    {
+      "caseId": "PFR049",
+      "paperCode": "GFLB",
+      "paperTitle": "The F-actin-binding RapGEF GflB is required for efficient macropinocytosis in Dictyostelium",
+      "doi": "10.1242/jcs.194126",
+      "panel": "Fig. 1 quantitative morphology",
+      "reference": "references/GFLB_Figure_1.jpeg",
+      "runRoot": "runs/PFR049",
+      "support": "direct",
+      "outcome": "completed",
+      "note": "Nested cell observations remain visible; inference uses three independent imaging-session summaries per condition."
+    },
+    {
+      "caseId": "PFR069",
+      "paperCode": "CRYO",
+      "paperTitle": "Cryo-ET of actin cytoskeleton and membrane structure in lamellipodia formation using optogenetics",
+      "doi": "10.1016/j.isci.2025.112529",
+      "panel": "Fig. 1F",
+      "reference": "references/CRYO_Figure_1.jpg",
+      "runRoot": "runs/PFR069",
+      "support": "impossible",
+      "outcome": "explicit_unsupported",
+      "note": "The published panel is a single-cohort descriptive trajectory. Inferential completion would invent a comparator or null value."
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { Suspense, lazy, type PropsWithChildren } from "react";
 import type { ProjectState } from "@lsaa/project";
 
 import type { AppRoute } from "../app/routes";
+import type { LiteratureExperimenterCase } from "../app/literatureBenchmark";
 import { PRODUCT_IDENTITY } from "../app/productIdentity";
 import { DiagnosticPanel } from "./DiagnosticPanel";
 import { ContextualHelp } from "./ContextualHelp";
@@ -19,6 +20,7 @@ type AppShellProps = PropsWithChildren<{
   route: AppRoute;
   onNavigate: (route: AppRoute) => void;
   onResetEvaluationCase?: () => void;
+  onUseLiteratureCase?: (source: LiteratureExperimenterCase) => void;
   browserPreview?: boolean;
   evaluationPreview?: boolean;
   activeProject?: ProjectState | null;
@@ -29,6 +31,7 @@ export function AppShell({
   route,
   onNavigate,
   onResetEvaluationCase,
+  onUseLiteratureCase,
   browserPreview = false,
   evaluationPreview = false,
   activeProject = null,
@@ -99,6 +102,7 @@ export function AppShell({
         <Suspense fallback={null}>
           <DevelopmentBenchmarkRunBar
             onNavigateHome={onResetEvaluationCase ?? (() => onNavigate("home"))}
+            onUseLiteratureCase={onUseLiteratureCase}
           />
         </Suspense>
       ) : null}

@@ -1,0 +1,39 @@
+{
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0",
+  "caseId": "PFR069",
+  "track": "track_A",
+  "runId": "personal_006",
+  "appVersion": "0.1.0",
+  "sourceRevision": "607ea8c58410-dirty",
+  "productRevision": "607ea8c58410-dirty",
+  "benchmarkInfrastructureRevision": "607ea8c58410-dirty",
+  "engineVersion": null,
+  "startedAt": "2026-08-24T13:30:33.073Z",
+  "completedAt": "2026-08-24T13:31:13.586Z",
+  "outcome": "explicit_unsupported",
+  "supportStatus": "impossible",
+  "artifactCompleteness": "metadata_only_explicit_unsupported_with_default_graph",
+  "trackASourceView": {
+    "caseId": "PFR069",
+    "runId": "personal_006",
+    "sha256": "36a0c4788c77d432c00f212a9375c31d153b70c77bf69e9b9497c88270ca6a3e"
+  },
+  "evidenceProvenance": {
+    "caseId": "PFR069",
+    "runId": "personal_006",
+    "sourceViewSha256": "36a0c4788c77d432c00f212a9375c31d153b70c77bf69e9b9497c88270ca6a3e"
+  },
+  "unsupportedEvidenceProvenanceVersion": "1.1.0",
+  "scientificReason": "Single-cohort longitudinal series is publication-descriptive; no comparison group or prespecified null value exists.",
+  "experimentalUnit": "cell",
+  "biologicalN": 6,
+  "attemptedRoutes": [
+    "Original time series",
+    "endpoint",
+    "and baseline-change routes were inspected."
+  ],
+  "scientificCompromiseReason": "Inferential execution would invent a null value or comparison absent from the published descriptive panel.",
+  "defaultGraphCaptured": true,
+  "interactionCount": 20,
+  "graphEditCount": 0
+}

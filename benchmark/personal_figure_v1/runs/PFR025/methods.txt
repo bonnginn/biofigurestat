@@ -1,0 +1,31 @@
+【Methods】
+解析テンプレート：D06 · 条件×Timeの反復測定（0.1.0）
+実行手法：条件×Timeの反復測定分散分析（mixed_anova）
+推奨手法：条件×Timeの反復測定分散分析（選択と同じ）
+推奨判断：推奨法を明示的に採用
+実験デザイン：PFR025 personal published-Figure validation／実験単位：unit-level.experimental-unit
+解析した測定項目：relative_SspB_LARG_DH_intensity (a.u.)
+対応構造：条件間で別々の独立した実験単位。
+統計上のn：Activated region n=7, Non-activated region n=7
+解析条件：Activated region、Non-activated region
+解析条件：Activated region vs Non-activated region
+エラーバー：平均±SEM（SD/√n）
+
+解析結果
+結果：完了
+balanced split-plot検定（交互作用を先に表示）：
+・条件 × Time（交互作用）：F=95.8504、自由度 8, 96、p=2.47e-42、partial_eta_squared=0.8887
+・条件（実験単位間）：F=457.649、自由度 1, 12、p=6.35e-11、partial_eta_squared=0.9744
+・Time（実験単位内）：F=91.7617、自由度 8, 96、p=1.56e-41、partial_eta_squared=0.8844
+条件間の事後比較：実行せず
+
+実行エンジン：lsaa-python 0.13.0
+使用パッケージ：numpy 2.3.5, scipy 1.18.0
+アプリケーション：Life Science Analysis App 0.1.0
+完了日時：2026-08-24T13:28:44.146856+00:00
+
+注意事項
+・除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。
+・正規化：実行設定に正規化計画がありません（該当なし／未設定）。
+・多重性補正：条件×Time、条件、Timeの事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。
+・エンジン診断（sphericity_not_estimated）：The initial balanced D06 model does not estimate a sphericity correction; use a validated mixed-effects model when this assumption is not defensible. 球面性補正を必要とする場合は検証済みmixed-effects modelを使用してください。

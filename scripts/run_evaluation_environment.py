@@ -17,8 +17,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BRIDGE_PORT = 43128
-UI_PORT = 1420
+BRIDGE_PORT = int(os.environ.get("LSAA_EVALUATION_BRIDGE_PORT", "43128"))
+UI_PORT = int(os.environ.get("LSAA_EVALUATION_UI_PORT", "1420"))
 EXPECTED_ENGINE_PACKAGES = {
     "lsaa-analysis-engine": "0.7.0",
     "numpy": "2.3.5",

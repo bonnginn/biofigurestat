@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0.0",
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0",
+  "corpus": {
+    "caseCount": 69,
+    "paperCount": 5,
+    "syntheticRowCount": 6810,
+    "sourceRawCaseCount": 0,
+    "reviewSetCount": 6
+  },
+  "runOutcomes": {
+    "completed": 5,
+    "explicit_unsupported": 1
+  },
+  "scientificSupport": {
+    "direct": 3,
+    "reasonable_workaround": 1,
+    "scientifically_compromising": 1,
+    "impossible": 1
+  },
+  "reviewStatus": {
+    "reviewed": 0,
+    "pending": 6
+  },
+  "keyFindings": [
+    "Runtime unit IDs reused workbook-local labels across independent conditions; import now condition-qualifies those IDs when the packet explicitly states that no repeated identity is implied.",
+    "Ordered-axis units were previously hard-coded to hours; personal OPTO data now preserve seconds and CRYO data preserve minutes.",
+    "PFR025 cannot preserve within-cell pairing between activated and non-activated regions from the available runtime identity and is scientifically compromising for inference.",
+    "PFR069 is a single-cohort descriptive trajectory; inferential completion would require inventing a comparator or null value, so it is explicitly unsupported."
+  ]
+}

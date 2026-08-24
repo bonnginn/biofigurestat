@@ -1,0 +1,424 @@
+[
+  {
+    "sequence": 1,
+    "occurredAt": "2026-08-24T13:27:26.050Z",
+    "type": "benchmark_run_started",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0",
+      "caseId": "PFR002",
+      "track": "track_A",
+      "runId": "personal_001b",
+      "sourceRevision": "607ea8c58410-dirty"
+    }
+  },
+  {
+    "sequence": 2,
+    "occurredAt": "2026-08-24T13:27:26.065Z",
+    "type": "blind_case_delivered",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR002",
+      "syntheticRows": 9
+    }
+  },
+  {
+    "sequence": 3,
+    "occurredAt": "2026-08-24T13:27:26.910Z",
+    "type": "route_changed",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "from": "home",
+      "to": "new-experiment"
+    }
+  },
+  {
+    "sequence": 4,
+    "occurredAt": "2026-08-24T13:27:26.910Z",
+    "type": "literature_design_created",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR002",
+      "source": "researcher_packet"
+    }
+  },
+  {
+    "sequence": 5,
+    "occurredAt": "2026-08-24T13:27:30.361Z",
+    "type": "experiment_workspace_started",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "source": "design_wizard",
+      "context": "microscopy_imaging",
+      "entryRoute": "unspecified",
+      "timeSampling": "none",
+      "orderedAxisSemantic": "time",
+      "orderedAxisTitle": "Time",
+      "orderedAxisUnit": "h",
+      "unitStructure": "independent",
+      "unitLabel": "independent experiment",
+      "readout": "proportion",
+      "conditionCount": 3
+    }
+  },
+  {
+    "sequence": 6,
+    "occurredAt": "2026-08-24T13:27:30.369Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "overview"
+    }
+  },
+  {
+    "sequence": 7,
+    "occurredAt": "2026-08-24T13:27:30.369Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "overview"
+    }
+  },
+  {
+    "sequence": 8,
+    "occurredAt": "2026-08-24T13:27:31.161Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 9,
+    "occurredAt": "2026-08-24T13:27:31.459Z",
+    "type": "literature_benchmark_data_loaded",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR002",
+      "mappedCells": 9
+    }
+  },
+  {
+    "sequence": 10,
+    "occurredAt": "2026-08-24T13:27:32.744Z",
+    "type": "graph_created_from_choice",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "recommendedGraph": "dot",
+      "selectedGraph": "dot",
+      "recommendationDiffers": false,
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout"
+    }
+  },
+  {
+    "sequence": 11,
+    "occurredAt": "2026-08-24T13:27:32.765Z",
+    "type": "default_graph_capture_started",
+    "effect": "non_rendering_ui",
+    "detail": {}
+  },
+  {
+    "sequence": 12,
+    "occurredAt": "2026-08-24T13:27:32.765Z",
+    "type": "graph_workspace_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "selectedGraph": "dot",
+      "readoutId": "readout.1"
+    }
+  },
+  {
+    "sequence": 13,
+    "occurredAt": "2026-08-24T13:27:32.769Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "graph",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 14,
+    "occurredAt": "2026-08-24T13:27:32.909Z",
+    "type": "default_graph_captured",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "defaultCapturedEventIndex": 11,
+      "graphStateFingerprint": "60c0bfa2c3b1a0f79aacd92e3b071d0fa0a38d295d02f4666eabc46b179a5835",
+      "analysisStateFingerprint": "88638d81dafeb35ce4bc9908583952ac38fe5e93e53f3ca527ea3726a6197531",
+      "svgSha256": "60c0bfa2c3b1a0f79aacd92e3b071d0fa0a38d295d02f4666eabc46b179a5835",
+      "pngSha256": "707aa45b6dc0b463b2ed7a2e48762609476c443e6776717eb5f8e07c31b1ab5a"
+    }
+  },
+  {
+    "sequence": 15,
+    "occurredAt": "2026-08-24T13:27:34.286Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "statistics",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 16,
+    "occurredAt": "2026-08-24T13:27:45.329Z",
+    "type": "recommendation_decision_recorded",
+    "effect": "analysis_only",
+    "detail": {
+      "decision": "accepted",
+      "recommendedMethod": "welch_anova"
+    }
+  },
+  {
+    "sequence": 17,
+    "occurredAt": "2026-08-24T13:27:47.952Z",
+    "type": "support_status_selected",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "supportStatus": "direct"
+    }
+  },
+  {
+    "sequence": 18,
+    "occurredAt": "2026-08-24T13:27:48.015Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "graph",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 19,
+    "occurredAt": "2026-08-24T13:27:48.306Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "dot",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2|condition.3",
+      "selectedTimes": "",
+      "timeMetric": "selected_timepoint",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sd",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "ciliated_fraction",
+      "axisRangeMode": "auto",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 20,
+    "occurredAt": "2026-08-24T13:27:48.328Z",
+    "type": "statistics_executed",
+    "effect": "analysis_only",
+    "detail": {
+      "method": "welch_anova",
+      "recommendedMethod": "welch_anova",
+      "recommendationDiffers": false,
+      "recommendationReasonCode": "draft_d03_design_assessment",
+      "recommendationExplanation": "独立した3条件を比較します（Control siRNA / Dox−: 3、Ndel1 siRNA / Dox−: 3、Ndel1 siRNA / Dox+: 3）。全体比較後の条件間比較にはGames–Howell法を使い、多重比較を扱います。対照群は未指定です。",
+      "recommendationDecision": "accepted",
+      "recommendationSelectedMethod": "welch_anova",
+      "contrast": "all_pairs",
+      "correction": "games_howell_all_pairs",
+      "protocolVersion": "0.2.0",
+      "mode": "manual",
+      "status": "ok"
+    }
+  },
+  {
+    "sequence": 21,
+    "occurredAt": "2026-08-24T13:27:48.339Z",
+    "type": "analysis_configuration_changed",
+    "effect": "analysis_only",
+    "detail": {
+      "graphType": "dot",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2|condition.3",
+      "selectedTimes": "",
+      "timeMetric": "selected_timepoint",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sd",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "ciliated_fraction",
+      "axisRangeMode": "auto",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 22,
+    "occurredAt": "2026-08-24T13:27:48.569Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "dot",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2|condition.3",
+      "selectedTimes": "",
+      "timeMetric": "selected_timepoint",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sem",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "ciliated_fraction",
+      "axisRangeMode": "auto",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 23,
+    "occurredAt": "2026-08-24T13:27:48.632Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "dot",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2|condition.3",
+      "selectedTimes": "",
+      "timeMetric": "selected_timepoint",
+      "selectedMethod": null,
+      "annotationMode": "exact_p",
+      "pointSize": 6,
+      "errorBar": "sem",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "ciliated_fraction",
+      "axisRangeMode": "auto",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 24,
+    "occurredAt": "2026-08-24T13:27:48.748Z",
+    "type": "final_graph_captured",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "finalCapturedEventIndex": 24,
+      "graphStateFingerprint": "f7929193b2a1d5f6a5ccc62cf6e98983d6464745b4787b9f4c09a49daaef02d8",
+      "analysisStateFingerprint": "3a8037bf29f1232a143842dbc464dfbb56b347f98a6dd83f17554a59ae2c430f",
+      "svgSha256": "f7929193b2a1d5f6a5ccc62cf6e98983d6464745b4787b9f4c09a49daaef02d8",
+      "pngSha256": "d1f78b71844b07fa09ff13f4dd8994753a276982b57315a66881eadefd7ffd62"
+    }
+  },
+  {
+    "sequence": 25,
+    "occurredAt": "2026-08-24T13:27:48.748Z",
+    "type": "benchmark_outcome_selected",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "outcome": "completed"
+    }
+  },
+  {
+    "sequence": 26,
+    "occurredAt": "2026-08-24T13:27:48.748Z",
+    "type": "benchmark_run_finalized",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "selectedGraph": "dot",
+      "selectedStatistics": "welch_anova"
+    }
+  }
+]

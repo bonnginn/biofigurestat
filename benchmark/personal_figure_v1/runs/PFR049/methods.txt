@@ -1,0 +1,32 @@
+【Methods】
+解析テンプレート：D03 · 3条件以上の独立群（0.1.0）
+実行手法：Welchの分散分析（welch_anova）
+推奨手法：Welchの分散分析（選択と同じ）
+推奨判断：推奨法を明示的に採用
+実験デザイン：PFR049 personal published-Figure validation／実験単位：unit-level.experimental-unit
+解析した測定項目：projected_cell_area_um2 (a.u.)
+対応構造：条件間で別々の独立した実験単位。
+統計上のn：AX2 parental n=3, gflB knockout n=3, GFP-GflB overproducer n=3
+解析条件：AX2 parental、gflB knockout、GFP-GflB overproducer
+主比較：AX2 parental vs gflB knockout
+エラーバー：エラーバーなし
+
+解析結果
+結果：完了
+全体検定：welch_one_way_anova、F=63.6276、自由度 2, 3.7445、p=0.0013
+全体効果量：cohen_f_welch=4.0813
+補正済み条件間比較：
+・AX2 parental vs gflB knockout：平均値の差 -37.8393（95%信頼区間 -58.993～-16.6855）、p=0.0046、調整済みp=0.0096、hedges_g=-4.7312
+・AX2 parental vs GFP-GflB overproducer：平均値の差 20.8797（95%信頼区間 8.9738～32.7856）、p=0.0036、調整済みp=0.0078、hedges_g=4.1519
+・gflB knockout vs GFP-GflB overproducer：平均値の差 58.719（95%信頼区間 36.7941～80.6439）、p=0.0018、調整済みp=0.0037、hedges_g=7.6581
+
+実行エンジン：lsaa-python 0.13.0
+使用パッケージ：numpy 2.3.5, scipy 1.18.0
+アプリケーション：Life Science Analysis App 0.1.0
+完了日時：2026-08-24T13:30:01.320753+00:00
+
+注意事項
+・除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。
+・正規化：実行設定に正規化計画がありません（該当なし／未設定）。
+・比較意図：すべての条件ペア。
+・多重性補正：games_howell_all_pairsを指定。

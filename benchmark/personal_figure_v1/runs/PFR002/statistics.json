@@ -1,0 +1,238 @@
+{
+  "selectedReadoutId": "readout.1",
+  "selectedConditionIds": [
+    "condition.1",
+    "condition.2",
+    "condition.3"
+  ],
+  "statisticalUnit": "independent experiment",
+  "recommendation": {
+    "templateId": "D03",
+    "templateVersion": "0.1.0",
+    "recommendedMethod": "welch_anova",
+    "alternativeMethods": [
+      "one_way_anova",
+      "kruskal_wallis"
+    ],
+    "reasonCode": "draft_d03_design_assessment",
+    "explanation": "独立した3条件を比較します（Control siRNA / Dox−: 3、Ndel1 siRNA / Dox−: 3、Ndel1 siRNA / Dox+: 3）。全体比較後の条件間比較にはGames–Howell法を使い、多重比較を扱います。対照群は未指定です。",
+    "statisticalNDefinition": "Control siRNA / Dox− n=3, Ndel1 siRNA / Dox− n=3, Ndel1 siRNA / Dox+ n=3",
+    "multiplicityMethod": "games_howell_all_pairs",
+    "decision": {
+      "kind": "accepted",
+      "selectedMethod": "welch_anova"
+    }
+  },
+  "recommendedMethod": "welch_anova",
+  "selectedMethod": "welch_anova",
+  "recommendationDiffers": false,
+  "contrast": {
+    "intent": "all_pairs",
+    "controlConditionId": null,
+    "plannedConditionPairs": []
+  },
+  "nByCondition": [
+    {
+      "conditionId": "condition.1",
+      "label": "Control siRNA / Dox−",
+      "n": 3
+    },
+    {
+      "conditionId": "condition.2",
+      "label": "Ndel1 siRNA / Dox−",
+      "n": 3
+    },
+    {
+      "conditionId": "condition.3",
+      "label": "Ndel1 siRNA / Dox+",
+      "n": 3
+    }
+  ],
+  "correction": "games_howell_all_pairs",
+  "request": {
+    "protocolVersion": "0.2.0",
+    "requestId": "request.draft.graph",
+    "projectId": "project.draft",
+    "analysisId": "analysis.draft.graph",
+    "templateId": "D03",
+    "templateVersion": "0.1.0",
+    "method": "welch_anova",
+    "conditionIds": [
+      "condition.1",
+      "condition.2",
+      "condition.3"
+    ],
+    "contrastIntent": "all_pairs",
+    "primaryContrastConditionIds": [
+      "condition.1",
+      "condition.2"
+    ],
+    "observations": [
+      {
+        "observationId": "observation.draft.1.1",
+        "conditionId": "condition.1",
+        "value": 6.25,
+        "experimentalUnitId": "condition.662cc006c916:PFR002_E01.condition.1"
+      },
+      {
+        "observationId": "observation.draft.2.1",
+        "conditionId": "condition.1",
+        "value": 4.225352112676056,
+        "experimentalUnitId": "condition.662cc006c916:PFR002_E02.condition.1"
+      },
+      {
+        "observationId": "observation.draft.3.1",
+        "conditionId": "condition.1",
+        "value": 6.4,
+        "experimentalUnitId": "condition.662cc006c916:PFR002_E03.condition.1"
+      },
+      {
+        "observationId": "observation.draft.1.2",
+        "conditionId": "condition.2",
+        "value": 37.06293706293706,
+        "experimentalUnitId": "condition.662cc006c916:PFR002_E01.condition.2"
+      },
+      {
+        "observationId": "observation.draft.2.2",
+        "conditionId": "condition.2",
+        "value": 31.654676258992804,
+        "experimentalUnitId": "condition.662cc006c916:PFR002_E02.condition.2"
+      },
+      {
+        "observationId": "observation.draft.3.2",
+        "conditionId": "condition.2",
+        "value": 46.25850340136054,
+        "experimentalUnitId": "condition.662cc006c916:PFR002_E03.condition.2"
+      },
+      {
+        "observationId": "observation.draft.1.3",
+        "conditionId": "condition.3",
+        "value": 6.521739130434782,
+        "experimentalUnitId": "condition.662cc006c916:PFR002_E01.condition.3"
+      },
+      {
+        "observationId": "observation.draft.2.3",
+        "conditionId": "condition.3",
+        "value": 7.317073170731707,
+        "experimentalUnitId": "condition.662cc006c916:PFR002_E02.condition.3"
+      },
+      {
+        "observationId": "observation.draft.3.3",
+        "conditionId": "condition.3",
+        "value": 1.550387596899225,
+        "experimentalUnitId": "condition.662cc006c916:PFR002_E03.condition.3"
+      }
+    ],
+    "options": {
+      "alternative": "two_sided",
+      "confidenceLevel": 0.95,
+      "multiplicityMethod": "games_howell_all_pairs"
+    }
+  },
+  "result": {
+    "protocolVersion": "0.2.0",
+    "requestId": "request.draft.graph",
+    "status": "ok",
+    "engine": {
+      "name": "lsaa-python",
+      "version": "0.13.0",
+      "packages": {
+        "numpy": "2.3.5",
+        "scipy": "1.18.0"
+      }
+    },
+    "estimates": [
+      {
+        "name": "condition.1_minus_condition.2",
+        "value": -32.70025487020478,
+        "standardError": 4.3200455560449775,
+        "confidenceInterval": {
+          "level": 0.95,
+          "lower": -56.79042931892931,
+          "upper": -8.610080421480252
+        }
+      },
+      {
+        "name": "condition.1_minus_condition.3",
+        "value": 0.49538407153678055,
+        "standardError": 1.9358080040612502,
+        "confidenceInterval": {
+          "level": 0.95,
+          "lower": -8.490065336163198,
+          "upper": 9.480833479236757
+        }
+      },
+      {
+        "name": "condition.2_minus_condition.3",
+        "value": 33.195638941741564,
+        "standardError": 4.628901040834354,
+        "confidenceInterval": {
+          "level": 0.95,
+          "lower": 12.344274019054573,
+          "upper": 54.047003864428554
+        }
+      }
+    ],
+    "tests": [
+      {
+        "name": "welch_one_way_anova",
+        "statisticName": "F",
+        "statistic": 23.73890221508172,
+        "degreesOfFreedom": [
+          2,
+          3.0695902311447907
+        ],
+        "pValue": 0.013575007100421897,
+        "adjustedPValue": null,
+        "effectSizeName": "cohen_f_welch",
+        "effectSize": 2.533974392604432
+      },
+      {
+        "name": "games_howell:condition.1:condition.2",
+        "statisticName": "t",
+        "statistic": -7.569423619722664,
+        "degreesOfFreedom": [
+          2.108161061531635
+        ],
+        "pValue": 0.014647328866952703,
+        "adjustedPValue": 0.02701750095658051,
+        "effectSizeName": "hedges_g",
+        "effectSize": -4.931252525671715
+      },
+      {
+        "name": "games_howell:condition.1:condition.3",
+        "statisticName": "t",
+        "statistic": 0.25590558076910724,
+        "degreesOfFreedom": [
+          2.5906600303425558
+        ],
+        "pValue": 0.8169654295474136,
+        "adjustedPValue": 0.965023476458824,
+        "effectSizeName": "hedges_g",
+        "effectSize": 0.16671481276501515
+      },
+      {
+        "name": "games_howell:condition.2:condition.3",
+        "statisticName": "t",
+        "statistic": 7.171386609673144,
+        "degreesOfFreedom": [
+          2.6943746082643756
+        ],
+        "pValue": 0.007911663841831515,
+        "adjustedPValue": 0.015659337790913774,
+        "effectSizeName": "hedges_g",
+        "effectSize": 4.671943348417685
+      }
+    ],
+    "diagnostics": [
+      {
+        "code": "variance_robust_multi_group_default",
+        "message": "Welch ANOVA and Games-Howell comparisons do not assume equal group variances; biological-unit independence remains a design requirement."
+      }
+    ],
+    "warnings": [],
+    "completedAt": "2026-08-24T13:27:48.099924+00:00"
+  },
+  "state": "current",
+  "applicationVersion": "0.1.0"
+}

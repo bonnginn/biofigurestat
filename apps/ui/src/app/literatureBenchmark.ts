@@ -1,5 +1,6 @@
 import {
   conditionDisplayLabel,
+  createExperimentSetDraft,
   experimentCellKey,
   orderedAxisSemantic,
   orderedAxisTitle,
@@ -73,7 +74,7 @@ export type LiteratureLoadAssessment = Readonly<{
 }>;
 
 export function isLiteratureCaseId(caseId: string | undefined): boolean {
-  return Boolean(caseId && /^(?:(?:JCB|NC|SA|EL)\d{3}|LSA\d{3})$/.test(caseId));
+  return Boolean(caseId && /^(?:(?:JCB|NC|SA|EL|PFR)\d{3}|LSA\d{3})$/.test(caseId));
 }
 
 export async function fetchLiteratureExperimenterCase(
@@ -126,9 +127,157 @@ function structuredXAxis(source: LiteratureExperimenterCase): LiteratureLoadAsse
       source: "synthetic_x_value",
     };
   }
-  return source.syntheticData.some(({ time }) => time !== null)
-    ? { semantic: "time", title: "Time", unit: "h", source: "researcher_packet" }
-    : undefined;
+  if (!source.syntheticData.some(({ time }) => time !== null)) return undefined;
+  const declaredUnits = uniqueInOrder(
+    source.syntheticData
+      .map(({ time_unit }) => time_unit?.trim())
+      .filter((unit): unit is string => Boolean(unit)),
+  );
+  return {
+    semantic: "time",
+    title: "Time",
+    unit: declaredUnits.length === 1 ? declaredUnits[0] : "h",
+    source: "researcher_packet",
+  };
+}
+
+function sourceReadoutShape(source: LiteratureExperimenterCase) {
+  const readouts = uniqueInOrder(source.syntheticData.map(({ readout }) => readout));
+  const hasRatios = source.syntheticData.some(
+    ({ numerator, denominator }) => numerator !== null || denominator !== null,
+  );
+  const hasWbBands =
+    readouts.some((readout) => /(?:^|_)(?:target)(?:_|$)/i.test(readout)) &&
+    readouts.some((readout) => /(?:reference|loading_control)/i.test(readout)) &&
+    readouts.some((readout) => /(?:ratio|normalized_target)/i.test(readout));
+  return hasRatios ? "proportion" : hasWbBands ? "wb_ratio" : "nested_continuous";
+}
+
+/** Build the researcher-visible design for deterministic evaluation automation. */
+export function createLiteratureExperimentDraft(
+  source: LiteratureExperimenterCase,
+): ExperimentSetDraft {
+  const rows = source.syntheticData;
+  const sourceConditions = uniqueInOrder(rows.map(({ condition }) => condition));
+  const sourceReadouts = uniqueInOrder(rows.map(({ readout }) => readout));
+  const shape = sourceReadoutShape(source);
+  const packetText = `${source.researcherPacket.measurement_context} ${source.researcherPacket.blind_experiment_summary}`;
+  const context = /phosphorylation|kinase|western|protein/i.test(packetText)
+    ? "protein_biochemical"
+    : /cell|cilia|cilium|morphology|migration|intensity|area/i.test(packetText)
+      ? "microscopy_imaging"
+      : "general_assay";
+  const base = createExperimentSetDraft(context, shape);
+  const factorialCells = sourceConditions.map((condition) =>
+    condition.split("|").map((part) => part.trim()),
+  );
+  const factorial =
+    factorialCells.length >= 4 &&
+    factorialCells.every((parts) => parts.length === 2 && parts.every(Boolean)) &&
+    uniqueInOrder(factorialCells.map(([first]) => first)).length >= 2 &&
+    uniqueInOrder(factorialCells.map(([, second]) => second)).length >= 2;
+  const attributes = factorial
+    ? [
+        { id: "attribute.1", label: "Factor 1" },
+        { id: "attribute.2", label: "Factor 2" },
+      ]
+    : [{ id: "attribute.1", label: "Condition" }];
+  const conditions = sourceConditions.map((condition, index) => {
+    const conditionAttributes: Record<string, string> = factorial
+      ? {
+          "attribute.1": factorialCells[index]?.[0] ?? "",
+          "attribute.2": factorialCells[index]?.[1] ?? "",
+        }
+      : { "attribute.1": condition };
+    return {
+      id: `condition.${index + 1}`,
+      label: condition,
+      attributes: conditionAttributes,
+    };
+  });
+  const conditionsByRawUnit = new Map<string, Set<string>>();
+  rows.forEach((row) => {
+    const conditionsForUnit = conditionsByRawUnit.get(row.unit_id) ?? new Set<string>();
+    conditionsForUnit.add(row.condition);
+    conditionsByRawUnit.set(row.unit_id, conditionsForUnit);
+  });
+  const matched =
+    [...conditionsByRawUnit.values()].some((value) => value.size > 1) ||
+    /across (?:paired|multiple) conditions/i.test(source.researcherPacket.repeated_identity_note);
+  const expectedAxis = structuredXAxis(source);
+  const axisValues = sourceAxisValues(source);
+  const unitAxisValues = new Map<string, Set<number>>();
+  rows.forEach((row) => {
+    const axisValue = expectedAxis?.semantic === "numeric_covariate" ? row.x_value : row.time;
+    if (axisValue === null) return;
+    const key = `${row.condition}:${sourceUnit(row)}`;
+    const values = unitAxisValues.get(key) ?? new Set<number>();
+    values.add(axisValue);
+    unitAxisValues.set(key, values);
+  });
+  const sampling =
+    axisValues.length === 0
+      ? "none"
+      : [...unitAxisValues.values()].some((values) => values.size > 1)
+        ? "longitudinal"
+        : "cross_sectional";
+  const unitOrderByCondition = new Map<string, string[]>();
+  rows.forEach((row) => {
+    const units = unitOrderByCondition.get(row.condition) ?? [];
+    const unit = sourceUnit(row);
+    if (!units.includes(unit)) units.push(unit);
+    unitOrderByCondition.set(row.condition, units);
+  });
+  const matchedUnits = uniqueInOrder(rows.map((row) => sourceUnit(row)));
+  const experimentCount = matched
+    ? matchedUnits.length
+    : Math.max(...[...unitOrderByCondition.values()].map((units) => units.length));
+  const timeUnit = expectedAxis?.unit === "s" ? "sec" : expectedAxis?.unit;
+  return {
+    ...base,
+    name: `${source.caseId} personal published-Figure validation`,
+    readouts: sourceReadouts.map((label, index) => ({
+      ...base.readouts[0],
+      id: `readout.${index + 1}`,
+      label,
+      shape,
+      ...(shape === "nested_continuous" ? { nestedInputMode: "nested_observations" as const } : {}),
+    })),
+    attributes,
+    conditions,
+    analysisIntent:
+      conditions.length === 1
+        ? { kind: "single_cohort", mode: "descriptive" }
+        : { kind: "group_comparison" },
+    conditionAssignment: {
+      kind: matched ? "matched" : "independent",
+      unitLabel: source.researcherPacket.experimental_unit_description,
+    },
+    time: {
+      sampling,
+      unit:
+        timeUnit === "sec" || timeUnit === "min" || timeUnit === "h" || timeUnit === "day"
+          ? timeUnit
+          : "h",
+      points: axisValues.map((value, index) => ({ id: `time.${index + 1}`, value })),
+      ...(expectedAxis
+        ? {
+            axisSemantic:
+              expectedAxis.semantic === "numeric_covariate" ? "numeric_covariate" : "time",
+            axisTitle: expectedAxis.title,
+            axisUnit: expectedAxis.unit,
+          }
+        : {}),
+    },
+    experiments: Array.from({ length: experimentCount }, (_, index) => ({
+      id: `experiment.${index + 1}`,
+      label: `Exp ${index + 1}`,
+      sessionId: `session.${index + 1}`,
+      stableUnitId: matchedUnits[index] ?? `unit.${index + 1}`,
+      date: "2026-08-24",
+      note: "personal benchmark synthetic reconstruction",
+    })),
+  };
 }
 
 function sourceAxisValues(source: LiteratureExperimenterCase): number[] {

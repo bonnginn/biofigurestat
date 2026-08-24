@@ -1,0 +1,279 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, "Noto Sans JP", system-ui, sans-serif;
+  color: #17201d;
+  background: #eef2ef;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+header {
+  height: 82px;
+  padding: 16px 24px;
+  background: #102c27;
+  color: #f5fbf8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+h1,
+h2,
+p {
+  margin: 0;
+}
+h1 {
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+h2 {
+  font-size: 22px;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+  color: #64c7a7;
+  margin-bottom: 5px;
+}
+.progress {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.progress span {
+  color: #b7d3ca;
+  font-size: 12px;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: calc(100vh - 82px);
+}
+aside {
+  background: #183b34;
+  padding: 14px;
+}
+nav {
+  display: grid;
+  gap: 7px;
+  position: sticky;
+  top: 14px;
+}
+.case-button {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 11px 12px;
+  text-align: left;
+  background: transparent;
+  color: #d9e9e4;
+  cursor: pointer;
+}
+.case-button small {
+  display: block;
+  color: #8db4a8;
+  margin-top: 3px;
+}
+.case-button.active {
+  background: #f5fbf8;
+  color: #14342d;
+}
+.case-button.active small {
+  color: #52736a;
+}
+main {
+  padding: 22px;
+  min-width: 0;
+}
+.case-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.case-head #caseNote {
+  margin-top: 7px;
+  color: #5b6b65;
+  max-width: 900px;
+  font-size: 13px;
+}
+button {
+  font: inherit;
+  border: 1px solid #b8c8c2;
+  background: white;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+button:hover {
+  border-color: #338b72;
+}
+.pager {
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+.figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.figures article {
+  min-width: 0;
+}
+.panel-label {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  margin: 0 0 7px 3px;
+  color: #4d625b;
+}
+.image-frame {
+  height: 500px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #d3ddd9;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  box-shadow: 0 3px 14px #173c3210;
+}
+.image-frame img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.fallback {
+  min-height: 18px;
+  font-size: 12px;
+  color: #9b4b34;
+  margin: 5px 3px 0;
+}
+.review-card {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #d3ddd9;
+  background: white;
+  border-radius: 12px;
+  display: grid;
+  gap: 13px;
+}
+.field {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.field > span,
+.comment span {
+  width: 92px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #52645e;
+}
+.segmented {
+  display: flex;
+  gap: 7px;
+}
+.segmented button.selected {
+  background: #1e755e;
+  border-color: #1e755e;
+  color: white;
+}
+.flags label {
+  font-size: 13px;
+}
+.comment {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.comment textarea {
+  flex: 1;
+  resize: vertical;
+  border: 1px solid #bccbc6;
+  border-radius: 8px;
+  padding: 10px;
+  font: inherit;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.actions a {
+  font-size: 13px;
+  color: #19634f;
+}
+.primary {
+  background: #1e755e;
+  color: white;
+  border-color: #1e755e;
+}
+@media (max-width: 1100px) {
+  .image-frame {
+    height: 420px;
+  }
+  .layout {
+    grid-template-columns: 190px 1fr;
+  }
+  main {
+    padding: 18px;
+  }
+  .figures {
+    gap: 9px;
+  }
+}
+@media (max-width: 700px) {
+  header {
+    height: auto;
+  }
+  .layout {
+    display: block;
+  }
+  aside {
+    padding: 8px;
+    overflow: auto;
+  }
+  nav {
+    display: flex;
+    position: static;
+  }
+  .case-button {
+    min-width: 150px;
+  }
+  main {
+    padding: 14px;
+  }
+  .case-head {
+    display: block;
+  }
+  .pager {
+    margin-top: 12px;
+  }
+  .figures {
+    grid-template-columns: 1fr;
+  }
+  .image-frame {
+    height: 440px;
+  }
+  .field,
+  .comment {
+    display: block;
+  }
+  .field > span,
+  .comment span {
+    display: block;
+    width: auto;
+    margin-bottom: 7px;
+  }
+  .actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}

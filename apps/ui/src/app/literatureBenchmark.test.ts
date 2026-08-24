@@ -4,6 +4,7 @@ import { createIndependentTwoGroupFixture } from "./syntheticFixtures";
 import { experimentCellKey } from "./experimentDraft";
 import {
   isLiteratureCaseId,
+  createLiteratureExperimentDraft,
   literatureOrderedAxisSummary,
   literatureWorkflowSummary,
   mapLiteratureMeasurements,
@@ -89,6 +90,7 @@ describe("literature benchmark experimenter boundary", () => {
     expect(isLiteratureCaseId("JCB003")).toBe(true);
     expect(isLiteratureCaseId("LSA051")).toBe(true);
     expect(isLiteratureCaseId("LSA495")).toBe(true);
+    expect(isLiteratureCaseId("PFR069")).toBe(true);
     expect(isLiteratureCaseId("LSA0500")).toBe(false);
     expect(isLiteratureCaseId("../JCB003")).toBe(false);
     expect(isLiteratureCaseId("pilot_independent_2group")).toBe(false);
@@ -540,6 +542,43 @@ describe("literature benchmark experimenter boundary", () => {
     expect(mapLiteratureMeasurements(multiReadoutSource, mislabeledDraft).reason).toContain(
       "この順序・名前",
     );
+  });
+
+  it("builds a compatible evaluation draft and preserves seconds on a personal trace", () => {
+    const personalTrace: LiteratureExperimenterCase = {
+      ...source,
+      caseId: "PFR025",
+      researcherPacket: {
+        ...source.researcherPacket,
+        case_id: "PFR025",
+        conditions: "Activated | Non-activated",
+        timepoints: "0, 100 s",
+        readouts: "relative_intensity",
+        repeated_identity_note: "The same stable cell is measured across multiple time points.",
+      },
+      syntheticData: ["Activated", "Non-activated"].flatMap((condition, conditionIndex) =>
+        [0, 100].flatMap((time) =>
+          [1, 2, 3].map((experiment) => ({
+            ...source.syntheticData[0],
+            case_id: "PFR025",
+            experiment_id: `PFR025_E0${experiment}`,
+            unit_id: `PFR025_E0${experiment}_${conditionIndex}`,
+            parent_unit_id: `PFR025_E0${experiment}`,
+            observation_id: `${conditionIndex}.${time}.${experiment}`,
+            condition,
+            time,
+            time_unit: "s",
+            readout: "relative_intensity",
+            value: 1 + conditionIndex + time / 100,
+            numerator: null,
+            denominator: null,
+          })),
+        ),
+      ),
+    };
+    const draft = createLiteratureExperimentDraft(personalTrace);
+    expect(draft.time).toMatchObject({ sampling: "longitudinal", unit: "sec", axisUnit: "s" });
+    expect(mapLiteratureMeasurements(personalTrace, draft).compatible).toBe(true);
   });
 
   it("refuses a nested packet with a missing parent mapping", () => {

@@ -1,0 +1,380 @@
+[
+  {
+    "sequence": 1,
+    "occurredAt": "2026-08-24T13:28:16.050Z",
+    "type": "benchmark_run_started",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0",
+      "caseId": "PFR025",
+      "track": "track_A",
+      "runId": "personal_003",
+      "sourceRevision": "607ea8c58410-dirty"
+    }
+  },
+  {
+    "sequence": 2,
+    "occurredAt": "2026-08-24T13:28:16.078Z",
+    "type": "blind_case_delivered",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR025",
+      "syntheticRows": 126
+    }
+  },
+  {
+    "sequence": 3,
+    "occurredAt": "2026-08-24T13:28:16.941Z",
+    "type": "route_changed",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "from": "home",
+      "to": "new-experiment"
+    }
+  },
+  {
+    "sequence": 4,
+    "occurredAt": "2026-08-24T13:28:16.941Z",
+    "type": "literature_design_created",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR025",
+      "source": "researcher_packet"
+    }
+  },
+  {
+    "sequence": 5,
+    "occurredAt": "2026-08-24T13:28:20.384Z",
+    "type": "experiment_workspace_started",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "source": "design_wizard",
+      "context": "microscopy_imaging",
+      "entryRoute": "unspecified",
+      "timeSampling": "longitudinal",
+      "orderedAxisSemantic": "time",
+      "orderedAxisTitle": "Time",
+      "orderedAxisUnit": "s",
+      "unitStructure": "independent",
+      "unitLabel": "cell",
+      "readout": "nested_continuous",
+      "conditionCount": 2
+    }
+  },
+  {
+    "sequence": 6,
+    "occurredAt": "2026-08-24T13:28:20.392Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "overview"
+    }
+  },
+  {
+    "sequence": 7,
+    "occurredAt": "2026-08-24T13:28:20.392Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "overview"
+    }
+  },
+  {
+    "sequence": 8,
+    "occurredAt": "2026-08-24T13:28:21.167Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "data",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 9,
+    "occurredAt": "2026-08-24T13:28:21.451Z",
+    "type": "literature_benchmark_data_loaded",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "caseId": "PFR025",
+      "mappedCells": 126
+    }
+  },
+  {
+    "sequence": 10,
+    "occurredAt": "2026-08-24T13:28:22.736Z",
+    "type": "graph_created_from_choice",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "recommendedGraph": "line",
+      "selectedGraph": "line",
+      "recommendationDiffers": false,
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout"
+    }
+  },
+  {
+    "sequence": 11,
+    "occurredAt": "2026-08-24T13:28:22.783Z",
+    "type": "default_graph_capture_started",
+    "effect": "non_rendering_ui",
+    "detail": {}
+  },
+  {
+    "sequence": 12,
+    "occurredAt": "2026-08-24T13:28:22.784Z",
+    "type": "graph_workspace_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "selectedGraph": "line",
+      "readoutId": "readout.1"
+    }
+  },
+  {
+    "sequence": 13,
+    "occurredAt": "2026-08-24T13:28:22.791Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "graph",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 14,
+    "occurredAt": "2026-08-24T13:28:23.028Z",
+    "type": "default_graph_captured",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "defaultCapturedEventIndex": 11,
+      "graphStateFingerprint": "5d599e58ef15d49e0c1bbbe0103403a354f1944dca5724198eaa286a4c6c0571",
+      "analysisStateFingerprint": "79e78fa4b5b729293feb43e690317730d65f412a5dd9b0997b345b8c3e4abd08",
+      "svgSha256": "5d599e58ef15d49e0c1bbbe0103403a354f1944dca5724198eaa286a4c6c0571",
+      "pngSha256": "80613ec4becc4a7a69751f0a5471bb394783a12797a9b2d9caab834d061dca2d"
+    }
+  },
+  {
+    "sequence": 15,
+    "occurredAt": "2026-08-24T13:28:24.320Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "statistics",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 16,
+    "occurredAt": "2026-08-24T13:28:41.974Z",
+    "type": "analysis_configuration_changed",
+    "effect": "analysis_only",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2",
+      "selectedTimes": "time.1|time.2|time.3|time.4|time.5|time.6|time.7|time.8|time.9",
+      "timeMetric": "full_time_course",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sd",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "relative_SspB_LARG_DH_intensity (a.u.)",
+      "axisRangeMode": "auto",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 17,
+    "occurredAt": "2026-08-24T13:28:42.020Z",
+    "type": "recommendation_decision_recorded",
+    "effect": "analysis_only",
+    "detail": {
+      "decision": "accepted",
+      "recommendedMethod": "mixed_anova"
+    }
+  },
+  {
+    "sequence": 18,
+    "occurredAt": "2026-08-24T13:28:44.362Z",
+    "type": "statistics_executed",
+    "effect": "analysis_only",
+    "detail": {
+      "method": "mixed_anova",
+      "recommendedMethod": "mixed_anova",
+      "recommendationDiffers": false,
+      "recommendationReasonCode": "draft_d06_design_assessment",
+      "recommendationExplanation": "条件間は独立、Time軸内は同じcellを追跡します。まず条件×Timeの交互作用を評価し、次に条件とTimeの全体効果を示します。",
+      "recommendationDecision": "accepted",
+      "recommendationSelectedMethod": "mixed_anova",
+      "contrast": "condition.1|condition.2",
+      "correction": null,
+      "protocolVersion": "0.6.0",
+      "mode": "manual",
+      "status": "ok"
+    }
+  },
+  {
+    "sequence": 19,
+    "occurredAt": "2026-08-24T13:28:44.378Z",
+    "type": "analysis_configuration_changed",
+    "effect": "analysis_only",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2",
+      "selectedTimes": "time.1|time.2|time.3|time.4|time.5|time.6|time.7|time.8|time.9",
+      "timeMetric": "full_time_course",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sd",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "relative_SspB_LARG_DH_intensity (a.u.)",
+      "axisRangeMode": "auto",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 20,
+    "occurredAt": "2026-08-24T13:28:44.683Z",
+    "type": "support_status_selected",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "supportStatus": "scientifically_compromising"
+    }
+  },
+  {
+    "sequence": 21,
+    "occurredAt": "2026-08-24T13:28:44.787Z",
+    "type": "workspace_subroute_opened",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "subroute": "graph",
+      "dataTab": "experiment:experiment.1"
+    }
+  },
+  {
+    "sequence": 22,
+    "occurredAt": "2026-08-24T13:28:45.084Z",
+    "type": "graph_configuration_changed",
+    "effect": "rendered_graph",
+    "detail": {
+      "graphType": "line",
+      "readoutId": "readout.1",
+      "sourceMode": "raw_readout",
+      "selectedConditions": "condition.1|condition.2",
+      "selectedTimes": "time.1|time.2|time.3|time.4|time.5|time.6|time.7|time.8|time.9",
+      "timeMetric": "full_time_course",
+      "selectedMethod": null,
+      "annotationMode": "hidden",
+      "pointSize": 6,
+      "errorBar": "sem",
+      "spacing": 1,
+      "legendPosition": "hidden",
+      "palette": "single",
+      "fontFamily": "arial",
+      "graphTitleFontSize": 20,
+      "axisTitleFontSize": 19,
+      "tickFontSize": 17,
+      "hierarchyFontSize": 17,
+      "legendFontSize": 16,
+      "axisTitle": "relative_SspB_LARG_DH_intensity (a.u.)",
+      "axisRangeMode": "auto",
+      "axisMin": null,
+      "axisMax": null,
+      "axisScale": "linear",
+      "axisTickMode": "auto",
+      "axisTickInterval": null,
+      "rawLayer": false,
+      "distributionLayer": false,
+      "boxLayer": false,
+      "experimentLayer": true,
+      "overallLayer": true,
+      "summaryLineWidth": 2,
+      "axisLineWidth": 1.4,
+      "errorBarLineWidth": 1.5,
+      "connectingLineWidth": 1.5,
+      "distributionLineWidth": 1.2
+    }
+  },
+  {
+    "sequence": 23,
+    "occurredAt": "2026-08-24T13:28:45.269Z",
+    "type": "final_graph_captured",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "finalCapturedEventIndex": 23,
+      "graphStateFingerprint": "ceafbc57aae88b4a36fc7a21ae30a9008dba93d7354285f2b4774f10729c9f0c",
+      "analysisStateFingerprint": "d4d57a73100ce65ff6ae9974d4c4db0444d61f876fcd45bf796f42a5fa6430d4",
+      "svgSha256": "ceafbc57aae88b4a36fc7a21ae30a9008dba93d7354285f2b4774f10729c9f0c",
+      "pngSha256": "5fa67b56f7a79eca457b841e84aa1fd51cd8eb41faa3e1b1d6bbc0320a28e36d"
+    }
+  },
+  {
+    "sequence": 24,
+    "occurredAt": "2026-08-24T13:28:45.270Z",
+    "type": "benchmark_outcome_selected",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "outcome": "completed"
+    }
+  },
+  {
+    "sequence": 25,
+    "occurredAt": "2026-08-24T13:28:45.270Z",
+    "type": "benchmark_run_finalized",
+    "effect": "non_rendering_ui",
+    "detail": {
+      "selectedGraph": "line",
+      "selectedStatistics": "mixed_anova"
+    }
+  }
+]

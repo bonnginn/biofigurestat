@@ -1,0 +1,9 @@
+{
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0",
+  "caseCount": 69,
+  "identityNormalization": "Condition-qualified runtime unit IDs are used when the researcher packet explicitly states that no repeated identity is implied across conditions or time.",
+  "masterSha256": "d2b1c3ca48e9d9a38ac5e81e98fb1b2052bb924b3dccac254737f1e62090b760",
+  "provenance": "SYNTHETIC_RECONSTRUCTION",
+  "rawRowCount": 6810,
+  "trackBSha256": "c4da43b97c76b8e91e14b09f6f1abf7e743f562a3820904cafd86757b6ff1846"
+}
