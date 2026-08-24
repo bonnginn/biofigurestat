@@ -253,7 +253,6 @@ export function CommonCoveragePage({
       !svgRef.current
     )
       return;
-    let cancelled = false;
     void (async () => {
       try {
         const capturedAt = new Date().toISOString();
@@ -281,23 +280,18 @@ export function CommonCoveragePage({
             mediaType: "image/png",
           },
         ]);
-        if (!cancelled)
-          completeDefaultGraphCapture({
-            graphStateFingerprint: svgSha256,
-            analysisStateFingerprint,
-            svgSha256,
-            pngSha256,
-          });
+        completeDefaultGraphCapture({
+          graphStateFingerprint: svgSha256,
+          analysisStateFingerprint,
+          svgSha256,
+          pngSha256,
+        });
+        setMessage("Benchmarkの既定Regression Graphを保存しました。");
       } catch {
-        if (!cancelled) {
-          setBenchmarkOutcome("infrastructure_failure");
-          setMessage("既定Regression Graphの評価artifactを保存できませんでした。");
-        }
+        setBenchmarkOutcome("infrastructure_failure");
+        setMessage("既定Regression Graphの評価artifactを保存できませんでした。");
       }
     })();
-    return () => {
-      cancelled = true;
-    };
   }, [
     benchmarkAnalysisState,
     benchmarkRun.defaultGraphCapture,
