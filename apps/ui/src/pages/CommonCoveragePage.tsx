@@ -95,9 +95,13 @@ export function CommonCoveragePage({
     setLiteratureCase(null);
     if (!identity || !isLiteratureCaseId(identity.caseId)) return;
     let cancelled = false;
-    void fetchLiteratureExperimenterCase(identity).then((loaded) => {
-      if (!cancelled) setLiteratureCase(loaded);
-    });
+    void fetchLiteratureExperimenterCase(identity)
+      .then((loaded) => {
+        if (!cancelled) setLiteratureCase(loaded);
+      })
+      .catch(() => {
+        if (!cancelled) setLiteratureCase(null);
+      });
     return () => {
       cancelled = true;
     };
