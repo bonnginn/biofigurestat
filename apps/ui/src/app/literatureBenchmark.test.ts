@@ -96,6 +96,57 @@ describe("literature benchmark experimenter boundary", () => {
     expect(isLiteratureCaseId("pilot_independent_2group")).toBe(false);
   });
 
+  it("preserves an explicit runtime factor-to-visual contract without case-specific parsing", () => {
+    const declaredSource: LiteratureExperimenterCase = {
+      ...source,
+      graphIntent: {
+        factors: [
+          {
+            id: "treatment",
+            label: "Treatment",
+            scientificRole: "intervention",
+            unitRole: "between_unit",
+            relationship: "independent",
+            visualRole: "x",
+          },
+        ],
+        conditionFactors: {
+          Control: { treatment: "Control" },
+          Treatment: { treatment: "Treatment" },
+        },
+        conditionRoles: { Control: "auxiliary_reference" },
+        comparisons: [
+          {
+            id: "planned.control-treatment",
+            label: "Control vs Treatment",
+            role: "primary",
+            conditions: ["Control", "Treatment"],
+          },
+        ],
+      },
+    };
+
+    const draft = createLiteratureExperimentDraft(declaredSource);
+    expect(draft.attributes).toEqual([
+      expect.objectContaining({
+        id: "treatment",
+        scientificRole: "intervention",
+        proposedVisualRole: "x",
+      }),
+    ]);
+    expect(draft.conditions[0]).toMatchObject({
+      role: "auxiliary_reference",
+      attributes: { treatment: "Control" },
+    });
+    expect(draft.comparisons).toEqual([
+      expect.objectContaining({
+        id: "planned.control-treatment",
+        conditionIds: ["condition.1", "condition.2"],
+      }),
+    ]);
+    expect(mapLiteratureMeasurements(declaredSource, draft).compatible).toBe(true);
+  });
+
   it("safely refuses expanded rows with preserved missingness", () => {
     const result = mapLiteratureMeasurements(
       {

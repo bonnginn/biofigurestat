@@ -167,6 +167,98 @@ describe("domain integrity", () => {
     ).toThrow(/must not contain a cycle/);
   });
 
+  it("preserves factor semantics independently from visual grouping and comparison roles", () => {
+    const createdAt = "2026-08-25T00:00:00Z";
+    const parsed = ExperimentDesignSchema.parse({
+      schemaVersion: "0.2.0",
+      id: "design.factor-aware",
+      name: "Independent time series display",
+      purpose: "microscopy",
+      outcomes: [{ id: "outcome.y", key: "y", label: "Y", type: "continuous" }],
+      factors: [
+        {
+          id: "factor.sirna",
+          key: "sirna",
+          label: "siRNA",
+          scientificRole: "intervention",
+          unitRole: "between_unit",
+          relationship: { kind: "independent" },
+          proposedVisualRole: "x",
+          levels: [
+            { id: "level.control", label: "Control", order: 0 },
+            { id: "level.kd", label: "Knockdown", order: 1 },
+          ],
+        },
+        {
+          id: "factor.time",
+          key: "time",
+          label: "Time",
+          scientificRole: "time",
+          unitRole: "between_unit",
+          relationship: { kind: "independent" },
+          proposedVisualRole: "series",
+          levels: [
+            { id: "level.0h", label: "0 h", order: 0 },
+            { id: "level.24h", label: "24 h", order: 1 },
+          ],
+        },
+      ],
+      conditions: [
+        {
+          id: "condition.control.0h",
+          label: "Control · 0 h",
+          factorLevels: { "factor.sirna": "level.control", "factor.time": "level.0h" },
+          role: "primary",
+        },
+        {
+          id: "condition.kd.24h",
+          label: "Knockdown · 24 h",
+          factorLevels: { "factor.sirna": "level.kd", "factor.time": "level.24h" },
+          role: "auxiliary_reference",
+          sourceProvenance: "published Figure reference",
+        },
+      ],
+      unitLevels: [
+        {
+          id: "unit.dish",
+          key: "dish",
+          label: "Dish",
+          role: "experimental_unit",
+          parentLevelId: null,
+        },
+      ],
+      experimentalUnitLevelId: "unit.dish",
+      pairing: { kind: "independent" },
+      plannedN: 3,
+      normalizationPlans: [],
+      primaryContrast: {
+        id: "contrast.primary",
+        label: "Control vs knockdown",
+        conditionIds: ["condition.control.0h", "condition.kd.24h"],
+      },
+      comparisons: [
+        {
+          id: "comparison.primary",
+          label: "Primary",
+          role: "primary",
+          conditionIds: ["condition.control.0h", "condition.kd.24h"],
+        },
+      ],
+      wizardRuleVersion: "factor-aware.1",
+      wizardDecisions: [],
+      createdAt,
+    });
+
+    expect(parsed.factors[1]).toMatchObject({
+      scientificRole: "time",
+      unitRole: "between_unit",
+      relationship: { kind: "independent" },
+      proposedVisualRole: "series",
+    });
+    expect(parsed.conditions[1].role).toBe("auxiliary_reference");
+    expect(parsed.comparisons?.[0].role).toBe("primary");
+  });
+
   it("rejects a design whose declared experimental unit is only a subsample", () => {
     expect(() =>
       ExperimentDesignSchema.parse({

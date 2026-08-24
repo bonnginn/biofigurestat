@@ -60,6 +60,33 @@ export type LiteratureExperimenterCase = Readonly<{
     paper_reported_analysis: string;
     curated_graph_reference: string;
   }>;
+  graphIntent?: Readonly<{
+    factors?: readonly Readonly<{
+      id: string;
+      label: string;
+      scientificRole?:
+        | "intervention"
+        | "genotype"
+        | "time"
+        | "state"
+        | "rescue"
+        | "control_reference"
+        | "readout"
+        | "other";
+      unitRole?: "within_unit" | "between_unit";
+      relationship?: "independent" | "repeated" | "paired";
+      visualRole?: "x" | "series" | "facet" | "annotation" | "auxiliary_reference" | "none";
+    }>[];
+    conditionFactors?: Readonly<Record<string, Readonly<Record<string, string>>>>;
+    conditionRoles?: Readonly<Record<string, "primary" | "auxiliary_reference">>;
+    comparisons?: readonly Readonly<{
+      id: string;
+      label: string;
+      role: "primary" | "auxiliary";
+      conditions: readonly [string, string];
+    }>[];
+    timeVisualRole?: "x" | "series" | "facet" | "annotation" | "none";
+  }>;
   syntheticData: readonly LiteratureSyntheticRow[];
 }>;
 
@@ -170,6 +197,9 @@ export function createLiteratureExperimentDraft(
       ? "microscopy_imaging"
       : "general_assay";
   const base = createExperimentSetDraft(context, shape);
+  const declaredFactors = source.graphIntent?.factors?.filter(
+    (factor) => factor.id.trim() && factor.label.trim(),
+  );
   const factorialCells = sourceConditions.map((condition) =>
     condition.split("|").map((part) => part.trim()),
   );
@@ -178,23 +208,39 @@ export function createLiteratureExperimentDraft(
     factorialCells.every((parts) => parts.length === 2 && parts.every(Boolean)) &&
     uniqueInOrder(factorialCells.map(([first]) => first)).length >= 2 &&
     uniqueInOrder(factorialCells.map(([, second]) => second)).length >= 2;
-  const attributes = factorial
-    ? [
-        { id: "attribute.1", label: "Factor 1" },
-        { id: "attribute.2", label: "Factor 2" },
-      ]
-    : [{ id: "attribute.1", label: "Condition" }];
+  const attributes = declaredFactors?.length
+    ? declaredFactors.map((factor) => ({
+        id: factor.id,
+        label: factor.label,
+        scientificRole: factor.scientificRole,
+        unitRole: factor.unitRole,
+        relationship: factor.relationship,
+        proposedVisualRole: factor.visualRole,
+      }))
+    : factorial
+      ? [
+          { id: "attribute.1", label: "Factor 1" },
+          { id: "attribute.2", label: "Factor 2" },
+        ]
+      : [{ id: "attribute.1", label: "Condition" }];
   const conditions = sourceConditions.map((condition, index) => {
-    const conditionAttributes: Record<string, string> = factorial
-      ? {
-          "attribute.1": factorialCells[index]?.[0] ?? "",
-          "attribute.2": factorialCells[index]?.[1] ?? "",
-        }
-      : { "attribute.1": condition };
+    const declaredValues = source.graphIntent?.conditionFactors?.[condition];
+    const conditionAttributes: Record<string, string> = declaredFactors?.length
+      ? Object.fromEntries(
+          declaredFactors.map((factor) => [factor.id, declaredValues?.[factor.id] ?? ""]),
+        )
+      : factorial
+        ? {
+            "attribute.1": factorialCells[index]?.[0] ?? "",
+            "attribute.2": factorialCells[index]?.[1] ?? "",
+          }
+        : { "attribute.1": condition };
     return {
       id: `condition.${index + 1}`,
       label: condition,
       attributes: conditionAttributes,
+      role: source.graphIntent?.conditionRoles?.[condition],
+      sourceProvenance: "literature runtime graphIntent",
     };
   });
   const declaredControlIndex = source.researcherPacket.control_condition
@@ -263,6 +309,19 @@ export function createLiteratureExperimentDraft(
     conditions,
     controlConditionId:
       declaredControlIndex >= 0 ? conditions[declaredControlIndex]?.id : undefined,
+    comparisons: source.graphIntent?.comparisons
+      ?.map((comparison) => {
+        const first = sourceConditions.indexOf(comparison.conditions[0]);
+        const second = sourceConditions.indexOf(comparison.conditions[1]);
+        if (first < 0 || second < 0) return null;
+        return {
+          id: comparison.id,
+          label: comparison.label,
+          role: comparison.role,
+          conditionIds: [conditions[first]?.id, conditions[second]?.id] as [string, string],
+        };
+      })
+      .filter((comparison): comparison is NonNullable<typeof comparison> => comparison !== null),
     analysisIntent:
       source.researcherPacket.descriptive_only || conditions.length === 1
         ? { kind: "single_cohort", mode: "descriptive" }
@@ -285,6 +344,9 @@ export function createLiteratureExperimentDraft(
             axisTitle: expectedAxis.title,
             axisUnit: expectedAxis.unit,
           }
+        : {}),
+      ...(source.graphIntent?.timeVisualRole
+        ? { proposedVisualRole: source.graphIntent.timeVisualRole }
         : {}),
     },
     experiments: Array.from({ length: experimentCount }, (_, index) => ({
@@ -381,6 +443,9 @@ export function mapLiteratureMeasurements(
     sourceFactorCells.every((parts) => parts.length === 2 && parts.every(Boolean)) &&
     uniqueInOrder(sourceFactorCells.map(([first]) => first)).length >= 2 &&
     uniqueInOrder(sourceFactorCells.map(([, second]) => second)).length >= 2;
+  const declaredFactors = source.graphIntent?.factors?.filter(
+    (factor) => factor.id.trim() && factor.label.trim(),
+  );
   const sourceTimes = uniqueInOrder(
     rows.map((row) => row.time).filter((value): value is number => value !== null),
   );
@@ -509,7 +574,10 @@ export function mapLiteratureMeasurements(
   if (target.conditions.length !== sourceConditions.length) {
     return mismatch(`条件数を${sourceConditions.length}にしてください。`);
   }
-  if (factorialSource && target.attributes.length !== 2) {
+  if (declaredFactors?.length && target.attributes.length !== declaredFactors.length) {
+    return mismatch(`このcaseは${declaredFactors.length}つの明示factorを保持する必要があります。`);
+  }
+  if (!declaredFactors?.length && factorialSource && target.attributes.length !== 2) {
     return mismatch(
       "このcaseは区切られた2要因の全組合せです。2つの要因を別々に定義し、interactionを評価するfactorial designにしてください。",
     );
@@ -519,6 +587,15 @@ export function mapLiteratureMeasurements(
   );
   if (
     sourceConditions.some((condition, index) => {
+      if (declaredFactors?.length) {
+        const targetCondition = target.conditions[index];
+        const declaredValues = source.graphIntent?.conditionFactors?.[condition];
+        return declaredFactors.some(
+          (factor) =>
+            normalized(targetCondition?.attributes[factor.id] ?? "") !==
+            normalized(declaredValues?.[factor.id] ?? ""),
+        );
+      }
       if (!factorialSource) return normalized(condition) !== targetConditionLabels[index];
       const targetCondition = target.conditions[index];
       const sourceParts = sourceFactorCells[index];

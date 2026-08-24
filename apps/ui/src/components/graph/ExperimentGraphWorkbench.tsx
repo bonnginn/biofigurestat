@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, RefObject } from "react";
+import type { ChangeEvent, MouseEvent as ReactMouseEvent, RefObject } from "react";
 import type {
   AnalysisEngineRequest,
   AnalysisEngineResult,
   AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
+import { layoutComparisonBrackets } from "@lsaa/graph-spec";
 
 import {
   categoricalPercentage,
@@ -94,6 +95,8 @@ type GraphAppearance = WorkspaceGraphState["appearance"];
 type AxisSettings = WorkspaceGraphState["axes"];
 type GraphType = WorkspaceGraphState["graphType"];
 type StatisticsAnnotation = NonNullable<WorkspaceGraphState["statisticsAnnotation"]>;
+type StatisticsAnnotationEntry = NonNullable<WorkspaceGraphState["statisticsAnnotations"]>[number];
+type GraphGrouping = NonNullable<WorkspaceGraphState["grouping"]>;
 
 function timeMetricLabel(plan: TimeAnalysisPlan): string {
   if (plan.kind === "full_time_course") return "条件×時間の全体モデル";
@@ -254,6 +257,13 @@ type GraphSeries = Readonly<{
   seriesKey: string;
   conditionId: string;
   conditionLabel: string;
+  xGroupKey: string;
+  xGroupLabel: string;
+  visualSeriesKey: string;
+  visualSeriesLabel: string;
+  facetKey: string;
+  facetLabel: string;
+  auxiliaryReference: boolean;
   timePointId?: string;
   timeLabel?: string;
   xValue?: number;
@@ -301,6 +311,7 @@ const DEFAULT_APPEARANCE: GraphAppearance = {
   errorBar: "sd",
   palette: "single",
   pointSize: 6,
+  pointOpacity: 0.9,
   axisLineWidth: 1.4,
   hierarchicalLabels: true,
   jitter: 12,
@@ -312,6 +323,13 @@ const DEFAULT_APPEARANCE: GraphAppearance = {
   legendFontSize: 16,
   legendPosition: "hidden",
   seriesColors: {},
+  seriesStyles: {},
+  distributionFill: "white",
+  distributionFillColor: "#ffffff",
+  distributionOutlineColor: "#111111",
+  barWidth: 0.72,
+  withinGroupSpacing: 0.72,
+  betweenGroupSpacing: 1.35,
   rawPointColor: "#8a96a3",
   summaryColor: "#111111",
   errorBarColor: "#111111",
@@ -353,6 +371,61 @@ function significanceSymbol(pValue: number): string {
   if (pValue < 0.01) return "**";
   if (pValue < 0.05) return "*";
   return "n.s.";
+}
+
+function pointMarkPath(
+  style: "circle" | "square" | "triangle" | "diamond",
+  x: number,
+  y: number,
+  radius: number,
+): string {
+  if (style === "square")
+    return `M ${x - radius} ${y - radius} H ${x + radius} V ${y + radius} H ${x - radius} Z`;
+  if (style === "triangle")
+    return `M ${x} ${y - radius * 1.15} L ${x + radius} ${y + radius} L ${x - radius} ${y + radius} Z`;
+  if (style === "diamond")
+    return `M ${x} ${y - radius * 1.25} L ${x + radius} ${y} L ${x} ${y + radius * 1.25} L ${x - radius} ${y} Z`;
+  return `M ${x - radius} ${y} A ${radius} ${radius} 0 1 0 ${x + radius} ${y} A ${radius} ${radius} 0 1 0 ${x - radius} ${y}`;
+}
+
+function SeriesPointMark(
+  props: Readonly<{
+    style: "circle" | "square" | "triangle" | "diamond";
+    cx: number;
+    cy: number;
+    radius: number;
+    fill: string;
+    opacity: number;
+    className: string;
+    layer: string;
+    inspectorTarget: InspectorTarget;
+    selected: boolean;
+    experimentId: string;
+    value: number;
+    ariaLabel: string;
+    onInspect: (target: InspectorTarget) => void;
+  }>,
+) {
+  const common = {
+    fill: props.fill,
+    opacity: props.opacity,
+    className: props.className,
+    "data-graph-layer": props.layer,
+    "data-inspector-target": props.inspectorTarget,
+    "data-selected": props.selected || undefined,
+    "data-experiment-id": props.experimentId,
+    "data-graph-value": props.value,
+    "aria-label": props.ariaLabel,
+    onDoubleClick: (event: ReactMouseEvent<SVGElement>) => {
+      event.stopPropagation();
+      props.onInspect(props.inspectorTarget);
+    },
+  };
+  return props.style === "circle" ? (
+    <circle cx={props.cx} cy={props.cy} r={props.radius} {...common} />
+  ) : (
+    <path d={pointMarkPath(props.style, props.cx, props.cy, props.radius)} {...common} />
+  );
 }
 
 export function describeActiveGraphLayers(
@@ -471,14 +544,16 @@ function buildConditionAxisLabels(
   draft: ExperimentSetDraft,
   series: readonly GraphSeries[],
   hierarchyOrder: readonly string[],
+  grouping: GraphGrouping,
 ): readonly ConditionAxisLabel[] {
+  const seriesFactorId = grouping.series.source === "factor" ? grouping.series.factorId : undefined;
   const orderedAttributes = [
     ...hierarchyOrder.flatMap((attributeId) => {
       const attribute = draft.attributes.find(({ id }) => id === attributeId);
       return attribute ? [attribute] : [];
     }),
     ...draft.attributes.filter(({ id }) => !hierarchyOrder.includes(id)),
-  ];
+  ].filter(({ id }) => id !== seriesFactorId);
   return series.map((item) => {
     const condition = draft.conditions.find((candidate) => candidate.id === item.conditionId);
     const levels = orderedAttributes.map((attribute) => ({
@@ -489,10 +564,19 @@ function buildConditionAxisLabels(
     return {
       conditionId: item.conditionId,
       levels:
-        levels.length > 0
-          ? levels
-          : [{ id: "condition", label: "条件", value: condition?.label || item.conditionLabel }],
-      timeLabel: item.timeLabel ?? "",
+        grouping.x.source === "factor"
+          ? [
+              {
+                id: grouping.x.factorId ?? "factor",
+                label:
+                  draft.attributes.find(({ id }) => id === grouping.x.factorId)?.label ?? "条件",
+                value: item.xGroupLabel,
+              },
+            ]
+          : levels.length > 0
+            ? levels
+            : [{ id: "condition", label: "条件", value: condition?.label || item.conditionLabel }],
+      timeLabel: grouping.series.source === "time" ? "" : (item.timeLabel ?? ""),
     };
   });
 }
@@ -556,7 +640,7 @@ function ExperimentGraphSvg({
   timeSampling,
   conditionAssignment,
   axisLabels,
-  series,
+  series: inputSeries,
   layers,
   appearance,
   graphType,
@@ -564,6 +648,7 @@ function ExperimentGraphSvg({
   svgRef,
   analysisResult,
   statisticsAnnotation,
+  statisticsAnnotations = [],
   annotationContext,
   layerDescription,
   onInspect,
@@ -583,11 +668,15 @@ function ExperimentGraphSvg({
   svgRef: RefObject<SVGSVGElement | null>;
   analysisResult: AnalysisEngineResult | null;
   statisticsAnnotation: StatisticsAnnotation;
+  statisticsAnnotations?: readonly StatisticsAnnotationEntry[];
   annotationContext: string;
   layerDescription: string;
   onInspect: (target: InspectorTarget) => void;
   activeInspectorTarget: InspectorTarget;
 }) {
+  const series = inputSeries.filter(
+    ({ visualSeriesKey }) => appearance.seriesStyles[visualSeriesKey]?.visible !== false,
+  );
   const continuousXValues = series
     .map((item) => item.xValue)
     .filter((value): value is number => value !== undefined && Number.isFinite(value));
@@ -597,14 +686,16 @@ function ExperimentGraphSvg({
     continuousXValues.length > 1;
   const gapWeights = axisLabels.slice(1).map((label, index) => {
     const previous = axisLabels[index];
-    if (previous?.conditionId === label.conditionId) return 1;
+    if (series[index]?.xGroupKey === series[index + 1]?.xGroupKey)
+      return appearance.withinGroupSpacing;
+    if (previous?.conditionId === label.conditionId) return appearance.withinGroupSpacing;
     if (label.levels.length <= 1) return 1;
     const commonPrefix = label.levels.findIndex(
       (level, levelIndex) => previous?.levels[levelIndex]?.value !== level.value,
     );
     const firstDifference = commonPrefix < 0 ? label.levels.length - 1 : commonPrefix;
     if (firstDifference >= label.levels.length - 1) return 1;
-    return 1.45 + (label.levels.length - 1 - firstDifference) * 0.55;
+    return appearance.betweenGroupSpacing + (label.levels.length - 1 - firstDifference) * 0.55;
   });
   const requiredSlotWidths = axisLabels.map((label) => {
     const labelWidth = Math.max(
@@ -632,9 +723,12 @@ function ExperimentGraphSvg({
   });
   const legendConditions = series.filter(
     (item, index) =>
-      series.findIndex((candidate) => candidate.conditionId === item.conditionId) === index,
+      series.findIndex((candidate) => candidate.visualSeriesKey === item.visualSeriesKey) === index,
   );
-  const showLegend = appearance.legendPosition !== "hidden" && legendConditions.length > 1;
+  const showLegend =
+    appearance.legendPosition !== "hidden" &&
+    legendConditions.length > 1 &&
+    legendConditions.some(({ visualSeriesLabel }) => visualSeriesLabel);
   const topLegendRows =
     showLegend && appearance.legendPosition === "top" ? Math.ceil(legendConditions.length / 3) : 0;
   const topLegendHeight = topLegendRows * Math.max(34, appearance.legendFontSize * 2);
@@ -650,23 +744,34 @@ function ExperimentGraphSvg({
     : "";
   const margin = {
     ...CHART_MARGIN,
-    top: CHART_MARGIN.top + topLegendHeight,
+    top:
+      CHART_MARGIN.top +
+      topLegendHeight +
+      Math.min(
+        5,
+        statisticsAnnotations.length || (statisticsAnnotation.mode === "hidden" ? 0 : 1),
+      ) *
+        24,
     right: CHART_MARGIN.right + (showLegend && appearance.legendPosition === "right" ? 190 : 0),
   };
-  const graphInnerWidth = continuousLine ? 880 : categoryLayout.innerWidth;
+  const graphInnerWidth = continuousLine ? 720 : categoryLayout.innerWidth;
   const width = margin.left + margin.right + graphInnerWidth;
   const hierarchyDepth =
     axes.showCategoryLabels && !continuousLine ? Math.max(0, axisLabels[0]?.levels.length ?? 0) : 0;
   const extraLabelHeight = Math.max(0, hierarchyDepth - 1) * 27;
   const xAxisTitleHeight = renderedXAxisTitle ? 34 : 0;
+  const baseBottomMargin = continuousLine ? 58 : CHART_MARGIN.bottom;
   const height = CHART_HEIGHT + extraLabelHeight + topLegendHeight + xAxisTitleHeight;
-  margin.bottom = CHART_MARGIN.bottom + extraLabelHeight + xAxisTitleHeight;
+  margin.bottom = baseBottomMargin + extraLabelHeight + xAxisTitleHeight;
   const plotHeight = height - margin.top - margin.bottom;
   const baseColors = PALETTES[appearance.palette];
   const conditionIds = [...new Set(series.map((item) => item.conditionId))];
-  const colors = conditionIds.map(
-    (conditionId, index) =>
-      appearance.seriesColors[conditionId] ?? baseColors[index % baseColors.length],
+  const visualSeriesKeys = [...new Set(series.map((item) => item.visualSeriesKey))];
+  const colors = visualSeriesKeys.map(
+    (seriesKey, index) =>
+      appearance.seriesStyles[seriesKey]?.color ??
+      appearance.seriesColors[seriesKey] ??
+      baseColors[index % baseColors.length],
   );
   const values =
     shape === "proportion"
@@ -712,16 +817,30 @@ function ExperimentGraphSvg({
   };
   const continuousXMin = continuousXValues.length ? Math.min(...continuousXValues) : 0;
   const continuousXMax = continuousXValues.length ? Math.max(...continuousXValues) : 1;
-  const continuousXRange = Math.max(continuousXMax - continuousXMin, Number.EPSILON);
+  const manualXRangeIsValid =
+    axes.xRangeMode === "manual" &&
+    axes.xMin !== null &&
+    axes.xMin !== undefined &&
+    axes.xMax !== null &&
+    axes.xMax !== undefined &&
+    axes.xMin < axes.xMax &&
+    (axes.xScale !== "log10" || axes.xMin > 0);
+  const continuousDomainMin = manualXRangeIsValid ? axes.xMin! : continuousXMin;
+  const continuousDomainMax = manualXRangeIsValid ? axes.xMax! : continuousXMax;
+  const continuousLogMin = Math.log10(Math.max(continuousDomainMin, Number.MIN_VALUE));
+  const continuousLogMax = Math.log10(Math.max(continuousDomainMax, Number.MIN_VALUE));
+  const continuousXRange = Math.max(continuousDomainMax - continuousDomainMin, Number.EPSILON);
+  const xForContinuousValue = (value: number) => {
+    const ratio =
+      axes.xScale === "log10" && value > 0 && continuousLogMax > continuousLogMin
+        ? (Math.log10(value) - continuousLogMin) / (continuousLogMax - continuousLogMin)
+        : (value - continuousDomainMin) / continuousXRange;
+    return margin.left + Math.max(0, Math.min(1, ratio)) * graphInnerWidth;
+  };
   const xFor = (index: number) => {
     if (continuousLine) {
-      const value = series[index]?.xValue ?? continuousXMin;
-      return (
-        margin.left +
-        appearance.sidePadding +
-        ((value - continuousXMin) / continuousXRange) *
-          Math.max(1, graphInnerWidth - appearance.sidePadding * 2)
-      );
+      const value = series[index]?.xValue ?? continuousDomainMin;
+      return xForContinuousValue(value);
     }
     return margin.left + categoryLayout.sidePadding + (categoryLayout.offsets[index] ?? 0);
   };
@@ -743,6 +862,34 @@ function ExperimentGraphSvg({
         return new Set(selected);
       })()
     : null;
+  const continuousTickFractionDigits = continuousLine
+    ? (() => {
+        const ordered = [...new Set(continuousXValues)].sort((a, b) => a - b);
+        const minimumGap = ordered
+          .slice(1)
+          .reduce(
+            (minimum, value, index) => Math.min(minimum, value - ordered[index]),
+            Number.POSITIVE_INFINITY,
+          );
+        if (!Number.isFinite(minimumGap) || minimumGap >= 1) return 0;
+        return Math.min(4, Math.max(1, Math.ceil(-Math.log10(minimumGap)) + 1));
+      })()
+    : 0;
+  const continuousTickValues = continuousLine
+    ? axes.xScale === "log10"
+      ? Array.from(
+          { length: Math.max(1, Math.floor(continuousLogMax) - Math.ceil(continuousLogMin) + 1) },
+          (_, index) => 10 ** (Math.ceil(continuousLogMin) + index),
+        )
+      : [
+          ...createNiceTicks(
+            continuousDomainMin,
+            continuousDomainMax,
+            6,
+            axes.xTickMode === "manual" ? (axes.xTickInterval ?? null) : null,
+          ),
+        ].reverse()
+    : [];
   const hierarchyGroups = Array.from({ length: hierarchyDepth }, (_, levelIndex) =>
     axisLabels.reduce<Array<{ key: string; label: string; start: number; end: number }>>(
       (groups, label, index) => {
@@ -763,6 +910,14 @@ function ExperimentGraphSvg({
       [],
     ),
   );
+  const categoryLabelRotationDegrees =
+    axes.categoryLabelRotation === "minus_30"
+      ? -30
+      : axes.categoryLabelRotation === "minus_45"
+        ? -45
+        : axes.categoryLabelRotation === "minus_90"
+          ? -90
+          : 0;
   const hasTimeLabels = axisLabels.some(({ timeLabel }) => timeLabel);
   const yTicks =
     axes.yScale === "log10"
@@ -844,6 +999,52 @@ function ExperimentGraphSvg({
               : [];
           })
         : [];
+  const activeStatisticsAnnotations: readonly StatisticsAnnotationEntry[] =
+    statisticsAnnotations.length > 0
+      ? statisticsAnnotations
+      : statisticsAnnotation.mode === "hidden"
+        ? []
+        : [
+            {
+              id: "annotation.legacy",
+              testIndex: statisticsAnnotation.testIndex,
+              mode: statisticsAnnotation.mode,
+              showNonSignificant: true,
+            },
+          ];
+  const resolvedAnnotations = activeStatisticsAnnotations.flatMap((annotation, stackIndex) => {
+    if (analysisResult?.status !== "ok") return [];
+    const test = analysisResult.tests[annotation.testIndex];
+    if (!test) return [];
+    const pValue = test.adjustedPValue ?? test.pValue;
+    if (!annotation.showNonSignificant && pValue >= 0.05) return [];
+    const [, firstConditionId, secondConditionId] = test.name.split(":");
+    const candidates = series
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) =>
+        annotation.lineage?.timePointId
+          ? item.timePointId === annotation.lineage.timePointId
+          : true,
+      );
+    const firstIndex = firstConditionId
+      ? candidates.find(({ item }) => item.conditionId === firstConditionId)?.index
+      : undefined;
+    const secondIndex = secondConditionId
+      ? candidates.find(({ item }) => item.conditionId === secondConditionId)?.index
+      : undefined;
+    const pairwise =
+      firstIndex !== undefined && secondIndex !== undefined
+        ? ([Math.min(firstIndex, secondIndex), Math.max(firstIndex, secondIndex)] as const)
+        : null;
+    return [{ annotation, test, pValue, pairwise, stackIndex }];
+  });
+  const bracketLevelById = new Map(
+    layoutComparisonBrackets(
+      resolvedAnnotations.flatMap(({ annotation, pairwise }) =>
+        pairwise ? [{ id: annotation.id, start: pairwise[0], end: pairwise[1] }] : [],
+      ),
+    ).map(({ id, level }) => [id, level]),
+  );
 
   return (
     <svg
@@ -905,11 +1106,18 @@ function ExperimentGraphSvg({
               appearance.legendPosition === "top"
                 ? 20 + row * Math.max(34, appearance.legendFontSize * 2)
                 : margin.top + 14 + row * Math.max(30, appearance.legendFontSize * 1.8);
-            const labelLines = splitParentLabel(item.conditionLabel);
+            const style = appearance.seriesStyles[item.visualSeriesKey];
+            const legendLabel = style?.legendLabel ?? item.visualSeriesLabel;
+            const labelLines = splitParentLabel(
+              `${legendLabel}${item.auxiliaryReference ? " (reference)" : ""}`,
+            );
             return (
-              <g key={item.conditionId} transform={`translate(${legendX} ${legendY})`}>
-                <title>{item.conditionLabel}</title>
-                <circle r="5" cx="5" cy="-4" fill={colors[index % colors.length]} />
+              <g key={item.visualSeriesKey} transform={`translate(${legendX} ${legendY})`}>
+                <title>{legendLabel}</title>
+                <path
+                  d={pointMarkPath(style?.pointStyle ?? "circle", 5, -4, 5)}
+                  fill={colors[index % colors.length]}
+                />
                 <text
                   x="16"
                   y="0"
@@ -918,7 +1126,11 @@ function ExperimentGraphSvg({
                   className="experiment-graph-svg-legend-label"
                 >
                   {labelLines.map((line, lineIndex) => (
-                    <tspan key={`${item.conditionId}-${lineIndex}`} x="16" dy={lineIndex ? 17 : 0}>
+                    <tspan
+                      key={`${item.visualSeriesKey}-${lineIndex}`}
+                      x="16"
+                      dy={lineIndex ? 17 : 0}
+                    >
                       {line}
                     </tspan>
                   ))}
@@ -1001,19 +1213,40 @@ function ExperimentGraphSvg({
           onInspect("x-axis");
         }}
       />
-      {axisLabels.map((label, index) =>
-        continuousTickIndices && !continuousTickIndices.has(index) ? null : (
-          <line
-            key={`category-tick-${label.conditionId}-${label.timeLabel || "none"}-${index}`}
-            x1={xFor(index)}
-            x2={xFor(index)}
-            y1={height - margin.bottom}
-            y2={height - margin.bottom - 6}
-            className="experiment-graph-category-tick"
-            data-inspector-target="x-axis"
-          />
-        ),
-      )}
+      {!continuousLine
+        ? axisLabels.map((label, index) =>
+            continuousTickIndices && !continuousTickIndices.has(index) ? null : (
+              <line
+                key={`category-tick-${label.conditionId}-${label.timeLabel || "none"}-${index}`}
+                x1={xFor(index)}
+                x2={xFor(index)}
+                y1={height - margin.bottom}
+                y2={height - margin.bottom - 6}
+                className="experiment-graph-category-tick"
+                data-inspector-target="x-axis"
+              />
+            ),
+          )
+        : continuousTickValues.map((value: number) => (
+            <g key={`continuous-x-tick-${value}`}>
+              <line
+                x1={xForContinuousValue(value)}
+                x2={xForContinuousValue(value)}
+                y1={height - margin.bottom}
+                y2={height - margin.bottom - 6}
+                className="experiment-graph-category-tick"
+              />
+              <text
+                x={xForContinuousValue(value)}
+                y={height - margin.bottom + 25}
+                textAnchor="middle"
+                className="experiment-graph-condition-attribute experiment-graph-time-label"
+                style={{ fontSize: appearance.tickFontSize, fill: "#000" }}
+              >
+                {formatNumber(value, continuousTickFractionDigits)}
+              </text>
+            </g>
+          ))}
       <text
         x={17}
         y={margin.top + plotHeight / 2}
@@ -1043,79 +1276,90 @@ function ExperimentGraphSvg({
           {renderedXAxisTitle}
         </text>
       ) : null}
-      {statisticsAnnotation.mode !== "hidden" &&
-      analysisResult?.status === "ok" &&
-      analysisResult.tests[statisticsAnnotation.testIndex] ? (
-        series.length === 2 ? (
-          <g data-graph-layer="statistics-annotation">
+      {axes.referenceLines?.map((reference) => (
+        <g key={reference.id} data-graph-layer="reference-line">
+          <line
+            x1={margin.left}
+            x2={width - margin.right}
+            y1={yFor(reference.value)}
+            y2={yFor(reference.value)}
+            stroke={reference.color}
+            strokeWidth={1.2}
+            strokeDasharray={
+              reference.lineStyle === "dashed"
+                ? "7 5"
+                : reference.lineStyle === "dotted"
+                  ? "2 4"
+                  : undefined
+            }
+          />
+          {reference.label ? (
+            <text
+              x={width - margin.right - 4}
+              y={yFor(reference.value) - 5}
+              textAnchor="end"
+              className="experiment-graph-stat-label"
+            >
+              {reference.label}
+            </text>
+          ) : null}
+        </g>
+      ))}
+      {resolvedAnnotations.map(({ annotation, test, pValue, pairwise, stackIndex }) => {
+        const annotationLevel = bracketLevelById.get(annotation.id) ?? stackIndex;
+        return pairwise ? (
+          <g key={annotation.id} data-graph-layer="statistics-annotation">
             <line
-              x1={xFor(0)}
-              x2={xFor(1)}
-              y1={margin.top - 10}
-              y2={margin.top - 10}
+              x1={xFor(pairwise[0])}
+              x2={xFor(pairwise[1])}
+              y1={margin.top - 10 - annotationLevel * 24}
+              y2={margin.top - 10 - annotationLevel * 24}
               className="experiment-graph-stat-line"
             />
             <line
-              x1={xFor(0)}
-              x2={xFor(0)}
-              y1={margin.top - 10}
-              y2={margin.top - 4}
+              x1={xFor(pairwise[0])}
+              x2={xFor(pairwise[0])}
+              y1={margin.top - 10 - annotationLevel * 24}
+              y2={margin.top - 4 - annotationLevel * 24}
               className="experiment-graph-stat-line"
             />
             <line
-              x1={xFor(1)}
-              x2={xFor(1)}
-              y1={margin.top - 10}
-              y2={margin.top - 4}
+              x1={xFor(pairwise[1])}
+              x2={xFor(pairwise[1])}
+              y1={margin.top - 10 - annotationLevel * 24}
+              y2={margin.top - 4 - annotationLevel * 24}
               className="experiment-graph-stat-line"
             />
             <text
-              x={(xFor(0) + xFor(1)) / 2}
-              y={margin.top - 14}
+              x={(xFor(pairwise[0]) + xFor(pairwise[1])) / 2}
+              y={margin.top - 14 - annotationLevel * 24}
               textAnchor="middle"
               className="experiment-graph-stat-label"
             >
-              {`${annotationContext} · ${
-                statisticsAnnotation.mode === "symbol"
-                  ? significanceSymbol(
-                      analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
-                        analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
-                    )
-                  : `p = ${formatExactPValue(
-                      analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
-                        analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
-                    )}`
-              }`}
+              {annotation.mode === "symbol"
+                ? significanceSymbol(pValue)
+                : `p = ${formatExactPValue(pValue)}`}
             </text>
           </g>
         ) : (
           <text
+            key={annotation.id}
             x={width - margin.right}
-            y={margin.top - 10}
+            y={margin.top - 10 - stackIndex * 22}
             textAnchor="end"
             className="experiment-graph-stat-label"
             data-graph-layer="statistics-annotation"
           >
-            {`${annotationContext} · ${
-              statisticsAnnotation.mode === "symbol"
-                ? significanceSymbol(
-                    analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
-                      analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
-                  )
+            {`${test.name || annotationContext} · ${
+              annotation.mode === "symbol"
+                ? significanceSymbol(pValue)
                 : `${
-                    isPairwiseComparisonTest(
-                      analysisResult.tests[statisticsAnnotation.testIndex]!.name,
-                    )
-                      ? "p"
-                      : "全体 p"
-                  } = ${formatExactPValue(
-                    analysisResult.tests[statisticsAnnotation.testIndex]?.adjustedPValue ??
-                      analysisResult.tests[statisticsAnnotation.testIndex]!.pValue,
-                  )}`
+                    isPairwiseComparisonTest(test.name) ? "p" : "全体 p"
+                  } = ${formatExactPValue(pValue)}`
             }`}
           </text>
-        )
-      ) : null}
+        );
+      })}
       {unitTrajectories.map((trajectory) => {
         const colorIndex = Math.max(0, conditionIds.indexOf(trajectory.conditionId));
         return (
@@ -1137,17 +1381,19 @@ function ExperimentGraphSvg({
         );
       })}
       {(graphType === "line" || layers.connectingLine) &&
-        conditionIds.map((conditionId) => {
+        visualSeriesKeys.map((visualSeriesKey) => {
           const points = series.flatMap((item, index) =>
-            item.conditionId === conditionId && item.summary.mean !== null
+            item.visualSeriesKey === visualSeriesKey && item.summary.mean !== null
               ? [`${xFor(index)},${yFor(item.summary.mean)}`]
               : [],
           );
           if (points.length < 2) return null;
-          const color = colors[Math.max(0, conditionIds.indexOf(conditionId)) % colors.length];
+          const color =
+            colors[Math.max(0, visualSeriesKeys.indexOf(visualSeriesKey)) % colors.length];
+          const lineStyle = appearance.seriesStyles[visualSeriesKey]?.lineStyle ?? "solid";
           return (
             <polyline
-              key={`line-${conditionId}`}
+              key={`line-${visualSeriesKey}`}
               points={points.join(" ")}
               fill="none"
               stroke={color}
@@ -1155,6 +1401,8 @@ function ExperimentGraphSvg({
               style={{
                 stroke: color,
                 strokeWidth: appearance.summaryLineWidth,
+                strokeDasharray:
+                  lineStyle === "dashed" ? "8 5" : lineStyle === "dotted" ? "2 4" : undefined,
               }}
               data-graph-layer="summary-trend"
               onDoubleClick={(event) => {
@@ -1215,7 +1463,12 @@ function ExperimentGraphSvg({
                     <text
                       x={center}
                       y={rowY}
-                      textAnchor="middle"
+                      textAnchor={categoryLabelRotationDegrees ? "end" : "middle"}
+                      transform={
+                        categoryLabelRotationDegrees
+                          ? `rotate(${categoryLabelRotationDegrees} ${center} ${rowY})`
+                          : undefined
+                      }
                       className={
                         levelIndex === 0
                           ? "experiment-graph-condition-label"
@@ -1248,7 +1501,18 @@ function ExperimentGraphSvg({
             levels: [{ id: "condition", label: "条件", value: item.conditionLabel }],
             timeLabel: item.timeLabel ?? "",
           } satisfies ConditionAxisLabel);
-        const color = colors[Math.max(0, conditionIds.indexOf(item.conditionId)) % colors.length];
+        const color =
+          colors[Math.max(0, visualSeriesKeys.indexOf(item.visualSeriesKey)) % colors.length];
+        const seriesStyle = appearance.seriesStyles[item.visualSeriesKey];
+        const distributionFill = seriesStyle?.fill ?? appearance.distributionFill;
+        const distributionFillColor =
+          distributionFill === "none"
+            ? "transparent"
+            : distributionFill === "white"
+              ? "#ffffff"
+              : distributionFill === "custom"
+                ? (seriesStyle?.fillColor ?? appearance.distributionFillColor)
+                : color;
         const summary = item.summary;
         const violinValues =
           shape === "proportion"
@@ -1291,6 +1555,7 @@ function ExperimentGraphSvg({
             data-condition-parent={axisLabel.levels[0]?.value ?? item.conditionLabel}
           >
             {axes.showCategoryLabels &&
+            !continuousLine &&
             (!continuousTickIndices || continuousTickIndices.has(seriesIndex)) ? (
               <text
                 x={x}
@@ -1309,9 +1574,9 @@ function ExperimentGraphSvg({
             ) : null}
             {graphType === "bar" && meanY !== null ? (
               <rect
-                x={x - distributionHalfWidth}
+                x={x - distributionHalfWidth * appearance.barWidth}
                 y={Math.min(meanY, barBaselineY)}
-                width={distributionHalfWidth * 2}
+                width={distributionHalfWidth * 2 * appearance.barWidth}
                 height={Math.max(1, Math.abs(barBaselineY - meanY))}
                 fill={color}
                 opacity={0.24}
@@ -1340,9 +1605,12 @@ function ExperimentGraphSvg({
                 <title>バイオリン分布を編集（ダブルクリック）</title>
                 <path
                   d={currentViolinPath}
-                  fill={color}
+                  fill={distributionFillColor}
                   className="experiment-graph-violin"
-                  style={{ strokeWidth: appearance.distributionLineWidth }}
+                  style={{
+                    strokeWidth: appearance.distributionLineWidth,
+                    stroke: appearance.distributionOutlineColor,
+                  }}
                 />
                 <path d={currentViolinPath} className="experiment-graph-violin-hit-target" />
               </g>
@@ -1350,23 +1618,22 @@ function ExperimentGraphSvg({
             {shape === "proportion" &&
               layers.experiment &&
               item.proportionPoints.map((point, pointIndex) => (
-                <circle
+                <SeriesPointMark
                   key={`${point.experimentId}-${pointIndex}`}
+                  style={seriesStyle?.pointStyle ?? "circle"}
                   cx={x + (pointIndex - (item.proportionPoints.length - 1) / 2) * 12}
                   cy={yFor(point.value)}
-                  r={appearance.pointSize}
+                  radius={appearance.pointSize}
                   fill={color}
+                  opacity={appearance.pointOpacity}
                   className="experiment-graph-point"
-                  data-graph-layer="proportion-experiment"
-                  data-inspector-target="experiment-summary"
-                  data-selected={activeInspectorTarget === "experiment-summary" || undefined}
-                  data-experiment-id={point.experimentId}
-                  data-graph-value={point.value}
-                  aria-label={`${item.conditionLabel} ${point.experimentLabel}: ${formatPercentage(point.value)}（${point.positive}/${point.eligible}）`}
-                  onDoubleClick={(event) => {
-                    event.stopPropagation();
-                    onInspect("experiment-summary");
-                  }}
+                  layer="proportion-experiment"
+                  inspectorTarget="experiment-summary"
+                  selected={activeInspectorTarget === "experiment-summary"}
+                  experimentId={point.experimentId}
+                  value={point.value}
+                  ariaLabel={`${item.conditionLabel} ${point.experimentLabel}: ${formatPercentage(point.value)}（${point.positive}/${point.eligible}）`}
+                  onInspect={onInspect}
                 />
               ))}
             {((shape === "nested_continuous" && layers.distribution) || layers.box) &&
@@ -1405,9 +1672,12 @@ function ExperimentGraphSvg({
                     y={yFor(rawQ3)}
                     width={44}
                     height={Math.max(1, yFor(rawQ1) - yFor(rawQ3))}
-                    fill={color}
+                    fill={distributionFillColor}
                     className="experiment-graph-distribution-box"
-                    style={{ strokeWidth: appearance.distributionLineWidth }}
+                    style={{
+                      strokeWidth: appearance.distributionLineWidth,
+                      stroke: appearance.distributionOutlineColor,
+                    }}
                   />
                   <line
                     x1={x - 22}
@@ -1445,23 +1715,22 @@ function ExperimentGraphSvg({
             {shape === "nested_continuous" &&
               layers.experiment &&
               item.experimentPoints.map((point, pointIndex) => (
-                <circle
+                <SeriesPointMark
                   key={`${point.experimentId}-experiment-${pointIndex}`}
+                  style={seriesStyle?.pointStyle ?? "circle"}
                   cx={x + (pointIndex - (item.experimentPoints.length - 1) / 2) * 8}
                   cy={yFor(point.value)}
-                  r={appearance.pointSize + 1}
+                  radius={appearance.pointSize + 1}
                   fill={color}
+                  opacity={appearance.pointOpacity}
                   className="experiment-graph-point experiment-graph-point--experiment"
-                  data-graph-layer="nested-experiment"
-                  data-inspector-target="experiment-summary"
-                  data-selected={activeInspectorTarget === "experiment-summary" || undefined}
-                  data-experiment-id={point.experimentId}
-                  data-graph-value={point.value}
-                  aria-label={`${item.conditionLabel} ${point.experimentLabel}の実験単位平均: ${formatNumber(point.value)}`}
-                  onDoubleClick={(event) => {
-                    event.stopPropagation();
-                    onInspect("experiment-summary");
-                  }}
+                  layer="nested-experiment"
+                  inspectorTarget="experiment-summary"
+                  selected={activeInspectorTarget === "experiment-summary"}
+                  experimentId={point.experimentId}
+                  value={point.value}
+                  ariaLabel={`${item.conditionLabel} ${point.experimentLabel}の実験単位平均: ${formatNumber(point.value)}`}
+                  onInspect={onInspect}
                 />
               ))}
             {layers.overall && meanY !== null && (
@@ -2157,6 +2426,23 @@ export function ExperimentGraphWorkbench({
     ...initialState?.appearance,
   });
   const [graphType, setGraphType] = useState<GraphType>(initialState?.graphType ?? "dot");
+  const [grouping, setGrouping] = useState<GraphGrouping>(() => {
+    if (initialState?.grouping) return initialState.grouping;
+    const xFactor = draft.attributes.find(({ proposedVisualRole }) => proposedVisualRole === "x");
+    const seriesFactor = draft.attributes.find(
+      ({ proposedVisualRole }) => proposedVisualRole === "series",
+    );
+    const timeAsSeries = draft.time.proposedVisualRole === "series";
+    return {
+      x: xFactor ? { source: "factor", factorId: xFactor.id } : { source: "condition" },
+      series: seriesFactor
+        ? { source: "factor", factorId: seriesFactor.id }
+        : timeAsSeries
+          ? { source: "time" }
+          : { source: "none" },
+      facet: null,
+    };
+  });
   const [axes, setAxes] = useState<AxisSettings>(
     initialState?.axes ?? {
       xSemantic: draft.time.points.length > 0 ? orderedAxisSemantic(draft.time) : "categorical",
@@ -2179,6 +2465,9 @@ export function ExperimentGraphWorkbench({
   );
   const [statisticsAnnotation, setStatisticsAnnotation] = useState<StatisticsAnnotation>(
     initialState?.statisticsAnnotation ?? { mode: "hidden", testIndex: 0 },
+  );
+  const [statisticsAnnotations, setStatisticsAnnotations] = useState<StatisticsAnnotationEntry[]>(
+    () => [...(initialState?.statisticsAnnotations ?? [])],
   );
   const [inspectorTarget, setInspectorTarget] = useState<InspectorTarget>(
     workspaceMode === "statistics" ? "statistics" : "data",
@@ -2240,10 +2529,12 @@ export function ExperimentGraphWorkbench({
       analysisTimePointId,
       analysisMetric: timeAnalysis,
       graphType,
+      grouping,
       layers,
       appearance,
       axes,
       statisticsAnnotation,
+      statisticsAnnotations,
       analysisRunId: analysis ? (initialState?.analysisRunId ?? null) : null,
       analysis,
     }),
@@ -2253,6 +2544,7 @@ export function ExperimentGraphWorkbench({
       appearance,
       axes,
       graphType,
+      grouping,
       initialState?.analysisRunId,
       layers,
       selectedConditionIds,
@@ -2260,6 +2552,7 @@ export function ExperimentGraphWorkbench({
       selectedTimePointIds,
       sourceMode,
       statisticsAnnotation,
+      statisticsAnnotations,
       timeAnalysis,
     ],
   );
@@ -2269,10 +2562,12 @@ export function ExperimentGraphWorkbench({
     selectedConditionIds,
     selectedTimePointIds,
     graphType,
+    grouping,
     layers,
     appearance,
     axes,
     statisticsAnnotation,
+    statisticsAnnotations,
     displayedDerivedMetric:
       sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis) ? timeAnalysis : null,
   });
@@ -2300,6 +2595,7 @@ export function ExperimentGraphWorkbench({
     if (initialState?.analysis) return;
     setAnalysis(null);
     setStatisticsAnnotation({ mode: "hidden", testIndex: 0 });
+    setStatisticsAnnotations([]);
   }, [initialState?.analysis]);
 
   useEffect(() => {
@@ -2424,8 +2720,36 @@ export function ExperimentGraphWorkbench({
       : draft.time.points.length > 0
         ? activeTimePoints
         : [undefined];
-    return activeConditions.flatMap((condition) =>
+    const built = activeConditions.flatMap((condition) =>
       timePoints.map((timePoint) => {
+        const xFactorId = grouping.x.source === "factor" ? grouping.x.factorId : undefined;
+        const xLevel = xFactorId ? condition.attributes[xFactorId] : undefined;
+        const xGroupKey = xFactorId ? `${xFactorId}:${xLevel ?? "unknown"}` : condition.id;
+        const xGroupLabel = xFactorId ? (xLevel ?? "—") : condition.label;
+        const seriesFactorId =
+          grouping.series.source === "factor" ? grouping.series.factorId : undefined;
+        const seriesFactor = draft.attributes.find(({ id }) => id === seriesFactorId);
+        const seriesLevel = seriesFactorId ? condition.attributes[seriesFactorId] : undefined;
+        const visualSeriesKey =
+          grouping.series.source === "time"
+            ? (timePoint?.id ?? "time.none")
+            : seriesFactorId
+              ? `${seriesFactorId}:${seriesLevel ?? "unknown"}`
+              : condition.id;
+        const visualSeriesLabel =
+          grouping.series.source === "time"
+            ? timePoint
+              ? `${timePoint.value} ${axes.xUnit.trim() || draft.time.unit}`
+              : "時点なし"
+            : seriesFactor
+              ? (seriesLevel ?? "—")
+              : condition.label;
+        const facetFactorId = grouping.facet?.factorId;
+        const facetLevel = facetFactorId ? condition.attributes[facetFactorId] : undefined;
+        const facetKey = facetFactorId
+          ? `${facetFactorId}:${facetLevel ?? "unknown"}`
+          : "facet.none";
+        const facetLabel = facetFactorId ? (facetLevel ?? "—") : "";
         const proportionPoints: ProportionPoint[] = [];
         const experimentPoints: ExperimentPoint[] = [];
         const rawPoints: RawPoint[] = [];
@@ -2520,6 +2844,13 @@ export function ExperimentGraphWorkbench({
           seriesKey: `${condition.id}::${timePoint?.id ?? "time.none"}`,
           conditionId: condition.id,
           conditionLabel: condition.label,
+          xGroupKey,
+          xGroupLabel,
+          visualSeriesKey,
+          visualSeriesLabel,
+          facetKey,
+          facetLabel,
+          auxiliaryReference: condition.role === "auxiliary_reference",
           timePointId: timePoint?.id,
           timeLabel: timePoint
             ? `${timePoint.value} ${axes.xUnit.trim() || draft.time.unit}`
@@ -2532,14 +2863,30 @@ export function ExperimentGraphWorkbench({
         };
       }),
     );
+    const xOrder = new Map<string, number>();
+    built.forEach(({ xGroupKey }) => {
+      if (!xOrder.has(xGroupKey)) xOrder.set(xGroupKey, xOrder.size);
+    });
+    return built.sort((first, second) => {
+      const groupDelta = (xOrder.get(first.xGroupKey) ?? 0) - (xOrder.get(second.xGroupKey) ?? 0);
+      if (groupDelta !== 0) return groupDelta;
+      return (
+        (appearance.seriesStyles[first.visualSeriesKey]?.order ?? 0) -
+        (appearance.seriesStyles[second.visualSeriesKey]?.order ?? 0)
+      );
+    });
   }, [
     activeConditions,
     activeTimePoints,
     cells,
     draft.experiments,
+    draft.attributes,
     draft.time.points.length,
     draft.time.unit,
     axes.xUnit,
+    appearance.seriesStyles,
+    graphType,
+    grouping,
     readout,
     sourceMode,
     timeAnalysis,
@@ -2589,13 +2936,50 @@ export function ExperimentGraphWorkbench({
       : (readout?.shape ?? "proportion");
   const axisLabels = useMemo(() => {
     if (appearance.hierarchicalLabels)
-      return buildConditionAxisLabels(draft, series, axes.hierarchyOrder);
+      return buildConditionAxisLabels(draft, series, axes.hierarchyOrder, grouping);
     return series.map((item) => ({
       conditionId: item.conditionId,
       levels: [{ id: "condition", label: "条件", value: item.conditionLabel }],
-      timeLabel: item.timeLabel ?? "",
+      timeLabel: grouping.series.source === "time" ? "" : (item.timeLabel ?? ""),
     }));
-  }, [appearance.hierarchicalLabels, axes.hierarchyOrder, draft, series]);
+  }, [appearance.hierarchicalLabels, axes.hierarchyOrder, draft, grouping, series]);
+  const facetGroups = useMemo(() => {
+    const grouped = new Map<
+      string,
+      { label: string; rows: GraphSeries[]; labels: ConditionAxisLabel[] }
+    >();
+    series.forEach((item, index) => {
+      const current = grouped.get(item.facetKey) ?? {
+        label: item.facetLabel,
+        rows: [],
+        labels: [],
+      };
+      current.rows.push(item);
+      const label = axisLabels[index];
+      if (label) current.labels.push(label);
+      grouped.set(item.facetKey, current);
+    });
+    const requestedOrder = grouping.facet?.levelOrder ?? [];
+    return [...grouped.entries()]
+      .map(([key, value]) => ({ key, ...value }))
+      .sort((first, second) => {
+        const firstOrder = requestedOrder.indexOf(first.label);
+        const secondOrder = requestedOrder.indexOf(second.label);
+        if (firstOrder < 0 && secondOrder < 0) return 0;
+        if (firstOrder < 0) return 1;
+        if (secondOrder < 0) return -1;
+        return firstOrder - secondOrder;
+      });
+  }, [axisLabels, grouping.facet?.levelOrder, series]);
+  const visualSeriesOptions = useMemo(
+    () =>
+      series.filter(
+        (item, index) =>
+          series.findIndex(({ visualSeriesKey }) => visualSeriesKey === item.visualSeriesKey) ===
+            index && item.visualSeriesLabel,
+      ),
+    [series],
+  );
   const baseAnnotationContext = analysis
     ? graphAnnotationContext({
         request: analysis.request,
@@ -3209,26 +3593,39 @@ export function ExperimentGraphWorkbench({
                       onInspect={inspectGraphPart}
                     />
                   ) : (
-                    <ExperimentGraphSvg
-                      shape={shape === "proportion" ? "proportion" : "nested_continuous"}
-                      readoutLabel={readout.label}
-                      readoutUnit={readout.unit}
-                      timeSampling={draft.time.sampling}
-                      conditionAssignment={draft.conditionAssignment}
-                      axisLabels={axisLabels}
-                      series={series}
-                      layers={layers}
-                      appearance={appearance}
-                      graphType={graphType}
-                      axes={axes}
-                      svgRef={svgRef}
-                      analysisResult={analysisResult}
-                      statisticsAnnotation={statisticsAnnotation}
-                      annotationContext={annotationContext}
-                      layerDescription={activeLayerDescription}
-                      onInspect={inspectGraphPart}
-                      activeInspectorTarget={inspectorTarget}
-                    />
+                    <div
+                      className={grouping.facet ? "experiment-graph-small-multiples" : undefined}
+                      data-facet-axis-policy={grouping.facet?.axisPolicy ?? "shared"}
+                    >
+                      {facetGroups.map((facet) => (
+                        <section className="experiment-graph-facet" key={facet.key}>
+                          {grouping.facet ? (
+                            <h3 className="experiment-graph-facet-title">{facet.label}</h3>
+                          ) : null}
+                          <ExperimentGraphSvg
+                            shape={shape === "proportion" ? "proportion" : "nested_continuous"}
+                            readoutLabel={readout.label}
+                            readoutUnit={readout.unit}
+                            timeSampling={draft.time.sampling}
+                            conditionAssignment={draft.conditionAssignment}
+                            axisLabels={facet.labels}
+                            series={facet.rows}
+                            layers={layers}
+                            appearance={appearance}
+                            graphType={graphType}
+                            axes={axes}
+                            svgRef={svgRef}
+                            analysisResult={analysisResult}
+                            statisticsAnnotation={statisticsAnnotation}
+                            statisticsAnnotations={statisticsAnnotations}
+                            annotationContext={annotationContext}
+                            layerDescription={activeLayerDescription}
+                            onInspect={inspectGraphPart}
+                            activeInspectorTarget={inspectorTarget}
+                          />
+                        </section>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -3397,6 +3794,110 @@ export function ExperimentGraphWorkbench({
                   ))}
                 </select>
               </label>
+              {draft.analysisIntent.kind !== "correlation" ? (
+                <fieldset className="experiment-graph-condition-fieldset">
+                  <legend>Factor → visual mapping</legend>
+                  <label className="experiment-graph-field">
+                    <span>X</span>
+                    <select
+                      aria-label="X factor"
+                      value={
+                        grouping.x.source === "factor"
+                          ? `factor:${grouping.x.factorId ?? ""}`
+                          : "condition"
+                      }
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setGrouping((current) => ({
+                          ...current,
+                          x: value.startsWith("factor:")
+                            ? { source: "factor", factorId: value.slice(7) }
+                            : { source: "condition" },
+                        }));
+                      }}
+                    >
+                      <option value="condition">条件</option>
+                      {draft.attributes.map((factor) => (
+                        <option key={factor.id} value={`factor:${factor.id}`}>
+                          {factor.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="experiment-graph-field">
+                    <span>系列</span>
+                    <select
+                      aria-label="系列 factor"
+                      value={
+                        grouping.series.source === "factor"
+                          ? `factor:${grouping.series.factorId ?? ""}`
+                          : grouping.series.source
+                      }
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setGrouping((current) => ({
+                          ...current,
+                          series: value.startsWith("factor:")
+                            ? { source: "factor", factorId: value.slice(7) }
+                            : value === "time"
+                              ? { source: "time" }
+                              : { source: "none" },
+                        }));
+                        if (value !== "none") {
+                          setAppearance((current) => ({
+                            ...current,
+                            legendPosition:
+                              current.legendPosition === "hidden" ? "top" : current.legendPosition,
+                            palette: current.palette === "single" ? "condition" : current.palette,
+                          }));
+                        }
+                      }}
+                    >
+                      <option value="none">なし</option>
+                      {draft.time.points.length > 0 ? (
+                        <option value="time">時間 / numeric X</option>
+                      ) : null}
+                      {draft.attributes.map((factor) => (
+                        <option key={factor.id} value={`factor:${factor.id}`}>
+                          {factor.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="experiment-graph-field">
+                    <span>Facet（small multiples）</span>
+                    <select
+                      aria-label="Facet factor"
+                      value={grouping.facet?.factorId ?? "none"}
+                      onChange={(event) =>
+                        setGrouping((current) => ({
+                          ...current,
+                          facet:
+                            event.target.value === "none"
+                              ? null
+                              : {
+                                  source: "factor",
+                                  factorId: event.target.value,
+                                  axisPolicy: "shared",
+                                  levelOrder: [],
+                                },
+                        }))
+                      }
+                    >
+                      <option value="none">なし</option>
+                      {draft.attributes.map((factor) => (
+                        <option key={factor.id} value={factor.id}>
+                          {factor.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <p className="experiment-graph-help">
+                    見た目の系列・Facetは、paired / repeated /
+                    independentの統計的関係を変更しません。
+                  </p>
+                </fieldset>
+              ) : null}
               {draft.time.sampling === "longitudinal" && draft.time.points.length > 1 ? (
                 <>
                   <label className="experiment-graph-field">
@@ -3518,7 +4019,10 @@ export function ExperimentGraphWorkbench({
                       aria-label={condition.label}
                       onChange={handleConditionChange}
                     />
-                    <span>{condition.label}</span>
+                    <span>
+                      {condition.label}
+                      {condition.role === "auxiliary_reference" ? "（reference）" : ""}
+                    </span>
                   </label>
                 ))}
               </fieldset>
@@ -3893,6 +4397,141 @@ export function ExperimentGraphWorkbench({
                   }
                 />
               </label>
+              {visualSeriesOptions.map((item, index) => {
+                const style = appearance.seriesStyles[item.visualSeriesKey] ?? {};
+                return (
+                  <fieldset
+                    className="experiment-graph-condition-fieldset"
+                    key={item.visualSeriesKey}
+                  >
+                    <legend>{item.visualSeriesLabel}</legend>
+                    <label className="experiment-graph-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={style.visible !== false}
+                        onChange={(event) =>
+                          setAppearance((current) => ({
+                            ...current,
+                            seriesStyles: {
+                              ...current.seriesStyles,
+                              [item.visualSeriesKey]: {
+                                ...current.seriesStyles[item.visualSeriesKey],
+                                visible: event.target.checked,
+                              },
+                            },
+                          }))
+                        }
+                      />
+                      <span>表示</span>
+                    </label>
+                    <label className="experiment-graph-field">
+                      <span>凡例ラベル</span>
+                      <input
+                        value={style.legendLabel ?? item.visualSeriesLabel}
+                        onChange={(event) =>
+                          setAppearance((current) => ({
+                            ...current,
+                            seriesStyles: {
+                              ...current.seriesStyles,
+                              [item.visualSeriesKey]: {
+                                ...current.seriesStyles[item.visualSeriesKey],
+                                legendLabel: event.target.value || item.visualSeriesLabel,
+                              },
+                            },
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="experiment-graph-field">
+                      <span>色</span>
+                      <input
+                        type="color"
+                        value={
+                          style.color ??
+                          PALETTES[appearance.palette][index % PALETTES[appearance.palette].length]
+                        }
+                        onChange={(event) =>
+                          setAppearance((current) => ({
+                            ...current,
+                            seriesStyles: {
+                              ...current.seriesStyles,
+                              [item.visualSeriesKey]: {
+                                ...current.seriesStyles[item.visualSeriesKey],
+                                color: event.target.value,
+                              },
+                            },
+                          }))
+                        }
+                      />
+                    </label>
+                    <label className="experiment-graph-field">
+                      <span>線</span>
+                      <select
+                        value={style.lineStyle ?? "solid"}
+                        onChange={(event) =>
+                          setAppearance((current) => ({
+                            ...current,
+                            seriesStyles: {
+                              ...current.seriesStyles,
+                              [item.visualSeriesKey]: {
+                                ...current.seriesStyles[item.visualSeriesKey],
+                                lineStyle: event.target.value as "solid" | "dashed" | "dotted",
+                              },
+                            },
+                          }))
+                        }
+                      >
+                        <option value="solid">実線</option>
+                        <option value="dashed">破線</option>
+                        <option value="dotted">点線</option>
+                      </select>
+                    </label>
+                    <label className="experiment-graph-field">
+                      <span>点</span>
+                      <select
+                        value={style.pointStyle ?? "circle"}
+                        onChange={(event) =>
+                          setAppearance((current) => ({
+                            ...current,
+                            seriesStyles: {
+                              ...current.seriesStyles,
+                              [item.visualSeriesKey]: {
+                                ...current.seriesStyles[item.visualSeriesKey],
+                                pointStyle: event.target.value as
+                                  "circle" | "square" | "triangle" | "diamond",
+                              },
+                            },
+                          }))
+                        }
+                      >
+                        <option value="circle">丸</option>
+                        <option value="square">四角</option>
+                        <option value="triangle">三角</option>
+                        <option value="diamond">菱形</option>
+                      </select>
+                    </label>
+                    <label className="experiment-graph-field">
+                      <span>順序</span>
+                      <input
+                        type="number"
+                        value={style.order ?? index}
+                        onChange={(event) =>
+                          setAppearance((current) => ({
+                            ...current,
+                            seriesStyles: {
+                              ...current.seriesStyles,
+                              [item.visualSeriesKey]: {
+                                ...current.seriesStyles[item.visualSeriesKey],
+                                order: Number(event.target.value),
+                              },
+                            },
+                          }))
+                        }
+                      />
+                    </label>
+                  </fieldset>
+                );
+              })}
             </section>
           ) : null}
 
@@ -3913,6 +4552,38 @@ export function ExperimentGraphWorkbench({
               <p className="experiment-graph-help">
                 バイオリンは細胞・ROIなど、十分な観測値がある場合の分布表示です。
               </p>
+              <label className="experiment-graph-field">
+                <span>塗り</span>
+                <select
+                  value={appearance.distributionFill}
+                  onChange={(event) =>
+                    setAppearance((current) => ({
+                      ...current,
+                      distributionFill: event.target.value as GraphAppearance["distributionFill"],
+                    }))
+                  }
+                >
+                  <option value="none">透明</option>
+                  <option value="white">白</option>
+                  <option value="series">系列色</option>
+                  <option value="custom">指定色</option>
+                </select>
+              </label>
+              {appearance.distributionFill === "custom" ? (
+                <label className="experiment-graph-field">
+                  <span>塗り色</span>
+                  <input
+                    type="color"
+                    value={appearance.distributionFillColor}
+                    onChange={(event) =>
+                      setAppearance((current) => ({
+                        ...current,
+                        distributionFillColor: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              ) : null}
               <label className="experiment-graph-field">
                 <span>輪郭線：{appearance.distributionLineWidth.toFixed(1)}px</span>
                 <input
@@ -3952,6 +4623,23 @@ export function ExperimentGraphWorkbench({
                   }
                 />
                 <span>中央値と四分位範囲を表示</span>
+              </label>
+              <label className="experiment-graph-field">
+                <span>塗り</span>
+                <select
+                  value={appearance.distributionFill}
+                  onChange={(event) =>
+                    setAppearance((current) => ({
+                      ...current,
+                      distributionFill: event.target.value as GraphAppearance["distributionFill"],
+                    }))
+                  }
+                >
+                  <option value="none">透明</option>
+                  <option value="white">白</option>
+                  <option value="series">系列色</option>
+                  <option value="custom">指定色</option>
+                </select>
               </label>
               <label className="experiment-graph-field">
                 <span>輪郭線：{appearance.distributionLineWidth.toFixed(1)}px</span>
@@ -4174,6 +4862,116 @@ export function ExperimentGraphWorkbench({
                   <option value="symbol">有意差記号</option>
                 </select>
               </label>
+              <button
+                type="button"
+                disabled={statisticsAnnotation.mode === "hidden"}
+                onClick={() => {
+                  const test = analysisResult.tests[statisticsAnnotation.testIndex];
+                  if (!test) return;
+                  const [, firstConditionId, secondConditionId] = test.name.split(":");
+                  const next: StatisticsAnnotationEntry = {
+                    id: `annotation.${statisticsAnnotation.testIndex}`,
+                    analysisId: analysisResult.requestId,
+                    comparisonId: test.name,
+                    testIndex: statisticsAnnotation.testIndex,
+                    mode:
+                      statisticsAnnotation.mode === "hidden" ? "symbol" : statisticsAnnotation.mode,
+                    showNonSignificant: true,
+                    ...(firstConditionId && secondConditionId
+                      ? {
+                          endpoints: [
+                            { conditionId: firstConditionId },
+                            { conditionId: secondConditionId },
+                          ] as const,
+                        }
+                      : {}),
+                    pValueStatus: test.adjustedPValue === null ? "unadjusted" : "adjusted",
+                    lineage: {
+                      ...(sourceMode === "derived_metric"
+                        ? { derivedMetric: timeAnalysis.kind }
+                        : {}),
+                      ...(analysisTimePointId ? { timePointId: analysisTimePointId } : {}),
+                      ...(timeAnalysis.kind !== "selected_timepoint"
+                        ? {
+                            endpoint: timeAnalysis.kind,
+                            ...(timeAnalysis.windowStart === undefined
+                              ? {}
+                              : { windowStart: timeAnalysis.windowStart }),
+                            ...(timeAnalysis.windowEnd === undefined
+                              ? {}
+                              : { windowEnd: timeAnalysis.windowEnd }),
+                          }
+                        : {}),
+                    },
+                  };
+                  setStatisticsAnnotations((current) => [
+                    ...current.filter(({ testIndex }) => testIndex !== next.testIndex),
+                    next,
+                  ]);
+                }}
+              >
+                この比較を注釈へ追加
+              </button>
+              {statisticsAnnotations.length > 0 ? (
+                <ul className="experiment-graph-annotation-list">
+                  {statisticsAnnotations.map((annotation) => {
+                    const test = analysisResult.tests[annotation.testIndex];
+                    if (!test) return null;
+                    return (
+                      <li key={annotation.id}>
+                        <span>
+                          {analysisTestAnnotationLabel(test, draft, baseAnnotationContext)}
+                        </span>
+                        <select
+                          aria-label={`${test.name}の表示形式`}
+                          value={annotation.mode}
+                          onChange={(event) =>
+                            setStatisticsAnnotations((current) =>
+                              current.map((item) =>
+                                item.id === annotation.id
+                                  ? {
+                                      ...item,
+                                      mode: event.target.value as "exact_p" | "symbol",
+                                    }
+                                  : item,
+                              ),
+                            )
+                          }
+                        >
+                          <option value="exact_p">p値</option>
+                          <option value="symbol">記号</option>
+                        </select>
+                        <label className="experiment-graph-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={annotation.showNonSignificant}
+                            onChange={(event) =>
+                              setStatisticsAnnotations((current) =>
+                                current.map((item) =>
+                                  item.id === annotation.id
+                                    ? { ...item, showNonSignificant: event.target.checked }
+                                    : item,
+                                ),
+                              )
+                            }
+                          />
+                          <span>n.s.表示</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setStatisticsAnnotations((current) =>
+                              current.filter(({ id }) => id !== annotation.id),
+                            )
+                          }
+                        >
+                          削除
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : null}
               <p className="experiment-graph-help">
                 表示内容：{annotationContext}
                 。保存済みのこのグラフの解析結果にだけリンクします。派生値の注釈はそのmetric/windowだけを表し、曲線全体の推論を意味しません。データや比較対象を変更すると注釈も外れます。
@@ -4380,6 +5178,109 @@ export function ExperimentGraphWorkbench({
                           }
                         />
                       </label>
+                      {axes.xSemantic !== "categorical" ? (
+                        <>
+                          <label className="experiment-graph-field">
+                            <span>Xスケール</span>
+                            <select
+                              value={axes.xScale ?? "linear"}
+                              onChange={(event) =>
+                                setAxes((current) => ({
+                                  ...current,
+                                  xScale: event.target.value as "linear" | "log10",
+                                }))
+                              }
+                            >
+                              <option value="linear">Linear</option>
+                              <option value="log10">Log10</option>
+                            </select>
+                          </label>
+                          <label className="experiment-graph-field">
+                            <span>X範囲</span>
+                            <select
+                              value={axes.xRangeMode ?? "auto"}
+                              onChange={(event) =>
+                                setAxes((current) => ({
+                                  ...current,
+                                  xRangeMode: event.target.value as "auto" | "manual",
+                                }))
+                              }
+                            >
+                              <option value="auto">自動</option>
+                              <option value="manual">手動</option>
+                            </select>
+                          </label>
+                          {axes.xRangeMode === "manual" ? (
+                            <div className="experiment-graph-range-grid">
+                              <label className="experiment-graph-field">
+                                <span>最小</span>
+                                <input
+                                  type="number"
+                                  value={axes.xMin ?? ""}
+                                  onChange={(event) =>
+                                    setAxes((current) => ({
+                                      ...current,
+                                      xMin:
+                                        event.target.value === ""
+                                          ? null
+                                          : Number(event.target.value),
+                                    }))
+                                  }
+                                />
+                              </label>
+                              <label className="experiment-graph-field">
+                                <span>最大</span>
+                                <input
+                                  type="number"
+                                  value={axes.xMax ?? ""}
+                                  onChange={(event) =>
+                                    setAxes((current) => ({
+                                      ...current,
+                                      xMax:
+                                        event.target.value === ""
+                                          ? null
+                                          : Number(event.target.value),
+                                    }))
+                                  }
+                                />
+                              </label>
+                            </div>
+                          ) : null}
+                          <label className="experiment-graph-field">
+                            <span>X目盛</span>
+                            <select
+                              value={axes.xTickMode ?? "auto"}
+                              onChange={(event) =>
+                                setAxes((current) => ({
+                                  ...current,
+                                  xTickMode: event.target.value as "auto" | "manual",
+                                }))
+                              }
+                            >
+                              <option value="auto">自動</option>
+                              <option value="manual">手動間隔</option>
+                            </select>
+                          </label>
+                          {axes.xTickMode === "manual" ? (
+                            <label className="experiment-graph-field">
+                              <span>目盛間隔</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                value={axes.xTickInterval ?? ""}
+                                onChange={(event) =>
+                                  setAxes((current) => ({
+                                    ...current,
+                                    xTickInterval:
+                                      event.target.value === "" ? null : Number(event.target.value),
+                                  }))
+                                }
+                              />
+                            </label>
+                          ) : null}
+                        </>
+                      ) : null}
                     </>
                   ) : null}
                   <label className="experiment-graph-checkbox">
@@ -4411,6 +5312,25 @@ export function ExperimentGraphWorkbench({
                     <span>カテゴリと階層ラベルを表示</span>
                   </label>
                   <label className="experiment-graph-field">
+                    <span>カテゴリラベル角度</span>
+                    <select
+                      value={axes.categoryLabelRotation ?? "none"}
+                      onChange={(event) =>
+                        setAxes((current) => ({
+                          ...current,
+                          categoryLabelRotation: event.target.value as NonNullable<
+                            AxisSettings["categoryLabelRotation"]
+                          >,
+                        }))
+                      }
+                    >
+                      <option value="none">水平</option>
+                      <option value="minus_30">−30°</option>
+                      <option value="minus_45">−45°</option>
+                      <option value="minus_90">−90°</option>
+                    </select>
+                  </label>
+                  <label className="experiment-graph-field">
                     <span>カテゴリ間隔：{axes.spacing.toFixed(1)}</span>
                     <input
                       aria-label="カテゴリ間隔"
@@ -4423,6 +5343,40 @@ export function ExperimentGraphWorkbench({
                         setAxes((current) => ({
                           ...current,
                           spacing: Number(event.target.value),
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="experiment-graph-field">
+                    <span>系列内：{appearance.withinGroupSpacing.toFixed(2)}</span>
+                    <input
+                      aria-label="系列内の間隔"
+                      type="range"
+                      min="0.4"
+                      max="1.4"
+                      step="0.05"
+                      value={appearance.withinGroupSpacing}
+                      onChange={(event) =>
+                        setAppearance((current) => ({
+                          ...current,
+                          withinGroupSpacing: Number(event.target.value),
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="experiment-graph-field">
+                    <span>X群間：{appearance.betweenGroupSpacing.toFixed(2)}</span>
+                    <input
+                      aria-label="X群間の間隔"
+                      type="range"
+                      min="0.8"
+                      max="2.4"
+                      step="0.05"
+                      value={appearance.betweenGroupSpacing}
+                      onChange={(event) =>
+                        setAppearance((current) => ({
+                          ...current,
+                          betweenGroupSpacing: Number(event.target.value),
                         }))
                       }
                     />

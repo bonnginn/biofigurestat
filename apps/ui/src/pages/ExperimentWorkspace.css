@@ -1253,6 +1253,27 @@
 }
 
 @media (max-width: 850px) {
+  .experiment-workspace-project-nav {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+  }
+
+  .experiment-workspace-project-nav button {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+
+  .experiment-workspace-file-menu,
+  .experiment-workspace-file-menu > summary {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
   .experiment-workspace-body:has(.experiment-workspace-inspector) {
     grid-template-columns: minmax(0, 1fr);
   }

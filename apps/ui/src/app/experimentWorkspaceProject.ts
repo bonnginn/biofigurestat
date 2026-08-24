@@ -105,6 +105,17 @@ export function createExperimentWorkspaceDesign(
         id: `factor.${attribute.id}`,
         key: attribute.id,
         label: attribute.label,
+        scientificRole: attribute.scientificRole,
+        unitRole: attribute.unitRole,
+        relationship: attribute.relationship
+          ? {
+              kind: attribute.relationship,
+              ...(attribute.unitRole === "within_unit"
+                ? { unitLevelId: "unit-level.experimental-unit" }
+                : {}),
+            }
+          : undefined,
+        proposedVisualRole: attribute.proposedVisualRole,
         levels: values.map((value, index) => ({
           id: `level.${attribute.id}.${index + 1}`,
           label: value,
@@ -121,6 +132,10 @@ export function createExperimentWorkspaceDesign(
             id: "factor.condition",
             key: "condition",
             label: "条件",
+            scientificRole: "other" as const,
+            unitRole: "between_unit" as const,
+            relationship: { kind: "independent" as const },
+            proposedVisualRole: "x" as const,
             levels: draft.conditions.map((condition, index) => ({
               id: `level.condition.${index + 1}`,
               label: condition.label,
@@ -146,6 +161,33 @@ export function createExperimentWorkspaceDesign(
       ...(readout.unit ? { unit: readout.unit } : {}),
     })),
     factors: effectiveFactors,
+    observationFactors:
+      draft.time.points.length > 0
+        ? [
+            {
+              id: "factor.time",
+              key: "time",
+              label: orderedAxisTitle(draft.time),
+              scientificRole: draft.time.scientificRole ?? "time",
+              unitRole:
+                draft.time.unitRole ??
+                (draft.time.sampling === "longitudinal" ? "within_unit" : "between_unit"),
+              relationship: {
+                kind:
+                  draft.time.relationship ??
+                  (draft.time.sampling === "longitudinal" ? "repeated" : "independent"),
+              },
+              proposedVisualRole:
+                draft.time.proposedVisualRole ??
+                (draft.time.sampling === "cross_sectional" ? "series" : "x"),
+              levels: draft.time.points.map((point, index) => ({
+                id: `level.time.${index + 1}`,
+                label: `${point.value} ${orderedAxisUnit(draft.time)}`.trim(),
+                order: index,
+              })),
+            },
+          ]
+        : undefined,
     conditions: draft.conditions.map((condition, conditionIndex) => ({
       id: condition.id,
       label: condition.label,
@@ -160,6 +202,8 @@ export function createExperimentWorkspaceDesign(
           return [factor.id, level?.id ?? factor.levels[0].id];
         }),
       ),
+      role: condition.role,
+      sourceProvenance: condition.sourceProvenance,
     })),
     unitLevels: [
       {
@@ -227,14 +271,29 @@ export function createExperimentWorkspaceDesign(
           ]
         : []),
     ]),
-    primaryContrast:
-      draft.conditions.length >= 2
+    primaryContrast: (() => {
+      const declaredPrimary = draft.comparisons?.find(({ role }) => role === "primary");
+      const primaryConditions = draft.conditions.filter(
+        ({ role }) => role !== "auxiliary_reference",
+      );
+      return declaredPrimary
         ? {
-            id: "contrast.primary",
-            label: `${draft.conditions[0].label} vs ${draft.conditions[1].label}`,
-            conditionIds: [draft.conditions[0].id, draft.conditions[1].id],
+            id: declaredPrimary.id,
+            label: declaredPrimary.label,
+            conditionIds: [...declaredPrimary.conditionIds] as [string, string],
           }
-        : null,
+        : primaryConditions.length >= 2
+          ? {
+              id: "contrast.primary",
+              label: `${primaryConditions[0].label} vs ${primaryConditions[1].label}`,
+              conditionIds: [primaryConditions[0].id, primaryConditions[1].id] as [string, string],
+            }
+          : null;
+    })(),
+    comparisons: draft.comparisons?.map((comparison) => ({
+      ...comparison,
+      conditionIds: [...comparison.conditionIds] as [string, string],
+    })),
     wizardRuleVersion: "experiment-workspace.0.1.0",
     wizardDecisions: [
       ...(draft.analysisIntent.kind === "correlation"
@@ -291,6 +350,7 @@ function createWorkspaceSnapshot(
     conditionAttributes: draft.attributes,
     conditions: draft.conditions,
     controlConditionId: draft.controlConditionId,
+    comparisons: draft.comparisons,
     analysisIntent: draft.analysisIntent,
     conditionAssignment: draft.conditionAssignment,
     timePlan: draft.time,
@@ -1177,6 +1237,7 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
     attributes: workspace.conditionAttributes,
     conditions: workspace.conditions,
     controlConditionId: workspace.controlConditionId,
+    comparisons: workspace.comparisons,
     analysisIntent: workspace.analysisIntent,
     conditionAssignment: workspace.conditionAssignment,
     time: workspace.timePlan,

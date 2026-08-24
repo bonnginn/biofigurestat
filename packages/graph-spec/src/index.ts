@@ -29,9 +29,12 @@ export const GraphSpecSchema = z
     mappings: z.object({
       x: z.string().min(1),
       y: z.string().min(1),
+      /** First-class visual series mapping. `color` remains a backward-compatible channel. */
+      series: z.string().min(1).optional(),
       color: z.string().optional(),
       pair: z.string().optional(),
       facet: z.string().optional(),
+      auxiliaryReference: z.string().optional(),
     }),
     summary: z.object({
       center: z.enum(["none", "mean", "median"]),
@@ -44,6 +47,27 @@ export const GraphSpecSchema = z
       opacity: z.number().min(0).max(1),
       showRawPoints: z.boolean(),
       showPairedLines: z.boolean(),
+      distributionFill: z.enum(["none", "white", "series", "custom"]).default("white"),
+      distributionFillColor: z.string().default("#ffffff"),
+      distributionOutlineColor: z.string().default("#111111"),
+      barWidth: z.number().min(0.25).max(1).default(0.72),
+      withinGroupSpacing: z.number().min(0.4).max(1.4).default(0.72),
+      betweenGroupSpacing: z.number().min(0.8).max(2.4).default(1.35),
+      seriesStyles: z
+        .record(
+          z.string(),
+          z.object({
+            color: z.string().optional(),
+            fill: z.enum(["none", "white", "series", "custom"]).optional(),
+            fillColor: z.string().optional(),
+            lineStyle: z.enum(["solid", "dashed", "dotted"]).optional(),
+            pointStyle: z.enum(["circle", "square", "triangle", "diamond"]).optional(),
+            legendLabel: z.string().min(1).optional(),
+            order: z.number().int().optional(),
+            visible: z.boolean().default(true),
+          }),
+        )
+        .default({}),
     }),
     axes: z.object({
       yStartAtZero: z.boolean(),
@@ -66,6 +90,43 @@ export const GraphSpecSchema = z
         max: z.number().finite().nullable(),
         missingColor: z.string().min(1),
         showCellValues: z.boolean(),
+      })
+      .optional(),
+    annotations: z
+      .array(
+        z.object({
+          id: EntityIdSchema,
+          analysisResultId: EntityIdSchema,
+          comparisonId: z.string().min(1).optional(),
+          testIndex: z.number().int().min(0),
+          mode: z.enum(["exact_p", "symbol"]),
+          showNonSignificant: z.boolean().default(true),
+          endpoints: z
+            .tuple([
+              z.object({ groupId: EntityIdSchema, seriesLevelId: EntityIdSchema.optional() }),
+              z.object({ groupId: EntityIdSchema, seriesLevelId: EntityIdSchema.optional() }),
+            ])
+            .optional(),
+          pValueStatus: z.enum(["adjusted", "unadjusted"]).optional(),
+          lineage: z
+            .object({
+              derivedMetric: z.string().optional(),
+              timePointId: EntityIdSchema.optional(),
+              endpoint: z.string().optional(),
+              windowStart: z.number().finite().optional(),
+              windowEnd: z.number().finite().optional(),
+            })
+            .optional(),
+        }),
+      )
+      .default([]),
+    facet: z
+      .object({
+        factorId: EntityIdSchema,
+        levelOrder: z.array(z.string()).default([]),
+        axisPolicy: z
+          .enum(["shared", "independent_x", "independent_y", "independent_both"])
+          .default("shared"),
       })
       .optional(),
   })
@@ -131,6 +192,7 @@ export * from "./heatmap";
 export * from "./survival";
 export * from "./distribution";
 export * from "./regression";
+export * from "./core-v1";
 
 export function createHeatmapGraphSpec(
   input: Readonly<{

@@ -8,6 +8,50 @@ const dataSource = {
 };
 
 describe("Core D01/D02 graph specifications", () => {
+  it("preserves factor-aware series, auxiliary reference, and saved-result annotations", () => {
+    const parsed = GraphSpecSchema.parse({
+      id: "graph.factor-aware",
+      version: "0.1.0",
+      type: "grouped_dot",
+      dataSource: { kind: "analysis_result", id: "analysis.1", revision: "1" },
+      analysisResultId: "analysis.1",
+      mappings: {
+        x: "factor.siRNA",
+        y: "value",
+        series: "factor.time",
+        color: "factor.time",
+        auxiliaryReference: "condition.role",
+      },
+      summary: { center: "mean", interval: "sd" },
+      appearance: {
+        palette: ["#111111", "#777777"],
+        pointSize: 5,
+        opacity: 1,
+        showRawPoints: true,
+        showPairedLines: false,
+        distributionFill: "white",
+        withinGroupSpacing: 0.7,
+        betweenGroupSpacing: 1.4,
+        seriesStyles: { "level.24h": { legendLabel: "24 h", pointStyle: "square" } },
+      },
+      axes: { yStartAtZero: false, yScale: "linear", xLabel: "siRNA", yLabel: "Response" },
+      annotations: [
+        {
+          id: "annotation.1",
+          analysisResultId: "analysis.1",
+          testIndex: 2,
+          mode: "symbol",
+          showNonSignificant: false,
+          lineage: { timePointId: "time.24h" },
+        },
+      ],
+    });
+
+    expect(parsed.mappings.series).toBe("factor.time");
+    expect(parsed.appearance.seriesStyles["level.24h"]?.legendLabel).toBe("24 h");
+    expect(parsed.annotations).toHaveLength(1);
+  });
+
   it("creates an individual-dot plus mean/SD graph for D01", () => {
     const spec = createCoreTwoConditionGraphSpec({
       graphId: "graph.d01",

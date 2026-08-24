@@ -13,6 +13,19 @@ export type TimeSampling = "none" | "cross_sectional" | "longitudinal";
 export type TimeUnit = "sec" | "min" | "h" | "day";
 export type OrderedAxisSemantic = "time" | "numeric_covariate";
 export type ConditionAssignmentKind = "independent" | "matched";
+export type FactorScientificRole =
+  | "intervention"
+  | "genotype"
+  | "time"
+  | "state"
+  | "rescue"
+  | "control_reference"
+  | "readout"
+  | "other";
+export type FactorUnitRole = "within_unit" | "between_unit";
+export type FactorRelationshipKind = "independent" | "repeated" | "paired";
+export type FactorVisualRole =
+  "x" | "series" | "facet" | "annotation" | "auxiliary_reference" | "none";
 export type AnalysisIntent =
   | Readonly<{ kind: "group_comparison" }>
   | Readonly<{
@@ -47,12 +60,18 @@ export type ConditionAssignmentDraft = Readonly<{
 export type ConditionAttributeDraft = Readonly<{
   id: string;
   label: string;
+  scientificRole?: FactorScientificRole;
+  unitRole?: FactorUnitRole;
+  relationship?: FactorRelationshipKind;
+  proposedVisualRole?: FactorVisualRole;
 }>;
 
 export type ConditionDraft = Readonly<{
   id: string;
   label: string;
   attributes: Readonly<Record<string, string>>;
+  role?: "primary" | "auxiliary_reference";
+  sourceProvenance?: string;
 }>;
 
 export type ReadoutDraft = Readonly<{
@@ -83,6 +102,17 @@ export type TimePlanDraft = Readonly<{
   axisSemantic?: OrderedAxisSemantic;
   axisTitle?: string;
   axisUnit?: string;
+  scientificRole?: FactorScientificRole;
+  unitRole?: FactorUnitRole;
+  relationship?: FactorRelationshipKind;
+  proposedVisualRole?: FactorVisualRole;
+}>;
+
+export type ExperimentComparisonDraft = Readonly<{
+  id: string;
+  label: string;
+  role: "primary" | "auxiliary";
+  conditionIds: readonly [string, string];
 }>;
 
 export function orderedAxisSemantic(time: TimePlanDraft): OrderedAxisSemantic {
@@ -119,6 +149,7 @@ export type ExperimentSetDraft = Readonly<{
   conditions: readonly ConditionDraft[];
   /** Explicit researcher-selected control. Never inferred from a visible label. */
   controlConditionId?: string;
+  comparisons?: readonly ExperimentComparisonDraft[];
   analysisIntent: AnalysisIntent;
   conditionAssignment: ConditionAssignmentDraft;
   time: TimePlanDraft;
@@ -147,6 +178,8 @@ export type NestedContinuousCellDraft = Readonly<{
   rawValues: readonly number[];
   source: "manual" | "paste";
   sourceLocations?: readonly string[];
+  /** Stable lower-level identity, preserved across time/series when explicitly supplied. */
+  observationUnitIds?: readonly string[];
   availability?: "planned" | "not_planned";
 }>;
 
@@ -320,12 +353,16 @@ export function conditionAttributeLevels(
 
 export function withActiveConditions(draft: ExperimentSetDraft): ExperimentSetDraft {
   const conditions = activeConditions(draft);
+  const conditionIds = new Set(conditions.map(({ id }) => id));
   return {
     ...draft,
     conditions,
     controlConditionId: conditions.some(({ id }) => id === draft.controlConditionId)
       ? draft.controlConditionId
       : undefined,
+    comparisons: draft.comparisons?.filter(({ conditionIds: pair }) =>
+      pair.every((conditionId) => conditionIds.has(conditionId)),
+    ),
   };
 }
 

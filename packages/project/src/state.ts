@@ -76,17 +76,51 @@ export const ExperimentWorkspaceStateSchema = z
         }),
       )
       .default([]),
-    conditionAttributes: z.array(z.object({ id: EntityIdSchema, label: z.string().min(1) })),
+    conditionAttributes: z.array(
+      z.object({
+        id: EntityIdSchema,
+        label: z.string().min(1),
+        scientificRole: z
+          .enum([
+            "intervention",
+            "genotype",
+            "time",
+            "state",
+            "rescue",
+            "control_reference",
+            "readout",
+            "other",
+          ])
+          .optional(),
+        unitRole: z.enum(["within_unit", "between_unit"]).optional(),
+        relationship: z.enum(["independent", "repeated", "paired"]).optional(),
+        proposedVisualRole: z
+          .enum(["x", "series", "facet", "annotation", "auxiliary_reference", "none"])
+          .optional(),
+      }),
+    ),
     conditions: z
       .array(
         z.object({
           id: EntityIdSchema,
           label: z.string().min(1),
           attributes: z.record(EntityIdSchema, z.string()),
+          role: z.enum(["primary", "auxiliary_reference"]).optional(),
+          sourceProvenance: z.string().min(1).optional(),
         }),
       )
       .min(1),
     controlConditionId: EntityIdSchema.optional(),
+    comparisons: z
+      .array(
+        z.object({
+          id: EntityIdSchema,
+          label: z.string().min(1),
+          role: z.enum(["primary", "auxiliary"]),
+          conditionIds: z.tuple([EntityIdSchema, EntityIdSchema]),
+        }),
+      )
+      .optional(),
     analysisIntent: z
       .discriminatedUnion("kind", [
         z.object({ kind: z.literal("group_comparison") }),
@@ -114,6 +148,23 @@ export const ExperimentWorkspaceStateSchema = z
       axisSemantic: z.enum(["time", "numeric_covariate"]).optional(),
       axisTitle: z.string().min(1).optional(),
       axisUnit: z.string().optional(),
+      scientificRole: z
+        .enum([
+          "intervention",
+          "genotype",
+          "time",
+          "state",
+          "rescue",
+          "control_reference",
+          "readout",
+          "other",
+        ])
+        .optional(),
+      unitRole: z.enum(["within_unit", "between_unit"]).optional(),
+      relationship: z.enum(["independent", "repeated", "paired"]).optional(),
+      proposedVisualRole: z
+        .enum(["x", "series", "facet", "annotation", "auxiliary_reference", "none"])
+        .optional(),
     }),
     experimentSessions: z
       .array(
@@ -181,6 +232,29 @@ export const ExperimentWorkspaceStateSchema = z
             "category_percentage",
           ])
           .default("dot"),
+        grouping: z
+          .object({
+            x: z.object({
+              source: z.enum(["condition", "factor"]),
+              factorId: EntityIdSchema.optional(),
+            }),
+            series: z.object({
+              source: z.enum(["none", "factor", "time"]),
+              factorId: EntityIdSchema.optional(),
+            }),
+            facet: z
+              .object({
+                source: z.enum(["factor"]),
+                factorId: EntityIdSchema,
+                axisPolicy: z
+                  .enum(["shared", "independent_x", "independent_y", "independent_both"])
+                  .default("shared"),
+                levelOrder: z.array(z.string()).default([]),
+              })
+              .nullable()
+              .default(null),
+          })
+          .optional(),
         layers: z.object({
           raw: z.boolean(),
           distribution: z.boolean().default(false),
@@ -197,6 +271,7 @@ export const ExperimentWorkspaceStateSchema = z
             .enum(["single", "condition", "grayscale", "colorblind", "publication"])
             .default("single"),
           pointSize: z.number().min(4).max(10),
+          pointOpacity: z.number().min(0.05).max(1).default(0.9),
           axisLineWidth: z.number().min(0.8).max(2.4),
           hierarchicalLabels: z.boolean(),
           jitter: z.number().min(0).max(24).default(12),
@@ -208,6 +283,27 @@ export const ExperimentWorkspaceStateSchema = z
           legendFontSize: z.number().min(9).max(24).default(16),
           legendPosition: z.enum(["hidden", "top", "right", "inside"]).default("hidden"),
           seriesColors: z.record(EntityIdSchema, z.string()).default({}),
+          seriesStyles: z
+            .record(
+              z.string(),
+              z.object({
+                color: z.string().optional(),
+                fill: z.enum(["none", "white", "series", "custom"]).optional(),
+                fillColor: z.string().optional(),
+                lineStyle: z.enum(["solid", "dashed", "dotted"]).optional(),
+                pointStyle: z.enum(["circle", "square", "triangle", "diamond"]).optional(),
+                legendLabel: z.string().min(1).optional(),
+                order: z.number().int().optional(),
+                visible: z.boolean().default(true),
+              }),
+            )
+            .default({}),
+          distributionFill: z.enum(["none", "white", "series", "custom"]).default("white"),
+          distributionFillColor: z.string().default("#ffffff"),
+          distributionOutlineColor: z.string().default("#111111"),
+          barWidth: z.number().min(0.25).max(1).default(0.72),
+          withinGroupSpacing: z.number().min(0.4).max(1.4).default(0.72),
+          betweenGroupSpacing: z.number().min(0.8).max(2.4).default(1.35),
           rawPointColor: z.string().default("#8a96a3"),
           summaryColor: z.string().default("#111111"),
           errorBarColor: z.string().default("#111111"),
@@ -224,6 +320,13 @@ export const ExperimentWorkspaceStateSchema = z
             xSemantic: z.enum(["categorical", "time", "numeric_covariate"]).default("categorical"),
             xTitle: z.string().default(""),
             xUnit: z.string().default(""),
+            xScale: z.enum(["linear", "log10"]).optional(),
+            xRangeMode: z.enum(["auto", "manual"]).optional(),
+            xMin: z.number().finite().nullable().optional(),
+            xMax: z.number().finite().nullable().optional(),
+            xTickMode: z.enum(["auto", "manual"]).optional(),
+            xTickInterval: z.number().positive().nullable().optional(),
+            categoryLabelRotation: z.enum(["none", "minus_30", "minus_45", "minus_90"]).optional(),
             yTitle: z.string(),
             yRangeMode: z.enum(["auto", "manual"]),
             yMin: z.number().finite().nullable(),
@@ -234,6 +337,17 @@ export const ExperimentWorkspaceStateSchema = z
             spacing: z.number().min(0.7).max(1.6),
             yTickMode: z.enum(["auto", "manual"]).default("auto"),
             yTickInterval: z.number().positive().nullable().default(null),
+            referenceLines: z
+              .array(
+                z.object({
+                  id: EntityIdSchema,
+                  value: z.number().finite(),
+                  label: z.string().optional(),
+                  color: z.string().default("#6b7280"),
+                  lineStyle: z.enum(["solid", "dashed", "dotted"]).default("dashed"),
+                }),
+              )
+              .optional(),
           })
           .default({
             xSemantic: "categorical",
@@ -256,6 +370,34 @@ export const ExperimentWorkspaceStateSchema = z
             testIndex: z.number().int().min(0),
           })
           .optional(),
+        statisticsAnnotations: z
+          .array(
+            z.object({
+              id: EntityIdSchema,
+              analysisId: EntityIdSchema.optional(),
+              comparisonId: z.string().min(1).optional(),
+              testIndex: z.number().int().min(0),
+              mode: z.enum(["exact_p", "symbol"]),
+              showNonSignificant: z.boolean().default(true),
+              endpoints: z
+                .tuple([
+                  z.object({ conditionId: EntityIdSchema, seriesKey: z.string().optional() }),
+                  z.object({ conditionId: EntityIdSchema, seriesKey: z.string().optional() }),
+                ])
+                .optional(),
+              pValueStatus: z.enum(["adjusted", "unadjusted"]).optional(),
+              lineage: z
+                .object({
+                  derivedMetric: z.string().optional(),
+                  timePointId: EntityIdSchema.optional(),
+                  endpoint: z.string().optional(),
+                  windowStart: z.number().finite().optional(),
+                  windowEnd: z.number().finite().optional(),
+                })
+                .optional(),
+            }),
+          )
+          .optional(),
       }),
     ),
   })
@@ -270,6 +412,18 @@ export const ExperimentWorkspaceStateSchema = z
         message: "The explicit control condition must reference a persisted condition",
       });
     }
+    const conditionIds = new Set(workspace.conditions.map(({ id }) => id));
+    workspace.comparisons?.forEach((comparison, comparisonIndex) => {
+      comparison.conditionIds.forEach((conditionId, conditionIndex) => {
+        if (!conditionIds.has(conditionId)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["comparisons", comparisonIndex, "conditionIds", conditionIndex],
+            message: "Workspace comparison references an unknown condition",
+          });
+        }
+      });
+    });
   });
 
 export const DesignRevisionSchema = z.object({

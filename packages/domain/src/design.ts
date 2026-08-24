@@ -40,6 +40,33 @@ export const FactorLevelSchema = z.object({
   groupId: EntityIdSchema.optional(),
 });
 
+export const FactorScientificRoleSchema = z.enum([
+  "intervention",
+  "genotype",
+  "time",
+  "state",
+  "rescue",
+  "control_reference",
+  "readout",
+  "other",
+]);
+
+export const FactorUnitRoleSchema = z.enum(["within_unit", "between_unit"]);
+
+export const FactorRelationshipSchema = z.object({
+  kind: z.enum(["independent", "repeated", "paired"]),
+  unitLevelId: EntityIdSchema.optional(),
+});
+
+export const FactorVisualRoleSchema = z.enum([
+  "x",
+  "series",
+  "facet",
+  "annotation",
+  "auxiliary_reference",
+  "none",
+]);
+
 /**
  * A scientific grouping of intervention levels, such as three independent
  * siRNA sequences targeting the same gene. Group membership never turns the
@@ -57,6 +84,10 @@ export const FactorDefinitionSchema = z
     id: EntityIdSchema,
     key: EntityIdSchema,
     label: z.string().min(1),
+    scientificRole: FactorScientificRoleSchema.optional(),
+    unitRole: FactorUnitRoleSchema.optional(),
+    relationship: FactorRelationshipSchema.optional(),
+    proposedVisualRole: FactorVisualRoleSchema.optional(),
     levelGroups: z.array(FactorLevelGroupSchema).optional(),
     levels: z.array(FactorLevelSchema).min(1),
   })
@@ -88,6 +119,8 @@ export const ConditionDefinitionSchema = z.object({
   id: EntityIdSchema,
   label: z.string().min(1),
   factorLevels: z.record(EntityIdSchema, EntityIdSchema),
+  role: z.enum(["primary", "auxiliary_reference"]).optional(),
+  sourceProvenance: z.string().min(1).optional(),
 });
 
 export const UnitRoleSchema = z.enum([
@@ -147,6 +180,13 @@ export const PrimaryContrastSchema = z.object({
   conditionIds: z.tuple([EntityIdSchema, EntityIdSchema]),
 });
 
+export const DesignComparisonSchema = z.object({
+  id: EntityIdSchema,
+  label: z.string().min(1),
+  role: z.enum(["primary", "auxiliary"]),
+  conditionIds: z.tuple([EntityIdSchema, EntityIdSchema]),
+});
+
 export const WizardDecisionSchema = z.object({
   questionId: EntityIdSchema,
   answer: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]),
@@ -160,6 +200,8 @@ export const ExperimentDesignSchema = z
     purpose: ExperimentPurposeSchema,
     outcomes: z.array(OutcomeDefinitionSchema).min(1),
     factors: z.array(FactorDefinitionSchema).min(1),
+    /** Ordered or event factors recorded per observation rather than encoded in condition cells. */
+    observationFactors: z.array(FactorDefinitionSchema).optional(),
     conditions: z.array(ConditionDefinitionSchema).min(1),
     unitLevels: z.array(UnitLevelDefinitionSchema).min(1),
     experimentalUnitLevelId: EntityIdSchema,
@@ -167,6 +209,7 @@ export const ExperimentDesignSchema = z
     plannedN: z.number().int().positive(),
     normalizationPlans: z.array(NormalizationPlanSchema).default([]),
     primaryContrast: PrimaryContrastSchema.nullable(),
+    comparisons: z.array(DesignComparisonSchema).optional(),
     wizardRuleVersion: z.string().min(1),
     wizardDecisions: z.array(WizardDecisionSchema),
     createdAt: IsoDateTimeSchema,
@@ -222,6 +265,17 @@ export const ExperimentDesignSchema = z
         });
       }
     });
+    design.comparisons?.forEach((comparison, comparisonIndex) => {
+      comparison.conditionIds.forEach((conditionId, conditionIndex) => {
+        if (!conditionIds.has(conditionId)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["comparisons", comparisonIndex, "conditionIds", conditionIndex],
+            message: "Design comparison references an unknown condition",
+          });
+        }
+      });
+    });
     if (design.conditions.length >= 2 && design.primaryContrast === null) {
       ctx.addIssue({
         code: "custom",
@@ -252,6 +306,23 @@ export const ExperimentDesignSchema = z
         message: "Blocked design references an unknown unit level",
       });
     }
+    [...design.factors, ...(design.observationFactors ?? [])].forEach((factor, factorIndex) => {
+      const relationshipUnitLevelId = factor.relationship?.unitLevelId;
+      if (relationshipUnitLevelId && !levelById.has(relationshipUnitLevelId)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["factors", factorIndex, "relationship", "unitLevelId"],
+          message: "Factor relationship references an unknown unit level",
+        });
+      }
+      if (factor.relationship?.kind === "independent" && factor.unitRole === "within_unit") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["factors", factorIndex, "relationship"],
+          message: "A within-unit factor cannot declare an independent relationship",
+        });
+      }
+    });
   });
 
 export type ExperimentDesign = z.infer<typeof ExperimentDesignSchema>;
