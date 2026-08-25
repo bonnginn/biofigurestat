@@ -32,4 +32,18 @@ describe("Graph Core v1 categorical stress layouts", () => {
     expect(layout.innerWidth).toBeLessThan(3_500);
     expect(layout.offsets.every(Number.isFinite)).toBe(true);
   });
+
+  it("allows series within one X group to use a deliberately dense gap", () => {
+    const layout = createCategoryLayout({
+      gapWeights: [0.4, 1.4, 0.4],
+      denseGaps: [true, false, true],
+      spacing: 1,
+      sidePadding: 72,
+      canvasPreset: "standard",
+      requiredSlotWidths: [120, 120, 120, 120],
+    });
+
+    expect(layout.offsets[1] - layout.offsets[0]).toBeCloseTo(35.2);
+    expect(layout.offsets[2] - layout.offsets[1]).toBeGreaterThan(100);
+  });
 });

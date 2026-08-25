@@ -635,6 +635,7 @@ describe("ExperimentGraphWorkbench", () => {
 
   it("executes only researcher-selected planned condition pairs with Holm correction", async () => {
     const { draft, cells } = simpleThreeGroupFixture();
+    const plannedTestName = `planned_holm:${draft.conditions[0].id}:${draft.conditions[2].id}`;
     const runner = vi.fn<AnalysisRunner>(async (request) => ({
       ...analysisResult,
       protocolVersion: request.protocolVersion,
@@ -643,7 +644,7 @@ describe("ExperimentGraphWorkbench", () => {
         analysisResult.tests[0],
         {
           ...analysisResult.tests[0],
-          name: `planned_holm:${draft.conditions[0].id}:${draft.conditions[2].id}`,
+          name: plannedTestName,
           pValue: 0.008,
           adjustedPValue: 0.016,
         },
@@ -697,6 +698,98 @@ describe("ExperimentGraphWorkbench", () => {
       .querySelector('[data-graph-layer="statistics-annotation"]');
     expect(plannedAnnotation).toHaveTextContent("p = 0.016");
     expect(plannedAnnotation).not.toHaveTextContent("全体 p");
+
+    selectInspectorTarget("annotation");
+    fireEvent.click(screen.getByRole("button", { name: "この比較を注釈へ追加" }));
+    fireEvent.change(
+      screen.getByRole("combobox", {
+        name: `${plannedTestName}の配置形式`,
+      }),
+      { target: { value: "symbol_only" } },
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: `${plannedTestName}の統計凡例` }), {
+      target: { value: "Adjusted p-value vs Control (Holm)" },
+    });
+    expect(
+      screen
+        .getByRole("img", { name: /実験単位ごとのグラフ/ })
+        .querySelector('[data-statistics-presentation="symbol-only"]'),
+    ).not.toBeNull();
+    expect(screen.getByText("Adjusted p-value vs Control (Holm)")).toBeVisible();
+  });
+
+  it("lets a factorial design switch from all cell pairs to selected planned pairs", async () => {
+    const { draft, cells } = factorialContinuousFixture();
+    const runner = vi.fn<AnalysisRunner>(async (request) => ({
+      ...analysisResult,
+      protocolVersion: request.protocolVersion,
+      requestId: request.requestId,
+    }));
+    render(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={cells}
+        analysisRunner={runner}
+        onClose={vi.fn()}
+      />,
+    );
+
+    selectInspectorTarget("statistics");
+    expect(screen.getByText("二因子の分散分析を推奨")).toBeVisible();
+    fireEvent.click(screen.getByRole("radio", { name: "事前に決めた条件ペアだけを比較" }));
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "Wild type / Vehicle vs Wild type / Stimulus" }),
+    );
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Gene-perturbed / Vehicle vs Gene-perturbed / Stimulus",
+      }),
+    );
+    acceptRecommendedMethod();
+    fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
+    fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+
+    await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
+    expect(runner.mock.calls[0][0]).toMatchObject({
+      protocolVersion: "0.2.0",
+      templateId: "D03",
+      method: "one_way_anova",
+      contrastIntent: "planned_comparisons",
+      plannedContrastConditionIds: [
+        [draft.conditions[0].id, draft.conditions[1].id],
+        [draft.conditions[2].id, draft.conditions[3].id],
+      ],
+      options: { multiplicityMethod: "holm_planned_comparisons" },
+    });
+  });
+
+  it("keeps displayed reference conditions separate from the statistical scope", async () => {
+    const fixture = simpleThreeGroupFixture();
+    const draft: ExperimentSetDraft = {
+      ...fixture.draft,
+      conditions: fixture.draft.conditions.map((condition, index) =>
+        index === 2 ? { ...condition, role: "auxiliary_reference" as const } : condition,
+      ),
+    };
+    const onStateChange = vi.fn();
+    render(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={fixture.cells}
+        onClose={vi.fn()}
+        onStateChange={onStateChange}
+        workspaceMode="statistics"
+      />,
+    );
+
+    await waitFor(() => expect(onStateChange).toHaveBeenCalled());
+    expect(onStateChange.mock.calls.at(-1)?.[0]).toMatchObject({
+      selectedConditionIds: draft.conditions.map(({ id }) => id),
+      analysisConditionIds: draft.conditions.slice(0, 2).map(({ id }) => id),
+    });
+
+    expect(screen.getByRole("checkbox", { name: "統計の条件：Treatment B" })).not.toBeChecked();
+    expect(screen.getByText(/図に表示する条件とは独立して選べます/)).toBeVisible();
   });
 
   it("names factorial effects and Holm-adjusted cell pairs distinctly in Graph annotations", async () => {
@@ -1042,6 +1135,35 @@ describe("ExperimentGraphWorkbench", () => {
     await expect(copyGraphToClipboard(svg)).resolves.toBe("svg");
     expect(write).toHaveBeenCalledTimes(1);
     expect(write.mock.calls[0]![0][0]?.data["image/svg+xml"]).toBeInstanceOf(Blob);
+  });
+
+  it("棒の幅を最大にすると同じX群内の系列を接して描く", () => {
+    const { draft, cells } = factorialContinuousFixture();
+    render(<ExperimentGraphWorkbench draft={draft} cells={cells} onClose={vi.fn()} />);
+
+    selectInspectorTarget("background");
+    fireEvent.change(screen.getByRole("combobox", { name: "グラフの基本形" }), {
+      target: { value: "bar" },
+    });
+    selectInspectorTarget("data");
+    fireEvent.change(screen.getByRole("combobox", { name: "X factor" }), {
+      target: { value: "factor:attribute.genotype" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "系列 factor" }), {
+      target: { value: "factor:attribute.treatment" },
+    });
+    selectInspectorTarget("x-axis");
+    fireEvent.change(screen.getByRole("slider", { name: "棒の幅" }), {
+      target: { value: "1" },
+    });
+
+    const svg = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
+    const bars = [...svg.querySelectorAll<SVGRectElement>('[data-graph-layer="bar"]')].sort(
+      (first, second) => Number(first.getAttribute("x")) - Number(second.getAttribute("x")),
+    );
+    const firstRight = Number(bars[0]!.getAttribute("x")) + Number(bars[0]!.getAttribute("width"));
+    const secondLeft = Number(bars[1]!.getAttribute("x"));
+    expect(firstRight).toBeCloseTo(secondLeft, 5);
   });
 
   it("Barは階層条件と複数時点でも全24群を省略せず描く", () => {

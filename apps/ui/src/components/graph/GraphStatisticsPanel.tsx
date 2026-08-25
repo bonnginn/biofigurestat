@@ -351,7 +351,8 @@ export function GraphStatisticsPanel({
 
       {assessment.state === "ready" ? (
         <>
-          {assessment.request?.protocolVersion === "0.2.0" ? (
+          {assessment.request?.protocolVersion === "0.2.0" ||
+          assessment.request?.protocolVersion === "0.4.0" ? (
             <fieldset className="experiment-graph-method-choices">
               <legend>何を比較しますか</legend>
               <label>
@@ -369,7 +370,10 @@ export function GraphStatisticsPanel({
                   type="radio"
                   name="contrast-intent"
                   value="control_vs_many"
-                  disabled={!assessment.request.controlConditionId}
+                  disabled={
+                    assessment.request.protocolVersion !== "0.2.0" ||
+                    !assessment.request.controlConditionId
+                  }
                   checked={(contrastIntent ?? assessment.contrastIntent) === "control_vs_many"}
                   onChange={() => onContrastIntentChange?.("control_vs_many")}
                 />
@@ -397,7 +401,8 @@ export function GraphStatisticsPanel({
               </label>
             </fieldset>
           ) : null}
-          {assessment.request?.protocolVersion === "0.2.0" &&
+          {(assessment.request?.protocolVersion === "0.2.0" ||
+            assessment.request?.protocolVersion === "0.4.0") &&
           effectiveContrastIntent === "planned_comparisons" ? (
             <fieldset className="experiment-graph-method-choices">
               <legend>事前に決めた比較を選択</legend>

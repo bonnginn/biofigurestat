@@ -429,6 +429,11 @@
   font-weight: 650;
 }
 
+.experiment-graph-statistics-legend {
+  fill: #111111;
+  font-size: 13px;
+}
+
 .experiment-graph-svg-legend {
   cursor: pointer;
 }

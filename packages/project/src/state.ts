@@ -199,6 +199,7 @@ export const ExperimentWorkspaceStateSchema = z
         selectedReadoutId: EntityIdSchema,
         sourceMode: z.enum(["raw_readout", "derived_metric"]).optional(),
         selectedConditionIds: z.array(EntityIdSchema),
+        analysisConditionIds: z.array(EntityIdSchema).optional(),
         selectedTimePointIds: z.array(EntityIdSchema),
         analysisTimePointId: EntityIdSchema.nullable().optional(),
         analysisMetric: z
@@ -379,6 +380,8 @@ export const ExperimentWorkspaceStateSchema = z
               testIndex: z.number().int().min(0),
               mode: z.enum(["exact_p", "symbol"]),
               showNonSignificant: z.boolean().default(true),
+              presentation: z.enum(["bracket", "symbol_only"]).optional(),
+              legendLabel: z.string().min(1).optional(),
               endpoints: z
                 .tuple([
                   z.object({ conditionId: EntityIdSchema, seriesKey: z.string().optional() }),
@@ -1029,6 +1032,21 @@ export const ProjectStateSchema = z
                 conditionIndex,
               ],
               message: "Workspace graph condition must exist in the workspace design",
+            });
+          }
+        });
+        graph.analysisConditionIds?.forEach((conditionId, conditionIndex) => {
+          if (!workspaceConditionIds.has(conditionId)) {
+            ctx.addIssue({
+              code: "custom",
+              path: [
+                "experimentWorkspace",
+                "graphs",
+                index,
+                "analysisConditionIds",
+                conditionIndex,
+              ],
+              message: "Workspace graph analysis condition must exist in the workspace design",
             });
           }
         });

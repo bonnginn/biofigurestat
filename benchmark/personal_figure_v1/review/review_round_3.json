@@ -1,6 +1,49 @@
 {
   "schemaVersion": "1.0.0",
   "round": 3,
-  "updatedAt": null,
-  "reviews": {}
+  "updatedAt": "2026-08-24T23:39:33.132Z",
+  "reviews": {
+    "PFR069": {
+      "readability": "ok",
+      "preference": "like",
+      "flags": [],
+      "comment": "",
+      "reviewedAt": "2026-08-24T23:33:55.814Z"
+    },
+    "PFR049": {
+      "readability": "insufficient",
+      "preference": "neutral",
+      "flags": ["labels", "structure"],
+      "comment": "箱ひげ図を想定。統計の線がグラフに干渉",
+      "reviewedAt": "2026-08-24T23:34:44.428Z"
+    },
+    "PFR046": {
+      "readability": "insufficient",
+      "preference": "neutral",
+      "flags": ["structure"],
+      "comment": "グループわけまでできているが、系列の近接配置が不十分",
+      "reviewedAt": "2026-08-24T23:35:21.309Z"
+    },
+    "PFR025": {
+      "readability": "ok",
+      "preference": "neutral",
+      "flags": ["labels"],
+      "comment": "標準偏差が横になっている？",
+      "reviewedAt": "2026-08-24T23:35:50.544Z"
+    },
+    "PFR004": {
+      "readability": "ok",
+      "preference": "dislike",
+      "flags": ["labels", "structure"],
+      "comment": "系列のペアを近接（棒グラフを接させる）させる。統計結果が線だと複雑になるので、＊＊のみをのせて、レジェンドで説明する。（prismでもこんな感じなので、今のままでも許容できる）",
+      "reviewedAt": "2026-08-24T23:37:39.245Z"
+    },
+    "PFR002": {
+      "readability": "insufficient",
+      "preference": "dislike",
+      "flags": ["statistics", "structure"],
+      "comment": "si RNAのNCをfinalから消すわけにはいかない。統計とグラフとで、扱う範囲の自由度を変える必要があるかも。系列は、棒グラフ間の距離を０に（接するように）する。凡例は右側に縦に並べる。",
+      "reviewedAt": "2026-08-24T23:39:33.132Z"
+    }
+  }
 }

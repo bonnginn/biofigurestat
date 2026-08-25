@@ -2,6 +2,7 @@ export type GraphCanvasPreset = "compact" | "standard" | "wide";
 
 export type CategoryLayoutInput = Readonly<{
   gapWeights: readonly number[];
+  denseGaps?: readonly boolean[];
   spacing: number;
   sidePadding: number;
   canvasPreset: GraphCanvasPreset;
@@ -24,7 +25,8 @@ export function createCategoryLayout(input: CategoryLayoutInput) {
         ((input.requiredSlotWidths?.[index] ?? 0) + (input.requiredSlotWidths?.[index + 1] ?? 0)) /
           2 +
         20;
-      return [...current, current[current.length - 1] + Math.max(baseSlot * weight, labelSafeGap)];
+      const minimumGap = input.denseGaps?.[index] ? 0 : labelSafeGap;
+      return [...current, current[current.length - 1] + Math.max(baseSlot * weight, minimumGap)];
     },
     categoryCount > 0 ? [0] : [],
   );

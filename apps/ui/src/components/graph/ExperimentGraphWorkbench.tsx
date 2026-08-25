@@ -697,6 +697,9 @@ function ExperimentGraphSvg({
     if (firstDifference >= label.levels.length - 1) return 1;
     return appearance.betweenGroupSpacing + (label.levels.length - 1 - firstDifference) * 0.55;
   });
+  const denseGaps = series
+    .slice(1)
+    .map((item, index) => item.xGroupKey === series[index]?.xGroupKey);
   const requiredSlotWidths = axisLabels.map((label) => {
     const labelWidth = Math.max(
       estimatedRenderedTextWidth(label.timeLabel, CATEGORY_LAYOUT_FONT_SIZE),
@@ -716,6 +719,7 @@ function ExperimentGraphSvg({
   });
   const categoryLayout = createCategoryLayout({
     gapWeights,
+    denseGaps,
     spacing: axes.spacing,
     sidePadding: appearance.sidePadding,
     canvasPreset: appearance.canvasPreset,
@@ -749,7 +753,8 @@ function ExperimentGraphSvg({
       topLegendHeight +
       Math.min(
         5,
-        statisticsAnnotations.length || (statisticsAnnotation.mode === "hidden" ? 0 : 1),
+        statisticsAnnotations.filter(({ presentation }) => presentation !== "symbol_only").length ||
+          (statisticsAnnotation.mode === "hidden" ? 0 : 1),
       ) *
         24,
     right: CHART_MARGIN.right + (showLegend && appearance.legendPosition === "right" ? 190 : 0),
@@ -760,9 +765,20 @@ function ExperimentGraphSvg({
     axes.showCategoryLabels && !continuousLine ? Math.max(0, axisLabels[0]?.levels.length ?? 0) : 0;
   const extraLabelHeight = Math.max(0, hierarchyDepth - 1) * 27;
   const xAxisTitleHeight = renderedXAxisTitle ? 34 : 0;
+  const statisticsLegendLabels = [
+    ...new Set(
+      statisticsAnnotations.flatMap(({ presentation, legendLabel }) =>
+        presentation === "symbol_only" && legendLabel ? [legendLabel] : [],
+      ),
+    ),
+  ];
+  const statisticsLegendHeight = statisticsLegendLabels.length
+    ? statisticsLegendLabels.length * 20 + 12
+    : 0;
   const baseBottomMargin = continuousLine ? 58 : CHART_MARGIN.bottom;
-  const height = CHART_HEIGHT + extraLabelHeight + topLegendHeight + xAxisTitleHeight;
-  margin.bottom = baseBottomMargin + extraLabelHeight + xAxisTitleHeight;
+  const height =
+    CHART_HEIGHT + extraLabelHeight + topLegendHeight + xAxisTitleHeight + statisticsLegendHeight;
+  margin.bottom = baseBottomMargin + extraLabelHeight + xAxisTitleHeight + statisticsLegendHeight;
   const plotHeight = height - margin.top - margin.bottom;
   const baseColors = PALETTES[appearance.palette];
   const conditionIds = [...new Set(series.map((item) => item.conditionId))];
@@ -1026,17 +1042,19 @@ function ExperimentGraphSvg({
           ? item.timePointId === annotation.lineage.timePointId
           : true,
       );
-    const firstIndex = firstConditionId
-      ? candidates.find(({ item }) => item.conditionId === firstConditionId)?.index
+    const requestedFirstConditionId = annotation.endpoints?.[0].conditionId ?? firstConditionId;
+    const requestedSecondConditionId = annotation.endpoints?.[1].conditionId ?? secondConditionId;
+    const firstIndex = requestedFirstConditionId
+      ? candidates.find(({ item }) => item.conditionId === requestedFirstConditionId)?.index
       : undefined;
-    const secondIndex = secondConditionId
-      ? candidates.find(({ item }) => item.conditionId === secondConditionId)?.index
+    const secondIndex = requestedSecondConditionId
+      ? candidates.find(({ item }) => item.conditionId === requestedSecondConditionId)?.index
       : undefined;
     const pairwise =
       firstIndex !== undefined && secondIndex !== undefined
         ? ([Math.min(firstIndex, secondIndex), Math.max(firstIndex, secondIndex)] as const)
         : null;
-    return [{ annotation, test, pValue, pairwise, stackIndex }];
+    return [{ annotation, test, pValue, pairwise, symbolTargetIndex: firstIndex, stackIndex }];
   });
   const bracketLevelById = new Map(
     layoutComparisonBrackets(
@@ -1305,61 +1323,103 @@ function ExperimentGraphSvg({
           ) : null}
         </g>
       ))}
-      {resolvedAnnotations.map(({ annotation, test, pValue, pairwise, stackIndex }) => {
-        const annotationLevel = bracketLevelById.get(annotation.id) ?? stackIndex;
-        return pairwise ? (
-          <g key={annotation.id} data-graph-layer="statistics-annotation">
-            <line
-              x1={xFor(pairwise[0])}
-              x2={xFor(pairwise[1])}
-              y1={margin.top - 10 - annotationLevel * 24}
-              y2={margin.top - 10 - annotationLevel * 24}
-              className="experiment-graph-stat-line"
-            />
-            <line
-              x1={xFor(pairwise[0])}
-              x2={xFor(pairwise[0])}
-              y1={margin.top - 10 - annotationLevel * 24}
-              y2={margin.top - 4 - annotationLevel * 24}
-              className="experiment-graph-stat-line"
-            />
-            <line
-              x1={xFor(pairwise[1])}
-              x2={xFor(pairwise[1])}
-              y1={margin.top - 10 - annotationLevel * 24}
-              y2={margin.top - 4 - annotationLevel * 24}
-              className="experiment-graph-stat-line"
-            />
+      {resolvedAnnotations.map(
+        ({ annotation, test, pValue, pairwise, symbolTargetIndex, stackIndex }) => {
+          const annotationLevel = bracketLevelById.get(annotation.id) ?? stackIndex;
+          if (annotation.presentation === "symbol_only") {
+            const targetIndex = symbolTargetIndex;
+            const target = targetIndex === undefined ? undefined : series[targetIndex];
+            const targetValues = target
+              ? shape === "proportion"
+                ? target.proportionPoints.map(({ value }) => value)
+                : [
+                    ...target.rawPoints.map(({ value }) => value),
+                    ...target.experimentPoints.map(({ value }) => value),
+                  ]
+              : [];
+            if (targetIndex === undefined || targetValues.length === 0) return null;
+            return (
+              <text
+                key={annotation.id}
+                x={xFor(targetIndex)}
+                y={Math.max(margin.top + 12, yFor(Math.max(...targetValues)) - 12)}
+                textAnchor="middle"
+                className="experiment-graph-stat-label"
+                data-graph-layer="statistics-annotation"
+                data-statistics-presentation="symbol-only"
+              >
+                {annotation.mode === "symbol"
+                  ? significanceSymbol(pValue)
+                  : `p = ${formatExactPValue(pValue)}`}
+              </text>
+            );
+          }
+          return pairwise ? (
+            <g key={annotation.id} data-graph-layer="statistics-annotation">
+              <line
+                x1={xFor(pairwise[0])}
+                x2={xFor(pairwise[1])}
+                y1={margin.top - 10 - annotationLevel * 24}
+                y2={margin.top - 10 - annotationLevel * 24}
+                className="experiment-graph-stat-line"
+              />
+              <line
+                x1={xFor(pairwise[0])}
+                x2={xFor(pairwise[0])}
+                y1={margin.top - 10 - annotationLevel * 24}
+                y2={margin.top - 4 - annotationLevel * 24}
+                className="experiment-graph-stat-line"
+              />
+              <line
+                x1={xFor(pairwise[1])}
+                x2={xFor(pairwise[1])}
+                y1={margin.top - 10 - annotationLevel * 24}
+                y2={margin.top - 4 - annotationLevel * 24}
+                className="experiment-graph-stat-line"
+              />
+              <text
+                x={(xFor(pairwise[0]) + xFor(pairwise[1])) / 2}
+                y={margin.top - 14 - annotationLevel * 24}
+                textAnchor="middle"
+                className="experiment-graph-stat-label"
+              >
+                {annotation.mode === "symbol"
+                  ? significanceSymbol(pValue)
+                  : `p = ${formatExactPValue(pValue)}`}
+              </text>
+            </g>
+          ) : (
             <text
-              x={(xFor(pairwise[0]) + xFor(pairwise[1])) / 2}
-              y={margin.top - 14 - annotationLevel * 24}
-              textAnchor="middle"
+              key={annotation.id}
+              x={width - margin.right}
+              y={margin.top - 10 - stackIndex * 22}
+              textAnchor="end"
               className="experiment-graph-stat-label"
+              data-graph-layer="statistics-annotation"
             >
-              {annotation.mode === "symbol"
-                ? significanceSymbol(pValue)
-                : `p = ${formatExactPValue(pValue)}`}
+              {`${test.name || annotationContext} · ${
+                annotation.mode === "symbol"
+                  ? significanceSymbol(pValue)
+                  : `${
+                      isPairwiseComparisonTest(test.name) ? "p" : "全体 p"
+                    } = ${formatExactPValue(pValue)}`
+              }`}
             </text>
-          </g>
-        ) : (
-          <text
-            key={annotation.id}
-            x={width - margin.right}
-            y={margin.top - 10 - stackIndex * 22}
-            textAnchor="end"
-            className="experiment-graph-stat-label"
-            data-graph-layer="statistics-annotation"
-          >
-            {`${test.name || annotationContext} · ${
-              annotation.mode === "symbol"
-                ? significanceSymbol(pValue)
-                : `${
-                    isPairwiseComparisonTest(test.name) ? "p" : "全体 p"
-                  } = ${formatExactPValue(pValue)}`
-            }`}
-          </text>
-        );
-      })}
+          );
+        },
+      )}
+      {statisticsLegendLabels.map((label, index) => (
+        <text
+          key={`statistics-legend-${label}`}
+          x={margin.left}
+          y={height - xAxisTitleHeight - statisticsLegendHeight + 20 + index * 20}
+          textAnchor="start"
+          className="experiment-graph-statistics-legend"
+          data-graph-layer="statistics-legend"
+        >
+          {label}
+        </text>
+      ))}
       {unitTrajectories.map((trajectory) => {
         const colorIndex = Math.max(0, conditionIds.indexOf(trajectory.conditionId));
         return (
@@ -1521,7 +1581,9 @@ function ExperimentGraphSvg({
         const boxValues =
           shape === "proportion"
             ? item.proportionPoints.map(({ value }) => value)
-            : item.experimentPoints.map(({ value }) => value);
+            : shape === "nested_continuous"
+              ? item.rawPoints.map(({ value }) => value)
+              : item.experimentPoints.map(({ value }) => value);
         const rawMinimum = quantile(boxValues, 0);
         const rawQ1 = quantile(boxValues, 0.25);
         const rawMedian = quantile(boxValues, 0.5);
@@ -1531,7 +1593,7 @@ function ExperimentGraphSvg({
         const sd = summary.sd;
         const meanY = mean === null ? null : yFor(mean);
         const error =
-          appearance.errorBar === "none" || sd === null
+          appearance.errorBar === "none" || sd === null || summary.n <= 1
             ? null
             : appearance.errorBar === "sem"
               ? sd / Math.sqrt(Math.max(summary.n, 1))
@@ -1543,8 +1605,10 @@ function ExperimentGraphSvg({
         const nextGap =
           seriesIndex < series.length - 1 ? xFor(seriesIndex + 1) - x : Number.POSITIVE_INFINITY;
         const localHalfWidth = Math.min(previousGap, nextGap, 52) / 2;
+        const barLocalHalfWidth = Math.min(previousGap, nextGap, 84) / 2;
         const jitterWidth = Math.min(appearance.jitter, Math.max(4, localHalfWidth * 0.58));
         const distributionHalfWidth = Math.min(22, Math.max(8, localHalfWidth * 0.78));
+        const barHalfWidth = Math.min(42, Math.max(8, barLocalHalfWidth * appearance.barWidth));
         const currentViolinPath = violinPath(violinValues, x, yFor, distributionHalfWidth);
         const barBaselineValue = axes.yScale === "log10" ? domainMin : Math.max(0, domainMin);
         const barBaselineY = yFor(barBaselineValue);
@@ -1574,9 +1638,9 @@ function ExperimentGraphSvg({
             ) : null}
             {graphType === "bar" && meanY !== null ? (
               <rect
-                x={x - distributionHalfWidth * appearance.barWidth}
+                x={x - barHalfWidth}
                 y={Math.min(meanY, barBaselineY)}
-                width={distributionHalfWidth * 2 * appearance.barWidth}
+                width={barHalfWidth * 2}
                 height={Math.max(1, Math.abs(barBaselineY - meanY))}
                 fill={color}
                 opacity={0.24}
@@ -2383,6 +2447,11 @@ export function ExperimentGraphWorkbench({
   const [selectedConditionIds, setSelectedConditionIds] = useState<string[]>(() =>
     initialState ? [...initialState.selectedConditionIds] : draft.conditions.map(({ id }) => id),
   );
+  const [analysisConditionIds, setAnalysisConditionIds] = useState<string[]>(() =>
+    initialState?.analysisConditionIds
+      ? [...initialState.analysisConditionIds]
+      : draft.conditions.filter(({ role }) => role !== "auxiliary_reference").map(({ id }) => id),
+  );
   const [selectedTimePointIds, setSelectedTimePointIds] = useState<string[]>(() =>
     initialState ? [...initialState.selectedTimePointIds] : draft.time.points.map(({ id }) => id),
   );
@@ -2525,6 +2594,7 @@ export function ExperimentGraphWorkbench({
       selectedReadoutId,
       sourceMode,
       selectedConditionIds,
+      analysisConditionIds,
       selectedTimePointIds,
       analysisTimePointId,
       analysisMetric: timeAnalysis,
@@ -2547,6 +2617,7 @@ export function ExperimentGraphWorkbench({
       grouping,
       initialState?.analysisRunId,
       layers,
+      analysisConditionIds,
       selectedConditionIds,
       selectedReadoutId,
       selectedTimePointIds,
@@ -2560,6 +2631,7 @@ export function ExperimentGraphWorkbench({
     selectedReadoutId,
     sourceMode,
     selectedConditionIds,
+    analysisConditionIds,
     selectedTimePointIds,
     graphType,
     grouping,
@@ -2575,6 +2647,7 @@ export function ExperimentGraphWorkbench({
     selectedReadoutId,
     sourceMode,
     selectedConditionIds,
+    analysisConditionIds,
     selectedTimePointIds,
     analysisTimePointId,
     analysisMetric: timeAnalysis,
@@ -2645,6 +2718,7 @@ export function ExperimentGraphWorkbench({
         readoutId: selectedReadoutId,
         sourceMode,
         selectedConditions: selectedConditionIds.join("|"),
+        analysisConditions: analysisConditionIds.join("|"),
         selectedTimes: selectedTimePointIds.join("|"),
         timeMetric: timeAnalysis.kind,
         selectedMethod: selectedStatisticalMethod ?? null,
@@ -2699,6 +2773,10 @@ export function ExperimentGraphWorkbench({
   const activeConditionIds = new Set(selectedConditionIds);
   const activeConditions = draft.conditions.filter((condition) =>
     activeConditionIds.has(condition.id),
+  );
+  const activeAnalysisConditionIds = new Set(analysisConditionIds);
+  const activeAnalysisConditions = draft.conditions.filter((condition) =>
+    activeAnalysisConditionIds.has(condition.id),
   );
   const activeTimePoints = draft.time.points.filter((point) =>
     selectedTimePointIds.includes(point.id),
@@ -3018,7 +3096,7 @@ export function ExperimentGraphWorkbench({
         draft,
         cells,
         readoutId: activeReadoutId,
-        conditionIds: selectedConditionIds,
+        conditionIds: analysisConditionIds,
         timePointId: analysisTimePointId ?? undefined,
         timeAnalysis,
         correlationMethod,
@@ -3038,7 +3116,7 @@ export function ExperimentGraphWorkbench({
       contrastIntent,
       correlationMethod,
       draft,
-      selectedConditionIds,
+      analysisConditionIds,
       selectedStatisticalMethod,
       plannedContrastConditionIds,
       axes.xSemantic,
@@ -3050,7 +3128,7 @@ export function ExperimentGraphWorkbench({
   const analysisContextKey = JSON.stringify({
     readoutId: activeReadoutId,
     sourceMode,
-    conditionIds: selectedConditionIds,
+    conditionIds: analysisConditionIds,
     displayedTimePointIds: selectedTimePointIds,
     analysisTimePointId,
     plannedContrastConditionIds,
@@ -3120,7 +3198,7 @@ export function ExperimentGraphWorkbench({
   const varyingStatisticalAttributes = draft.attributes.filter(
     (attribute) =>
       new Set(
-        activeConditions
+        activeAnalysisConditions
           .map((condition) => condition.attributes[attribute.id]?.trim())
           .filter(Boolean),
       ).size > 1,
@@ -3133,6 +3211,17 @@ export function ExperimentGraphWorkbench({
       event.target.checked
         ? [...current, conditionId]
         : current.filter((selectedId) => selectedId !== conditionId),
+    );
+  };
+  const handleAnalysisConditionChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const conditionId = event.target.value;
+    setAnalysisConditionIds((current) =>
+      event.target.checked
+        ? [...current, conditionId]
+        : current.filter((selectedId) => selectedId !== conditionId),
+    );
+    setPlannedContrastConditionIds((current) =>
+      current.filter(([firstId, secondId]) => firstId !== conditionId && secondId !== conditionId),
     );
     setAnalysis(null);
   };
@@ -3286,7 +3375,8 @@ export function ExperimentGraphWorkbench({
       const statisticsArtifact = analysis
         ? {
             selectedReadoutId,
-            selectedConditionIds,
+            selectedConditionIds: analysisConditionIds,
+            displayedConditionIds: selectedConditionIds,
             statisticalUnit: draft.conditionAssignment.unitLabel,
             recommendation:
               analysis.recommendation ??
@@ -3694,7 +3784,8 @@ export function ExperimentGraphWorkbench({
                   <option value="error-bar">誤差線</option>
                   <option value="connecting-line">接続線</option>
                   <option value="legend">凡例</option>
-                  {workspaceMode === "graph" && analysisResult?.status === "ok" ? (
+                  {(workspaceMode === "graph" || workspaceMode === "combined") &&
+                  analysisResult?.status === "ok" ? (
                     <option value="annotation">統計注釈</option>
                   ) : null}
                   {workspaceMode === "combined" ? (
@@ -3725,24 +3816,28 @@ export function ExperimentGraphWorkbench({
                 </select>
               </label>
               <fieldset className="experiment-graph-condition-fieldset">
-                <legend>条件</legend>
+                <legend>統計に含める条件</legend>
                 {draft.conditions.map((condition) => (
                   <label className="experiment-graph-checkbox" key={condition.id}>
                     <input
                       type="checkbox"
                       value={condition.id}
-                      checked={activeConditionIds.has(condition.id)}
+                      checked={activeAnalysisConditionIds.has(condition.id)}
                       disabled={draft.analysisIntent.kind === "correlation"}
                       aria-label={`統計の条件：${condition.label}`}
-                      onChange={handleConditionChange}
+                      onChange={handleAnalysisConditionChange}
                     />
                     <span>
                       {condition.label}
                       {condition.id === draft.controlConditionId ? "（対照群）" : ""}
+                      {condition.role === "auxiliary_reference" ? "（図のみのreference）" : ""}
                     </span>
                   </label>
                 ))}
               </fieldset>
+              <p className="experiment-graph-help">
+                図に表示する条件とは独立して選べます。referenceを図に残したまま、事前に決めた比較だけを解析できます。
+              </p>
               <dl className="experiment-statistics-design-summary">
                 <div>
                   <dt>統計上の単位</dt>
@@ -4877,6 +4972,7 @@ export function ExperimentGraphWorkbench({
                     mode:
                       statisticsAnnotation.mode === "hidden" ? "symbol" : statisticsAnnotation.mode,
                     showNonSignificant: true,
+                    presentation: "bracket",
                     ...(firstConditionId && secondConditionId
                       ? {
                           endpoints: [
@@ -4941,6 +5037,44 @@ export function ExperimentGraphWorkbench({
                           <option value="exact_p">p値</option>
                           <option value="symbol">記号</option>
                         </select>
+                        <select
+                          aria-label={`${test.name}の配置形式`}
+                          value={annotation.presentation ?? "bracket"}
+                          onChange={(event) =>
+                            setStatisticsAnnotations((current) =>
+                              current.map((item) =>
+                                item.id === annotation.id
+                                  ? {
+                                      ...item,
+                                      presentation: event.target.value as "bracket" | "symbol_only",
+                                    }
+                                  : item,
+                              ),
+                            )
+                          }
+                        >
+                          <option value="bracket">比較線</option>
+                          <option value="symbol_only">対象群の上に記号のみ</option>
+                        </select>
+                        {(annotation.presentation ?? "bracket") === "symbol_only" ? (
+                          <input
+                            aria-label={`${test.name}の統計凡例`}
+                            placeholder="例：**** adjusted p < 0.0001 vs control"
+                            value={annotation.legendLabel ?? ""}
+                            onChange={(event) =>
+                              setStatisticsAnnotations((current) =>
+                                current.map((item) =>
+                                  item.id === annotation.id
+                                    ? {
+                                        ...item,
+                                        legendLabel: event.target.value || undefined,
+                                      }
+                                    : item,
+                                ),
+                              )
+                            }
+                          />
+                        ) : null}
                         <label className="experiment-graph-checkbox">
                           <input
                             type="checkbox"
@@ -5348,6 +5482,24 @@ export function ExperimentGraphWorkbench({
                     />
                   </label>
                   <label className="experiment-graph-field">
+                    <span>棒の幅：{appearance.barWidth.toFixed(2)}</span>
+                    <input
+                      aria-label="棒の幅"
+                      type="range"
+                      min="0.25"
+                      max="1"
+                      step="0.05"
+                      value={appearance.barWidth}
+                      disabled={graphType !== "bar"}
+                      onChange={(event) =>
+                        setAppearance((current) => ({
+                          ...current,
+                          barWidth: Number(event.target.value),
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="experiment-graph-field">
                     <span>系列内：{appearance.withinGroupSpacing.toFixed(2)}</span>
                     <input
                       aria-label="系列内の間隔"
@@ -5677,7 +5829,10 @@ export function ExperimentGraphWorkbench({
                       setAnalysis(null);
                     }}
                     contrastIntent={contrastIntent}
-                    conditionOptions={activeConditions.map(({ id, label }) => ({ id, label }))}
+                    conditionOptions={activeAnalysisConditions.map(({ id, label }) => ({
+                      id,
+                      label,
+                    }))}
                     plannedContrastConditionIds={plannedContrastConditionIds}
                     onPlannedContrastConditionIdsChange={(pairs) => {
                       setPlannedContrastConditionIds([...pairs]);

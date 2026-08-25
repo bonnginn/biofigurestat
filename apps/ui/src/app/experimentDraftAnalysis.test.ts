@@ -301,7 +301,7 @@ describe("temporary experiment-first analysis adapter", () => {
       contrastIntent: "control_vs_many",
     });
     expect(assessment).toMatchObject({
-      recommendedMethod: "welch_anova",
+      recommendedMethod: "one_way_anova",
       method: "one_way_anova",
       contrastIntent: "control_vs_many",
       request: {
@@ -346,7 +346,7 @@ describe("temporary experiment-first analysis adapter", () => {
       plannedContrastConditionIds: plannedPairs,
     });
     expect(assessment).toMatchObject({
-      recommendedMethod: "welch_anova",
+      recommendedMethod: "one_way_anova",
       method: "one_way_anova",
       contrastIntent: "planned_comparisons",
       request: {

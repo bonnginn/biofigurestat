@@ -814,7 +814,7 @@ export function assessDraftGraphAnalysis(input: {
     };
   }
 
-  if (varyingAttributes.length === 2) {
+  if (varyingAttributes.length === 2 && input.contrastIntent !== "planned_comparisons") {
     if (input.draft.conditionAssignment.kind === "matched") {
       return {
         state: "unsupported",
@@ -986,11 +986,12 @@ export function assessDraftGraphAnalysis(input: {
     };
   }
 
-  const recommendedMethod: StatisticalMethod = "welch_anova";
   const controlAvailable = conditions.some(({ id }) => id === input.draft.controlConditionId);
   const requestedIntent = input.contrastIntent ?? "all_pairs";
   const contrastIntent: ContrastIntent =
     requestedIntent === "control_vs_many" && !controlAvailable ? "all_pairs" : requestedIntent;
+  const recommendedMethod: StatisticalMethod =
+    contrastIntent === "all_pairs" ? "welch_anova" : "one_way_anova";
   const activeConditionIds = new Set(conditions.map(({ id }) => id));
   const plannedContrastConditionIds = (input.plannedContrastConditionIds ?? [])
     .filter(
@@ -1052,8 +1053,22 @@ export function assessDraftGraphAnalysis(input: {
   });
   return {
     state: "ready",
-    title: "Welchの分散分析を推奨",
-    reason: `独立した${conditions.length}条件を比較します（${nText}）。全体比較後の条件間比較にはGames–Howell法を使い、多重比較を扱います。${input.draft.controlConditionId ? "明示した対照群との比較を結果内で識別できます。" : "対照群は未指定です。"}`,
+    title:
+      effectiveIntent === "planned_comparisons"
+        ? "事前指定した条件ペアの比較を推奨"
+        : effectiveIntent === "control_vs_many"
+          ? "対照群との比較を推奨"
+          : effectiveIntent === "omnibus_only"
+            ? "一元配置分散分析の全体比較を推奨"
+            : "Welchの分散分析を推奨",
+    reason:
+      effectiveIntent === "planned_comparisons"
+        ? `独立した${conditions.length}条件のうち、事前に選んだ${plannedContrastConditionIds.length}ペアだけを比較し、p値をHolm法で調整します（${nText}）。`
+        : effectiveIntent === "control_vs_many"
+          ? `明示した対照群と各処置をDunnett法で比較します（${nText}）。`
+          : effectiveIntent === "omnibus_only"
+            ? `独立した${conditions.length}条件について、条件間ペアを追加せず全体差だけを評価します（${nText}）。`
+            : `独立した${conditions.length}条件を比較します（${nText}）。全体比較後の条件間比較にはGames–Howell法を使い、多重比較を扱います。${input.draft.controlConditionId ? "明示した対照群との比較を結果内で識別できます。" : "対照群は未指定です。"}`,
     method,
     recommendedMethod,
     methodChoices: [
