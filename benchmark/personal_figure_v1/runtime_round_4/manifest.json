@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0_ROUND_4_REMEDIATION",
+  "sourceRuntime": "runtime_round_3",
+  "purpose": "Round 3 saved-review remediation validation",
+  "syntheticValues": "byte-equivalent numeric values after identity-only copy",
+  "seed": 20260825,
+  "goldBrief": "docs/alpha/PERSONAL_FIGURE_GOLD_BRIEFS_2026-08-25.md",
+  "round3Review": "benchmark/personal_figure_v1/review/review_round_3.json",
+  "caseIds": [
+    "PFR002",
+    "PFR004",
+    "PFR025",
+    "PFR046",
+    "PFR049",
+    "PFR069"
+  ]
+}
