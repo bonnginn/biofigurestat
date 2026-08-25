@@ -1045,8 +1045,47 @@ function prepareWorkspaceAnalyses(input: {
         ? { kind: "derived_dataset", id: derivedDatasetRevisionId, revision: "0.1.0" }
         : { kind: "raw_revision", id: input.records.rawRevision.id, revision: "0.1.0" },
       analysisResultId: requestId,
+      dataSets: graph.dataSets ?? {
+        displaySet: {
+          conditionIds: graph.selectedConditionIds,
+          timePointIds: graph.selectedTimePointIds,
+        },
+        analysisSet: {
+          conditionIds: graph.analysisConditionIds ?? graph.selectedConditionIds,
+          timePointIds: graph.analysisTimePointId ? [graph.analysisTimePointId] : [],
+        },
+        comparisonSet: [
+          ...(request.protocolVersion === "0.2.0"
+            ? (request.plannedContrastConditionIds ?? []).map((conditionIds, index) => ({
+                id: `planned.${index + 1}`,
+                conditionIds,
+              }))
+            : []),
+          ...(graph.statisticsAnnotations ?? []).flatMap((annotation) =>
+            annotation.endpoints
+              ? [
+                  {
+                    id: annotation.comparisonId ?? annotation.id,
+                    conditionIds: [
+                      annotation.endpoints[0].conditionId,
+                      annotation.endpoints[1].conditionId,
+                    ] as [string, string],
+                  },
+                ]
+              : [],
+          ),
+        ],
+        annotationSet: (graph.statisticsAnnotations ?? []).flatMap((annotation) =>
+          annotation.endpoints ? [{ comparisonId: annotation.comparisonId ?? annotation.id }] : [],
+        ),
+      },
       mappings: {
         x: variableConditionIds?.[0] ?? "conditionId",
+        xHierarchy:
+          graph.grouping?.x.source === "factor"
+            ? (graph.grouping.x.factorIds ??
+              (graph.grouping.x.factorId ? [graph.grouping.x.factorId] : []))
+            : [],
         y: "value",
         ...(request.templateId === "D09" ? {} : { color: "conditionId" }),
         ...(request.templateId === "D02" || request.templateId === "D09"
@@ -1066,6 +1105,11 @@ function prepareWorkspaceAnalyses(input: {
         opacity: 0.9,
         showRawPoints: true,
         showPairedLines: request.templateId === "D02",
+        barOutline: graph.appearance.barOutline ?? true,
+        barMeanMarker: graph.appearance.barMeanMarker ?? false,
+        boxWhiskerMode: graph.appearance.boxWhiskerMode ?? "tukey_1_5_iqr",
+        uncertaintyStyle: graph.appearance.uncertaintyStyle ?? "error_bars",
+        ribbonOpacity: graph.appearance.ribbonOpacity ?? 0.18,
       },
       axes: {
         yStartAtZero: readout?.shape === "proportion",
@@ -1080,6 +1124,7 @@ function prepareWorkspaceAnalyses(input: {
             ? (input.draft.conditions.find(({ id }) => id === variableConditionIds?.[1])?.label ??
               "Y")
             : (readout?.label ?? "Value"),
+        showMinorTicks: graph.axes.showMinorTicks ?? true,
       },
     });
     analyses.push({

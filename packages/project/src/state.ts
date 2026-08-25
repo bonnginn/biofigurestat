@@ -201,6 +201,25 @@ export const ExperimentWorkspaceStateSchema = z
         selectedConditionIds: z.array(EntityIdSchema),
         analysisConditionIds: z.array(EntityIdSchema).optional(),
         selectedTimePointIds: z.array(EntityIdSchema),
+        dataSets: z
+          .object({
+            displaySet: z.object({
+              conditionIds: z.array(EntityIdSchema),
+              timePointIds: z.array(EntityIdSchema),
+            }),
+            analysisSet: z.object({
+              conditionIds: z.array(EntityIdSchema),
+              timePointIds: z.array(EntityIdSchema),
+            }),
+            comparisonSet: z.array(
+              z.object({
+                id: z.string().min(1),
+                conditionIds: z.tuple([EntityIdSchema, EntityIdSchema]),
+              }),
+            ),
+            annotationSet: z.array(z.object({ comparisonId: z.string().min(1) })),
+          })
+          .optional(),
         analysisTimePointId: EntityIdSchema.nullable().optional(),
         analysisMetric: z
           .object({
@@ -238,6 +257,7 @@ export const ExperimentWorkspaceStateSchema = z
             x: z.object({
               source: z.enum(["condition", "factor"]),
               factorId: EntityIdSchema.optional(),
+              factorIds: z.array(EntityIdSchema).optional(),
             }),
             series: z.object({
               source: z.enum(["none", "factor", "time"]),
@@ -305,6 +325,11 @@ export const ExperimentWorkspaceStateSchema = z
           barWidth: z.number().min(0.25).max(1).default(0.72),
           withinGroupSpacing: z.number().min(0.4).max(1.4).default(0.72),
           betweenGroupSpacing: z.number().min(0.8).max(2.4).default(1.35),
+          barOutline: z.boolean().optional(),
+          barMeanMarker: z.boolean().optional(),
+          boxWhiskerMode: z.enum(["tukey_1_5_iqr", "min_max"]).optional(),
+          uncertaintyStyle: z.enum(["error_bars", "ribbon", "none"]).optional(),
+          ribbonOpacity: z.number().min(0.05).max(0.6).optional(),
           rawPointColor: z.string().default("#8a96a3"),
           summaryColor: z.string().default("#111111"),
           errorBarColor: z.string().default("#111111"),
@@ -327,6 +352,7 @@ export const ExperimentWorkspaceStateSchema = z
             xMax: z.number().finite().nullable().optional(),
             xTickMode: z.enum(["auto", "manual"]).optional(),
             xTickInterval: z.number().positive().nullable().optional(),
+            showMinorTicks: z.boolean().optional(),
             categoryLabelRotation: z.enum(["none", "minus_30", "minus_45", "minus_90"]).optional(),
             yTitle: z.string(),
             yRangeMode: z.enum(["auto", "manual"]),
@@ -423,6 +449,53 @@ export const ExperimentWorkspaceStateSchema = z
             code: "custom",
             path: ["comparisons", comparisonIndex, "conditionIds", conditionIndex],
             message: "Workspace comparison references an unknown condition",
+          });
+        }
+      });
+    });
+    workspace.graphs.forEach((graph, graphIndex) => {
+      if (!graph.dataSets) return;
+      for (const [setName, ids] of [
+        ["displaySet", graph.dataSets.displaySet.conditionIds],
+        ["analysisSet", graph.dataSets.analysisSet.conditionIds],
+      ] as const) {
+        ids.forEach((conditionId, conditionIndex) => {
+          if (!conditionIds.has(conditionId)) {
+            ctx.addIssue({
+              code: "custom",
+              path: ["graphs", graphIndex, "dataSets", setName, "conditionIds", conditionIndex],
+              message: "Graph data set references an unknown condition",
+            });
+          }
+        });
+      }
+      const analysisIds = new Set(graph.dataSets.analysisSet.conditionIds);
+      graph.dataSets.comparisonSet.forEach((comparison, comparisonIndex) => {
+        comparison.conditionIds.forEach((conditionId, conditionIndex) => {
+          if (!analysisIds.has(conditionId)) {
+            ctx.addIssue({
+              code: "custom",
+              path: [
+                "graphs",
+                graphIndex,
+                "dataSets",
+                "comparisonSet",
+                comparisonIndex,
+                "conditionIds",
+                conditionIndex,
+              ],
+              message: "Graph comparison set must be contained in the analysis set",
+            });
+          }
+        });
+      });
+      const comparisonIds = new Set(graph.dataSets.comparisonSet.map(({ id }) => id));
+      graph.dataSets.annotationSet.forEach(({ comparisonId }, annotationIndex) => {
+        if (!comparisonIds.has(comparisonId)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["graphs", graphIndex, "dataSets", "annotationSet", annotationIndex],
+            message: "Graph annotation set must reference the comparison set",
           });
         }
       });

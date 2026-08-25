@@ -1,5 +1,6 @@
 import type { ReadoutDraft, ReadoutShape } from "./experimentDraft";
 import type { WorkspaceGraphState } from "./experimentWorkspaceProject";
+import { graphDisplayLabel } from "../components/graph/graphSemantics";
 
 export function defaultLayersForGraphType(
   graphType: WorkspaceGraphState["graphType"],
@@ -41,5 +42,6 @@ export function defaultGraphYTitle(readout: ReadoutDraft | undefined): string {
   if (readout.shape === "nested_continuous" && readout.label === "細胞強度") {
     return readout.unit ? `Intensity (${readout.unit})` : "Intensity";
   }
-  return readout.unit ? `${readout.label} (${readout.unit})` : readout.label;
+  const label = graphDisplayLabel({ internalName: readout.label });
+  return readout.unit ? `${label} (${readout.unit})` : label;
 }

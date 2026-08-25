@@ -264,6 +264,11 @@
   stroke-width: 1.2;
 }
 
+.experiment-graph-minor-tick {
+  stroke: #000;
+  stroke-width: 0.9;
+}
+
 .experiment-graph-axis-label,
 .experiment-graph-axis-title,
 .experiment-graph-condition-label,
@@ -408,9 +413,14 @@
 }
 
 .experiment-graph-distribution-whisker,
+.experiment-graph-distribution-whisker-cap,
 .experiment-graph-distribution-median {
   stroke: #526b85;
   stroke-width: 1.2;
+}
+
+.experiment-graph-uncertainty-ribbon {
+  pointer-events: none;
 }
 
 .experiment-graph-distribution-median {

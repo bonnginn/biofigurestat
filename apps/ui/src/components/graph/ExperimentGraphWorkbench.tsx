@@ -70,6 +70,12 @@ import { PRODUCT_IDENTITY } from "../../app/productIdentity";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { createCategoryLayout, createNiceTicks } from "./graphLayout";
+import {
+  buildHierarchyGroups,
+  computeBoxWhiskerSummary,
+  createMinorTicks,
+  omitGenericCategoricalAxisTitle,
+} from "./graphSemantics";
 
 import "./graph-workbench.css";
 
@@ -330,6 +336,11 @@ const DEFAULT_APPEARANCE: GraphAppearance = {
   barWidth: 0.72,
   withinGroupSpacing: 0.72,
   betweenGroupSpacing: 1.35,
+  barOutline: true,
+  barMeanMarker: false,
+  boxWhiskerMode: "tukey_1_5_iqr",
+  uncertaintyStyle: "error_bars",
+  ribbonOpacity: 0.18,
   rawPointColor: "#8a96a3",
   summaryColor: "#111111",
   errorBarColor: "#111111",
@@ -496,16 +507,6 @@ export function describeActiveGraphLayers(
   return parts.join(" + ") || "No data layers selected";
 }
 
-function quantile(values: readonly number[], probability: number): number | null {
-  if (values.length === 0) return null;
-  const ordered = [...values].sort((first, second) => first - second);
-  const position = (ordered.length - 1) * probability;
-  const lower = Math.floor(position);
-  const upper = Math.ceil(position);
-  if (lower === upper) return ordered[lower];
-  return ordered[lower] + (ordered[upper] - ordered[lower]) * (position - lower);
-}
-
 function isProportionCell(cell: unknown): cell is ProportionCellDraft {
   return Boolean(cell && typeof cell === "object" && "kind" in cell && cell.kind === "proportion");
 }
@@ -554,6 +555,14 @@ function buildConditionAxisLabels(
     }),
     ...draft.attributes.filter(({ id }) => !hierarchyOrder.includes(id)),
   ].filter(({ id }) => id !== seriesFactorId);
+  const xFactorIds =
+    grouping.x.source === "factor"
+      ? grouping.x.factorIds?.length
+        ? grouping.x.factorIds
+        : grouping.x.factorId
+          ? [grouping.x.factorId]
+          : []
+      : [];
   return series.map((item) => {
     const condition = draft.conditions.find((candidate) => candidate.id === item.conditionId);
     const levels = orderedAttributes.map((attribute) => ({
@@ -565,14 +574,14 @@ function buildConditionAxisLabels(
       conditionId: item.conditionId,
       levels:
         grouping.x.source === "factor"
-          ? [
-              {
-                id: grouping.x.factorId ?? "factor",
-                label:
-                  draft.attributes.find(({ id }) => id === grouping.x.factorId)?.label ?? "条件",
-                value: item.xGroupLabel,
-              },
-            ]
+          ? xFactorIds.map((factorId) => {
+              const attribute = draft.attributes.find(({ id }) => id === factorId);
+              return {
+                id: factorId,
+                label: attribute?.label ?? "条件",
+                value: condition?.attributes[factorId]?.trim() || "—",
+              };
+            })
           : levels.length > 0
             ? levels
             : [{ id: "condition", label: "条件", value: condition?.label || item.conditionLabel }],
@@ -737,12 +746,9 @@ function ExperimentGraphSvg({
     showLegend && appearance.legendPosition === "top" ? Math.ceil(legendConditions.length / 3) : 0;
   const topLegendHeight = topLegendRows * Math.max(34, appearance.legendFontSize * 2);
   const xAxisTitle =
-    axes.xTitle.trim() ||
-    (axes.xSemantic === "time"
-      ? "Time"
-      : axes.xSemantic === "numeric_covariate"
-        ? "Covariate"
-        : "");
+    axes.xSemantic === "categorical"
+      ? omitGenericCategoricalAxisTitle(axes.xTitle)
+      : axes.xTitle.trim() || (axes.xSemantic === "time" ? "Time" : "Covariate");
   const renderedXAxisTitle = xAxisTitle
     ? `${xAxisTitle}${axes.xUnit.trim() ? ` (${axes.xUnit.trim()})` : ""}`
     : "";
@@ -906,26 +912,11 @@ function ExperimentGraphSvg({
           ),
         ].reverse()
     : [];
-  const hierarchyGroups = Array.from({ length: hierarchyDepth }, (_, levelIndex) =>
-    axisLabels.reduce<Array<{ key: string; label: string; start: number; end: number }>>(
-      (groups, label, index) => {
-        const level = label.levels[levelIndex];
-        if (!level) return groups;
-        const key = label.levels
-          .slice(0, levelIndex + 1)
-          .map(({ value }) => value)
-          .join("\u001f");
-        const previous = groups.at(-1);
-        if (previous?.key === key) {
-          previous.end = index;
-          return groups;
-        }
-        groups.push({ key, label: level.value, start: index, end: index });
-        return groups;
-      },
-      [],
-    ),
-  );
+  const continuousMinorTickValues =
+    continuousLine && axes.xScale !== "log10" && (axes.showMinorTicks ?? true)
+      ? createMinorTicks(continuousTickValues, continuousDomainMin, continuousDomainMax, 5)
+      : [];
+  const hierarchyGroups = buildHierarchyGroups(axisLabels).slice(0, hierarchyDepth);
   const categoryLabelRotationDegrees =
     axes.categoryLabelRotation === "minus_30"
       ? -30
@@ -1245,26 +1236,39 @@ function ExperimentGraphSvg({
               />
             ),
           )
-        : continuousTickValues.map((value: number) => (
-            <g key={`continuous-x-tick-${value}`}>
+        : [
+            ...continuousMinorTickValues.map((value) => (
               <line
+                key={`continuous-x-minor-tick-${value}`}
                 x1={xForContinuousValue(value)}
                 x2={xForContinuousValue(value)}
                 y1={height - margin.bottom}
-                y2={height - margin.bottom - 6}
-                className="experiment-graph-category-tick"
+                y2={height - margin.bottom - 3.5}
+                className="experiment-graph-minor-tick"
+                data-graph-layer="minor-tick"
               />
-              <text
-                x={xForContinuousValue(value)}
-                y={height - margin.bottom + 25}
-                textAnchor="middle"
-                className="experiment-graph-condition-attribute experiment-graph-time-label"
-                style={{ fontSize: appearance.tickFontSize, fill: "#000" }}
-              >
-                {formatNumber(value, continuousTickFractionDigits)}
-              </text>
-            </g>
-          ))}
+            )),
+            ...continuousTickValues.map((value: number) => (
+              <g key={`continuous-x-tick-${value}`}>
+                <line
+                  x1={xForContinuousValue(value)}
+                  x2={xForContinuousValue(value)}
+                  y1={height - margin.bottom}
+                  y2={height - margin.bottom - 6}
+                  className="experiment-graph-category-tick"
+                />
+                <text
+                  x={xForContinuousValue(value)}
+                  y={height - margin.bottom + 25}
+                  textAnchor="middle"
+                  className="experiment-graph-condition-attribute experiment-graph-time-label"
+                  style={{ fontSize: appearance.tickFontSize, fill: "#000" }}
+                >
+                  {formatNumber(value, continuousTickFractionDigits)}
+                </text>
+              </g>
+            )),
+          ]}
       <text
         x={17}
         y={margin.top + plotHeight / 2}
@@ -1441,6 +1445,50 @@ function ExperimentGraphSvg({
         );
       })}
       {(graphType === "line" || layers.connectingLine) &&
+        continuousLine &&
+        layers.errorBar &&
+        (appearance.uncertaintyStyle ?? "error_bars") === "ribbon" &&
+        visualSeriesKeys.map((visualSeriesKey) => {
+          const points = series
+            .filter(
+              (item) =>
+                item.visualSeriesKey === visualSeriesKey &&
+                item.xValue !== undefined &&
+                item.summary.mean !== null &&
+                item.summary.sd !== null,
+            )
+            .sort((first, second) => first.xValue! - second.xValue!);
+          if (points.length < 2) return null;
+          const interval = (item: GraphSeries) =>
+            appearance.errorBar === "sem"
+              ? item.summary.sd! / Math.sqrt(Math.max(item.summary.n, 1))
+              : item.summary.sd!;
+          const upper = points.map(
+            (item) =>
+              `${xForContinuousValue(item.xValue!)},${yFor(item.summary.mean! + interval(item))}`,
+          );
+          const lower = [...points]
+            .reverse()
+            .map(
+              (item) =>
+                `${xForContinuousValue(item.xValue!)},${yFor(item.summary.mean! - interval(item))}`,
+            );
+          const color =
+            colors[Math.max(0, visualSeriesKeys.indexOf(visualSeriesKey)) % colors.length];
+          return (
+            <path
+              key={`ribbon-${visualSeriesKey}`}
+              d={`M ${upper[0]} L ${[...upper.slice(1), ...lower].join(" L ")} Z`}
+              fill={color}
+              opacity={appearance.ribbonOpacity ?? 0.18}
+              stroke="none"
+              className="experiment-graph-uncertainty-ribbon"
+              data-graph-layer="uncertainty-ribbon"
+              data-uncertainty={appearance.errorBar}
+            />
+          );
+        })}
+      {(graphType === "line" || layers.connectingLine) &&
         visualSeriesKeys.map((visualSeriesKey) => {
           const points = series.flatMap((item, index) =>
             item.visualSeriesKey === visualSeriesKey && item.summary.mean !== null
@@ -1584,11 +1632,15 @@ function ExperimentGraphSvg({
             : shape === "nested_continuous"
               ? item.rawPoints.map(({ value }) => value)
               : item.experimentPoints.map(({ value }) => value);
-        const rawMinimum = quantile(boxValues, 0);
-        const rawQ1 = quantile(boxValues, 0.25);
-        const rawMedian = quantile(boxValues, 0.5);
-        const rawQ3 = quantile(boxValues, 0.75);
-        const rawMaximum = quantile(boxValues, 1);
+        const boxSummary = computeBoxWhiskerSummary(
+          boxValues,
+          appearance.boxWhiskerMode ?? "tukey_1_5_iqr",
+        );
+        const rawMinimum = boxSummary?.lowerWhisker ?? null;
+        const rawQ1 = boxSummary?.q1 ?? null;
+        const rawMedian = boxSummary?.median ?? null;
+        const rawQ3 = boxSummary?.q3 ?? null;
+        const rawMaximum = boxSummary?.upperWhisker ?? null;
         const mean = summary.mean;
         const sd = summary.sd;
         const meanY = mean === null ? null : yFor(mean);
@@ -1644,6 +1696,8 @@ function ExperimentGraphSvg({
                 height={Math.max(1, Math.abs(barBaselineY - meanY))}
                 fill={color}
                 opacity={0.24}
+                stroke={appearance.barOutline === false ? "none" : color}
+                strokeWidth={appearance.barOutline === false ? 0 : appearance.distributionLineWidth}
                 className="experiment-graph-bar"
                 data-graph-layer="bar"
                 data-inspector-target="experiment-summary"
@@ -1738,6 +1792,22 @@ function ExperimentGraphSvg({
                     className="experiment-graph-distribution-whisker"
                     style={{ strokeWidth: appearance.distributionLineWidth }}
                   />
+                  <line
+                    x1={x - 10}
+                    x2={x + 10}
+                    y1={yFor(rawMaximum)}
+                    y2={yFor(rawMaximum)}
+                    className="experiment-graph-distribution-whisker-cap"
+                    style={{ strokeWidth: appearance.distributionLineWidth }}
+                  />
+                  <line
+                    x1={x - 10}
+                    x2={x + 10}
+                    y1={yFor(rawMinimum)}
+                    y2={yFor(rawMinimum)}
+                    className="experiment-graph-distribution-whisker-cap"
+                    style={{ strokeWidth: appearance.distributionLineWidth }}
+                  />
                   <rect
                     x={x - 22}
                     y={yFor(rawQ3)}
@@ -1758,6 +1828,18 @@ function ExperimentGraphSvg({
                     className="experiment-graph-distribution-median"
                     style={{ strokeWidth: appearance.summaryLineWidth }}
                   />
+                  {boxSummary?.outliers.map((value, outlierIndex) => (
+                    <circle
+                      key={`box-outlier-${outlierIndex}-${value}`}
+                      cx={x}
+                      cy={yFor(value)}
+                      r={Math.max(2.2, appearance.pointSize * 0.42)}
+                      fill="none"
+                      stroke={appearance.distributionOutlineColor}
+                      className="experiment-graph-distribution-outlier"
+                      data-graph-layer="box-outlier"
+                    />
+                  ))}
                 </g>
               )}
             {shape === "nested_continuous" &&
@@ -1804,97 +1886,103 @@ function ExperimentGraphSvg({
                   onInspect={onInspect}
                 />
               ))}
-            {layers.overall && meanY !== null && (
-              <line
-                x1={x - 26}
-                x2={x + 26}
-                y1={meanY}
-                y2={meanY}
-                className="experiment-graph-mean-line"
-                style={{
-                  stroke: appearance.summaryColor,
-                  strokeWidth: appearance.summaryLineWidth,
-                }}
-                data-graph-layer={summaryLayer}
-                data-inspector-target="experiment-summary"
-                data-selected={activeInspectorTarget === "experiment-summary" || undefined}
-                onDoubleClick={(event) => {
-                  event.stopPropagation();
-                  onInspect("experiment-summary");
-                }}
-              />
-            )}
-            {layers.overall && layers.errorBar && lowerY !== null && upperY !== null && (
-              <>
+            {layers.overall &&
+              meanY !== null &&
+              (graphType !== "bar" || appearance.barMeanMarker === true) && (
                 <line
-                  x1={x}
-                  x2={x}
-                  y1={lowerY}
-                  y2={upperY}
-                  className="experiment-graph-error-line"
+                  x1={x - 26}
+                  x2={x + 26}
+                  y1={meanY}
+                  y2={meanY}
+                  className="experiment-graph-mean-line"
                   style={{
-                    stroke: appearance.errorBarColor,
-                    strokeWidth: appearance.errorBarLineWidth,
+                    stroke: appearance.summaryColor,
+                    strokeWidth: appearance.summaryLineWidth,
                   }}
                   data-graph-layer={summaryLayer}
-                  data-inspector-target="error-bar"
-                  data-selected={activeInspectorTarget === "error-bar" || undefined}
+                  data-inspector-target="experiment-summary"
+                  data-selected={activeInspectorTarget === "experiment-summary" || undefined}
                   onDoubleClick={(event) => {
                     event.stopPropagation();
-                    onInspect("error-bar");
+                    onInspect("experiment-summary");
                   }}
                 />
-                <line
-                  x1={x}
-                  x2={x}
-                  y1={lowerY}
-                  y2={upperY}
-                  className="experiment-graph-error-hit-target"
-                  data-inspector-target="error-bar"
-                  data-selected={activeInspectorTarget === "error-bar" || undefined}
-                  onDoubleClick={(event) => {
-                    event.stopPropagation();
-                    onInspect("error-bar");
-                  }}
-                />
-                <line
-                  x1={x - 8}
-                  x2={x + 8}
-                  y1={lowerY}
-                  y2={lowerY}
-                  className="experiment-graph-error-cap"
-                  style={{
-                    stroke: appearance.errorBarColor,
-                    strokeWidth: appearance.errorBarLineWidth,
-                  }}
-                  data-graph-layer={summaryLayer}
-                  data-inspector-target="error-bar"
-                  data-selected={activeInspectorTarget === "error-bar" || undefined}
-                  onDoubleClick={(event) => {
-                    event.stopPropagation();
-                    onInspect("error-bar");
-                  }}
-                />
-                <line
-                  x1={x - 8}
-                  x2={x + 8}
-                  y1={upperY}
-                  y2={upperY}
-                  className="experiment-graph-error-cap"
-                  style={{
-                    stroke: appearance.errorBarColor,
-                    strokeWidth: appearance.errorBarLineWidth,
-                  }}
-                  data-graph-layer={summaryLayer}
-                  data-inspector-target="error-bar"
-                  data-selected={activeInspectorTarget === "error-bar" || undefined}
-                  onDoubleClick={(event) => {
-                    event.stopPropagation();
-                    onInspect("error-bar");
-                  }}
-                />
-              </>
-            )}
+              )}
+            {layers.overall &&
+              layers.errorBar &&
+              (appearance.uncertaintyStyle ?? "error_bars") === "error_bars" &&
+              lowerY !== null &&
+              upperY !== null && (
+                <>
+                  <line
+                    x1={x}
+                    x2={x}
+                    y1={lowerY}
+                    y2={upperY}
+                    className="experiment-graph-error-line"
+                    style={{
+                      stroke: appearance.errorBarColor,
+                      strokeWidth: appearance.errorBarLineWidth,
+                    }}
+                    data-graph-layer={summaryLayer}
+                    data-inspector-target="error-bar"
+                    data-selected={activeInspectorTarget === "error-bar" || undefined}
+                    onDoubleClick={(event) => {
+                      event.stopPropagation();
+                      onInspect("error-bar");
+                    }}
+                  />
+                  <line
+                    x1={x}
+                    x2={x}
+                    y1={lowerY}
+                    y2={upperY}
+                    className="experiment-graph-error-hit-target"
+                    data-inspector-target="error-bar"
+                    data-selected={activeInspectorTarget === "error-bar" || undefined}
+                    onDoubleClick={(event) => {
+                      event.stopPropagation();
+                      onInspect("error-bar");
+                    }}
+                  />
+                  <line
+                    x1={x - 8}
+                    x2={x + 8}
+                    y1={lowerY}
+                    y2={lowerY}
+                    className="experiment-graph-error-cap"
+                    style={{
+                      stroke: appearance.errorBarColor,
+                      strokeWidth: appearance.errorBarLineWidth,
+                    }}
+                    data-graph-layer={summaryLayer}
+                    data-inspector-target="error-bar"
+                    data-selected={activeInspectorTarget === "error-bar" || undefined}
+                    onDoubleClick={(event) => {
+                      event.stopPropagation();
+                      onInspect("error-bar");
+                    }}
+                  />
+                  <line
+                    x1={x - 8}
+                    x2={x + 8}
+                    y1={upperY}
+                    y2={upperY}
+                    className="experiment-graph-error-cap"
+                    style={{
+                      stroke: appearance.errorBarColor,
+                      strokeWidth: appearance.errorBarLineWidth,
+                    }}
+                    data-graph-layer={summaryLayer}
+                    data-inspector-target="error-bar"
+                    data-selected={activeInspectorTarget === "error-bar" || undefined}
+                    onDoubleClick={(event) => {
+                      event.stopPropagation();
+                      onInspect("error-bar");
+                    }}
+                  />
+                </>
+              )}
           </g>
         );
       })}
@@ -2452,15 +2540,29 @@ export function ExperimentGraphWorkbench({
     initialState?.selectedReadoutId ?? draft.readouts[0]?.id ?? "",
   );
   const [selectedConditionIds, setSelectedConditionIds] = useState<string[]>(() =>
-    initialState ? [...initialState.selectedConditionIds] : draft.conditions.map(({ id }) => id),
+    initialState
+      ? [
+          ...(initialState.dataSets?.displaySet.conditionIds.length
+            ? initialState.dataSets.displaySet.conditionIds
+            : initialState.selectedConditionIds),
+        ]
+      : draft.conditions.map(({ id }) => id),
   );
   const [analysisConditionIds, setAnalysisConditionIds] = useState<string[]>(() =>
-    initialState?.analysisConditionIds
-      ? [...initialState.analysisConditionIds]
-      : draft.conditions.filter(({ role }) => role !== "auxiliary_reference").map(({ id }) => id),
+    initialState?.dataSets?.analysisSet.conditionIds.length
+      ? [...initialState.dataSets.analysisSet.conditionIds]
+      : initialState?.analysisConditionIds
+        ? [...initialState.analysisConditionIds]
+        : draft.conditions.filter(({ role }) => role !== "auxiliary_reference").map(({ id }) => id),
   );
   const [selectedTimePointIds, setSelectedTimePointIds] = useState<string[]>(() =>
-    initialState ? [...initialState.selectedTimePointIds] : draft.time.points.map(({ id }) => id),
+    initialState
+      ? [
+          ...(initialState.dataSets?.displaySet.timePointIds.length
+            ? initialState.dataSets.displaySet.timePointIds
+            : initialState.selectedTimePointIds),
+        ]
+      : draft.time.points.map(({ id }) => id),
   );
   const [analysisTimePointId, setAnalysisTimePointId] = useState<string | null>(
     initialState?.analysisTimePointId ??
@@ -2504,13 +2606,18 @@ export function ExperimentGraphWorkbench({
   const [graphType, setGraphType] = useState<GraphType>(initialState?.graphType ?? "dot");
   const [grouping, setGrouping] = useState<GraphGrouping>(() => {
     if (initialState?.grouping) return initialState.grouping;
-    const xFactor = draft.attributes.find(({ proposedVisualRole }) => proposedVisualRole === "x");
+    const xFactors = draft.attributes.filter(
+      ({ proposedVisualRole }) => proposedVisualRole === "x",
+    );
+    const xFactor = xFactors[0];
     const seriesFactor = draft.attributes.find(
       ({ proposedVisualRole }) => proposedVisualRole === "series",
     );
     const timeAsSeries = draft.time.proposedVisualRole === "series";
     return {
-      x: xFactor ? { source: "factor", factorId: xFactor.id } : { source: "condition" },
+      x: xFactor
+        ? { source: "factor", factorId: xFactor.id, factorIds: xFactors.map(({ id }) => id) }
+        : { source: "condition" },
       series: seriesFactor
         ? { source: "factor", factorId: seriesFactor.id }
         : timeAsSeries
@@ -2534,6 +2641,7 @@ export function ExperimentGraphWorkbench({
       spacing: 1,
       yTickMode: "auto",
       yTickInterval: null,
+      showMinorTicks: true,
     },
   );
   const [analysis, setAnalysis] = useState<WorkspaceGraphAnalysis | null>(
@@ -2575,21 +2683,35 @@ export function ExperimentGraphWorkbench({
         unit: axes.xUnit,
       },
     });
+    const graphMetadata = [
+      graphType === "box"
+        ? `Box whiskers: ${(appearance.boxWhiskerMode ?? "tukey_1_5_iqr") === "min_max" ? "minimum–maximum" : "Tukey 1.5×IQR"}.`
+        : null,
+      graphType === "line" && (appearance.uncertaintyStyle ?? "error_bars") === "ribbon"
+        ? `Time-course ribbon: ${appearance.errorBar.toUpperCase()}, opacity ${appearance.ribbonOpacity ?? 0.18}. The band is clipped to the measured X domain.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" ");
     if (timeAnalysis.kind === "selected_timepoint" || timeAnalysis.kind === "full_time_course")
-      return base;
+      return graphMetadata ? `${base}\n${graphMetadata}` : base;
     const window = `${timeAnalysis.windowStart ?? "最初"}～${timeAnalysis.windowEnd ?? "最後"} ${draft.time.unit}`;
     const baseline =
       timeAnalysis.kind === "change_from_baseline" || timeAnalysis.kind === "f_over_f0"
         ? `。baseline=${timeAnalysis.baselineTime ?? "最初の時点"} ${draft.time.unit}`
         : "";
-    return `${base}\n時系列の派生値：${timeMetricLabel(timeAnalysis)}。解析window=${window}${baseline}。raw時系列と変換設定はプロジェクトに保持。`;
+    return `${base}\n時系列の派生値：${timeMetricLabel(timeAnalysis)}。解析window=${window}${baseline}。raw時系列と変換設定はプロジェクトに保持。${graphMetadata ? ` ${graphMetadata}` : ""}`;
   }, [
     analysis,
+    appearance.boxWhiskerMode,
     appearance.errorBar,
+    appearance.ribbonOpacity,
+    appearance.uncertaintyStyle,
     axes.xSemantic,
     axes.xTitle,
     axes.xUnit,
     draft,
+    graphType,
     layers.errorBar,
     selectedReadoutId,
     timeAnalysis,
@@ -2603,6 +2725,42 @@ export function ExperimentGraphWorkbench({
       selectedConditionIds,
       analysisConditionIds,
       selectedTimePointIds,
+      dataSets: {
+        displaySet: {
+          conditionIds: selectedConditionIds,
+          timePointIds: selectedTimePointIds,
+        },
+        analysisSet: {
+          conditionIds: analysisConditionIds,
+          timePointIds: analysisTimePointId ? [analysisTimePointId] : selectedTimePointIds,
+        },
+        comparisonSet: [
+          ...new Map(
+            [
+              ...plannedContrastConditionIds.map((conditionIds, index) => ({
+                id: `planned.${index + 1}`,
+                conditionIds: [conditionIds[0], conditionIds[1]] as [string, string],
+              })),
+              ...statisticsAnnotations.flatMap((annotation) =>
+                annotation.endpoints
+                  ? [
+                      {
+                        id: annotation.comparisonId ?? annotation.id,
+                        conditionIds: [
+                          annotation.endpoints[0].conditionId,
+                          annotation.endpoints[1].conditionId,
+                        ] as [string, string],
+                      },
+                    ]
+                  : [],
+              ),
+            ].map((comparison) => [comparison.id, comparison]),
+          ).values(),
+        ],
+        annotationSet: statisticsAnnotations.flatMap((annotation) =>
+          annotation.endpoints ? [{ comparisonId: annotation.comparisonId ?? annotation.id }] : [],
+        ),
+      },
       analysisTimePointId,
       analysisMetric: timeAnalysis,
       graphType,
@@ -2628,6 +2786,7 @@ export function ExperimentGraphWorkbench({
       selectedConditionIds,
       selectedReadoutId,
       selectedTimePointIds,
+      plannedContrastConditionIds,
       sourceMode,
       statisticsAnnotation,
       statisticsAnnotations,
@@ -2807,10 +2966,19 @@ export function ExperimentGraphWorkbench({
         : [undefined];
     const built = activeConditions.flatMap((condition) =>
       timePoints.map((timePoint) => {
-        const xFactorId = grouping.x.source === "factor" ? grouping.x.factorId : undefined;
-        const xLevel = xFactorId ? condition.attributes[xFactorId] : undefined;
-        const xGroupKey = xFactorId ? `${xFactorId}:${xLevel ?? "unknown"}` : condition.id;
-        const xGroupLabel = xFactorId ? (xLevel ?? "—") : condition.label;
+        const xFactorIds =
+          grouping.x.source === "factor"
+            ? grouping.x.factorIds?.length
+              ? grouping.x.factorIds
+              : grouping.x.factorId
+                ? [grouping.x.factorId]
+                : []
+            : [];
+        const xLevels = xFactorIds.map((factorId) => condition.attributes[factorId] ?? "unknown");
+        const xGroupKey = xFactorIds.length
+          ? xFactorIds.map((factorId, index) => `${factorId}:${xLevels[index]}`).join("|")
+          : condition.id;
+        const xGroupLabel = xLevels.length ? xLevels.join(" / ") : condition.label;
         const seriesFactorId =
           grouping.series.source === "factor" ? grouping.series.factorId : undefined;
         const seriesFactor = draft.attributes.find(({ id }) => id === seriesFactorId);
@@ -3913,7 +4081,11 @@ export function ExperimentGraphWorkbench({
                         setGrouping((current) => ({
                           ...current,
                           x: value.startsWith("factor:")
-                            ? { source: "factor", factorId: value.slice(7) }
+                            ? {
+                                source: "factor",
+                                factorId: value.slice(7),
+                                factorIds: [value.slice(7)],
+                              }
                             : { source: "condition" },
                         }));
                       }}
@@ -3926,6 +4098,49 @@ export function ExperimentGraphWorkbench({
                       ))}
                     </select>
                   </label>
+                  {grouping.x.source === "factor" && draft.attributes.length > 1 ? (
+                    <label className="experiment-graph-field">
+                      <span>X階層（複数選択可）</span>
+                      <select
+                        multiple
+                        aria-label="X hierarchy factors"
+                        value={
+                          grouping.x.factorIds?.length
+                            ? grouping.x.factorIds
+                            : grouping.x.factorId
+                              ? [grouping.x.factorId]
+                              : []
+                        }
+                        onChange={(event) => {
+                          const factorIds = [...event.target.selectedOptions].map(
+                            ({ value }) => value,
+                          );
+                          setGrouping((current) => ({
+                            ...current,
+                            x: {
+                              source: "factor",
+                              factorId: factorIds[0],
+                              factorIds,
+                            },
+                          }));
+                        }}
+                      >
+                        {draft.attributes
+                          .filter(
+                            ({ id }) =>
+                              id !==
+                              (grouping.series.source === "factor"
+                                ? grouping.series.factorId
+                                : undefined),
+                          )
+                          .map((factor) => (
+                            <option key={factor.id} value={factor.id}>
+                              {factor.label || factor.id}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                  ) : null}
                   <label className="experiment-graph-field">
                     <span>系列</span>
                     <select
@@ -4687,6 +4902,22 @@ export function ExperimentGraphWorkbench({
                 </label>
               ) : null}
               <label className="experiment-graph-field">
+                <span>ひげの定義</span>
+                <select
+                  aria-label="箱ひげの定義"
+                  value={appearance.boxWhiskerMode ?? "tukey_1_5_iqr"}
+                  onChange={(event) =>
+                    setAppearance((current) => ({
+                      ...current,
+                      boxWhiskerMode: event.target.value as "tukey_1_5_iqr" | "min_max",
+                    }))
+                  }
+                >
+                  <option value="tukey_1_5_iqr">Tukey 1.5×IQR</option>
+                  <option value="min_max">最小–最大</option>
+                </select>
+              </label>
+              <label className="experiment-graph-field">
                 <span>輪郭線：{appearance.distributionLineWidth.toFixed(1)}px</span>
                 <input
                   type="range"
@@ -4794,6 +5025,42 @@ export function ExperimentGraphWorkbench({
                   <option value="none">なし</option>
                 </select>
               </label>
+              <label className="experiment-graph-field">
+                <span>不確実性の表示</span>
+                <select
+                  aria-label="不確実性の表示形式"
+                  value={appearance.uncertaintyStyle ?? "error_bars"}
+                  onChange={(event) =>
+                    setAppearance((current) => ({
+                      ...current,
+                      uncertaintyStyle: event.target.value as "error_bars" | "ribbon" | "none",
+                    }))
+                  }
+                >
+                  <option value="error_bars">誤差線</option>
+                  <option value="ribbon">リボン</option>
+                  <option value="none">なし</option>
+                </select>
+              </label>
+              {(appearance.uncertaintyStyle ?? "error_bars") === "ribbon" ? (
+                <label className="experiment-graph-field">
+                  <span>リボン透明度：{(appearance.ribbonOpacity ?? 0.18).toFixed(2)}</span>
+                  <input
+                    type="range"
+                    min="0.05"
+                    max="0.6"
+                    step="0.01"
+                    aria-label="リボン透明度"
+                    value={appearance.ribbonOpacity ?? 0.18}
+                    onChange={(event) =>
+                      setAppearance((current) => ({
+                        ...current,
+                        ribbonOpacity: Number(event.target.value),
+                      }))
+                    }
+                  />
+                </label>
+              ) : null}
               <label className="experiment-graph-field">
                 <span>線幅：{appearance.errorBarLineWidth.toFixed(1)}px</span>
                 <input
@@ -5420,6 +5687,20 @@ export function ExperimentGraphWorkbench({
                               />
                             </label>
                           ) : null}
+                          <label className="experiment-graph-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={axes.showMinorTicks ?? true}
+                              aria-label="補助目盛を表示"
+                              onChange={(event) =>
+                                setAxes((current) => ({
+                                  ...current,
+                                  showMinorTicks: event.target.checked,
+                                }))
+                              }
+                            />
+                            <span>補助目盛を表示（グリッド線なし）</span>
+                          </label>
                         </>
                       ) : null}
                     </>
@@ -5470,6 +5751,36 @@ export function ExperimentGraphWorkbench({
                       <option value="minus_45">−45°</option>
                       <option value="minus_90">−90°</option>
                     </select>
+                  </label>
+                  <label className="experiment-graph-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={appearance.barOutline ?? true}
+                      disabled={graphType !== "bar"}
+                      aria-label="棒の輪郭線を表示"
+                      onChange={(event) =>
+                        setAppearance((current) => ({
+                          ...current,
+                          barOutline: event.target.checked,
+                        }))
+                      }
+                    />
+                    <span>棒の輪郭線を表示</span>
+                  </label>
+                  <label className="experiment-graph-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={appearance.barMeanMarker ?? false}
+                      disabled={graphType !== "bar"}
+                      aria-label="棒に平均マーカーを重ねる"
+                      onChange={(event) =>
+                        setAppearance((current) => ({
+                          ...current,
+                          barMeanMarker: event.target.checked,
+                        }))
+                      }
+                    />
+                    <span>棒に平均マーカーを重ねる</span>
                   </label>
                   <label className="experiment-graph-field">
                     <span>カテゴリ間隔：{axes.spacing.toFixed(1)}</span>

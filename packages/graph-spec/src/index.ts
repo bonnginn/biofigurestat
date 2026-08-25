@@ -15,6 +15,33 @@ export const GraphTypeSchema = z.enum([
   "ecdf",
 ]);
 
+export const GraphDataSetSemanticsSchema = z
+  .object({
+    displaySet: z.object({
+      conditionIds: z.array(EntityIdSchema).default([]),
+      timePointIds: z.array(EntityIdSchema).default([]),
+    }),
+    analysisSet: z.object({
+      conditionIds: z.array(EntityIdSchema).default([]),
+      timePointIds: z.array(EntityIdSchema).default([]),
+    }),
+    comparisonSet: z
+      .array(
+        z.object({
+          id: z.string().min(1),
+          conditionIds: z.tuple([EntityIdSchema, EntityIdSchema]),
+        }),
+      )
+      .default([]),
+    annotationSet: z.array(z.object({ comparisonId: z.string().min(1) })).default([]),
+  })
+  .default({
+    displaySet: { conditionIds: [], timePointIds: [] },
+    analysisSet: { conditionIds: [], timePointIds: [] },
+    comparisonSet: [],
+    annotationSet: [],
+  });
+
 export const GraphSpecSchema = z
   .object({
     id: EntityIdSchema,
@@ -26,8 +53,11 @@ export const GraphSpecSchema = z
       revision: z.string().min(1),
     }),
     analysisResultId: EntityIdSchema.nullable(),
+    /** Independent display, analysis, planned-comparison, and visible-annotation ranges. */
+    dataSets: GraphDataSetSemanticsSchema,
     mappings: z.object({
       x: z.string().min(1),
+      xHierarchy: z.array(z.string().min(1)).default([]),
       y: z.string().min(1),
       /** First-class visual series mapping. `color` remains a backward-compatible channel. */
       series: z.string().min(1).optional(),
@@ -53,6 +83,11 @@ export const GraphSpecSchema = z
       barWidth: z.number().min(0.25).max(1).default(0.72),
       withinGroupSpacing: z.number().min(0.4).max(1.4).default(0.72),
       betweenGroupSpacing: z.number().min(0.8).max(2.4).default(1.35),
+      barOutline: z.boolean().default(true),
+      barMeanMarker: z.boolean().default(false),
+      boxWhiskerMode: z.enum(["tukey_1_5_iqr", "min_max"]).default("tukey_1_5_iqr"),
+      uncertaintyStyle: z.enum(["error_bars", "ribbon", "none"]).default("error_bars"),
+      ribbonOpacity: z.number().min(0.05).max(0.6).default(0.18),
       seriesStyles: z
         .record(
           z.string(),
@@ -75,6 +110,7 @@ export const GraphSpecSchema = z
       xScale: z.enum(["linear", "log10"]).optional(),
       xLabel: z.string(),
       yLabel: z.string(),
+      showMinorTicks: z.boolean().default(true),
     }),
     distribution: z
       .object({
@@ -183,6 +219,28 @@ export const GraphSpecSchema = z
         message: "Distribution graphs require explicit bin metadata",
       });
     }
+    const analysisIds = new Set(spec.dataSets.analysisSet.conditionIds);
+    spec.dataSets.comparisonSet.forEach((comparison, comparisonIndex) => {
+      comparison.conditionIds.forEach((conditionId, conditionIndex) => {
+        if (analysisIds.size > 0 && !analysisIds.has(conditionId)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["dataSets", "comparisonSet", comparisonIndex, "conditionIds", conditionIndex],
+            message: "Planned comparisons must reference the analysis set",
+          });
+        }
+      });
+    });
+    const comparisonIds = new Set(spec.dataSets.comparisonSet.map(({ id }) => id));
+    spec.dataSets.annotationSet.forEach(({ comparisonId }, annotationIndex) => {
+      if (!comparisonIds.has(comparisonId)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["dataSets", "annotationSet", annotationIndex, "comparisonId"],
+          message: "Visible annotations must reference a selected comparison",
+        });
+      }
+    });
   });
 
 export type GraphSpec = z.infer<typeof GraphSpecSchema>;
