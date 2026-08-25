@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Personal Figure Validation</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=3" />
   </head>
   <body>
     <header>
@@ -12,11 +12,26 @@
         <p class="eyebrow">LSA PERSONAL WORKFLOW VALIDATION</p>
         <h1>Published Figure Comparison</h1>
       </div>
-      <div class="progress">
-        <strong id="progressText">0 / 0</strong><span id="saveState">未保存</span>
+      <div class="header-actions">
+        <a id="finalsLink" class="view-link">Final graphs一覧</a>
+        <a id="comparisonLink" class="view-link">比較・レビュー</a>
+        <div class="progress">
+          <strong id="progressText">0 / 0</strong><span id="saveState">未保存</span>
+        </div>
       </div>
     </header>
-    <div class="layout">
+    <section id="finalsView" class="finals-view" hidden>
+      <div class="finals-head">
+        <div>
+          <p class="eyebrow">COMPLETED OUTPUTS</p>
+          <h2>Final graphs</h2>
+          <p>完成済みのグラフだけを一覧表示しています。</p>
+        </div>
+        <strong id="finalsCount"></strong>
+      </div>
+      <div id="finalGallery" class="final-gallery"></div>
+    </section>
+    <div id="comparisonView" class="layout">
       <aside>
         <nav id="caseList" aria-label="ケース一覧"></nav>
       </aside>
@@ -102,6 +117,6 @@
         </section>
       </main>
     </div>
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=3"></script>
   </body>
 </html>

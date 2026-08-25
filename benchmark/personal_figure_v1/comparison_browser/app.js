@@ -3,6 +3,7 @@ const preferenceOptions = ["Like", "Neutral", "Dislike"];
 let manifest;
 const requestedRound = new URLSearchParams(window.location.search).get("round");
 const round = requestedRound === "1" || requestedRound === "3" ? requestedRound : "2";
+const finalOnly = new URLSearchParams(window.location.search).get("view") === "finals";
 let reviewData = { schemaVersion: "1.0.0", updatedAt: null, reviews: {} };
 let index = 0;
 
@@ -108,10 +109,54 @@ function exportJson() {
   URL.revokeObjectURL(a.href);
 }
 
+function renderFinalGallery() {
+  const completedCases = manifest.cases.filter((item) => item.outcome === "completed");
+  $("finalsCount").textContent = `${completedCases.length} graphs`;
+  $("finalGallery").replaceChildren(
+    ...completedCases.map((item) => {
+      const article = document.createElement("article");
+      article.className = "final-card";
+      const heading = document.createElement("div");
+      heading.className = "final-card-head";
+      const meta = document.createElement("p");
+      meta.className = "eyebrow";
+      meta.textContent = `${item.caseId} · ${item.paperCode} · ${item.panel}`;
+      const title = document.createElement("h3");
+      title.textContent = item.paperTitle;
+      heading.append(meta, title);
+      const link = document.createElement("a");
+      link.className = "final-image-frame";
+      link.href = join(`../${item.runRoot}`, "final_graph.png");
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      link.title = `${item.caseId}の完成グラフを原寸で開く`;
+      const image = document.createElement("img");
+      image.src = link.href;
+      image.alt = `${item.caseId} ${item.panel} final graph`;
+      link.append(image);
+      article.append(heading, link);
+      return article;
+    }),
+  );
+}
+
 async function init() {
   const manifestPath =
     round === "1" ? "../comparison_manifest.json" : `../comparison_manifest_round_${round}.json`;
   manifest = await fetch(manifestPath).then((r) => r.json());
+  const baseQuery = `?round=${round}&ui=finals2`;
+  $("finalsLink").href = `${baseQuery}&view=finals`;
+  $("comparisonLink").href = baseQuery;
+  $("finalsLink").classList.toggle("active", finalOnly);
+  $("comparisonLink").classList.toggle("active", !finalOnly);
+  $("finalsView").hidden = !finalOnly;
+  $("comparisonView").hidden = finalOnly;
+  $("progressText").hidden = finalOnly;
+  $("saveState").hidden = finalOnly;
+  if (finalOnly) {
+    renderFinalGallery();
+    return;
+  }
   try {
     reviewData = await fetch(`/api/personal-review?round=${round}`).then((r) => r.json());
   } catch {}
