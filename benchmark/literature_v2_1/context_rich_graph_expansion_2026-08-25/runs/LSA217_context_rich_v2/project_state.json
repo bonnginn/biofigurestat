@@ -1,0 +1,533 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA217_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA217.o1",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.1",
+        "followUpTime": 30.492,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o2",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.2",
+        "followUpTime": 13.346,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o3",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.3",
+        "followUpTime": 18.126,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o4",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.4",
+        "followUpTime": 16.712,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o5",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.5",
+        "followUpTime": 17.833,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o6",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.6",
+        "followUpTime": 23.834,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o7",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.7",
+        "followUpTime": 19.376,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o8",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.8",
+        "followUpTime": 31.807,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o9",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.9",
+        "followUpTime": 2,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o10",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.10",
+        "followUpTime": 16.458,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o11",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.11",
+        "followUpTime": 20.971,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o12",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.12",
+        "followUpTime": 26.903,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o13",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.13",
+        "followUpTime": 12.597,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o14",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.14",
+        "followUpTime": 13.621,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o15",
+        "series": "CPD",
+        "experimentalUnitId": "mouse.CPD.15",
+        "followUpTime": 35.045,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o16",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.1",
+        "followUpTime": 37.097,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o17",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.2",
+        "followUpTime": 17.458,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o18",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.3",
+        "followUpTime": 28.788,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o19",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.4",
+        "followUpTime": 23.639,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o20",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.5",
+        "followUpTime": 23.538,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o21",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.6",
+        "followUpTime": 25.91,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o22",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.7",
+        "followUpTime": 23.177,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o23",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.8",
+        "followUpTime": 39.961,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o24",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.9",
+        "followUpTime": 32.052,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o25",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.10",
+        "followUpTime": 27.177,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o26",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.11",
+        "followUpTime": 30.938,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o27",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.12",
+        "followUpTime": 26.272,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o28",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.13",
+        "followUpTime": 22.826,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o29",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.14",
+        "followUpTime": 28.228,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o30",
+        "series": "LPD",
+        "experimentalUnitId": "mouse.LPD.15",
+        "followUpTime": 43.775,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o31",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.1",
+        "followUpTime": 44.771,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o32",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.2",
+        "followUpTime": 33.256,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o33",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.3",
+        "followUpTime": 39.498,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o34",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.4",
+        "followUpTime": 25.783,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o35",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.5",
+        "followUpTime": 29.636,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o36",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.6",
+        "followUpTime": 27.262,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o37",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.7",
+        "followUpTime": 37.809,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o38",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.8",
+        "followUpTime": 42.276,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o39",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.9",
+        "followUpTime": 30.533,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o40",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.10",
+        "followUpTime": 40.247,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o41",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.11",
+        "followUpTime": 19.312,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o42",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.12",
+        "followUpTime": 36.634,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o43",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.13",
+        "followUpTime": 37.844,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o44",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.14",
+        "followUpTime": 29.525,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o45",
+        "series": "CPD + LPS",
+        "experimentalUnitId": "mouse.CPD + LPS.15",
+        "followUpTime": 40.438,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o46",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.1",
+        "followUpTime": 40.818,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o47",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.2",
+        "followUpTime": 42.593,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o48",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.3",
+        "followUpTime": 38.792,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o49",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.4",
+        "followUpTime": 43.178,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o50",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.5",
+        "followUpTime": 44.611,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o51",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.6",
+        "followUpTime": 53.264,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o52",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.7",
+        "followUpTime": 33.836,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o53",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.8",
+        "followUpTime": 37.504,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o54",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.9",
+        "followUpTime": 33.491,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o55",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.10",
+        "followUpTime": 34.882,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o56",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.11",
+        "followUpTime": 33.859,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o57",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.12",
+        "followUpTime": 46.962,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o58",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.13",
+        "followUpTime": 40.866,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o59",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.14",
+        "followUpTime": 42.309,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA217.o60",
+        "series": "LPD + LPS",
+        "experimentalUnitId": "mouse.LPD + LPS.15",
+        "followUpTime": 41.954,
+        "eventObserved": false,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA217_context_rich_v2",
+    "originalCaseId": "LSA217",
+    "scientificQuestion": "Does a low-protein diet increase mortality after LPS challenge?",
+    "conditions": [
+      "CPD",
+      "LPD",
+      "CPD + LPS",
+      "LPD + LPS"
+    ],
+    "statisticalUnit": "mouse",
+    "sourceMethod": "two-sided log-rank (Mantel–Cox)",
+    "source": {
+      "pmcid": "PMC11372442",
+      "url": "https://europepmc.org/articles/PMC11372442",
+      "targetPanel": "Fig. 1E",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "two-sided log-rank (Mantel–Cox)"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "survival",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Does a low-protein diet increase mortality after LPS challenge?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA217",
+    "candidateFamilyReclassified": "survival",
+    "poolDOpened": false
+  }
+}

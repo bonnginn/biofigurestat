@@ -1,0 +1,187 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA108_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA108.o1",
+        "series": "0% HD",
+        "experimentalUnitId": "unit.0% HD.1",
+        "pairId": null,
+        "x": null,
+        "value": 59.3208,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o2",
+        "series": "0% HD",
+        "experimentalUnitId": "unit.0% HD.2",
+        "pairId": null,
+        "x": null,
+        "value": 46.24,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o3",
+        "series": "0% HD",
+        "experimentalUnitId": "unit.0% HD.3",
+        "pairId": null,
+        "x": null,
+        "value": 55.7668,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o4",
+        "series": "0% HD",
+        "experimentalUnitId": "unit.0% HD.4",
+        "pairId": null,
+        "x": null,
+        "value": 51.3094,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o5",
+        "series": "0% HD",
+        "experimentalUnitId": "unit.0% HD.5",
+        "pairId": null,
+        "x": null,
+        "value": 55.5403,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o6",
+        "series": "Low HD",
+        "experimentalUnitId": "unit.Low HD.1",
+        "pairId": null,
+        "x": null,
+        "value": 61.9453,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o7",
+        "series": "Low HD",
+        "experimentalUnitId": "unit.Low HD.2",
+        "pairId": null,
+        "x": null,
+        "value": 64.8448,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o8",
+        "series": "Low HD",
+        "experimentalUnitId": "unit.Low HD.3",
+        "pairId": null,
+        "x": null,
+        "value": 58.7104,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o9",
+        "series": "Low HD",
+        "experimentalUnitId": "unit.Low HD.4",
+        "pairId": null,
+        "x": null,
+        "value": 69.4449,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o10",
+        "series": "Low HD",
+        "experimentalUnitId": "unit.Low HD.5",
+        "pairId": null,
+        "x": null,
+        "value": 57.2953,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o11",
+        "series": "High HD",
+        "experimentalUnitId": "unit.High HD.1",
+        "pairId": null,
+        "x": null,
+        "value": 69.6961,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o12",
+        "series": "High HD",
+        "experimentalUnitId": "unit.High HD.2",
+        "pairId": null,
+        "x": null,
+        "value": 76.0231,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o13",
+        "series": "High HD",
+        "experimentalUnitId": "unit.High HD.3",
+        "pairId": null,
+        "x": null,
+        "value": 61.3541,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o14",
+        "series": "High HD",
+        "experimentalUnitId": "unit.High HD.4",
+        "pairId": null,
+        "x": null,
+        "value": 71.8565,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA108.o15",
+        "series": "High HD",
+        "experimentalUnitId": "unit.High HD.5",
+        "pairId": null,
+        "x": null,
+        "value": 64.2942,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA108_context_rich_v2",
+    "originalCaseId": "LSA108",
+    "scientificQuestion": "Does dissolving Sla1-GFP puncta with 1,6-hexanediol inhibit endocytosis?",
+    "conditions": [
+      "0% HD",
+      "Low HD",
+      "High HD"
+    ],
+    "statisticalUnit": "cell; independent biological-repeat identity not stated",
+    "sourceMethod": "descriptive Graph only",
+    "source": {
+      "pmcid": "PMC8685726",
+      "url": "https://europepmc.org/articles/PMC8685726",
+      "targetPanel": "Fig. 3B",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "The legend reports cell/focus counts but not an independent biological n; inference is withheld.",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "descriptive Graph only"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "stacked",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Does dissolving Sla1-GFP puncta with 1,6-hexanediol inhibit endocytosis?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA108",
+    "candidateFamilyReclassified": "descriptive_proportion",
+    "poolDOpened": false
+  }
+}

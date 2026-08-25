@@ -1,0 +1,5 @@
+{
+  "caseId": "LSA178",
+  "classification": "READY_WITH_BOUNDED_SOURCE_UNCERTAINTY",
+  "note": "Experiment-level summaries are treated as a repeated block; cell counts are display context, not n."
+}

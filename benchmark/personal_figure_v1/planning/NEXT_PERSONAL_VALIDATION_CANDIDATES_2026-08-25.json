@@ -1,0 +1,398 @@
+{
+  "schemaVersion": "next-personal-validation-candidates-1.0.0",
+  "date": "2026-08-25",
+  "phase": "planning_only",
+  "generationAuthorized": false,
+  "sourceCorpusCaseCount": 69,
+  "acceptedRegressionCases": ["PFR002", "PFR004", "PFR025", "PFR046", "PFR049", "PFR069"],
+  "selection": {
+    "candidateCount": 15,
+    "recommendedCount": 10,
+    "reserveCount": 5,
+    "lowConfidenceCount": 3,
+    "excludedFromShortlistCount": 54
+  },
+  "evidenceBoundary": "Existing runtime data are deterministic synthetic reconstructions, not published source observations.",
+  "candidates": [
+    {
+      "candidateId": "PFR009",
+      "paperCode": "NDEL1",
+      "figurePanel": "Fig. 5B",
+      "priority": "recommended",
+      "broadFigureFamily": "Western-blot normalized time course",
+      "scientificMessage": "Ndel1/GAPDH abundance changes over serum starvation.",
+      "design": "Independent WB experiments across ordered time; repeated preparation identity unconfirmed.",
+      "primaryContrast": "Trajectory relative to 0 h; no default all-pairs family.",
+      "statisticalUnit": "Independent Western-blot experiment, approximately n=3.",
+      "inference": "Descriptive only unless a prespecified time contrast and matching are confirmed.",
+      "graph": "Mean ± SEM line with time points; optional experiment traces only with valid identity.",
+      "semantics": {
+        "x": "time (h)",
+        "series": "Ndel1/GAPDH",
+        "y": "normalized abundance ratio",
+        "reference": "0 h"
+      },
+      "sampleSize": "3 experiments, 6 time levels; 54 synthetic lower-level rows.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "CONFIRMED_FROM_METHODS", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": ["WB normalization provenance", "ordered time", "descriptive-only route"]
+    },
+    {
+      "candidateId": "PFR011",
+      "paperCode": "NDEL1",
+      "figurePanel": "Fig. 5D",
+      "priority": "recommended",
+      "broadFigureFamily": "Nested microscopy distribution",
+      "scientificMessage": "Centrosomal Ndel1 intensity changes during serum starvation.",
+      "design": "Cross-sectional cells nested in independent imaging sessions.",
+      "primaryContrast": "Prespecified post-starvation times versus 0 h.",
+      "statisticalUnit": "Independent imaging experiment, approximately n=3; cells are nested.",
+      "inference": "Session-level control-versus-many or hierarchical model.",
+      "graph": "Violin/box with raw cells and distinct session summaries.",
+      "semantics": {
+        "x": "ordered time category",
+        "series": "one intensity readout",
+        "y": "relative centrosomal Ndel1 intensity",
+        "reference": "0 h"
+      },
+      "sampleSize": "356 synthetic cell rows across 3 sessions and 6 levels.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "INFERRED_HIGH_CONFIDENCE", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": ["nested raw + summary", "large distribution", "selected comparisons"]
+    },
+    {
+      "candidateId": "PFR020",
+      "paperCode": "NDEL1",
+      "figurePanel": "Fig. 9F",
+      "priority": "recommended",
+      "broadFigureFamily": "Grouped animal-level proportion",
+      "scientificMessage": "Ndel1 hypomorphism changes ciliation within specific renal compartments.",
+      "design": "Independent mice; genotype crossed with three renal categories.",
+      "primaryContrast": "WT versus cko within each renal category.",
+      "statisticalUnit": "Mouse, approximately n=6; counted objects retain numerator/denominator.",
+      "inference": "Three adjusted genotype contrasts or genotype × category model if interaction is primary.",
+      "graph": "Grouped mouse-level dots with summary, optionally faceted by renal category.",
+      "semantics": {
+        "x": "renal category",
+        "series": "genotype",
+        "y": "ciliated fraction",
+        "reference": "WT"
+      },
+      "sampleSize": "6 mice; 36 synthetic mouse-category rows.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "CONFIRMED_FROM_METHODS", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": [
+        "numerator/denominator",
+        "hierarchical labels",
+        "facets",
+        "selected comparisons"
+      ]
+    },
+    {
+      "candidateId": "PFR021",
+      "paperCode": "NDEL1",
+      "figurePanel": "Fig. 9G",
+      "priority": "reserve",
+      "overallConfidence": "low",
+      "broadFigureFamily": "Cilium-within-mouse distribution",
+      "scientificMessage": "Ndel1 hypomorphism changes cilium length in specific renal compartments.",
+      "design": "Cilia nested within mice, crossed by genotype and renal category.",
+      "primaryContrast": "WT versus cko within each renal category.",
+      "statisticalUnit": "Mouse; current catalog n=20 is unsafe until reconciled with cilium counts.",
+      "inference": "Mouse summaries or hierarchical model after identity/count confirmation.",
+      "graph": "Raw cilia plus mouse summaries, preferably faceted by renal category.",
+      "semantics": {
+        "x": "renal category",
+        "series": "genotype",
+        "y": "cilium length (µm)",
+        "reference": "WT"
+      },
+      "sampleSize": "1,342 synthetic cilium rows; true mouse n unresolved.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": ["three-level nesting", "biological-n guardrail", "large raw layer", "facets"]
+    },
+    {
+      "candidateId": "PFR027",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 2C",
+      "priority": "recommended",
+      "broadFigureFamily": "Nested longitudinal two-series line",
+      "scientificMessage": "Opto-RhoA selectively increases the RhoA biosensor after illumination.",
+      "design": "Longitudinal cells nested in imaging experiments with stable cell identity.",
+      "primaryContrast": "Opto-RhoA versus opto-control on a prespecified response summary or trajectory.",
+      "statisticalUnit": "Independent imaging experiment, approximately n=3; cells are nested repeated observations.",
+      "inference": "Experiment-level response summary or mixed model.",
+      "graph": "Mean trajectory with uncertainty and optional faint nested traces.",
+      "semantics": {
+        "x": "time (s)",
+        "series": "opto-control and opto-RhoA",
+        "y": "relative RhoA biosensor intensity",
+        "reference": "opto-control"
+      },
+      "sampleSize": "84 synthetic rows across 3 experiments and 7 times.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "CONFIRMED_FROM_METHODS", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": ["repeated identity", "nesting", "continuous X", "activation annotation"]
+    },
+    {
+      "candidateId": "PFR033",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 3A",
+      "priority": "recommended",
+      "broadFigureFamily": "Control-versus-many proportion screen",
+      "scientificMessage": "RhoA is the principal tested small-GTPase inducer of Ca²⁺ transients in RPE1.",
+      "design": "Independent imaging experiments with responder numerator/denominator across seven constructs.",
+      "primaryContrast": "Relevant opto-GTPases versus opto-control; no all-pairs default.",
+      "statisticalUnit": "Independent imaging experiment, approximately n=4.",
+      "inference": "Control-versus-many on experiment proportions, or descriptive-only if treated as a screen.",
+      "graph": "Outlined bars or experiment dots with mean ± SD.",
+      "semantics": {
+        "x": "opto-GTPase construct",
+        "series": "single categorical set",
+        "y": "responder fraction",
+        "reference": "opto-control"
+      },
+      "sampleSize": "4 experiments × 7 conditions in the reconstruction.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": [
+        "control-vs-many",
+        "long labels",
+        "numerator/denominator",
+        "sparse annotations"
+      ]
+    },
+    {
+      "candidateId": "PFR035",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 3D",
+      "priority": "reserve",
+      "broadFigureFamily": "Multi-series descriptive trajectory",
+      "scientificMessage": "Responding cell types show different Ca²⁺ transient shapes and peak timing.",
+      "design": "Responding cells followed longitudinally and nested in imaging experiments.",
+      "primaryContrast": "Descriptive trajectory/peak timing, conditional on response.",
+      "statisticalUnit": "Independent imaging experiment, approximately n=3 if inference is added.",
+      "inference": "Descriptive only unless peak/AUC contrasts are prespecified.",
+      "graph": "Four mean ± SD trajectories or small multiples.",
+      "semantics": {
+        "x": "time (s)",
+        "series": "cell type",
+        "y": "normalized R-GECO1 (%)",
+        "reference": "none"
+      },
+      "sampleSize": "384 synthetic responding-cell time rows.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": [
+        "legend density",
+        "responder-only subset",
+        "ribbon overlap",
+        "small multiples"
+      ]
+    },
+    {
+      "candidateId": "PFR043",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 5E",
+      "priority": "recommended",
+      "broadFigureFamily": "Mechanistic rescue control-versus-many",
+      "scientificMessage": "Specific PLCε domains and catalytic activities are required for rescue.",
+      "design": "Independent imaging experiments across WT, negative control, and domain mutants.",
+      "primaryContrast": "Each mutant versus PLCε WT, plus ECFP versus WT for rescue context.",
+      "statisticalUnit": "Independent imaging experiment, approximately n=3.",
+      "inference": "One-way family with prespecified WT-reference contrasts and multiplicity control.",
+      "graph": "Experiment dots with mean ± SD and hierarchical WT/mutant labels.",
+      "semantics": {
+        "x": "rescue construct/domain",
+        "series": "single categorical set",
+        "y": "Ca²⁺ responder fraction",
+        "reference": "PLCε WT; ECFP negative"
+      },
+      "sampleSize": "18 synthetic experiment-condition rows.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "CONFIRMED_FROM_METHODS", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": [
+        "rescue semantics",
+        "two reference roles",
+        "selected comparisons",
+        "long labels"
+      ]
+    },
+    {
+      "candidateId": "PFR045",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 6F",
+      "priority": "recommended",
+      "broadFigureFamily": "Irregular repeated multi-series line",
+      "scientificMessage": "Active constructs alter cytosolic PLCδ-PH fluorescence relative to control.",
+      "design": "Repeated observations within cells/experiments across six time points.",
+      "primaryContrast": "Trajectory or endpoint response of active constructs versus matched control.",
+      "statisticalUnit": "Independent cell/imaging experiment, approximately n=6.",
+      "inference": "Descriptive trajectory by default; paired summary only with a planned endpoint/AUC.",
+      "graph": "Three mean ± SD measured-point-only trajectories with activation annotation.",
+      "semantics": {
+        "x": "time (s)",
+        "series": "probe/construct combination",
+        "y": "relative cytosolic fluorescence",
+        "reference": "opto-RhoA + mCherry"
+      },
+      "sampleSize": "108 synthetic repeated rows.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": [
+        "irregular X",
+        "repeated identity",
+        "legend semantics",
+        "uncertainty ribbons"
+      ]
+    },
+    {
+      "candidateId": "PFR047",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 7E,F",
+      "priority": "reserve",
+      "broadFigureFamily": "Multi-treatment paired before/after",
+      "scientificMessage": "Cyclosporin A and BAPTA-AM suppress opto-RhoA-driven NFAT translocation.",
+      "design": "Dark/Lit paired within cells; cells nested in experiments; three treatment groups.",
+      "primaryContrast": "Within-treatment Dark versus Lit and DMSO-reference differences in change.",
+      "statisticalUnit": "Independent experiment, approximately n=3; cells remain nested.",
+      "inference": "Experiment-aware paired/change analysis with prespecified treatment contrasts.",
+      "graph": "Paired raw layer plus experiment summaries, or change-score dots.",
+      "semantics": {
+        "x": "treatment",
+        "series": "Dark and Lit",
+        "y": "NFAT nuclear/cytosol ratio",
+        "reference": "DMSO"
+      },
+      "sampleSize": "360 synthetic cell-time rows.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "CONFIRMED_FROM_METHODS"],
+      "stressPoints": ["pairing plus nesting", "two-stage comparisons", "annotation hierarchy"]
+    },
+    {
+      "candidateId": "PFR054",
+      "paperCode": "GFLB",
+      "figurePanel": "Fig. 2",
+      "priority": "recommended",
+      "overallConfidence": "low",
+      "broadFigureFamily": "Three-level nested lifetime distribution",
+      "scientificMessage": "GflB loss prolongs macropinocytic crown lifetime.",
+      "design": "Crown events nested in cells and movies across imaging sessions.",
+      "primaryContrast": "gflB knockout versus AX2; overproducer versus AX2 secondary.",
+      "statisticalUnit": "Independent movie/session, approximately n=3.",
+      "inference": "Session summaries or hierarchical model with AX2-reference contrasts.",
+      "graph": "Unfilled violin/box with raw events and distinct movie/session summaries.",
+      "semantics": {
+        "x": "genotype",
+        "series": "single categorical set",
+        "y": "crown lifetime (s)",
+        "reference": "AX2"
+      },
+      "sampleSize": "109 synthetic event rows; published allocation needs confirmation.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": [
+        "event-cell-movie nesting",
+        "skewed duration",
+        "raw + summary",
+        "selected contrasts"
+      ]
+    },
+    {
+      "candidateId": "PFR059",
+      "paperCode": "GFLB",
+      "figurePanel": "Fig. 3G,H",
+      "priority": "recommended",
+      "broadFigureFamily": "Crossed biochemical fractionation",
+      "scientificMessage": "GflB loss redistributes actin toward the detergent-insoluble fraction.",
+      "design": "Independent fractionation experiments with linked soluble/insoluble fractions.",
+      "primaryContrast": "Knockout versus AX2 within each fraction; insoluble likely primary.",
+      "statisticalUnit": "Independent fractionation experiment, approximately n=3.",
+      "inference": "Paired/factorial experiment-aware analysis.",
+      "graph": "Grouped experiment dots/bars with genotype on X and fraction as series.",
+      "semantics": {
+        "x": "genotype",
+        "series": "soluble and insoluble",
+        "y": "actin fraction of total",
+        "reference": "AX2"
+      },
+      "sampleSize": "12 synthetic experiment-fraction rows.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "CONFIRMED_FROM_METHODS", "INFERRED_HIGH_CONFIDENCE"],
+      "stressPoints": [
+        "crossed factors",
+        "within-sample dependence",
+        "compositional values",
+        "grouped labels"
+      ]
+    },
+    {
+      "candidateId": "PFR061",
+      "paperCode": "KER5",
+      "figurePanel": "Fig. 1A",
+      "priority": "reserve",
+      "broadFigureFamily": "Phase × linked-target biochemical",
+      "scientificMessage": "Early mitosis increases the soluble fractions of K5 and K14.",
+      "design": "Independent fractionation experiments with linked K5/K14 readouts.",
+      "primaryContrast": "Early mitosis versus interphase separately for K5 and K14.",
+      "statisticalUnit": "Independent biochemical experiment, approximately n=3.",
+      "inference": "Two prespecified phase contrasts with multiplicity handling.",
+      "graph": "Grouped experiment dots/bars or facets by keratin.",
+      "semantics": {
+        "x": "keratin",
+        "series": "interphase and early mitosis",
+        "y": "soluble fraction of total",
+        "reference": "interphase"
+      },
+      "sampleSize": "12 synthetic experiment-target-phase rows.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": ["linked targets", "grouped series", "within-experiment dependence"]
+    },
+    {
+      "candidateId": "PFR062",
+      "paperCode": "KER5",
+      "figurePanel": "Fig. 1B,C",
+      "priority": "recommended",
+      "broadFigureFamily": "Kinase × substrate kinetic small multiples",
+      "scientificMessage": "Kinase/substrate combinations have distinct phosphorylation kinetics.",
+      "design": "Independent kinase experiments across 3 kinases, 2 substrates, and 4 times.",
+      "primaryContrast": "Descriptive trajectories; endpoint or AUC only if prespecified.",
+      "statisticalUnit": "Independent in-vitro kinase experiment, approximately n=3.",
+      "inference": "Descriptive only for the main trajectory unless the user specifies a summary contrast.",
+      "graph": "Small multiples by kinase with K5/K14 series, or a six-series overlay.",
+      "semantics": {
+        "x": "time (min)",
+        "series": "substrate",
+        "facet": "kinase",
+        "y": "mol phosphate/mol keratin",
+        "reference": "0 min"
+      },
+      "sampleSize": "72 synthetic experiment-series-time rows.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": [
+        "three-factor hierarchy",
+        "legend/facet semantics",
+        "continuous X",
+        "series density"
+      ]
+    },
+    {
+      "candidateId": "PFR066",
+      "paperCode": "KER5",
+      "figurePanel": "Fig. 2A,B",
+      "priority": "reserve",
+      "overallConfidence": "low",
+      "broadFigureFamily": "Synchronized multiple-readout small multiples",
+      "scientificMessage": "K5 phosphorylation peaks align with mitotic-phase composition after release.",
+      "design": "Independent synchronized-cell experiments with linked readouts across time.",
+      "primaryContrast": "Descriptive temporal alignment; traces are not exchangeable groups.",
+      "statisticalUnit": "Independent synchronization experiment, approximately n=3.",
+      "inference": "Descriptive only unless an association or lag hypothesis is supplied.",
+      "graph": "Aligned facets separating phospho-signals from phase fractions; no misleading dual axis.",
+      "semantics": {
+        "x": "time after release",
+        "series": "two traces within each readout family",
+        "facet": "phosphorylation versus phase composition",
+        "y": "readout-specific scale",
+        "reference": "0 h"
+      },
+      "sampleSize": "60 synthetic linked-readout rows.",
+      "confidence": ["CONFIRMED_FROM_PAPER", "UNCERTAIN_NEEDS_USER"],
+      "stressPoints": [
+        "multiple readouts",
+        "synchronized facets",
+        "incompatible Y semantics",
+        "provenance links"
+      ]
+    }
+  ]
+}

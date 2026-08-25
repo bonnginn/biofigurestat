@@ -1,0 +1,242 @@
+{
+  "caseId": "LSA300_context_rich_v2",
+  "classification": "CONTEXT_RICH_READY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA300_context_rich_v2",
+    "originalCaseId": "LSA300",
+    "scientificQuestion": "Does membrane permeabilization change TMEM24 plasma-membrane fluorescence in the same cell?",
+    "conditions": [
+      "Intact",
+      "Permeabilized"
+    ],
+    "statisticalUnit": "cell",
+    "sourceMethod": "within-cell comparison",
+    "source": {
+      "pmcid": "PMC8729788",
+      "url": "https://europepmc.org/articles/PMC8729788",
+      "targetPanel": "Fig. 1H",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA300.o1",
+      "series": "Intact",
+      "experimentalUnitId": "unit.1",
+      "pairId": "unit.1",
+      "x": null,
+      "value": 46.0167,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o2",
+      "series": "Intact",
+      "experimentalUnitId": "unit.2",
+      "pairId": "unit.2",
+      "x": null,
+      "value": 49.8812,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o3",
+      "series": "Intact",
+      "experimentalUnitId": "unit.3",
+      "pairId": "unit.3",
+      "x": null,
+      "value": 42.2447,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o4",
+      "series": "Intact",
+      "experimentalUnitId": "unit.4",
+      "pairId": "unit.4",
+      "x": null,
+      "value": 55.8023,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o5",
+      "series": "Intact",
+      "experimentalUnitId": "unit.5",
+      "pairId": "unit.5",
+      "x": null,
+      "value": 39.4982,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o6",
+      "series": "Intact",
+      "experimentalUnitId": "unit.6",
+      "pairId": "unit.6",
+      "x": null,
+      "value": 46.0397,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o7",
+      "series": "Intact",
+      "experimentalUnitId": "unit.7",
+      "pairId": "unit.7",
+      "x": null,
+      "value": 53.9891,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o8",
+      "series": "Intact",
+      "experimentalUnitId": "unit.8",
+      "pairId": "unit.8",
+      "x": null,
+      "value": 54.9293,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o9",
+      "series": "Intact",
+      "experimentalUnitId": "unit.9",
+      "pairId": "unit.9",
+      "x": null,
+      "value": 50.8904,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o10",
+      "series": "Intact",
+      "experimentalUnitId": "unit.10",
+      "pairId": "unit.10",
+      "x": null,
+      "value": 45.2037,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o11",
+      "series": "Intact",
+      "experimentalUnitId": "unit.11",
+      "pairId": "unit.11",
+      "x": null,
+      "value": 59.7308,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o12",
+      "series": "Intact",
+      "experimentalUnitId": "unit.12",
+      "pairId": "unit.12",
+      "x": null,
+      "value": 51.5541,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o13",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.1",
+      "pairId": "unit.1",
+      "x": null,
+      "value": 55.3471,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o14",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.2",
+      "pairId": "unit.2",
+      "x": null,
+      "value": 53.3579,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o15",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.3",
+      "pairId": "unit.3",
+      "x": null,
+      "value": 66.2927,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o16",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.4",
+      "pairId": "unit.4",
+      "x": null,
+      "value": 63.3826,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o17",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.5",
+      "pairId": "unit.5",
+      "x": null,
+      "value": 69.7797,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o18",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.6",
+      "pairId": "unit.6",
+      "x": null,
+      "value": 67.9125,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o19",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.7",
+      "pairId": "unit.7",
+      "x": null,
+      "value": 53.4202,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o20",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.8",
+      "pairId": "unit.8",
+      "x": null,
+      "value": 63.7844,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o21",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.9",
+      "pairId": "unit.9",
+      "x": null,
+      "value": 57.015,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o22",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.10",
+      "pairId": "unit.10",
+      "x": null,
+      "value": 61.7189,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o23",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.11",
+      "pairId": "unit.11",
+      "x": null,
+      "value": 57.5739,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA300.o24",
+      "series": "Permeabilized",
+      "experimentalUnitId": "unit.12",
+      "pairId": "unit.12",
+      "x": null,
+      "value": 62.8357,
+      "synthetic": true
+    }
+  ]
+}

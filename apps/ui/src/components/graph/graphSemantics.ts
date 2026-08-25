@@ -100,6 +100,18 @@ export function omitGenericCategoricalAxisTitle(title: string): string {
   return /^(condition|group|genotype|time)$/i.test(title.trim()) ? "" : title.trim();
 }
 
+export function resolveSeriesLinePresentation(
+  style: Readonly<{ lineStyle?: "solid" | "dashed" | "dotted"; lineWidth?: number }> | undefined,
+  fallbackWidth: number,
+) {
+  const lineStyle = style?.lineStyle ?? "solid";
+  return {
+    lineStyle,
+    lineWidth: style?.lineWidth ?? fallbackWidth,
+    dashArray: lineStyle === "dashed" ? "8 5" : lineStyle === "dotted" ? "2 4" : undefined,
+  } as const;
+}
+
 export type HierarchicalAxisLabel = Readonly<{
   levels: readonly Readonly<{ value: string }>[];
 }>;

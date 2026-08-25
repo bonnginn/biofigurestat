@@ -1,0 +1,7 @@
+Case: LSA249_context_rich_v2
+Source: https://europepmc.org/articles/PMC13322376 (Fig. 3B)
+All observations are deterministic synthetic reconstruction, not published raw data.
+Statistical unit: independent experiment summarized from >50 cells
+Primary contrast: Vector versus ATG9B
+Analysis status: ok
+Authority: saved local numerical-engine result; Graph does not smooth or recompute analysis.

@@ -1,0 +1,267 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA334_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA334.o1",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.1",
+        "pairId": null,
+        "x": null,
+        "value": 57.7323,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o2",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.2",
+        "pairId": null,
+        "x": null,
+        "value": 53.6466,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o3",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.3",
+        "pairId": null,
+        "x": null,
+        "value": 52.2195,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o4",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.4",
+        "pairId": null,
+        "x": null,
+        "value": 54.969,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o5",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.5",
+        "pairId": null,
+        "x": null,
+        "value": 47.8551,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o6",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.6",
+        "pairId": null,
+        "x": null,
+        "value": 51.0445,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o7",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.7",
+        "pairId": null,
+        "x": null,
+        "value": 54.847,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o8",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.8",
+        "pairId": null,
+        "x": null,
+        "value": 50.1458,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o9",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.9",
+        "pairId": null,
+        "x": null,
+        "value": 52.6412,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o10",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.10",
+        "pairId": null,
+        "x": null,
+        "value": 49.5319,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o11",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.11",
+        "pairId": null,
+        "x": null,
+        "value": 41.5275,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o12",
+        "series": "TrrWT",
+        "experimentalUnitId": "unit.TrrWT.12",
+        "pairId": null,
+        "x": null,
+        "value": 62.1693,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o13",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.1",
+        "pairId": null,
+        "x": null,
+        "value": 60.5848,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o14",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.2",
+        "pairId": null,
+        "x": null,
+        "value": 69.0625,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o15",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.3",
+        "pairId": null,
+        "x": null,
+        "value": 61.5524,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o16",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.4",
+        "pairId": null,
+        "x": null,
+        "value": 62.8259,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o17",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.5",
+        "pairId": null,
+        "x": null,
+        "value": 67.4554,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o18",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.6",
+        "pairId": null,
+        "x": null,
+        "value": 57.188,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o19",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.7",
+        "pairId": null,
+        "x": null,
+        "value": 65.4403,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o20",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.8",
+        "pairId": null,
+        "x": null,
+        "value": 58.1972,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o21",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.9",
+        "pairId": null,
+        "x": null,
+        "value": 65.7171,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o22",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.10",
+        "pairId": null,
+        "x": null,
+        "value": 63.9887,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o23",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.11",
+        "pairId": null,
+        "x": null,
+        "value": 53.8102,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA334.o24",
+        "series": "TrrCA",
+        "experimentalUnitId": "unit.TrrCA.12",
+        "pairId": null,
+        "x": null,
+        "value": 59.0728,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA334_context_rich_v2",
+    "originalCaseId": "LSA334",
+    "scientificQuestion": "Does Trr-dependent H3K4 hypomethylation alter larval size?",
+    "conditions": [
+      "TrrWT",
+      "TrrCA"
+    ],
+    "statisticalUnit": "larva",
+    "sourceMethod": "two-tailed Student t test",
+    "source": {
+      "pmcid": "PMC9764455",
+      "url": "https://europepmc.org/articles/PMC9764455",
+      "targetPanel": "Fig. 3C",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "two-tailed Student t test"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "dot_summary",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Does Trr-dependent H3K4 hypomethylation alter larval size?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA334",
+    "candidateFamilyReclassified": "two_group_continuous",
+    "poolDOpened": false
+  }
+}

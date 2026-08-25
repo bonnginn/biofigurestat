@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "survival",
+  "analysisResultAuthority": true,
+  "displaySet": "all synthetic rows",
+  "analysisSet": "biological-unit summaries or explicit survival units",
+  "comparisonSet": "three vaccine groups",
+  "annotationSet": "Only source-supported comparisons"
+}

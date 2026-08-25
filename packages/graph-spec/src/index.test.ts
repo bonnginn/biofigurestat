@@ -32,7 +32,14 @@ describe("Core D01/D02 graph specifications", () => {
         distributionFill: "white",
         withinGroupSpacing: 0.7,
         betweenGroupSpacing: 1.4,
-        seriesStyles: { "level.24h": { legendLabel: "24 h", pointStyle: "square" } },
+        seriesStyles: {
+          "level.24h": {
+            legendLabel: "24 h",
+            pointStyle: "square",
+            lineStyle: "dashed",
+            lineWidth: 3.5,
+          },
+        },
       },
       axes: { yStartAtZero: false, yScale: "linear", xLabel: "siRNA", yLabel: "Response" },
       annotations: [
@@ -49,6 +56,7 @@ describe("Core D01/D02 graph specifications", () => {
 
     expect(parsed.mappings.series).toBe("factor.time");
     expect(parsed.appearance.seriesStyles["level.24h"]?.legendLabel).toBe("24 h");
+    expect(parsed.appearance.seriesStyles["level.24h"]?.lineWidth).toBe(3.5);
     expect(parsed.annotations).toHaveLength(1);
   });
 

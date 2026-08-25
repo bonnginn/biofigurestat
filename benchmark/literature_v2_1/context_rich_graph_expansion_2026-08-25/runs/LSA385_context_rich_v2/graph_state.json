@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "dot_summary",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "Does ST8Sia6 loss increase CD8α−NK1.1+ cells among small-bowel γδ T cells?",
+  "annotationSet": "none without an authoritative saved result"
+}

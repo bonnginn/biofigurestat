@@ -1,0 +1,7 @@
+Case: LSA178_context_rich_v2
+Source: https://europepmc.org/articles/PMC10730611 (Fig. 6K)
+Scientific question: Does association with Pf4 or fd tactoids reduce gentamicin uptake?
+Statistical unit: independent experiment
+Source analysis: source pairwise comparisons
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

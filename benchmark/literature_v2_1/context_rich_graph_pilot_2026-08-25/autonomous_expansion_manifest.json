@@ -1,0 +1,9 @@
+{
+  "status": "COMPLETED_BY_FAMILY_BATCH",
+  "pilotCount": 12,
+  "finalSubsetCount": 35,
+  "target": 35,
+  "methodologyVersion": "context-rich-graph-1.1",
+  "expansionRoot": "benchmark/literature_v2_1/context_rich_graph_expansion_2026-08-25",
+  "poolDOpened": false
+}

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA233_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA233.o1",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.1",
+        "pairId": null,
+        "x": null,
+        "value": 34.1983,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA233.o2",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.2",
+        "pairId": null,
+        "x": null,
+        "value": 47.4133,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA233.o3",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.3",
+        "pairId": null,
+        "x": null,
+        "value": 51.998,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA233.o4",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.4",
+        "pairId": null,
+        "x": null,
+        "value": 43.0464,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA233.o5",
+        "series": "Cep120-KO",
+        "experimentalUnitId": "unit.Cep120-KO.1",
+        "pairId": null,
+        "x": null,
+        "value": 53.5839,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA233.o6",
+        "series": "Cep120-KO",
+        "experimentalUnitId": "unit.Cep120-KO.2",
+        "pairId": null,
+        "x": null,
+        "value": 61.6879,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA233.o7",
+        "series": "Cep120-KO",
+        "experimentalUnitId": "unit.Cep120-KO.3",
+        "pairId": null,
+        "x": null,
+        "value": 53.433,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA233.o8",
+        "series": "Cep120-KO",
+        "experimentalUnitId": "unit.Cep120-KO.4",
+        "pairId": null,
+        "x": null,
+        "value": 61.6066,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA233_context_rich_v2",
+    "originalCaseId": "LSA233",
+    "scientificQuestion": "Does stromal Cep120 deletion reduce the proportion of cells containing centrosomes?",
+    "conditions": [
+      "Control",
+      "Cep120-KO"
+    ],
+    "statisticalUnit": "mouse",
+    "sourceMethod": "two-tailed unpaired t test",
+    "source": {
+      "pmcid": "PMC10897188",
+      "url": "https://europepmc.org/articles/PMC10897188",
+      "targetPanel": "Fig. EV1F",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "Historical paired classification corrected to independent mouse groups; hundreds of cells are subsamples.",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "two-tailed unpaired t test"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "dot_summary",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Does stromal Cep120 deletion reduce the proportion of cells containing centrosomes?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA233",
+    "candidateFamilyReclassified": "two_group_proportion",
+    "poolDOpened": false
+  }
+}

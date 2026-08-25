@@ -1,0 +1,19 @@
+{
+  "caseId": "PFR027A",
+  "checks": {
+    "experimentalUnitCorrect": true,
+    "displayUnitSeparatedFromInferentialUnit": true,
+    "pairingRepeatedIdentityCorrect": true,
+    "descriptiveOrInferentialExplicit": true,
+    "comparisonFamilyMatchesQuestion": true,
+    "controlReferenceRolesCorrect": true,
+    "displaySubsetCorrect": true,
+    "analysisSetCorrect": true,
+    "comparisonSetCorrect": true,
+    "annotationSetCorrect": true,
+    "legendFactorSemanticsCorrect": true,
+    "graphConventionAppropriate": true
+  },
+  "uncertaintyRecorded": false,
+  "notes": []
+}

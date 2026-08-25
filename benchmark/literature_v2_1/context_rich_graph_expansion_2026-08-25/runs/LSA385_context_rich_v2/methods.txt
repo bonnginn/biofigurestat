@@ -1,0 +1,7 @@
+Case: LSA385_context_rich_v2
+Source: https://europepmc.org/articles/PMC13298801 (Fig. 2H)
+Scientific question: Does ST8Sia6 loss increase CD8α−NK1.1+ cells among small-bowel γδ T cells?
+Statistical unit: mouse
+Source analysis: Student t test
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

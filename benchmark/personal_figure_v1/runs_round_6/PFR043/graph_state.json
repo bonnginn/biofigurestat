@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "1.1.0",
+  "caseId": "PFR043",
+  "graphType": "bar",
+  "dataSets": {
+    "displaySet": {
+      "conditionIds": [
+        "ECFP",
+        "WT",
+        "F702A",
+        "H1433L",
+        "R2130L",
+        "ΔYins"
+      ]
+    },
+    "analysisSet": {
+      "unit": "independent imaging experiment (n=3)",
+      "status": "ok"
+    },
+    "comparisonSet": [
+      {
+        "id": "comparison.PFR043.1",
+        "conditionIds": [
+          "ECFP",
+          "WT"
+        ]
+      },
+      {
+        "id": "comparison.PFR043.2",
+        "conditionIds": [
+          "WT",
+          "F702A"
+        ]
+      },
+      {
+        "id": "comparison.PFR043.3",
+        "conditionIds": [
+          "WT",
+          "H1433L"
+        ]
+      },
+      {
+        "id": "comparison.PFR043.4",
+        "conditionIds": [
+          "WT",
+          "R2130L"
+        ]
+      },
+      {
+        "id": "comparison.PFR043.5",
+        "conditionIds": [
+          "WT",
+          "ΔYins"
+        ]
+      }
+    ],
+    "annotationSet": [
+      {
+        "comparisonId": "comparison.PFR043.1",
+        "display": "significant_only"
+      },
+      {
+        "comparisonId": "comparison.PFR043.2",
+        "display": "significant_only"
+      },
+      {
+        "comparisonId": "comparison.PFR043.3",
+        "display": "significant_only"
+      },
+      {
+        "comparisonId": "comparison.PFR043.4",
+        "display": "significant_only"
+      },
+      {
+        "comparisonId": "comparison.PFR043.5",
+        "display": "significant_only"
+      }
+    ]
+  },
+  "appearance": {
+    "barOutline": true,
+    "barMeanMarker": false,
+    "boxWhiskerMode": "tukey_1_5_iqr",
+    "uncertaintyStyle": "error_bars",
+    "summary": "mean_sd",
+    "errorBarSeries": [
+      "all"
+    ],
+    "seriesStyles": {}
+  },
+  "axes": {
+    "xSemantic": "categorical",
+    "xTitle": "Rescue construct",
+    "yTitle": "Cells with calcium transients (%)",
+    "gridLines": false,
+    "yMax": 100,
+    "tickLabels": "default"
+  },
+  "analysis": {
+    "status": "ok",
+    "authoritativeSavedResult": true,
+    "resultCount": 1,
+    "modelId": null
+  }
+}

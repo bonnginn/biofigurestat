@@ -1,0 +1,12 @@
+{
+  "representable": 12,
+  "needsHumanContext": 0,
+  "safeUnsupported": 1,
+  "genericProductGaps": [
+    {
+      "caseId": "LSA126",
+      "gap": "two crossed within-unit factors (hemisphere × time) with stable animal identity",
+      "alphaPolicy": "SAFE_UNSUPPORTED_FOR_ALPHA"
+    }
+  ]
+}

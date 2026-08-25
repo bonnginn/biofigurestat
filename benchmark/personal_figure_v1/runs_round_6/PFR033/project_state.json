@@ -1,0 +1,380 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "PFR033",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000001",
+        "condition": "RhoA",
+        "series": "RhoA",
+        "x": null,
+        "value": 75.294118,
+        "experimentalUnitId": "experiment.1",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 64,
+        "denominator": 85
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000002",
+        "condition": "RhoA",
+        "series": "RhoA",
+        "x": null,
+        "value": 83.333333,
+        "experimentalUnitId": "experiment.2",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 75,
+        "denominator": 90
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000003",
+        "condition": "RhoA",
+        "series": "RhoA",
+        "x": null,
+        "value": 84.210526,
+        "experimentalUnitId": "experiment.3",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 80,
+        "denominator": 95
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000004",
+        "condition": "RhoA",
+        "series": "RhoA",
+        "x": null,
+        "value": 82.0,
+        "experimentalUnitId": "experiment.4",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 82,
+        "denominator": 100
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000005",
+        "condition": "Rac1",
+        "series": "Rac1",
+        "x": null,
+        "value": 10.588235,
+        "experimentalUnitId": "experiment.1",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 9,
+        "denominator": 85
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000006",
+        "condition": "Rac1",
+        "series": "Rac1",
+        "x": null,
+        "value": 11.111111,
+        "experimentalUnitId": "experiment.2",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 10,
+        "denominator": 90
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000007",
+        "condition": "Rac1",
+        "series": "Rac1",
+        "x": null,
+        "value": 6.315789,
+        "experimentalUnitId": "experiment.3",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 6,
+        "denominator": 95
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000008",
+        "condition": "Rac1",
+        "series": "Rac1",
+        "x": null,
+        "value": 9.0,
+        "experimentalUnitId": "experiment.4",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 9,
+        "denominator": 100
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000009",
+        "condition": "Cdc42",
+        "series": "Cdc42",
+        "x": null,
+        "value": 10.588235,
+        "experimentalUnitId": "experiment.1",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 9,
+        "denominator": 85
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000010",
+        "condition": "Cdc42",
+        "series": "Cdc42",
+        "x": null,
+        "value": 11.111111,
+        "experimentalUnitId": "experiment.2",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 10,
+        "denominator": 90
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000011",
+        "condition": "Cdc42",
+        "series": "Cdc42",
+        "x": null,
+        "value": 8.421053,
+        "experimentalUnitId": "experiment.3",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 8,
+        "denominator": 95
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000012",
+        "condition": "Cdc42",
+        "series": "Cdc42",
+        "x": null,
+        "value": 15.0,
+        "experimentalUnitId": "experiment.4",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 15,
+        "denominator": 100
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000013",
+        "condition": "Ras",
+        "series": "Ras",
+        "x": null,
+        "value": 9.411765,
+        "experimentalUnitId": "experiment.1",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 8,
+        "denominator": 85
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000014",
+        "condition": "Ras",
+        "series": "Ras",
+        "x": null,
+        "value": 3.333333,
+        "experimentalUnitId": "experiment.2",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 3,
+        "denominator": 90
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000015",
+        "condition": "Ras",
+        "series": "Ras",
+        "x": null,
+        "value": 8.421053,
+        "experimentalUnitId": "experiment.3",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 8,
+        "denominator": 95
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000016",
+        "condition": "Ras",
+        "series": "Ras",
+        "x": null,
+        "value": 9.0,
+        "experimentalUnitId": "experiment.4",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 9,
+        "denominator": 100
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000017",
+        "condition": "Rap",
+        "series": "Rap",
+        "x": null,
+        "value": 7.058824,
+        "experimentalUnitId": "experiment.1",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 6,
+        "denominator": 85
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000018",
+        "condition": "Rap",
+        "series": "Rap",
+        "x": null,
+        "value": 3.333333,
+        "experimentalUnitId": "experiment.2",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 3,
+        "denominator": 90
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000019",
+        "condition": "Rap",
+        "series": "Rap",
+        "x": null,
+        "value": 0.0,
+        "experimentalUnitId": "experiment.3",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 0,
+        "denominator": 95
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000020",
+        "condition": "Rap",
+        "series": "Rap",
+        "x": null,
+        "value": 8.0,
+        "experimentalUnitId": "experiment.4",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 8,
+        "denominator": 100
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000021",
+        "condition": "Ral",
+        "series": "Ral",
+        "x": null,
+        "value": 8.235294,
+        "experimentalUnitId": "experiment.1",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 7,
+        "denominator": 85
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000022",
+        "condition": "Ral",
+        "series": "Ral",
+        "x": null,
+        "value": 11.111111,
+        "experimentalUnitId": "experiment.2",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 10,
+        "denominator": 90
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000023",
+        "condition": "Ral",
+        "series": "Ral",
+        "x": null,
+        "value": 10.526316,
+        "experimentalUnitId": "experiment.3",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 10,
+        "denominator": 95
+      },
+      {
+        "caseId": "PFR033",
+        "observationId": "PFR033_R6_O000024",
+        "condition": "Ral",
+        "series": "Ral",
+        "x": null,
+        "value": 6.0,
+        "experimentalUnitId": "experiment.4",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "numerator": 6,
+        "denominator": 100
+      }
+    ]
+  },
+  "graph": {
+    "schemaVersion": "1.1.0",
+    "caseId": "PFR033",
+    "graphType": "bar",
+    "dataSets": {
+      "displaySet": {
+        "conditionIds": [
+          "RhoA",
+          "Rac1",
+          "Cdc42",
+          "Ras",
+          "Rap",
+          "Ral"
+        ]
+      },
+      "analysisSet": {
+        "unit": "independent imaging experiment (n=4)",
+        "status": "not_applicable"
+      },
+      "comparisonSet": [],
+      "annotationSet": []
+    },
+    "appearance": {
+      "barOutline": true,
+      "barMeanMarker": false,
+      "boxWhiskerMode": "tukey_1_5_iqr",
+      "uncertaintyStyle": "error_bars",
+      "summary": "mean_sd",
+      "errorBarSeries": [
+        "all"
+      ],
+      "seriesStyles": {}
+    },
+    "axes": {
+      "xSemantic": "categorical",
+      "xTitle": "Optogenetic construct",
+      "yTitle": "Cells with calcium transients (%)",
+      "gridLines": false,
+      "yMax": 100,
+      "tickLabels": "default"
+    },
+    "analysis": {
+      "status": "not_applicable",
+      "authoritativeSavedResult": false,
+      "resultCount": 0,
+      "modelId": null
+    }
+  },
+  "analysis": {
+    "caseId": "PFR033",
+    "status": "not_applicable",
+    "reason": "Authoritative Figure specification is descriptive-only; no inferential request was created.",
+    "results": []
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:02:33.751393+00:00",
+    "generator": "scripts/generate_expanded_personal_validation.py",
+    "humanRatingEntered": false
+  }
+}

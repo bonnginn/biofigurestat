@@ -1,0 +1,541 @@
+{
+  "caseId": "LSA090_context_rich_v2",
+  "classification": "CONTEXT_RICH_READY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.0.0",
+    "caseId": "LSA090_context_rich_v2",
+    "originalCaseId": "LSA090",
+    "source": {
+      "pmcid": "PMC8886815",
+      "url": "https://europepmc.org/articles/PMC8886815",
+      "targetPanel": "Fig. 6E",
+      "evidenceSummary": "FRET-pixel box plots: donor control 8 measurements/4 cells, HSA 20/6, H464Q 21/5; unpaired t tests reported."
+    },
+    "fields": {
+      "scientificMessage": {
+        "value": "FRET-positive pixels across donor control, HSA and H464Q",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "experimentalDesign": {
+        "value": "FRET-pixel box plots: donor control 8 measurements/4 cells, HSA 20/6, H464Q 21/5; unpaired t tests reported.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "statisticalUnit": {
+        "value": "cell with nested measurements",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "pairingNestingRepeated": {
+        "value": "Encoded explicitly in synthetic rows where supported",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "factorsLevels": {
+        "value": "See display/series semantics",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "primaryContrast": {
+        "value": "donor control versus each ligand",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "referenceRoles": {
+        "value": "Control/reference labels preserved from legend",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "intent": {
+        "value": "Inferential where the legend reports a test; representative pixels remain descriptive",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "displaySet": {
+        "value": "box plot",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "analysisSet": {
+        "value": "cell with nested measurements",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "comparisonSet": {
+        "value": "donor control versus each ligand",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "annotationSet": {
+        "value": "Only source-supported comparisons",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "graphConvention": {
+        "value": "box plot",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "xSemantics": {
+        "value": "condition or numeric time according to panel",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "seriesSemantics": {
+        "value": "scientific condition/time identity",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "facetSemantics": {
+        "value": "time facet only for LSA088",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "yReadout": {
+        "value": "FRET-positive pixels across donor control, HSA and H464Q",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "sampleSizeStructure": {
+        "value": "FRET-pixel box plots: donor control 8 measurements/4 cells, HSA 20/6, H464Q 21/5; unpaired t tests reported.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "axisColorLegend": {
+        "value": "labels preserve source roles; color identifies series",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "uncertainty": {
+        "value": "SD/SEM or distribution as reported",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      }
+    },
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA090_context_rich_v2.o00001",
+      "series": "Donor control",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 21.495397,
+      "synthetic": true,
+      "nestedObservationId": "cell.1"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00002",
+      "series": "Donor control",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 20.506378,
+      "synthetic": true,
+      "nestedObservationId": "cell.2"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00003",
+      "series": "Donor control",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 20.187159,
+      "synthetic": true,
+      "nestedObservationId": "cell.3"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00004",
+      "series": "Donor control",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 29.318706,
+      "synthetic": true,
+      "nestedObservationId": "cell.4"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00005",
+      "series": "Donor control",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 22.327796,
+      "synthetic": true,
+      "nestedObservationId": "cell.5"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00006",
+      "series": "Donor control",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 19.391912,
+      "synthetic": true,
+      "nestedObservationId": "cell.6"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00007",
+      "series": "Donor control",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 23.677236,
+      "synthetic": true,
+      "nestedObservationId": "cell.7"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00008",
+      "series": "Donor control",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 16.971727,
+      "synthetic": true,
+      "nestedObservationId": "cell.8"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00009",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 51.253322,
+      "synthetic": true,
+      "nestedObservationId": "cell.1"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00010",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 40.881846,
+      "synthetic": true,
+      "nestedObservationId": "cell.2"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00011",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 50.602824,
+      "synthetic": true,
+      "nestedObservationId": "cell.3"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00012",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 48.983355,
+      "synthetic": true,
+      "nestedObservationId": "cell.4"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00013",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.5",
+      "x": null,
+      "value": 58.35455,
+      "synthetic": true,
+      "nestedObservationId": "cell.5"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00014",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.6",
+      "x": null,
+      "value": 38.588152,
+      "synthetic": true,
+      "nestedObservationId": "cell.6"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00015",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 48.885667,
+      "synthetic": true,
+      "nestedObservationId": "cell.7"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00016",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 51.841839,
+      "synthetic": true,
+      "nestedObservationId": "cell.8"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00017",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 55.703575,
+      "synthetic": true,
+      "nestedObservationId": "cell.9"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00018",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 40.321772,
+      "synthetic": true,
+      "nestedObservationId": "cell.10"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00019",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.5",
+      "x": null,
+      "value": 38.934558,
+      "synthetic": true,
+      "nestedObservationId": "cell.11"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00020",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.6",
+      "x": null,
+      "value": 53.490016,
+      "synthetic": true,
+      "nestedObservationId": "cell.12"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00021",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 49.067729,
+      "synthetic": true,
+      "nestedObservationId": "cell.13"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00022",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 44.176026,
+      "synthetic": true,
+      "nestedObservationId": "cell.14"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00023",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 47.88592,
+      "synthetic": true,
+      "nestedObservationId": "cell.15"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00024",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 40.554891,
+      "synthetic": true,
+      "nestedObservationId": "cell.16"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00025",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.5",
+      "x": null,
+      "value": 53.57023,
+      "synthetic": true,
+      "nestedObservationId": "cell.17"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00026",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.6",
+      "x": null,
+      "value": 37.918239,
+      "synthetic": true,
+      "nestedObservationId": "cell.18"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00027",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 44.198146,
+      "synthetic": true,
+      "nestedObservationId": "cell.19"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00028",
+      "series": "HSA",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 51.829519,
+      "synthetic": true,
+      "nestedObservationId": "cell.20"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00029",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 27.464658,
+      "synthetic": true,
+      "nestedObservationId": "cell.1"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00030",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 25.445207,
+      "synthetic": true,
+      "nestedObservationId": "cell.2"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00031",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 22.601833,
+      "synthetic": true,
+      "nestedObservationId": "cell.3"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00032",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 29.865414,
+      "synthetic": true,
+      "nestedObservationId": "cell.4"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00033",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.5",
+      "x": null,
+      "value": 25.777043,
+      "synthetic": true,
+      "nestedObservationId": "cell.5"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00034",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 23.173544,
+      "synthetic": true,
+      "nestedObservationId": "cell.6"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00035",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 22.178947,
+      "synthetic": true,
+      "nestedObservationId": "cell.7"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00036",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 28.646362,
+      "synthetic": true,
+      "nestedObservationId": "cell.8"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00037",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 27.191289,
+      "synthetic": true,
+      "nestedObservationId": "cell.9"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00038",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.5",
+      "x": null,
+      "value": 30.389832,
+      "synthetic": true,
+      "nestedObservationId": "cell.10"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00039",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 29.456227,
+      "synthetic": true,
+      "nestedObservationId": "cell.11"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00040",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 22.21012,
+      "synthetic": true,
+      "nestedObservationId": "cell.12"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00041",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 27.392216,
+      "synthetic": true,
+      "nestedObservationId": "cell.13"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00042",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 24.007503,
+      "synthetic": true,
+      "nestedObservationId": "cell.14"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00043",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.5",
+      "x": null,
+      "value": 26.359469,
+      "synthetic": true,
+      "nestedObservationId": "cell.15"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00044",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 24.286949,
+      "synthetic": true,
+      "nestedObservationId": "cell.16"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00045",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 26.917843,
+      "synthetic": true,
+      "nestedObservationId": "cell.17"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00046",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 17.099172,
+      "synthetic": true,
+      "nestedObservationId": "cell.18"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00047",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 23.706651,
+      "synthetic": true,
+      "nestedObservationId": "cell.19"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00048",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.5",
+      "x": null,
+      "value": 25.999009,
+      "synthetic": true,
+      "nestedObservationId": "cell.20"
+    },
+    {
+      "observationId": "LSA090_context_rich_v2.o00049",
+      "series": "H464Q",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 21.523177,
+      "synthetic": true,
+      "nestedObservationId": "cell.21"
+    }
+  ]
+}

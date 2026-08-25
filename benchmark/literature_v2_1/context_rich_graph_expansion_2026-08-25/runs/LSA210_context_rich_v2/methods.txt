@@ -1,0 +1,7 @@
+Case: LSA210_context_rich_v2
+Source: https://europepmc.org/articles/PMC12855580 (Fig. 4F)
+Scientific question: Do Piezo1 knockdown and TfR-1 inhibition reduce stiffness-associated endothelial iron accumulation?
+Statistical unit: biological repeat
+Source analysis: one-way ANOVA
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

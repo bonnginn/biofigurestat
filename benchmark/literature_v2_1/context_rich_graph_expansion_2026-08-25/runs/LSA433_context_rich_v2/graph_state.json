@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "heatmap",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "Which genes distinguish primed MER51B-GFP+LTR5_Hs-RFP+ from MER51B-GFP+ hESCs?",
+  "annotationSet": "none without an authoritative saved result"
+}

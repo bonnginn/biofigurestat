@@ -1,0 +1,273 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA128_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA128.o1",
+        "series": "M1018 0 h",
+        "experimentalUnitId": "unit.M1018 0 h.1",
+        "pairId": null,
+        "x": null,
+        "value": 49.6612,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o2",
+        "series": "M1018 0 h",
+        "experimentalUnitId": "unit.M1018 0 h.2",
+        "pairId": null,
+        "x": null,
+        "value": 51.9314,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o3",
+        "series": "M1018 0 h",
+        "experimentalUnitId": "unit.M1018 0 h.3",
+        "pairId": null,
+        "x": null,
+        "value": 47.0918,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o4",
+        "series": "M1018 40 h",
+        "experimentalUnitId": "unit.M1018 40 h.1",
+        "pairId": null,
+        "x": null,
+        "value": 56.6609,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o5",
+        "series": "M1018 40 h",
+        "experimentalUnitId": "unit.M1018 40 h.2",
+        "pairId": null,
+        "x": null,
+        "value": 63.1649,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o6",
+        "series": "M1018 40 h",
+        "experimentalUnitId": "unit.M1018 40 h.3",
+        "pairId": null,
+        "x": null,
+        "value": 58.8007,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o7",
+        "series": "BDM 0 h",
+        "experimentalUnitId": "unit.BDM 0 h.1",
+        "pairId": null,
+        "x": null,
+        "value": 67.8341,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o8",
+        "series": "BDM 0 h",
+        "experimentalUnitId": "unit.BDM 0 h.2",
+        "pairId": null,
+        "x": null,
+        "value": 71.9703,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o9",
+        "series": "BDM 0 h",
+        "experimentalUnitId": "unit.BDM 0 h.3",
+        "pairId": null,
+        "x": null,
+        "value": 53.932,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o10",
+        "series": "BDM 40 h",
+        "experimentalUnitId": "unit.BDM 40 h.1",
+        "pairId": null,
+        "x": null,
+        "value": 77.3324,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o11",
+        "series": "BDM 40 h",
+        "experimentalUnitId": "unit.BDM 40 h.2",
+        "pairId": null,
+        "x": null,
+        "value": 73.8679,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o12",
+        "series": "BDM 40 h",
+        "experimentalUnitId": "unit.BDM 40 h.3",
+        "pairId": null,
+        "x": null,
+        "value": 74.5062,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o13",
+        "series": "Bleb 0 h",
+        "experimentalUnitId": "unit.Bleb 0 h.1",
+        "pairId": null,
+        "x": null,
+        "value": 86.1278,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o14",
+        "series": "Bleb 0 h",
+        "experimentalUnitId": "unit.Bleb 0 h.2",
+        "pairId": null,
+        "x": null,
+        "value": 82.7871,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o15",
+        "series": "Bleb 0 h",
+        "experimentalUnitId": "unit.Bleb 0 h.3",
+        "pairId": null,
+        "x": null,
+        "value": 92.5141,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o16",
+        "series": "Bleb 40 h",
+        "experimentalUnitId": "unit.Bleb 40 h.1",
+        "pairId": null,
+        "x": null,
+        "value": 99.0361,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o17",
+        "series": "Bleb 40 h",
+        "experimentalUnitId": "unit.Bleb 40 h.2",
+        "pairId": null,
+        "x": null,
+        "value": 93.7049,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o18",
+        "series": "Bleb 40 h",
+        "experimentalUnitId": "unit.Bleb 40 h.3",
+        "pairId": null,
+        "x": null,
+        "value": 88.5831,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o19",
+        "series": "nitro-Bleb 0 h",
+        "experimentalUnitId": "unit.nitro-Bleb 0 h.1",
+        "pairId": null,
+        "x": null,
+        "value": 96.5883,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o20",
+        "series": "nitro-Bleb 0 h",
+        "experimentalUnitId": "unit.nitro-Bleb 0 h.2",
+        "pairId": null,
+        "x": null,
+        "value": 100.83,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o21",
+        "series": "nitro-Bleb 0 h",
+        "experimentalUnitId": "unit.nitro-Bleb 0 h.3",
+        "pairId": null,
+        "x": null,
+        "value": 108.9826,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o22",
+        "series": "nitro-Bleb 40 h",
+        "experimentalUnitId": "unit.nitro-Bleb 40 h.1",
+        "pairId": null,
+        "x": null,
+        "value": 113.8023,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o23",
+        "series": "nitro-Bleb 40 h",
+        "experimentalUnitId": "unit.nitro-Bleb 40 h.2",
+        "pairId": null,
+        "x": null,
+        "value": 120.6947,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA128.o24",
+        "series": "nitro-Bleb 40 h",
+        "experimentalUnitId": "unit.nitro-Bleb 40 h.3",
+        "pairId": null,
+        "x": null,
+        "value": 116.771,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA128_context_rich_v2",
+    "originalCaseId": "LSA128",
+    "scientificQuestion": "Which culture medium best preserves adult SAN-cell length over 40 hours?",
+    "conditions": [
+      "M1018 0 h",
+      "M1018 40 h",
+      "BDM 0 h",
+      "BDM 40 h",
+      "Bleb 0 h",
+      "Bleb 40 h",
+      "nitro-Bleb 0 h",
+      "nitro-Bleb 40 h"
+    ],
+    "statisticalUnit": "cell nested in preparation",
+    "sourceMethod": "Kruskal–Wallis + Dunn; 0-vs-40 h Mann–Whitney",
+    "source": {
+      "pmcid": "PMC8749457",
+      "url": "https://europepmc.org/articles/PMC8749457",
+      "targetPanel": "Fig. 1C",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "More than 48 cells from three preparations are displayed; preparation remains the biological unit.",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "Kruskal–Wallis + Dunn; 0-vs-40 h Mann–Whitney"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "dot_summary",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Which culture medium best preserves adult SAN-cell length over 40 hours?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA128",
+    "candidateFamilyReclassified": "factorial_descriptive",
+    "poolDOpened": false
+  }
+}

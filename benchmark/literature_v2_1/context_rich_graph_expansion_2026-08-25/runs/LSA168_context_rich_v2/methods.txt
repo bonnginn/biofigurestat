@@ -1,0 +1,7 @@
+Case: LSA168_context_rich_v2
+Source: https://europepmc.org/articles/PMC12669963 (Fig. 3C)
+All observations are deterministic synthetic reconstruction, not published raw data.
+Statistical unit: independent pulldown experiment
+Primary contrast: WT versus S24F and OMM
+Analysis status: ok
+Authority: saved local numerical-engine result; Graph does not smooth or recompute analysis.

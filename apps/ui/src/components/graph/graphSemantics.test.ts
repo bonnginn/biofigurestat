@@ -5,6 +5,7 @@ import {
   createMinorTicks,
   graphDisplayLabel,
   omitGenericCategoricalAxisTitle,
+  resolveSeriesLinePresentation,
 } from "./graphSemantics";
 
 describe("generic graph semantics", () => {
@@ -70,5 +71,18 @@ describe("generic graph semantics", () => {
       },
     ]);
     expect(groups[1]).toHaveLength(4);
+  });
+
+  it("keeps per-series width and dash semantics synchronized", () => {
+    expect(resolveSeriesLinePresentation({ lineStyle: "dashed", lineWidth: 3.5 }, 2)).toEqual({
+      lineStyle: "dashed",
+      lineWidth: 3.5,
+      dashArray: "8 5",
+    });
+    expect(resolveSeriesLinePresentation(undefined, 2)).toEqual({
+      lineStyle: "solid",
+      lineWidth: 2,
+      dashArray: undefined,
+    });
   });
 });

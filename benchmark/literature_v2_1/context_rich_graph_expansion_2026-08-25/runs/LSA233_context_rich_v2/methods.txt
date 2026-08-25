@@ -1,0 +1,7 @@
+Case: LSA233_context_rich_v2
+Source: https://europepmc.org/articles/PMC10897188 (Fig. EV1F)
+Scientific question: Does stromal Cep120 deletion reduce the proportion of cells containing centrosomes?
+Statistical unit: mouse
+Source analysis: two-tailed unpaired t test
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

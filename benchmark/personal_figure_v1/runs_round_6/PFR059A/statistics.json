@@ -1,0 +1,523 @@
+{
+  "caseId": "PFR059A",
+  "status": "ok",
+  "unit": "fractionation experiment",
+  "results": [
+    {
+      "label": "T",
+      "request": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR059A.T",
+        "projectId": "project.PFR059A",
+        "analysisId": "analysis.PFR059A.T",
+        "templateId": "D03",
+        "templateVersion": "0.1.0",
+        "method": "one_way_anova",
+        "conditionIds": [
+          "AX2",
+          "gflB KO",
+          "gflB KO (GFP-GflB)"
+        ],
+        "contrastIntent": "planned_comparisons",
+        "plannedContrastConditionIds": [
+          [
+            "AX2",
+            "gflB KO"
+          ],
+          [
+            "gflB KO",
+            "gflB KO (GFP-GflB)"
+          ]
+        ],
+        "primaryContrastConditionIds": [
+          "AX2",
+          "gflB KO"
+        ],
+        "observations": [
+          {
+            "observationId": "PFR059A.T.AX2.1",
+            "conditionId": "AX2",
+            "value": 97.595877,
+            "experimentalUnitId": "AX2.experiment.1.AX2"
+          },
+          {
+            "observationId": "PFR059A.T.AX2.2",
+            "conditionId": "AX2",
+            "value": 98.443934,
+            "experimentalUnitId": "AX2.experiment.2.AX2"
+          },
+          {
+            "observationId": "PFR059A.T.AX2.3",
+            "conditionId": "AX2",
+            "value": 101.306235,
+            "experimentalUnitId": "AX2.experiment.3.AX2"
+          },
+          {
+            "observationId": "PFR059A.T.gflB KO.1",
+            "conditionId": "gflB KO",
+            "value": 99.441748,
+            "experimentalUnitId": "gflB KO.experiment.1.gflB KO"
+          },
+          {
+            "observationId": "PFR059A.T.gflB KO.2",
+            "conditionId": "gflB KO",
+            "value": 101.56188,
+            "experimentalUnitId": "gflB KO.experiment.2.gflB KO"
+          },
+          {
+            "observationId": "PFR059A.T.gflB KO.3",
+            "conditionId": "gflB KO",
+            "value": 102.196765,
+            "experimentalUnitId": "gflB KO.experiment.3.gflB KO"
+          },
+          {
+            "observationId": "PFR059A.T.gflB KO (GFP-GflB).1",
+            "conditionId": "gflB KO (GFP-GflB)",
+            "value": 102.721671,
+            "experimentalUnitId": "gflB KO (GFP-GflB).experiment.1.gflB KO (GFP-GflB)"
+          },
+          {
+            "observationId": "PFR059A.T.gflB KO (GFP-GflB).2",
+            "conditionId": "gflB KO (GFP-GflB)",
+            "value": 100.209032,
+            "experimentalUnitId": "gflB KO (GFP-GflB).experiment.2.gflB KO (GFP-GflB)"
+          },
+          {
+            "observationId": "PFR059A.T.gflB KO (GFP-GflB).3",
+            "conditionId": "gflB KO (GFP-GflB)",
+            "value": 95.97453,
+            "experimentalUnitId": "gflB KO (GFP-GflB).experiment.3.gflB KO (GFP-GflB)"
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.95,
+          "multiplicityMethod": "holm_planned_comparisons"
+        }
+      },
+      "result": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR059A.T",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.14.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0",
+            "statsmodels": "0.14.6"
+          }
+        },
+        "estimates": [
+          {
+            "name": "AX2_minus_gflB KO",
+            "value": -1.9514489999999967,
+            "standardError": 1.9714175677636967,
+            "confidenceInterval": null
+          },
+          {
+            "name": "gflB KO_minus_gflB KO (GFP-GflB)",
+            "value": 1.4317199999999843,
+            "standardError": 1.9714175677636967,
+            "confidenceInterval": null
+          }
+        ],
+        "tests": [
+          {
+            "name": "classical_one_way_anova",
+            "statisticName": "F",
+            "statistic": 0.5255897536192928,
+            "degreesOfFreedom": [
+              2.0,
+              6.0
+            ],
+            "pValue": 0.6161244425159482,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          },
+          {
+            "name": "planned_holm:AX2:gflB KO",
+            "statisticName": "t",
+            "statistic": -0.9898709598158083,
+            "degreesOfFreedom": [
+              6.0
+            ],
+            "pValue": 0.3604610337674138,
+            "adjustedPValue": 0.7209220675348276,
+            "effectSizeName": "hedges_g",
+            "effectSize": -0.9095382362589135
+          },
+          {
+            "name": "planned_holm:gflB KO:gflB KO (GFP-GflB)",
+            "statisticName": "t",
+            "statistic": 0.7262388361609634,
+            "degreesOfFreedom": [
+              6.0
+            ],
+            "pValue": 0.49503551048744343,
+            "adjustedPValue": 0.7209220675348276,
+            "effectSizeName": "hedges_g",
+            "effectSize": 0.4363187188312679
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "equal_variance_assumption_selected",
+            "message": "Conventional one-way ANOVA and its pooled-variance comparisons assume equal population variances."
+          },
+          {
+            "code": "planned_pairwise_no_simultaneous_ci",
+            "message": "Only the explicitly selected pairwise comparisons were tested with Holm-adjusted p-values. Simultaneous confidence intervals are not reported for this workflow."
+          }
+        ],
+        "warnings": [],
+        "completedAt": "2026-08-25T06:02:44.177781+00:00"
+      }
+    },
+    {
+      "label": "S",
+      "request": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR059A.S",
+        "projectId": "project.PFR059A",
+        "analysisId": "analysis.PFR059A.S",
+        "templateId": "D03",
+        "templateVersion": "0.1.0",
+        "method": "one_way_anova",
+        "conditionIds": [
+          "AX2",
+          "gflB KO",
+          "gflB KO (GFP-GflB)"
+        ],
+        "contrastIntent": "planned_comparisons",
+        "plannedContrastConditionIds": [
+          [
+            "AX2",
+            "gflB KO"
+          ],
+          [
+            "gflB KO",
+            "gflB KO (GFP-GflB)"
+          ]
+        ],
+        "primaryContrastConditionIds": [
+          "AX2",
+          "gflB KO"
+        ],
+        "observations": [
+          {
+            "observationId": "PFR059A.S.AX2.1",
+            "conditionId": "AX2",
+            "value": 64.141241,
+            "experimentalUnitId": "AX2.experiment.1.AX2"
+          },
+          {
+            "observationId": "PFR059A.S.AX2.2",
+            "conditionId": "AX2",
+            "value": 59.201979,
+            "experimentalUnitId": "AX2.experiment.2.AX2"
+          },
+          {
+            "observationId": "PFR059A.S.AX2.3",
+            "conditionId": "AX2",
+            "value": 59.105953,
+            "experimentalUnitId": "AX2.experiment.3.AX2"
+          },
+          {
+            "observationId": "PFR059A.S.gflB KO.1",
+            "conditionId": "gflB KO",
+            "value": 37.535464,
+            "experimentalUnitId": "gflB KO.experiment.1.gflB KO"
+          },
+          {
+            "observationId": "PFR059A.S.gflB KO.2",
+            "conditionId": "gflB KO",
+            "value": 40.72944,
+            "experimentalUnitId": "gflB KO.experiment.2.gflB KO"
+          },
+          {
+            "observationId": "PFR059A.S.gflB KO.3",
+            "conditionId": "gflB KO",
+            "value": 39.744604,
+            "experimentalUnitId": "gflB KO.experiment.3.gflB KO"
+          },
+          {
+            "observationId": "PFR059A.S.gflB KO (GFP-GflB).1",
+            "conditionId": "gflB KO (GFP-GflB)",
+            "value": 57.352043,
+            "experimentalUnitId": "gflB KO (GFP-GflB).experiment.1.gflB KO (GFP-GflB)"
+          },
+          {
+            "observationId": "PFR059A.S.gflB KO (GFP-GflB).2",
+            "conditionId": "gflB KO (GFP-GflB)",
+            "value": 60.935459,
+            "experimentalUnitId": "gflB KO (GFP-GflB).experiment.2.gflB KO (GFP-GflB)"
+          },
+          {
+            "observationId": "PFR059A.S.gflB KO (GFP-GflB).3",
+            "conditionId": "gflB KO (GFP-GflB)",
+            "value": 59.403983,
+            "experimentalUnitId": "gflB KO (GFP-GflB).experiment.3.gflB KO (GFP-GflB)"
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.95,
+          "multiplicityMethod": "holm_planned_comparisons"
+        }
+      },
+      "result": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR059A.S",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.14.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0",
+            "statsmodels": "0.14.6"
+          }
+        },
+        "estimates": [
+          {
+            "name": "AX2_minus_gflB KO",
+            "value": 21.479888333333335,
+            "standardError": 1.7764726415481833,
+            "confidenceInterval": null
+          },
+          {
+            "name": "gflB KO_minus_gflB KO (GFP-GflB)",
+            "value": -19.89399233333333,
+            "standardError": 1.7764726415481833,
+            "confidenceInterval": null
+          }
+        ],
+        "tests": [
+          {
+            "name": "classical_one_way_anova",
+            "statisticName": "F",
+            "statistic": 90.80176236627734,
+            "degreesOfFreedom": [
+              2.0,
+              6.0
+            ],
+            "pValue": 3.271378310578838e-05,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          },
+          {
+            "name": "planned_holm:AX2:gflB KO",
+            "statisticName": "t",
+            "statistic": 12.091313894152496,
+            "degreesOfFreedom": [
+              6.0
+            ],
+            "pValue": 1.943515554770873e-05,
+            "adjustedPValue": 3.887031109541746e-05,
+            "effectSizeName": "hedges_g",
+            "effectSize": 7.318335892004161
+          },
+          {
+            "name": "planned_holm:gflB KO:gflB KO (GFP-GflB)",
+            "statisticName": "t",
+            "statistic": -11.198592012087424,
+            "degreesOfFreedom": [
+              6.0
+            ],
+            "pValue": 3.0270089480764947e-05,
+            "adjustedPValue": 3.887031109541746e-05,
+            "effectSizeName": "hedges_g",
+            "effectSize": -9.235366239978992
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "equal_variance_assumption_selected",
+            "message": "Conventional one-way ANOVA and its pooled-variance comparisons assume equal population variances."
+          },
+          {
+            "code": "planned_pairwise_no_simultaneous_ci",
+            "message": "Only the explicitly selected pairwise comparisons were tested with Holm-adjusted p-values. Simultaneous confidence intervals are not reported for this workflow."
+          }
+        ],
+        "warnings": [],
+        "completedAt": "2026-08-25T06:02:45.616054+00:00"
+      }
+    },
+    {
+      "label": "P",
+      "request": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR059A.P",
+        "projectId": "project.PFR059A",
+        "analysisId": "analysis.PFR059A.P",
+        "templateId": "D03",
+        "templateVersion": "0.1.0",
+        "method": "one_way_anova",
+        "conditionIds": [
+          "AX2",
+          "gflB KO",
+          "gflB KO (GFP-GflB)"
+        ],
+        "contrastIntent": "planned_comparisons",
+        "plannedContrastConditionIds": [
+          [
+            "AX2",
+            "gflB KO"
+          ],
+          [
+            "gflB KO",
+            "gflB KO (GFP-GflB)"
+          ]
+        ],
+        "primaryContrastConditionIds": [
+          "AX2",
+          "gflB KO"
+        ],
+        "observations": [
+          {
+            "observationId": "PFR059A.P.AX2.1",
+            "conditionId": "AX2",
+            "value": 35.858759,
+            "experimentalUnitId": "AX2.experiment.1.AX2"
+          },
+          {
+            "observationId": "PFR059A.P.AX2.2",
+            "conditionId": "AX2",
+            "value": 40.798021,
+            "experimentalUnitId": "AX2.experiment.2.AX2"
+          },
+          {
+            "observationId": "PFR059A.P.AX2.3",
+            "conditionId": "AX2",
+            "value": 40.894047,
+            "experimentalUnitId": "AX2.experiment.3.AX2"
+          },
+          {
+            "observationId": "PFR059A.P.gflB KO.1",
+            "conditionId": "gflB KO",
+            "value": 62.464536,
+            "experimentalUnitId": "gflB KO.experiment.1.gflB KO"
+          },
+          {
+            "observationId": "PFR059A.P.gflB KO.2",
+            "conditionId": "gflB KO",
+            "value": 59.27056,
+            "experimentalUnitId": "gflB KO.experiment.2.gflB KO"
+          },
+          {
+            "observationId": "PFR059A.P.gflB KO.3",
+            "conditionId": "gflB KO",
+            "value": 60.255396,
+            "experimentalUnitId": "gflB KO.experiment.3.gflB KO"
+          },
+          {
+            "observationId": "PFR059A.P.gflB KO (GFP-GflB).1",
+            "conditionId": "gflB KO (GFP-GflB)",
+            "value": 42.647957,
+            "experimentalUnitId": "gflB KO (GFP-GflB).experiment.1.gflB KO (GFP-GflB)"
+          },
+          {
+            "observationId": "PFR059A.P.gflB KO (GFP-GflB).2",
+            "conditionId": "gflB KO (GFP-GflB)",
+            "value": 39.064541,
+            "experimentalUnitId": "gflB KO (GFP-GflB).experiment.2.gflB KO (GFP-GflB)"
+          },
+          {
+            "observationId": "PFR059A.P.gflB KO (GFP-GflB).3",
+            "conditionId": "gflB KO (GFP-GflB)",
+            "value": 40.596017,
+            "experimentalUnitId": "gflB KO (GFP-GflB).experiment.3.gflB KO (GFP-GflB)"
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.95,
+          "multiplicityMethod": "holm_planned_comparisons"
+        }
+      },
+      "result": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR059A.P",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.14.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0",
+            "statsmodels": "0.14.6"
+          }
+        },
+        "estimates": [
+          {
+            "name": "AX2_minus_gflB KO",
+            "value": -21.479888333333335,
+            "standardError": 1.7764726415481846,
+            "confidenceInterval": null
+          },
+          {
+            "name": "gflB KO_minus_gflB KO (GFP-GflB)",
+            "value": 19.89399233333333,
+            "standardError": 1.7764726415481846,
+            "confidenceInterval": null
+          }
+        ],
+        "tests": [
+          {
+            "name": "classical_one_way_anova",
+            "statisticName": "F",
+            "statistic": 90.80176236627736,
+            "degreesOfFreedom": [
+              2.0,
+              6.0
+            ],
+            "pValue": 3.271378310578836e-05,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          },
+          {
+            "name": "planned_holm:AX2:gflB KO",
+            "statisticName": "t",
+            "statistic": -12.091313894152487,
+            "degreesOfFreedom": [
+              6.0
+            ],
+            "pValue": 1.9435155547708797e-05,
+            "adjustedPValue": 3.8870311095417594e-05,
+            "effectSizeName": "hedges_g",
+            "effectSize": -7.318335892004152
+          },
+          {
+            "name": "planned_holm:gflB KO:gflB KO (GFP-GflB)",
+            "statisticName": "t",
+            "statistic": 11.198592012087415,
+            "degreesOfFreedom": [
+              6.0
+            ],
+            "pValue": 3.0270089480765096e-05,
+            "adjustedPValue": 3.8870311095417594e-05,
+            "effectSizeName": "hedges_g",
+            "effectSize": 9.235366239978992
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "equal_variance_assumption_selected",
+            "message": "Conventional one-way ANOVA and its pooled-variance comparisons assume equal population variances."
+          },
+          {
+            "code": "planned_pairwise_no_simultaneous_ci",
+            "message": "Only the explicitly selected pairwise comparisons were tested with Holm-adjusted p-values. Simultaneous confidence intervals are not reported for this workflow."
+          }
+        ],
+        "warnings": [],
+        "completedAt": "2026-08-25T06:02:47.019245+00:00"
+      }
+    }
+  ]
+}

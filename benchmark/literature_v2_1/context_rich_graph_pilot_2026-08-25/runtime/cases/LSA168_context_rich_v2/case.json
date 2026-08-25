@@ -1,0 +1,208 @@
+{
+  "caseId": "LSA168_context_rich_v2",
+  "classification": "CONTEXT_RICH_READY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.0.0",
+    "caseId": "LSA168_context_rich_v2",
+    "originalCaseId": "LSA168",
+    "source": {
+      "pmcid": "PMC12669963",
+      "url": "https://europepmc.org/articles/PMC12669963",
+      "targetPanel": "Fig. 3C",
+      "evidenceSummary": "DRP1 binding normalized to PGAM5-GFP pulldown, WT/S24F/OMM, n=4, mean±SEM, Dunnett versus WT."
+    },
+    "fields": {
+      "scientificMessage": {
+        "value": "PGAM5 cleavage state controls DRP1 binding",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "experimentalDesign": {
+        "value": "DRP1 binding normalized to PGAM5-GFP pulldown, WT/S24F/OMM, n=4, mean±SEM, Dunnett versus WT.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "statisticalUnit": {
+        "value": "independent pulldown experiment",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "pairingNestingRepeated": {
+        "value": "Encoded explicitly in synthetic rows where supported",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "factorsLevels": {
+        "value": "See display/series semantics",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "primaryContrast": {
+        "value": "WT versus S24F and OMM",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "referenceRoles": {
+        "value": "Control/reference labels preserved from legend",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "intent": {
+        "value": "Inferential where the legend reports a test; representative pixels remain descriptive",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "displaySet": {
+        "value": "bar/dot",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "analysisSet": {
+        "value": "independent pulldown experiment",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "comparisonSet": {
+        "value": "WT versus S24F and OMM",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "annotationSet": {
+        "value": "Only source-supported comparisons",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "graphConvention": {
+        "value": "bar/dot",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "xSemantics": {
+        "value": "condition or numeric time according to panel",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "seriesSemantics": {
+        "value": "scientific condition/time identity",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "facetSemantics": {
+        "value": "time facet only for LSA088",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "yReadout": {
+        "value": "PGAM5 cleavage state controls DRP1 binding",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "sampleSizeStructure": {
+        "value": "DRP1 binding normalized to PGAM5-GFP pulldown, WT/S24F/OMM, n=4, mean±SEM, Dunnett versus WT.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "axisColorLegend": {
+        "value": "labels preserve source roles; color identifies series",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "uncertainty": {
+        "value": "SD/SEM or distribution as reported",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      }
+    },
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA168_context_rich_v2.o00001",
+      "series": "WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 0.901661,
+      "synthetic": true,
+      "nestedObservationId": null
+    },
+    {
+      "observationId": "LSA168_context_rich_v2.o00002",
+      "series": "WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 0.938048,
+      "synthetic": true,
+      "nestedObservationId": null
+    },
+    {
+      "observationId": "LSA168_context_rich_v2.o00003",
+      "series": "WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 0.923586,
+      "synthetic": true,
+      "nestedObservationId": null
+    },
+    {
+      "observationId": "LSA168_context_rich_v2.o00004",
+      "series": "WT",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 0.970558,
+      "synthetic": true,
+      "nestedObservationId": null
+    },
+    {
+      "observationId": "LSA168_context_rich_v2.o00005",
+      "series": "S24F",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 0.361035,
+      "synthetic": true,
+      "nestedObservationId": null
+    },
+    {
+      "observationId": "LSA168_context_rich_v2.o00006",
+      "series": "S24F",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 0.370411,
+      "synthetic": true,
+      "nestedObservationId": null
+    },
+    {
+      "observationId": "LSA168_context_rich_v2.o00007",
+      "series": "S24F",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 0.441447,
+      "synthetic": true,
+      "nestedObservationId": null
+    },
+    {
+      "observationId": "LSA168_context_rich_v2.o00008",
+      "series": "S24F",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 0.346474,
+      "synthetic": true,
+      "nestedObservationId": null
+    },
+    {
+      "observationId": "LSA168_context_rich_v2.o00009",
+      "series": "OMM",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 0.364684,
+      "synthetic": true,
+      "nestedObservationId": null
+    },
+    {
+      "observationId": "LSA168_context_rich_v2.o00010",
+      "series": "OMM",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 0.145027,
+      "synthetic": true,
+      "nestedObservationId": null
+    },
+    {
+      "observationId": "LSA168_context_rich_v2.o00011",
+      "series": "OMM",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 0.110836,
+      "synthetic": true,
+      "nestedObservationId": null
+    },
+    {
+      "observationId": "LSA168_context_rich_v2.o00012",
+      "series": "OMM",
+      "experimentalUnitId": "experiment.4",
+      "x": null,
+      "value": 0.351288,
+      "synthetic": true,
+      "nestedObservationId": null
+    }
+  ]
+}

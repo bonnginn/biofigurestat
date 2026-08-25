@@ -1,0 +1,219 @@
+{
+  "caseId": "PFR027A",
+  "status": "ok",
+  "unit": "independent imaging experiment",
+  "results": [
+    {
+      "request": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR027A.planned",
+        "projectId": "project.PFR027A",
+        "analysisId": "analysis.PFR027A.planned",
+        "templateId": "D03",
+        "templateVersion": "0.1.0",
+        "method": "one_way_anova",
+        "conditionIds": [
+          "control",
+          "RhoA",
+          "Rac1",
+          "Cdc42"
+        ],
+        "contrastIntent": "planned_comparisons",
+        "plannedContrastConditionIds": [
+          [
+            "control",
+            "RhoA"
+          ],
+          [
+            "control",
+            "Rac1"
+          ],
+          [
+            "control",
+            "Cdc42"
+          ]
+        ],
+        "primaryContrastConditionIds": [
+          "control",
+          "RhoA"
+        ],
+        "observations": [
+          {
+            "observationId": "PFR027A.planned.control.1",
+            "conditionId": "control",
+            "value": 1.049859,
+            "experimentalUnitId": "experiment.1.control"
+          },
+          {
+            "observationId": "PFR027A.planned.control.2",
+            "conditionId": "control",
+            "value": 0.981546,
+            "experimentalUnitId": "experiment.2.control"
+          },
+          {
+            "observationId": "PFR027A.planned.control.3",
+            "conditionId": "control",
+            "value": 1.015341,
+            "experimentalUnitId": "experiment.3.control"
+          },
+          {
+            "observationId": "PFR027A.planned.RhoA.1",
+            "conditionId": "RhoA",
+            "value": 1.547099,
+            "experimentalUnitId": "experiment.1.RhoA"
+          },
+          {
+            "observationId": "PFR027A.planned.RhoA.2",
+            "conditionId": "RhoA",
+            "value": 1.599795,
+            "experimentalUnitId": "experiment.2.RhoA"
+          },
+          {
+            "observationId": "PFR027A.planned.RhoA.3",
+            "conditionId": "RhoA",
+            "value": 1.621875,
+            "experimentalUnitId": "experiment.3.RhoA"
+          },
+          {
+            "observationId": "PFR027A.planned.Rac1.1",
+            "conditionId": "Rac1",
+            "value": 1.054713,
+            "experimentalUnitId": "experiment.1.Rac1"
+          },
+          {
+            "observationId": "PFR027A.planned.Rac1.2",
+            "conditionId": "Rac1",
+            "value": 1.05003,
+            "experimentalUnitId": "experiment.2.Rac1"
+          },
+          {
+            "observationId": "PFR027A.planned.Rac1.3",
+            "conditionId": "Rac1",
+            "value": 1.134362,
+            "experimentalUnitId": "experiment.3.Rac1"
+          },
+          {
+            "observationId": "PFR027A.planned.Cdc42.1",
+            "conditionId": "Cdc42",
+            "value": 1.000855,
+            "experimentalUnitId": "experiment.1.Cdc42"
+          },
+          {
+            "observationId": "PFR027A.planned.Cdc42.2",
+            "conditionId": "Cdc42",
+            "value": 0.991385,
+            "experimentalUnitId": "experiment.2.Cdc42"
+          },
+          {
+            "observationId": "PFR027A.planned.Cdc42.3",
+            "conditionId": "Cdc42",
+            "value": 1.012959,
+            "experimentalUnitId": "experiment.3.Cdc42"
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.95,
+          "multiplicityMethod": "holm_planned_comparisons"
+        }
+      },
+      "result": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR027A.planned",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.14.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0",
+            "statsmodels": "0.14.6"
+          }
+        },
+        "estimates": [
+          {
+            "name": "control_minus_RhoA",
+            "value": -0.5740076666666665,
+            "standardError": 0.02888459336355246,
+            "confidenceInterval": null
+          },
+          {
+            "name": "control_minus_Rac1",
+            "value": -0.06411966666666657,
+            "standardError": 0.02888459336355246,
+            "confidenceInterval": null
+          },
+          {
+            "name": "control_minus_Cdc42",
+            "value": 0.013849000000000222,
+            "standardError": 0.02888459336355246,
+            "confidenceInterval": null
+          }
+        ],
+        "tests": [
+          {
+            "name": "classical_one_way_anova",
+            "statisticName": "F",
+            "statistic": 188.86210238927262,
+            "degreesOfFreedom": [
+              3.0,
+              8.0
+            ],
+            "pValue": 9.19616811946037e-08,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          },
+          {
+            "name": "planned_holm:control:RhoA",
+            "statisticName": "t",
+            "statistic": -19.872451013659358,
+            "degreesOfFreedom": [
+              8.0
+            ],
+            "pValue": 4.283965190043667e-08,
+            "adjustedPValue": 1.2851895570131002e-07,
+            "effectSizeName": "hedges_g",
+            "effectSize": -12.59940733495711
+          },
+          {
+            "name": "planned_holm:control:Rac1",
+            "statisticName": "t",
+            "statistic": -2.2198569964143897,
+            "degreesOfFreedom": [
+              8.0
+            ],
+            "pValue": 0.057194863389746546,
+            "adjustedPValue": 0.11438972677949309,
+            "effectSizeName": "hedges_g",
+            "effectSize": -1.2384479098535048
+          },
+          {
+            "name": "planned_holm:control:Cdc42",
+            "statisticName": "t",
+            "statistic": 0.4794597530140532,
+            "degreesOfFreedom": [
+              8.0
+            ],
+            "pValue": 0.6444443931896393,
+            "adjustedPValue": 0.6444443931896393,
+            "effectSizeName": "hedges_g",
+            "effectSize": 0.4361647567592991
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "equal_variance_assumption_selected",
+            "message": "Conventional one-way ANOVA and its pooled-variance comparisons assume equal population variances."
+          },
+          {
+            "code": "planned_pairwise_no_simultaneous_ci",
+            "message": "Only the explicitly selected pairwise comparisons were tested with Holm-adjusted p-values. Simultaneous confidence intervals are not reported for this workflow."
+          }
+        ],
+        "warnings": [],
+        "completedAt": "2026-08-25T06:02:40.890102+00:00"
+      }
+    }
+  ]
+}

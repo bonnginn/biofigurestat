@@ -1,0 +1,18 @@
+{
+  "covered": [
+    "heatmap/multi-readout",
+    "multiple-series FRAP",
+    "nested box/violin",
+    "nested raw+summary",
+    "WB normalization",
+    "faceted correlation",
+    "survival",
+    "rescue/reference logic",
+    "source-localized cap-binding",
+    "safe Graph-only crossed-within design"
+  ],
+  "safeUnsupported": [
+    "crossed within-animal hemisphere×time inference"
+  ],
+  "humanContext": []
+}

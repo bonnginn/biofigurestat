@@ -1,0 +1,18 @@
+{
+  "contextLoss": {
+    "generic_scientific_question": 50,
+    "low_paper_to_packet_semantic_overlap": 50,
+    "x_series_facet_intent_not_encoded": 50,
+    "reference_role_not_explicit": 22
+  },
+  "contradictions": {
+    "paper_vs_gold_time_structure": 6,
+    "source_internal_n_subject_vs_context_animal": 3,
+    "source_message_human_vs_n_animal": 3,
+    "source_n_unit_imaging_field_vs_gold_experiment": 2,
+    "source_internal_n_cell_vs_context_animal": 1,
+    "source_internal_n_experiment_vs_context_animal": 1,
+    "source_internal_n_sample_vs_context_animal": 1,
+    "source_message_animal_vs_n_subject": 1
+  }
+}

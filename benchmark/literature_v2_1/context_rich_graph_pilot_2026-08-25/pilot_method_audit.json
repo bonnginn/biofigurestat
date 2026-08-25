@@ -1,0 +1,8 @@
+{
+  "verdict": "READY_FOR_FAMILY_EXPANSION",
+  "reason": "LSA077 is localized to Fig. 2B with Fig. 2D retained as a split-case candidate; LSA126 is accepted as a valid Graph-only case under the SAFE_UNSUPPORTED_FOR_ALPHA policy. Neither uncertainty permits fabricated inference.",
+  "autonomousExpansionPerformed": true,
+  "methodologyVersion": "context-rich-graph-1.1",
+  "expansionCaseCount": 35,
+  "expansionVerdict": "READY_WITH_BOUNDED_EXCEPTIONS"
+}

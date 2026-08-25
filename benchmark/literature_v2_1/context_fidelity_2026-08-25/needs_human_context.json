@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "count": 2,
+  "cases": [
+    {
+      "caseId": "LSA156",
+      "fields": [
+        "biological_unit"
+      ],
+      "classification": "UNRESOLVABLE_FROM_SOURCE"
+    },
+    {
+      "caseId": "LSA390",
+      "fields": [
+        "biological_unit"
+      ],
+      "classification": "UNRESOLVABLE_FROM_SOURCE"
+    }
+  ]
+}

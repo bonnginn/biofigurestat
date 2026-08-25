@@ -91,7 +91,7 @@
 
 .experiment-graph-workbench-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(250px, 278px);
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 340px);
   gap: 10px;
   align-items: start;
 }
@@ -1029,6 +1029,17 @@
 }
 
 @media (max-width: 960px) {
+  .experiment-graph-workbench--statistics .experiment-graph-inspector {
+    display: block;
+  }
+
+  .experiment-graph-workbench--statistics .experiment-statistics-source {
+    border-right: 0;
+    border-bottom: 1px solid #d9e2ec;
+  }
+}
+
+@container (max-width: 720px) {
   .experiment-graph-workbench-layout {
     grid-template-columns: 1fr;
   }
@@ -1048,24 +1059,11 @@
   }
 }
 
-@container (max-width: 900px) {
-  .experiment-graph-workbench-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .experiment-graph-inspector {
-    position: static;
-    max-height: none;
-  }
-
-  .experiment-graph-workbench--statistics .experiment-graph-inspector {
-    display: block;
-  }
-
-  .experiment-graph-workbench--statistics .experiment-statistics-source {
-    border-right: 0;
-    border-bottom: 1px solid #d9e2ec;
-  }
+.experiment-graph-series-style-shortcut {
+  width: 100%;
+  border: 1px solid #9eb8cf;
+  background: #f3f8fc;
+  color: #174f78;
 }
 
 @media (max-width: 680px) {

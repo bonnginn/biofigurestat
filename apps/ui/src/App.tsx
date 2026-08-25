@@ -188,13 +188,22 @@ export default function App({ projectActions }: AppProps) {
       case "contingency":
       case "repeated-nonparametric":
       case "regression":
+      case "nonlinear-fit":
       case "distribution":
-        return <CommonCoveragePage mode={route} onBack={() => navigate("home")} />;
+        return (
+          <CommonCoveragePage
+            mode={route}
+            onBack={() => navigate("new-experiment")}
+            onNavigate={navigate}
+            saveProject={browserPreview ? undefined : saveProject}
+          />
+        );
       case "survival":
         return (
           <SpecializedCorePage
             mode="survival"
-            onBack={() => navigate("home")}
+            onBack={() => navigate("new-experiment")}
+            onNavigate={navigate}
             saveProject={browserPreview ? undefined : saveProject}
           />
         );
@@ -202,7 +211,8 @@ export default function App({ projectActions }: AppProps) {
         return (
           <SpecializedCorePage
             mode="heatmap"
-            onBack={() => navigate("home")}
+            onBack={() => navigate("new-experiment")}
+            onNavigate={navigate}
             saveProject={browserPreview ? undefined : saveProject}
           />
         );

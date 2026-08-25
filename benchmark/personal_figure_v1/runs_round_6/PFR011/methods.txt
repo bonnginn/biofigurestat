@@ -1,0 +1,6 @@
+Case: PFR011 (NDEL1 Fig. 5C)
+Source status: SYNTHETIC_RECONSTRUCTION; values are not published raw observations.
+Experimental/statistical unit: independent imaging session (reconstructed, n=3)
+Primary contrast: 0 h versus each later time; annotate significant only
+Inference status: ok_app_reconstruction.
+Display, analysis, comparison, and annotation sets are stored separately in graph_state.json.

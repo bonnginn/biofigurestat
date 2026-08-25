@@ -1,0 +1,12 @@
+{
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0_EXPANDED_ROUND_6",
+  "caseId": "PFR062",
+  "runId": "expanded_round6_PFR062_001",
+  "completedAt": "2026-08-25T06:02:33.751393+00:00",
+  "outcome": "completed",
+  "supportStatus": "generic_basic_nonlinear_xy_fit",
+  "artifactCompleteness": "complete",
+  "humanRatingEntered": false,
+  "finalSvgSha256": "ae0a1725cc773ddbd45b07554f666bd35b5f65ef3907ad23fe2502b0325b5ef5",
+  "finalPngSha256": "f77db217aec42a469fe2e79aa04b797ecb23931f98a41b8c69933c81c38f02ce"
+}

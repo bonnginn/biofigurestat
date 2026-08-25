@@ -1,0 +1,7 @@
+Case: LSA274_context_rich_v2
+Source: https://europepmc.org/articles/PMC10837629 (Fig. 9B)
+Scientific question: Does C. aerofaciens increase blood ethanol under a choline-deficient high-fat diet?
+Statistical unit: mouse
+Source analysis: Wilcoxon rank-sum test
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

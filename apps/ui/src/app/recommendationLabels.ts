@@ -22,6 +22,7 @@ const METHOD_LABELS: Record<AnalysisRecommendation["recommendedMethod"], string>
   pearson_chi_square: "Pearsonのカイ二乗検定",
   mcnemar_exact: "正確McNemar検定",
   simple_linear_regression: "単回帰（OLS）",
+  nonlinear_xy_fit: "非線形XYフィッティング",
 };
 
 export function methodLabel(method: AnalysisRecommendation["recommendedMethod"]) {
@@ -42,6 +43,7 @@ export function templateLabel(templateId: AnalysisRecommendation["templateId"]) 
   if (templateId === "D14") return "D14 · カテゴリcount";
   if (templateId === "D15") return "D15 · 反復ノンパラメトリック";
   if (templateId === "D16") return "D16 · 単回帰";
+  if (templateId === "D17") return "D17 · 非線形XYフィッティング";
   return `${templateId} · 解析テンプレート`;
 }
 

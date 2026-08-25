@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "dot_summary",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "Do Piezo1 knockdown and TfR-1 inhibition reduce stiffness-associated endothelial iron accumulation?",
+  "annotationSet": "none without an authoritative saved result"
+}

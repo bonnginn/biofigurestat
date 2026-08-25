@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "dot_summary",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "Does ASD2Δ-Sh3 reduce ROCK activation relative to GFP and WT-Sh3?",
+  "annotationSet": "none without an authoritative saved result"
+}

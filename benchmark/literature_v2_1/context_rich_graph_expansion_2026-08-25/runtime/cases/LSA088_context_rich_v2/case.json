@@ -1,0 +1,1540 @@
+{
+  "caseId": "LSA088_context_rich_v2",
+  "classification": "CONTEXT_RICH_READY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.0.0",
+    "caseId": "LSA088_context_rich_v2",
+    "originalCaseId": "LSA088",
+    "source": {
+      "pmcid": "PMC12752511",
+      "url": "https://europepmc.org/articles/PMC12752511",
+      "targetPanel": "Fig. 1D/H",
+      "evidenceSummary": "Representative pixel-colocalization scatter at 12 h and 24 h; Pearson R 0.59/0.72; ten images per replicate, N=3."
+    },
+    "fields": {
+      "scientificMessage": {
+        "value": "Mitochondrial colocalization increases from 12 h to 24 h",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "experimentalDesign": {
+        "value": "Representative pixel-colocalization scatter at 12 h and 24 h; Pearson R 0.59/0.72; ten images per replicate, N=3.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "statisticalUnit": {
+        "value": "representative image pixels; N=3 biological replicates is context only",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "pairingNestingRepeated": {
+        "value": "Encoded explicitly in synthetic rows where supported",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "factorsLevels": {
+        "value": "See display/series semantics",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "primaryContrast": {
+        "value": "descriptive Pearson per time",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "referenceRoles": {
+        "value": "Control/reference labels preserved from legend",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "intent": {
+        "value": "Inferential where the legend reports a test; representative pixels remain descriptive",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "displaySet": {
+        "value": "faceted scatter",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "analysisSet": {
+        "value": "representative image pixels; N=3 biological replicates is context only",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "comparisonSet": {
+        "value": "descriptive Pearson per time",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "annotationSet": {
+        "value": "Only source-supported comparisons",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "graphConvention": {
+        "value": "faceted scatter",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "xSemantics": {
+        "value": "condition or numeric time according to panel",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "seriesSemantics": {
+        "value": "scientific condition/time identity",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "facetSemantics": {
+        "value": "time facet only for LSA088",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "yReadout": {
+        "value": "Mitochondrial colocalization increases from 12 h to 24 h",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "sampleSizeStructure": {
+        "value": "Representative pixel-colocalization scatter at 12 h and 24 h; Pearson R 0.59/0.72; ten images per replicate, N=3.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "axisColorLegend": {
+        "value": "labels preserve source roles; color identifies series",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "uncertainty": {
+        "value": "SD/SEM or distribution as reported",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      }
+    },
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA088_context_rich_v2.o00001",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.1",
+      "x": -0.6746892905941453,
+      "value": 0.393541,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00002",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.2",
+      "x": 0.42699175400764505,
+      "value": 0.495593,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00003",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.3",
+      "x": -0.0877621890485575,
+      "value": 0.153879,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00004",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.4",
+      "x": -2.040594609987377,
+      "value": -0.632597,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00005",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.5",
+      "x": -0.7117263909313623,
+      "value": -1.299324,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00006",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.6",
+      "x": -0.42609594022519526,
+      "value": 1.054661,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00007",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.7",
+      "x": 0.4236047288903007,
+      "value": 0.087279,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00008",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.8",
+      "x": 1.114732491868754,
+      "value": 0.534082,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00009",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.9",
+      "x": 0.5399850850241339,
+      "value": -0.145557,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00010",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.10",
+      "x": 0.3418456702716895,
+      "value": 0.115934,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00011",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.11",
+      "x": 0.2847759118730904,
+      "value": 1.688567,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00012",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.12",
+      "x": 0.10144657419049992,
+      "value": 1.396004,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00013",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.13",
+      "x": 0.0591445602607103,
+      "value": -0.322835,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00014",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.14",
+      "x": -0.26089450554846794,
+      "value": -0.845447,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00015",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.15",
+      "x": -0.27392658141989434,
+      "value": -1.15578,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00016",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.16",
+      "x": -0.35541906473809143,
+      "value": -0.887389,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00017",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.17",
+      "x": -0.3116304714735053,
+      "value": -1.61361,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00018",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.18",
+      "x": 2.1526081873196334,
+      "value": 1.310779,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00019",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.19",
+      "x": 0.6701007337685192,
+      "value": 1.341989,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00020",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.20",
+      "x": 0.20903015342847342,
+      "value": -0.822578,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00021",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.21",
+      "x": 0.4203856663825216,
+      "value": 0.386927,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00022",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.22",
+      "x": 2.084435337480055,
+      "value": 0.635334,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00023",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.23",
+      "x": -0.33153967458254424,
+      "value": -0.509931,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00024",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.24",
+      "x": -0.4266345407102025,
+      "value": -0.440525,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00025",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.25",
+      "x": -3.2043443861671883,
+      "value": -1.160715,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00026",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.26",
+      "x": -2.158593173312001,
+      "value": -2.840583,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00027",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.27",
+      "x": 1.3316230686892598,
+      "value": -0.909224,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00028",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.28",
+      "x": -0.6025774436983782,
+      "value": 0.73165,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00029",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.29",
+      "x": 1.0637088116688942,
+      "value": 0.660015,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00030",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.30",
+      "x": -0.43713431036024214,
+      "value": 0.142266,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00031",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.31",
+      "x": 0.31194640567513227,
+      "value": -0.623021,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00032",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.32",
+      "x": 1.2861968316457224,
+      "value": 0.55111,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00033",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.33",
+      "x": -0.29409837206970224,
+      "value": 0.408042,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00034",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.34",
+      "x": -0.5687410471570535,
+      "value": 0.788746,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00035",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.35",
+      "x": -0.5349456480642685,
+      "value": -0.196016,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00036",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.36",
+      "x": -1.0912963841329093,
+      "value": -0.740267,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00037",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.37",
+      "x": -0.2631877191899486,
+      "value": -0.720336,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00038",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.38",
+      "x": 1.8589885782688067,
+      "value": 1.271037,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00039",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.39",
+      "x": 0.2248992338461625,
+      "value": -0.753896,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00040",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.40",
+      "x": -0.31607036597718174,
+      "value": 0.363524,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00041",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.41",
+      "x": 0.393362958077654,
+      "value": 0.668968,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00042",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.42",
+      "x": 0.6057793235577775,
+      "value": 0.332805,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00043",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.43",
+      "x": -0.18955311481353027,
+      "value": 0.215959,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00044",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.44",
+      "x": 1.0842832597666157,
+      "value": -0.343753,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00045",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.45",
+      "x": 0.5130584144491193,
+      "value": 1.324581,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00046",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.46",
+      "x": -0.8969037426909026,
+      "value": -1.307649,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00047",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.47",
+      "x": 0.4265215943178778,
+      "value": -1.106816,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00048",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.48",
+      "x": -1.3242343521215827,
+      "value": -2.114904,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00049",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.49",
+      "x": 1.2436161871914997,
+      "value": -0.223569,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00050",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.50",
+      "x": 1.247981373617958,
+      "value": 1.358454,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00051",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.51",
+      "x": -0.005388251787908184,
+      "value": -0.881021,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00052",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.52",
+      "x": -0.14944091042107924,
+      "value": 0.005776,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00053",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.53",
+      "x": -1.6370987610797991,
+      "value": 0.031775,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00054",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.54",
+      "x": 0.5868072922906372,
+      "value": 0.707325,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00055",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.55",
+      "x": -0.5659984164793513,
+      "value": -0.556503,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00056",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.56",
+      "x": -0.4395588945677819,
+      "value": 0.012698,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00057",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.57",
+      "x": 2.4858558269237307,
+      "value": 0.259978,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00058",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.58",
+      "x": -0.07193415395829808,
+      "value": -0.775846,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00059",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.59",
+      "x": -1.4403271091183654,
+      "value": -0.739178,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00060",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.60",
+      "x": 1.0536872032963207,
+      "value": 1.495397,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00061",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.61",
+      "x": 1.8596352455598,
+      "value": 1.76129,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00062",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.62",
+      "x": -0.4895297271346212,
+      "value": 0.281886,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00063",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.63",
+      "x": -1.1830377473027536,
+      "value": 0.915425,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00064",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.64",
+      "x": 1.2956222976515797,
+      "value": 0.241444,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00065",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.65",
+      "x": -0.28932487748077107,
+      "value": -0.044165,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00066",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.66",
+      "x": -0.3776715550876186,
+      "value": -1.194264,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00067",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.67",
+      "x": 0.16650582694040328,
+      "value": 0.6147,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00068",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.68",
+      "x": 0.8828212034867257,
+      "value": -0.524451,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00069",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.69",
+      "x": -0.5881180227014648,
+      "value": -0.479336,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00070",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.70",
+      "x": 0.6455912441987033,
+      "value": 0.242873,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00071",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.71",
+      "x": -1.673160088851868,
+      "value": -1.377811,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00072",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.72",
+      "x": 1.0930632094927881,
+      "value": 0.849928,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00073",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.73",
+      "x": -0.7812025808229103,
+      "value": 0.118441,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00074",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.74",
+      "x": 0.49052344748823756,
+      "value": 0.300987,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00075",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.75",
+      "x": 0.999074495990482,
+      "value": -0.907407,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00076",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.76",
+      "x": 1.4573340708218068,
+      "value": 1.207769,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00077",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.77",
+      "x": -0.9607139459088156,
+      "value": -0.615101,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00078",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.78",
+      "x": -0.6500679861473103,
+      "value": 0.048805,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00079",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.79",
+      "x": -0.9968683009163016,
+      "value": -1.250677,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00080",
+      "series": "12 h",
+      "experimentalUnitId": "representative_pixel.80",
+      "x": 0.4834444095687255,
+      "value": 0.235107,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00081",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.1",
+      "x": 0.17977598622835486,
+      "value": 0.032946,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00082",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.2",
+      "x": -0.7746901713162905,
+      "value": -0.426148,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00083",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.3",
+      "x": -0.45279084973713046,
+      "value": 0.549488,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00084",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.4",
+      "x": 0.2588768724650084,
+      "value": 0.007423,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00085",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.5",
+      "x": -0.8377348636281108,
+      "value": -1.190579,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00086",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.6",
+      "x": 1.4152528703121676,
+      "value": 1.0578,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00087",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.7",
+      "x": 0.5531636347779629,
+      "value": 0.554449,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00088",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.8",
+      "x": 0.7474747031402041,
+      "value": 0.03597,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00089",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.9",
+      "x": 0.42607582645538983,
+      "value": 1.287805,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00090",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.10",
+      "x": -0.18799841260352604,
+      "value": 0.723978,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00091",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.11",
+      "x": 0.18783615203647785,
+      "value": 0.538305,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00092",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.12",
+      "x": 0.727559631205104,
+      "value": -0.9774,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00093",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.13",
+      "x": -0.29347519448416765,
+      "value": -1.10061,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00094",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.14",
+      "x": 1.3409968008218687,
+      "value": 1.320659,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00095",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.15",
+      "x": 0.24880568687426405,
+      "value": 0.132184,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00096",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.16",
+      "x": -1.8934375520462237,
+      "value": -2.066168,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00097",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.17",
+      "x": -0.0965429956352373,
+      "value": -0.862245,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00098",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.18",
+      "x": 1.087607422948273,
+      "value": 1.210163,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00099",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.19",
+      "x": -2.055523168346752,
+      "value": -0.096236,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00100",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.20",
+      "x": 1.5522591023488754,
+      "value": -0.046179,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00101",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.21",
+      "x": -1.225694864911364,
+      "value": -1.101794,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00102",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.22",
+      "x": 1.0140860841597161,
+      "value": 0.354683,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00103",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.23",
+      "x": 1.041073358416123,
+      "value": 1.70662,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00104",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.24",
+      "x": -0.3897257830325641,
+      "value": -0.259889,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00105",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.25",
+      "x": 0.44305406395854935,
+      "value": -0.250277,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00106",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.26",
+      "x": 0.2540053672511622,
+      "value": 0.900547,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00107",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.27",
+      "x": 1.309314864015464,
+      "value": 1.070954,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00108",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.28",
+      "x": 1.5643009253978493,
+      "value": 0.117137,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00109",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.29",
+      "x": 1.6413863937987674,
+      "value": -0.294503,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00110",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.30",
+      "x": 0.6999220401439655,
+      "value": 0.157221,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00111",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.31",
+      "x": -1.2416108796887624,
+      "value": -1.450942,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00112",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.32",
+      "x": 0.8186093851275688,
+      "value": 0.690072,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00113",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.33",
+      "x": 1.5238200902347865,
+      "value": 1.778506,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00114",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.34",
+      "x": -1.664320563921491,
+      "value": -1.346034,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00115",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.35",
+      "x": 0.1784960794306212,
+      "value": 0.123034,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00116",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.36",
+      "x": -0.03821304825842585,
+      "value": 0.713413,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00117",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.37",
+      "x": -0.7300459141746647,
+      "value": 0.283584,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00118",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.38",
+      "x": 1.1805353794628535,
+      "value": 0.763057,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00119",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.39",
+      "x": -2.4237312033036367,
+      "value": -1.801922,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00120",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.40",
+      "x": 0.564596099736688,
+      "value": 0.695582,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00121",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.41",
+      "x": -0.47964929669332473,
+      "value": -0.51122,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00122",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.42",
+      "x": 1.3299177284132733,
+      "value": 0.848201,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00123",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.43",
+      "x": 1.4027777429987183,
+      "value": 0.693342,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00124",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.44",
+      "x": -0.7601657057964278,
+      "value": 0.536479,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00125",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.45",
+      "x": 1.1398296637976408,
+      "value": -1.151109,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00126",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.46",
+      "x": -0.712799085518812,
+      "value": -0.350261,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00127",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.47",
+      "x": -0.16833952705619304,
+      "value": -1.500987,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00128",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.48",
+      "x": -0.09036419910393362,
+      "value": -0.623598,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00129",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.49",
+      "x": -0.5674567381434604,
+      "value": 0.369412,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00130",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.50",
+      "x": -1.0038804884575303,
+      "value": -0.568017,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00131",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.51",
+      "x": -0.19887486338376337,
+      "value": 0.158484,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00132",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.52",
+      "x": -0.675642059996199,
+      "value": -1.330921,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00133",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.53",
+      "x": 0.5904176495814346,
+      "value": -0.159787,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00134",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.54",
+      "x": 0.3570171987178366,
+      "value": 0.639684,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00135",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.55",
+      "x": -1.2378703057592608,
+      "value": -0.733571,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00136",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.56",
+      "x": -0.1736920584393295,
+      "value": 0.267614,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00137",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.57",
+      "x": -0.4130445995365386,
+      "value": -1.999069,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00138",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.58",
+      "x": -0.9338736814144079,
+      "value": 0.445452,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00139",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.59",
+      "x": -1.4221518808059435,
+      "value": -1.414642,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00140",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.60",
+      "x": 0.04206392116999785,
+      "value": 0.745968,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00141",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.61",
+      "x": -0.2217545349560863,
+      "value": -0.029505,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00142",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.62",
+      "x": -0.9750262846459604,
+      "value": 0.682906,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00143",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.63",
+      "x": 2.113262235817538,
+      "value": 2.263111,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00144",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.64",
+      "x": -0.20261243336404328,
+      "value": -0.435872,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00145",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.65",
+      "x": -0.9582244895663491,
+      "value": -2.086712,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00146",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.66",
+      "x": 0.4711397564914445,
+      "value": 1.242883,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00147",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.67",
+      "x": -0.2372241973174655,
+      "value": 0.543396,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00148",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.68",
+      "x": 0.5061332231634144,
+      "value": -0.76481,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00149",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.69",
+      "x": 0.44002221329990043,
+      "value": -0.411007,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00150",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.70",
+      "x": -0.5986777386839619,
+      "value": -0.169304,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00151",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.71",
+      "x": 0.2745540832198325,
+      "value": 0.500644,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00152",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.72",
+      "x": 0.3919035254396209,
+      "value": 0.941922,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00153",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.73",
+      "x": 0.1115204009270373,
+      "value": -0.867494,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00154",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.74",
+      "x": -0.6281597748781342,
+      "value": -0.787731,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00155",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.75",
+      "x": -0.06005024277928613,
+      "value": -0.289362,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00156",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.76",
+      "x": -0.2592990210993014,
+      "value": 0.928249,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00157",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.77",
+      "x": -0.829272907335829,
+      "value": -0.024738,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00158",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.78",
+      "x": -0.2291517897410219,
+      "value": -0.231646,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00159",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.79",
+      "x": 0.17086142616679104,
+      "value": 0.341022,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA088_context_rich_v2.o00160",
+      "series": "24 h",
+      "experimentalUnitId": "representative_pixel.80",
+      "x": 1.3430492718092304,
+      "value": 1.784946,
+      "synthetic": true,
+      "displayOnly": true
+    }
+  ]
+}

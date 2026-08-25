@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.1.0",
+  "caseId": "PFR027B",
+  "graphType": "line",
+  "dataSets": {
+    "displaySet": {
+      "conditionIds": [
+        "control",
+        "RhoA"
+      ]
+    },
+    "analysisSet": {
+      "unit": "cell repeated over time, nested in imaging experiment",
+      "status": "not_applicable"
+    },
+    "comparisonSet": [],
+    "annotationSet": []
+  },
+  "appearance": {
+    "barOutline": true,
+    "barMeanMarker": false,
+    "boxWhiskerMode": "tukey_1_5_iqr",
+    "uncertaintyStyle": "ribbon",
+    "summary": "case_defined",
+    "errorBarSeries": [],
+    "seriesStyles": {}
+  },
+  "axes": {
+    "xSemantic": "numeric_covariate",
+    "xTitle": "Time (sec)",
+    "yTitle": "Relative fluorescence intensity",
+    "gridLines": false,
+    "yMax": null,
+    "tickLabels": "default"
+  },
+  "analysis": {
+    "status": "not_applicable",
+    "authoritativeSavedResult": false,
+    "resultCount": 0,
+    "modelId": null
+  }
+}

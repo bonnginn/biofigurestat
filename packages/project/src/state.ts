@@ -312,6 +312,7 @@ export const ExperimentWorkspaceStateSchema = z
                 fill: z.enum(["none", "white", "series", "custom"]).optional(),
                 fillColor: z.string().optional(),
                 lineStyle: z.enum(["solid", "dashed", "dotted"]).optional(),
+                lineWidth: z.number().min(0.5).max(8).optional(),
                 pointStyle: z.enum(["circle", "square", "triangle", "diamond"]).optional(),
                 legendLabel: z.string().min(1).optional(),
                 order: z.number().int().optional(),
@@ -969,6 +970,27 @@ export const ProjectStateSchema = z
           });
         }
       });
+      if (run.request.protocolVersion === "0.14.0") {
+        run.request.points.forEach((point, pointIndex) => {
+          const raw = persistedRawById.get(point.observationId);
+          const matchesRaw =
+            run.inputDerivedDatasetRevisionId === null &&
+            raw !== undefined &&
+            raw.conditionId === point.seriesId &&
+            raw.unitInstanceId === point.experimentalUnitId &&
+            raw.measurement.kind === "scalar" &&
+            numericallyEquivalent(raw.measurement.value, point.y) &&
+            typeof raw.time === "number" &&
+            numericallyEquivalent(raw.time, point.x);
+          if (!matchesRaw) {
+            ctx.addIssue({
+              code: "custom",
+              path: ["analysisRuns", index, "request", "points", pointIndex],
+              message: "Executed nonlinear XY input must reproduce from its declared raw dataset",
+            });
+          }
+        });
+      }
       if (run.state === "current" && run.inputRawRevisionId !== state.activeRawRevisionId) {
         ctx.addIssue({
           code: "custom",
@@ -1250,7 +1272,11 @@ export function createInitialProjectState(input: CreateInitialProjectStateInput)
               targetId: analysisRunId,
               occurredAt: input.analysis.result.completedAt,
               actor: input.actor,
-              detail: `${input.analysis.request.templateId} executed by ${input.analysis.result.engine.name} ${input.analysis.result.engine.version}.`,
+              detail:
+                input.analysis.request.protocolVersion === "0.14.0" &&
+                input.analysis.result.nonlinearFit
+                  ? `D17 ${input.analysis.request.modelId} (${input.analysis.result.nonlinearFit.modelVersion}) executed by ${input.analysis.result.engine.name} ${input.analysis.result.engine.version}; model rationale, initial values, bounds, parameter estimates, diagnostics, raw XY points, and authoritative fitted curves were persisted.`
+                  : `${input.analysis.request.templateId} executed by ${input.analysis.result.engine.name} ${input.analysis.result.engine.version}.`,
             },
           ]
         : []),

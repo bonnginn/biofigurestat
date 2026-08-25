@@ -1,0 +1,349 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA053_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA053.o1",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.1",
+        "pairId": null,
+        "x": null,
+        "value": 50.8262,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o2",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.2",
+        "pairId": null,
+        "x": null,
+        "value": 45.2529,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o3",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.3",
+        "pairId": null,
+        "x": null,
+        "value": 53.8846,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o4",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.4",
+        "pairId": null,
+        "x": null,
+        "value": 43.8821,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o5",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.5",
+        "pairId": null,
+        "x": null,
+        "value": 57.0994,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o6",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.6",
+        "pairId": null,
+        "x": null,
+        "value": 44.8875,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o7",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.7",
+        "pairId": null,
+        "x": null,
+        "value": 54.6801,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o8",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.8",
+        "pairId": null,
+        "x": null,
+        "value": 61.5233,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o9",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.9",
+        "pairId": null,
+        "x": null,
+        "value": 49.3288,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o10",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.10",
+        "pairId": null,
+        "x": null,
+        "value": 51.6125,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o11",
+        "series": "Control",
+        "experimentalUnitId": "unit.Control.11",
+        "pairId": null,
+        "x": null,
+        "value": 54.131,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o12",
+        "series": "Low-dose cisplatin",
+        "experimentalUnitId": "unit.Low-dose cisplatin.1",
+        "pairId": null,
+        "x": null,
+        "value": 72.537,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o13",
+        "series": "Low-dose cisplatin",
+        "experimentalUnitId": "unit.Low-dose cisplatin.2",
+        "pairId": null,
+        "x": null,
+        "value": 52.5483,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o14",
+        "series": "Low-dose cisplatin",
+        "experimentalUnitId": "unit.Low-dose cisplatin.3",
+        "pairId": null,
+        "x": null,
+        "value": 64.6846,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o15",
+        "series": "Low-dose cisplatin",
+        "experimentalUnitId": "unit.Low-dose cisplatin.4",
+        "pairId": null,
+        "x": null,
+        "value": 53.0483,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o16",
+        "series": "Low-dose cisplatin",
+        "experimentalUnitId": "unit.Low-dose cisplatin.5",
+        "pairId": null,
+        "x": null,
+        "value": 58.8255,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o17",
+        "series": "Low-dose cisplatin",
+        "experimentalUnitId": "unit.Low-dose cisplatin.6",
+        "pairId": null,
+        "x": null,
+        "value": 58.7802,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o18",
+        "series": "Low-dose cisplatin",
+        "experimentalUnitId": "unit.Low-dose cisplatin.7",
+        "pairId": null,
+        "x": null,
+        "value": 55.5424,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o19",
+        "series": "Low-dose cisplatin",
+        "experimentalUnitId": "unit.Low-dose cisplatin.8",
+        "pairId": null,
+        "x": null,
+        "value": 67.4771,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o20",
+        "series": "Low-dose cisplatin",
+        "experimentalUnitId": "unit.Low-dose cisplatin.9",
+        "pairId": null,
+        "x": null,
+        "value": 46.1544,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o21",
+        "series": "Low-dose cisplatin",
+        "experimentalUnitId": "unit.Low-dose cisplatin.10",
+        "pairId": null,
+        "x": null,
+        "value": 62.995,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o22",
+        "series": "Low-dose cisplatin",
+        "experimentalUnitId": "unit.Low-dose cisplatin.11",
+        "pairId": null,
+        "x": null,
+        "value": 57.1752,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o23",
+        "series": "High-dose cisplatin",
+        "experimentalUnitId": "unit.High-dose cisplatin.1",
+        "pairId": null,
+        "x": null,
+        "value": 67.5899,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o24",
+        "series": "High-dose cisplatin",
+        "experimentalUnitId": "unit.High-dose cisplatin.2",
+        "pairId": null,
+        "x": null,
+        "value": 70.7652,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o25",
+        "series": "High-dose cisplatin",
+        "experimentalUnitId": "unit.High-dose cisplatin.3",
+        "pairId": null,
+        "x": null,
+        "value": 67.6988,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o26",
+        "series": "High-dose cisplatin",
+        "experimentalUnitId": "unit.High-dose cisplatin.4",
+        "pairId": null,
+        "x": null,
+        "value": 81.0366,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o27",
+        "series": "High-dose cisplatin",
+        "experimentalUnitId": "unit.High-dose cisplatin.5",
+        "pairId": null,
+        "x": null,
+        "value": 62.5022,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o28",
+        "series": "High-dose cisplatin",
+        "experimentalUnitId": "unit.High-dose cisplatin.6",
+        "pairId": null,
+        "x": null,
+        "value": 67.1953,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o29",
+        "series": "High-dose cisplatin",
+        "experimentalUnitId": "unit.High-dose cisplatin.7",
+        "pairId": null,
+        "x": null,
+        "value": 73.1972,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o30",
+        "series": "High-dose cisplatin",
+        "experimentalUnitId": "unit.High-dose cisplatin.8",
+        "pairId": null,
+        "x": null,
+        "value": 60.1575,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o31",
+        "series": "High-dose cisplatin",
+        "experimentalUnitId": "unit.High-dose cisplatin.9",
+        "pairId": null,
+        "x": null,
+        "value": 73.1767,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o32",
+        "series": "High-dose cisplatin",
+        "experimentalUnitId": "unit.High-dose cisplatin.10",
+        "pairId": null,
+        "x": null,
+        "value": 59.6225,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA053.o33",
+        "series": "High-dose cisplatin",
+        "experimentalUnitId": "unit.High-dose cisplatin.11",
+        "pairId": null,
+        "x": null,
+        "value": 68.867,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA053_context_rich_v2",
+    "originalCaseId": "LSA053",
+    "scientificQuestion": "Does cisplatin dose change the number of newly arising indels across generations?",
+    "conditions": [
+      "Control",
+      "Low-dose cisplatin",
+      "High-dose cisplatin"
+    ],
+    "statisticalUnit": "generation within an accumulation lineage",
+    "sourceMethod": "Kruskal–Wallis + Conover–Iman",
+    "source": {
+      "pmcid": "PMC10688063",
+      "url": "https://europepmc.org/articles/PMC10688063",
+      "targetPanel": "Fig. 2A",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "Two lineages contribute generations; lineage dependence is retained in provenance and inference is not reconstructed.",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "Kruskal–Wallis + Conover–Iman"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "box",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Does cisplatin dose change the number of newly arising indels across generations?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA053",
+    "candidateFamilyReclassified": "multi_group_nonparametric",
+    "poolDOpened": false
+  }
+}

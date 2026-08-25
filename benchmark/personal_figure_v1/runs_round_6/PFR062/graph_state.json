@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.1.0",
+  "caseId": "PFR062",
+  "graphType": "nonlinear_xy",
+  "dataSets": {
+    "displaySet": {
+      "conditionIds": [
+        "K5",
+        "K14"
+      ]
+    },
+    "analysisSet": {
+      "unit": "independent in-vitro kinase experiment (n=3)",
+      "status": "ok"
+    },
+    "comparisonSet": [],
+    "annotationSet": []
+  },
+  "appearance": {
+    "barOutline": true,
+    "barMeanMarker": false,
+    "boxWhiskerMode": "tukey_1_5_iqr",
+    "uncertaintyStyle": "error_bars",
+    "summary": "case_defined",
+    "errorBarSeries": [],
+    "seriesStyles": {}
+  },
+  "axes": {
+    "xSemantic": "numeric_covariate",
+    "xTitle": "Time (min)",
+    "yTitle": "mol Pi / mol substrate",
+    "gridLines": false,
+    "yMax": null,
+    "tickLabels": "default"
+  },
+  "analysis": {
+    "status": "ok",
+    "authoritativeSavedResult": true,
+    "resultCount": 1,
+    "modelId": "zero_baseline_association"
+  }
+}

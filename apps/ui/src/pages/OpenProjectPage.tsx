@@ -12,7 +12,11 @@ import {
   rehydrateRepeatedConditionDataSheet,
   rehydrateTwoConditionDataSheet,
 } from "@lsaa/data-sheet";
-import { createHeatmapModel, createKaplanMeierGraphModel } from "@lsaa/graph-spec";
+import {
+  createHeatmapModel,
+  createKaplanMeierGraphModel,
+  createNonlinearFitGraphModel,
+} from "@lsaa/graph-spec";
 
 import {
   actionErrorMessage,
@@ -28,6 +32,8 @@ import { ExperimentWorkspace } from "./ExperimentWorkspace";
 import { MultiConditionDataSheetPage } from "./MultiConditionDataSheetPage";
 import { HeatmapGraph } from "../components/graph/HeatmapGraph";
 import { SurvivalGraph } from "../components/graph/SurvivalGraph";
+import { NonlinearFitGraph } from "../components/graph/NonlinearFitGraph";
+import { generateMethodsText } from "../app/methodsText";
 
 type OpenProjectPageProps = {
   onNavigate: (route: AppRoute) => void;
@@ -99,6 +105,90 @@ function PersistedProjectView({
         />
       </div>
     );
+  }
+  const nonlinearRun = state.analysisRuns.find(
+    (analysis) =>
+      analysis.state === "current" &&
+      analysis.request.protocolVersion === "0.14.0" &&
+      analysis.result.status === "ok" &&
+      analysis.result.nonlinearFit,
+  );
+  if (nonlinearRun?.request.protocolVersion === "0.14.0" && nonlinearRun.result.nonlinearFit) {
+    const graphRecord = state.graphs.find(
+      (graph) =>
+        graph.state === "current" &&
+        graph.sourceAnalysisRunId === nonlinearRun.id &&
+        graph.spec.type === "nonlinear_xy",
+    );
+    if (!graphRecord) {
+      return <p role="alert">保存済みD17結果に対応するGraph specificationがありません。</p>;
+    }
+    try {
+      const labels = Object.fromEntries(
+        design.conditions.map((condition) => [condition.id, condition.label]),
+      );
+      const model = createNonlinearFitGraphModel(
+        graphRecord.spec,
+        nonlinearRun.request.points,
+        nonlinearRun.result,
+      );
+      const methods = generateMethodsText({
+        design,
+        recommendation: nonlinearRun.recommendation,
+        request: nonlinearRun.request,
+        result: nonlinearRun.result,
+        graphSpec: graphRecord.spec,
+        outcomeId: design.outcomes[0]?.id,
+      });
+      return (
+        <div className="page-stack">
+          <button type="button" onClick={onBack}>
+            ← 戻る
+          </button>
+          <section className="workspace-panel nonlinear-opened-project">
+            <p className="overline">Saved authoritative D17 result</p>
+            <h1>{state.metadata.projectName}</h1>
+            <p>
+              {nonlinearRun.result.nonlinearFit.modelId} · model version{" "}
+              {nonlinearRun.result.nonlinearFit.modelVersion}
+            </p>
+            <NonlinearFitGraph
+              model={model}
+              xLabel={`${nonlinearRun.request.xLabel}${nonlinearRun.request.xUnit ? ` (${nonlinearRun.request.xUnit})` : ""}`}
+              yLabel={`${nonlinearRun.request.yLabel}${nonlinearRun.request.yUnit ? ` (${nonlinearRun.request.yUnit})` : ""}`}
+              seriesLabels={labels}
+            />
+            <div className="nonlinear-fit-results" aria-label="復元した非線形fit結果">
+              {nonlinearRun.result.nonlinearFit.series.map((seriesFit) => (
+                <section key={seriesFit.seriesId} className="nonlinear-fit-series-result">
+                  <h2>{labels[seriesFit.seriesId] ?? seriesFit.seriesId}</h2>
+                  <p>
+                    {seriesFit.parameters
+                      .map((parameter) => `${parameter.name}=${parameter.value.toPrecision(5)}`)
+                      .join(" · ")}
+                  </p>
+                  <p>
+                    R²={seriesFit.diagnostics.rSquared.toPrecision(4)} · RMSE=
+                    {seriesFit.diagnostics.rmse.toPrecision(4)} · AIC=
+                    {seriesFit.diagnostics.aic.toPrecision(5)}
+                  </p>
+                </section>
+              ))}
+            </div>
+            <details>
+              <summary>Methods / provenance</summary>
+              <pre style={{ whiteSpace: "pre-wrap" }}>{methods}</pre>
+            </details>
+          </section>
+        </div>
+      );
+    } catch (error) {
+      return (
+        <p role="alert">
+          D17 projectを復元できません：{error instanceof Error ? error.message : "不明なエラー"}
+        </p>
+      );
+    }
   }
   const outcome = design.outcomes[0];
   if (!outcome) return <p role="alert">解析項目を復元できません。</p>;

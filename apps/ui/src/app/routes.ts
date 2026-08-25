@@ -84,12 +84,21 @@ export const specializedAnalysisRoutes = [
     accent: "green",
   },
   {
+    id: "nonlinear-fit",
+    path: "/nonlinear-fit",
+    title: "非線形XYフィット",
+    description: "時間依存などの飽和曲線をローカルでfitします。",
+    japaneseDescription: "観測点と保存済みfit curve、parameter、診断を分離して保持します。",
+    eyebrow: "10",
+    accent: "blue",
+  },
+  {
     id: "distribution",
     path: "/distribution",
     title: "分布グラフ",
     description: "HistogramとECDFを作成します。",
     japaneseDescription: "元の個別値を保持し、検定を自動追加しません。",
-    eyebrow: "10",
+    eyebrow: "11",
     accent: "violet",
   },
 ] as const;

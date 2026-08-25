@@ -1,0 +1,6 @@
+Case: PFR059A (GFLB Fig. 3G)
+Source status: SYNTHETIC_RECONSTRUCTION; values are not published raw observations.
+Experimental/statistical unit: independent fractionation experiment (n=3)
+Primary contrast: within fraction: AX2 vs KO and KO vs rescue
+Inference status: ok.
+Display, analysis, comparison, and annotation sets are stored separately in graph_state.json.

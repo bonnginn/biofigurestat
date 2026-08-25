@@ -1,0 +1,7 @@
+Case: PFR045 (OPTO Fig. 6F)
+Source status: SYNTHETIC_RECONSTRUCTION; values are not published raw observations.
+Experimental/statistical unit: cell/imaging experiment repeated over time (n=6)
+Primary contrast: None
+Inference status: not_applicable.
+Display, analysis, comparison, and annotation sets are stored separately in graph_state.json.
+No inferential statistics were requested or executed by design.

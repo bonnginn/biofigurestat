@@ -1,0 +1,676 @@
+{
+  "caseId": "LSA186_context_rich_v2",
+  "classification": "READY_WITH_BOUNDED_SOURCE_UNCERTAINTY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA186_context_rich_v2",
+    "originalCaseId": "LSA186",
+    "scientificQuestion": "How do IL-17A and Epo change the erythroid-subset landscape in marrow and spleen?",
+    "conditions": [
+      "Vehicle",
+      "IL-17A",
+      "Epo",
+      "IL-17A + Epo"
+    ],
+    "statisticalUnit": "mouse",
+    "sourceMethod": "panel is descriptive; related PC tests use corrected post-hoc comparisons",
+    "source": {
+      "pmcid": "PMC12697970",
+      "url": "https://europepmc.org/articles/PMC12697970",
+      "targetPanel": "Fig. 2F",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "The heatmap displays fold changes for many subsets; per-feature inferential annotations are not reconstructed.",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA186.o1",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.1",
+      "featureId": "Feature 01",
+      "value": 0.5077,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o2",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.1",
+      "featureId": "Feature 01",
+      "value": -0.1787,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o3",
+      "series": "Epo",
+      "experimentalUnitId": "feature.1",
+      "featureId": "Feature 01",
+      "value": -1.3485,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o4",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.1",
+      "featureId": "Feature 01",
+      "value": -2.7459,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o5",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.2",
+      "featureId": "Feature 02",
+      "value": -0.9232,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o6",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.2",
+      "featureId": "Feature 02",
+      "value": 0.4966,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o7",
+      "series": "Epo",
+      "experimentalUnitId": "feature.2",
+      "featureId": "Feature 02",
+      "value": 1.0481,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o8",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.2",
+      "featureId": "Feature 02",
+      "value": 2.4274,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o9",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.3",
+      "featureId": "Feature 03",
+      "value": -0.2419,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o10",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.3",
+      "featureId": "Feature 03",
+      "value": 0.5129,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o11",
+      "series": "Epo",
+      "experimentalUnitId": "feature.3",
+      "featureId": "Feature 03",
+      "value": 1.2827,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o12",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.3",
+      "featureId": "Feature 03",
+      "value": 2.4518,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o13",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.4",
+      "featureId": "Feature 04",
+      "value": 0.3134,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o14",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.4",
+      "featureId": "Feature 04",
+      "value": -0.541,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o15",
+      "series": "Epo",
+      "experimentalUnitId": "feature.4",
+      "featureId": "Feature 04",
+      "value": -1.2897,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o16",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.4",
+      "featureId": "Feature 04",
+      "value": -2.6711,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o17",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.5",
+      "featureId": "Feature 05",
+      "value": -1.0209,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o18",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.5",
+      "featureId": "Feature 05",
+      "value": 0.3595,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o19",
+      "series": "Epo",
+      "experimentalUnitId": "feature.5",
+      "featureId": "Feature 05",
+      "value": 1.9425,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o20",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.5",
+      "featureId": "Feature 05",
+      "value": 2.7491,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o21",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.6",
+      "featureId": "Feature 06",
+      "value": -0.7593,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o22",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.6",
+      "featureId": "Feature 06",
+      "value": 0.6134,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o23",
+      "series": "Epo",
+      "experimentalUnitId": "feature.6",
+      "featureId": "Feature 06",
+      "value": 1.2033,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o24",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.6",
+      "featureId": "Feature 06",
+      "value": 3.1398,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o25",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.7",
+      "featureId": "Feature 07",
+      "value": 0.6478,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o26",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.7",
+      "featureId": "Feature 07",
+      "value": -0.5496,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o27",
+      "series": "Epo",
+      "experimentalUnitId": "feature.7",
+      "featureId": "Feature 07",
+      "value": -1.5351,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o28",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.7",
+      "featureId": "Feature 07",
+      "value": -2.2626,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o29",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.8",
+      "featureId": "Feature 08",
+      "value": -0.4042,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o30",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.8",
+      "featureId": "Feature 08",
+      "value": 0.5501,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o31",
+      "series": "Epo",
+      "experimentalUnitId": "feature.8",
+      "featureId": "Feature 08",
+      "value": 1.3219,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o32",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.8",
+      "featureId": "Feature 08",
+      "value": 2.6828,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o33",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.9",
+      "featureId": "Feature 09",
+      "value": -0.6442,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o34",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.9",
+      "featureId": "Feature 09",
+      "value": 0.6933,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o35",
+      "series": "Epo",
+      "experimentalUnitId": "feature.9",
+      "featureId": "Feature 09",
+      "value": 1.7806,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o36",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.9",
+      "featureId": "Feature 09",
+      "value": 2.7706,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o37",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.10",
+      "featureId": "Feature 10",
+      "value": 0.5349,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o38",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.10",
+      "featureId": "Feature 10",
+      "value": -0.3806,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o39",
+      "series": "Epo",
+      "experimentalUnitId": "feature.10",
+      "featureId": "Feature 10",
+      "value": -1.4895,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o40",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.10",
+      "featureId": "Feature 10",
+      "value": -2.5254,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o41",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.11",
+      "featureId": "Feature 11",
+      "value": -0.0028,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o42",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.11",
+      "featureId": "Feature 11",
+      "value": 0.753,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o43",
+      "series": "Epo",
+      "experimentalUnitId": "feature.11",
+      "featureId": "Feature 11",
+      "value": 1.5075,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o44",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.11",
+      "featureId": "Feature 11",
+      "value": 2.6934,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o45",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.12",
+      "featureId": "Feature 12",
+      "value": -0.4078,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o46",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.12",
+      "featureId": "Feature 12",
+      "value": 0.4675,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o47",
+      "series": "Epo",
+      "experimentalUnitId": "feature.12",
+      "featureId": "Feature 12",
+      "value": 1.4491,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o48",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.12",
+      "featureId": "Feature 12",
+      "value": 2.5337,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o49",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.13",
+      "featureId": "Feature 13",
+      "value": 0.8355,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o50",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.13",
+      "featureId": "Feature 13",
+      "value": -0.3808,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o51",
+      "series": "Epo",
+      "experimentalUnitId": "feature.13",
+      "featureId": "Feature 13",
+      "value": -1.5323,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o52",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.13",
+      "featureId": "Feature 13",
+      "value": -1.9674,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o53",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.14",
+      "featureId": "Feature 14",
+      "value": -0.7049,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o54",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.14",
+      "featureId": "Feature 14",
+      "value": 0.3709,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o55",
+      "series": "Epo",
+      "experimentalUnitId": "feature.14",
+      "featureId": "Feature 14",
+      "value": 1.3408,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o56",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.14",
+      "featureId": "Feature 14",
+      "value": 2.4387,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o57",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.15",
+      "featureId": "Feature 15",
+      "value": -0.5593,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o58",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.15",
+      "featureId": "Feature 15",
+      "value": 0.47,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o59",
+      "series": "Epo",
+      "experimentalUnitId": "feature.15",
+      "featureId": "Feature 15",
+      "value": 1.692,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o60",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.15",
+      "featureId": "Feature 15",
+      "value": 2.3952,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o61",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.16",
+      "featureId": "Feature 16",
+      "value": 0.8896,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o62",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.16",
+      "featureId": "Feature 16",
+      "value": -0.7968,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o63",
+      "series": "Epo",
+      "experimentalUnitId": "feature.16",
+      "featureId": "Feature 16",
+      "value": -1.9036,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o64",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.16",
+      "featureId": "Feature 16",
+      "value": -2.1522,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o65",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.17",
+      "featureId": "Feature 17",
+      "value": -0.6415,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o66",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.17",
+      "featureId": "Feature 17",
+      "value": 0.2223,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o67",
+      "series": "Epo",
+      "experimentalUnitId": "feature.17",
+      "featureId": "Feature 17",
+      "value": 0.984,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o68",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.17",
+      "featureId": "Feature 17",
+      "value": 2.7529,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o69",
+      "series": "Vehicle",
+      "experimentalUnitId": "feature.18",
+      "featureId": "Feature 18",
+      "value": -0.6758,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o70",
+      "series": "IL-17A",
+      "experimentalUnitId": "feature.18",
+      "featureId": "Feature 18",
+      "value": 0.7532,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o71",
+      "series": "Epo",
+      "experimentalUnitId": "feature.18",
+      "featureId": "Feature 18",
+      "value": 1.3313,
+      "synthetic": true,
+      "displayOnly": true
+    },
+    {
+      "observationId": "LSA186.o72",
+      "series": "IL-17A + Epo",
+      "experimentalUnitId": "feature.18",
+      "featureId": "Feature 18",
+      "value": 2.7451,
+      "synthetic": true,
+      "displayOnly": true
+    }
+  ]
+}

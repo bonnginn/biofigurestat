@@ -1,0 +1,7 @@
+Case: LSA302_context_rich_v2
+Source: https://europepmc.org/articles/PMC10629695 (Fig. 1C)
+Scientific question: Does centrosome amplification increase cell invasion relative to both controls?
+Statistical unit: independent experiment
+Source analysis: one-way ANOVA + Bonferroni
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

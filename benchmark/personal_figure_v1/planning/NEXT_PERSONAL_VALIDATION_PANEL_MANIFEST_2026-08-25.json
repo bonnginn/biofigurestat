@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "next-personal-validation-panel-manifest-1.0.0",
+  "date": "2026-08-25",
+  "note": "A null localFigurePath means the panel remains referenced by its primary article and existing runtime evidence; no image was downloaded in this planning phase.",
+  "panels": [
+    {
+      "candidateId": "PFR009",
+      "paperCode": "NDEL1",
+      "figurePanel": "Fig. 5B",
+      "doi": "10.1083/jcb.201507046",
+      "articleUrl": "https://rupress.org/jcb/article/212/4/409/38478/Ndel1-suppresses-ciliogenesis-in-proliferating",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR009/integrator.json"
+    },
+    {
+      "candidateId": "PFR011",
+      "paperCode": "NDEL1",
+      "figurePanel": "Fig. 5D",
+      "doi": "10.1083/jcb.201507046",
+      "articleUrl": "https://rupress.org/jcb/article/212/4/409/38478/Ndel1-suppresses-ciliogenesis-in-proliferating",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR011/integrator.json"
+    },
+    {
+      "candidateId": "PFR020",
+      "paperCode": "NDEL1",
+      "figurePanel": "Fig. 9F",
+      "doi": "10.1083/jcb.201507046",
+      "articleUrl": "https://rupress.org/jcb/article/212/4/409/38478/Ndel1-suppresses-ciliogenesis-in-proliferating",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR020/integrator.json"
+    },
+    {
+      "candidateId": "PFR021",
+      "paperCode": "NDEL1",
+      "figurePanel": "Fig. 9G",
+      "doi": "10.1083/jcb.201507046",
+      "articleUrl": "https://rupress.org/jcb/article/212/4/409/38478/Ndel1-suppresses-ciliogenesis-in-proliferating",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR021/integrator.json"
+    },
+    {
+      "candidateId": "PFR027",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 2C",
+      "doi": "10.1016/j.jbc.2021.100290",
+      "articleUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7949103/",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR027/integrator.json"
+    },
+    {
+      "candidateId": "PFR033",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 3A",
+      "doi": "10.1016/j.jbc.2021.100290",
+      "articleUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7949103/",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR033/integrator.json"
+    },
+    {
+      "candidateId": "PFR035",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 3D",
+      "doi": "10.1016/j.jbc.2021.100290",
+      "articleUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7949103/",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR035/integrator.json"
+    },
+    {
+      "candidateId": "PFR043",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 5E",
+      "doi": "10.1016/j.jbc.2021.100290",
+      "articleUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7949103/",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR043/integrator.json"
+    },
+    {
+      "candidateId": "PFR045",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 6F",
+      "doi": "10.1016/j.jbc.2021.100290",
+      "articleUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7949103/",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR045/integrator.json"
+    },
+    {
+      "candidateId": "PFR047",
+      "paperCode": "OPTO",
+      "figurePanel": "Fig. 7E,F",
+      "doi": "10.1016/j.jbc.2021.100290",
+      "articleUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7949103/",
+      "localFigurePath": "benchmark/personal_figure_v1/references/OPTO_Figure_7.jpg",
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR047/integrator.json"
+    },
+    {
+      "candidateId": "PFR054",
+      "paperCode": "GFLB",
+      "figurePanel": "Fig. 2",
+      "doi": "10.1242/jcs.194126",
+      "articleUrl": "https://doi.org/10.1242/jcs.194126",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR054/integrator.json"
+    },
+    {
+      "candidateId": "PFR059",
+      "paperCode": "GFLB",
+      "figurePanel": "Fig. 3G,H",
+      "doi": "10.1242/jcs.194126",
+      "articleUrl": "https://doi.org/10.1242/jcs.194126",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR059/integrator.json"
+    },
+    {
+      "candidateId": "PFR061",
+      "paperCode": "KER5",
+      "figurePanel": "Fig. 1A",
+      "doi": "10.1016/j.bbrc.2018.03.016",
+      "articleUrl": "https://www.sciencedirect.com/science/article/pii/S0006291X1830490X",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR061/integrator.json"
+    },
+    {
+      "candidateId": "PFR062",
+      "paperCode": "KER5",
+      "figurePanel": "Fig. 1B,C",
+      "doi": "10.1016/j.bbrc.2018.03.016",
+      "articleUrl": "https://www.sciencedirect.com/science/article/pii/S0006291X1830490X",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR062/integrator.json"
+    },
+    {
+      "candidateId": "PFR066",
+      "paperCode": "KER5",
+      "figurePanel": "Fig. 2A,B",
+      "doi": "10.1016/j.bbrc.2018.03.016",
+      "articleUrl": "https://www.sciencedirect.com/science/article/pii/S0006291X1830490X",
+      "localFigurePath": null,
+      "runtimeReference": "benchmark/personal_figure_v1/runtime/cases/PFR066/integrator.json"
+    }
+  ]
+}

@@ -1,0 +1,266 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-08-25T06:02:33.751393+00:00",
+  "caseCount": 12,
+  "completed": 12,
+  "explicitUnsupported": 0,
+  "audits": [
+    {
+      "caseId": "PFR009",
+      "checks": {
+        "experimentalUnitCorrect": true,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": true,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": false,
+      "notes": []
+    },
+    {
+      "caseId": "PFR011",
+      "checks": {
+        "experimentalUnitCorrect": true,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": true,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": true,
+      "notes": [
+        "Session identities are explicit app reconstruction, not published source data."
+      ]
+    },
+    {
+      "caseId": "PFR020",
+      "checks": {
+        "experimentalUnitCorrect": true,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": true,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": false,
+      "notes": []
+    },
+    {
+      "caseId": "PFR027A",
+      "checks": {
+        "experimentalUnitCorrect": true,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": true,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": false,
+      "notes": []
+    },
+    {
+      "caseId": "PFR027B",
+      "checks": {
+        "experimentalUnitCorrect": true,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": true,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": false,
+      "notes": []
+    },
+    {
+      "caseId": "PFR033",
+      "checks": {
+        "experimentalUnitCorrect": true,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": true,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": false,
+      "notes": []
+    },
+    {
+      "caseId": "PFR043",
+      "checks": {
+        "experimentalUnitCorrect": true,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": true,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": false,
+      "notes": []
+    },
+    {
+      "caseId": "PFR045",
+      "checks": {
+        "experimentalUnitCorrect": true,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": true,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": false,
+      "notes": []
+    },
+    {
+      "caseId": "PFR054",
+      "checks": {
+        "experimentalUnitCorrect": false,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": false,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": true,
+      "notes": [
+        "Source-backed inferential hierarchy remains uncertain."
+      ]
+    },
+    {
+      "caseId": "PFR059A",
+      "checks": {
+        "experimentalUnitCorrect": true,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": true,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": false,
+      "notes": []
+    },
+    {
+      "caseId": "PFR059B",
+      "checks": {
+        "experimentalUnitCorrect": true,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": true,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": false,
+      "notes": []
+    },
+    {
+      "caseId": "PFR062",
+      "checks": {
+        "experimentalUnitCorrect": true,
+        "displayUnitSeparatedFromInferentialUnit": true,
+        "pairingRepeatedIdentityCorrect": true,
+        "descriptiveOrInferentialExplicit": true,
+        "comparisonFamilyMatchesQuestion": true,
+        "controlReferenceRolesCorrect": true,
+        "displaySubsetCorrect": true,
+        "analysisSetCorrect": true,
+        "comparisonSetCorrect": true,
+        "annotationSetCorrect": true,
+        "legendFactorSemanticsCorrect": true,
+        "graphConventionAppropriate": true
+      },
+      "uncertaintyRecorded": false,
+      "notes": [
+        "Authoritative nonlinear fit is stored separately from raw observations."
+      ]
+    }
+  ],
+  "defects": [
+    {
+      "caseId": "PFR054",
+      "classification": "SOURCE_UNCERTAINTY",
+      "severity": "nonblocking",
+      "action": "display only; inference unsupported",
+      "detail": "Crown-event display is supported, but source-backed cell/movie/session identity is insufficient to define the inferential unit safely. Events were not treated as biological n."
+    }
+  ],
+  "genericProductChanges": [
+    {
+      "classification": "GRAPH_CAPABILITY_GAP",
+      "change": "per-series lineWidth plus synchronized legend line style/width",
+      "affectedCase": "PFR045"
+    },
+    {
+      "classification": "SCIENTIFIC_ENGINE_CAPABILITY",
+      "change": "versioned generic basic nonlinear XY fitting with authoritative saved curves",
+      "affectedCase": "PFR062"
+    }
+  ],
+  "humanRatingsGenerated": false,
+  "poolDOpened": false
+}

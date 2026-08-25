@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "scatter",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "Does cocaine exposure increase dopaminergic-axon branching as a function of axon length?",
+  "annotationSet": "none without an authoritative saved result"
+}

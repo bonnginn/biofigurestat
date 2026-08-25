@@ -1,0 +1,964 @@
+{
+  "caseId": "LSA135_context_rich_v2",
+  "classification": "READY_WITH_MINOR_SOURCE_UNCERTAINTY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.0.0",
+    "caseId": "LSA135_context_rich_v2",
+    "originalCaseId": "LSA135",
+    "source": {
+      "pmcid": "PMC9647956",
+      "url": "https://europepmc.org/articles/PMC9647956",
+      "targetPanel": "Fig. 5a",
+      "evidenceSummary": "48-DEG heatmap: 3 h and 6 h post-infection versus 1 h; replicate n for the heatmap is not stated."
+    },
+    "fields": {
+      "scientificMessage": {
+        "value": "Show the shared 48-gene transcriptional program at 3 h and 6 h relative to 1 h.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "experimentalDesign": {
+        "value": "A549 infection time comparison summarized as a DEG heatmap.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "statisticalUnit": {
+        "value": "Not recoverable for this panel; heatmap cells are feature summaries, not biological n.",
+        "confidence": "NEEDS_HUMAN_CONTEXT"
+      },
+      "pairingNestingRepeated": {
+        "value": "No unit-level identity asserted.",
+        "confidence": "CONFIRMED_FROM_SOURCE_DATA"
+      },
+      "factorsLevels": {
+        "value": "comparison: 3 h vs 1 h; 6 h vs 1 h; 48 shared DEGs",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "primaryContrast": {
+        "value": "Each later time versus 1 h",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "referenceRoles": {
+        "value": "1 h is the reference time",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "intent": {
+        "value": "Descriptive display of multiple-testing-selected features",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "displaySet": {
+        "value": "48 shared DEGs × two contrasts",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "analysisSet": {
+        "value": "Not reconstructed without source counts",
+        "confidence": "NEEDS_HUMAN_CONTEXT"
+      },
+      "comparisonSet": {
+        "value": "3 h vs 1 h; 6 h vs 1 h",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "annotationSet": {
+        "value": "No per-cell significance annotation",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "graphConvention": {
+        "value": "Heatmap",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "xSemantics": {
+        "value": "Time contrast",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "seriesSemantics": {
+        "value": "None",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "facetSemantics": {
+        "value": "None",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "yReadout": {
+        "value": "48 DEG identities",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "sampleSizeStructure": {
+        "value": "Unresolved for panel a",
+        "confidence": "NEEDS_HUMAN_CONTEXT"
+      },
+      "axisColorLegend": {
+        "value": "Columns are contrasts; diverging color is synthetic log2-fold change",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "uncertainty": {
+        "value": "Not displayed",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      }
+    },
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA135_context_rich_v2.o00001",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.01",
+      "x": null,
+      "value": -1.060841,
+      "synthetic": true,
+      "featureId": "DEG.01"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00002",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.01",
+      "x": null,
+      "value": -1.520174,
+      "synthetic": true,
+      "featureId": "DEG.01"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00003",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.02",
+      "x": null,
+      "value": 0.803575,
+      "synthetic": true,
+      "featureId": "DEG.02"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00004",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.02",
+      "x": null,
+      "value": 1.581888,
+      "synthetic": true,
+      "featureId": "DEG.02"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00005",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.03",
+      "x": null,
+      "value": 0.599906,
+      "synthetic": true,
+      "featureId": "DEG.03"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00006",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.03",
+      "x": null,
+      "value": 1.398745,
+      "synthetic": true,
+      "featureId": "DEG.03"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00007",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.04",
+      "x": null,
+      "value": 0.926194,
+      "synthetic": true,
+      "featureId": "DEG.04"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00008",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.04",
+      "x": null,
+      "value": 1.356804,
+      "synthetic": true,
+      "featureId": "DEG.04"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00009",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.05",
+      "x": null,
+      "value": -0.823258,
+      "synthetic": true,
+      "featureId": "DEG.05"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00010",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.05",
+      "x": null,
+      "value": -1.328153,
+      "synthetic": true,
+      "featureId": "DEG.05"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00011",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.06",
+      "x": null,
+      "value": 0.304615,
+      "synthetic": true,
+      "featureId": "DEG.06"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00012",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.06",
+      "x": null,
+      "value": 1.917901,
+      "synthetic": true,
+      "featureId": "DEG.06"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00013",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.07",
+      "x": null,
+      "value": 0.773957,
+      "synthetic": true,
+      "featureId": "DEG.07"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00014",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.07",
+      "x": null,
+      "value": 1.819583,
+      "synthetic": true,
+      "featureId": "DEG.07"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00015",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.08",
+      "x": null,
+      "value": 0.819114,
+      "synthetic": true,
+      "featureId": "DEG.08"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00016",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.08",
+      "x": null,
+      "value": 1.528543,
+      "synthetic": true,
+      "featureId": "DEG.08"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00017",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.09",
+      "x": null,
+      "value": -1.094587,
+      "synthetic": true,
+      "featureId": "DEG.09"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00018",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.09",
+      "x": null,
+      "value": -1.26544,
+      "synthetic": true,
+      "featureId": "DEG.09"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00019",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.10",
+      "x": null,
+      "value": 1.00055,
+      "synthetic": true,
+      "featureId": "DEG.10"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00020",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.10",
+      "x": null,
+      "value": 1.312536,
+      "synthetic": true,
+      "featureId": "DEG.10"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00021",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.11",
+      "x": null,
+      "value": 1.013466,
+      "synthetic": true,
+      "featureId": "DEG.11"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00022",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.11",
+      "x": null,
+      "value": 1.582807,
+      "synthetic": true,
+      "featureId": "DEG.11"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00023",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.12",
+      "x": null,
+      "value": 0.457809,
+      "synthetic": true,
+      "featureId": "DEG.12"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00024",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.12",
+      "x": null,
+      "value": 1.353398,
+      "synthetic": true,
+      "featureId": "DEG.12"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00025",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.13",
+      "x": null,
+      "value": -0.45021,
+      "synthetic": true,
+      "featureId": "DEG.13"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00026",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.13",
+      "x": null,
+      "value": -1.394356,
+      "synthetic": true,
+      "featureId": "DEG.13"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00027",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.14",
+      "x": null,
+      "value": 0.389669,
+      "synthetic": true,
+      "featureId": "DEG.14"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00028",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.14",
+      "x": null,
+      "value": 0.749521,
+      "synthetic": true,
+      "featureId": "DEG.14"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00029",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.15",
+      "x": null,
+      "value": 1.005552,
+      "synthetic": true,
+      "featureId": "DEG.15"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00030",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.15",
+      "x": null,
+      "value": 1.147986,
+      "synthetic": true,
+      "featureId": "DEG.15"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00031",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.16",
+      "x": null,
+      "value": 0.711478,
+      "synthetic": true,
+      "featureId": "DEG.16"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00032",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.16",
+      "x": null,
+      "value": 1.292422,
+      "synthetic": true,
+      "featureId": "DEG.16"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00033",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.17",
+      "x": null,
+      "value": -1.02793,
+      "synthetic": true,
+      "featureId": "DEG.17"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00034",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.17",
+      "x": null,
+      "value": -1.205089,
+      "synthetic": true,
+      "featureId": "DEG.17"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00035",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.18",
+      "x": null,
+      "value": 0.635435,
+      "synthetic": true,
+      "featureId": "DEG.18"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00036",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.18",
+      "x": null,
+      "value": 1.889364,
+      "synthetic": true,
+      "featureId": "DEG.18"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00037",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.19",
+      "x": null,
+      "value": 0.733152,
+      "synthetic": true,
+      "featureId": "DEG.19"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00038",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.19",
+      "x": null,
+      "value": 0.955361,
+      "synthetic": true,
+      "featureId": "DEG.19"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00039",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.20",
+      "x": null,
+      "value": 0.418114,
+      "synthetic": true,
+      "featureId": "DEG.20"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00040",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.20",
+      "x": null,
+      "value": 1.694918,
+      "synthetic": true,
+      "featureId": "DEG.20"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00041",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.21",
+      "x": null,
+      "value": -0.548069,
+      "synthetic": true,
+      "featureId": "DEG.21"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00042",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.21",
+      "x": null,
+      "value": -1.570828,
+      "synthetic": true,
+      "featureId": "DEG.21"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00043",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.22",
+      "x": null,
+      "value": 0.523081,
+      "synthetic": true,
+      "featureId": "DEG.22"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00044",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.22",
+      "x": null,
+      "value": 1.401601,
+      "synthetic": true,
+      "featureId": "DEG.22"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00045",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.23",
+      "x": null,
+      "value": 0.396983,
+      "synthetic": true,
+      "featureId": "DEG.23"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00046",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.23",
+      "x": null,
+      "value": 1.28974,
+      "synthetic": true,
+      "featureId": "DEG.23"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00047",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.24",
+      "x": null,
+      "value": 0.877568,
+      "synthetic": true,
+      "featureId": "DEG.24"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00048",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.24",
+      "x": null,
+      "value": 0.938738,
+      "synthetic": true,
+      "featureId": "DEG.24"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00049",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.25",
+      "x": null,
+      "value": -1.086915,
+      "synthetic": true,
+      "featureId": "DEG.25"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00050",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.25",
+      "x": null,
+      "value": -1.287523,
+      "synthetic": true,
+      "featureId": "DEG.25"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00051",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.26",
+      "x": null,
+      "value": 0.312712,
+      "synthetic": true,
+      "featureId": "DEG.26"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00052",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.26",
+      "x": null,
+      "value": 1.586361,
+      "synthetic": true,
+      "featureId": "DEG.26"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00053",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.27",
+      "x": null,
+      "value": 0.341781,
+      "synthetic": true,
+      "featureId": "DEG.27"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00054",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.27",
+      "x": null,
+      "value": 1.777942,
+      "synthetic": true,
+      "featureId": "DEG.27"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00055",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.28",
+      "x": null,
+      "value": 0.637421,
+      "synthetic": true,
+      "featureId": "DEG.28"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00056",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.28",
+      "x": null,
+      "value": 1.624911,
+      "synthetic": true,
+      "featureId": "DEG.28"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00057",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.29",
+      "x": null,
+      "value": -0.381013,
+      "synthetic": true,
+      "featureId": "DEG.29"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00058",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.29",
+      "x": null,
+      "value": -1.168201,
+      "synthetic": true,
+      "featureId": "DEG.29"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00059",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.30",
+      "x": null,
+      "value": 0.942029,
+      "synthetic": true,
+      "featureId": "DEG.30"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00060",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.30",
+      "x": null,
+      "value": 1.174412,
+      "synthetic": true,
+      "featureId": "DEG.30"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00061",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.31",
+      "x": null,
+      "value": 0.814806,
+      "synthetic": true,
+      "featureId": "DEG.31"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00062",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.31",
+      "x": null,
+      "value": 1.059864,
+      "synthetic": true,
+      "featureId": "DEG.31"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00063",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.32",
+      "x": null,
+      "value": 0.658411,
+      "synthetic": true,
+      "featureId": "DEG.32"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00064",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.32",
+      "x": null,
+      "value": 1.157967,
+      "synthetic": true,
+      "featureId": "DEG.32"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00065",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.33",
+      "x": null,
+      "value": -0.725017,
+      "synthetic": true,
+      "featureId": "DEG.33"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00066",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.33",
+      "x": null,
+      "value": -1.709044,
+      "synthetic": true,
+      "featureId": "DEG.33"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00067",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.34",
+      "x": null,
+      "value": 0.719917,
+      "synthetic": true,
+      "featureId": "DEG.34"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00068",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.34",
+      "x": null,
+      "value": 1.286168,
+      "synthetic": true,
+      "featureId": "DEG.34"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00069",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.35",
+      "x": null,
+      "value": 0.711947,
+      "synthetic": true,
+      "featureId": "DEG.35"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00070",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.35",
+      "x": null,
+      "value": 1.685768,
+      "synthetic": true,
+      "featureId": "DEG.35"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00071",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.36",
+      "x": null,
+      "value": 0.599629,
+      "synthetic": true,
+      "featureId": "DEG.36"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00072",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.36",
+      "x": null,
+      "value": 1.391477,
+      "synthetic": true,
+      "featureId": "DEG.36"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00073",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.37",
+      "x": null,
+      "value": -1.098304,
+      "synthetic": true,
+      "featureId": "DEG.37"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00074",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.37",
+      "x": null,
+      "value": -1.072473,
+      "synthetic": true,
+      "featureId": "DEG.37"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00075",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.38",
+      "x": null,
+      "value": 0.492766,
+      "synthetic": true,
+      "featureId": "DEG.38"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00076",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.38",
+      "x": null,
+      "value": 1.471998,
+      "synthetic": true,
+      "featureId": "DEG.38"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00077",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.39",
+      "x": null,
+      "value": 0.653692,
+      "synthetic": true,
+      "featureId": "DEG.39"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00078",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.39",
+      "x": null,
+      "value": 1.213125,
+      "synthetic": true,
+      "featureId": "DEG.39"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00079",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.40",
+      "x": null,
+      "value": 1.06757,
+      "synthetic": true,
+      "featureId": "DEG.40"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00080",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.40",
+      "x": null,
+      "value": 1.195572,
+      "synthetic": true,
+      "featureId": "DEG.40"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00081",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.41",
+      "x": null,
+      "value": -0.53261,
+      "synthetic": true,
+      "featureId": "DEG.41"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00082",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.41",
+      "x": null,
+      "value": -1.648715,
+      "synthetic": true,
+      "featureId": "DEG.41"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00083",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.42",
+      "x": null,
+      "value": 0.59159,
+      "synthetic": true,
+      "featureId": "DEG.42"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00084",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.42",
+      "x": null,
+      "value": 1.62281,
+      "synthetic": true,
+      "featureId": "DEG.42"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00085",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.43",
+      "x": null,
+      "value": 0.786974,
+      "synthetic": true,
+      "featureId": "DEG.43"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00086",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.43",
+      "x": null,
+      "value": 1.162654,
+      "synthetic": true,
+      "featureId": "DEG.43"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00087",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.44",
+      "x": null,
+      "value": 0.341248,
+      "synthetic": true,
+      "featureId": "DEG.44"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00088",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.44",
+      "x": null,
+      "value": 1.787769,
+      "synthetic": true,
+      "featureId": "DEG.44"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00089",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.45",
+      "x": null,
+      "value": -0.625372,
+      "synthetic": true,
+      "featureId": "DEG.45"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00090",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.45",
+      "x": null,
+      "value": -0.820193,
+      "synthetic": true,
+      "featureId": "DEG.45"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00091",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.46",
+      "x": null,
+      "value": 0.52171,
+      "synthetic": true,
+      "featureId": "DEG.46"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00092",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.46",
+      "x": null,
+      "value": 1.021463,
+      "synthetic": true,
+      "featureId": "DEG.46"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00093",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.47",
+      "x": null,
+      "value": 0.227367,
+      "synthetic": true,
+      "featureId": "DEG.47"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00094",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.47",
+      "x": null,
+      "value": 1.172896,
+      "synthetic": true,
+      "featureId": "DEG.47"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00095",
+      "series": "3 h vs 1 h",
+      "experimentalUnitId": "DEG.48",
+      "x": null,
+      "value": 0.424659,
+      "synthetic": true,
+      "featureId": "DEG.48"
+    },
+    {
+      "observationId": "LSA135_context_rich_v2.o00096",
+      "series": "6 h vs 1 h",
+      "experimentalUnitId": "DEG.48",
+      "x": null,
+      "value": 1.169308,
+      "synthetic": true,
+      "featureId": "DEG.48"
+    }
+  ]
+}

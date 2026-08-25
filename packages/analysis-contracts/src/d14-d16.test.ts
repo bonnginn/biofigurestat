@@ -4,6 +4,7 @@ import {
   ContingencyAnalysisEngineRequestSchema,
   FriedmanAnalysisEngineRequestSchema,
   SimpleLinearRegressionEngineRequestSchema,
+  NonlinearXyFitEngineRequestSchema,
 } from "./contracts";
 
 const options = {
@@ -102,6 +103,42 @@ describe("D14-D16 contracts", () => {
       options,
     } as const;
     expect(SimpleLinearRegressionEngineRequestSchema.parse(request).includeIntercept).toBe(true);
+    expect(AnalysisEngineRequestSchema.safeParse(request).success).toBe(true);
+  });
+});
+
+describe("D17 nonlinear XY contract", () => {
+  it("persists explicit model selection, series identity, starts, and bounds", () => {
+    const request = {
+      protocolVersion: "0.14.0",
+      requestId: "request.kinetics",
+      projectId: "project.kinetics",
+      analysisId: "analysis.kinetics",
+      templateId: "D17",
+      templateVersion: "0.1.0",
+      method: "nonlinear_xy_fit",
+      modelId: "zero_baseline_association",
+      modelSelectionRationale: "Time-course product accumulation is monotone and saturating.",
+      xLabel: "Time",
+      yLabel: "Product",
+      xUnit: "min",
+      yUnit: "mol/mol",
+      seriesIds: ["K5", "K14"],
+      points: ["K5", "K14"].flatMap((seriesId) =>
+        [0, 30, 60, 120].map((x, index) => ({
+          observationId: `${seriesId}.${index}`,
+          experimentalUnitId: `${seriesId}.experiment.1`,
+          seriesId,
+          x,
+          y: index * (seriesId === "K5" ? 0.5 : 0.3),
+        })),
+      ),
+      initialValues: { K5: { plateau: 2, rate: 0.02 } },
+      bounds: { K5: { plateau: { lower: 0, upper: 5 }, rate: { lower: 0.0001, upper: 1 } } },
+      observations: [],
+      options,
+    } as const;
+    expect(NonlinearXyFitEngineRequestSchema.parse(request).seriesIds).toEqual(["K5", "K14"]);
     expect(AnalysisEngineRequestSchema.safeParse(request).success).toBe(true);
   });
 });

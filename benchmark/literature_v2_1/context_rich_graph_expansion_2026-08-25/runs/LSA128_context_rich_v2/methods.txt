@@ -1,0 +1,7 @@
+Case: LSA128_context_rich_v2
+Source: https://europepmc.org/articles/PMC8749457 (Fig. 1C)
+Scientific question: Which culture medium best preserves adult SAN-cell length over 40 hours?
+Statistical unit: cell nested in preparation
+Source analysis: Kruskal–Wallis + Dunn; 0-vs-40 h Mann–Whitney
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

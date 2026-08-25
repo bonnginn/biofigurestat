@@ -1,0 +1,375 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA433_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA433.o1",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.1",
+        "featureId": "Feature 01",
+        "value": 0.5051,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o2",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.1",
+        "featureId": "Feature 01",
+        "value": -0.5344,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o3",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.2",
+        "featureId": "Feature 02",
+        "value": -1.0314,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o4",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.2",
+        "featureId": "Feature 02",
+        "value": 0.2701,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o5",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.3",
+        "featureId": "Feature 03",
+        "value": -0.2927,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o6",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.3",
+        "featureId": "Feature 03",
+        "value": 0.9082,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o7",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.4",
+        "featureId": "Feature 04",
+        "value": 0.458,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o8",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.4",
+        "featureId": "Feature 04",
+        "value": -0.3904,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o9",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.5",
+        "featureId": "Feature 05",
+        "value": -0.5789,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o10",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.5",
+        "featureId": "Feature 05",
+        "value": 0.2571,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o11",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.6",
+        "featureId": "Feature 06",
+        "value": -0.5731,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o12",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.6",
+        "featureId": "Feature 06",
+        "value": 0.1968,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o13",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.7",
+        "featureId": "Feature 07",
+        "value": 0.5914,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o14",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.7",
+        "featureId": "Feature 07",
+        "value": -0.1094,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o15",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.8",
+        "featureId": "Feature 08",
+        "value": -0.5522,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o16",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.8",
+        "featureId": "Feature 08",
+        "value": 0.1388,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o17",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.9",
+        "featureId": "Feature 09",
+        "value": -0.6604,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o18",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.9",
+        "featureId": "Feature 09",
+        "value": 0.5667,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o19",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.10",
+        "featureId": "Feature 10",
+        "value": 0.2331,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o20",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.10",
+        "featureId": "Feature 10",
+        "value": -0.8277,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o21",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.11",
+        "featureId": "Feature 11",
+        "value": -0.0569,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o22",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.11",
+        "featureId": "Feature 11",
+        "value": 0.5397,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o23",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.12",
+        "featureId": "Feature 12",
+        "value": -0.6632,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o24",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.12",
+        "featureId": "Feature 12",
+        "value": 0.5907,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o25",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.13",
+        "featureId": "Feature 13",
+        "value": 0.8088,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o26",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.13",
+        "featureId": "Feature 13",
+        "value": -0.7172,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o27",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.14",
+        "featureId": "Feature 14",
+        "value": -0.7884,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o28",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.14",
+        "featureId": "Feature 14",
+        "value": 0.9034,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o29",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.15",
+        "featureId": "Feature 15",
+        "value": -0.476,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o30",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.15",
+        "featureId": "Feature 15",
+        "value": 0.2622,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o31",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.16",
+        "featureId": "Feature 16",
+        "value": 0.6368,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o32",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.16",
+        "featureId": "Feature 16",
+        "value": -0.3775,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o33",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.17",
+        "featureId": "Feature 17",
+        "value": -0.1946,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o34",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.17",
+        "featureId": "Feature 17",
+        "value": 0.3507,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o35",
+        "series": "MER51B-GFP+",
+        "experimentalUnitId": "feature.18",
+        "featureId": "Feature 18",
+        "value": 0.1856,
+        "synthetic": true,
+        "displayOnly": true
+      },
+      {
+        "observationId": "LSA433.o36",
+        "series": "MER51B-GFP+LTR5_Hs-RFP+",
+        "experimentalUnitId": "feature.18",
+        "featureId": "Feature 18",
+        "value": 0.8456,
+        "synthetic": true,
+        "displayOnly": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA433_context_rich_v2",
+    "originalCaseId": "LSA433",
+    "scientificQuestion": "Which genes distinguish primed MER51B-GFP+LTR5_Hs-RFP+ from MER51B-GFP+ hESCs?",
+    "conditions": [
+      "MER51B-GFP+",
+      "MER51B-GFP+LTR5_Hs-RFP+"
+    ],
+    "statisticalUnit": "biological replicate",
+    "sourceMethod": "Wald tests + Benjamini–Hochberg",
+    "source": {
+      "pmcid": "PMC11772670",
+      "url": "https://europepmc.org/articles/PMC11772670",
+      "targetPanel": "Fig. 3I",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "Wald tests + Benjamini–Hochberg"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "heatmap",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Which genes distinguish primed MER51B-GFP+LTR5_Hs-RFP+ from MER51B-GFP+ hESCs?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA433",
+    "candidateFamilyReclassified": "multiple_testing",
+    "poolDOpened": false
+  }
+}

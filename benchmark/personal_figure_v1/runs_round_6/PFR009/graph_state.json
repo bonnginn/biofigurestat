@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.1.0",
+  "caseId": "PFR009",
+  "graphType": "line",
+  "dataSets": {
+    "displaySet": {
+      "conditionIds": [
+        "Ndel1",
+        "trichoplein"
+      ]
+    },
+    "analysisSet": {
+      "unit": "representative WB sample (n=1)",
+      "status": "not_applicable"
+    },
+    "comparisonSet": [],
+    "annotationSet": []
+  },
+  "appearance": {
+    "barOutline": true,
+    "barMeanMarker": false,
+    "boxWhiskerMode": "tukey_1_5_iqr",
+    "uncertaintyStyle": "error_bars",
+    "summary": "case_defined",
+    "errorBarSeries": [],
+    "seriesStyles": {}
+  },
+  "axes": {
+    "xSemantic": "numeric_covariate",
+    "xTitle": "Serum starvation (h)",
+    "yTitle": "Relative intensity",
+    "gridLines": true,
+    "yMax": null,
+    "tickLabels": "default"
+  },
+  "analysis": {
+    "status": "not_applicable",
+    "authoritativeSavedResult": false,
+    "resultCount": 0,
+    "modelId": null
+  }
+}

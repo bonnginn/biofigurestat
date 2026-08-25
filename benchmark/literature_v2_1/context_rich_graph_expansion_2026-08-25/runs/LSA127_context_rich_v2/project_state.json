@@ -1,0 +1,195 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA127_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA127.o1",
+        "series": "CTL",
+        "experimentalUnitId": "unit.CTL.1",
+        "pairId": null,
+        "x": null,
+        "value": 56.9606,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o2",
+        "series": "CTL",
+        "experimentalUnitId": "unit.CTL.2",
+        "pairId": null,
+        "x": null,
+        "value": 53.9505,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o3",
+        "series": "CTL",
+        "experimentalUnitId": "unit.CTL.3",
+        "pairId": null,
+        "x": null,
+        "value": 47.7246,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o4",
+        "series": "CTL",
+        "experimentalUnitId": "unit.CTL.4",
+        "pairId": null,
+        "x": null,
+        "value": 59.1032,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o5",
+        "series": "CTL",
+        "experimentalUnitId": "unit.CTL.5",
+        "pairId": null,
+        "x": null,
+        "value": 60.9248,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o6",
+        "series": "CTL",
+        "experimentalUnitId": "unit.CTL.6",
+        "pairId": null,
+        "x": null,
+        "value": 51.0844,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o7",
+        "series": "CTL",
+        "experimentalUnitId": "unit.CTL.7",
+        "pairId": null,
+        "x": null,
+        "value": 44.9097,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o8",
+        "series": "CTL",
+        "experimentalUnitId": "unit.CTL.8",
+        "pairId": null,
+        "x": null,
+        "value": 52.8703,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o9",
+        "series": "DTA",
+        "experimentalUnitId": "unit.DTA.1",
+        "pairId": null,
+        "x": null,
+        "value": 62.2374,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o10",
+        "series": "DTA",
+        "experimentalUnitId": "unit.DTA.2",
+        "pairId": null,
+        "x": null,
+        "value": 59.3512,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o11",
+        "series": "DTA",
+        "experimentalUnitId": "unit.DTA.3",
+        "pairId": null,
+        "x": null,
+        "value": 55.0089,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o12",
+        "series": "DTA",
+        "experimentalUnitId": "unit.DTA.4",
+        "pairId": null,
+        "x": null,
+        "value": 57.042,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o13",
+        "series": "DTA",
+        "experimentalUnitId": "unit.DTA.5",
+        "pairId": null,
+        "x": null,
+        "value": 49.5391,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o14",
+        "series": "DTA",
+        "experimentalUnitId": "unit.DTA.6",
+        "pairId": null,
+        "x": null,
+        "value": 52.3684,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o15",
+        "series": "DTA",
+        "experimentalUnitId": "unit.DTA.7",
+        "pairId": null,
+        "x": null,
+        "value": 60.3788,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA127.o16",
+        "series": "DTA",
+        "experimentalUnitId": "unit.DTA.8",
+        "pairId": null,
+        "x": null,
+        "value": 52.0138,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA127_context_rich_v2",
+    "originalCaseId": "LSA127",
+    "scientificQuestion": "Does oligodendrocyte ablation alter microglial density at P13–15?",
+    "conditions": [
+      "CTL",
+      "DTA"
+    ],
+    "statisticalUnit": "mouse",
+    "sourceMethod": "Mann–Whitney U test",
+    "source": {
+      "pmcid": "PMC13278736",
+      "url": "https://europepmc.org/articles/PMC13278736",
+      "targetPanel": "Fig. 2B",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "Historical correlation label corrected: the selected panel is an independent two-group animal comparison.",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "Mann–Whitney U test"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "dot_summary",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Does oligodendrocyte ablation alter microglial density at P13–15?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA127",
+    "candidateFamilyReclassified": "two_group_nonparametric",
+    "poolDOpened": false
+  }
+}

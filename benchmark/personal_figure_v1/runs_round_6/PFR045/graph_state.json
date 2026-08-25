@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1.1.0",
+  "caseId": "PFR045",
+  "graphType": "line",
+  "dataSets": {
+    "displaySet": {
+      "conditionIds": [
+        "5-ptase + PLCδ-PH, ON",
+        "RhoA + PLCδ-PH, ON",
+        "RhoA + PLCδ-PH, OFF",
+        "RhoA + mCherry, ON",
+        "RhoA + mCherry, OFF"
+      ]
+    },
+    "analysisSet": {
+      "unit": "cell/imaging experiment repeated over time (n=6)",
+      "status": "not_applicable"
+    },
+    "comparisonSet": [],
+    "annotationSet": []
+  },
+  "appearance": {
+    "barOutline": true,
+    "barMeanMarker": false,
+    "boxWhiskerMode": "tukey_1_5_iqr",
+    "uncertaintyStyle": "ribbon",
+    "summary": "case_defined",
+    "errorBarSeries": [],
+    "seriesStyles": {
+      "5-ptase + PLCδ-PH, ON": {
+        "color": "#245c8a",
+        "lineStyle": "solid",
+        "lineWidth": 3.5,
+        "visible": true,
+        "legendLabel": "5-ptase + PLCδ-PH, ON"
+      },
+      "RhoA + PLCδ-PH, ON": {
+        "color": "#c26532",
+        "lineStyle": "solid",
+        "lineWidth": 3,
+        "visible": true,
+        "legendLabel": "RhoA + PLCδ-PH, ON"
+      },
+      "RhoA + PLCδ-PH, OFF": {
+        "color": "#c26532",
+        "lineStyle": "dashed",
+        "lineWidth": 2,
+        "visible": true,
+        "legendLabel": "RhoA + PLCδ-PH, OFF"
+      },
+      "RhoA + mCherry, ON": {
+        "color": "#3e7c67",
+        "lineStyle": "solid",
+        "lineWidth": 2.5,
+        "visible": true,
+        "legendLabel": "RhoA + mCherry, ON"
+      },
+      "RhoA + mCherry, OFF": {
+        "color": "#3e7c67",
+        "lineStyle": "dashed",
+        "lineWidth": 2,
+        "visible": true,
+        "legendLabel": "RhoA + mCherry, OFF"
+      }
+    }
+  },
+  "axes": {
+    "xSemantic": "numeric_covariate",
+    "xTitle": "Time (sec)",
+    "yTitle": "Relative cytosolic fluorescence",
+    "gridLines": false,
+    "yMax": null,
+    "tickLabels": "default"
+  },
+  "analysis": {
+    "status": "not_applicable",
+    "authoritativeSavedResult": false,
+    "resultCount": 0,
+    "modelId": null
+  }
+}

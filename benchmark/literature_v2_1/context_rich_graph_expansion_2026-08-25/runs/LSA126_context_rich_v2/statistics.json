@@ -1,0 +1,5 @@
+{
+  "status": "not_executed",
+  "reason": "SAFE_UNSUPPORTED_FOR_ALPHA: two crossed within-mouse factors (hemisphere × ordered stage) are displayed without substituting an invalid model",
+  "results": []
+}

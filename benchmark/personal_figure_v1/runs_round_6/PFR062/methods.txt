@@ -1,0 +1,9 @@
+Case: PFR062 (KER5 Fig. 1B representative CDK1 panel)
+Source status: SYNTHETIC_RECONSTRUCTION; values are not published raw observations.
+Experimental/statistical unit: independent in-vitro kinase experiment (n=3)
+Primary contrast: Independent saturating kinetic fit for K5 and K14
+Inference status: ok.
+Display, analysis, comparison, and annotation sets are stored separately in graph_state.json.
+Authoritative model: zero_baseline_association 0.1.0 (plateau * (1 - exp(-rate * x))).
+Model rationale: The source panel is a product-formation time course without an explicit published fit equation. A zero-baseline one-phase association is the simplest saturating kinetic model; Michaelis-Menten is not used because X is time, not substrate concentration.
+Engine: lsaa-python 0.14.0; fitted parameters, uncertainty, diagnostics, starts, bounds, and fitted curves are preserved in statistics.json.

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "1.1.0",
+  "caseId": "PFR059B",
+  "graphType": "stacked",
+  "dataSets": {
+    "displaySet": {
+      "conditionIds": [
+        "S",
+        "P"
+      ]
+    },
+    "analysisSet": {
+      "unit": "independent fractionation experiment (n=3); P/S paired",
+      "status": "ok"
+    },
+    "comparisonSet": [
+      {
+        "id": "comparison.PFR059B.1",
+        "conditionIds": [
+          "AX2",
+          "gflB KO"
+        ]
+      },
+      {
+        "id": "comparison.PFR059B.2",
+        "conditionIds": [
+          "gflB KO",
+          "gflB KO (GFP-GflB)"
+        ]
+      }
+    ],
+    "annotationSet": [
+      {
+        "comparisonId": "comparison.PFR059B.1",
+        "display": "significant_only"
+      },
+      {
+        "comparisonId": "comparison.PFR059B.2",
+        "display": "significant_only"
+      }
+    ]
+  },
+  "appearance": {
+    "barOutline": true,
+    "barMeanMarker": false,
+    "boxWhiskerMode": "tukey_1_5_iqr",
+    "uncertaintyStyle": "error_bars",
+    "summary": "mean_sd",
+    "errorBarSeries": [
+      "P"
+    ],
+    "seriesStyles": {}
+  },
+  "axes": {
+    "xSemantic": "categorical",
+    "xTitle": "Genotype",
+    "yTitle": "Relative amount of actin (%)",
+    "gridLines": false,
+    "yMax": 100,
+    "tickLabels": "default"
+  },
+  "analysis": {
+    "status": "ok",
+    "authoritativeSavedResult": true,
+    "resultCount": 1,
+    "modelId": null
+  }
+}

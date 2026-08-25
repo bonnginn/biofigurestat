@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "survival",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "Does a low-protein diet increase mortality after LPS challenge?",
+  "annotationSet": "none without an authoritative saved result"
+}

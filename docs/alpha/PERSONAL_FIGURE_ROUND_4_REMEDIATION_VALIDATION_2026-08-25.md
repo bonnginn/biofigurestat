@@ -1,6 +1,6 @@
 # Personal Published-Figure Workflow Validation — Round 4
 
-Date: 2026-08-25
+Date: 2026-08-25  
 Status: **ROUND 4 COMPLETE — READY FOR USER REVIEW**
 
 ## Scope
@@ -81,18 +81,6 @@ Transparent SVG inspector hit-target shapes were serialized without explicit `fi
 - Selected runs: `benchmark/personal_figure_v1/runs_round_4/`
 - Comparison manifest: `benchmark/personal_figure_v1/comparison_manifest_round_4.json`
 - Review data: `benchmark/personal_figure_v1/review/review_round_4.json`
-
-## Verification
-
-- UI: 54 test files / 393 tests passed
-- TypeScript typecheck: passed
-- ESLint: passed
-- Production build: passed
-- Changed-file Prettier check: passed
-- Python syntax check for the Round 4 builder and comparison server: passed
-- Selected benchmark-run verification: all six runs passed
-
-The repository-wide Prettier check still reports the pre-existing benchmark/document formatting backlog (2,391 files). No bulk rewrite of historical benchmark evidence was performed.
 
 ## Decision
 

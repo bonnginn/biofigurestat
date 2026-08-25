@@ -1,0 +1,5 @@
+{
+  "caseId": "LSA053",
+  "classification": "READY_WITH_BOUNDED_SOURCE_UNCERTAINTY",
+  "note": "Two lineages contribute generations; lineage dependence is retained in provenance and inference is not reconstructed."
+}

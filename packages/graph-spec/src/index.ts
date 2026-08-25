@@ -13,6 +13,7 @@ export const GraphTypeSchema = z.enum([
   "heatmap",
   "histogram",
   "ecdf",
+  "nonlinear_xy",
 ]);
 
 export const GraphDataSetSemanticsSchema = z
@@ -96,6 +97,7 @@ export const GraphSpecSchema = z
             fill: z.enum(["none", "white", "series", "custom"]).optional(),
             fillColor: z.string().optional(),
             lineStyle: z.enum(["solid", "dashed", "dotted"]).optional(),
+            lineWidth: z.number().min(0.5).max(8).optional(),
             pointStyle: z.enum(["circle", "square", "triangle", "diamond"]).optional(),
             legendLabel: z.string().min(1).optional(),
             order: z.number().int().optional(),
@@ -250,6 +252,7 @@ export * from "./heatmap";
 export * from "./survival";
 export * from "./distribution";
 export * from "./regression";
+export * from "./nonlinear-fit";
 export * from "./core-v1";
 
 export function createHeatmapGraphSpec(

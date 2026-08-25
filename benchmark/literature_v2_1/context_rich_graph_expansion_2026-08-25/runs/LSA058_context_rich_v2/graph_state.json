@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "box",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "Does cky-1 deletion alter ivermectin sensitivity across treatment concentrations?",
+  "annotationSet": "none without an authoritative saved result"
+}

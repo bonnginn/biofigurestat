@@ -1,0 +1,7 @@
+Case: PFR054 (GFLB Fig. 2D)
+Source status: SYNTHETIC_RECONSTRUCTION; values are not published raw observations.
+Experimental/statistical unit: unresolved; crown events are display units only
+Primary contrast: AX2 versus gflB KO requested but not executed
+Inference status: unsupported.
+Display, analysis, comparison, and annotation sets are stored separately in graph_state.json.
+No two-group test was executed because source-backed movie/session identity could not be recovered safely; crown events were not counted as biological n.

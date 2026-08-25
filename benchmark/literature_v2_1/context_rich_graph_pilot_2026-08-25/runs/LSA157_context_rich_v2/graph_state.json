@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "violin",
+  "analysisResultAuthority": true,
+  "displaySet": "all synthetic rows",
+  "analysisSet": "biological-unit summaries or explicit survival units",
+  "comparisonSet": "each active/endogenous group versus kinase-dead",
+  "annotationSet": "Only source-supported comparisons"
+}

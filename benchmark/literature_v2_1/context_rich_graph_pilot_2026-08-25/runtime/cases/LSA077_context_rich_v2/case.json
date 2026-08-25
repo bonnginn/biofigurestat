@@ -1,0 +1,244 @@
+{
+  "caseId": "LSA077_context_rich_v2",
+  "classification": "READY_WITH_MINOR_SOURCE_UNCERTAINTY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.0.0",
+    "caseId": "LSA077_context_rich_v2",
+    "originalCaseId": "LSA077",
+    "source": {
+      "pmcid": "PMC10883267",
+      "url": "https://europepmc.org/articles/PMC10883267",
+      "targetPanel": "Fig. 2B",
+      "evidenceSummary": "m7G cap-binding by eIF4E constructs and conserved-tryptophan mutants, n=3 independent experiments; two-way ANOVA/Tukey is reported, but the second model factor is not explicit in the legend."
+    },
+    "fields": {
+      "scientificMessage": {
+        "value": "Conserved tryptophans support eIF4E1B binding to the mRNA cap",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "experimentalDesign": {
+        "value": "m7G cap-binding by eIF4E constructs and conserved-tryptophan mutants, n=3 independent experiments; two-way ANOVA/Tukey is reported, but the second model factor is not explicit in the legend.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "statisticalUnit": {
+        "value": "independent pulldown experiment",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "pairingNestingRepeated": {
+        "value": "Encoded explicitly in synthetic rows where supported",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "factorsLevels": {
+        "value": "See display/series semantics",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "primaryContrast": {
+        "value": "constructs and mutants versus canonical/negative references",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "referenceRoles": {
+        "value": "Control/reference labels preserved from legend",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "intent": {
+        "value": "Inferential where the legend reports a test; representative pixels remain descriptive",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "displaySet": {
+        "value": "Fig. 2B points with mean±SD",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "analysisSet": {
+        "value": "independent pulldown experiment",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "comparisonSet": {
+        "value": "constructs and mutants versus canonical/negative references",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "annotationSet": {
+        "value": "Only source-supported comparisons",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "graphConvention": {
+        "value": "Fig. 2B points with mean±SD",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "xSemantics": {
+        "value": "condition or numeric time according to panel",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "seriesSemantics": {
+        "value": "scientific condition/time identity",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "facetSemantics": {
+        "value": "time facet only for LSA088",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "yReadout": {
+        "value": "Conserved tryptophans support eIF4E1B binding to the mRNA cap",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "sampleSizeStructure": {
+        "value": "m7G cap-binding by eIF4E constructs and conserved-tryptophan mutants, n=3 independent experiments; two-way ANOVA/Tukey is reported, but the second model factor is not explicit in the legend.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "axisColorLegend": {
+        "value": "labels preserve source roles; color identifies series",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "uncertainty": {
+        "value": "SD/SEM or distribution as reported",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      }
+    },
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA077_context_rich_v2.o00001",
+      "series": "Dr eIF4Ea",
+      "experimentalUnitId": "pulldown.1",
+      "x": null,
+      "value": 1.071081,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00002",
+      "series": "Dr eIF4Ea",
+      "experimentalUnitId": "pulldown.2",
+      "x": null,
+      "value": 1.003749,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00003",
+      "series": "Dr eIF4Ea",
+      "experimentalUnitId": "pulldown.3",
+      "x": null,
+      "value": 0.954272,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00004",
+      "series": "Hs eIF4E1B WT",
+      "experimentalUnitId": "pulldown.1",
+      "x": null,
+      "value": 0.729133,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00005",
+      "series": "Hs eIF4E1B WT",
+      "experimentalUnitId": "pulldown.2",
+      "x": null,
+      "value": 0.881786,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00006",
+      "series": "Hs eIF4E1B WT",
+      "experimentalUnitId": "pulldown.3",
+      "x": null,
+      "value": 0.877676,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00007",
+      "series": "W81A",
+      "experimentalUnitId": "pulldown.1",
+      "x": null,
+      "value": 0.40176,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00008",
+      "series": "W81A",
+      "experimentalUnitId": "pulldown.2",
+      "x": null,
+      "value": 0.315121,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00009",
+      "series": "W81A",
+      "experimentalUnitId": "pulldown.3",
+      "x": null,
+      "value": 0.382152,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00010",
+      "series": "W113A",
+      "experimentalUnitId": "pulldown.1",
+      "x": null,
+      "value": 0.391422,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00011",
+      "series": "W113A",
+      "experimentalUnitId": "pulldown.2",
+      "x": null,
+      "value": 0.356283,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00012",
+      "series": "W113A",
+      "experimentalUnitId": "pulldown.3",
+      "x": null,
+      "value": 0.357819,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00013",
+      "series": "W81A/W113A",
+      "experimentalUnitId": "pulldown.1",
+      "x": null,
+      "value": 0.120022,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00014",
+      "series": "W81A/W113A",
+      "experimentalUnitId": "pulldown.2",
+      "x": null,
+      "value": 0.21141,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00015",
+      "series": "W81A/W113A",
+      "experimentalUnitId": "pulldown.3",
+      "x": null,
+      "value": 0.078548,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00016",
+      "series": "eIF4EBP1 4EBM",
+      "experimentalUnitId": "pulldown.1",
+      "x": null,
+      "value": 0.003521,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00017",
+      "series": "eIF4EBP1 4EBM",
+      "experimentalUnitId": "pulldown.2",
+      "x": null,
+      "value": 0.021409,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA077_context_rich_v2.o00018",
+      "series": "eIF4EBP1 4EBM",
+      "experimentalUnitId": "pulldown.3",
+      "x": null,
+      "value": 0.091075,
+      "synthetic": true
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+Case: LSA157_context_rich_v2
+Source: https://europepmc.org/articles/PMC8647013 (Fig. 1B)
+All observations are deterministic synthetic reconstruction, not published raw data.
+Statistical unit: biological experiment summarized from nested cells
+Primary contrast: each active/endogenous group versus kinase-dead
+Analysis status: ok
+Authority: saved local numerical-engine result; Graph does not smooth or recompute analysis.

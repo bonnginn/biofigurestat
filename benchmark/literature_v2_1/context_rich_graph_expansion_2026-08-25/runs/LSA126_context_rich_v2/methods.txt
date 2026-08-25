@@ -1,0 +1,6 @@
+Case: LSA126_context_rich_v2
+Source: https://europepmc.org/articles/PMC12747520 (Fig. 2B-D)
+All observations are deterministic synthetic reconstruction, not published raw data.
+Statistical unit: mouse repeated across hemisphere and time
+Primary contrast: within-animal hemisphere and baseline contrasts
+Analysis status: not_executed

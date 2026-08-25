@@ -7,6 +7,7 @@ export type ResolvedSeriesStyle = Readonly<{
   fill: "none" | "white" | "series" | "custom";
   fillColor?: string;
   lineStyle: "solid" | "dashed" | "dotted";
+  lineWidth?: number;
   pointStyle: "circle" | "square" | "triangle" | "diamond";
 }>;
 

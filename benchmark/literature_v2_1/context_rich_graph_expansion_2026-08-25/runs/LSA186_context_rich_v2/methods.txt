@@ -1,0 +1,7 @@
+Case: LSA186_context_rich_v2
+Source: https://europepmc.org/articles/PMC12697970 (Fig. 2F)
+Scientific question: How do IL-17A and Epo change the erythroid-subset landscape in marrow and spleen?
+Statistical unit: mouse
+Source analysis: panel is descriptive; related PC tests use corrected post-hoc comparisons
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

@@ -24,6 +24,139 @@
   --orange: #dd8a50;
 }
 
+.analysis-route-switcher {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 360px) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid #d7e1ea;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.analysis-route-switcher > span {
+  font-weight: 700;
+  color: #243b53;
+}
+
+.analysis-route-switcher select {
+  min-height: 38px;
+}
+
+.analysis-route-switcher small {
+  color: #617181;
+}
+
+.nonlinear-fit-settings {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.nonlinear-fit-settings fieldset {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #d7e1ea;
+  border-radius: 10px;
+}
+
+.nonlinear-fit-settings fieldset > label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.nonlinear-fit-settings fieldset span {
+  display: grid;
+  gap: 2px;
+}
+
+.nonlinear-fit-axis-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.nonlinear-fit-axis-fields label,
+.nonlinear-fit-settings > label {
+  display: grid;
+  gap: 5px;
+}
+
+.nonlinear-fit-parameter-inputs,
+.nonlinear-fit-series-result table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.nonlinear-fit-parameter-inputs th,
+.nonlinear-fit-parameter-inputs td,
+.nonlinear-fit-series-result th,
+.nonlinear-fit-series-result td {
+  padding: 7px;
+  border-bottom: 1px solid #dfe7ee;
+  text-align: left;
+}
+
+.nonlinear-fit-parameter-inputs input {
+  width: 100%;
+  min-width: 70px;
+}
+
+.nonlinear-fit-results {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.nonlinear-fit-series-result {
+  padding: 14px;
+  border: 1px solid #d7e1ea;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.nonlinear-fit-diagnostics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.nonlinear-fit-diagnostics div {
+  padding: 8px;
+  border-radius: 8px;
+  background: #f4f7fa;
+}
+
+.nonlinear-fit-diagnostics dt {
+  color: #617181;
+  font-size: 0.78rem;
+}
+
+.nonlinear-fit-diagnostics dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+}
+
+.nonlinear-opened-project svg,
+.workspace-panel > svg[aria-label="非線形フィットGraph"] {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .analysis-route-switcher,
+  .nonlinear-fit-axis-fields,
+  .nonlinear-fit-diagnostics {
+    grid-template-columns: 1fr;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

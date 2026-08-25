@@ -1,0 +1,166 @@
+{
+  "status": "ok",
+  "results": [
+    {
+      "request": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.LSA157",
+        "projectId": "project.LSA157.v2",
+        "analysisId": "analysis.LSA157",
+        "templateId": "D03",
+        "templateVersion": "0.1.0",
+        "method": "one_way_anova",
+        "conditionIds": [
+          "Endogenous V1",
+          "V1 WT",
+          "V1 KD"
+        ],
+        "contrastIntent": "control_vs_many",
+        "controlConditionId": "Endogenous V1",
+        "observations": [
+          {
+            "observationId": "LSA157.Endogenous V1.experiment.1",
+            "conditionId": "Endogenous V1",
+            "experimentalUnitId": "experiment.1Endogenous V1",
+            "value": 28.809989416666667
+          },
+          {
+            "observationId": "LSA157.Endogenous V1.experiment.2",
+            "conditionId": "Endogenous V1",
+            "experimentalUnitId": "experiment.2Endogenous V1",
+            "value": 28.07704341666667
+          },
+          {
+            "observationId": "LSA157.Endogenous V1.experiment.3",
+            "conditionId": "Endogenous V1",
+            "experimentalUnitId": "experiment.3Endogenous V1",
+            "value": 28.0231785
+          },
+          {
+            "observationId": "LSA157.V1 WT.experiment.1",
+            "conditionId": "V1 WT",
+            "experimentalUnitId": "experiment.1V1 WT",
+            "value": 36.25862791666667
+          },
+          {
+            "observationId": "LSA157.V1 WT.experiment.2",
+            "conditionId": "V1 WT",
+            "experimentalUnitId": "experiment.2V1 WT",
+            "value": 35.56032091666667
+          },
+          {
+            "observationId": "LSA157.V1 WT.experiment.3",
+            "conditionId": "V1 WT",
+            "experimentalUnitId": "experiment.3V1 WT",
+            "value": 35.861957833333335
+          },
+          {
+            "observationId": "LSA157.V1 KD.experiment.1",
+            "conditionId": "V1 KD",
+            "experimentalUnitId": "experiment.1V1 KD",
+            "value": 6.256326083333334
+          },
+          {
+            "observationId": "LSA157.V1 KD.experiment.2",
+            "conditionId": "V1 KD",
+            "experimentalUnitId": "experiment.2V1 KD",
+            "value": 6.058630333333333
+          },
+          {
+            "observationId": "LSA157.V1 KD.experiment.3",
+            "conditionId": "V1 KD",
+            "experimentalUnitId": "experiment.3V1 KD",
+            "value": 5.8796938333333335
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.95,
+          "multiplicityMethod": "dunnett_control_vs_many"
+        }
+      },
+      "result": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.LSA157",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.14.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0"
+          }
+        },
+        "estimates": [
+          {
+            "name": "V1 WT_minus_Endogenous V1",
+            "value": 7.5902317777777775,
+            "standardError": null,
+            "confidenceInterval": {
+              "level": 0.95,
+              "lower": 6.790212297143773,
+              "upper": 8.390251258411782
+            }
+          },
+          {
+            "name": "V1 KD_minus_Endogenous V1",
+            "value": -22.23852036111111,
+            "standardError": null,
+            "confidenceInterval": {
+              "level": 0.95,
+              "lower": -23.038539841745113,
+              "upper": -21.438500880477108
+            }
+          }
+        ],
+        "tests": [
+          {
+            "name": "classical_one_way_anova",
+            "statisticName": "F",
+            "statistic": 6155.900649032464,
+            "degreesOfFreedom": [
+              2.0,
+              6.0
+            ],
+            "pValue": 1.155724098147415e-10,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          },
+          {
+            "name": "dunnett:V1 WT:Endogenous V1",
+            "statisticName": "t",
+            "statistic": 27.163842619299718,
+            "degreesOfFreedom": [
+              6.0
+            ],
+            "pValue": 8.881784197001252e-16,
+            "adjustedPValue": 8.881784197001252e-16,
+            "effectSizeName": "hedges_g",
+            "effectSize": 15.239272415591712
+          },
+          {
+            "name": "dunnett:V1 KD:Endogenous V1",
+            "statisticName": "t",
+            "statistic": -79.58698559692395,
+            "degreesOfFreedom": [
+              6.0
+            ],
+            "pValue": 0.0,
+            "adjustedPValue": 0.0,
+            "effectSizeName": "hedges_g",
+            "effectSize": -52.47324555887625
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "equal_variance_assumption_selected",
+            "message": "Conventional one-way ANOVA and its pooled-variance comparisons assume equal population variances."
+          }
+        ],
+        "warnings": [],
+        "completedAt": "2026-08-25T06:44:04.520018+00:00"
+      }
+    }
+  ]
+}

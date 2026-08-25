@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA210_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA210.o1",
+        "series": "NC",
+        "experimentalUnitId": "unit.NC.1",
+        "pairId": null,
+        "x": null,
+        "value": 49.3132,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA210.o2",
+        "series": "NC",
+        "experimentalUnitId": "unit.NC.2",
+        "pairId": null,
+        "x": null,
+        "value": 50.3765,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA210.o3",
+        "series": "NC",
+        "experimentalUnitId": "unit.NC.3",
+        "pairId": null,
+        "x": null,
+        "value": 50.54,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA210.o4",
+        "series": "si-Piezo1",
+        "experimentalUnitId": "unit.si-Piezo1.1",
+        "pairId": null,
+        "x": null,
+        "value": 56.936,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA210.o5",
+        "series": "si-Piezo1",
+        "experimentalUnitId": "unit.si-Piezo1.2",
+        "pairId": null,
+        "x": null,
+        "value": 48.7723,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA210.o6",
+        "series": "si-Piezo1",
+        "experimentalUnitId": "unit.si-Piezo1.3",
+        "pairId": null,
+        "x": null,
+        "value": 68.1548,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA210.o7",
+        "series": "TfR-1-IN-1",
+        "experimentalUnitId": "unit.TfR-1-IN-1.1",
+        "pairId": null,
+        "x": null,
+        "value": 60.0325,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA210.o8",
+        "series": "TfR-1-IN-1",
+        "experimentalUnitId": "unit.TfR-1-IN-1.2",
+        "pairId": null,
+        "x": null,
+        "value": 68.7283,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA210.o9",
+        "series": "TfR-1-IN-1",
+        "experimentalUnitId": "unit.TfR-1-IN-1.3",
+        "pairId": null,
+        "x": null,
+        "value": 53.8661,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA210.o10",
+        "series": "si-Piezo1 + TfR-1-IN-1",
+        "experimentalUnitId": "unit.si-Piezo1 + TfR-1-IN-1.1",
+        "pairId": null,
+        "x": null,
+        "value": 74.8021,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA210.o11",
+        "series": "si-Piezo1 + TfR-1-IN-1",
+        "experimentalUnitId": "unit.si-Piezo1 + TfR-1-IN-1.2",
+        "pairId": null,
+        "x": null,
+        "value": 72.922,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA210.o12",
+        "series": "si-Piezo1 + TfR-1-IN-1",
+        "experimentalUnitId": "unit.si-Piezo1 + TfR-1-IN-1.3",
+        "pairId": null,
+        "x": null,
+        "value": 68.1765,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA210_context_rich_v2",
+    "originalCaseId": "LSA210",
+    "scientificQuestion": "Do Piezo1 knockdown and TfR-1 inhibition reduce stiffness-associated endothelial iron accumulation?",
+    "conditions": [
+      "NC",
+      "si-Piezo1",
+      "TfR-1-IN-1",
+      "si-Piezo1 + TfR-1-IN-1"
+    ],
+    "statisticalUnit": "biological repeat",
+    "sourceMethod": "one-way ANOVA",
+    "source": {
+      "pmcid": "PMC12855580",
+      "url": "https://europepmc.org/articles/PMC12855580",
+      "targetPanel": "Fig. 4F",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "one-way ANOVA"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "dot_summary",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Do Piezo1 knockdown and TfR-1 inhibition reduce stiffness-associated endothelial iron accumulation?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA210",
+    "candidateFamilyReclassified": "multi_group",
+    "poolDOpened": false
+  }
+}

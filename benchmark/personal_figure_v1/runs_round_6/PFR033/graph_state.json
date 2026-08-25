@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.1.0",
+  "caseId": "PFR033",
+  "graphType": "bar",
+  "dataSets": {
+    "displaySet": {
+      "conditionIds": [
+        "RhoA",
+        "Rac1",
+        "Cdc42",
+        "Ras",
+        "Rap",
+        "Ral"
+      ]
+    },
+    "analysisSet": {
+      "unit": "independent imaging experiment (n=4)",
+      "status": "not_applicable"
+    },
+    "comparisonSet": [],
+    "annotationSet": []
+  },
+  "appearance": {
+    "barOutline": true,
+    "barMeanMarker": false,
+    "boxWhiskerMode": "tukey_1_5_iqr",
+    "uncertaintyStyle": "error_bars",
+    "summary": "mean_sd",
+    "errorBarSeries": [
+      "all"
+    ],
+    "seriesStyles": {}
+  },
+  "axes": {
+    "xSemantic": "categorical",
+    "xTitle": "Optogenetic construct",
+    "yTitle": "Cells with calcium transients (%)",
+    "gridLines": false,
+    "yMax": 100,
+    "tickLabels": "default"
+  },
+  "analysis": {
+    "status": "not_applicable",
+    "authoritativeSavedResult": false,
+    "resultCount": 0,
+    "modelId": null
+  }
+}

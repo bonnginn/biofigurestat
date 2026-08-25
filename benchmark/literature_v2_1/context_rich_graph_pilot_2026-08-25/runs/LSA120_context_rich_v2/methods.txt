@@ -1,0 +1,7 @@
+Case: LSA120_context_rich_v2
+Source: https://europepmc.org/articles/PMC11685895 (Fig. 3C)
+All observations are deterministic synthetic reconstruction, not published raw data.
+Statistical unit: mouse
+Primary contrast: three vaccine groups
+Analysis status: ok
+Authority: saved local numerical-engine result; Graph does not smooth or recompute analysis.

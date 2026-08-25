@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA378_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA378.o1",
+        "series": "Normal-fat diet",
+        "experimentalUnitId": "unit.Normal-fat diet.1",
+        "pairId": null,
+        "x": null,
+        "value": 44.6474,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA378.o2",
+        "series": "Normal-fat diet",
+        "experimentalUnitId": "unit.Normal-fat diet.2",
+        "pairId": null,
+        "x": null,
+        "value": 50.9505,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA378.o3",
+        "series": "Normal-fat diet",
+        "experimentalUnitId": "unit.Normal-fat diet.3",
+        "pairId": null,
+        "x": null,
+        "value": 43.35,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA378.o4",
+        "series": "Normal-fat diet",
+        "experimentalUnitId": "unit.Normal-fat diet.4",
+        "pairId": null,
+        "x": null,
+        "value": 37.1326,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA378.o5",
+        "series": "Normal-fat diet",
+        "experimentalUnitId": "unit.Normal-fat diet.5",
+        "pairId": null,
+        "x": null,
+        "value": 56.5475,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA378.o6",
+        "series": "Normal-fat diet",
+        "experimentalUnitId": "unit.Normal-fat diet.6",
+        "pairId": null,
+        "x": null,
+        "value": 45.6711,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA378.o7",
+        "series": "High-fat diet",
+        "experimentalUnitId": "unit.High-fat diet.1",
+        "pairId": null,
+        "x": null,
+        "value": 59.246,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA378.o8",
+        "series": "High-fat diet",
+        "experimentalUnitId": "unit.High-fat diet.2",
+        "pairId": null,
+        "x": null,
+        "value": 57.7662,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA378.o9",
+        "series": "High-fat diet",
+        "experimentalUnitId": "unit.High-fat diet.3",
+        "pairId": null,
+        "x": null,
+        "value": 66.0271,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA378.o10",
+        "series": "High-fat diet",
+        "experimentalUnitId": "unit.High-fat diet.4",
+        "pairId": null,
+        "x": null,
+        "value": 55.8948,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA378.o11",
+        "series": "High-fat diet",
+        "experimentalUnitId": "unit.High-fat diet.5",
+        "pairId": null,
+        "x": null,
+        "value": 57.6165,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA378.o12",
+        "series": "High-fat diet",
+        "experimentalUnitId": "unit.High-fat diet.6",
+        "pairId": null,
+        "x": null,
+        "value": 70.5578,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA378_context_rich_v2",
+    "originalCaseId": "LSA378",
+    "scientificQuestion": "Does a high-fat diet reduce nephrocyte FITC-albumin uptake?",
+    "conditions": [
+      "Normal-fat diet",
+      "High-fat diet"
+    ],
+    "statisticalUnit": "fly",
+    "sourceMethod": "two-tailed Student t test",
+    "source": {
+      "pmcid": "PMC12755883",
+      "url": "https://europepmc.org/articles/PMC12755883",
+      "targetPanel": "Fig. 1B",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "two-tailed Student t test"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "box",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Does a high-fat diet reduce nephrocyte FITC-albumin uptake?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA378",
+    "candidateFamilyReclassified": "two_group_continuous",
+    "poolDOpened": false
+  }
+}

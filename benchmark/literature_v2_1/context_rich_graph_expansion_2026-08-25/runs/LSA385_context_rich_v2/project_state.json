@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA385_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA385.o1",
+        "series": "WT",
+        "experimentalUnitId": "unit.WT.1",
+        "pairId": null,
+        "x": null,
+        "value": 50.2932,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA385.o2",
+        "series": "WT",
+        "experimentalUnitId": "unit.WT.2",
+        "pairId": null,
+        "x": null,
+        "value": 52.2361,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA385.o3",
+        "series": "WT",
+        "experimentalUnitId": "unit.WT.3",
+        "pairId": null,
+        "x": null,
+        "value": 57.2378,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA385.o4",
+        "series": "WT",
+        "experimentalUnitId": "unit.WT.4",
+        "pairId": null,
+        "x": null,
+        "value": 58.5389,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA385.o5",
+        "series": "WT",
+        "experimentalUnitId": "unit.WT.5",
+        "pairId": null,
+        "x": null,
+        "value": 49.2299,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA385.o6",
+        "series": "WT",
+        "experimentalUnitId": "unit.WT.6",
+        "pairId": null,
+        "x": null,
+        "value": 61.616,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA385.o7",
+        "series": "ST8Sia6 KO",
+        "experimentalUnitId": "unit.ST8Sia6 KO.1",
+        "pairId": null,
+        "x": null,
+        "value": 64.4808,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA385.o8",
+        "series": "ST8Sia6 KO",
+        "experimentalUnitId": "unit.ST8Sia6 KO.2",
+        "pairId": null,
+        "x": null,
+        "value": 57.82,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA385.o9",
+        "series": "ST8Sia6 KO",
+        "experimentalUnitId": "unit.ST8Sia6 KO.3",
+        "pairId": null,
+        "x": null,
+        "value": 56.3523,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA385.o10",
+        "series": "ST8Sia6 KO",
+        "experimentalUnitId": "unit.ST8Sia6 KO.4",
+        "pairId": null,
+        "x": null,
+        "value": 54.9381,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA385.o11",
+        "series": "ST8Sia6 KO",
+        "experimentalUnitId": "unit.ST8Sia6 KO.5",
+        "pairId": null,
+        "x": null,
+        "value": 59.7849,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA385.o12",
+        "series": "ST8Sia6 KO",
+        "experimentalUnitId": "unit.ST8Sia6 KO.6",
+        "pairId": null,
+        "x": null,
+        "value": 58.4527,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA385_context_rich_v2",
+    "originalCaseId": "LSA385",
+    "scientificQuestion": "Does ST8Sia6 loss increase CD8α−NK1.1+ cells among small-bowel γδ T cells?",
+    "conditions": [
+      "WT",
+      "ST8Sia6 KO"
+    ],
+    "statisticalUnit": "mouse",
+    "sourceMethod": "Student t test",
+    "source": {
+      "pmcid": "PMC13298801",
+      "url": "https://europepmc.org/articles/PMC13298801",
+      "targetPanel": "Fig. 2H",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "Student t test"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "dot_summary",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Does ST8Sia6 loss increase CD8α−NK1.1+ cells among small-bowel γδ T cells?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA385",
+    "candidateFamilyReclassified": "two_group_proportion",
+    "poolDOpened": false
+  }
+}

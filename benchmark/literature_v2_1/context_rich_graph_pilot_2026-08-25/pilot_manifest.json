@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "1.0.0",
+  "caseCount": 12,
+  "caseIds": [
+    "LSA135",
+    "LSA086",
+    "LSA090",
+    "LSA077",
+    "LSA126",
+    "LSA157",
+    "LSA249",
+    "LSA094",
+    "LSA168",
+    "LSA088",
+    "LSA120",
+    "LSA346"
+  ],
+  "classifications": {
+    "READY_WITH_MINOR_SOURCE_UNCERTAINTY": 3,
+    "CONTEXT_RICH_READY": 8,
+    "CONTEXT_RICH_READY_SAFE_UNSUPPORTED": 1
+  },
+  "cases": [
+    {
+      "caseId": "LSA135",
+      "lineageId": "LSA135_context_rich_v2",
+      "classification": "READY_WITH_MINOR_SOURCE_UNCERTAINTY",
+      "family": "heatmap",
+      "sourceUrl": "https://europepmc.org/articles/PMC9647956",
+      "panel": "Fig. 5a",
+      "runRoot": "runs/LSA135_context_rich_v2"
+    },
+    {
+      "caseId": "LSA086",
+      "lineageId": "LSA086_context_rich_v2",
+      "classification": "CONTEXT_RICH_READY",
+      "family": "line",
+      "sourceUrl": "https://europepmc.org/articles/PMC10445746",
+      "panel": "Fig. 1I",
+      "runRoot": "runs/LSA086_context_rich_v2"
+    },
+    {
+      "caseId": "LSA090",
+      "lineageId": "LSA090_context_rich_v2",
+      "classification": "CONTEXT_RICH_READY",
+      "family": "box",
+      "sourceUrl": "https://europepmc.org/articles/PMC8886815",
+      "panel": "Fig. 6E",
+      "runRoot": "runs/LSA090_context_rich_v2"
+    },
+    {
+      "caseId": "LSA077",
+      "lineageId": "LSA077_context_rich_v2",
+      "classification": "READY_WITH_MINOR_SOURCE_UNCERTAINTY",
+      "family": "dot_summary",
+      "sourceUrl": "https://europepmc.org/articles/PMC10883267",
+      "panel": "Fig. 2B",
+      "runRoot": "runs/LSA077_context_rich_v2"
+    },
+    {
+      "caseId": "LSA126",
+      "lineageId": "LSA126_context_rich_v2",
+      "classification": "CONTEXT_RICH_READY_SAFE_UNSUPPORTED",
+      "family": "line",
+      "sourceUrl": "https://europepmc.org/articles/PMC12747520",
+      "panel": "Fig. 2B-D",
+      "runRoot": "runs/LSA126_context_rich_v2"
+    },
+    {
+      "caseId": "LSA157",
+      "lineageId": "LSA157_context_rich_v2",
+      "classification": "CONTEXT_RICH_READY",
+      "family": "violin",
+      "sourceUrl": "https://europepmc.org/articles/PMC8647013",
+      "panel": "Fig. 1B",
+      "runRoot": "runs/LSA157_context_rich_v2"
+    },
+    {
+      "caseId": "LSA249",
+      "lineageId": "LSA249_context_rich_v2",
+      "classification": "CONTEXT_RICH_READY",
+      "family": "dot_summary",
+      "sourceUrl": "https://europepmc.org/articles/PMC13322376",
+      "panel": "Fig. 3B",
+      "runRoot": "runs/LSA249_context_rich_v2"
+    },
+    {
+      "caseId": "LSA094",
+      "lineageId": "LSA094_context_rich_v2",
+      "classification": "READY_WITH_MINOR_SOURCE_UNCERTAINTY",
+      "family": "dot_summary",
+      "sourceUrl": "https://europepmc.org/articles/PMC12086567",
+      "panel": "Fig. 1I",
+      "runRoot": "runs/LSA094_context_rich_v2"
+    },
+    {
+      "caseId": "LSA168",
+      "lineageId": "LSA168_context_rich_v2",
+      "classification": "CONTEXT_RICH_READY",
+      "family": "dot_summary",
+      "sourceUrl": "https://europepmc.org/articles/PMC12669963",
+      "panel": "Fig. 3C",
+      "runRoot": "runs/LSA168_context_rich_v2"
+    },
+    {
+      "caseId": "LSA088",
+      "lineageId": "LSA088_context_rich_v2",
+      "classification": "CONTEXT_RICH_READY",
+      "family": "scatter",
+      "sourceUrl": "https://europepmc.org/articles/PMC12752511",
+      "panel": "Fig. 1D/H",
+      "runRoot": "runs/LSA088_context_rich_v2"
+    },
+    {
+      "caseId": "LSA120",
+      "lineageId": "LSA120_context_rich_v2",
+      "classification": "CONTEXT_RICH_READY",
+      "family": "survival",
+      "sourceUrl": "https://europepmc.org/articles/PMC11685895",
+      "panel": "Fig. 3C",
+      "runRoot": "runs/LSA120_context_rich_v2"
+    },
+    {
+      "caseId": "LSA346",
+      "lineageId": "LSA346_context_rich_v2",
+      "classification": "CONTEXT_RICH_READY",
+      "family": "survival",
+      "sourceUrl": "https://europepmc.org/articles/PMC13006526",
+      "panel": "Fig. 4H",
+      "runRoot": "runs/LSA346_context_rich_v2"
+    }
+  ],
+  "poolDOpened": false
+}

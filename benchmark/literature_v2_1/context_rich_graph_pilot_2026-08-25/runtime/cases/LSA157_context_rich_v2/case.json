@@ -1,0 +1,1072 @@
+{
+  "caseId": "LSA157_context_rich_v2",
+  "classification": "CONTEXT_RICH_READY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.0.0",
+    "caseId": "LSA157_context_rich_v2",
+    "originalCaseId": "LSA157",
+    "source": {
+      "pmcid": "PMC8647013",
+      "url": "https://europepmc.org/articles/PMC8647013",
+      "targetPanel": "Fig. 1B",
+      "evidenceSummary": "V1 foci counts per cell, 30–50 cells from three biological replicates; one-way ANOVA versus kinase-dead reference."
+    },
+    "fields": {
+      "scientificMessage": {
+        "value": "Active EML4-ALK V1 forms cytoplasmic foci",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "experimentalDesign": {
+        "value": "V1 foci counts per cell, 30–50 cells from three biological replicates; one-way ANOVA versus kinase-dead reference.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "statisticalUnit": {
+        "value": "biological experiment summarized from nested cells",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "pairingNestingRepeated": {
+        "value": "Encoded explicitly in synthetic rows where supported",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "factorsLevels": {
+        "value": "See display/series semantics",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "primaryContrast": {
+        "value": "each active/endogenous group versus kinase-dead",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "referenceRoles": {
+        "value": "Control/reference labels preserved from legend",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "intent": {
+        "value": "Inferential where the legend reports a test; representative pixels remain descriptive",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "displaySet": {
+        "value": "violin with nested cells",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "analysisSet": {
+        "value": "biological experiment summarized from nested cells",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "comparisonSet": {
+        "value": "each active/endogenous group versus kinase-dead",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "annotationSet": {
+        "value": "Only source-supported comparisons",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "graphConvention": {
+        "value": "violin with nested cells",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "xSemantics": {
+        "value": "condition or numeric time according to panel",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "seriesSemantics": {
+        "value": "scientific condition/time identity",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "facetSemantics": {
+        "value": "time facet only for LSA088",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "yReadout": {
+        "value": "Active EML4-ALK V1 forms cytoplasmic foci",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "sampleSizeStructure": {
+        "value": "V1 foci counts per cell, 30–50 cells from three biological replicates; one-way ANOVA versus kinase-dead reference.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "axisColorLegend": {
+        "value": "labels preserve source roles; color identifies series",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "uncertainty": {
+        "value": "SD/SEM or distribution as reported",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      }
+    },
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA157_context_rich_v2.o00001",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 24.966982,
+      "synthetic": true,
+      "nestedObservationId": "cell.1"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00002",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 29.505205,
+      "synthetic": true,
+      "nestedObservationId": "cell.2"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00003",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 24.882502,
+      "synthetic": true,
+      "nestedObservationId": "cell.3"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00004",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 29.459684,
+      "synthetic": true,
+      "nestedObservationId": "cell.4"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00005",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 26.703854,
+      "synthetic": true,
+      "nestedObservationId": "cell.5"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00006",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 27.856748,
+      "synthetic": true,
+      "nestedObservationId": "cell.6"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00007",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 31.561025,
+      "synthetic": true,
+      "nestedObservationId": "cell.7"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00008",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 24.813795,
+      "synthetic": true,
+      "nestedObservationId": "cell.8"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00009",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 29.075321,
+      "synthetic": true,
+      "nestedObservationId": "cell.9"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00010",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 25.391558,
+      "synthetic": true,
+      "nestedObservationId": "cell.10"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00011",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 26.385331,
+      "synthetic": true,
+      "nestedObservationId": "cell.11"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00012",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 29.916687,
+      "synthetic": true,
+      "nestedObservationId": "cell.12"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00013",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 24.847637,
+      "synthetic": true,
+      "nestedObservationId": "cell.13"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00014",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 24.020676,
+      "synthetic": true,
+      "nestedObservationId": "cell.14"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00015",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 23.781653,
+      "synthetic": true,
+      "nestedObservationId": "cell.15"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00016",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 24.294168,
+      "synthetic": true,
+      "nestedObservationId": "cell.16"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00017",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 33.219627,
+      "synthetic": true,
+      "nestedObservationId": "cell.17"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00018",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 25.894413,
+      "synthetic": true,
+      "nestedObservationId": "cell.18"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00019",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 31.229404,
+      "synthetic": true,
+      "nestedObservationId": "cell.19"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00020",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 28.733243,
+      "synthetic": true,
+      "nestedObservationId": "cell.20"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00021",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 31.102565,
+      "synthetic": true,
+      "nestedObservationId": "cell.21"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00022",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 29.649392,
+      "synthetic": true,
+      "nestedObservationId": "cell.22"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00023",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 31.273099,
+      "synthetic": true,
+      "nestedObservationId": "cell.23"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00024",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 27.837827,
+      "synthetic": true,
+      "nestedObservationId": "cell.24"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00025",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 33.849133,
+      "synthetic": true,
+      "nestedObservationId": "cell.25"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00026",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 27.045387,
+      "synthetic": true,
+      "nestedObservationId": "cell.26"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00027",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 28.949817,
+      "synthetic": true,
+      "nestedObservationId": "cell.27"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00028",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 32.492935,
+      "synthetic": true,
+      "nestedObservationId": "cell.28"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00029",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 24.278319,
+      "synthetic": true,
+      "nestedObservationId": "cell.29"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00030",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 30.159654,
+      "synthetic": true,
+      "nestedObservationId": "cell.30"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00031",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 25.924762,
+      "synthetic": true,
+      "nestedObservationId": "cell.31"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00032",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 28.164183,
+      "synthetic": true,
+      "nestedObservationId": "cell.32"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00033",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 29.252222,
+      "synthetic": true,
+      "nestedObservationId": "cell.33"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00034",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 32.053193,
+      "synthetic": true,
+      "nestedObservationId": "cell.34"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00035",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 32.781802,
+      "synthetic": true,
+      "nestedObservationId": "cell.35"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00036",
+      "series": "Endogenous V1",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 27.568733,
+      "synthetic": true,
+      "nestedObservationId": "cell.36"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00037",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 43.131219,
+      "synthetic": true,
+      "nestedObservationId": "cell.1"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00038",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 38.836583,
+      "synthetic": true,
+      "nestedObservationId": "cell.2"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00039",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 34.173987,
+      "synthetic": true,
+      "nestedObservationId": "cell.3"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00040",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 33.146628,
+      "synthetic": true,
+      "nestedObservationId": "cell.4"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00041",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 32.156681,
+      "synthetic": true,
+      "nestedObservationId": "cell.5"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00042",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 35.549414,
+      "synthetic": true,
+      "nestedObservationId": "cell.6"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00043",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 34.616893,
+      "synthetic": true,
+      "nestedObservationId": "cell.7"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00044",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 42.495088,
+      "synthetic": true,
+      "nestedObservationId": "cell.8"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00045",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 32.207736,
+      "synthetic": true,
+      "nestedObservationId": "cell.9"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00046",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 35.075785,
+      "synthetic": true,
+      "nestedObservationId": "cell.10"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00047",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 34.227202,
+      "synthetic": true,
+      "nestedObservationId": "cell.11"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00048",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 34.899521,
+      "synthetic": true,
+      "nestedObservationId": "cell.12"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00049",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 38.500698,
+      "synthetic": true,
+      "nestedObservationId": "cell.13"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00050",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 35.82588,
+      "synthetic": true,
+      "nestedObservationId": "cell.14"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00051",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 43.28393,
+      "synthetic": true,
+      "nestedObservationId": "cell.15"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00052",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 19.650339,
+      "synthetic": true,
+      "nestedObservationId": "cell.16"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00053",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 34.074604,
+      "synthetic": true,
+      "nestedObservationId": "cell.17"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00054",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 36.78262,
+      "synthetic": true,
+      "nestedObservationId": "cell.18"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00055",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 40.341986,
+      "synthetic": true,
+      "nestedObservationId": "cell.19"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00056",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 31.757972,
+      "synthetic": true,
+      "nestedObservationId": "cell.20"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00057",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 32.372516,
+      "synthetic": true,
+      "nestedObservationId": "cell.21"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00058",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 45.227103,
+      "synthetic": true,
+      "nestedObservationId": "cell.22"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00059",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 41.658407,
+      "synthetic": true,
+      "nestedObservationId": "cell.23"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00060",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 29.875046,
+      "synthetic": true,
+      "nestedObservationId": "cell.24"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00061",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 36.67253,
+      "synthetic": true,
+      "nestedObservationId": "cell.25"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00062",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 33.58342,
+      "synthetic": true,
+      "nestedObservationId": "cell.26"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00063",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 33.522561,
+      "synthetic": true,
+      "nestedObservationId": "cell.27"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00064",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 34.94578,
+      "synthetic": true,
+      "nestedObservationId": "cell.28"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00065",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 33.306318,
+      "synthetic": true,
+      "nestedObservationId": "cell.29"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00066",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 43.376611,
+      "synthetic": true,
+      "nestedObservationId": "cell.30"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00067",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 38.631434,
+      "synthetic": true,
+      "nestedObservationId": "cell.31"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00068",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 35.706245,
+      "synthetic": true,
+      "nestedObservationId": "cell.32"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00069",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 37.962703,
+      "synthetic": true,
+      "nestedObservationId": "cell.33"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00070",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 35.16314,
+      "synthetic": true,
+      "nestedObservationId": "cell.34"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00071",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 33.095451,
+      "synthetic": true,
+      "nestedObservationId": "cell.35"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00072",
+      "series": "V1 WT",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 36.336849,
+      "synthetic": true,
+      "nestedObservationId": "cell.36"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00073",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 7.828261,
+      "synthetic": true,
+      "nestedObservationId": "cell.1"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00074",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 7.107882,
+      "synthetic": true,
+      "nestedObservationId": "cell.2"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00075",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 5.923444,
+      "synthetic": true,
+      "nestedObservationId": "cell.3"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00076",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 6.565501,
+      "synthetic": true,
+      "nestedObservationId": "cell.4"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00077",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 5.154791,
+      "synthetic": true,
+      "nestedObservationId": "cell.5"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00078",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 5.551178,
+      "synthetic": true,
+      "nestedObservationId": "cell.6"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00079",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 5.306945,
+      "synthetic": true,
+      "nestedObservationId": "cell.7"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00080",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 6.391777,
+      "synthetic": true,
+      "nestedObservationId": "cell.8"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00081",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 6.851219,
+      "synthetic": true,
+      "nestedObservationId": "cell.9"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00082",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 5.643406,
+      "synthetic": true,
+      "nestedObservationId": "cell.10"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00083",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 6.64258,
+      "synthetic": true,
+      "nestedObservationId": "cell.11"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00084",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 4.489242,
+      "synthetic": true,
+      "nestedObservationId": "cell.12"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00085",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 6.270941,
+      "synthetic": true,
+      "nestedObservationId": "cell.13"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00086",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 6.395392,
+      "synthetic": true,
+      "nestedObservationId": "cell.14"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00087",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 5.539694,
+      "synthetic": true,
+      "nestedObservationId": "cell.15"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00088",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 6.662169,
+      "synthetic": true,
+      "nestedObservationId": "cell.16"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00089",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 5.878458,
+      "synthetic": true,
+      "nestedObservationId": "cell.17"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00090",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 6.061028,
+      "synthetic": true,
+      "nestedObservationId": "cell.18"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00091",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 5.669992,
+      "synthetic": true,
+      "nestedObservationId": "cell.19"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00092",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 6.121144,
+      "synthetic": true,
+      "nestedObservationId": "cell.20"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00093",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 6.268567,
+      "synthetic": true,
+      "nestedObservationId": "cell.21"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00094",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 7.158548,
+      "synthetic": true,
+      "nestedObservationId": "cell.22"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00095",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 5.160314,
+      "synthetic": true,
+      "nestedObservationId": "cell.23"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00096",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 5.537548,
+      "synthetic": true,
+      "nestedObservationId": "cell.24"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00097",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 5.124789,
+      "synthetic": true,
+      "nestedObservationId": "cell.25"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00098",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 5.267819,
+      "synthetic": true,
+      "nestedObservationId": "cell.26"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00099",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 5.16264,
+      "synthetic": true,
+      "nestedObservationId": "cell.27"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00100",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 6.510416,
+      "synthetic": true,
+      "nestedObservationId": "cell.28"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00101",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 5.883373,
+      "synthetic": true,
+      "nestedObservationId": "cell.29"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00102",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 6.031765,
+      "synthetic": true,
+      "nestedObservationId": "cell.30"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00103",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 5.995281,
+      "synthetic": true,
+      "nestedObservationId": "cell.31"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00104",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 6.114398,
+      "synthetic": true,
+      "nestedObservationId": "cell.32"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00105",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 5.776576,
+      "synthetic": true,
+      "nestedObservationId": "cell.33"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00106",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 6.339664,
+      "synthetic": true,
+      "nestedObservationId": "cell.34"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00107",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 6.585636,
+      "synthetic": true,
+      "nestedObservationId": "cell.35"
+    },
+    {
+      "observationId": "LSA157_context_rich_v2.o00108",
+      "series": "V1 KD",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 7.363425,
+      "synthetic": true,
+      "nestedObservationId": "cell.36"
+    }
+  ]
+}

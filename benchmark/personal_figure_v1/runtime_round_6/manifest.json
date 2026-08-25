@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0_EXPANDED_ROUND_6",
+  "caseIds": [
+    "PFR009",
+    "PFR011",
+    "PFR020",
+    "PFR027A",
+    "PFR027B",
+    "PFR033",
+    "PFR043",
+    "PFR045",
+    "PFR054",
+    "PFR059A",
+    "PFR059B",
+    "PFR062"
+  ],
+  "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+  "poolDOpened": false
+}

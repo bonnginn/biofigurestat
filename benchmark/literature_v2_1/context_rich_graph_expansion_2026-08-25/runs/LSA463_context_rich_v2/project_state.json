@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA463_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA463.o1",
+        "series": "800-nm extrusion",
+        "experimentalUnitId": "unit.800-nm extrusion.1",
+        "pairId": null,
+        "x": null,
+        "value": 50.6499,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA463.o2",
+        "series": "800-nm extrusion",
+        "experimentalUnitId": "unit.800-nm extrusion.2",
+        "pairId": null,
+        "x": null,
+        "value": 47.4907,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA463.o3",
+        "series": "800-nm extrusion",
+        "experimentalUnitId": "unit.800-nm extrusion.3",
+        "pairId": null,
+        "x": null,
+        "value": 43.3344,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA463.o4",
+        "series": "200-nm extrusion",
+        "experimentalUnitId": "unit.200-nm extrusion.1",
+        "pairId": null,
+        "x": null,
+        "value": 57.1446,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA463.o5",
+        "series": "200-nm extrusion",
+        "experimentalUnitId": "unit.200-nm extrusion.2",
+        "pairId": null,
+        "x": null,
+        "value": 61.919,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA463.o6",
+        "series": "200-nm extrusion",
+        "experimentalUnitId": "unit.200-nm extrusion.3",
+        "pairId": null,
+        "x": null,
+        "value": 57.0917,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA463.o7",
+        "series": "50-nm extrusion",
+        "experimentalUnitId": "unit.50-nm extrusion.1",
+        "pairId": null,
+        "x": null,
+        "value": 65.2478,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA463.o8",
+        "series": "50-nm extrusion",
+        "experimentalUnitId": "unit.50-nm extrusion.2",
+        "pairId": null,
+        "x": null,
+        "value": 83.0866,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA463.o9",
+        "series": "50-nm extrusion",
+        "experimentalUnitId": "unit.50-nm extrusion.3",
+        "pairId": null,
+        "x": null,
+        "value": 63.9722,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA463_context_rich_v2",
+    "originalCaseId": "LSA463",
+    "scientificQuestion": "Does the HRS FYVE domain prefer highly curved liposomes?",
+    "conditions": [
+      "800-nm extrusion",
+      "200-nm extrusion",
+      "50-nm extrusion"
+    ],
+    "statisticalUnit": "independent sample",
+    "sourceMethod": "one-way ANOVA + Bonferroni",
+    "source": {
+      "pmcid": "PMC11574359",
+      "url": "https://europepmc.org/articles/PMC11574359",
+      "targetPanel": "Fig. 3A",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "one-way ANOVA + Bonferroni"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "box",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Does the HRS FYVE domain prefer highly curved liposomes?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA463",
+    "candidateFamilyReclassified": "multi_group",
+    "poolDOpened": false
+  }
+}

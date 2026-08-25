@@ -1,0 +1,7 @@
+Case: LSA346_context_rich_v2
+Source: https://europepmc.org/articles/PMC13006526 (Fig. 4H)
+All observations are deterministic synthetic reconstruction, not published raw data.
+Statistical unit: larva nested in five experiments
+Primary contrast: control, perturbation, rescue
+Analysis status: ok
+Authority: saved local numerical-engine result; Graph does not smooth or recompute analysis.

@@ -1,0 +1,80 @@
+{
+  "caseId": "LSA058_context_rich_v2",
+  "classification": "READY_WITH_BOUNDED_SOURCE_UNCERTAINTY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA058_context_rich_v2",
+    "originalCaseId": "LSA058",
+    "scientificQuestion": "Does cky-1 deletion alter ivermectin sensitivity across treatment concentrations?",
+    "conditions": [
+      "N2 control",
+      "cky-1 deletion"
+    ],
+    "statisticalUnit": "independent experiment",
+    "sourceMethod": "Kruskal–Wallis",
+    "source": {
+      "pmcid": "PMC9597552",
+      "url": "https://europepmc.org/articles/PMC9597552",
+      "targetPanel": "Fig. 5F",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "The panel contains multiple ivermectin conditions; exact dose-level inference remains source-bound.",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA058.o1",
+      "series": "N2 control",
+      "experimentalUnitId": "unit.N2 control.1",
+      "pairId": null,
+      "x": null,
+      "value": 54.5296,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA058.o2",
+      "series": "N2 control",
+      "experimentalUnitId": "unit.N2 control.2",
+      "pairId": null,
+      "x": null,
+      "value": 54.5384,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA058.o3",
+      "series": "N2 control",
+      "experimentalUnitId": "unit.N2 control.3",
+      "pairId": null,
+      "x": null,
+      "value": 53.6047,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA058.o4",
+      "series": "cky-1 deletion",
+      "experimentalUnitId": "unit.cky-1 deletion.1",
+      "pairId": null,
+      "x": null,
+      "value": 70.0711,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA058.o5",
+      "series": "cky-1 deletion",
+      "experimentalUnitId": "unit.cky-1 deletion.2",
+      "pairId": null,
+      "x": null,
+      "value": 73.0,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA058.o6",
+      "series": "cky-1 deletion",
+      "experimentalUnitId": "unit.cky-1 deletion.3",
+      "pairId": null,
+      "x": null,
+      "value": 59.658,
+      "synthetic": true
+    }
+  ]
+}

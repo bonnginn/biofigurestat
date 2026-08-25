@@ -1,0 +1,7 @@
+Case: LSA300_context_rich_v2
+Source: https://europepmc.org/articles/PMC8729788 (Fig. 1H)
+Scientific question: Does membrane permeabilization change TMEM24 plasma-membrane fluorescence in the same cell?
+Statistical unit: cell
+Source analysis: within-cell comparison
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

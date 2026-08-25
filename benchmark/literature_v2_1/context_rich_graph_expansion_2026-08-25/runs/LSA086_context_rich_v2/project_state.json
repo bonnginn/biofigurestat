@@ -1,0 +1,5180 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA086_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA086_context_rich_v2.o00001",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.1",
+        "x": 0,
+        "value": 0.118374,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00002",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.1",
+        "x": 5,
+        "value": 0.518075,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00003",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.1",
+        "x": 10,
+        "value": 0.688411,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00004",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.1",
+        "x": 20,
+        "value": 0.855136,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00005",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.1",
+        "x": 40,
+        "value": 0.952711,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00006",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.1",
+        "x": 60,
+        "value": 0.940306,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00007",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.2",
+        "x": 0,
+        "value": 0.08914,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00008",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.2",
+        "x": 5,
+        "value": 0.476658,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00009",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.2",
+        "x": 10,
+        "value": 0.684618,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00010",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.2",
+        "x": 20,
+        "value": 0.874148,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00011",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.2",
+        "x": 40,
+        "value": 0.946856,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00012",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.2",
+        "x": 60,
+        "value": 0.939819,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00013",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.3",
+        "x": 0,
+        "value": 0.081113,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00014",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.3",
+        "x": 5,
+        "value": 0.483828,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00015",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.3",
+        "x": 10,
+        "value": 0.742218,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00016",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.3",
+        "x": 20,
+        "value": 0.897963,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00017",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.3",
+        "x": 40,
+        "value": 0.940903,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00018",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.3",
+        "x": 60,
+        "value": 0.951853,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00019",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.4",
+        "x": 0,
+        "value": 0.106464,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00020",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.4",
+        "x": 5,
+        "value": 0.463404,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00021",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.4",
+        "x": 10,
+        "value": 0.703455,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00022",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.4",
+        "x": 20,
+        "value": 0.882812,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00023",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.4",
+        "x": 40,
+        "value": 0.927577,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00024",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.4",
+        "x": 60,
+        "value": 0.92995,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00025",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.5",
+        "x": 0,
+        "value": 0.073489,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00026",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.5",
+        "x": 5,
+        "value": 0.44217,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00027",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.5",
+        "x": 10,
+        "value": 0.696643,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00028",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.5",
+        "x": 20,
+        "value": 0.906049,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00029",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.5",
+        "x": 40,
+        "value": 0.949896,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00030",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.5",
+        "x": 60,
+        "value": 0.960912,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00031",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.6",
+        "x": 0,
+        "value": 0.08225,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00032",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.6",
+        "x": 5,
+        "value": 0.468446,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00033",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.6",
+        "x": 10,
+        "value": 0.652334,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00034",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.6",
+        "x": 20,
+        "value": 0.918313,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00035",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.6",
+        "x": 40,
+        "value": 0.91956,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00036",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.6",
+        "x": 60,
+        "value": 0.962378,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00037",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.7",
+        "x": 0,
+        "value": 0.021109,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00038",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.7",
+        "x": 5,
+        "value": 0.467888,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00039",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.7",
+        "x": 10,
+        "value": 0.677957,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00040",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.7",
+        "x": 20,
+        "value": 0.843404,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00041",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.7",
+        "x": 40,
+        "value": 0.955466,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00042",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.7",
+        "x": 60,
+        "value": 0.948888,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00043",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.8",
+        "x": 0,
+        "value": 0.052227,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00044",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.8",
+        "x": 5,
+        "value": 0.469315,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00045",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.8",
+        "x": 10,
+        "value": 0.707112,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00046",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.8",
+        "x": 20,
+        "value": 0.872217,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00047",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.8",
+        "x": 40,
+        "value": 0.94129,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00048",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.8",
+        "x": 60,
+        "value": 1.022204,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00049",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.9",
+        "x": 0,
+        "value": 0.063218,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00050",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.9",
+        "x": 5,
+        "value": 0.434484,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00051",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.9",
+        "x": 10,
+        "value": 0.679369,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00052",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.9",
+        "x": 20,
+        "value": 0.876911,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00053",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.9",
+        "x": 40,
+        "value": 0.978128,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00054",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.9",
+        "x": 60,
+        "value": 0.959168,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00055",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.10",
+        "x": 0,
+        "value": 0.038698,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00056",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.10",
+        "x": 5,
+        "value": 0.442859,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00057",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.10",
+        "x": 10,
+        "value": 0.660091,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00058",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.10",
+        "x": 20,
+        "value": 0.890741,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00059",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.10",
+        "x": 40,
+        "value": 0.994045,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00060",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.10",
+        "x": 60,
+        "value": 0.945849,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00061",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.11",
+        "x": 0,
+        "value": 0.070432,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00062",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.11",
+        "x": 5,
+        "value": 0.480488,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00063",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.11",
+        "x": 10,
+        "value": 0.675169,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00064",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.11",
+        "x": 20,
+        "value": 0.896354,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00065",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.11",
+        "x": 40,
+        "value": 0.927267,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00066",
+        "series": "PLCδ1-PH",
+        "experimentalUnitId": "PLCδ1-PH.cell.11",
+        "x": 60,
+        "value": 0.988924,
+        "synthetic": true,
+        "pairId": "PLCδ1-PH.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00067",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.1",
+        "x": 0,
+        "value": 0.058698,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00068",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.1",
+        "x": 5,
+        "value": 0.22845,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00069",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.1",
+        "x": 10,
+        "value": 0.359932,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00070",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.1",
+        "x": 20,
+        "value": 0.456999,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00071",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.1",
+        "x": 40,
+        "value": 0.620928,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00072",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.1",
+        "x": 60,
+        "value": 0.694201,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00073",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.2",
+        "x": 0,
+        "value": 0.136404,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00074",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.2",
+        "x": 5,
+        "value": 0.182068,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00075",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.2",
+        "x": 10,
+        "value": 0.335604,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00076",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.2",
+        "x": 20,
+        "value": 0.434996,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00077",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.2",
+        "x": 40,
+        "value": 0.613482,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00078",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.2",
+        "x": 60,
+        "value": 0.676073,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00079",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.3",
+        "x": 0,
+        "value": 0.065593,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00080",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.3",
+        "x": 5,
+        "value": 0.244271,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00081",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.3",
+        "x": 10,
+        "value": 0.258394,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00082",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.3",
+        "x": 20,
+        "value": 0.476441,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00083",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.3",
+        "x": 40,
+        "value": 0.606605,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00084",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.3",
+        "x": 60,
+        "value": 0.67528,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00085",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.4",
+        "x": 0,
+        "value": 0.091522,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00086",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.4",
+        "x": 5,
+        "value": 0.207695,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00087",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.4",
+        "x": 10,
+        "value": 0.366237,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00088",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.4",
+        "x": 20,
+        "value": 0.436888,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00089",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.4",
+        "x": 40,
+        "value": 0.610856,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00090",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.4",
+        "x": 60,
+        "value": 0.698643,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00091",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.5",
+        "x": 0,
+        "value": 0.047323,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00092",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.5",
+        "x": 5,
+        "value": 0.230519,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00093",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.5",
+        "x": 10,
+        "value": 0.277012,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00094",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.5",
+        "x": 20,
+        "value": 0.463408,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00095",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.5",
+        "x": 40,
+        "value": 0.633082,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00096",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.5",
+        "x": 60,
+        "value": 0.695898,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00097",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.6",
+        "x": 0,
+        "value": 0.09502,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00098",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.6",
+        "x": 5,
+        "value": 0.255079,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00099",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.6",
+        "x": 10,
+        "value": 0.370251,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00100",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.6",
+        "x": 20,
+        "value": 0.462537,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00101",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.6",
+        "x": 40,
+        "value": 0.612797,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00102",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.6",
+        "x": 60,
+        "value": 0.685036,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00103",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.7",
+        "x": 0,
+        "value": 0.067883,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00104",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.7",
+        "x": 5,
+        "value": 0.199204,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00105",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.7",
+        "x": 10,
+        "value": 0.329272,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00106",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.7",
+        "x": 20,
+        "value": 0.458965,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00107",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.7",
+        "x": 40,
+        "value": 0.613517,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00108",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.7",
+        "x": 60,
+        "value": 0.693531,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00109",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.8",
+        "x": 0,
+        "value": 0.021383,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00110",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.8",
+        "x": 5,
+        "value": 0.210335,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00111",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.8",
+        "x": 10,
+        "value": 0.298868,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00112",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.8",
+        "x": 20,
+        "value": 0.449405,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00113",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.8",
+        "x": 40,
+        "value": 0.614741,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00114",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.8",
+        "x": 60,
+        "value": 0.663601,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00115",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.9",
+        "x": 0,
+        "value": 0.107142,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00116",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.9",
+        "x": 5,
+        "value": 0.225767,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00117",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.9",
+        "x": 10,
+        "value": 0.306522,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00118",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.9",
+        "x": 20,
+        "value": 0.433058,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00119",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.9",
+        "x": 40,
+        "value": 0.583326,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00120",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.9",
+        "x": 60,
+        "value": 0.66378,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00121",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.10",
+        "x": 0,
+        "value": 0.100761,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00122",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.10",
+        "x": 5,
+        "value": 0.212293,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00123",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.10",
+        "x": 10,
+        "value": 0.343979,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00124",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.10",
+        "x": 20,
+        "value": 0.475508,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00125",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.10",
+        "x": 40,
+        "value": 0.638529,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00126",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.10",
+        "x": 60,
+        "value": 0.617217,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.10"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00127",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.11",
+        "x": 0,
+        "value": 0.077604,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00128",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.11",
+        "x": 5,
+        "value": 0.169952,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00129",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.11",
+        "x": 10,
+        "value": 0.365851,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00130",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.11",
+        "x": 20,
+        "value": 0.486973,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00131",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.11",
+        "x": 40,
+        "value": 0.627195,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00132",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.11",
+        "x": 60,
+        "value": 0.664521,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.11"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00133",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.12",
+        "x": 0,
+        "value": 0.098505,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.12"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00134",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.12",
+        "x": 5,
+        "value": 0.23417,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.12"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00135",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.12",
+        "x": 10,
+        "value": 0.283668,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.12"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00136",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.12",
+        "x": 20,
+        "value": 0.456396,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.12"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00137",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.12",
+        "x": 40,
+        "value": 0.624696,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.12"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00138",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.12",
+        "x": 60,
+        "value": 0.660525,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.12"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00139",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.13",
+        "x": 0,
+        "value": 0.116601,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.13"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00140",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.13",
+        "x": 5,
+        "value": 0.20045,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.13"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00141",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.13",
+        "x": 10,
+        "value": 0.330087,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.13"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00142",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.13",
+        "x": 20,
+        "value": 0.463546,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.13"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00143",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.13",
+        "x": 40,
+        "value": 0.584264,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.13"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00144",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.13",
+        "x": 60,
+        "value": 0.669598,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.13"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00145",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.14",
+        "x": 0,
+        "value": 0.095527,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.14"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00146",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.14",
+        "x": 5,
+        "value": 0.192085,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.14"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00147",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.14",
+        "x": 10,
+        "value": 0.271123,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.14"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00148",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.14",
+        "x": 20,
+        "value": 0.510413,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.14"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00149",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.14",
+        "x": 40,
+        "value": 0.617728,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.14"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00150",
+        "series": "tubbyCT",
+        "experimentalUnitId": "tubbyCT.cell.14",
+        "x": 60,
+        "value": 0.66041,
+        "synthetic": true,
+        "pairId": "tubbyCT.cell.14"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00151",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.1",
+        "x": 0,
+        "value": 0.060374,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00152",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.1",
+        "x": 5,
+        "value": 0.167354,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00153",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.1",
+        "x": 10,
+        "value": 0.244602,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00154",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.1",
+        "x": 20,
+        "value": 0.331571,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00155",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.1",
+        "x": 40,
+        "value": 0.409421,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00156",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.1",
+        "x": 60,
+        "value": 0.479678,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.1"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00157",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.2",
+        "x": 0,
+        "value": 0.088782,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00158",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.2",
+        "x": 5,
+        "value": 0.180783,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00159",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.2",
+        "x": 10,
+        "value": 0.225561,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00160",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.2",
+        "x": 20,
+        "value": 0.276949,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00161",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.2",
+        "x": 40,
+        "value": 0.423653,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00162",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.2",
+        "x": 60,
+        "value": 0.495836,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.2"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00163",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.3",
+        "x": 0,
+        "value": 0.057604,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00164",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.3",
+        "x": 5,
+        "value": 0.130275,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00165",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.3",
+        "x": 10,
+        "value": 0.212563,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00166",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.3",
+        "x": 20,
+        "value": 0.283707,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00167",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.3",
+        "x": 40,
+        "value": 0.411393,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00168",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.3",
+        "x": 60,
+        "value": 0.505844,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.3"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00169",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.4",
+        "x": 0,
+        "value": 0.084216,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00170",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.4",
+        "x": 5,
+        "value": 0.100785,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00171",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.4",
+        "x": 10,
+        "value": 0.270695,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00172",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.4",
+        "x": 20,
+        "value": 0.313381,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00173",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.4",
+        "x": 40,
+        "value": 0.400623,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00174",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.4",
+        "x": 60,
+        "value": 0.507058,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.4"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00175",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.5",
+        "x": 0,
+        "value": 0.059327,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00176",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.5",
+        "x": 5,
+        "value": 0.162936,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00177",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.5",
+        "x": 10,
+        "value": 0.200301,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00178",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.5",
+        "x": 20,
+        "value": 0.301336,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00179",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.5",
+        "x": 40,
+        "value": 0.406682,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00180",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.5",
+        "x": 60,
+        "value": 0.466217,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.5"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00181",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.6",
+        "x": 0,
+        "value": 0.06505,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00182",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.6",
+        "x": 5,
+        "value": 0.154968,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00183",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.6",
+        "x": 10,
+        "value": 0.201493,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00184",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.6",
+        "x": 20,
+        "value": 0.316584,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00185",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.6",
+        "x": 40,
+        "value": 0.471085,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00186",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.6",
+        "x": 60,
+        "value": 0.48508,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.6"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00187",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.7",
+        "x": 0,
+        "value": 0.110496,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00188",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.7",
+        "x": 5,
+        "value": 0.137419,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00189",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.7",
+        "x": 10,
+        "value": 0.247347,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00190",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.7",
+        "x": 20,
+        "value": 0.327286,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00191",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.7",
+        "x": 40,
+        "value": 0.434825,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00192",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.7",
+        "x": 60,
+        "value": 0.490391,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.7"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00193",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.8",
+        "x": 0,
+        "value": 0.099926,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00194",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.8",
+        "x": 5,
+        "value": 0.175856,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00195",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.8",
+        "x": 10,
+        "value": 0.16834,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00196",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.8",
+        "x": 20,
+        "value": 0.340243,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00197",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.8",
+        "x": 40,
+        "value": 0.423067,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00198",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.8",
+        "x": 60,
+        "value": 0.499281,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.8"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00199",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.9",
+        "x": 0,
+        "value": 0.093457,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00200",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.9",
+        "x": 5,
+        "value": 0.16121,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00201",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.9",
+        "x": 10,
+        "value": 0.243518,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00202",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.9",
+        "x": 20,
+        "value": 0.312831,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00203",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.9",
+        "x": 40,
+        "value": 0.449516,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.9"
+      },
+      {
+        "observationId": "LSA086_context_rich_v2.o00204",
+        "series": "E-Syt3",
+        "experimentalUnitId": "E-Syt3.cell.9",
+        "x": 60,
+        "value": 0.496557,
+        "synthetic": true,
+        "pairId": "E-Syt3.cell.9"
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.0.0",
+    "caseId": "LSA086_context_rich_v2",
+    "originalCaseId": "LSA086",
+    "source": {
+      "pmcid": "PMC10445746",
+      "url": "https://europepmc.org/articles/PMC10445746",
+      "targetPanel": "Fig. 1I",
+      "evidenceSummary": "FRAP recovery mean±SEM for PLCδ1-PH, tubbyCT and E-Syt3; n=11, 14 and 9 cells; three repeats."
+    },
+    "fields": {
+      "scientificMessage": {
+        "value": "Compare FRAP recovery of tubbyCT with mobile PLCδ1-PH and E-Syt3 references.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "experimentalDesign": {
+        "value": "Cell-level repeated FRAP time course from three experiments.",
+        "confidence": "CONFIRMED_FROM_METHODS"
+      },
+      "statisticalUnit": {
+        "value": "cell; experiment identity unavailable",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "pairingNestingRepeated": {
+        "value": "same cell repeated over time",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "factorsLevels": {
+        "value": "probe × recovery time",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "primaryContrast": {
+        "value": "recovery kinetics among probes",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "referenceRoles": {
+        "value": "PLCδ1-PH mobile reference; E-Syt3 junction reference",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "intent": {
+        "value": "descriptive recovery curves; time-constant inference belongs to panel J",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "displaySet": {
+        "value": "all three probe trajectories",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "analysisSet": {
+        "value": "independent per-series kinetic fits",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "comparisonSet": {
+        "value": "none on panel I",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "annotationSet": {
+        "value": "none",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "graphConvention": {
+        "value": "mean±SEM time course",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "xSemantics": {
+        "value": "FRAP recovery time, synthetic spacing",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "seriesSemantics": {
+        "value": "probe identity",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "facetSemantics": {
+        "value": "none",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "yReadout": {
+        "value": "normalized fluorescence recovery",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "sampleSizeStructure": {
+        "value": "11/14/9 cells, three repeats",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "axisColorLegend": {
+        "value": "numeric time; color identifies probe",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "uncertainty": {
+        "value": "SEM",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      }
+    },
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "ok",
+    "results": [
+      {
+        "request": {
+          "protocolVersion": "0.14.0",
+          "requestId": "request.LSA086.fit",
+          "projectId": "project.LSA086.v2",
+          "analysisId": "analysis.LSA086.fit",
+          "templateId": "D17",
+          "templateVersion": "0.1.0",
+          "method": "nonlinear_xy_fit",
+          "modelId": "one_phase_association",
+          "modelSelectionRationale": "FRAP recovery is a saturating time course; independent one-phase association fits preserve probe identity.",
+          "xLabel": "Recovery time",
+          "yLabel": "Normalized fluorescence",
+          "xUnit": "s",
+          "yUnit": "relative",
+          "seriesIds": [
+            "PLCδ1-PH",
+            "tubbyCT",
+            "E-Syt3"
+          ],
+          "points": [
+            {
+              "observationId": "LSA086_context_rich_v2.o00001",
+              "experimentalUnitId": "PLCδ1-PH.cell.1",
+              "seriesId": "PLCδ1-PH",
+              "x": 0,
+              "y": 0.118374
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00002",
+              "experimentalUnitId": "PLCδ1-PH.cell.1",
+              "seriesId": "PLCδ1-PH",
+              "x": 5,
+              "y": 0.518075
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00003",
+              "experimentalUnitId": "PLCδ1-PH.cell.1",
+              "seriesId": "PLCδ1-PH",
+              "x": 10,
+              "y": 0.688411
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00004",
+              "experimentalUnitId": "PLCδ1-PH.cell.1",
+              "seriesId": "PLCδ1-PH",
+              "x": 20,
+              "y": 0.855136
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00005",
+              "experimentalUnitId": "PLCδ1-PH.cell.1",
+              "seriesId": "PLCδ1-PH",
+              "x": 40,
+              "y": 0.952711
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00006",
+              "experimentalUnitId": "PLCδ1-PH.cell.1",
+              "seriesId": "PLCδ1-PH",
+              "x": 60,
+              "y": 0.940306
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00007",
+              "experimentalUnitId": "PLCδ1-PH.cell.2",
+              "seriesId": "PLCδ1-PH",
+              "x": 0,
+              "y": 0.08914
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00008",
+              "experimentalUnitId": "PLCδ1-PH.cell.2",
+              "seriesId": "PLCδ1-PH",
+              "x": 5,
+              "y": 0.476658
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00009",
+              "experimentalUnitId": "PLCδ1-PH.cell.2",
+              "seriesId": "PLCδ1-PH",
+              "x": 10,
+              "y": 0.684618
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00010",
+              "experimentalUnitId": "PLCδ1-PH.cell.2",
+              "seriesId": "PLCδ1-PH",
+              "x": 20,
+              "y": 0.874148
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00011",
+              "experimentalUnitId": "PLCδ1-PH.cell.2",
+              "seriesId": "PLCδ1-PH",
+              "x": 40,
+              "y": 0.946856
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00012",
+              "experimentalUnitId": "PLCδ1-PH.cell.2",
+              "seriesId": "PLCδ1-PH",
+              "x": 60,
+              "y": 0.939819
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00013",
+              "experimentalUnitId": "PLCδ1-PH.cell.3",
+              "seriesId": "PLCδ1-PH",
+              "x": 0,
+              "y": 0.081113
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00014",
+              "experimentalUnitId": "PLCδ1-PH.cell.3",
+              "seriesId": "PLCδ1-PH",
+              "x": 5,
+              "y": 0.483828
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00015",
+              "experimentalUnitId": "PLCδ1-PH.cell.3",
+              "seriesId": "PLCδ1-PH",
+              "x": 10,
+              "y": 0.742218
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00016",
+              "experimentalUnitId": "PLCδ1-PH.cell.3",
+              "seriesId": "PLCδ1-PH",
+              "x": 20,
+              "y": 0.897963
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00017",
+              "experimentalUnitId": "PLCδ1-PH.cell.3",
+              "seriesId": "PLCδ1-PH",
+              "x": 40,
+              "y": 0.940903
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00018",
+              "experimentalUnitId": "PLCδ1-PH.cell.3",
+              "seriesId": "PLCδ1-PH",
+              "x": 60,
+              "y": 0.951853
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00019",
+              "experimentalUnitId": "PLCδ1-PH.cell.4",
+              "seriesId": "PLCδ1-PH",
+              "x": 0,
+              "y": 0.106464
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00020",
+              "experimentalUnitId": "PLCδ1-PH.cell.4",
+              "seriesId": "PLCδ1-PH",
+              "x": 5,
+              "y": 0.463404
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00021",
+              "experimentalUnitId": "PLCδ1-PH.cell.4",
+              "seriesId": "PLCδ1-PH",
+              "x": 10,
+              "y": 0.703455
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00022",
+              "experimentalUnitId": "PLCδ1-PH.cell.4",
+              "seriesId": "PLCδ1-PH",
+              "x": 20,
+              "y": 0.882812
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00023",
+              "experimentalUnitId": "PLCδ1-PH.cell.4",
+              "seriesId": "PLCδ1-PH",
+              "x": 40,
+              "y": 0.927577
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00024",
+              "experimentalUnitId": "PLCδ1-PH.cell.4",
+              "seriesId": "PLCδ1-PH",
+              "x": 60,
+              "y": 0.92995
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00025",
+              "experimentalUnitId": "PLCδ1-PH.cell.5",
+              "seriesId": "PLCδ1-PH",
+              "x": 0,
+              "y": 0.073489
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00026",
+              "experimentalUnitId": "PLCδ1-PH.cell.5",
+              "seriesId": "PLCδ1-PH",
+              "x": 5,
+              "y": 0.44217
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00027",
+              "experimentalUnitId": "PLCδ1-PH.cell.5",
+              "seriesId": "PLCδ1-PH",
+              "x": 10,
+              "y": 0.696643
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00028",
+              "experimentalUnitId": "PLCδ1-PH.cell.5",
+              "seriesId": "PLCδ1-PH",
+              "x": 20,
+              "y": 0.906049
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00029",
+              "experimentalUnitId": "PLCδ1-PH.cell.5",
+              "seriesId": "PLCδ1-PH",
+              "x": 40,
+              "y": 0.949896
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00030",
+              "experimentalUnitId": "PLCδ1-PH.cell.5",
+              "seriesId": "PLCδ1-PH",
+              "x": 60,
+              "y": 0.960912
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00031",
+              "experimentalUnitId": "PLCδ1-PH.cell.6",
+              "seriesId": "PLCδ1-PH",
+              "x": 0,
+              "y": 0.08225
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00032",
+              "experimentalUnitId": "PLCδ1-PH.cell.6",
+              "seriesId": "PLCδ1-PH",
+              "x": 5,
+              "y": 0.468446
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00033",
+              "experimentalUnitId": "PLCδ1-PH.cell.6",
+              "seriesId": "PLCδ1-PH",
+              "x": 10,
+              "y": 0.652334
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00034",
+              "experimentalUnitId": "PLCδ1-PH.cell.6",
+              "seriesId": "PLCδ1-PH",
+              "x": 20,
+              "y": 0.918313
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00035",
+              "experimentalUnitId": "PLCδ1-PH.cell.6",
+              "seriesId": "PLCδ1-PH",
+              "x": 40,
+              "y": 0.91956
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00036",
+              "experimentalUnitId": "PLCδ1-PH.cell.6",
+              "seriesId": "PLCδ1-PH",
+              "x": 60,
+              "y": 0.962378
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00037",
+              "experimentalUnitId": "PLCδ1-PH.cell.7",
+              "seriesId": "PLCδ1-PH",
+              "x": 0,
+              "y": 0.021109
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00038",
+              "experimentalUnitId": "PLCδ1-PH.cell.7",
+              "seriesId": "PLCδ1-PH",
+              "x": 5,
+              "y": 0.467888
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00039",
+              "experimentalUnitId": "PLCδ1-PH.cell.7",
+              "seriesId": "PLCδ1-PH",
+              "x": 10,
+              "y": 0.677957
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00040",
+              "experimentalUnitId": "PLCδ1-PH.cell.7",
+              "seriesId": "PLCδ1-PH",
+              "x": 20,
+              "y": 0.843404
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00041",
+              "experimentalUnitId": "PLCδ1-PH.cell.7",
+              "seriesId": "PLCδ1-PH",
+              "x": 40,
+              "y": 0.955466
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00042",
+              "experimentalUnitId": "PLCδ1-PH.cell.7",
+              "seriesId": "PLCδ1-PH",
+              "x": 60,
+              "y": 0.948888
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00043",
+              "experimentalUnitId": "PLCδ1-PH.cell.8",
+              "seriesId": "PLCδ1-PH",
+              "x": 0,
+              "y": 0.052227
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00044",
+              "experimentalUnitId": "PLCδ1-PH.cell.8",
+              "seriesId": "PLCδ1-PH",
+              "x": 5,
+              "y": 0.469315
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00045",
+              "experimentalUnitId": "PLCδ1-PH.cell.8",
+              "seriesId": "PLCδ1-PH",
+              "x": 10,
+              "y": 0.707112
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00046",
+              "experimentalUnitId": "PLCδ1-PH.cell.8",
+              "seriesId": "PLCδ1-PH",
+              "x": 20,
+              "y": 0.872217
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00047",
+              "experimentalUnitId": "PLCδ1-PH.cell.8",
+              "seriesId": "PLCδ1-PH",
+              "x": 40,
+              "y": 0.94129
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00048",
+              "experimentalUnitId": "PLCδ1-PH.cell.8",
+              "seriesId": "PLCδ1-PH",
+              "x": 60,
+              "y": 1.022204
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00049",
+              "experimentalUnitId": "PLCδ1-PH.cell.9",
+              "seriesId": "PLCδ1-PH",
+              "x": 0,
+              "y": 0.063218
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00050",
+              "experimentalUnitId": "PLCδ1-PH.cell.9",
+              "seriesId": "PLCδ1-PH",
+              "x": 5,
+              "y": 0.434484
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00051",
+              "experimentalUnitId": "PLCδ1-PH.cell.9",
+              "seriesId": "PLCδ1-PH",
+              "x": 10,
+              "y": 0.679369
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00052",
+              "experimentalUnitId": "PLCδ1-PH.cell.9",
+              "seriesId": "PLCδ1-PH",
+              "x": 20,
+              "y": 0.876911
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00053",
+              "experimentalUnitId": "PLCδ1-PH.cell.9",
+              "seriesId": "PLCδ1-PH",
+              "x": 40,
+              "y": 0.978128
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00054",
+              "experimentalUnitId": "PLCδ1-PH.cell.9",
+              "seriesId": "PLCδ1-PH",
+              "x": 60,
+              "y": 0.959168
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00055",
+              "experimentalUnitId": "PLCδ1-PH.cell.10",
+              "seriesId": "PLCδ1-PH",
+              "x": 0,
+              "y": 0.038698
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00056",
+              "experimentalUnitId": "PLCδ1-PH.cell.10",
+              "seriesId": "PLCδ1-PH",
+              "x": 5,
+              "y": 0.442859
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00057",
+              "experimentalUnitId": "PLCδ1-PH.cell.10",
+              "seriesId": "PLCδ1-PH",
+              "x": 10,
+              "y": 0.660091
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00058",
+              "experimentalUnitId": "PLCδ1-PH.cell.10",
+              "seriesId": "PLCδ1-PH",
+              "x": 20,
+              "y": 0.890741
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00059",
+              "experimentalUnitId": "PLCδ1-PH.cell.10",
+              "seriesId": "PLCδ1-PH",
+              "x": 40,
+              "y": 0.994045
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00060",
+              "experimentalUnitId": "PLCδ1-PH.cell.10",
+              "seriesId": "PLCδ1-PH",
+              "x": 60,
+              "y": 0.945849
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00061",
+              "experimentalUnitId": "PLCδ1-PH.cell.11",
+              "seriesId": "PLCδ1-PH",
+              "x": 0,
+              "y": 0.070432
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00062",
+              "experimentalUnitId": "PLCδ1-PH.cell.11",
+              "seriesId": "PLCδ1-PH",
+              "x": 5,
+              "y": 0.480488
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00063",
+              "experimentalUnitId": "PLCδ1-PH.cell.11",
+              "seriesId": "PLCδ1-PH",
+              "x": 10,
+              "y": 0.675169
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00064",
+              "experimentalUnitId": "PLCδ1-PH.cell.11",
+              "seriesId": "PLCδ1-PH",
+              "x": 20,
+              "y": 0.896354
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00065",
+              "experimentalUnitId": "PLCδ1-PH.cell.11",
+              "seriesId": "PLCδ1-PH",
+              "x": 40,
+              "y": 0.927267
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00066",
+              "experimentalUnitId": "PLCδ1-PH.cell.11",
+              "seriesId": "PLCδ1-PH",
+              "x": 60,
+              "y": 0.988924
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00067",
+              "experimentalUnitId": "tubbyCT.cell.1",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.058698
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00068",
+              "experimentalUnitId": "tubbyCT.cell.1",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.22845
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00069",
+              "experimentalUnitId": "tubbyCT.cell.1",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.359932
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00070",
+              "experimentalUnitId": "tubbyCT.cell.1",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.456999
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00071",
+              "experimentalUnitId": "tubbyCT.cell.1",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.620928
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00072",
+              "experimentalUnitId": "tubbyCT.cell.1",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.694201
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00073",
+              "experimentalUnitId": "tubbyCT.cell.2",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.136404
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00074",
+              "experimentalUnitId": "tubbyCT.cell.2",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.182068
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00075",
+              "experimentalUnitId": "tubbyCT.cell.2",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.335604
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00076",
+              "experimentalUnitId": "tubbyCT.cell.2",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.434996
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00077",
+              "experimentalUnitId": "tubbyCT.cell.2",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.613482
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00078",
+              "experimentalUnitId": "tubbyCT.cell.2",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.676073
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00079",
+              "experimentalUnitId": "tubbyCT.cell.3",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.065593
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00080",
+              "experimentalUnitId": "tubbyCT.cell.3",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.244271
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00081",
+              "experimentalUnitId": "tubbyCT.cell.3",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.258394
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00082",
+              "experimentalUnitId": "tubbyCT.cell.3",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.476441
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00083",
+              "experimentalUnitId": "tubbyCT.cell.3",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.606605
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00084",
+              "experimentalUnitId": "tubbyCT.cell.3",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.67528
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00085",
+              "experimentalUnitId": "tubbyCT.cell.4",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.091522
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00086",
+              "experimentalUnitId": "tubbyCT.cell.4",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.207695
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00087",
+              "experimentalUnitId": "tubbyCT.cell.4",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.366237
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00088",
+              "experimentalUnitId": "tubbyCT.cell.4",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.436888
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00089",
+              "experimentalUnitId": "tubbyCT.cell.4",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.610856
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00090",
+              "experimentalUnitId": "tubbyCT.cell.4",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.698643
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00091",
+              "experimentalUnitId": "tubbyCT.cell.5",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.047323
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00092",
+              "experimentalUnitId": "tubbyCT.cell.5",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.230519
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00093",
+              "experimentalUnitId": "tubbyCT.cell.5",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.277012
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00094",
+              "experimentalUnitId": "tubbyCT.cell.5",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.463408
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00095",
+              "experimentalUnitId": "tubbyCT.cell.5",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.633082
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00096",
+              "experimentalUnitId": "tubbyCT.cell.5",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.695898
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00097",
+              "experimentalUnitId": "tubbyCT.cell.6",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.09502
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00098",
+              "experimentalUnitId": "tubbyCT.cell.6",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.255079
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00099",
+              "experimentalUnitId": "tubbyCT.cell.6",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.370251
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00100",
+              "experimentalUnitId": "tubbyCT.cell.6",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.462537
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00101",
+              "experimentalUnitId": "tubbyCT.cell.6",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.612797
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00102",
+              "experimentalUnitId": "tubbyCT.cell.6",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.685036
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00103",
+              "experimentalUnitId": "tubbyCT.cell.7",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.067883
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00104",
+              "experimentalUnitId": "tubbyCT.cell.7",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.199204
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00105",
+              "experimentalUnitId": "tubbyCT.cell.7",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.329272
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00106",
+              "experimentalUnitId": "tubbyCT.cell.7",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.458965
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00107",
+              "experimentalUnitId": "tubbyCT.cell.7",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.613517
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00108",
+              "experimentalUnitId": "tubbyCT.cell.7",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.693531
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00109",
+              "experimentalUnitId": "tubbyCT.cell.8",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.021383
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00110",
+              "experimentalUnitId": "tubbyCT.cell.8",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.210335
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00111",
+              "experimentalUnitId": "tubbyCT.cell.8",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.298868
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00112",
+              "experimentalUnitId": "tubbyCT.cell.8",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.449405
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00113",
+              "experimentalUnitId": "tubbyCT.cell.8",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.614741
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00114",
+              "experimentalUnitId": "tubbyCT.cell.8",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.663601
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00115",
+              "experimentalUnitId": "tubbyCT.cell.9",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.107142
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00116",
+              "experimentalUnitId": "tubbyCT.cell.9",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.225767
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00117",
+              "experimentalUnitId": "tubbyCT.cell.9",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.306522
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00118",
+              "experimentalUnitId": "tubbyCT.cell.9",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.433058
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00119",
+              "experimentalUnitId": "tubbyCT.cell.9",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.583326
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00120",
+              "experimentalUnitId": "tubbyCT.cell.9",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.66378
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00121",
+              "experimentalUnitId": "tubbyCT.cell.10",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.100761
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00122",
+              "experimentalUnitId": "tubbyCT.cell.10",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.212293
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00123",
+              "experimentalUnitId": "tubbyCT.cell.10",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.343979
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00124",
+              "experimentalUnitId": "tubbyCT.cell.10",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.475508
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00125",
+              "experimentalUnitId": "tubbyCT.cell.10",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.638529
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00126",
+              "experimentalUnitId": "tubbyCT.cell.10",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.617217
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00127",
+              "experimentalUnitId": "tubbyCT.cell.11",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.077604
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00128",
+              "experimentalUnitId": "tubbyCT.cell.11",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.169952
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00129",
+              "experimentalUnitId": "tubbyCT.cell.11",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.365851
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00130",
+              "experimentalUnitId": "tubbyCT.cell.11",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.486973
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00131",
+              "experimentalUnitId": "tubbyCT.cell.11",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.627195
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00132",
+              "experimentalUnitId": "tubbyCT.cell.11",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.664521
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00133",
+              "experimentalUnitId": "tubbyCT.cell.12",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.098505
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00134",
+              "experimentalUnitId": "tubbyCT.cell.12",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.23417
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00135",
+              "experimentalUnitId": "tubbyCT.cell.12",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.283668
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00136",
+              "experimentalUnitId": "tubbyCT.cell.12",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.456396
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00137",
+              "experimentalUnitId": "tubbyCT.cell.12",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.624696
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00138",
+              "experimentalUnitId": "tubbyCT.cell.12",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.660525
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00139",
+              "experimentalUnitId": "tubbyCT.cell.13",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.116601
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00140",
+              "experimentalUnitId": "tubbyCT.cell.13",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.20045
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00141",
+              "experimentalUnitId": "tubbyCT.cell.13",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.330087
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00142",
+              "experimentalUnitId": "tubbyCT.cell.13",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.463546
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00143",
+              "experimentalUnitId": "tubbyCT.cell.13",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.584264
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00144",
+              "experimentalUnitId": "tubbyCT.cell.13",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.669598
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00145",
+              "experimentalUnitId": "tubbyCT.cell.14",
+              "seriesId": "tubbyCT",
+              "x": 0,
+              "y": 0.095527
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00146",
+              "experimentalUnitId": "tubbyCT.cell.14",
+              "seriesId": "tubbyCT",
+              "x": 5,
+              "y": 0.192085
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00147",
+              "experimentalUnitId": "tubbyCT.cell.14",
+              "seriesId": "tubbyCT",
+              "x": 10,
+              "y": 0.271123
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00148",
+              "experimentalUnitId": "tubbyCT.cell.14",
+              "seriesId": "tubbyCT",
+              "x": 20,
+              "y": 0.510413
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00149",
+              "experimentalUnitId": "tubbyCT.cell.14",
+              "seriesId": "tubbyCT",
+              "x": 40,
+              "y": 0.617728
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00150",
+              "experimentalUnitId": "tubbyCT.cell.14",
+              "seriesId": "tubbyCT",
+              "x": 60,
+              "y": 0.66041
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00151",
+              "experimentalUnitId": "E-Syt3.cell.1",
+              "seriesId": "E-Syt3",
+              "x": 0,
+              "y": 0.060374
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00152",
+              "experimentalUnitId": "E-Syt3.cell.1",
+              "seriesId": "E-Syt3",
+              "x": 5,
+              "y": 0.167354
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00153",
+              "experimentalUnitId": "E-Syt3.cell.1",
+              "seriesId": "E-Syt3",
+              "x": 10,
+              "y": 0.244602
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00154",
+              "experimentalUnitId": "E-Syt3.cell.1",
+              "seriesId": "E-Syt3",
+              "x": 20,
+              "y": 0.331571
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00155",
+              "experimentalUnitId": "E-Syt3.cell.1",
+              "seriesId": "E-Syt3",
+              "x": 40,
+              "y": 0.409421
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00156",
+              "experimentalUnitId": "E-Syt3.cell.1",
+              "seriesId": "E-Syt3",
+              "x": 60,
+              "y": 0.479678
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00157",
+              "experimentalUnitId": "E-Syt3.cell.2",
+              "seriesId": "E-Syt3",
+              "x": 0,
+              "y": 0.088782
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00158",
+              "experimentalUnitId": "E-Syt3.cell.2",
+              "seriesId": "E-Syt3",
+              "x": 5,
+              "y": 0.180783
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00159",
+              "experimentalUnitId": "E-Syt3.cell.2",
+              "seriesId": "E-Syt3",
+              "x": 10,
+              "y": 0.225561
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00160",
+              "experimentalUnitId": "E-Syt3.cell.2",
+              "seriesId": "E-Syt3",
+              "x": 20,
+              "y": 0.276949
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00161",
+              "experimentalUnitId": "E-Syt3.cell.2",
+              "seriesId": "E-Syt3",
+              "x": 40,
+              "y": 0.423653
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00162",
+              "experimentalUnitId": "E-Syt3.cell.2",
+              "seriesId": "E-Syt3",
+              "x": 60,
+              "y": 0.495836
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00163",
+              "experimentalUnitId": "E-Syt3.cell.3",
+              "seriesId": "E-Syt3",
+              "x": 0,
+              "y": 0.057604
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00164",
+              "experimentalUnitId": "E-Syt3.cell.3",
+              "seriesId": "E-Syt3",
+              "x": 5,
+              "y": 0.130275
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00165",
+              "experimentalUnitId": "E-Syt3.cell.3",
+              "seriesId": "E-Syt3",
+              "x": 10,
+              "y": 0.212563
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00166",
+              "experimentalUnitId": "E-Syt3.cell.3",
+              "seriesId": "E-Syt3",
+              "x": 20,
+              "y": 0.283707
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00167",
+              "experimentalUnitId": "E-Syt3.cell.3",
+              "seriesId": "E-Syt3",
+              "x": 40,
+              "y": 0.411393
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00168",
+              "experimentalUnitId": "E-Syt3.cell.3",
+              "seriesId": "E-Syt3",
+              "x": 60,
+              "y": 0.505844
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00169",
+              "experimentalUnitId": "E-Syt3.cell.4",
+              "seriesId": "E-Syt3",
+              "x": 0,
+              "y": 0.084216
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00170",
+              "experimentalUnitId": "E-Syt3.cell.4",
+              "seriesId": "E-Syt3",
+              "x": 5,
+              "y": 0.100785
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00171",
+              "experimentalUnitId": "E-Syt3.cell.4",
+              "seriesId": "E-Syt3",
+              "x": 10,
+              "y": 0.270695
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00172",
+              "experimentalUnitId": "E-Syt3.cell.4",
+              "seriesId": "E-Syt3",
+              "x": 20,
+              "y": 0.313381
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00173",
+              "experimentalUnitId": "E-Syt3.cell.4",
+              "seriesId": "E-Syt3",
+              "x": 40,
+              "y": 0.400623
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00174",
+              "experimentalUnitId": "E-Syt3.cell.4",
+              "seriesId": "E-Syt3",
+              "x": 60,
+              "y": 0.507058
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00175",
+              "experimentalUnitId": "E-Syt3.cell.5",
+              "seriesId": "E-Syt3",
+              "x": 0,
+              "y": 0.059327
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00176",
+              "experimentalUnitId": "E-Syt3.cell.5",
+              "seriesId": "E-Syt3",
+              "x": 5,
+              "y": 0.162936
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00177",
+              "experimentalUnitId": "E-Syt3.cell.5",
+              "seriesId": "E-Syt3",
+              "x": 10,
+              "y": 0.200301
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00178",
+              "experimentalUnitId": "E-Syt3.cell.5",
+              "seriesId": "E-Syt3",
+              "x": 20,
+              "y": 0.301336
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00179",
+              "experimentalUnitId": "E-Syt3.cell.5",
+              "seriesId": "E-Syt3",
+              "x": 40,
+              "y": 0.406682
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00180",
+              "experimentalUnitId": "E-Syt3.cell.5",
+              "seriesId": "E-Syt3",
+              "x": 60,
+              "y": 0.466217
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00181",
+              "experimentalUnitId": "E-Syt3.cell.6",
+              "seriesId": "E-Syt3",
+              "x": 0,
+              "y": 0.06505
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00182",
+              "experimentalUnitId": "E-Syt3.cell.6",
+              "seriesId": "E-Syt3",
+              "x": 5,
+              "y": 0.154968
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00183",
+              "experimentalUnitId": "E-Syt3.cell.6",
+              "seriesId": "E-Syt3",
+              "x": 10,
+              "y": 0.201493
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00184",
+              "experimentalUnitId": "E-Syt3.cell.6",
+              "seriesId": "E-Syt3",
+              "x": 20,
+              "y": 0.316584
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00185",
+              "experimentalUnitId": "E-Syt3.cell.6",
+              "seriesId": "E-Syt3",
+              "x": 40,
+              "y": 0.471085
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00186",
+              "experimentalUnitId": "E-Syt3.cell.6",
+              "seriesId": "E-Syt3",
+              "x": 60,
+              "y": 0.48508
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00187",
+              "experimentalUnitId": "E-Syt3.cell.7",
+              "seriesId": "E-Syt3",
+              "x": 0,
+              "y": 0.110496
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00188",
+              "experimentalUnitId": "E-Syt3.cell.7",
+              "seriesId": "E-Syt3",
+              "x": 5,
+              "y": 0.137419
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00189",
+              "experimentalUnitId": "E-Syt3.cell.7",
+              "seriesId": "E-Syt3",
+              "x": 10,
+              "y": 0.247347
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00190",
+              "experimentalUnitId": "E-Syt3.cell.7",
+              "seriesId": "E-Syt3",
+              "x": 20,
+              "y": 0.327286
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00191",
+              "experimentalUnitId": "E-Syt3.cell.7",
+              "seriesId": "E-Syt3",
+              "x": 40,
+              "y": 0.434825
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00192",
+              "experimentalUnitId": "E-Syt3.cell.7",
+              "seriesId": "E-Syt3",
+              "x": 60,
+              "y": 0.490391
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00193",
+              "experimentalUnitId": "E-Syt3.cell.8",
+              "seriesId": "E-Syt3",
+              "x": 0,
+              "y": 0.099926
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00194",
+              "experimentalUnitId": "E-Syt3.cell.8",
+              "seriesId": "E-Syt3",
+              "x": 5,
+              "y": 0.175856
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00195",
+              "experimentalUnitId": "E-Syt3.cell.8",
+              "seriesId": "E-Syt3",
+              "x": 10,
+              "y": 0.16834
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00196",
+              "experimentalUnitId": "E-Syt3.cell.8",
+              "seriesId": "E-Syt3",
+              "x": 20,
+              "y": 0.340243
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00197",
+              "experimentalUnitId": "E-Syt3.cell.8",
+              "seriesId": "E-Syt3",
+              "x": 40,
+              "y": 0.423067
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00198",
+              "experimentalUnitId": "E-Syt3.cell.8",
+              "seriesId": "E-Syt3",
+              "x": 60,
+              "y": 0.499281
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00199",
+              "experimentalUnitId": "E-Syt3.cell.9",
+              "seriesId": "E-Syt3",
+              "x": 0,
+              "y": 0.093457
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00200",
+              "experimentalUnitId": "E-Syt3.cell.9",
+              "seriesId": "E-Syt3",
+              "x": 5,
+              "y": 0.16121
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00201",
+              "experimentalUnitId": "E-Syt3.cell.9",
+              "seriesId": "E-Syt3",
+              "x": 10,
+              "y": 0.243518
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00202",
+              "experimentalUnitId": "E-Syt3.cell.9",
+              "seriesId": "E-Syt3",
+              "x": 20,
+              "y": 0.312831
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00203",
+              "experimentalUnitId": "E-Syt3.cell.9",
+              "seriesId": "E-Syt3",
+              "x": 40,
+              "y": 0.449516
+            },
+            {
+              "observationId": "LSA086_context_rich_v2.o00204",
+              "experimentalUnitId": "E-Syt3.cell.9",
+              "seriesId": "E-Syt3",
+              "x": 60,
+              "y": 0.496557
+            }
+          ],
+          "initialValues": {},
+          "bounds": {},
+          "observations": [],
+          "options": {
+            "alternative": "two_sided",
+            "confidenceLevel": 0.95,
+            "multiplicityMethod": null
+          }
+        },
+        "result": {
+          "protocolVersion": "0.14.0",
+          "requestId": "request.LSA086.fit",
+          "status": "ok",
+          "engine": {
+            "name": "lsaa-python",
+            "version": "0.14.0",
+            "packages": {
+              "numpy": "2.3.5",
+              "scipy": "1.18.0"
+            }
+          },
+          "estimates": [
+            {
+              "name": "PLCδ1-PH.baseline",
+              "value": 0.07148963637418017,
+              "standardError": 0.007050446445710101,
+              "confidenceInterval": {
+                "level": 0.95,
+                "lower": 0.05740044339884642,
+                "upper": 0.08557882934951393
+              }
+            },
+            {
+              "name": "PLCδ1-PH.plateau",
+              "value": 0.9596608283259657,
+              "standardError": 0.00509086156522281,
+              "confidenceInterval": {
+                "level": 0.95,
+                "lower": 0.9494875532638203,
+                "upper": 0.969834103388111
+              }
+            },
+            {
+              "name": "PLCδ1-PH.rate",
+              "value": 0.11897860373188197,
+              "standardError": 0.002631709276230392,
+              "confidenceInterval": {
+                "level": 0.95,
+                "lower": 0.11371955238906287,
+                "upper": 0.12423765507470108
+              }
+            },
+            {
+              "name": "tubbyCT.baseline",
+              "value": 0.08457344801084377,
+              "standardError": 0.006097331982396468,
+              "confidenceInterval": {
+                "level": 0.95,
+                "lower": 0.07244166995589316,
+                "upper": 0.09670522606579438
+              }
+            },
+            {
+              "name": "tubbyCT.plateau",
+              "value": 0.7108490071145437,
+              "standardError": 0.010225569055055634,
+              "confidenceInterval": {
+                "level": 0.95,
+                "lower": 0.6905033322161354,
+                "upper": 0.731194682012952
+              }
+            },
+            {
+              "name": "tubbyCT.rate",
+              "value": 0.046623976317899544,
+              "standardError": 0.0021071605435135036,
+              "confidenceInterval": {
+                "level": 0.95,
+                "lower": 0.04243138780314271,
+                "upper": 0.050816564832656376
+              }
+            },
+            {
+              "name": "E-Syt3.baseline",
+              "value": 0.08126398226959974,
+              "standardError": 0.00646595181742864,
+              "confidenceInterval": {
+                "level": 0.95,
+                "lower": 0.06828304234128582,
+                "upper": 0.09424492219791367
+              }
+            },
+            {
+              "name": "E-Syt3.plateau",
+              "value": 0.5489395689622489,
+              "standardError": 0.018003676530369096,
+              "confidenceInterval": {
+                "level": 0.95,
+                "lower": 0.5127956801538638,
+                "upper": 0.5850834577706341
+              }
+            },
+            {
+              "name": "E-Syt3.rate",
+              "value": 0.034232916445394494,
+              "standardError": 0.0030560983014285593,
+              "confidenceInterval": {
+                "level": 0.95,
+                "lower": 0.028097543094956726,
+                "upper": 0.04036828979583226
+              }
+            }
+          ],
+          "tests": [],
+          "diagnostics": [
+            {
+              "code": "nonlinear_fit_authority",
+              "message": "Fitted curves and parameters were computed by the deterministic local SciPy engine and persisted as the authoritative analysis result."
+            }
+          ],
+          "warnings": [],
+          "nonlinearFit": {
+            "modelId": "one_phase_association",
+            "modelVersion": "0.1.0",
+            "modelFormula": "baseline + (plateau - baseline) * (1 - exp(-rate * x))",
+            "selectionRationale": "FRAP recovery is a saturating time course; independent one-phase association fits preserve probe identity.",
+            "series": [
+              {
+                "seriesId": "PLCδ1-PH",
+                "converged": true,
+                "parameters": [
+                  {
+                    "name": "PLCδ1-PH.baseline",
+                    "value": 0.07148963637418017,
+                    "standardError": 0.007050446445710101,
+                    "confidenceInterval": {
+                      "level": 0.95,
+                      "lower": 0.05740044339884642,
+                      "upper": 0.08557882934951393
+                    }
+                  },
+                  {
+                    "name": "PLCδ1-PH.plateau",
+                    "value": 0.9596608283259657,
+                    "standardError": 0.00509086156522281,
+                    "confidenceInterval": {
+                      "level": 0.95,
+                      "lower": 0.9494875532638203,
+                      "upper": 0.969834103388111
+                    }
+                  },
+                  {
+                    "name": "PLCδ1-PH.rate",
+                    "value": 0.11897860373188197,
+                    "standardError": 0.002631709276230392,
+                    "confidenceInterval": {
+                      "level": 0.95,
+                      "lower": 0.11371955238906287,
+                      "upper": 0.12423765507470108
+                    }
+                  }
+                ],
+                "diagnostics": {
+                  "n": 66,
+                  "distinctX": 6,
+                  "residualDegreesOfFreedom": 63,
+                  "rss": 0.03647126102718827,
+                  "rmse": 0.024060525871091525,
+                  "rSquared": 0.9945475401421694,
+                  "aic": -489.0584390186237
+                },
+                "initialValues": {
+                  "baseline": 0.021109,
+                  "plateau": 1.022204,
+                  "rate": 0.03333333333333333
+                },
+                "bounds": {
+                  "baseline": {
+                    "lower": -1.9810809999999996,
+                    "upper": 2.0232989999999997
+                  },
+                  "plateau": {
+                    "lower": -0.9799859999999998,
+                    "upper": 4.025488999999999
+                  },
+                  "rate": {
+                    "lower": 1e-12,
+                    "upper": 1.6666666666666667
+                  }
+                },
+                "fittedCurve": [
+                  {
+                    "x": 0.0,
+                    "y": 0.07148963637418017
+                  },
+                  {
+                    "x": 0.5042016806722689,
+                    "y": 0.12320367631471588
+                  },
+                  {
+                    "x": 1.0084033613445378,
+                    "y": 0.17190665042559516
+                  },
+                  {
+                    "x": 1.5126050420168067,
+                    "y": 0.21777387893786054
+                  },
+                  {
+                    "x": 2.0168067226890756,
+                    "y": 0.2609704740083539
+                  },
+                  {
+                    "x": 2.5210084033613445,
+                    "y": 0.30165193408796603
+                  },
+                  {
+                    "x": 3.0252100840336134,
+                    "y": 0.3399647036826129
+                  },
+                  {
+                    "x": 3.5294117647058822,
+                    "y": 0.3760467005219578
+                  },
+                  {
+                    "x": 4.033613445378151,
+                    "y": 0.4100278120335726
+                  },
+                  {
+                    "x": 4.53781512605042,
+                    "y": 0.4420303629097386
+                  },
+                  {
+                    "x": 5.042016806722689,
+                    "y": 0.4721695554500276
+                  },
+                  {
+                    "x": 5.546218487394958,
+                    "y": 0.5005538842648013
+                  },
+                  {
+                    "x": 6.050420168067227,
+                    "y": 0.527285526832471
+                  },
+                  {
+                    "x": 6.554621848739496,
+                    "y": 0.5524607113164434
+                  },
+                  {
+                    "x": 7.0588235294117645,
+                    "y": 0.5761700629658092
+                  },
+                  {
+                    "x": 7.563025210084033,
+                    "y": 0.598498930346748
+                  },
+                  {
+                    "x": 8.067226890756302,
+                    "y": 0.6195276925790079
+                  },
+                  {
+                    "x": 8.571428571428571,
+                    "y": 0.6393320486834475
+                  },
+                  {
+                    "x": 9.07563025210084,
+                    "y": 0.6579832900822291
+                  },
+                  {
+                    "x": 9.579831932773109,
+                    "y": 0.6755485572326029
+                  },
+                  {
+                    "x": 10.084033613445378,
+                    "y": 0.6920910813181129
+                  },
+                  {
+                    "x": 10.588235294117647,
+                    "y": 0.7076704118672558
+                  },
+                  {
+                    "x": 11.092436974789916,
+                    "y": 0.7223426311189757
+                  },
+                  {
+                    "x": 11.596638655462185,
+                    "y": 0.7361605559066606
+                  },
+                  {
+                    "x": 12.100840336134453,
+                    "y": 0.7491739277873825
+                  },
+                  {
+                    "x": 12.605042016806722,
+                    "y": 0.7614295921008032
+                  },
+                  {
+                    "x": 13.109243697478991,
+                    "y": 0.7729716666023214
+                  },
+                  {
+                    "x": 13.61344537815126,
+                    "y": 0.7838417002775027
+                  },
+                  {
+                    "x": 14.117647058823529,
+                    "y": 0.7940788229094895
+                  },
+                  {
+                    "x": 14.621848739495798,
+                    "y": 0.8037198859378054
+                  },
+                  {
+                    "x": 15.126050420168067,
+                    "y": 0.8127995951156098
+                  },
+                  {
+                    "x": 15.630252100840336,
+                    "y": 0.8213506354429445
+                  },
+                  {
+                    "x": 16.134453781512605,
+                    "y": 0.8294037888257038
+                  },
+                  {
+                    "x": 16.63865546218487,
+                    "y": 0.8369880448838738
+                  },
+                  {
+                    "x": 17.142857142857142,
+                    "y": 0.8441307053079302
+                  },
+                  {
+                    "x": 17.647058823529413,
+                    "y": 0.8508574821390505
+                  },
+                  {
+                    "x": 18.15126050420168,
+                    "y": 0.8571925903269318
+                  },
+                  {
+                    "x": 18.655462184873947,
+                    "y": 0.8631588348984018
+                  },
+                  {
+                    "x": 19.159663865546218,
+                    "y": 0.8687776930506095
+                  },
+                  {
+                    "x": 19.66386554621849,
+                    "y": 0.8740693914643158
+                  },
+                  {
+                    "x": 20.168067226890756,
+                    "y": 0.8790529791155932
+                  },
+                  {
+                    "x": 20.672268907563023,
+                    "y": 0.8837463958480424
+                  },
+                  {
+                    "x": 21.176470588235293,
+                    "y": 0.8881665369523708
+                  },
+                  {
+                    "x": 21.680672268907564,
+                    "y": 0.8923293139858046
+                  },
+                  {
+                    "x": 22.18487394957983,
+                    "y": 0.8962497120502724
+                  },
+                  {
+                    "x": 22.6890756302521,
+                    "y": 0.8999418437355491
+                  },
+                  {
+                    "x": 23.19327731092437,
+                    "y": 0.9034189999215433
+                  },
+                  {
+                    "x": 23.69747899159664,
+                    "y": 0.9066936976226065
+                  },
+                  {
+                    "x": 24.201680672268907,
+                    "y": 0.909777725046092
+                  },
+                  {
+                    "x": 24.705882352941174,
+                    "y": 0.912682184027366
+                  },
+                  {
+                    "x": 25.210084033613445,
+                    "y": 0.9154175299940273
+                  },
+                  {
+                    "x": 25.714285714285715,
+                    "y": 0.9179936096031969
+                  },
+                  {
+                    "x": 26.218487394957982,
+                    "y": 0.9204196961873667
+                  },
+                  {
+                    "x": 26.72268907563025,
+                    "y": 0.922704523136401
+                  },
+                  {
+                    "x": 27.22689075630252,
+                    "y": 0.924856315335862
+                  },
+                  {
+                    "x": 27.73109243697479,
+                    "y": 0.9268828187748283
+                  },
+                  {
+                    "x": 28.235294117647058,
+                    "y": 0.9287913284297898
+                  },
+                  {
+                    "x": 28.739495798319325,
+                    "y": 0.9305887145249943
+                  },
+                  {
+                    "x": 29.243697478991596,
+                    "y": 0.9322814472637756
+                  },
+                  {
+                    "x": 29.747899159663866,
+                    "y": 0.9338756201198956
+                  },
+                  {
+                    "x": 30.252100840336134,
+                    "y": 0.9353769717727378
+                  },
+                  {
+                    "x": 30.7563025210084,
+                    "y": 0.9367909067653198
+                  },
+                  {
+                    "x": 31.26050420168067,
+                    "y": 0.9381225149594846
+                  },
+                  {
+                    "x": 31.764705882352942,
+                    "y": 0.9393765898583094
+                  },
+                  {
+                    "x": 32.26890756302521,
+                    "y": 0.9405576458616848
+                  },
+                  {
+                    "x": 32.773109243697476,
+                    "y": 0.941669934517184
+                  },
+                  {
+                    "x": 33.27731092436974,
+                    "y": 0.9427174598247192
+                  },
+                  {
+                    "x": 33.78151260504202,
+                    "y": 0.9437039926500805
+                  },
+                  {
+                    "x": 34.285714285714285,
+                    "y": 0.944633084299241
+                  },
+                  {
+                    "x": 34.78991596638655,
+                    "y": 0.9455080793022947
+                  },
+                  {
+                    "x": 35.294117647058826,
+                    "y": 0.9463321274530462
+                  },
+                  {
+                    "x": 35.79831932773109,
+                    "y": 0.9471081951475893
+                  },
+                  {
+                    "x": 36.30252100840336,
+                    "y": 0.9478390760626962
+                  },
+                  {
+                    "x": 36.80672268907563,
+                    "y": 0.948527401212453
+                  },
+                  {
+                    "x": 37.310924369747895,
+                    "y": 0.9491756484193434
+                  },
+                  {
+                    "x": 37.81512605042017,
+                    "y": 0.9497861512338777
+                  },
+                  {
+                    "x": 38.319327731092436,
+                    "y": 0.950361107334872
+                  },
+                  {
+                    "x": 38.8235294117647,
+                    "y": 0.9509025864406201
+                  },
+                  {
+                    "x": 39.32773109243698,
+                    "y": 0.9514125377594332
+                  },
+                  {
+                    "x": 39.831932773109244,
+                    "y": 0.9518927970063713
+                  },
+                  {
+                    "x": 40.33613445378151,
+                    "y": 0.9523450930114219
+                  },
+                  {
+                    "x": 40.84033613445378,
+                    "y": 0.9527710539429167
+                  },
+                  {
+                    "x": 41.344537815126046,
+                    "y": 0.9531722131685872
+                  },
+                  {
+                    "x": 41.84873949579832,
+                    "y": 0.9535500147753586
+                  },
+                  {
+                    "x": 42.35294117647059,
+                    "y": 0.953905818767752
+                  },
+                  {
+                    "x": 42.857142857142854,
+                    "y": 0.9542409059636084
+                  },
+                  {
+                    "x": 43.36134453781513,
+                    "y": 0.9545564826047576
+                  },
+                  {
+                    "x": 43.865546218487395,
+                    "y": 0.9548536846992286
+                  },
+                  {
+                    "x": 44.36974789915966,
+                    "y": 0.9551335821106349
+                  },
+                  {
+                    "x": 44.87394957983193,
+                    "y": 0.9553971824094531
+                  },
+                  {
+                    "x": 45.3781512605042,
+                    "y": 0.9556454345000601
+                  },
+                  {
+                    "x": 45.88235294117647,
+                    "y": 0.955879232036584
+                  },
+                  {
+                    "x": 46.38655462184874,
+                    "y": 0.9560994166398679
+                  },
+                  {
+                    "x": 46.890756302521005,
+                    "y": 0.956306780927123
+                  },
+                  {
+                    "x": 47.39495798319328,
+                    "y": 0.9565020713651803
+                  },
+                  {
+                    "x": 47.89915966386555,
+                    "y": 0.9566859909576111
+                  },
+                  {
+                    "x": 48.403361344537814,
+                    "y": 0.9568592017753877
+                  },
+                  {
+                    "x": 48.90756302521008,
+                    "y": 0.9570223273401977
+                  },
+                  {
+                    "x": 49.41176470588235,
+                    "y": 0.9571759548689867
+                  },
+                  {
+                    "x": 49.91596638655462,
+                    "y": 0.9573206373878139
+                  },
+                  {
+                    "x": 50.42016806722689,
+                    "y": 0.9574568957226267
+                  },
+                  {
+                    "x": 50.924369747899156,
+                    "y": 0.9575852203741221
+                  },
+                  {
+                    "x": 51.42857142857143,
+                    "y": 0.957706073283443
+                  },
+                  {
+                    "x": 51.9327731092437,
+                    "y": 0.9578198894950687
+                  },
+                  {
+                    "x": 52.436974789915965,
+                    "y": 0.9579270787228795
+                  },
+                  {
+                    "x": 52.94117647058823,
+                    "y": 0.9580280268250397
+                  },
+                  {
+                    "x": 53.4453781512605,
+                    "y": 0.9581230971930036
+                  },
+                  {
+                    "x": 53.94957983193277,
+                    "y": 0.9582126320596469
+                  },
+                  {
+                    "x": 54.45378151260504,
+                    "y": 0.9582969537312309
+                  },
+                  {
+                    "x": 54.95798319327731,
+                    "y": 0.9583763657476362
+                  },
+                  {
+                    "x": 55.46218487394958,
+                    "y": 0.9584511539750408
+                  },
+                  {
+                    "x": 55.96638655462185,
+                    "y": 0.9585215876349766
+                  },
+                  {
+                    "x": 56.470588235294116,
+                    "y": 0.9585879202734697
+                  },
+                  {
+                    "x": 56.97478991596638,
+                    "y": 0.9586503906737508
+                  },
+                  {
+                    "x": 57.47899159663865,
+                    "y": 0.9587092237158236
+                  },
+                  {
+                    "x": 57.983193277310924,
+                    "y": 0.9587646311859853
+                  },
+                  {
+                    "x": 58.48739495798319,
+                    "y": 0.9588168125392104
+                  },
+                  {
+                    "x": 58.99159663865546,
+                    "y": 0.9588659556171465
+                  },
+                  {
+                    "x": 59.49579831932773,
+                    "y": 0.9589122373243039
+                  },
+                  {
+                    "x": 60.0,
+                    "y": 0.9589558242648732
+                  }
+                ]
+              },
+              {
+                "seriesId": "tubbyCT",
+                "converged": true,
+                "parameters": [
+                  {
+                    "name": "tubbyCT.baseline",
+                    "value": 0.08457344801084377,
+                    "standardError": 0.006097331982396468,
+                    "confidenceInterval": {
+                      "level": 0.95,
+                      "lower": 0.07244166995589316,
+                      "upper": 0.09670522606579438
+                    }
+                  },
+                  {
+                    "name": "tubbyCT.plateau",
+                    "value": 0.7108490071145437,
+                    "standardError": 0.010225569055055634,
+                    "confidenceInterval": {
+                      "level": 0.95,
+                      "lower": 0.6905033322161354,
+                      "upper": 0.731194682012952
+                    }
+                  },
+                  {
+                    "name": "tubbyCT.rate",
+                    "value": 0.046623976317899544,
+                    "standardError": 0.0021071605435135036,
+                    "confidenceInterval": {
+                      "level": 0.95,
+                      "lower": 0.04243138780314271,
+                      "upper": 0.050816564832656376
+                    }
+                  }
+                ],
+                "diagnostics": {
+                  "n": 84,
+                  "distinctX": 6,
+                  "residualDegreesOfFreedom": 81,
+                  "rss": 0.053690656579467554,
+                  "rmse": 0.02574582708114447,
+                  "rSquared": 0.9857118258846851,
+                  "aic": -611.8479790881487
+                },
+                "initialValues": {
+                  "baseline": 0.021383,
+                  "plateau": 0.698643,
+                  "rate": 0.03333333333333333
+                },
+                "bounds": {
+                  "baseline": {
+                    "lower": -1.333137,
+                    "upper": 1.375903
+                  },
+                  "plateau": {
+                    "lower": -0.6558769999999999,
+                    "upper": 2.730423
+                  },
+                  "rate": {
+                    "lower": 1e-12,
+                    "upper": 1.6666666666666667
+                  }
+                },
+                "fittedCurve": [
+                  {
+                    "x": 0.0,
+                    "y": 0.08457344801084377
+                  },
+                  {
+                    "x": 0.5042016806722689,
+                    "y": 0.09912416483776297
+                  },
+                  {
+                    "x": 1.0084033613445378,
+                    "y": 0.11333681424835157
+                  },
+                  {
+                    "x": 1.5126050420168067,
+                    "y": 0.12721925080945629
+                  },
+                  {
+                    "x": 2.0168067226890756,
+                    "y": 0.14077914659704371
+                  },
+                  {
+                    "x": 2.5210084033613445,
+                    "y": 0.15402399543614387
+                  },
+                  {
+                    "x": 3.0252100840336134,
+                    "y": 0.16696111704228467
+                  },
+                  {
+                    "x": 3.5294117647058822,
+                    "y": 0.1795976610667044
+                  },
+                  {
+                    "x": 4.033613445378151,
+                    "y": 0.1919406110475799
+                  },
+                  {
+                    "x": 4.53781512605042,
+                    "y": 0.20399678826945197
+                  },
+                  {
+                    "x": 5.042016806722689,
+                    "y": 0.21577285553298287
+                  },
+                  {
+                    "x": 5.546218487394958,
+                    "y": 0.2272753208371277
+                  },
+                  {
+                    "x": 6.050420168067227,
+                    "y": 0.2385105409757553
+                  },
+                  {
+                    "x": 6.554621848739496,
+                    "y": 0.2494847250507064
+                  },
+                  {
+                    "x": 7.0588235294117645,
+                    "y": 0.26020393790322993
+                  },
+                  {
+                    "x": 7.563025210084033,
+                    "y": 0.2706741034656952
+                  },
+                  {
+                    "x": 8.067226890756302,
+                    "y": 0.28090100803543
+                  },
+                  {
+                    "x": 8.571428571428571,
+                    "y": 0.2908903034724963
+                  },
+                  {
+                    "x": 9.07563025210084,
+                    "y": 0.300647510323169
+                  },
+                  {
+                    "x": 9.579831932773109,
+                    "y": 0.31017802087084534
+                  },
+                  {
+                    "x": 10.084033613445378,
+                    "y": 0.31948710211606945
+                  },
+                  {
+                    "x": 10.588235294117647,
+                    "y": 0.3285798986873205
+                  },
+                  {
+                    "x": 11.092436974789916,
+                    "y": 0.33746143568417203
+                  },
+                  {
+                    "x": 11.596638655462185,
+                    "y": 0.3461366214543943
+                  },
+                  {
+                    "x": 12.100840336134453,
+                    "y": 0.3546102503065339
+                  },
+                  {
+                    "x": 12.605042016806722,
+                    "y": 0.3628870051594704
+                  },
+                  {
+                    "x": 13.109243697478991,
+                    "y": 0.3709714601304137
+                  },
+                  {
+                    "x": 13.61344537815126,
+                    "y": 0.37886808306277237
+                  },
+                  {
+                    "x": 14.117647058823529,
+                    "y": 0.38658123799529054
+                  },
+                  {
+                    "x": 14.621848739495798,
+                    "y": 0.3941151875738175
+                  },
+                  {
+                    "x": 15.126050420168067,
+                    "y": 0.4014740954070426
+                  },
+                  {
+                    "x": 15.630252100840336,
+                    "y": 0.4086620283674978
+                  },
+                  {
+                    "x": 16.134453781512605,
+                    "y": 0.41568295883909945
+                  },
+                  {
+                    "x": 16.63865546218487,
+                    "y": 0.4225407669124711
+                  },
+                  {
+                    "x": 17.142857142857142,
+                    "y": 0.4292392425292613
+                  },
+                  {
+                    "x": 17.647058823529413,
+                    "y": 0.4357820875766399
+                  },
+                  {
+                    "x": 18.15126050420168,
+                    "y": 0.44217291793313196
+                  },
+                  {
+                    "x": 18.655462184873947,
+                    "y": 0.4484152654669202
+                  },
+                  {
+                    "x": 19.159663865546218,
+                    "y": 0.4545125799877175
+                  },
+                  {
+                    "x": 19.66386554621849,
+                    "y": 0.4604682311532918
+                  },
+                  {
+                    "x": 20.168067226890756,
+                    "y": 0.46628551033169446
+                  },
+                  {
+                    "x": 20.672268907563023,
+                    "y": 0.47196763242022255
+                  },
+                  {
+                    "x": 21.176470588235293,
+                    "y": 0.4775177376221193
+                  },
+                  {
+                    "x": 21.680672268907564,
+                    "y": 0.4829388931819959
+                  },
+                  {
+                    "x": 22.18487394957983,
+                    "y": 0.48823409508093235
+                  },
+                  {
+                    "x": 22.6890756302521,
+                    "y": 0.49340626969219525
+                  },
+                  {
+                    "x": 23.19327731092437,
+                    "y": 0.49845827539848664
+                  },
+                  {
+                    "x": 23.69747899159664,
+                    "y": 0.5033929041716187
+                  },
+                  {
+                    "x": 24.201680672268907,
+                    "y": 0.5082128831154862
+                  },
+                  {
+                    "x": 24.705882352941174,
+                    "y": 0.5129208759731902
+                  },
+                  {
+                    "x": 25.210084033613445,
+                    "y": 0.5175194845991454
+                  },
+                  {
+                    "x": 25.714285714285715,
+                    "y": 0.5220112503969853
+                  },
+                  {
+                    "x": 26.218487394957982,
+                    "y": 0.5263986557240594
+                  },
+                  {
+                    "x": 26.72268907563025,
+                    "y": 0.5306841252632981
+                  },
+                  {
+                    "x": 27.22689075630252,
+                    "y": 0.5348700273632055
+                  },
+                  {
+                    "x": 27.73109243697479,
+                    "y": 0.538958675346717
+                  },
+                  {
+                    "x": 28.235294117647058,
+                    "y": 0.5429523287896494
+                  },
+                  {
+                    "x": 28.739495798319325,
+                    "y": 0.5468531947694462
+                  },
+                  {
+                    "x": 29.243697478991596,
+                    "y": 0.5506634290849115
+                  },
+                  {
+                    "x": 29.747899159663866,
+                    "y": 0.554385137447603
+                  },
+                  {
+                    "x": 30.252100840336134,
+                    "y": 0.5580203766455463
+                  },
+                  {
+                    "x": 30.7563025210084,
+                    "y": 0.5615711556799107
+                  },
+                  {
+                    "x": 31.26050420168067,
+                    "y": 0.565039436875276
+                  },
+                  {
+                    "x": 31.764705882352942,
+                    "y": 0.5684271369641039
+                  },
+                  {
+                    "x": 32.26890756302521,
+                    "y": 0.5717361281460129
+                  },
+                  {
+                    "x": 32.773109243697476,
+                    "y": 0.5749682391224424
+                  },
+                  {
+                    "x": 33.27731092436974,
+                    "y": 0.5781252561072774
+                  },
+                  {
+                    "x": 33.78151260504202,
+                    "y": 0.5812089238139928
+                  },
+                  {
+                    "x": 34.285714285714285,
+                    "y": 0.5842209464198633
+                  },
+                  {
+                    "x": 34.78991596638655,
+                    "y": 0.5871629885077698
+                  },
+                  {
+                    "x": 35.294117647058826,
+                    "y": 0.5900366759861251
+                  },
+                  {
+                    "x": 35.79831932773109,
+                    "y": 0.592843596987426
+                  },
+                  {
+                    "x": 36.30252100840336,
+                    "y": 0.5955853027459287
+                  },
+                  {
+                    "x": 36.80672268907563,
+                    "y": 0.5982633084549328
+                  },
+                  {
+                    "x": 37.310924369747895,
+                    "y": 0.6008790941041466
+                  },
+                  {
+                    "x": 37.81512605042017,
+                    "y": 0.6034341052975984
+                  },
+                  {
+                    "x": 38.319327731092436,
+                    "y": 0.6059297540525436
+                  },
+                  {
+                    "x": 38.8235294117647,
+                    "y": 0.6083674195798107
+                  },
+                  {
+                    "x": 39.32773109243698,
+                    "y": 0.6107484490460174
+                  },
+                  {
+                    "x": 39.831932773109244,
+                    "y": 0.613074158318077
+                  },
+                  {
+                    "x": 40.33613445378151,
+                    "y": 0.6153458326904064
+                  },
+                  {
+                    "x": 40.84033613445378,
+                    "y": 0.6175647275952408
+                  },
+                  {
+                    "x": 41.344537815126046,
+                    "y": 0.6197320692964421
+                  },
+                  {
+                    "x": 41.84873949579832,
+                    "y": 0.6218490555671895
+                  },
+                  {
+                    "x": 42.35294117647059,
+                    "y": 0.6239168563519246
+                  },
+                  {
+                    "x": 42.857142857142854,
+                    "y": 0.6259366144129166
+                  },
+                  {
+                    "x": 43.36134453781513,
+                    "y": 0.627909445961805
+                  },
+                  {
+                    "x": 43.865546218487395,
+                    "y": 0.6298364412764708
+                  },
+                  {
+                    "x": 44.36974789915966,
+                    "y": 0.631718665303573
+                  },
+                  {
+                    "x": 44.87394957983193,
+                    "y": 0.6335571582470891
+                  },
+                  {
+                    "x": 45.3781512605042,
+                    "y": 0.6353529361431784
+                  },
+                  {
+                    "x": 45.88235294117647,
+                    "y": 0.6371069914216911
+                  },
+                  {
+                    "x": 46.38655462184874,
+                    "y": 0.638820293454631
+                  },
+                  {
+                    "x": 46.890756302521005,
+                    "y": 0.640493789091875
+                  },
+                  {
+                    "x": 47.39495798319328,
+                    "y": 0.6421284031844466
+                  },
+                  {
+                    "x": 47.89915966386555,
+                    "y": 0.6437250390956305
+                  },
+                  {
+                    "x": 48.403361344537814,
+                    "y": 0.6452845792002134
+                  },
+                  {
+                    "x": 48.90756302521008,
+                    "y": 0.6468078853721256
+                  },
+                  {
+                    "x": 49.41176470588235,
+                    "y": 0.6482957994607511
+                  },
+                  {
+                    "x": 49.91596638655462,
+                    "y": 0.6497491437561734
+                  },
+                  {
+                    "x": 50.42016806722689,
+                    "y": 0.651168721443611
+                  },
+                  {
+                    "x": 50.924369747899156,
+                    "y": 0.6525553170472941
+                  },
+                  {
+                    "x": 51.42857142857143,
+                    "y": 0.6539096968640296
+                  },
+                  {
+                    "x": 51.9327731092437,
+                    "y": 0.6552326093866914
+                  },
+                  {
+                    "x": 52.436974789915965,
+                    "y": 0.6565247857178729
+                  },
+                  {
+                    "x": 52.94117647058823,
+                    "y": 0.6577869399739277
+                  },
+                  {
+                    "x": 53.4453781512605,
+                    "y": 0.6590197696796232
+                  },
+                  {
+                    "x": 53.94957983193277,
+                    "y": 0.6602239561536252
+                  },
+                  {
+                    "x": 54.45378151260504,
+                    "y": 0.6614001648850258
+                  },
+                  {
+                    "x": 54.95798319327731,
+                    "y": 0.6625490459011244
+                  },
+                  {
+                    "x": 55.46218487394958,
+                    "y": 0.6636712341266613
+                  },
+                  {
+                    "x": 55.96638655462185,
+                    "y": 0.6647673497347073
+                  },
+                  {
+                    "x": 56.470588235294116,
+                    "y": 0.6658379984894004
+                  },
+                  {
+                    "x": 56.97478991596638,
+                    "y": 0.6668837720807183
+                  },
+                  {
+                    "x": 57.47899159663865,
+                    "y": 0.6679052484514738
+                  },
+                  {
+                    "x": 57.983193277310924,
+                    "y": 0.6689029921167131
+                  },
+                  {
+                    "x": 58.48739495798319,
+                    "y": 0.6698775544756923
+                  },
+                  {
+                    "x": 58.99159663865546,
+                    "y": 0.6708294741166066
+                  },
+                  {
+                    "x": 59.49579831932773,
+                    "y": 0.6717592771142391
+                  },
+                  {
+                    "x": 60.0,
+                    "y": 0.6726674773206933
+                  }
+                ]
+              },
+              {
+                "seriesId": "E-Syt3",
+                "converged": true,
+                "parameters": [
+                  {
+                    "name": "E-Syt3.baseline",
+                    "value": 0.08126398226959974,
+                    "standardError": 0.00646595181742864,
+                    "confidenceInterval": {
+                      "level": 0.95,
+                      "lower": 0.06828304234128582,
+                      "upper": 0.09424492219791367
+                    }
+                  },
+                  {
+                    "name": "E-Syt3.plateau",
+                    "value": 0.5489395689622489,
+                    "standardError": 0.018003676530369096,
+                    "confidenceInterval": {
+                      "level": 0.95,
+                      "lower": 0.5127956801538638,
+                      "upper": 0.5850834577706341
+                    }
+                  },
+                  {
+                    "name": "E-Syt3.rate",
+                    "value": 0.034232916445394494,
+                    "standardError": 0.0030560983014285593,
+                    "confidenceInterval": {
+                      "level": 0.95,
+                      "lower": 0.028097543094956726,
+                      "upper": 0.04036828979583226
+                    }
+                  }
+                ],
+                "diagnostics": {
+                  "n": 54,
+                  "distinctX": 6,
+                  "residualDegreesOfFreedom": 51,
+                  "rss": 0.026036163288068452,
+                  "rmse": 0.022594534862404248,
+                  "rSquared": 0.9776283305193543,
+                  "aic": -406.4116543443877
+                },
+                "initialValues": {
+                  "baseline": 0.057604,
+                  "plateau": 0.507058,
+                  "rate": 0.03333333333333333
+                },
+                "bounds": {
+                  "baseline": {
+                    "lower": -0.841304,
+                    "upper": 0.956512
+                  },
+                  "plateau": {
+                    "lower": -0.39185000000000003,
+                    "upper": 1.85542
+                  },
+                  "rate": {
+                    "lower": 1e-12,
+                    "upper": 1.6666666666666667
+                  }
+                },
+                "fittedCurve": [
+                  {
+                    "x": 0.0,
+                    "y": 0.08126398226959974
+                  },
+                  {
+                    "x": 0.5042016806722689,
+                    "y": 0.08926693505225523
+                  },
+                  {
+                    "x": 1.0084033613445378,
+                    "y": 0.09713293979857139
+                  },
+                  {
+                    "x": 1.5126050420168067,
+                    "y": 0.10486433998915673
+                  },
+                  {
+                    "x": 2.0168067226890756,
+                    "y": 0.11246343900253794
+                  },
+                  {
+                    "x": 2.5210084033613445,
+                    "y": 0.11993250080139425
+                  },
+                  {
+                    "x": 3.0252100840336134,
+                    "y": 0.12727375060704876
+                  },
+                  {
+                    "x": 3.5294117647058822,
+                    "y": 0.13448937556241808
+                  },
+                  {
+                    "x": 4.033613445378151,
+                    "y": 0.14158152538361685
+                  },
+                  {
+                    "x": 4.53781512605042,
+                    "y": 0.14855231300041238
+                  },
+                  {
+                    "x": 5.042016806722689,
+                    "y": 0.15540381518571972
+                  },
+                  {
+                    "x": 5.546218487394958,
+                    "y": 0.16213807317432427
+                  },
+                  {
+                    "x": 6.050420168067227,
+                    "y": 0.16875709327101718
+                  },
+                  {
+                    "x": 6.554621848739496,
+                    "y": 0.17526284744832374
+                  },
+                  {
+                    "x": 7.0588235294117645,
+                    "y": 0.18165727393400383
+                  },
+                  {
+                    "x": 7.563025210084033,
+                    "y": 0.1879422777884986
+                  },
+                  {
+                    "x": 8.067226890756302,
+                    "y": 0.19411973147249578
+                  },
+                  {
+                    "x": 8.571428571428571,
+                    "y": 0.2001914754047831
+                  },
+                  {
+                    "x": 9.07563025210084,
+                    "y": 0.2061593185105549
+                  },
+                  {
+                    "x": 9.579831932773109,
+                    "y": 0.21202503876033688
+                  },
+                  {
+                    "x": 10.084033613445378,
+                    "y": 0.21779038369968784
+                  },
+                  {
+                    "x": 10.588235294117647,
+                    "y": 0.22345707096983775
+                  },
+                  {
+                    "x": 11.092436974789916,
+                    "y": 0.229026788819416
+                  },
+                  {
+                    "x": 11.596638655462185,
+                    "y": 0.23450119660742333
+                  },
+                  {
+                    "x": 12.100840336134453,
+                    "y": 0.23988192529759655
+                  },
+                  {
+                    "x": 12.605042016806722,
+                    "y": 0.24517057794431352
+                  },
+                  {
+                    "x": 13.109243697478991,
+                    "y": 0.25036873017018346
+                  },
+                  {
+                    "x": 13.61344537815126,
+                    "y": 0.2554779306354647
+                  },
+                  {
+                    "x": 14.117647058823529,
+                    "y": 0.2604997014994491
+                  },
+                  {
+                    "x": 14.621848739495798,
+                    "y": 0.26543553887395216
+                  },
+                  {
+                    "x": 15.126050420168067,
+                    "y": 0.27028691326904164
+                  },
+                  {
+                    "x": 15.630252100840336,
+                    "y": 0.2750552700311402
+                  },
+                  {
+                    "x": 16.134453781512605,
+                    "y": 0.27974202977362994
+                  },
+                  {
+                    "x": 16.63865546218487,
+                    "y": 0.28434858880008895
+                  },
+                  {
+                    "x": 17.142857142857142,
+                    "y": 0.28887631952028564
+                  },
+                  {
+                    "x": 17.647058823529413,
+                    "y": 0.29332657085905345
+                  },
+                  {
+                    "x": 18.15126050420168,
+                    "y": 0.2977006686581701
+                  },
+                  {
+                    "x": 18.655462184873947,
+                    "y": 0.3019999160713587
+                  },
+                  {
+                    "x": 19.159663865546218,
+                    "y": 0.3062255939525304
+                  },
+                  {
+                    "x": 19.66386554621849,
+                    "y": 0.31037896123738284
+                  },
+                  {
+                    "x": 20.168067226890756,
+                    "y": 0.3144612553184685
+                  },
+                  {
+                    "x": 20.672268907563023,
+                    "y": 0.3184736924138457
+                  },
+                  {
+                    "x": 21.176470588235293,
+                    "y": 0.3224174679294197
+                  },
+                  {
+                    "x": 21.680672268907564,
+                    "y": 0.3262937568150849
+                  },
+                  {
+                    "x": 22.18487394957983,
+                    "y": 0.33010371391477145
+                  },
+                  {
+                    "x": 22.6890756302521,
+                    "y": 0.3338484743105027
+                  },
+                  {
+                    "x": 23.19327731092437,
+                    "y": 0.33752915366056435
+                  },
+                  {
+                    "x": 23.69747899159664,
+                    "y": 0.3411468485318874
+                  },
+                  {
+                    "x": 24.201680672268907,
+                    "y": 0.3447026367267426
+                  },
+                  {
+                    "x": 24.705882352941174,
+                    "y": 0.34819757760384534
+                  },
+                  {
+                    "x": 25.210084033613445,
+                    "y": 0.3516327123939651
+                  },
+                  {
+                    "x": 25.714285714285715,
+                    "y": 0.35500906451013375
+                  },
+                  {
+                    "x": 26.218487394957982,
+                    "y": 0.3583276398525469
+                  },
+                  {
+                    "x": 26.72268907563025,
+                    "y": 0.3615894271082463
+                  },
+                  {
+                    "x": 27.22689075630252,
+                    "y": 0.3647953980456747
+                  },
+                  {
+                    "x": 27.73109243697479,
+                    "y": 0.36794650780418997
+                  },
+                  {
+                    "x": 28.235294117647058,
+                    "y": 0.37104369517862557
+                  },
+                  {
+                    "x": 28.739495798319325,
+                    "y": 0.3740878828989806
+                  },
+                  {
+                    "x": 29.243697478991596,
+                    "y": 0.37707997790532455
+                  },
+                  {
+                    "x": 29.747899159663866,
+                    "y": 0.38002087161799747
+                  },
+                  {
+                    "x": 30.252100840336134,
+                    "y": 0.3829114402031867
+                  },
+                  {
+                    "x": 30.7563025210084,
+                    "y": 0.38575254483395854
+                  },
+                  {
+                    "x": 31.26050420168067,
+                    "y": 0.38854503194682344
+                  },
+                  {
+                    "x": 31.764705882352942,
+                    "y": 0.3912897334939109
+                  },
+                  {
+                    "x": 32.26890756302521,
+                    "y": 0.3939874671908286
+                  },
+                  {
+                    "x": 32.773109243697476,
+                    "y": 0.3966390367602808
+                  },
+                  {
+                    "x": 33.27731092436974,
+                    "y": 0.3992452321715171
+                  },
+                  {
+                    "x": 33.78151260504202,
+                    "y": 0.4018068298756848
+                  },
+                  {
+                    "x": 34.285714285714285,
+                    "y": 0.40432459303715246
+                  },
+                  {
+                    "x": 34.78991596638655,
+                    "y": 0.40679927176087644
+                  },
+                  {
+                    "x": 35.294117647058826,
+                    "y": 0.40923160331587544
+                  },
+                  {
+                    "x": 35.79831932773109,
+                    "y": 0.41162231235488195
+                  },
+                  {
+                    "x": 36.30252100840336,
+                    "y": 0.4139721111302342
+                  },
+                  {
+                    "x": 36.80672268907563,
+                    "y": 0.4162816997060743
+                  },
+                  {
+                    "x": 37.310924369747895,
+                    "y": 0.4185517661669147
+                  },
+                  {
+                    "x": 37.81512605042017,
+                    "y": 0.4207829868226361
+                  },
+                  {
+                    "x": 38.319327731092436,
+                    "y": 0.42297602640997695
+                  },
+                  {
+                    "x": 38.8235294117647,
+                    "y": 0.42513153829057543
+                  },
+                  {
+                    "x": 39.32773109243698,
+                    "y": 0.4272501646456221
+                  },
+                  {
+                    "x": 39.831932773109244,
+                    "y": 0.4293325366671821
+                  },
+                  {
+                    "x": 40.33613445378151,
+                    "y": 0.43137927474624294
+                  },
+                  {
+                    "x": 40.84033613445378,
+                    "y": 0.43339098865754466
+                  },
+                  {
+                    "x": 41.344537815126046,
+                    "y": 0.43536827774124687
+                  },
+                  {
+                    "x": 41.84873949579832,
+                    "y": 0.43731173108148774
+                  },
+                  {
+                    "x": 42.35294117647059,
+                    "y": 0.43922192768188617
+                  },
+                  {
+                    "x": 42.857142857142854,
+                    "y": 0.4410994366380424
+                  },
+                  {
+                    "x": 43.36134453781513,
+                    "y": 0.4429448173070854
+                  },
+                  {
+                    "x": 43.865546218487395,
+                    "y": 0.44475861947431944
+                  },
+                  {
+                    "x": 44.36974789915966,
+                    "y": 0.44654138351701905
+                  },
+                  {
+                    "x": 44.87394957983193,
+                    "y": 0.44829364056542115
+                  },
+                  {
+                    "x": 45.3781512605042,
+                    "y": 0.45001591266096175
+                  },
+                  {
+                    "x": 45.88235294117647,
+                    "y": 0.4517087129118056
+                  },
+                  {
+                    "x": 46.38655462184874,
+                    "y": 0.4533725456457136
+                  },
+                  {
+                    "x": 46.890756302521005,
+                    "y": 0.4550079065602952
+                  },
+                  {
+                    "x": 47.39495798319328,
+                    "y": 0.45661528287068875
+                  },
+                  {
+                    "x": 47.89915966386555,
+                    "y": 0.45819515345471545
+                  },
+                  {
+                    "x": 48.403361344537814,
+                    "y": 0.4597479889955488
+                  },
+                  {
+                    "x": 48.90756302521008,
+                    "y": 0.4612742521219434
+                  },
+                  {
+                    "x": 49.41176470588235,
+                    "y": 0.46277439754606314
+                  },
+                  {
+                    "x": 49.91596638655462,
+                    "y": 0.4642488721989519
+                  },
+                  {
+                    "x": 50.42016806722689,
+                    "y": 0.465698115363685
+                  },
+                  {
+                    "x": 50.924369747899156,
+                    "y": 0.46712255880624315
+                  },
+                  {
+                    "x": 51.42857142857143,
+                    "y": 0.4685226269041464
+                  },
+                  {
+                    "x": 51.9327731092437,
+                    "y": 0.4698987367728864
+                  },
+                  {
+                    "x": 52.436974789915965,
+                    "y": 0.47125129839019614
+                  },
+                  {
+                    "x": 52.94117647058823,
+                    "y": 0.47258071471819213
+                  },
+                  {
+                    "x": 53.4453781512605,
+                    "y": 0.4738873818234273
+                  },
+                  {
+                    "x": 53.94957983193277,
+                    "y": 0.4751716889948892
+                  },
+                  {
+                    "x": 54.45378151260504,
+                    "y": 0.4764340188599787
+                  },
+                  {
+                    "x": 54.95798319327731,
+                    "y": 0.47767474749850447
+                  },
+                  {
+                    "x": 55.46218487394958,
+                    "y": 0.4788942445547268
+                  },
+                  {
+                    "x": 55.96638655462185,
+                    "y": 0.48009287334748346
+                  },
+                  {
+                    "x": 56.470588235294116,
+                    "y": 0.481270990978432
+                  },
+                  {
+                    "x": 56.97478991596638,
+                    "y": 0.4824289484384391
+                  },
+                  {
+                    "x": 57.47899159663865,
+                    "y": 0.48356709071214937
+                  },
+                  {
+                    "x": 57.983193277310924,
+                    "y": 0.48468575688076543
+                  },
+                  {
+                    "x": 58.48739495798319,
+                    "y": 0.4857852802230682
+                  },
+                  {
+                    "x": 58.99159663865546,
+                    "y": 0.48686598831470956
+                  },
+                  {
+                    "x": 59.49579831932773,
+                    "y": 0.48792820312580487
+                  },
+                  {
+                    "x": 60.0,
+                    "y": 0.4889722411168563
+                  }
+                ]
+              }
+            ]
+          },
+          "completedAt": "2026-08-25T06:44:01.488160+00:00"
+        }
+      }
+    ]
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "line",
+    "analysisResultAuthority": true,
+    "displaySet": "all synthetic rows",
+    "analysisSet": "biological-unit summaries or explicit survival units",
+    "comparisonSet": "none on panel I",
+    "annotationSet": "none"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:00.139081+00:00",
+    "generator": "scripts/generate_context_rich_graph_pilot.py",
+    "originalCaseId": "LSA086",
+    "originalBenchmark": "LSA495_v2_1_repaired_1",
+    "poolDOpened": false
+  }
+}

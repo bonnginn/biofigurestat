@@ -1,0 +1,7 @@
+Case: LSA064_context_rich_v2
+Source: https://europepmc.org/articles/PMC9761050 (Fig. 1B)
+Scientific question: Does a second VSV dose improve survival of CT26LacZ-bearing mice?
+Statistical unit: mouse
+Source analysis: log-rank test
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

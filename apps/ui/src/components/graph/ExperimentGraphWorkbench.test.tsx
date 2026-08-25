@@ -125,7 +125,8 @@ function withTwoConditions(base: ExperimentSetDraft): ExperimentSetDraft {
 }
 
 function acceptRecommendedMethod(): void {
-  fireEvent.click(screen.getByRole("button", { name: "推奨法を使う" }));
+  expect(screen.queryByRole("button", { name: "推奨法を使う" })).toBeNull();
+  expect(screen.getByText(/推奨法を選択中/)).toBeVisible();
 }
 
 function proportionFixture(): { draft: ExperimentSetDraft; cells: ExperimentCellMap } {
@@ -1146,12 +1147,16 @@ describe("ExperimentGraphWorkbench", () => {
       target: { value: "bar" },
     });
     selectInspectorTarget("data");
-    fireEvent.change(screen.getByRole("combobox", { name: "X factor" }), {
+    fireEvent.change(screen.getByRole("combobox", { name: "X軸に使う要因" }), {
       target: { value: "factor:attribute.genotype" },
     });
-    fireEvent.change(screen.getByRole("combobox", { name: "系列 factor" }), {
+    fireEvent.change(screen.getByRole("combobox", { name: "系列に使う要因" }), {
       target: { value: "factor:attribute.treatment" },
     });
+    fireEvent.click(screen.getByRole("button", { name: "系列の色・線・点を編集" }));
+    expect(screen.getByRole("combobox", { name: "編集対象" })).toHaveValue("series-style");
+    expect(screen.getByRole("heading", { name: "系列の色・線・点" })).toBeVisible();
+    selectInspectorTarget("data");
     selectInspectorTarget("x-axis");
     fireEvent.change(screen.getByRole("slider", { name: "棒の幅" }), {
       target: { value: "1" },
@@ -1370,18 +1375,12 @@ describe("ExperimentGraphWorkbench", () => {
     );
 
     const box = svg.querySelector(".experiment-graph-distribution-box");
-    const boxHitTarget = svg.querySelector(".experiment-graph-box-hit-target");
-    expect(boxHitTarget).toHaveAttribute("fill", "none");
-    expect(boxHitTarget).toHaveAttribute("stroke", "none");
     fireEvent.click(box!);
     expect(screen.getByRole("combobox", { name: "編集対象" })).toHaveValue("box");
 
     selectInspectorTarget("violin");
     fireEvent.click(screen.getByRole("checkbox", { name: "バイオリンを表示" }));
     const violin = svg.querySelector('[data-graph-layer="violin"]');
-    const violinHitTarget = svg.querySelector(".experiment-graph-violin-hit-target");
-    expect(violinHitTarget).toHaveAttribute("fill", "none");
-    expect(violinHitTarget).toHaveAttribute("stroke", "none");
     fireEvent.click(violin!);
     expect(screen.getByRole("combobox", { name: "編集対象" })).toHaveValue("violin");
     expect(violin).toHaveAttribute("data-selected", "true");

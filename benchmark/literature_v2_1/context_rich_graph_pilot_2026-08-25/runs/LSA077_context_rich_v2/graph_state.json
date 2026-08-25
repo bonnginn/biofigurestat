@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "dot_summary",
+  "analysisResultAuthority": false,
+  "displaySet": "all synthetic rows",
+  "analysisSet": "biological-unit summaries or explicit survival units",
+  "comparisonSet": "constructs and mutants versus canonical/negative references",
+  "annotationSet": "Only source-supported comparisons"
+}

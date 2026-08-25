@@ -1,0 +1,7 @@
+Case: LSA257_context_rich_v2
+Source: https://europepmc.org/articles/PMC12704899 (Fig. 2B)
+Scientific question: How does refeeding after starvation change the proportion of Vasa2+/Piwi1+ cells?
+Statistical unit: pooled biological replicate (15 animals)
+Source analysis: one-way ANOVA + Tukey HSD
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

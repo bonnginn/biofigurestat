@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "events": [
+    {
+      "event": "synthetic_reconstruction",
+      "at": "2026-08-25T06:02:33.751393+00:00"
+    },
+    {
+      "event": "scientific_audit",
+      "at": "2026-08-25T06:02:33.751393+00:00",
+      "status": "recorded"
+    },
+    {
+      "event": "final_graph_capture",
+      "at": "2026-08-25T06:02:33.751393+00:00"
+    }
+  ],
+  "humanRatingEntered": false
+}

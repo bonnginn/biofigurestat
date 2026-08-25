@@ -1,0 +1,98 @@
+{
+  "caseId": "LSA274_context_rich_v2",
+  "classification": "CONTEXT_RICH_READY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA274_context_rich_v2",
+    "originalCaseId": "LSA274",
+    "scientificQuestion": "Does C. aerofaciens increase blood ethanol under a choline-deficient high-fat diet?",
+    "conditions": [
+      "CDHF",
+      "CDHF + C. aerofaciens"
+    ],
+    "statisticalUnit": "mouse",
+    "sourceMethod": "Wilcoxon rank-sum test",
+    "source": {
+      "pmcid": "PMC10837629",
+      "url": "https://europepmc.org/articles/PMC10837629",
+      "targetPanel": "Fig. 9B",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA274.o1",
+      "series": "CDHF",
+      "experimentalUnitId": "unit.CDHF.1",
+      "pairId": null,
+      "x": null,
+      "value": 50.7104,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA274.o2",
+      "series": "CDHF",
+      "experimentalUnitId": "unit.CDHF.2",
+      "pairId": null,
+      "x": null,
+      "value": 41.5434,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA274.o3",
+      "series": "CDHF",
+      "experimentalUnitId": "unit.CDHF.3",
+      "pairId": null,
+      "x": null,
+      "value": 43.9596,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA274.o4",
+      "series": "CDHF",
+      "experimentalUnitId": "unit.CDHF.4",
+      "pairId": null,
+      "x": null,
+      "value": 57.3911,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA274.o5",
+      "series": "CDHF + C. aerofaciens",
+      "experimentalUnitId": "unit.CDHF + C. aerofaciens.1",
+      "pairId": null,
+      "x": null,
+      "value": 55.7443,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA274.o6",
+      "series": "CDHF + C. aerofaciens",
+      "experimentalUnitId": "unit.CDHF + C. aerofaciens.2",
+      "pairId": null,
+      "x": null,
+      "value": 63.732,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA274.o7",
+      "series": "CDHF + C. aerofaciens",
+      "experimentalUnitId": "unit.CDHF + C. aerofaciens.3",
+      "pairId": null,
+      "x": null,
+      "value": 55.2089,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA274.o8",
+      "series": "CDHF + C. aerofaciens",
+      "experimentalUnitId": "unit.CDHF + C. aerofaciens.4",
+      "pairId": null,
+      "x": null,
+      "value": 60.1057,
+      "synthetic": true
+    }
+  ]
+}

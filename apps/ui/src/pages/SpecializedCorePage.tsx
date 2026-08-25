@@ -38,6 +38,8 @@ import {
 import { generateMethodsText } from "../app/methodsText";
 import { PRODUCT_IDENTITY } from "../app/productIdentity";
 import type { SaveProjectAction } from "../app/projectActions";
+import type { AppRoute } from "../app/routes";
+import { AnalysisRouteSwitcher } from "../components/AnalysisRouteSwitcher";
 import { HeatmapGraph } from "../components/graph/HeatmapGraph";
 import { SurvivalGraph } from "../components/graph/SurvivalGraph";
 
@@ -46,6 +48,7 @@ type Props = Readonly<{
   onBack: () => void;
   saveProject?: SaveProjectAction;
   analysisRunner?: AnalysisRunner;
+  onNavigate?: (route: AppRoute) => void;
 }>;
 const now = () => new Date().toISOString();
 const day = () => new Date().toISOString().slice(0, 10);
@@ -64,6 +67,7 @@ export function SpecializedCorePage({
   onBack,
   saveProject,
   analysisRunner = defaultAnalysisRunner,
+  onNavigate,
 }: Props) {
   const [text, setText] = useState(
     mode === "survival"
@@ -681,6 +685,7 @@ export function SpecializedCorePage({
       <button type="button" onClick={onBack}>
         ← 戻る
       </button>
+      <AnalysisRouteSwitcher current={mode} onNavigate={onNavigate} />
       <section className="workspace-panel">
         <p className="overline">Specialized Core</p>
         <h1>{mode === "survival" ? "Survival / time-to-event" : "Heatmap / matrix"}</h1>

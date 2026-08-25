@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "scatter",
+  "analysisResultAuthority": true,
+  "displaySet": "all synthetic rows",
+  "analysisSet": "biological-unit summaries or explicit survival units",
+  "comparisonSet": "descriptive Pearson per time",
+  "annotationSet": "Only source-supported comparisons"
+}

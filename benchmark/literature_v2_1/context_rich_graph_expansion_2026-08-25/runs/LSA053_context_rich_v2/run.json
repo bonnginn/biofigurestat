@@ -1,0 +1,7 @@
+{
+  "caseId": "LSA053_context_rich_v2",
+  "outcome": "READY_WITH_BOUNDED_SOURCE_UNCERTAINTY",
+  "artifactCompleteness": "complete",
+  "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+  "finalGraphSha256": "9e6d75f3b939145712449d05f2f82e692da881a32d8fdb66ab9c08b914d27364"
+}

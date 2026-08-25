@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.1.0",
+  "caseId": "PFR054",
+  "graphType": "box",
+  "dataSets": {
+    "displaySet": {
+      "conditionIds": [
+        "AX2",
+        "gflB KO"
+      ]
+    },
+    "analysisSet": {
+      "unit": "unresolved; crown events are display units only",
+      "status": "unsupported"
+    },
+    "comparisonSet": [],
+    "annotationSet": []
+  },
+  "appearance": {
+    "barOutline": true,
+    "barMeanMarker": false,
+    "boxWhiskerMode": "tukey_1_5_iqr",
+    "uncertaintyStyle": "error_bars",
+    "summary": "case_defined",
+    "errorBarSeries": [],
+    "seriesStyles": {}
+  },
+  "axes": {
+    "xSemantic": "categorical",
+    "xTitle": "Genotype",
+    "yTitle": "Crown lifetime (s)",
+    "gridLines": false,
+    "yMax": null,
+    "tickLabels": "default"
+  },
+  "analysis": {
+    "status": "unsupported",
+    "authoritativeSavedResult": false,
+    "resultCount": 0,
+    "modelId": null
+  }
+}

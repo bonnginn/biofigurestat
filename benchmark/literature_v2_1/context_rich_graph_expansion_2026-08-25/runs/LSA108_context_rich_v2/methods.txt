@@ -1,0 +1,7 @@
+Case: LSA108_context_rich_v2
+Source: https://europepmc.org/articles/PMC8685726 (Fig. 3B)
+Scientific question: Does dissolving Sla1-GFP puncta with 1,6-hexanediol inhibit endocytosis?
+Statistical unit: cell; independent biological-repeat identity not stated
+Source analysis: descriptive Graph only
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

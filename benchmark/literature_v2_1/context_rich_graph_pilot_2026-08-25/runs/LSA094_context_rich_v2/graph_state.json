@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "dot_summary",
+  "analysisResultAuthority": true,
+  "displaySet": "all synthetic rows",
+  "analysisSet": "biological-unit summaries or explicit survival units",
+  "comparisonSet": "Resting versus thrombin",
+  "annotationSet": "Only source-supported comparisons"
+}

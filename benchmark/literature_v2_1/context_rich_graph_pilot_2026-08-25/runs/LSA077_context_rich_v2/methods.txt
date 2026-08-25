@@ -1,0 +1,6 @@
+Case: LSA077_context_rich_v2
+Source: https://europepmc.org/articles/PMC10883267 (Fig. 2B)
+All observations are deterministic synthetic reconstruction, not published raw data.
+Statistical unit: independent pulldown experiment
+Primary contrast: constructs and mutants versus canonical/negative references
+Analysis status: not_executed

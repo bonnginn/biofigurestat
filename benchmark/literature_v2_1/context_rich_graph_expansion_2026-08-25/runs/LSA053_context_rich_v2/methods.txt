@@ -1,0 +1,7 @@
+Case: LSA053_context_rich_v2
+Source: https://europepmc.org/articles/PMC10688063 (Fig. 2A)
+Scientific question: Does cisplatin dose change the number of newly arising indels across generations?
+Statistical unit: generation within an accumulation lineage
+Source analysis: Kruskal–Wallis + Conover–Iman
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

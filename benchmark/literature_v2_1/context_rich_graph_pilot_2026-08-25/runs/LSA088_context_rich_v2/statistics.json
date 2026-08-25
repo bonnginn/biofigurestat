@@ -1,0 +1,2385 @@
+{
+  "status": "ok_descriptive_pixel_level",
+  "results": [
+    {
+      "label": "12 h",
+      "request": {
+        "protocolVersion": "0.5.0",
+        "requestId": "request.LSA088.12 h",
+        "projectId": "project.LSA088.v2",
+        "analysisId": "analysis.LSA088.12 h",
+        "templateId": "D09",
+        "templateVersion": "0.1.0",
+        "method": "pearson",
+        "variableConditionIds": [
+          "x",
+          "y"
+        ],
+        "observations": [
+          {
+            "observationId": "LSA088_context_rich_v2.o00001x",
+            "conditionId": "x",
+            "value": -0.6746892905941453,
+            "experimentalUnitId": "representative_pixel.1",
+            "pairId": "representative_pixel.1"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00001y",
+            "conditionId": "y",
+            "value": 0.393541,
+            "experimentalUnitId": "representative_pixel.1",
+            "pairId": "representative_pixel.1"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00002x",
+            "conditionId": "x",
+            "value": 0.42699175400764505,
+            "experimentalUnitId": "representative_pixel.2",
+            "pairId": "representative_pixel.2"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00002y",
+            "conditionId": "y",
+            "value": 0.495593,
+            "experimentalUnitId": "representative_pixel.2",
+            "pairId": "representative_pixel.2"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00003x",
+            "conditionId": "x",
+            "value": -0.0877621890485575,
+            "experimentalUnitId": "representative_pixel.3",
+            "pairId": "representative_pixel.3"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00003y",
+            "conditionId": "y",
+            "value": 0.153879,
+            "experimentalUnitId": "representative_pixel.3",
+            "pairId": "representative_pixel.3"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00004x",
+            "conditionId": "x",
+            "value": -2.040594609987377,
+            "experimentalUnitId": "representative_pixel.4",
+            "pairId": "representative_pixel.4"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00004y",
+            "conditionId": "y",
+            "value": -0.632597,
+            "experimentalUnitId": "representative_pixel.4",
+            "pairId": "representative_pixel.4"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00005x",
+            "conditionId": "x",
+            "value": -0.7117263909313623,
+            "experimentalUnitId": "representative_pixel.5",
+            "pairId": "representative_pixel.5"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00005y",
+            "conditionId": "y",
+            "value": -1.299324,
+            "experimentalUnitId": "representative_pixel.5",
+            "pairId": "representative_pixel.5"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00006x",
+            "conditionId": "x",
+            "value": -0.42609594022519526,
+            "experimentalUnitId": "representative_pixel.6",
+            "pairId": "representative_pixel.6"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00006y",
+            "conditionId": "y",
+            "value": 1.054661,
+            "experimentalUnitId": "representative_pixel.6",
+            "pairId": "representative_pixel.6"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00007x",
+            "conditionId": "x",
+            "value": 0.4236047288903007,
+            "experimentalUnitId": "representative_pixel.7",
+            "pairId": "representative_pixel.7"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00007y",
+            "conditionId": "y",
+            "value": 0.087279,
+            "experimentalUnitId": "representative_pixel.7",
+            "pairId": "representative_pixel.7"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00008x",
+            "conditionId": "x",
+            "value": 1.114732491868754,
+            "experimentalUnitId": "representative_pixel.8",
+            "pairId": "representative_pixel.8"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00008y",
+            "conditionId": "y",
+            "value": 0.534082,
+            "experimentalUnitId": "representative_pixel.8",
+            "pairId": "representative_pixel.8"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00009x",
+            "conditionId": "x",
+            "value": 0.5399850850241339,
+            "experimentalUnitId": "representative_pixel.9",
+            "pairId": "representative_pixel.9"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00009y",
+            "conditionId": "y",
+            "value": -0.145557,
+            "experimentalUnitId": "representative_pixel.9",
+            "pairId": "representative_pixel.9"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00010x",
+            "conditionId": "x",
+            "value": 0.3418456702716895,
+            "experimentalUnitId": "representative_pixel.10",
+            "pairId": "representative_pixel.10"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00010y",
+            "conditionId": "y",
+            "value": 0.115934,
+            "experimentalUnitId": "representative_pixel.10",
+            "pairId": "representative_pixel.10"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00011x",
+            "conditionId": "x",
+            "value": 0.2847759118730904,
+            "experimentalUnitId": "representative_pixel.11",
+            "pairId": "representative_pixel.11"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00011y",
+            "conditionId": "y",
+            "value": 1.688567,
+            "experimentalUnitId": "representative_pixel.11",
+            "pairId": "representative_pixel.11"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00012x",
+            "conditionId": "x",
+            "value": 0.10144657419049992,
+            "experimentalUnitId": "representative_pixel.12",
+            "pairId": "representative_pixel.12"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00012y",
+            "conditionId": "y",
+            "value": 1.396004,
+            "experimentalUnitId": "representative_pixel.12",
+            "pairId": "representative_pixel.12"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00013x",
+            "conditionId": "x",
+            "value": 0.0591445602607103,
+            "experimentalUnitId": "representative_pixel.13",
+            "pairId": "representative_pixel.13"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00013y",
+            "conditionId": "y",
+            "value": -0.322835,
+            "experimentalUnitId": "representative_pixel.13",
+            "pairId": "representative_pixel.13"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00014x",
+            "conditionId": "x",
+            "value": -0.26089450554846794,
+            "experimentalUnitId": "representative_pixel.14",
+            "pairId": "representative_pixel.14"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00014y",
+            "conditionId": "y",
+            "value": -0.845447,
+            "experimentalUnitId": "representative_pixel.14",
+            "pairId": "representative_pixel.14"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00015x",
+            "conditionId": "x",
+            "value": -0.27392658141989434,
+            "experimentalUnitId": "representative_pixel.15",
+            "pairId": "representative_pixel.15"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00015y",
+            "conditionId": "y",
+            "value": -1.15578,
+            "experimentalUnitId": "representative_pixel.15",
+            "pairId": "representative_pixel.15"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00016x",
+            "conditionId": "x",
+            "value": -0.35541906473809143,
+            "experimentalUnitId": "representative_pixel.16",
+            "pairId": "representative_pixel.16"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00016y",
+            "conditionId": "y",
+            "value": -0.887389,
+            "experimentalUnitId": "representative_pixel.16",
+            "pairId": "representative_pixel.16"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00017x",
+            "conditionId": "x",
+            "value": -0.3116304714735053,
+            "experimentalUnitId": "representative_pixel.17",
+            "pairId": "representative_pixel.17"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00017y",
+            "conditionId": "y",
+            "value": -1.61361,
+            "experimentalUnitId": "representative_pixel.17",
+            "pairId": "representative_pixel.17"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00018x",
+            "conditionId": "x",
+            "value": 2.1526081873196334,
+            "experimentalUnitId": "representative_pixel.18",
+            "pairId": "representative_pixel.18"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00018y",
+            "conditionId": "y",
+            "value": 1.310779,
+            "experimentalUnitId": "representative_pixel.18",
+            "pairId": "representative_pixel.18"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00019x",
+            "conditionId": "x",
+            "value": 0.6701007337685192,
+            "experimentalUnitId": "representative_pixel.19",
+            "pairId": "representative_pixel.19"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00019y",
+            "conditionId": "y",
+            "value": 1.341989,
+            "experimentalUnitId": "representative_pixel.19",
+            "pairId": "representative_pixel.19"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00020x",
+            "conditionId": "x",
+            "value": 0.20903015342847342,
+            "experimentalUnitId": "representative_pixel.20",
+            "pairId": "representative_pixel.20"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00020y",
+            "conditionId": "y",
+            "value": -0.822578,
+            "experimentalUnitId": "representative_pixel.20",
+            "pairId": "representative_pixel.20"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00021x",
+            "conditionId": "x",
+            "value": 0.4203856663825216,
+            "experimentalUnitId": "representative_pixel.21",
+            "pairId": "representative_pixel.21"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00021y",
+            "conditionId": "y",
+            "value": 0.386927,
+            "experimentalUnitId": "representative_pixel.21",
+            "pairId": "representative_pixel.21"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00022x",
+            "conditionId": "x",
+            "value": 2.084435337480055,
+            "experimentalUnitId": "representative_pixel.22",
+            "pairId": "representative_pixel.22"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00022y",
+            "conditionId": "y",
+            "value": 0.635334,
+            "experimentalUnitId": "representative_pixel.22",
+            "pairId": "representative_pixel.22"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00023x",
+            "conditionId": "x",
+            "value": -0.33153967458254424,
+            "experimentalUnitId": "representative_pixel.23",
+            "pairId": "representative_pixel.23"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00023y",
+            "conditionId": "y",
+            "value": -0.509931,
+            "experimentalUnitId": "representative_pixel.23",
+            "pairId": "representative_pixel.23"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00024x",
+            "conditionId": "x",
+            "value": -0.4266345407102025,
+            "experimentalUnitId": "representative_pixel.24",
+            "pairId": "representative_pixel.24"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00024y",
+            "conditionId": "y",
+            "value": -0.440525,
+            "experimentalUnitId": "representative_pixel.24",
+            "pairId": "representative_pixel.24"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00025x",
+            "conditionId": "x",
+            "value": -3.2043443861671883,
+            "experimentalUnitId": "representative_pixel.25",
+            "pairId": "representative_pixel.25"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00025y",
+            "conditionId": "y",
+            "value": -1.160715,
+            "experimentalUnitId": "representative_pixel.25",
+            "pairId": "representative_pixel.25"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00026x",
+            "conditionId": "x",
+            "value": -2.158593173312001,
+            "experimentalUnitId": "representative_pixel.26",
+            "pairId": "representative_pixel.26"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00026y",
+            "conditionId": "y",
+            "value": -2.840583,
+            "experimentalUnitId": "representative_pixel.26",
+            "pairId": "representative_pixel.26"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00027x",
+            "conditionId": "x",
+            "value": 1.3316230686892598,
+            "experimentalUnitId": "representative_pixel.27",
+            "pairId": "representative_pixel.27"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00027y",
+            "conditionId": "y",
+            "value": -0.909224,
+            "experimentalUnitId": "representative_pixel.27",
+            "pairId": "representative_pixel.27"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00028x",
+            "conditionId": "x",
+            "value": -0.6025774436983782,
+            "experimentalUnitId": "representative_pixel.28",
+            "pairId": "representative_pixel.28"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00028y",
+            "conditionId": "y",
+            "value": 0.73165,
+            "experimentalUnitId": "representative_pixel.28",
+            "pairId": "representative_pixel.28"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00029x",
+            "conditionId": "x",
+            "value": 1.0637088116688942,
+            "experimentalUnitId": "representative_pixel.29",
+            "pairId": "representative_pixel.29"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00029y",
+            "conditionId": "y",
+            "value": 0.660015,
+            "experimentalUnitId": "representative_pixel.29",
+            "pairId": "representative_pixel.29"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00030x",
+            "conditionId": "x",
+            "value": -0.43713431036024214,
+            "experimentalUnitId": "representative_pixel.30",
+            "pairId": "representative_pixel.30"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00030y",
+            "conditionId": "y",
+            "value": 0.142266,
+            "experimentalUnitId": "representative_pixel.30",
+            "pairId": "representative_pixel.30"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00031x",
+            "conditionId": "x",
+            "value": 0.31194640567513227,
+            "experimentalUnitId": "representative_pixel.31",
+            "pairId": "representative_pixel.31"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00031y",
+            "conditionId": "y",
+            "value": -0.623021,
+            "experimentalUnitId": "representative_pixel.31",
+            "pairId": "representative_pixel.31"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00032x",
+            "conditionId": "x",
+            "value": 1.2861968316457224,
+            "experimentalUnitId": "representative_pixel.32",
+            "pairId": "representative_pixel.32"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00032y",
+            "conditionId": "y",
+            "value": 0.55111,
+            "experimentalUnitId": "representative_pixel.32",
+            "pairId": "representative_pixel.32"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00033x",
+            "conditionId": "x",
+            "value": -0.29409837206970224,
+            "experimentalUnitId": "representative_pixel.33",
+            "pairId": "representative_pixel.33"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00033y",
+            "conditionId": "y",
+            "value": 0.408042,
+            "experimentalUnitId": "representative_pixel.33",
+            "pairId": "representative_pixel.33"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00034x",
+            "conditionId": "x",
+            "value": -0.5687410471570535,
+            "experimentalUnitId": "representative_pixel.34",
+            "pairId": "representative_pixel.34"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00034y",
+            "conditionId": "y",
+            "value": 0.788746,
+            "experimentalUnitId": "representative_pixel.34",
+            "pairId": "representative_pixel.34"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00035x",
+            "conditionId": "x",
+            "value": -0.5349456480642685,
+            "experimentalUnitId": "representative_pixel.35",
+            "pairId": "representative_pixel.35"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00035y",
+            "conditionId": "y",
+            "value": -0.196016,
+            "experimentalUnitId": "representative_pixel.35",
+            "pairId": "representative_pixel.35"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00036x",
+            "conditionId": "x",
+            "value": -1.0912963841329093,
+            "experimentalUnitId": "representative_pixel.36",
+            "pairId": "representative_pixel.36"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00036y",
+            "conditionId": "y",
+            "value": -0.740267,
+            "experimentalUnitId": "representative_pixel.36",
+            "pairId": "representative_pixel.36"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00037x",
+            "conditionId": "x",
+            "value": -0.2631877191899486,
+            "experimentalUnitId": "representative_pixel.37",
+            "pairId": "representative_pixel.37"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00037y",
+            "conditionId": "y",
+            "value": -0.720336,
+            "experimentalUnitId": "representative_pixel.37",
+            "pairId": "representative_pixel.37"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00038x",
+            "conditionId": "x",
+            "value": 1.8589885782688067,
+            "experimentalUnitId": "representative_pixel.38",
+            "pairId": "representative_pixel.38"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00038y",
+            "conditionId": "y",
+            "value": 1.271037,
+            "experimentalUnitId": "representative_pixel.38",
+            "pairId": "representative_pixel.38"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00039x",
+            "conditionId": "x",
+            "value": 0.2248992338461625,
+            "experimentalUnitId": "representative_pixel.39",
+            "pairId": "representative_pixel.39"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00039y",
+            "conditionId": "y",
+            "value": -0.753896,
+            "experimentalUnitId": "representative_pixel.39",
+            "pairId": "representative_pixel.39"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00040x",
+            "conditionId": "x",
+            "value": -0.31607036597718174,
+            "experimentalUnitId": "representative_pixel.40",
+            "pairId": "representative_pixel.40"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00040y",
+            "conditionId": "y",
+            "value": 0.363524,
+            "experimentalUnitId": "representative_pixel.40",
+            "pairId": "representative_pixel.40"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00041x",
+            "conditionId": "x",
+            "value": 0.393362958077654,
+            "experimentalUnitId": "representative_pixel.41",
+            "pairId": "representative_pixel.41"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00041y",
+            "conditionId": "y",
+            "value": 0.668968,
+            "experimentalUnitId": "representative_pixel.41",
+            "pairId": "representative_pixel.41"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00042x",
+            "conditionId": "x",
+            "value": 0.6057793235577775,
+            "experimentalUnitId": "representative_pixel.42",
+            "pairId": "representative_pixel.42"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00042y",
+            "conditionId": "y",
+            "value": 0.332805,
+            "experimentalUnitId": "representative_pixel.42",
+            "pairId": "representative_pixel.42"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00043x",
+            "conditionId": "x",
+            "value": -0.18955311481353027,
+            "experimentalUnitId": "representative_pixel.43",
+            "pairId": "representative_pixel.43"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00043y",
+            "conditionId": "y",
+            "value": 0.215959,
+            "experimentalUnitId": "representative_pixel.43",
+            "pairId": "representative_pixel.43"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00044x",
+            "conditionId": "x",
+            "value": 1.0842832597666157,
+            "experimentalUnitId": "representative_pixel.44",
+            "pairId": "representative_pixel.44"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00044y",
+            "conditionId": "y",
+            "value": -0.343753,
+            "experimentalUnitId": "representative_pixel.44",
+            "pairId": "representative_pixel.44"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00045x",
+            "conditionId": "x",
+            "value": 0.5130584144491193,
+            "experimentalUnitId": "representative_pixel.45",
+            "pairId": "representative_pixel.45"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00045y",
+            "conditionId": "y",
+            "value": 1.324581,
+            "experimentalUnitId": "representative_pixel.45",
+            "pairId": "representative_pixel.45"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00046x",
+            "conditionId": "x",
+            "value": -0.8969037426909026,
+            "experimentalUnitId": "representative_pixel.46",
+            "pairId": "representative_pixel.46"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00046y",
+            "conditionId": "y",
+            "value": -1.307649,
+            "experimentalUnitId": "representative_pixel.46",
+            "pairId": "representative_pixel.46"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00047x",
+            "conditionId": "x",
+            "value": 0.4265215943178778,
+            "experimentalUnitId": "representative_pixel.47",
+            "pairId": "representative_pixel.47"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00047y",
+            "conditionId": "y",
+            "value": -1.106816,
+            "experimentalUnitId": "representative_pixel.47",
+            "pairId": "representative_pixel.47"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00048x",
+            "conditionId": "x",
+            "value": -1.3242343521215827,
+            "experimentalUnitId": "representative_pixel.48",
+            "pairId": "representative_pixel.48"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00048y",
+            "conditionId": "y",
+            "value": -2.114904,
+            "experimentalUnitId": "representative_pixel.48",
+            "pairId": "representative_pixel.48"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00049x",
+            "conditionId": "x",
+            "value": 1.2436161871914997,
+            "experimentalUnitId": "representative_pixel.49",
+            "pairId": "representative_pixel.49"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00049y",
+            "conditionId": "y",
+            "value": -0.223569,
+            "experimentalUnitId": "representative_pixel.49",
+            "pairId": "representative_pixel.49"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00050x",
+            "conditionId": "x",
+            "value": 1.247981373617958,
+            "experimentalUnitId": "representative_pixel.50",
+            "pairId": "representative_pixel.50"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00050y",
+            "conditionId": "y",
+            "value": 1.358454,
+            "experimentalUnitId": "representative_pixel.50",
+            "pairId": "representative_pixel.50"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00051x",
+            "conditionId": "x",
+            "value": -0.005388251787908184,
+            "experimentalUnitId": "representative_pixel.51",
+            "pairId": "representative_pixel.51"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00051y",
+            "conditionId": "y",
+            "value": -0.881021,
+            "experimentalUnitId": "representative_pixel.51",
+            "pairId": "representative_pixel.51"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00052x",
+            "conditionId": "x",
+            "value": -0.14944091042107924,
+            "experimentalUnitId": "representative_pixel.52",
+            "pairId": "representative_pixel.52"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00052y",
+            "conditionId": "y",
+            "value": 0.005776,
+            "experimentalUnitId": "representative_pixel.52",
+            "pairId": "representative_pixel.52"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00053x",
+            "conditionId": "x",
+            "value": -1.6370987610797991,
+            "experimentalUnitId": "representative_pixel.53",
+            "pairId": "representative_pixel.53"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00053y",
+            "conditionId": "y",
+            "value": 0.031775,
+            "experimentalUnitId": "representative_pixel.53",
+            "pairId": "representative_pixel.53"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00054x",
+            "conditionId": "x",
+            "value": 0.5868072922906372,
+            "experimentalUnitId": "representative_pixel.54",
+            "pairId": "representative_pixel.54"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00054y",
+            "conditionId": "y",
+            "value": 0.707325,
+            "experimentalUnitId": "representative_pixel.54",
+            "pairId": "representative_pixel.54"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00055x",
+            "conditionId": "x",
+            "value": -0.5659984164793513,
+            "experimentalUnitId": "representative_pixel.55",
+            "pairId": "representative_pixel.55"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00055y",
+            "conditionId": "y",
+            "value": -0.556503,
+            "experimentalUnitId": "representative_pixel.55",
+            "pairId": "representative_pixel.55"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00056x",
+            "conditionId": "x",
+            "value": -0.4395588945677819,
+            "experimentalUnitId": "representative_pixel.56",
+            "pairId": "representative_pixel.56"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00056y",
+            "conditionId": "y",
+            "value": 0.012698,
+            "experimentalUnitId": "representative_pixel.56",
+            "pairId": "representative_pixel.56"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00057x",
+            "conditionId": "x",
+            "value": 2.4858558269237307,
+            "experimentalUnitId": "representative_pixel.57",
+            "pairId": "representative_pixel.57"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00057y",
+            "conditionId": "y",
+            "value": 0.259978,
+            "experimentalUnitId": "representative_pixel.57",
+            "pairId": "representative_pixel.57"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00058x",
+            "conditionId": "x",
+            "value": -0.07193415395829808,
+            "experimentalUnitId": "representative_pixel.58",
+            "pairId": "representative_pixel.58"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00058y",
+            "conditionId": "y",
+            "value": -0.775846,
+            "experimentalUnitId": "representative_pixel.58",
+            "pairId": "representative_pixel.58"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00059x",
+            "conditionId": "x",
+            "value": -1.4403271091183654,
+            "experimentalUnitId": "representative_pixel.59",
+            "pairId": "representative_pixel.59"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00059y",
+            "conditionId": "y",
+            "value": -0.739178,
+            "experimentalUnitId": "representative_pixel.59",
+            "pairId": "representative_pixel.59"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00060x",
+            "conditionId": "x",
+            "value": 1.0536872032963207,
+            "experimentalUnitId": "representative_pixel.60",
+            "pairId": "representative_pixel.60"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00060y",
+            "conditionId": "y",
+            "value": 1.495397,
+            "experimentalUnitId": "representative_pixel.60",
+            "pairId": "representative_pixel.60"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00061x",
+            "conditionId": "x",
+            "value": 1.8596352455598,
+            "experimentalUnitId": "representative_pixel.61",
+            "pairId": "representative_pixel.61"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00061y",
+            "conditionId": "y",
+            "value": 1.76129,
+            "experimentalUnitId": "representative_pixel.61",
+            "pairId": "representative_pixel.61"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00062x",
+            "conditionId": "x",
+            "value": -0.4895297271346212,
+            "experimentalUnitId": "representative_pixel.62",
+            "pairId": "representative_pixel.62"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00062y",
+            "conditionId": "y",
+            "value": 0.281886,
+            "experimentalUnitId": "representative_pixel.62",
+            "pairId": "representative_pixel.62"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00063x",
+            "conditionId": "x",
+            "value": -1.1830377473027536,
+            "experimentalUnitId": "representative_pixel.63",
+            "pairId": "representative_pixel.63"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00063y",
+            "conditionId": "y",
+            "value": 0.915425,
+            "experimentalUnitId": "representative_pixel.63",
+            "pairId": "representative_pixel.63"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00064x",
+            "conditionId": "x",
+            "value": 1.2956222976515797,
+            "experimentalUnitId": "representative_pixel.64",
+            "pairId": "representative_pixel.64"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00064y",
+            "conditionId": "y",
+            "value": 0.241444,
+            "experimentalUnitId": "representative_pixel.64",
+            "pairId": "representative_pixel.64"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00065x",
+            "conditionId": "x",
+            "value": -0.28932487748077107,
+            "experimentalUnitId": "representative_pixel.65",
+            "pairId": "representative_pixel.65"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00065y",
+            "conditionId": "y",
+            "value": -0.044165,
+            "experimentalUnitId": "representative_pixel.65",
+            "pairId": "representative_pixel.65"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00066x",
+            "conditionId": "x",
+            "value": -0.3776715550876186,
+            "experimentalUnitId": "representative_pixel.66",
+            "pairId": "representative_pixel.66"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00066y",
+            "conditionId": "y",
+            "value": -1.194264,
+            "experimentalUnitId": "representative_pixel.66",
+            "pairId": "representative_pixel.66"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00067x",
+            "conditionId": "x",
+            "value": 0.16650582694040328,
+            "experimentalUnitId": "representative_pixel.67",
+            "pairId": "representative_pixel.67"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00067y",
+            "conditionId": "y",
+            "value": 0.6147,
+            "experimentalUnitId": "representative_pixel.67",
+            "pairId": "representative_pixel.67"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00068x",
+            "conditionId": "x",
+            "value": 0.8828212034867257,
+            "experimentalUnitId": "representative_pixel.68",
+            "pairId": "representative_pixel.68"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00068y",
+            "conditionId": "y",
+            "value": -0.524451,
+            "experimentalUnitId": "representative_pixel.68",
+            "pairId": "representative_pixel.68"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00069x",
+            "conditionId": "x",
+            "value": -0.5881180227014648,
+            "experimentalUnitId": "representative_pixel.69",
+            "pairId": "representative_pixel.69"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00069y",
+            "conditionId": "y",
+            "value": -0.479336,
+            "experimentalUnitId": "representative_pixel.69",
+            "pairId": "representative_pixel.69"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00070x",
+            "conditionId": "x",
+            "value": 0.6455912441987033,
+            "experimentalUnitId": "representative_pixel.70",
+            "pairId": "representative_pixel.70"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00070y",
+            "conditionId": "y",
+            "value": 0.242873,
+            "experimentalUnitId": "representative_pixel.70",
+            "pairId": "representative_pixel.70"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00071x",
+            "conditionId": "x",
+            "value": -1.673160088851868,
+            "experimentalUnitId": "representative_pixel.71",
+            "pairId": "representative_pixel.71"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00071y",
+            "conditionId": "y",
+            "value": -1.377811,
+            "experimentalUnitId": "representative_pixel.71",
+            "pairId": "representative_pixel.71"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00072x",
+            "conditionId": "x",
+            "value": 1.0930632094927881,
+            "experimentalUnitId": "representative_pixel.72",
+            "pairId": "representative_pixel.72"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00072y",
+            "conditionId": "y",
+            "value": 0.849928,
+            "experimentalUnitId": "representative_pixel.72",
+            "pairId": "representative_pixel.72"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00073x",
+            "conditionId": "x",
+            "value": -0.7812025808229103,
+            "experimentalUnitId": "representative_pixel.73",
+            "pairId": "representative_pixel.73"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00073y",
+            "conditionId": "y",
+            "value": 0.118441,
+            "experimentalUnitId": "representative_pixel.73",
+            "pairId": "representative_pixel.73"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00074x",
+            "conditionId": "x",
+            "value": 0.49052344748823756,
+            "experimentalUnitId": "representative_pixel.74",
+            "pairId": "representative_pixel.74"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00074y",
+            "conditionId": "y",
+            "value": 0.300987,
+            "experimentalUnitId": "representative_pixel.74",
+            "pairId": "representative_pixel.74"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00075x",
+            "conditionId": "x",
+            "value": 0.999074495990482,
+            "experimentalUnitId": "representative_pixel.75",
+            "pairId": "representative_pixel.75"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00075y",
+            "conditionId": "y",
+            "value": -0.907407,
+            "experimentalUnitId": "representative_pixel.75",
+            "pairId": "representative_pixel.75"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00076x",
+            "conditionId": "x",
+            "value": 1.4573340708218068,
+            "experimentalUnitId": "representative_pixel.76",
+            "pairId": "representative_pixel.76"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00076y",
+            "conditionId": "y",
+            "value": 1.207769,
+            "experimentalUnitId": "representative_pixel.76",
+            "pairId": "representative_pixel.76"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00077x",
+            "conditionId": "x",
+            "value": -0.9607139459088156,
+            "experimentalUnitId": "representative_pixel.77",
+            "pairId": "representative_pixel.77"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00077y",
+            "conditionId": "y",
+            "value": -0.615101,
+            "experimentalUnitId": "representative_pixel.77",
+            "pairId": "representative_pixel.77"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00078x",
+            "conditionId": "x",
+            "value": -0.6500679861473103,
+            "experimentalUnitId": "representative_pixel.78",
+            "pairId": "representative_pixel.78"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00078y",
+            "conditionId": "y",
+            "value": 0.048805,
+            "experimentalUnitId": "representative_pixel.78",
+            "pairId": "representative_pixel.78"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00079x",
+            "conditionId": "x",
+            "value": -0.9968683009163016,
+            "experimentalUnitId": "representative_pixel.79",
+            "pairId": "representative_pixel.79"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00079y",
+            "conditionId": "y",
+            "value": -1.250677,
+            "experimentalUnitId": "representative_pixel.79",
+            "pairId": "representative_pixel.79"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00080x",
+            "conditionId": "x",
+            "value": 0.4834444095687255,
+            "experimentalUnitId": "representative_pixel.80",
+            "pairId": "representative_pixel.80"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00080y",
+            "conditionId": "y",
+            "value": 0.235107,
+            "experimentalUnitId": "representative_pixel.80",
+            "pairId": "representative_pixel.80"
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.95,
+          "multiplicityMethod": null
+        }
+      },
+      "result": {
+        "protocolVersion": "0.5.0",
+        "requestId": "request.LSA088.12 h",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.14.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0"
+          }
+        },
+        "estimates": [
+          {
+            "name": "correlation_coefficient",
+            "value": 0.546473532986353,
+            "standardError": null,
+            "confidenceInterval": {
+              "level": 0.95,
+              "lower": 0.3713436744321904,
+              "upper": 0.6840561685722609
+            }
+          }
+        ],
+        "tests": [
+          {
+            "name": "pearson_correlation",
+            "statisticName": "r",
+            "statistic": 0.546473532986353,
+            "degreesOfFreedom": [
+              78.0
+            ],
+            "pValue": 1.573422259992071e-07,
+            "adjustedPValue": null,
+            "effectSizeName": "r",
+            "effectSize": 0.546473532986353
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "association_not_causation",
+            "message": "Correlation describes association and does not establish causation."
+          }
+        ],
+        "warnings": [],
+        "completedAt": "2026-08-25T06:44:10.424822+00:00"
+      }
+    },
+    {
+      "label": "24 h",
+      "request": {
+        "protocolVersion": "0.5.0",
+        "requestId": "request.LSA088.24 h",
+        "projectId": "project.LSA088.v2",
+        "analysisId": "analysis.LSA088.24 h",
+        "templateId": "D09",
+        "templateVersion": "0.1.0",
+        "method": "pearson",
+        "variableConditionIds": [
+          "x",
+          "y"
+        ],
+        "observations": [
+          {
+            "observationId": "LSA088_context_rich_v2.o00081x",
+            "conditionId": "x",
+            "value": 0.17977598622835486,
+            "experimentalUnitId": "representative_pixel.1",
+            "pairId": "representative_pixel.1"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00081y",
+            "conditionId": "y",
+            "value": 0.032946,
+            "experimentalUnitId": "representative_pixel.1",
+            "pairId": "representative_pixel.1"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00082x",
+            "conditionId": "x",
+            "value": -0.7746901713162905,
+            "experimentalUnitId": "representative_pixel.2",
+            "pairId": "representative_pixel.2"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00082y",
+            "conditionId": "y",
+            "value": -0.426148,
+            "experimentalUnitId": "representative_pixel.2",
+            "pairId": "representative_pixel.2"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00083x",
+            "conditionId": "x",
+            "value": -0.45279084973713046,
+            "experimentalUnitId": "representative_pixel.3",
+            "pairId": "representative_pixel.3"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00083y",
+            "conditionId": "y",
+            "value": 0.549488,
+            "experimentalUnitId": "representative_pixel.3",
+            "pairId": "representative_pixel.3"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00084x",
+            "conditionId": "x",
+            "value": 0.2588768724650084,
+            "experimentalUnitId": "representative_pixel.4",
+            "pairId": "representative_pixel.4"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00084y",
+            "conditionId": "y",
+            "value": 0.007423,
+            "experimentalUnitId": "representative_pixel.4",
+            "pairId": "representative_pixel.4"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00085x",
+            "conditionId": "x",
+            "value": -0.8377348636281108,
+            "experimentalUnitId": "representative_pixel.5",
+            "pairId": "representative_pixel.5"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00085y",
+            "conditionId": "y",
+            "value": -1.190579,
+            "experimentalUnitId": "representative_pixel.5",
+            "pairId": "representative_pixel.5"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00086x",
+            "conditionId": "x",
+            "value": 1.4152528703121676,
+            "experimentalUnitId": "representative_pixel.6",
+            "pairId": "representative_pixel.6"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00086y",
+            "conditionId": "y",
+            "value": 1.0578,
+            "experimentalUnitId": "representative_pixel.6",
+            "pairId": "representative_pixel.6"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00087x",
+            "conditionId": "x",
+            "value": 0.5531636347779629,
+            "experimentalUnitId": "representative_pixel.7",
+            "pairId": "representative_pixel.7"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00087y",
+            "conditionId": "y",
+            "value": 0.554449,
+            "experimentalUnitId": "representative_pixel.7",
+            "pairId": "representative_pixel.7"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00088x",
+            "conditionId": "x",
+            "value": 0.7474747031402041,
+            "experimentalUnitId": "representative_pixel.8",
+            "pairId": "representative_pixel.8"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00088y",
+            "conditionId": "y",
+            "value": 0.03597,
+            "experimentalUnitId": "representative_pixel.8",
+            "pairId": "representative_pixel.8"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00089x",
+            "conditionId": "x",
+            "value": 0.42607582645538983,
+            "experimentalUnitId": "representative_pixel.9",
+            "pairId": "representative_pixel.9"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00089y",
+            "conditionId": "y",
+            "value": 1.287805,
+            "experimentalUnitId": "representative_pixel.9",
+            "pairId": "representative_pixel.9"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00090x",
+            "conditionId": "x",
+            "value": -0.18799841260352604,
+            "experimentalUnitId": "representative_pixel.10",
+            "pairId": "representative_pixel.10"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00090y",
+            "conditionId": "y",
+            "value": 0.723978,
+            "experimentalUnitId": "representative_pixel.10",
+            "pairId": "representative_pixel.10"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00091x",
+            "conditionId": "x",
+            "value": 0.18783615203647785,
+            "experimentalUnitId": "representative_pixel.11",
+            "pairId": "representative_pixel.11"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00091y",
+            "conditionId": "y",
+            "value": 0.538305,
+            "experimentalUnitId": "representative_pixel.11",
+            "pairId": "representative_pixel.11"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00092x",
+            "conditionId": "x",
+            "value": 0.727559631205104,
+            "experimentalUnitId": "representative_pixel.12",
+            "pairId": "representative_pixel.12"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00092y",
+            "conditionId": "y",
+            "value": -0.9774,
+            "experimentalUnitId": "representative_pixel.12",
+            "pairId": "representative_pixel.12"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00093x",
+            "conditionId": "x",
+            "value": -0.29347519448416765,
+            "experimentalUnitId": "representative_pixel.13",
+            "pairId": "representative_pixel.13"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00093y",
+            "conditionId": "y",
+            "value": -1.10061,
+            "experimentalUnitId": "representative_pixel.13",
+            "pairId": "representative_pixel.13"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00094x",
+            "conditionId": "x",
+            "value": 1.3409968008218687,
+            "experimentalUnitId": "representative_pixel.14",
+            "pairId": "representative_pixel.14"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00094y",
+            "conditionId": "y",
+            "value": 1.320659,
+            "experimentalUnitId": "representative_pixel.14",
+            "pairId": "representative_pixel.14"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00095x",
+            "conditionId": "x",
+            "value": 0.24880568687426405,
+            "experimentalUnitId": "representative_pixel.15",
+            "pairId": "representative_pixel.15"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00095y",
+            "conditionId": "y",
+            "value": 0.132184,
+            "experimentalUnitId": "representative_pixel.15",
+            "pairId": "representative_pixel.15"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00096x",
+            "conditionId": "x",
+            "value": -1.8934375520462237,
+            "experimentalUnitId": "representative_pixel.16",
+            "pairId": "representative_pixel.16"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00096y",
+            "conditionId": "y",
+            "value": -2.066168,
+            "experimentalUnitId": "representative_pixel.16",
+            "pairId": "representative_pixel.16"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00097x",
+            "conditionId": "x",
+            "value": -0.0965429956352373,
+            "experimentalUnitId": "representative_pixel.17",
+            "pairId": "representative_pixel.17"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00097y",
+            "conditionId": "y",
+            "value": -0.862245,
+            "experimentalUnitId": "representative_pixel.17",
+            "pairId": "representative_pixel.17"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00098x",
+            "conditionId": "x",
+            "value": 1.087607422948273,
+            "experimentalUnitId": "representative_pixel.18",
+            "pairId": "representative_pixel.18"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00098y",
+            "conditionId": "y",
+            "value": 1.210163,
+            "experimentalUnitId": "representative_pixel.18",
+            "pairId": "representative_pixel.18"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00099x",
+            "conditionId": "x",
+            "value": -2.055523168346752,
+            "experimentalUnitId": "representative_pixel.19",
+            "pairId": "representative_pixel.19"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00099y",
+            "conditionId": "y",
+            "value": -0.096236,
+            "experimentalUnitId": "representative_pixel.19",
+            "pairId": "representative_pixel.19"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00100x",
+            "conditionId": "x",
+            "value": 1.5522591023488754,
+            "experimentalUnitId": "representative_pixel.20",
+            "pairId": "representative_pixel.20"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00100y",
+            "conditionId": "y",
+            "value": -0.046179,
+            "experimentalUnitId": "representative_pixel.20",
+            "pairId": "representative_pixel.20"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00101x",
+            "conditionId": "x",
+            "value": -1.225694864911364,
+            "experimentalUnitId": "representative_pixel.21",
+            "pairId": "representative_pixel.21"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00101y",
+            "conditionId": "y",
+            "value": -1.101794,
+            "experimentalUnitId": "representative_pixel.21",
+            "pairId": "representative_pixel.21"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00102x",
+            "conditionId": "x",
+            "value": 1.0140860841597161,
+            "experimentalUnitId": "representative_pixel.22",
+            "pairId": "representative_pixel.22"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00102y",
+            "conditionId": "y",
+            "value": 0.354683,
+            "experimentalUnitId": "representative_pixel.22",
+            "pairId": "representative_pixel.22"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00103x",
+            "conditionId": "x",
+            "value": 1.041073358416123,
+            "experimentalUnitId": "representative_pixel.23",
+            "pairId": "representative_pixel.23"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00103y",
+            "conditionId": "y",
+            "value": 1.70662,
+            "experimentalUnitId": "representative_pixel.23",
+            "pairId": "representative_pixel.23"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00104x",
+            "conditionId": "x",
+            "value": -0.3897257830325641,
+            "experimentalUnitId": "representative_pixel.24",
+            "pairId": "representative_pixel.24"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00104y",
+            "conditionId": "y",
+            "value": -0.259889,
+            "experimentalUnitId": "representative_pixel.24",
+            "pairId": "representative_pixel.24"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00105x",
+            "conditionId": "x",
+            "value": 0.44305406395854935,
+            "experimentalUnitId": "representative_pixel.25",
+            "pairId": "representative_pixel.25"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00105y",
+            "conditionId": "y",
+            "value": -0.250277,
+            "experimentalUnitId": "representative_pixel.25",
+            "pairId": "representative_pixel.25"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00106x",
+            "conditionId": "x",
+            "value": 0.2540053672511622,
+            "experimentalUnitId": "representative_pixel.26",
+            "pairId": "representative_pixel.26"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00106y",
+            "conditionId": "y",
+            "value": 0.900547,
+            "experimentalUnitId": "representative_pixel.26",
+            "pairId": "representative_pixel.26"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00107x",
+            "conditionId": "x",
+            "value": 1.309314864015464,
+            "experimentalUnitId": "representative_pixel.27",
+            "pairId": "representative_pixel.27"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00107y",
+            "conditionId": "y",
+            "value": 1.070954,
+            "experimentalUnitId": "representative_pixel.27",
+            "pairId": "representative_pixel.27"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00108x",
+            "conditionId": "x",
+            "value": 1.5643009253978493,
+            "experimentalUnitId": "representative_pixel.28",
+            "pairId": "representative_pixel.28"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00108y",
+            "conditionId": "y",
+            "value": 0.117137,
+            "experimentalUnitId": "representative_pixel.28",
+            "pairId": "representative_pixel.28"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00109x",
+            "conditionId": "x",
+            "value": 1.6413863937987674,
+            "experimentalUnitId": "representative_pixel.29",
+            "pairId": "representative_pixel.29"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00109y",
+            "conditionId": "y",
+            "value": -0.294503,
+            "experimentalUnitId": "representative_pixel.29",
+            "pairId": "representative_pixel.29"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00110x",
+            "conditionId": "x",
+            "value": 0.6999220401439655,
+            "experimentalUnitId": "representative_pixel.30",
+            "pairId": "representative_pixel.30"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00110y",
+            "conditionId": "y",
+            "value": 0.157221,
+            "experimentalUnitId": "representative_pixel.30",
+            "pairId": "representative_pixel.30"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00111x",
+            "conditionId": "x",
+            "value": -1.2416108796887624,
+            "experimentalUnitId": "representative_pixel.31",
+            "pairId": "representative_pixel.31"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00111y",
+            "conditionId": "y",
+            "value": -1.450942,
+            "experimentalUnitId": "representative_pixel.31",
+            "pairId": "representative_pixel.31"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00112x",
+            "conditionId": "x",
+            "value": 0.8186093851275688,
+            "experimentalUnitId": "representative_pixel.32",
+            "pairId": "representative_pixel.32"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00112y",
+            "conditionId": "y",
+            "value": 0.690072,
+            "experimentalUnitId": "representative_pixel.32",
+            "pairId": "representative_pixel.32"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00113x",
+            "conditionId": "x",
+            "value": 1.5238200902347865,
+            "experimentalUnitId": "representative_pixel.33",
+            "pairId": "representative_pixel.33"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00113y",
+            "conditionId": "y",
+            "value": 1.778506,
+            "experimentalUnitId": "representative_pixel.33",
+            "pairId": "representative_pixel.33"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00114x",
+            "conditionId": "x",
+            "value": -1.664320563921491,
+            "experimentalUnitId": "representative_pixel.34",
+            "pairId": "representative_pixel.34"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00114y",
+            "conditionId": "y",
+            "value": -1.346034,
+            "experimentalUnitId": "representative_pixel.34",
+            "pairId": "representative_pixel.34"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00115x",
+            "conditionId": "x",
+            "value": 0.1784960794306212,
+            "experimentalUnitId": "representative_pixel.35",
+            "pairId": "representative_pixel.35"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00115y",
+            "conditionId": "y",
+            "value": 0.123034,
+            "experimentalUnitId": "representative_pixel.35",
+            "pairId": "representative_pixel.35"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00116x",
+            "conditionId": "x",
+            "value": -0.03821304825842585,
+            "experimentalUnitId": "representative_pixel.36",
+            "pairId": "representative_pixel.36"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00116y",
+            "conditionId": "y",
+            "value": 0.713413,
+            "experimentalUnitId": "representative_pixel.36",
+            "pairId": "representative_pixel.36"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00117x",
+            "conditionId": "x",
+            "value": -0.7300459141746647,
+            "experimentalUnitId": "representative_pixel.37",
+            "pairId": "representative_pixel.37"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00117y",
+            "conditionId": "y",
+            "value": 0.283584,
+            "experimentalUnitId": "representative_pixel.37",
+            "pairId": "representative_pixel.37"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00118x",
+            "conditionId": "x",
+            "value": 1.1805353794628535,
+            "experimentalUnitId": "representative_pixel.38",
+            "pairId": "representative_pixel.38"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00118y",
+            "conditionId": "y",
+            "value": 0.763057,
+            "experimentalUnitId": "representative_pixel.38",
+            "pairId": "representative_pixel.38"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00119x",
+            "conditionId": "x",
+            "value": -2.4237312033036367,
+            "experimentalUnitId": "representative_pixel.39",
+            "pairId": "representative_pixel.39"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00119y",
+            "conditionId": "y",
+            "value": -1.801922,
+            "experimentalUnitId": "representative_pixel.39",
+            "pairId": "representative_pixel.39"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00120x",
+            "conditionId": "x",
+            "value": 0.564596099736688,
+            "experimentalUnitId": "representative_pixel.40",
+            "pairId": "representative_pixel.40"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00120y",
+            "conditionId": "y",
+            "value": 0.695582,
+            "experimentalUnitId": "representative_pixel.40",
+            "pairId": "representative_pixel.40"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00121x",
+            "conditionId": "x",
+            "value": -0.47964929669332473,
+            "experimentalUnitId": "representative_pixel.41",
+            "pairId": "representative_pixel.41"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00121y",
+            "conditionId": "y",
+            "value": -0.51122,
+            "experimentalUnitId": "representative_pixel.41",
+            "pairId": "representative_pixel.41"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00122x",
+            "conditionId": "x",
+            "value": 1.3299177284132733,
+            "experimentalUnitId": "representative_pixel.42",
+            "pairId": "representative_pixel.42"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00122y",
+            "conditionId": "y",
+            "value": 0.848201,
+            "experimentalUnitId": "representative_pixel.42",
+            "pairId": "representative_pixel.42"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00123x",
+            "conditionId": "x",
+            "value": 1.4027777429987183,
+            "experimentalUnitId": "representative_pixel.43",
+            "pairId": "representative_pixel.43"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00123y",
+            "conditionId": "y",
+            "value": 0.693342,
+            "experimentalUnitId": "representative_pixel.43",
+            "pairId": "representative_pixel.43"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00124x",
+            "conditionId": "x",
+            "value": -0.7601657057964278,
+            "experimentalUnitId": "representative_pixel.44",
+            "pairId": "representative_pixel.44"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00124y",
+            "conditionId": "y",
+            "value": 0.536479,
+            "experimentalUnitId": "representative_pixel.44",
+            "pairId": "representative_pixel.44"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00125x",
+            "conditionId": "x",
+            "value": 1.1398296637976408,
+            "experimentalUnitId": "representative_pixel.45",
+            "pairId": "representative_pixel.45"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00125y",
+            "conditionId": "y",
+            "value": -1.151109,
+            "experimentalUnitId": "representative_pixel.45",
+            "pairId": "representative_pixel.45"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00126x",
+            "conditionId": "x",
+            "value": -0.712799085518812,
+            "experimentalUnitId": "representative_pixel.46",
+            "pairId": "representative_pixel.46"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00126y",
+            "conditionId": "y",
+            "value": -0.350261,
+            "experimentalUnitId": "representative_pixel.46",
+            "pairId": "representative_pixel.46"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00127x",
+            "conditionId": "x",
+            "value": -0.16833952705619304,
+            "experimentalUnitId": "representative_pixel.47",
+            "pairId": "representative_pixel.47"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00127y",
+            "conditionId": "y",
+            "value": -1.500987,
+            "experimentalUnitId": "representative_pixel.47",
+            "pairId": "representative_pixel.47"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00128x",
+            "conditionId": "x",
+            "value": -0.09036419910393362,
+            "experimentalUnitId": "representative_pixel.48",
+            "pairId": "representative_pixel.48"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00128y",
+            "conditionId": "y",
+            "value": -0.623598,
+            "experimentalUnitId": "representative_pixel.48",
+            "pairId": "representative_pixel.48"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00129x",
+            "conditionId": "x",
+            "value": -0.5674567381434604,
+            "experimentalUnitId": "representative_pixel.49",
+            "pairId": "representative_pixel.49"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00129y",
+            "conditionId": "y",
+            "value": 0.369412,
+            "experimentalUnitId": "representative_pixel.49",
+            "pairId": "representative_pixel.49"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00130x",
+            "conditionId": "x",
+            "value": -1.0038804884575303,
+            "experimentalUnitId": "representative_pixel.50",
+            "pairId": "representative_pixel.50"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00130y",
+            "conditionId": "y",
+            "value": -0.568017,
+            "experimentalUnitId": "representative_pixel.50",
+            "pairId": "representative_pixel.50"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00131x",
+            "conditionId": "x",
+            "value": -0.19887486338376337,
+            "experimentalUnitId": "representative_pixel.51",
+            "pairId": "representative_pixel.51"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00131y",
+            "conditionId": "y",
+            "value": 0.158484,
+            "experimentalUnitId": "representative_pixel.51",
+            "pairId": "representative_pixel.51"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00132x",
+            "conditionId": "x",
+            "value": -0.675642059996199,
+            "experimentalUnitId": "representative_pixel.52",
+            "pairId": "representative_pixel.52"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00132y",
+            "conditionId": "y",
+            "value": -1.330921,
+            "experimentalUnitId": "representative_pixel.52",
+            "pairId": "representative_pixel.52"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00133x",
+            "conditionId": "x",
+            "value": 0.5904176495814346,
+            "experimentalUnitId": "representative_pixel.53",
+            "pairId": "representative_pixel.53"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00133y",
+            "conditionId": "y",
+            "value": -0.159787,
+            "experimentalUnitId": "representative_pixel.53",
+            "pairId": "representative_pixel.53"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00134x",
+            "conditionId": "x",
+            "value": 0.3570171987178366,
+            "experimentalUnitId": "representative_pixel.54",
+            "pairId": "representative_pixel.54"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00134y",
+            "conditionId": "y",
+            "value": 0.639684,
+            "experimentalUnitId": "representative_pixel.54",
+            "pairId": "representative_pixel.54"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00135x",
+            "conditionId": "x",
+            "value": -1.2378703057592608,
+            "experimentalUnitId": "representative_pixel.55",
+            "pairId": "representative_pixel.55"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00135y",
+            "conditionId": "y",
+            "value": -0.733571,
+            "experimentalUnitId": "representative_pixel.55",
+            "pairId": "representative_pixel.55"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00136x",
+            "conditionId": "x",
+            "value": -0.1736920584393295,
+            "experimentalUnitId": "representative_pixel.56",
+            "pairId": "representative_pixel.56"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00136y",
+            "conditionId": "y",
+            "value": 0.267614,
+            "experimentalUnitId": "representative_pixel.56",
+            "pairId": "representative_pixel.56"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00137x",
+            "conditionId": "x",
+            "value": -0.4130445995365386,
+            "experimentalUnitId": "representative_pixel.57",
+            "pairId": "representative_pixel.57"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00137y",
+            "conditionId": "y",
+            "value": -1.999069,
+            "experimentalUnitId": "representative_pixel.57",
+            "pairId": "representative_pixel.57"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00138x",
+            "conditionId": "x",
+            "value": -0.9338736814144079,
+            "experimentalUnitId": "representative_pixel.58",
+            "pairId": "representative_pixel.58"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00138y",
+            "conditionId": "y",
+            "value": 0.445452,
+            "experimentalUnitId": "representative_pixel.58",
+            "pairId": "representative_pixel.58"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00139x",
+            "conditionId": "x",
+            "value": -1.4221518808059435,
+            "experimentalUnitId": "representative_pixel.59",
+            "pairId": "representative_pixel.59"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00139y",
+            "conditionId": "y",
+            "value": -1.414642,
+            "experimentalUnitId": "representative_pixel.59",
+            "pairId": "representative_pixel.59"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00140x",
+            "conditionId": "x",
+            "value": 0.04206392116999785,
+            "experimentalUnitId": "representative_pixel.60",
+            "pairId": "representative_pixel.60"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00140y",
+            "conditionId": "y",
+            "value": 0.745968,
+            "experimentalUnitId": "representative_pixel.60",
+            "pairId": "representative_pixel.60"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00141x",
+            "conditionId": "x",
+            "value": -0.2217545349560863,
+            "experimentalUnitId": "representative_pixel.61",
+            "pairId": "representative_pixel.61"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00141y",
+            "conditionId": "y",
+            "value": -0.029505,
+            "experimentalUnitId": "representative_pixel.61",
+            "pairId": "representative_pixel.61"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00142x",
+            "conditionId": "x",
+            "value": -0.9750262846459604,
+            "experimentalUnitId": "representative_pixel.62",
+            "pairId": "representative_pixel.62"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00142y",
+            "conditionId": "y",
+            "value": 0.682906,
+            "experimentalUnitId": "representative_pixel.62",
+            "pairId": "representative_pixel.62"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00143x",
+            "conditionId": "x",
+            "value": 2.113262235817538,
+            "experimentalUnitId": "representative_pixel.63",
+            "pairId": "representative_pixel.63"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00143y",
+            "conditionId": "y",
+            "value": 2.263111,
+            "experimentalUnitId": "representative_pixel.63",
+            "pairId": "representative_pixel.63"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00144x",
+            "conditionId": "x",
+            "value": -0.20261243336404328,
+            "experimentalUnitId": "representative_pixel.64",
+            "pairId": "representative_pixel.64"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00144y",
+            "conditionId": "y",
+            "value": -0.435872,
+            "experimentalUnitId": "representative_pixel.64",
+            "pairId": "representative_pixel.64"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00145x",
+            "conditionId": "x",
+            "value": -0.9582244895663491,
+            "experimentalUnitId": "representative_pixel.65",
+            "pairId": "representative_pixel.65"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00145y",
+            "conditionId": "y",
+            "value": -2.086712,
+            "experimentalUnitId": "representative_pixel.65",
+            "pairId": "representative_pixel.65"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00146x",
+            "conditionId": "x",
+            "value": 0.4711397564914445,
+            "experimentalUnitId": "representative_pixel.66",
+            "pairId": "representative_pixel.66"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00146y",
+            "conditionId": "y",
+            "value": 1.242883,
+            "experimentalUnitId": "representative_pixel.66",
+            "pairId": "representative_pixel.66"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00147x",
+            "conditionId": "x",
+            "value": -0.2372241973174655,
+            "experimentalUnitId": "representative_pixel.67",
+            "pairId": "representative_pixel.67"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00147y",
+            "conditionId": "y",
+            "value": 0.543396,
+            "experimentalUnitId": "representative_pixel.67",
+            "pairId": "representative_pixel.67"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00148x",
+            "conditionId": "x",
+            "value": 0.5061332231634144,
+            "experimentalUnitId": "representative_pixel.68",
+            "pairId": "representative_pixel.68"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00148y",
+            "conditionId": "y",
+            "value": -0.76481,
+            "experimentalUnitId": "representative_pixel.68",
+            "pairId": "representative_pixel.68"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00149x",
+            "conditionId": "x",
+            "value": 0.44002221329990043,
+            "experimentalUnitId": "representative_pixel.69",
+            "pairId": "representative_pixel.69"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00149y",
+            "conditionId": "y",
+            "value": -0.411007,
+            "experimentalUnitId": "representative_pixel.69",
+            "pairId": "representative_pixel.69"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00150x",
+            "conditionId": "x",
+            "value": -0.5986777386839619,
+            "experimentalUnitId": "representative_pixel.70",
+            "pairId": "representative_pixel.70"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00150y",
+            "conditionId": "y",
+            "value": -0.169304,
+            "experimentalUnitId": "representative_pixel.70",
+            "pairId": "representative_pixel.70"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00151x",
+            "conditionId": "x",
+            "value": 0.2745540832198325,
+            "experimentalUnitId": "representative_pixel.71",
+            "pairId": "representative_pixel.71"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00151y",
+            "conditionId": "y",
+            "value": 0.500644,
+            "experimentalUnitId": "representative_pixel.71",
+            "pairId": "representative_pixel.71"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00152x",
+            "conditionId": "x",
+            "value": 0.3919035254396209,
+            "experimentalUnitId": "representative_pixel.72",
+            "pairId": "representative_pixel.72"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00152y",
+            "conditionId": "y",
+            "value": 0.941922,
+            "experimentalUnitId": "representative_pixel.72",
+            "pairId": "representative_pixel.72"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00153x",
+            "conditionId": "x",
+            "value": 0.1115204009270373,
+            "experimentalUnitId": "representative_pixel.73",
+            "pairId": "representative_pixel.73"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00153y",
+            "conditionId": "y",
+            "value": -0.867494,
+            "experimentalUnitId": "representative_pixel.73",
+            "pairId": "representative_pixel.73"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00154x",
+            "conditionId": "x",
+            "value": -0.6281597748781342,
+            "experimentalUnitId": "representative_pixel.74",
+            "pairId": "representative_pixel.74"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00154y",
+            "conditionId": "y",
+            "value": -0.787731,
+            "experimentalUnitId": "representative_pixel.74",
+            "pairId": "representative_pixel.74"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00155x",
+            "conditionId": "x",
+            "value": -0.06005024277928613,
+            "experimentalUnitId": "representative_pixel.75",
+            "pairId": "representative_pixel.75"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00155y",
+            "conditionId": "y",
+            "value": -0.289362,
+            "experimentalUnitId": "representative_pixel.75",
+            "pairId": "representative_pixel.75"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00156x",
+            "conditionId": "x",
+            "value": -0.2592990210993014,
+            "experimentalUnitId": "representative_pixel.76",
+            "pairId": "representative_pixel.76"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00156y",
+            "conditionId": "y",
+            "value": 0.928249,
+            "experimentalUnitId": "representative_pixel.76",
+            "pairId": "representative_pixel.76"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00157x",
+            "conditionId": "x",
+            "value": -0.829272907335829,
+            "experimentalUnitId": "representative_pixel.77",
+            "pairId": "representative_pixel.77"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00157y",
+            "conditionId": "y",
+            "value": -0.024738,
+            "experimentalUnitId": "representative_pixel.77",
+            "pairId": "representative_pixel.77"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00158x",
+            "conditionId": "x",
+            "value": -0.2291517897410219,
+            "experimentalUnitId": "representative_pixel.78",
+            "pairId": "representative_pixel.78"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00158y",
+            "conditionId": "y",
+            "value": -0.231646,
+            "experimentalUnitId": "representative_pixel.78",
+            "pairId": "representative_pixel.78"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00159x",
+            "conditionId": "x",
+            "value": 0.17086142616679104,
+            "experimentalUnitId": "representative_pixel.79",
+            "pairId": "representative_pixel.79"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00159y",
+            "conditionId": "y",
+            "value": 0.341022,
+            "experimentalUnitId": "representative_pixel.79",
+            "pairId": "representative_pixel.79"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00160x",
+            "conditionId": "x",
+            "value": 1.3430492718092304,
+            "experimentalUnitId": "representative_pixel.80",
+            "pairId": "representative_pixel.80"
+          },
+          {
+            "observationId": "LSA088_context_rich_v2.o00160y",
+            "conditionId": "y",
+            "value": 1.784946,
+            "experimentalUnitId": "representative_pixel.80",
+            "pairId": "representative_pixel.80"
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.95,
+          "multiplicityMethod": null
+        }
+      },
+      "result": {
+        "protocolVersion": "0.5.0",
+        "requestId": "request.LSA088.24 h",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.14.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0"
+          }
+        },
+        "estimates": [
+          {
+            "name": "correlation_coefficient",
+            "value": 0.6170432398089283,
+            "standardError": null,
+            "confidenceInterval": {
+              "level": 0.95,
+              "lower": 0.4596422632432474,
+              "upper": 0.7368604139751698
+            }
+          }
+        ],
+        "tests": [
+          {
+            "name": "pearson_correlation",
+            "statisticName": "r",
+            "statistic": 0.6170432398089283,
+            "degreesOfFreedom": [
+              78.0
+            ],
+            "pValue": 1.0932974920368522e-09,
+            "adjustedPValue": null,
+            "effectSizeName": "r",
+            "effectSize": 0.6170432398089283
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "association_not_causation",
+            "message": "Correlation describes association and does not establish causation."
+          }
+        ],
+        "warnings": [],
+        "completedAt": "2026-08-25T06:44:11.854533+00:00"
+      }
+    }
+  ]
+}

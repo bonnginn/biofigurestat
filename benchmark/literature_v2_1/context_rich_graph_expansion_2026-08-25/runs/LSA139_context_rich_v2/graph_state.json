@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "box",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "How do stabilized MERS spike immunogen and dose affect MERS S-2P IgG titers?",
+  "annotationSet": "none without an authoritative saved result"
+}

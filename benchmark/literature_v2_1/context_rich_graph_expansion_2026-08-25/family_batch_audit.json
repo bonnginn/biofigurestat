@@ -1,0 +1,54 @@
+{
+  "verdict": "READY_WITH_BOUNDED_EXCEPTIONS",
+  "readyDefinition": "Exact panel and scientific display are source-localized; unsupported or under-specified inference is withheld rather than approximated.",
+  "methodologyRules": [
+    "panel before family",
+    "paper family may override historical candidate family",
+    "biological unit before n",
+    "display/analysis/comparison/annotation sets remain separate",
+    "safe unsupported is an acceptable Alpha boundary",
+    "synthetic values are never published observations"
+  ],
+  "classificationCounts": {
+    "READY_WITH_MINOR_SOURCE_UNCERTAINTY": 3,
+    "CONTEXT_RICH_READY": 24,
+    "CONTEXT_RICH_READY_SAFE_UNSUPPORTED": 2,
+    "READY_WITH_BOUNDED_SOURCE_UNCERTAINTY": 6
+  },
+  "familyBatchCounts": {
+    "two_group_continuous": 2,
+    "two_group_nonparametric": 2,
+    "nested_xy": 1,
+    "multi_group": 2,
+    "cross_sectional_time": 1,
+    "multi_group_nonparametric": 2,
+    "factorial_descriptive": 1,
+    "factorial": 1,
+    "repeated_block": 1,
+    "paired": 1,
+    "two_group_proportion": 2,
+    "nested_multi_group": 1,
+    "descriptive_proportion": 1,
+    "survival": 2,
+    "multiple_testing": 1,
+    "multiple_readout": 1,
+    "western_blot": 1
+  },
+  "correctedHistoricalFamilies": [
+    {
+      "caseId": "LSA127",
+      "from": "correlation",
+      "to": "two_group_nonparametric"
+    },
+    {
+      "caseId": "LSA233",
+      "from": "paired",
+      "to": "independent two-group proportion"
+    },
+    {
+      "caseId": "LSA257",
+      "from": "multi_group",
+      "to": "cross-sectional ordered time"
+    }
+  ]
+}

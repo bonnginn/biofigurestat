@@ -2,13 +2,14 @@ const readabilityOptions = ["Good", "OK", "Insufficient"];
 const preferenceOptions = ["Like", "Neutral", "Dislike"];
 let manifest;
 const requestedRound = new URLSearchParams(window.location.search).get("round");
-const round = ["1", "3", "4", "5"].includes(requestedRound) ? requestedRound : "2";
+const round = ["1", "3", "4", "5", "6"].includes(requestedRound) ? requestedRound : "2";
 const finalOnly = new URLSearchParams(window.location.search).get("view") === "finals";
 let reviewData = { schemaVersion: "1.0.0", updatedAt: null, reviews: {} };
 let index = 0;
 
 const $ = (id) => document.getElementById(id);
 const join = (root, file) => `${root}/${file}`;
+const asset = (path) => `${path}?v=${encodeURIComponent(manifest?.generatedAt ?? "static")}`;
 
 function segmented(id, options) {
   const node = $(id);
@@ -53,12 +54,11 @@ function render() {
     `Round ${round} · ${item.caseId} · ${item.paperCode} · ${item.panel} · ${item.support}`;
   $("caseTitle").textContent = item.paperTitle;
   $("caseNote").textContent = item.note;
-  $("referenceImage").src = `../${item.reference}`;
-  $("defaultImage").src = join(`../${item.runRoot}`, "default_graph.png");
+  $("referenceImage").src = asset(`../${item.reference}`);
+  $("defaultImage").src = asset(join(`../${item.runRoot}`, "default_graph.png"));
   const finalAvailable = item.outcome === "completed";
-  $("finalImage").src = join(
-    `../${item.runRoot}`,
-    finalAvailable ? "final_graph.png" : "default_graph.png",
+  $("finalImage").src = asset(
+    join(`../${item.runRoot}`, finalAvailable ? "final_graph.png" : "default_graph.png"),
   );
   $("finalFallback").textContent = finalAvailable
     ? ""
@@ -126,7 +126,7 @@ function renderFinalGallery() {
       heading.append(meta, title);
       const link = document.createElement("a");
       link.className = "final-image-frame";
-      link.href = join(`../${item.runRoot}`, "final_graph.png");
+      link.href = asset(join(`../${item.runRoot}`, "final_graph.png"));
       link.target = "_blank";
       link.rel = "noreferrer";
       link.title = `${item.caseId}の完成グラフを原寸で開く`;

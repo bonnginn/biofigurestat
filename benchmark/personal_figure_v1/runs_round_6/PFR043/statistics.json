@@ -1,0 +1,301 @@
+{
+  "caseId": "PFR043",
+  "status": "ok",
+  "unit": "independent imaging experiment",
+  "results": [
+    {
+      "request": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR043.planned",
+        "projectId": "project.PFR043",
+        "analysisId": "analysis.PFR043.planned",
+        "templateId": "D03",
+        "templateVersion": "0.1.0",
+        "method": "one_way_anova",
+        "conditionIds": [
+          "ECFP",
+          "WT",
+          "F702A",
+          "H1433L",
+          "R2130L",
+          "ΔYins"
+        ],
+        "contrastIntent": "planned_comparisons",
+        "plannedContrastConditionIds": [
+          [
+            "ECFP",
+            "WT"
+          ],
+          [
+            "WT",
+            "F702A"
+          ],
+          [
+            "WT",
+            "H1433L"
+          ],
+          [
+            "WT",
+            "R2130L"
+          ],
+          [
+            "WT",
+            "ΔYins"
+          ]
+        ],
+        "primaryContrastConditionIds": [
+          "ECFP",
+          "WT"
+        ],
+        "observations": [
+          {
+            "observationId": "PFR043.planned.ECFP.1",
+            "conditionId": "ECFP",
+            "value": 17.307692,
+            "experimentalUnitId": "experiment.1.ECFP"
+          },
+          {
+            "observationId": "PFR043.planned.ECFP.2",
+            "conditionId": "ECFP",
+            "value": 17.592593,
+            "experimentalUnitId": "experiment.2.ECFP"
+          },
+          {
+            "observationId": "PFR043.planned.ECFP.3",
+            "conditionId": "ECFP",
+            "value": 20.535714,
+            "experimentalUnitId": "experiment.3.ECFP"
+          },
+          {
+            "observationId": "PFR043.planned.WT.1",
+            "conditionId": "WT",
+            "value": 82.692308,
+            "experimentalUnitId": "experiment.1.WT"
+          },
+          {
+            "observationId": "PFR043.planned.WT.2",
+            "conditionId": "WT",
+            "value": 79.62963,
+            "experimentalUnitId": "experiment.2.WT"
+          },
+          {
+            "observationId": "PFR043.planned.WT.3",
+            "conditionId": "WT",
+            "value": 81.25,
+            "experimentalUnitId": "experiment.3.WT"
+          },
+          {
+            "observationId": "PFR043.planned.F702A.1",
+            "conditionId": "F702A",
+            "value": 71.153846,
+            "experimentalUnitId": "experiment.1.F702A"
+          },
+          {
+            "observationId": "PFR043.planned.F702A.2",
+            "conditionId": "F702A",
+            "value": 76.851852,
+            "experimentalUnitId": "experiment.2.F702A"
+          },
+          {
+            "observationId": "PFR043.planned.F702A.3",
+            "conditionId": "F702A",
+            "value": 78.571429,
+            "experimentalUnitId": "experiment.3.F702A"
+          },
+          {
+            "observationId": "PFR043.planned.H1433L.1",
+            "conditionId": "H1433L",
+            "value": 18.269231,
+            "experimentalUnitId": "experiment.1.H1433L"
+          },
+          {
+            "observationId": "PFR043.planned.H1433L.2",
+            "conditionId": "H1433L",
+            "value": 32.407407,
+            "experimentalUnitId": "experiment.2.H1433L"
+          },
+          {
+            "observationId": "PFR043.planned.H1433L.3",
+            "conditionId": "H1433L",
+            "value": 28.571429,
+            "experimentalUnitId": "experiment.3.H1433L"
+          },
+          {
+            "observationId": "PFR043.planned.R2130L.1",
+            "conditionId": "R2130L",
+            "value": 80.769231,
+            "experimentalUnitId": "experiment.1.R2130L"
+          },
+          {
+            "observationId": "PFR043.planned.R2130L.2",
+            "conditionId": "R2130L",
+            "value": 71.296296,
+            "experimentalUnitId": "experiment.2.R2130L"
+          },
+          {
+            "observationId": "PFR043.planned.R2130L.3",
+            "conditionId": "R2130L",
+            "value": 79.464286,
+            "experimentalUnitId": "experiment.3.R2130L"
+          },
+          {
+            "observationId": "PFR043.planned.ΔYins.1",
+            "conditionId": "ΔYins",
+            "value": 32.692308,
+            "experimentalUnitId": "experiment.1.ΔYins"
+          },
+          {
+            "observationId": "PFR043.planned.ΔYins.2",
+            "conditionId": "ΔYins",
+            "value": 29.62963,
+            "experimentalUnitId": "experiment.2.ΔYins"
+          },
+          {
+            "observationId": "PFR043.planned.ΔYins.3",
+            "conditionId": "ΔYins",
+            "value": 25.892857,
+            "experimentalUnitId": "experiment.3.ΔYins"
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.95,
+          "multiplicityMethod": "holm_planned_comparisons"
+        }
+      },
+      "result": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR043.planned",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.14.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0",
+            "statsmodels": "0.14.6"
+          }
+        },
+        "estimates": [
+          {
+            "name": "ECFP_minus_WT",
+            "value": -62.711979666666664,
+            "standardError": 3.528097096520844,
+            "confidenceInterval": null
+          },
+          {
+            "name": "WT_minus_F702A",
+            "value": 5.664937000000009,
+            "standardError": 3.528097096520844,
+            "confidenceInterval": null
+          },
+          {
+            "name": "WT_minus_H1433L",
+            "value": 54.77462366666667,
+            "standardError": 3.528097096520844,
+            "confidenceInterval": null
+          },
+          {
+            "name": "WT_minus_R2130L",
+            "value": 4.014041666666671,
+            "standardError": 3.528097096520844,
+            "confidenceInterval": null
+          },
+          {
+            "name": "WT_minus_ΔYins",
+            "value": 51.78571433333333,
+            "standardError": 3.528097096520844,
+            "confidenceInterval": null
+          }
+        ],
+        "tests": [
+          {
+            "name": "classical_one_way_anova",
+            "statisticName": "F",
+            "statistic": 139.0083372977842,
+            "degreesOfFreedom": [
+              5.0,
+              12.0
+            ],
+            "pValue": 3.428443479305545e-10,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          },
+          {
+            "name": "planned_holm:ECFP:WT",
+            "statisticName": "t",
+            "statistic": -17.77501524221335,
+            "degreesOfFreedom": [
+              12.0
+            ],
+            "pValue": 5.501328181156713e-10,
+            "adjustedPValue": 2.7506640905783563e-09,
+            "effectSizeName": "hedges_g",
+            "effectSize": -30.060155587328246
+          },
+          {
+            "name": "planned_holm:WT:F702A",
+            "statisticName": "t",
+            "statistic": 1.6056635758654043,
+            "degreesOfFreedom": [
+              12.0
+            ],
+            "pValue": 0.134326311659723,
+            "adjustedPValue": 0.268652623319446,
+            "effectSizeName": "hedges_g",
+            "effectSize": 1.5314542994316365
+          },
+          {
+            "name": "planned_holm:WT:H1433L",
+            "statisticName": "t",
+            "statistic": 15.525259698969586,
+            "degreesOfFreedom": [
+              12.0
+            ],
+            "pValue": 2.6202747869553518e-09,
+            "adjustedPValue": 1.0481099147821407e-08,
+            "effectSizeName": "hedges_g",
+            "effectSize": 8.27374011011979
+          },
+          {
+            "name": "planned_holm:WT:R2130L",
+            "statisticName": "t",
+            "statistic": 1.137735599914478,
+            "degreesOfFreedom": [
+              12.0
+            ],
+            "pValue": 0.27743789757396553,
+            "adjustedPValue": 0.27743789757396553,
+            "effectSizeName": "hedges_g",
+            "effectSize": 0.845364350139874
+          },
+          {
+            "name": "planned_holm:WT:ΔYins",
+            "statisticName": "t",
+            "statistic": 14.678086491553955,
+            "degreesOfFreedom": [
+              12.0
+            ],
+            "pValue": 4.979475729228607e-09,
+            "adjustedPValue": 1.493842718768582e-08,
+            "effectSizeName": "hedges_g",
+            "effectSize": 15.648651615967905
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "equal_variance_assumption_selected",
+            "message": "Conventional one-way ANOVA and its pooled-variance comparisons assume equal population variances."
+          },
+          {
+            "code": "planned_pairwise_no_simultaneous_ci",
+            "message": "Only the explicitly selected pairwise comparisons were tested with Holm-adjusted p-values. Simultaneous confidence intervals are not reported for this workflow."
+          }
+        ],
+        "warnings": [],
+        "completedAt": "2026-08-25T06:02:42.511808+00:00"
+      }
+    }
+  ]
+}

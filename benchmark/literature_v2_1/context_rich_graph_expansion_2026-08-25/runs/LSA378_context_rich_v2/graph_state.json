@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "box",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "Does a high-fat diet reduce nephrocyte FITC-albumin uptake?",
+  "annotationSet": "none without an authoritative saved result"
+}

@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.1.0",
+  "caseId": "PFR020",
+  "graphType": "grouped_bar",
+  "dataSets": {
+    "displaySet": {
+      "conditionIds": [
+        "Proximal",
+        "Distal",
+        "C.D."
+      ]
+    },
+    "analysisSet": {
+      "unit": "mouse (n=6 per genotype)",
+      "status": "ok"
+    },
+    "comparisonSet": [
+      {
+        "id": "comparison.PFR020.1",
+        "conditionIds": [
+          "WT/WT",
+          "cko/cko"
+        ]
+      },
+      {
+        "id": "comparison.PFR020.2",
+        "conditionIds": [
+          "WT/WT",
+          "cko/cko"
+        ]
+      },
+      {
+        "id": "comparison.PFR020.3",
+        "conditionIds": [
+          "WT/WT",
+          "cko/cko"
+        ]
+      }
+    ],
+    "annotationSet": [
+      {
+        "comparisonId": "comparison.PFR020.1",
+        "display": "show_ns"
+      },
+      {
+        "comparisonId": "comparison.PFR020.2",
+        "display": "show_ns"
+      },
+      {
+        "comparisonId": "comparison.PFR020.3",
+        "display": "show_ns"
+      }
+    ]
+  },
+  "appearance": {
+    "barOutline": true,
+    "barMeanMarker": false,
+    "boxWhiskerMode": "tukey_1_5_iqr",
+    "uncertaintyStyle": "error_bars",
+    "summary": "mean_sd",
+    "errorBarSeries": [
+      "all"
+    ],
+    "seriesStyles": {}
+  },
+  "axes": {
+    "xSemantic": "categorical",
+    "xTitle": "Renal category",
+    "yTitle": "Cells with cilia (%)",
+    "gridLines": false,
+    "yMax": 100,
+    "tickLabels": "default"
+  },
+  "analysis": {
+    "status": "ok",
+    "authoritativeSavedResult": true,
+    "resultCount": 3,
+    "modelId": null
+  }
+}

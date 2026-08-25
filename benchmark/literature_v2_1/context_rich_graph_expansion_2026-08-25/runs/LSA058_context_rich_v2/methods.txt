@@ -1,0 +1,7 @@
+Case: LSA058_context_rich_v2
+Source: https://europepmc.org/articles/PMC9597552 (Fig. 5F)
+Scientific question: Does cky-1 deletion alter ivermectin sensitivity across treatment concentrations?
+Statistical unit: independent experiment
+Source analysis: Kruskal–Wallis
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

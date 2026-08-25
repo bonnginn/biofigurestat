@@ -1,0 +1,7 @@
+Case: LSA334_context_rich_v2
+Source: https://europepmc.org/articles/PMC9764455 (Fig. 3C)
+Scientific question: Does Trr-dependent H3K4 hypomethylation alter larval size?
+Statistical unit: larva
+Source analysis: two-tailed Student t test
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

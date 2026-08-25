@@ -1,0 +1,777 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA139_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA139.o1",
+        "series": "PBS",
+        "experimentalUnitId": "unit.PBS.1",
+        "pairId": null,
+        "x": null,
+        "value": 55.837,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o2",
+        "series": "PBS",
+        "experimentalUnitId": "unit.PBS.2",
+        "pairId": null,
+        "x": null,
+        "value": 35.6549,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o3",
+        "series": "PBS",
+        "experimentalUnitId": "unit.PBS.3",
+        "pairId": null,
+        "x": null,
+        "value": 49.425,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o4",
+        "series": "PBS",
+        "experimentalUnitId": "unit.PBS.4",
+        "pairId": null,
+        "x": null,
+        "value": 40.6406,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o5",
+        "series": "PBS",
+        "experimentalUnitId": "unit.PBS.5",
+        "pairId": null,
+        "x": null,
+        "value": 62.944,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o6",
+        "series": "PBS",
+        "experimentalUnitId": "unit.PBS.6",
+        "pairId": null,
+        "x": null,
+        "value": 56.5226,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o7",
+        "series": "PBS",
+        "experimentalUnitId": "unit.PBS.7",
+        "pairId": null,
+        "x": null,
+        "value": 53.1168,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o8",
+        "series": "PBS",
+        "experimentalUnitId": "unit.PBS.8",
+        "pairId": null,
+        "x": null,
+        "value": 47.0079,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o9",
+        "series": "PBS",
+        "experimentalUnitId": "unit.PBS.9",
+        "pairId": null,
+        "x": null,
+        "value": 54.4413,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o10",
+        "series": "PBS",
+        "experimentalUnitId": "unit.PBS.10",
+        "pairId": null,
+        "x": null,
+        "value": 56.0528,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o11",
+        "series": "S-2P 1 µg",
+        "experimentalUnitId": "unit.S-2P 1 µg.1",
+        "pairId": null,
+        "x": null,
+        "value": 52.22,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o12",
+        "series": "S-2P 1 µg",
+        "experimentalUnitId": "unit.S-2P 1 µg.2",
+        "pairId": null,
+        "x": null,
+        "value": 58.1841,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o13",
+        "series": "S-2P 1 µg",
+        "experimentalUnitId": "unit.S-2P 1 µg.3",
+        "pairId": null,
+        "x": null,
+        "value": 61.5169,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o14",
+        "series": "S-2P 1 µg",
+        "experimentalUnitId": "unit.S-2P 1 µg.4",
+        "pairId": null,
+        "x": null,
+        "value": 55.0488,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o15",
+        "series": "S-2P 1 µg",
+        "experimentalUnitId": "unit.S-2P 1 µg.5",
+        "pairId": null,
+        "x": null,
+        "value": 67.7841,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o16",
+        "series": "S-2P 1 µg",
+        "experimentalUnitId": "unit.S-2P 1 µg.6",
+        "pairId": null,
+        "x": null,
+        "value": 56.9602,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o17",
+        "series": "S-2P 1 µg",
+        "experimentalUnitId": "unit.S-2P 1 µg.7",
+        "pairId": null,
+        "x": null,
+        "value": 63.3605,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o18",
+        "series": "S-2P 1 µg",
+        "experimentalUnitId": "unit.S-2P 1 µg.8",
+        "pairId": null,
+        "x": null,
+        "value": 59.9002,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o19",
+        "series": "S-2P 1 µg",
+        "experimentalUnitId": "unit.S-2P 1 µg.9",
+        "pairId": null,
+        "x": null,
+        "value": 51.8133,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o20",
+        "series": "S-2P 1 µg",
+        "experimentalUnitId": "unit.S-2P 1 µg.10",
+        "pairId": null,
+        "x": null,
+        "value": 57.2263,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o21",
+        "series": "SS.V1 0.4 µg",
+        "experimentalUnitId": "unit.SS.V1 0.4 µg.1",
+        "pairId": null,
+        "x": null,
+        "value": 71.7265,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o22",
+        "series": "SS.V1 0.4 µg",
+        "experimentalUnitId": "unit.SS.V1 0.4 µg.2",
+        "pairId": null,
+        "x": null,
+        "value": 63.9525,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o23",
+        "series": "SS.V1 0.4 µg",
+        "experimentalUnitId": "unit.SS.V1 0.4 µg.3",
+        "pairId": null,
+        "x": null,
+        "value": 58.2092,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o24",
+        "series": "SS.V1 0.4 µg",
+        "experimentalUnitId": "unit.SS.V1 0.4 µg.4",
+        "pairId": null,
+        "x": null,
+        "value": 80.1482,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o25",
+        "series": "SS.V1 0.4 µg",
+        "experimentalUnitId": "unit.SS.V1 0.4 µg.5",
+        "pairId": null,
+        "x": null,
+        "value": 68.8446,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o26",
+        "series": "SS.V1 0.4 µg",
+        "experimentalUnitId": "unit.SS.V1 0.4 µg.6",
+        "pairId": null,
+        "x": null,
+        "value": 64.0211,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o27",
+        "series": "SS.V1 0.4 µg",
+        "experimentalUnitId": "unit.SS.V1 0.4 µg.7",
+        "pairId": null,
+        "x": null,
+        "value": 63.2898,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o28",
+        "series": "SS.V1 0.4 µg",
+        "experimentalUnitId": "unit.SS.V1 0.4 µg.8",
+        "pairId": null,
+        "x": null,
+        "value": 72.2499,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o29",
+        "series": "SS.V1 0.4 µg",
+        "experimentalUnitId": "unit.SS.V1 0.4 µg.9",
+        "pairId": null,
+        "x": null,
+        "value": 76.4027,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o30",
+        "series": "SS.V1 0.4 µg",
+        "experimentalUnitId": "unit.SS.V1 0.4 µg.10",
+        "pairId": null,
+        "x": null,
+        "value": 74.2345,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o31",
+        "series": "SS.V1 2 µg",
+        "experimentalUnitId": "unit.SS.V1 2 µg.1",
+        "pairId": null,
+        "x": null,
+        "value": 72.2043,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o32",
+        "series": "SS.V1 2 µg",
+        "experimentalUnitId": "unit.SS.V1 2 µg.2",
+        "pairId": null,
+        "x": null,
+        "value": 72.7585,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o33",
+        "series": "SS.V1 2 µg",
+        "experimentalUnitId": "unit.SS.V1 2 µg.3",
+        "pairId": null,
+        "x": null,
+        "value": 79.1078,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o34",
+        "series": "SS.V1 2 µg",
+        "experimentalUnitId": "unit.SS.V1 2 µg.4",
+        "pairId": null,
+        "x": null,
+        "value": 84.4728,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o35",
+        "series": "SS.V1 2 µg",
+        "experimentalUnitId": "unit.SS.V1 2 µg.5",
+        "pairId": null,
+        "x": null,
+        "value": 80.8328,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o36",
+        "series": "SS.V1 2 µg",
+        "experimentalUnitId": "unit.SS.V1 2 µg.6",
+        "pairId": null,
+        "x": null,
+        "value": 70.1252,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o37",
+        "series": "SS.V1 2 µg",
+        "experimentalUnitId": "unit.SS.V1 2 µg.7",
+        "pairId": null,
+        "x": null,
+        "value": 75.62,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o38",
+        "series": "SS.V1 2 µg",
+        "experimentalUnitId": "unit.SS.V1 2 µg.8",
+        "pairId": null,
+        "x": null,
+        "value": 76.6364,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o39",
+        "series": "SS.V1 2 µg",
+        "experimentalUnitId": "unit.SS.V1 2 µg.9",
+        "pairId": null,
+        "x": null,
+        "value": 71.6251,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o40",
+        "series": "SS.V1 2 µg",
+        "experimentalUnitId": "unit.SS.V1 2 µg.10",
+        "pairId": null,
+        "x": null,
+        "value": 72.351,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o41",
+        "series": "SS.V1 10 µg",
+        "experimentalUnitId": "unit.SS.V1 10 µg.1",
+        "pairId": null,
+        "x": null,
+        "value": 86.7134,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o42",
+        "series": "SS.V1 10 µg",
+        "experimentalUnitId": "unit.SS.V1 10 µg.2",
+        "pairId": null,
+        "x": null,
+        "value": 80.7471,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o43",
+        "series": "SS.V1 10 µg",
+        "experimentalUnitId": "unit.SS.V1 10 µg.3",
+        "pairId": null,
+        "x": null,
+        "value": 81.6775,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o44",
+        "series": "SS.V1 10 µg",
+        "experimentalUnitId": "unit.SS.V1 10 µg.4",
+        "pairId": null,
+        "x": null,
+        "value": 88.0385,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o45",
+        "series": "SS.V1 10 µg",
+        "experimentalUnitId": "unit.SS.V1 10 µg.5",
+        "pairId": null,
+        "x": null,
+        "value": 87.0118,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o46",
+        "series": "SS.V1 10 µg",
+        "experimentalUnitId": "unit.SS.V1 10 µg.6",
+        "pairId": null,
+        "x": null,
+        "value": 74.2732,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o47",
+        "series": "SS.V1 10 µg",
+        "experimentalUnitId": "unit.SS.V1 10 µg.7",
+        "pairId": null,
+        "x": null,
+        "value": 100.6651,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o48",
+        "series": "SS.V1 10 µg",
+        "experimentalUnitId": "unit.SS.V1 10 µg.8",
+        "pairId": null,
+        "x": null,
+        "value": 87.8689,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o49",
+        "series": "SS.V1 10 µg",
+        "experimentalUnitId": "unit.SS.V1 10 µg.9",
+        "pairId": null,
+        "x": null,
+        "value": 79.0929,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o50",
+        "series": "SS.V1 10 µg",
+        "experimentalUnitId": "unit.SS.V1 10 µg.10",
+        "pairId": null,
+        "x": null,
+        "value": 88.3297,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o51",
+        "series": "SS.V2 0.4 µg",
+        "experimentalUnitId": "unit.SS.V2 0.4 µg.1",
+        "pairId": null,
+        "x": null,
+        "value": 90.0384,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o52",
+        "series": "SS.V2 0.4 µg",
+        "experimentalUnitId": "unit.SS.V2 0.4 µg.2",
+        "pairId": null,
+        "x": null,
+        "value": 98.1897,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o53",
+        "series": "SS.V2 0.4 µg",
+        "experimentalUnitId": "unit.SS.V2 0.4 µg.3",
+        "pairId": null,
+        "x": null,
+        "value": 92.7704,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o54",
+        "series": "SS.V2 0.4 µg",
+        "experimentalUnitId": "unit.SS.V2 0.4 µg.4",
+        "pairId": null,
+        "x": null,
+        "value": 93.978,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o55",
+        "series": "SS.V2 0.4 µg",
+        "experimentalUnitId": "unit.SS.V2 0.4 µg.5",
+        "pairId": null,
+        "x": null,
+        "value": 89.5471,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o56",
+        "series": "SS.V2 0.4 µg",
+        "experimentalUnitId": "unit.SS.V2 0.4 µg.6",
+        "pairId": null,
+        "x": null,
+        "value": 87.5279,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o57",
+        "series": "SS.V2 0.4 µg",
+        "experimentalUnitId": "unit.SS.V2 0.4 µg.7",
+        "pairId": null,
+        "x": null,
+        "value": 91.4121,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o58",
+        "series": "SS.V2 0.4 µg",
+        "experimentalUnitId": "unit.SS.V2 0.4 µg.8",
+        "pairId": null,
+        "x": null,
+        "value": 96.2773,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o59",
+        "series": "SS.V2 0.4 µg",
+        "experimentalUnitId": "unit.SS.V2 0.4 µg.9",
+        "pairId": null,
+        "x": null,
+        "value": 93.0566,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o60",
+        "series": "SS.V2 0.4 µg",
+        "experimentalUnitId": "unit.SS.V2 0.4 µg.10",
+        "pairId": null,
+        "x": null,
+        "value": 97.6375,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o61",
+        "series": "SS.V2 2 µg",
+        "experimentalUnitId": "unit.SS.V2 2 µg.1",
+        "pairId": null,
+        "x": null,
+        "value": 114.0037,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o62",
+        "series": "SS.V2 2 µg",
+        "experimentalUnitId": "unit.SS.V2 2 µg.2",
+        "pairId": null,
+        "x": null,
+        "value": 101.055,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o63",
+        "series": "SS.V2 2 µg",
+        "experimentalUnitId": "unit.SS.V2 2 µg.3",
+        "pairId": null,
+        "x": null,
+        "value": 111.3191,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o64",
+        "series": "SS.V2 2 µg",
+        "experimentalUnitId": "unit.SS.V2 2 µg.4",
+        "pairId": null,
+        "x": null,
+        "value": 101.0656,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o65",
+        "series": "SS.V2 2 µg",
+        "experimentalUnitId": "unit.SS.V2 2 µg.5",
+        "pairId": null,
+        "x": null,
+        "value": 113.0616,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o66",
+        "series": "SS.V2 2 µg",
+        "experimentalUnitId": "unit.SS.V2 2 µg.6",
+        "pairId": null,
+        "x": null,
+        "value": 109.206,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o67",
+        "series": "SS.V2 2 µg",
+        "experimentalUnitId": "unit.SS.V2 2 µg.7",
+        "pairId": null,
+        "x": null,
+        "value": 105.3012,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o68",
+        "series": "SS.V2 2 µg",
+        "experimentalUnitId": "unit.SS.V2 2 µg.8",
+        "pairId": null,
+        "x": null,
+        "value": 102.3297,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o69",
+        "series": "SS.V2 2 µg",
+        "experimentalUnitId": "unit.SS.V2 2 µg.9",
+        "pairId": null,
+        "x": null,
+        "value": 108.7822,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o70",
+        "series": "SS.V2 2 µg",
+        "experimentalUnitId": "unit.SS.V2 2 µg.10",
+        "pairId": null,
+        "x": null,
+        "value": 110.2904,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o71",
+        "series": "SS.V2 10 µg",
+        "experimentalUnitId": "unit.SS.V2 10 µg.1",
+        "pairId": null,
+        "x": null,
+        "value": 103.0998,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o72",
+        "series": "SS.V2 10 µg",
+        "experimentalUnitId": "unit.SS.V2 10 µg.2",
+        "pairId": null,
+        "x": null,
+        "value": 121.3157,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o73",
+        "series": "SS.V2 10 µg",
+        "experimentalUnitId": "unit.SS.V2 10 µg.3",
+        "pairId": null,
+        "x": null,
+        "value": 111.4795,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o74",
+        "series": "SS.V2 10 µg",
+        "experimentalUnitId": "unit.SS.V2 10 µg.4",
+        "pairId": null,
+        "x": null,
+        "value": 113.4634,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o75",
+        "series": "SS.V2 10 µg",
+        "experimentalUnitId": "unit.SS.V2 10 µg.5",
+        "pairId": null,
+        "x": null,
+        "value": 116.2298,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o76",
+        "series": "SS.V2 10 µg",
+        "experimentalUnitId": "unit.SS.V2 10 µg.6",
+        "pairId": null,
+        "x": null,
+        "value": 115.7754,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o77",
+        "series": "SS.V2 10 µg",
+        "experimentalUnitId": "unit.SS.V2 10 µg.7",
+        "pairId": null,
+        "x": null,
+        "value": 121.1425,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o78",
+        "series": "SS.V2 10 µg",
+        "experimentalUnitId": "unit.SS.V2 10 µg.8",
+        "pairId": null,
+        "x": null,
+        "value": 114.7369,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o79",
+        "series": "SS.V2 10 µg",
+        "experimentalUnitId": "unit.SS.V2 10 µg.9",
+        "pairId": null,
+        "x": null,
+        "value": 117.8271,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA139.o80",
+        "series": "SS.V2 10 µg",
+        "experimentalUnitId": "unit.SS.V2 10 µg.10",
+        "pairId": null,
+        "x": null,
+        "value": 112.8095,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA139_context_rich_v2",
+    "originalCaseId": "LSA139",
+    "scientificQuestion": "How do stabilized MERS spike immunogen and dose affect MERS S-2P IgG titers?",
+    "conditions": [
+      "PBS",
+      "S-2P 1 µg",
+      "SS.V1 0.4 µg",
+      "SS.V1 2 µg",
+      "SS.V1 10 µg",
+      "SS.V2 0.4 µg",
+      "SS.V2 2 µg",
+      "SS.V2 10 µg"
+    ],
+    "statisticalUnit": "mouse",
+    "sourceMethod": "two-way ANOVA + multiple comparisons",
+    "source": {
+      "pmcid": "PMC8519809",
+      "url": "https://europepmc.org/articles/PMC8519809",
+      "targetPanel": "Fig. 2B",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "two-way ANOVA + multiple comparisons"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "box",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "How do stabilized MERS spike immunogen and dose affect MERS S-2P IgG titers?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA139",
+    "candidateFamilyReclassified": "factorial",
+    "poolDOpened": false
+  }
+}

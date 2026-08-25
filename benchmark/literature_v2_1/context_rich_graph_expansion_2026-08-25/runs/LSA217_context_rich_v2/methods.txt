@@ -1,0 +1,7 @@
+Case: LSA217_context_rich_v2
+Source: https://europepmc.org/articles/PMC11372442 (Fig. 1E)
+Scientific question: Does a low-protein diet increase mortality after LPS challenge?
+Statistical unit: mouse
+Source analysis: two-sided log-rank (Mantel–Cox)
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

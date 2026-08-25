@@ -1,0 +1,7 @@
+Case: LSA433_context_rich_v2
+Source: https://europepmc.org/articles/PMC11772670 (Fig. 3I)
+Scientific question: Which genes distinguish primed MER51B-GFP+LTR5_Hs-RFP+ from MER51B-GFP+ hESCs?
+Statistical unit: biological replicate
+Source analysis: Wald tests + Benjamini–Hochberg
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

@@ -1,0 +1,5 @@
+{
+  "status": "not_executed",
+  "reason": "source reports two-way ANOVA/Tukey but does not identify the second model factor; Graph Gold is localized to Fig. 2B and inference is withheld",
+  "results": []
+}

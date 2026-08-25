@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "stacked",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "Does dissolving Sla1-GFP puncta with 1,6-hexanediol inhibit endocytosis?",
+  "annotationSet": "none without an authoritative saved result"
+}

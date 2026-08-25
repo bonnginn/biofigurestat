@@ -1,0 +1,206 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "PFR009",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000001",
+        "condition": "Ndel1",
+        "series": "Ndel1",
+        "x": 0,
+        "value": 1,
+        "experimentalUnitId": "representative_WB_Ndel1_0h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      },
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000002",
+        "condition": "Ndel1",
+        "series": "Ndel1",
+        "x": 4,
+        "value": 0.92,
+        "experimentalUnitId": "representative_WB_Ndel1_4h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      },
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000003",
+        "condition": "Ndel1",
+        "series": "Ndel1",
+        "x": 8,
+        "value": 0.73,
+        "experimentalUnitId": "representative_WB_Ndel1_8h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      },
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000004",
+        "condition": "Ndel1",
+        "series": "Ndel1",
+        "x": 16,
+        "value": 0.51,
+        "experimentalUnitId": "representative_WB_Ndel1_16h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      },
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000005",
+        "condition": "Ndel1",
+        "series": "Ndel1",
+        "x": 24,
+        "value": 0.44,
+        "experimentalUnitId": "representative_WB_Ndel1_24h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      },
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000006",
+        "condition": "Ndel1",
+        "series": "Ndel1",
+        "x": 48,
+        "value": 0.76,
+        "experimentalUnitId": "representative_WB_Ndel1_48h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      },
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000007",
+        "condition": "trichoplein",
+        "series": "trichoplein",
+        "x": 0,
+        "value": 1,
+        "experimentalUnitId": "representative_WB_trichoplein_0h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      },
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000008",
+        "condition": "trichoplein",
+        "series": "trichoplein",
+        "x": 4,
+        "value": 0.96,
+        "experimentalUnitId": "representative_WB_trichoplein_4h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      },
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000009",
+        "condition": "trichoplein",
+        "series": "trichoplein",
+        "x": 8,
+        "value": 0.82,
+        "experimentalUnitId": "representative_WB_trichoplein_8h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      },
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000010",
+        "condition": "trichoplein",
+        "series": "trichoplein",
+        "x": 16,
+        "value": 0.64,
+        "experimentalUnitId": "representative_WB_trichoplein_16h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      },
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000011",
+        "condition": "trichoplein",
+        "series": "trichoplein",
+        "x": 24,
+        "value": 0.57,
+        "experimentalUnitId": "representative_WB_trichoplein_24h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      },
+      {
+        "caseId": "PFR009",
+        "observationId": "PFR009_R6_O000012",
+        "condition": "trichoplein",
+        "series": "trichoplein",
+        "x": 48,
+        "value": 0.84,
+        "experimentalUnitId": "representative_WB_trichoplein_48h",
+        "synthetic": true,
+        "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+        "normalizationReference": "0 h"
+      }
+    ]
+  },
+  "graph": {
+    "schemaVersion": "1.1.0",
+    "caseId": "PFR009",
+    "graphType": "line",
+    "dataSets": {
+      "displaySet": {
+        "conditionIds": [
+          "Ndel1",
+          "trichoplein"
+        ]
+      },
+      "analysisSet": {
+        "unit": "representative WB sample (n=1)",
+        "status": "not_applicable"
+      },
+      "comparisonSet": [],
+      "annotationSet": []
+    },
+    "appearance": {
+      "barOutline": true,
+      "barMeanMarker": false,
+      "boxWhiskerMode": "tukey_1_5_iqr",
+      "uncertaintyStyle": "error_bars",
+      "summary": "case_defined",
+      "errorBarSeries": [],
+      "seriesStyles": {}
+    },
+    "axes": {
+      "xSemantic": "numeric_covariate",
+      "xTitle": "Serum starvation (h)",
+      "yTitle": "Relative intensity",
+      "gridLines": true,
+      "yMax": null,
+      "tickLabels": "default"
+    },
+    "analysis": {
+      "status": "not_applicable",
+      "authoritativeSavedResult": false,
+      "resultCount": 0,
+      "modelId": null
+    }
+  },
+  "analysis": {
+    "caseId": "PFR009",
+    "status": "not_applicable",
+    "reason": "Authoritative Figure specification is descriptive-only; no inferential request was created.",
+    "results": []
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:02:33.751393+00:00",
+    "generator": "scripts/generate_expanded_personal_validation.py",
+    "humanRatingEntered": false
+  }
+}

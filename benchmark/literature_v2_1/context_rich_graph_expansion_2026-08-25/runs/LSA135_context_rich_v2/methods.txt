@@ -1,0 +1,6 @@
+Case: LSA135_context_rich_v2
+Source: https://europepmc.org/articles/PMC9647956 (Fig. 5a)
+All observations are deterministic synthetic reconstruction, not published raw data.
+Statistical unit: Not recoverable for this panel; heatmap cells are feature summaries, not biological n.
+Primary contrast: Each later time versus 1 h
+Analysis status: not_executed

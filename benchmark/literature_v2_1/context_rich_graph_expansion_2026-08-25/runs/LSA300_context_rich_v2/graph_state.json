@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "paired",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "Does membrane permeabilization change TMEM24 plasma-membrane fluorescence in the same cell?",
+  "annotationSet": "none without an authoritative saved result"
+}

@@ -1,0 +1,189 @@
+{
+  "caseId": "LSA180_context_rich_v2",
+  "classification": "CONTEXT_RICH_READY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA180_context_rich_v2",
+    "originalCaseId": "LSA180",
+    "scientificQuestion": "Does ASD2Δ-Sh3 reduce ROCK activation relative to GFP and WT-Sh3?",
+    "conditions": [
+      "GFP",
+      "WT-Sh3",
+      "ASD2Δ-Sh3"
+    ],
+    "statisticalUnit": "biological replicate",
+    "sourceMethod": "unpaired t tests",
+    "source": {
+      "pmcid": "PMC12852734",
+      "url": "https://europepmc.org/articles/PMC12852734",
+      "targetPanel": "Fig. 1D",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA180.o1",
+      "series": "GFP",
+      "experimentalUnitId": "unit.GFP.1",
+      "pairId": null,
+      "x": null,
+      "value": 52.562,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o2",
+      "series": "GFP",
+      "experimentalUnitId": "unit.GFP.2",
+      "pairId": null,
+      "x": null,
+      "value": 51.8108,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o3",
+      "series": "GFP",
+      "experimentalUnitId": "unit.GFP.3",
+      "pairId": null,
+      "x": null,
+      "value": 49.4734,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o4",
+      "series": "GFP",
+      "experimentalUnitId": "unit.GFP.4",
+      "pairId": null,
+      "x": null,
+      "value": 51.5283,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o5",
+      "series": "GFP",
+      "experimentalUnitId": "unit.GFP.5",
+      "pairId": null,
+      "x": null,
+      "value": 37.7564,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o6",
+      "series": "GFP",
+      "experimentalUnitId": "unit.GFP.6",
+      "pairId": null,
+      "x": null,
+      "value": 54.2459,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o7",
+      "series": "WT-Sh3",
+      "experimentalUnitId": "unit.WT-Sh3.1",
+      "pairId": null,
+      "x": null,
+      "value": 54.7296,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o8",
+      "series": "WT-Sh3",
+      "experimentalUnitId": "unit.WT-Sh3.2",
+      "pairId": null,
+      "x": null,
+      "value": 52.4649,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o9",
+      "series": "WT-Sh3",
+      "experimentalUnitId": "unit.WT-Sh3.3",
+      "pairId": null,
+      "x": null,
+      "value": 56.4434,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o10",
+      "series": "WT-Sh3",
+      "experimentalUnitId": "unit.WT-Sh3.4",
+      "pairId": null,
+      "x": null,
+      "value": 68.7056,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o11",
+      "series": "WT-Sh3",
+      "experimentalUnitId": "unit.WT-Sh3.5",
+      "pairId": null,
+      "x": null,
+      "value": 61.5416,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o12",
+      "series": "WT-Sh3",
+      "experimentalUnitId": "unit.WT-Sh3.6",
+      "pairId": null,
+      "x": null,
+      "value": 57.7913,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o13",
+      "series": "ASD2Δ-Sh3",
+      "experimentalUnitId": "unit.ASD2Δ-Sh3.1",
+      "pairId": null,
+      "x": null,
+      "value": 74.6884,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o14",
+      "series": "ASD2Δ-Sh3",
+      "experimentalUnitId": "unit.ASD2Δ-Sh3.2",
+      "pairId": null,
+      "x": null,
+      "value": 67.0814,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o15",
+      "series": "ASD2Δ-Sh3",
+      "experimentalUnitId": "unit.ASD2Δ-Sh3.3",
+      "pairId": null,
+      "x": null,
+      "value": 71.2399,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o16",
+      "series": "ASD2Δ-Sh3",
+      "experimentalUnitId": "unit.ASD2Δ-Sh3.4",
+      "pairId": null,
+      "x": null,
+      "value": 64.5508,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o17",
+      "series": "ASD2Δ-Sh3",
+      "experimentalUnitId": "unit.ASD2Δ-Sh3.5",
+      "pairId": null,
+      "x": null,
+      "value": 70.0511,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA180.o18",
+      "series": "ASD2Δ-Sh3",
+      "experimentalUnitId": "unit.ASD2Δ-Sh3.6",
+      "pairId": null,
+      "x": null,
+      "value": 67.3627,
+      "synthetic": true
+    }
+  ]
+}

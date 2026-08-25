@@ -1,0 +1,386 @@
+{
+  "caseId": "LSA324_context_rich_v2",
+  "classification": "READY_WITH_BOUNDED_SOURCE_UNCERTAINTY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA324_context_rich_v2",
+    "originalCaseId": "LSA324",
+    "scientificQuestion": "Does cocaine exposure increase dopaminergic-axon branching as a function of axon length?",
+    "conditions": [
+      "Saline",
+      "Cocaine"
+    ],
+    "statisticalUnit": "mouse with axons nested within mouse",
+    "sourceMethod": "two-tailed Mann–Whitney U on branch density",
+    "source": {
+      "pmcid": "PMC8716107",
+      "url": "https://europepmc.org/articles/PMC8716107",
+      "targetPanel": "Fig. 6B",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "The source displays 44/41 axons from two mice per group; axons are not promoted to independent biological n.",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA324.o1",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.1",
+      "nestedObservationId": "axon.1",
+      "x": 46.1916,
+      "value": 0.4036,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o2",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.1",
+      "nestedObservationId": "axon.2",
+      "x": 83.9517,
+      "value": 0,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o3",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.1",
+      "nestedObservationId": "axon.3",
+      "x": 100.4005,
+      "value": 1.0486,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o4",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.1",
+      "nestedObservationId": "axon.4",
+      "x": 39.5702,
+      "value": 1.0657,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o5",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.1",
+      "nestedObservationId": "axon.5",
+      "x": 41.8542,
+      "value": 1.5721,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o6",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.1",
+      "nestedObservationId": "axon.6",
+      "x": 65.0831,
+      "value": 1.4683,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o7",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.1",
+      "nestedObservationId": "axon.7",
+      "x": 44.9368,
+      "value": 0.0847,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o8",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.1",
+      "nestedObservationId": "axon.8",
+      "x": 89.0166,
+      "value": 0.6292,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o9",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.1",
+      "nestedObservationId": "axon.9",
+      "x": 79.0205,
+      "value": 0.2229,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o10",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.1",
+      "nestedObservationId": "axon.10",
+      "x": 66.7323,
+      "value": 0.3207,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o11",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.2",
+      "nestedObservationId": "axon.1",
+      "x": 71.9656,
+      "value": 1.7612,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o12",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.2",
+      "nestedObservationId": "axon.2",
+      "x": 71.5649,
+      "value": 0.6992,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o13",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.2",
+      "nestedObservationId": "axon.3",
+      "x": 70.9387,
+      "value": 1.6907,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o14",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.2",
+      "nestedObservationId": "axon.4",
+      "x": 62.1137,
+      "value": 0.8491,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o15",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.2",
+      "nestedObservationId": "axon.5",
+      "x": 101.2953,
+      "value": 0.5217,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o16",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.2",
+      "nestedObservationId": "axon.6",
+      "x": 53.7173,
+      "value": 0.9496,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o17",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.2",
+      "nestedObservationId": "axon.7",
+      "x": 66.3615,
+      "value": 0.4542,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o18",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.2",
+      "nestedObservationId": "axon.8",
+      "x": 98.8805,
+      "value": 0.8005,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o19",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.2",
+      "nestedObservationId": "axon.9",
+      "x": 56.848,
+      "value": 1.429,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o20",
+      "series": "Saline",
+      "experimentalUnitId": "mouse.Saline.2",
+      "nestedObservationId": "axon.10",
+      "x": 61.482,
+      "value": 1.4198,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o21",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.1",
+      "nestedObservationId": "axon.1",
+      "x": 76.8337,
+      "value": 2.3745,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o22",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.1",
+      "nestedObservationId": "axon.2",
+      "x": 41.8124,
+      "value": 2.6415,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o23",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.1",
+      "nestedObservationId": "axon.3",
+      "x": 64.1363,
+      "value": 1.0485,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o24",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.1",
+      "nestedObservationId": "axon.4",
+      "x": 55.9915,
+      "value": 1.2503,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o25",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.1",
+      "nestedObservationId": "axon.5",
+      "x": 32.8645,
+      "value": 0.7732,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o26",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.1",
+      "nestedObservationId": "axon.6",
+      "x": 48.3661,
+      "value": 1.3378,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o27",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.1",
+      "nestedObservationId": "axon.7",
+      "x": 103.7695,
+      "value": 4.9883,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o28",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.1",
+      "nestedObservationId": "axon.8",
+      "x": 64.2463,
+      "value": 1.6762,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o29",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.1",
+      "nestedObservationId": "axon.9",
+      "x": 69.9591,
+      "value": 2.0554,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o30",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.1",
+      "nestedObservationId": "axon.10",
+      "x": 78.0436,
+      "value": 2.8768,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o31",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.2",
+      "nestedObservationId": "axon.1",
+      "x": 60.9086,
+      "value": 2.0851,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o32",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.2",
+      "nestedObservationId": "axon.2",
+      "x": 64.8063,
+      "value": 1.8512,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o33",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.2",
+      "nestedObservationId": "axon.3",
+      "x": 70.9793,
+      "value": 2.8161,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o34",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.2",
+      "nestedObservationId": "axon.4",
+      "x": 111.5967,
+      "value": 4.6273,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o35",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.2",
+      "nestedObservationId": "axon.5",
+      "x": 59.5681,
+      "value": 1.9943,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o36",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.2",
+      "nestedObservationId": "axon.6",
+      "x": 93.2883,
+      "value": 3.0697,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o37",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.2",
+      "nestedObservationId": "axon.7",
+      "x": 77.4849,
+      "value": 2.941,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o38",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.2",
+      "nestedObservationId": "axon.8",
+      "x": 47.8406,
+      "value": 0.9471,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o39",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.2",
+      "nestedObservationId": "axon.9",
+      "x": 64.2706,
+      "value": 1.4015,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA324.o40",
+      "series": "Cocaine",
+      "experimentalUnitId": "mouse.Cocaine.2",
+      "nestedObservationId": "axon.10",
+      "x": 71.4907,
+      "value": 3.3698,
+      "synthetic": true
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "clusters": [],
+  "resolved": [
+    {
+      "caseId": "LSA077",
+      "decision": "SELECT_FIG_2B_FOR_LEGACY_LINEAGE_AND_RETAIN_FIG_2D_AS_SPLIT_CANDIDATE"
+    },
+    {
+      "caseId": "LSA126",
+      "decision": "SAFE_UNSUPPORTED_FOR_ALPHA"
+    }
+  ]
+}

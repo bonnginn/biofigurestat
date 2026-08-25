@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA257_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA257.o1",
+        "series": "T5ds",
+        "experimentalUnitId": "unit.T5ds.1",
+        "pairId": null,
+        "x": 0,
+        "value": 39.7852,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA257.o2",
+        "series": "T5ds",
+        "experimentalUnitId": "unit.T5ds.2",
+        "pairId": null,
+        "x": 0,
+        "value": 46.2607,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA257.o3",
+        "series": "T5ds",
+        "experimentalUnitId": "unit.T5ds.3",
+        "pairId": null,
+        "x": 0,
+        "value": 49.2184,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA257.o4",
+        "series": "Post-refeeding day 5",
+        "experimentalUnitId": "unit.Post-refeeding day 5.1",
+        "pairId": null,
+        "x": 1,
+        "value": 65.0889,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA257.o5",
+        "series": "Post-refeeding day 5",
+        "experimentalUnitId": "unit.Post-refeeding day 5.2",
+        "pairId": null,
+        "x": 1,
+        "value": 58.9581,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA257.o6",
+        "series": "Post-refeeding day 5",
+        "experimentalUnitId": "unit.Post-refeeding day 5.3",
+        "pairId": null,
+        "x": 1,
+        "value": 49.0876,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA257.o7",
+        "series": "Post-refeeding day 10",
+        "experimentalUnitId": "unit.Post-refeeding day 10.1",
+        "pairId": null,
+        "x": 2,
+        "value": 59.7951,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA257.o8",
+        "series": "Post-refeeding day 10",
+        "experimentalUnitId": "unit.Post-refeeding day 10.2",
+        "pairId": null,
+        "x": 2,
+        "value": 59.634,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA257.o9",
+        "series": "Post-refeeding day 10",
+        "experimentalUnitId": "unit.Post-refeeding day 10.3",
+        "pairId": null,
+        "x": 2,
+        "value": 70.5374,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA257.o10",
+        "series": "Post-refeeding day 20",
+        "experimentalUnitId": "unit.Post-refeeding day 20.1",
+        "pairId": null,
+        "x": 3,
+        "value": 86.9089,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA257.o11",
+        "series": "Post-refeeding day 20",
+        "experimentalUnitId": "unit.Post-refeeding day 20.2",
+        "pairId": null,
+        "x": 3,
+        "value": 73.7614,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA257.o12",
+        "series": "Post-refeeding day 20",
+        "experimentalUnitId": "unit.Post-refeeding day 20.3",
+        "pairId": null,
+        "x": 3,
+        "value": 74.7036,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA257_context_rich_v2",
+    "originalCaseId": "LSA257",
+    "scientificQuestion": "How does refeeding after starvation change the proportion of Vasa2+/Piwi1+ cells?",
+    "conditions": [
+      "T5ds",
+      "Post-refeeding day 5",
+      "Post-refeeding day 10",
+      "Post-refeeding day 20"
+    ],
+    "statisticalUnit": "pooled biological replicate (15 animals)",
+    "sourceMethod": "one-way ANOVA + Tukey HSD",
+    "source": {
+      "pmcid": "PMC12704899",
+      "url": "https://europepmc.org/articles/PMC12704899",
+      "targetPanel": "Fig. 2B",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "one-way ANOVA + Tukey HSD"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "line",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "How does refeeding after starvation change the proportion of Vasa2+/Piwi1+ cells?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA257",
+    "candidateFamilyReclassified": "cross_sectional_time",
+    "poolDOpened": false
+  }
+}

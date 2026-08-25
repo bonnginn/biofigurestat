@@ -1,0 +1,820 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA120_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA120_context_rich_v2.o00001",
+        "series": "Vehicle",
+        "experimentalUnitId": "mouse.Vehicle.1",
+        "x": 21.55122094300286,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 21.55122094300286,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00002",
+        "series": "Vehicle",
+        "experimentalUnitId": "mouse.Vehicle.2",
+        "x": 26.825242452926943,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 26.825242452926943,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00003",
+        "series": "Vehicle",
+        "experimentalUnitId": "mouse.Vehicle.3",
+        "x": 10.334798399812566,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 10.334798399812566,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00004",
+        "series": "Vehicle",
+        "experimentalUnitId": "mouse.Vehicle.4",
+        "x": 22.803937889883496,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 22.803937889883496,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00005",
+        "series": "Vehicle",
+        "experimentalUnitId": "mouse.Vehicle.5",
+        "x": 18.369587284075067,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 18.369587284075067,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00006",
+        "series": "Vehicle",
+        "experimentalUnitId": "mouse.Vehicle.6",
+        "x": 30.064343081193037,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 30.064343081193037,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00007",
+        "series": "Vehicle",
+        "experimentalUnitId": "mouse.Vehicle.7",
+        "x": 22.36506992151546,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 22.36506992151546,
+        "eventObserved": false
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00008",
+        "series": "Vehicle",
+        "experimentalUnitId": "mouse.Vehicle.8",
+        "x": 31.604394135847766,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 31.604394135847766,
+        "eventObserved": false
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00009",
+        "series": "Parental ES-D3",
+        "experimentalUnitId": "mouse.Parental ES-D3.1",
+        "x": 53.34906398248011,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 53.34906398248011,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00010",
+        "series": "Parental ES-D3",
+        "experimentalUnitId": "mouse.Parental ES-D3.2",
+        "x": 64.97151420604061,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 64.97151420604061,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00011",
+        "series": "Parental ES-D3",
+        "experimentalUnitId": "mouse.Parental ES-D3.3",
+        "x": 36.673200837655465,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 36.673200837655465,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00012",
+        "series": "Parental ES-D3",
+        "experimentalUnitId": "mouse.Parental ES-D3.4",
+        "x": 48.33439422901482,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 48.33439422901482,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00013",
+        "series": "Parental ES-D3",
+        "experimentalUnitId": "mouse.Parental ES-D3.5",
+        "x": 46.05697432309011,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 46.05697432309011,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00014",
+        "series": "Parental ES-D3",
+        "experimentalUnitId": "mouse.Parental ES-D3.6",
+        "x": 42.059053240865566,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 42.059053240865566,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00015",
+        "series": "Parental ES-D3",
+        "experimentalUnitId": "mouse.Parental ES-D3.7",
+        "x": 48.866724154271196,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 48.866724154271196,
+        "eventObserved": false
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00016",
+        "series": "Parental ES-D3",
+        "experimentalUnitId": "mouse.Parental ES-D3.8",
+        "x": 57.888917244414145,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 57.888917244414145,
+        "eventObserved": false
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00017",
+        "series": "Differentiated ES-D3",
+        "experimentalUnitId": "mouse.Differentiated ES-D3.1",
+        "x": 40.03473251909824,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 40.03473251909824,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00018",
+        "series": "Differentiated ES-D3",
+        "experimentalUnitId": "mouse.Differentiated ES-D3.2",
+        "x": 36.67322654858397,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 36.67322654858397,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00019",
+        "series": "Differentiated ES-D3",
+        "experimentalUnitId": "mouse.Differentiated ES-D3.3",
+        "x": 49.22600552891559,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 49.22600552891559,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00020",
+        "series": "Differentiated ES-D3",
+        "experimentalUnitId": "mouse.Differentiated ES-D3.4",
+        "x": 35.99990461739447,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 35.99990461739447,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00021",
+        "series": "Differentiated ES-D3",
+        "experimentalUnitId": "mouse.Differentiated ES-D3.5",
+        "x": 40.57028369825328,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 40.57028369825328,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00022",
+        "series": "Differentiated ES-D3",
+        "experimentalUnitId": "mouse.Differentiated ES-D3.6",
+        "x": 35.71416285191616,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 35.71416285191616,
+        "eventObserved": true
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00023",
+        "series": "Differentiated ES-D3",
+        "experimentalUnitId": "mouse.Differentiated ES-D3.7",
+        "x": 18.636487567226414,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 18.636487567226414,
+        "eventObserved": false
+      },
+      {
+        "observationId": "LSA120_context_rich_v2.o00024",
+        "series": "Differentiated ES-D3",
+        "experimentalUnitId": "mouse.Differentiated ES-D3.8",
+        "x": 33.71304140870859,
+        "value": 0,
+        "synthetic": true,
+        "followUpTime": 33.71304140870859,
+        "eventObserved": false
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.0.0",
+    "caseId": "LSA120_context_rich_v2",
+    "originalCaseId": "LSA120",
+    "source": {
+      "pmcid": "PMC11685895",
+      "url": "https://europepmc.org/articles/PMC11685895",
+      "targetPanel": "Fig. 3C",
+      "evidenceSummary": "Kaplan–Meier survival after vehicle, parental ES-D3 vaccine or differentiated ES-D3 vaccine; n=8 mice per sex/group."
+    },
+    "fields": {
+      "scientificMessage": {
+        "value": "Undifferentiated ES-D3 vaccination prolongs survival",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "experimentalDesign": {
+        "value": "Kaplan–Meier survival after vehicle, parental ES-D3 vaccine or differentiated ES-D3 vaccine; n=8 mice per sex/group.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "statisticalUnit": {
+        "value": "mouse",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "pairingNestingRepeated": {
+        "value": "Encoded explicitly in synthetic rows where supported",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "factorsLevels": {
+        "value": "See display/series semantics",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "primaryContrast": {
+        "value": "three vaccine groups",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "referenceRoles": {
+        "value": "Control/reference labels preserved from legend",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "intent": {
+        "value": "Inferential where the legend reports a test; representative pixels remain descriptive",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "displaySet": {
+        "value": "Kaplan-Meier",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "analysisSet": {
+        "value": "mouse",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "comparisonSet": {
+        "value": "three vaccine groups",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "annotationSet": {
+        "value": "Only source-supported comparisons",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "graphConvention": {
+        "value": "Kaplan-Meier",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "xSemantics": {
+        "value": "condition or numeric time according to panel",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "seriesSemantics": {
+        "value": "scientific condition/time identity",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "facetSemantics": {
+        "value": "time facet only for LSA088",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "yReadout": {
+        "value": "Undifferentiated ES-D3 vaccination prolongs survival",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "sampleSizeStructure": {
+        "value": "Kaplan–Meier survival after vehicle, parental ES-D3 vaccine or differentiated ES-D3 vaccine; n=8 mice per sex/group.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "axisColorLegend": {
+        "value": "labels preserve source roles; color identifies series",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "uncertainty": {
+        "value": "SD/SEM or distribution as reported",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      }
+    },
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "ok",
+    "results": [
+      {
+        "request": {
+          "protocolVersion": "0.8.0",
+          "requestId": "request.LSA120.survival",
+          "projectId": "project.LSA120.v2",
+          "analysisId": "analysis.LSA120.survival",
+          "templateId": "D11",
+          "templateVersion": "0.1.0",
+          "method": "log_rank",
+          "conditionIds": [
+            "Vehicle",
+            "Parental ES-D3",
+            "Differentiated ES-D3"
+          ],
+          "observations": [
+            {
+              "observationId": "LSA120_context_rich_v2.o00001",
+              "conditionId": "Vehicle",
+              "experimentalUnitId": "mouse.Vehicle.1",
+              "followUpTime": 21.55122094300286,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00002",
+              "conditionId": "Vehicle",
+              "experimentalUnitId": "mouse.Vehicle.2",
+              "followUpTime": 26.825242452926943,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00003",
+              "conditionId": "Vehicle",
+              "experimentalUnitId": "mouse.Vehicle.3",
+              "followUpTime": 10.334798399812566,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00004",
+              "conditionId": "Vehicle",
+              "experimentalUnitId": "mouse.Vehicle.4",
+              "followUpTime": 22.803937889883496,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00005",
+              "conditionId": "Vehicle",
+              "experimentalUnitId": "mouse.Vehicle.5",
+              "followUpTime": 18.369587284075067,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00006",
+              "conditionId": "Vehicle",
+              "experimentalUnitId": "mouse.Vehicle.6",
+              "followUpTime": 30.064343081193037,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00007",
+              "conditionId": "Vehicle",
+              "experimentalUnitId": "mouse.Vehicle.7",
+              "followUpTime": 22.36506992151546,
+              "eventObserved": false
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00008",
+              "conditionId": "Vehicle",
+              "experimentalUnitId": "mouse.Vehicle.8",
+              "followUpTime": 31.604394135847766,
+              "eventObserved": false
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00009",
+              "conditionId": "Parental ES-D3",
+              "experimentalUnitId": "mouse.Parental ES-D3.1",
+              "followUpTime": 53.34906398248011,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00010",
+              "conditionId": "Parental ES-D3",
+              "experimentalUnitId": "mouse.Parental ES-D3.2",
+              "followUpTime": 64.97151420604061,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00011",
+              "conditionId": "Parental ES-D3",
+              "experimentalUnitId": "mouse.Parental ES-D3.3",
+              "followUpTime": 36.673200837655465,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00012",
+              "conditionId": "Parental ES-D3",
+              "experimentalUnitId": "mouse.Parental ES-D3.4",
+              "followUpTime": 48.33439422901482,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00013",
+              "conditionId": "Parental ES-D3",
+              "experimentalUnitId": "mouse.Parental ES-D3.5",
+              "followUpTime": 46.05697432309011,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00014",
+              "conditionId": "Parental ES-D3",
+              "experimentalUnitId": "mouse.Parental ES-D3.6",
+              "followUpTime": 42.059053240865566,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00015",
+              "conditionId": "Parental ES-D3",
+              "experimentalUnitId": "mouse.Parental ES-D3.7",
+              "followUpTime": 48.866724154271196,
+              "eventObserved": false
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00016",
+              "conditionId": "Parental ES-D3",
+              "experimentalUnitId": "mouse.Parental ES-D3.8",
+              "followUpTime": 57.888917244414145,
+              "eventObserved": false
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00017",
+              "conditionId": "Differentiated ES-D3",
+              "experimentalUnitId": "mouse.Differentiated ES-D3.1",
+              "followUpTime": 40.03473251909824,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00018",
+              "conditionId": "Differentiated ES-D3",
+              "experimentalUnitId": "mouse.Differentiated ES-D3.2",
+              "followUpTime": 36.67322654858397,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00019",
+              "conditionId": "Differentiated ES-D3",
+              "experimentalUnitId": "mouse.Differentiated ES-D3.3",
+              "followUpTime": 49.22600552891559,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00020",
+              "conditionId": "Differentiated ES-D3",
+              "experimentalUnitId": "mouse.Differentiated ES-D3.4",
+              "followUpTime": 35.99990461739447,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00021",
+              "conditionId": "Differentiated ES-D3",
+              "experimentalUnitId": "mouse.Differentiated ES-D3.5",
+              "followUpTime": 40.57028369825328,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00022",
+              "conditionId": "Differentiated ES-D3",
+              "experimentalUnitId": "mouse.Differentiated ES-D3.6",
+              "followUpTime": 35.71416285191616,
+              "eventObserved": true
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00023",
+              "conditionId": "Differentiated ES-D3",
+              "experimentalUnitId": "mouse.Differentiated ES-D3.7",
+              "followUpTime": 18.636487567226414,
+              "eventObserved": false
+            },
+            {
+              "observationId": "LSA120_context_rich_v2.o00024",
+              "conditionId": "Differentiated ES-D3",
+              "experimentalUnitId": "mouse.Differentiated ES-D3.8",
+              "followUpTime": 33.71304140870859,
+              "eventObserved": false
+            }
+          ],
+          "options": {
+            "alternative": "two_sided",
+            "confidenceLevel": 0.95,
+            "multiplicityMethod": null
+          }
+        },
+        "result": {
+          "protocolVersion": "0.8.0",
+          "requestId": "request.LSA120.survival",
+          "status": "ok",
+          "engine": {
+            "name": "lsaa-python",
+            "version": "0.14.0",
+            "packages": {
+              "numpy": "2.3.5",
+              "scipy": "1.18.0"
+            }
+          },
+          "estimates": [],
+          "tests": [
+            {
+              "name": "log_rank_test",
+              "statisticName": "chi_square",
+              "statistic": 23.661683865996718,
+              "degreesOfFreedom": [
+                2.0
+              ],
+              "pValue": 7.276635690487778e-06,
+              "adjustedPValue": null,
+              "effectSizeName": null,
+              "effectSize": null
+            }
+          ],
+          "diagnostics": [
+            {
+              "code": "survival_censoring_preserved",
+              "message": "Censored units contributed to risk sets and were not treated as missing observations."
+            }
+          ],
+          "warnings": [],
+          "survival": {
+            "groups": [
+              {
+                "conditionId": "Vehicle",
+                "n": 8,
+                "events": 6,
+                "censored": 2,
+                "curve": [
+                  {
+                    "time": 0.0,
+                    "survival": 1.0,
+                    "atRisk": 8,
+                    "events": 0,
+                    "censored": 0
+                  },
+                  {
+                    "time": 10.334798399812566,
+                    "survival": 0.875,
+                    "atRisk": 8,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 18.369587284075067,
+                    "survival": 0.75,
+                    "atRisk": 7,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 21.55122094300286,
+                    "survival": 0.625,
+                    "atRisk": 6,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 22.36506992151546,
+                    "survival": 0.625,
+                    "atRisk": 5,
+                    "events": 0,
+                    "censored": 1
+                  },
+                  {
+                    "time": 22.803937889883496,
+                    "survival": 0.46875,
+                    "atRisk": 4,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 26.825242452926943,
+                    "survival": 0.31250000000000006,
+                    "atRisk": 3,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 30.064343081193037,
+                    "survival": 0.15625000000000003,
+                    "atRisk": 2,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 31.604394135847766,
+                    "survival": 0.15625000000000003,
+                    "atRisk": 1,
+                    "events": 0,
+                    "censored": 1
+                  }
+                ],
+                "censorTimes": [
+                  22.36506992151546,
+                  31.604394135847766
+                ]
+              },
+              {
+                "conditionId": "Parental ES-D3",
+                "n": 8,
+                "events": 6,
+                "censored": 2,
+                "curve": [
+                  {
+                    "time": 0.0,
+                    "survival": 1.0,
+                    "atRisk": 8,
+                    "events": 0,
+                    "censored": 0
+                  },
+                  {
+                    "time": 36.673200837655465,
+                    "survival": 0.875,
+                    "atRisk": 8,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 42.059053240865566,
+                    "survival": 0.75,
+                    "atRisk": 7,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 46.05697432309011,
+                    "survival": 0.625,
+                    "atRisk": 6,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 48.33439422901482,
+                    "survival": 0.5,
+                    "atRisk": 5,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 48.866724154271196,
+                    "survival": 0.5,
+                    "atRisk": 4,
+                    "events": 0,
+                    "censored": 1
+                  },
+                  {
+                    "time": 53.34906398248011,
+                    "survival": 0.33333333333333337,
+                    "atRisk": 3,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 57.888917244414145,
+                    "survival": 0.33333333333333337,
+                    "atRisk": 2,
+                    "events": 0,
+                    "censored": 1
+                  },
+                  {
+                    "time": 64.97151420604061,
+                    "survival": 0.0,
+                    "atRisk": 1,
+                    "events": 1,
+                    "censored": 0
+                  }
+                ],
+                "censorTimes": [
+                  48.866724154271196,
+                  57.888917244414145
+                ]
+              },
+              {
+                "conditionId": "Differentiated ES-D3",
+                "n": 8,
+                "events": 6,
+                "censored": 2,
+                "curve": [
+                  {
+                    "time": 0.0,
+                    "survival": 1.0,
+                    "atRisk": 8,
+                    "events": 0,
+                    "censored": 0
+                  },
+                  {
+                    "time": 18.636487567226414,
+                    "survival": 1.0,
+                    "atRisk": 8,
+                    "events": 0,
+                    "censored": 1
+                  },
+                  {
+                    "time": 33.71304140870859,
+                    "survival": 1.0,
+                    "atRisk": 7,
+                    "events": 0,
+                    "censored": 1
+                  },
+                  {
+                    "time": 35.71416285191616,
+                    "survival": 0.8333333333333334,
+                    "atRisk": 6,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 35.99990461739447,
+                    "survival": 0.6666666666666667,
+                    "atRisk": 5,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 36.67322654858397,
+                    "survival": 0.5,
+                    "atRisk": 4,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 40.03473251909824,
+                    "survival": 0.33333333333333337,
+                    "atRisk": 3,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 40.57028369825328,
+                    "survival": 0.16666666666666669,
+                    "atRisk": 2,
+                    "events": 1,
+                    "censored": 0
+                  },
+                  {
+                    "time": 49.22600552891559,
+                    "survival": 0.0,
+                    "atRisk": 1,
+                    "events": 1,
+                    "censored": 0
+                  }
+                ],
+                "censorTimes": [
+                  18.636487567226414,
+                  33.71304140870859
+                ]
+              }
+            ]
+          },
+          "completedAt": "2026-08-25T06:44:13.414243+00:00"
+        }
+      }
+    ]
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "survival",
+    "analysisResultAuthority": true,
+    "displaySet": "all synthetic rows",
+    "analysisSet": "biological-unit summaries or explicit survival units",
+    "comparisonSet": "three vaccine groups",
+    "annotationSet": "Only source-supported comparisons"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:00.139081+00:00",
+    "generator": "scripts/generate_context_rich_graph_pilot.py",
+    "originalCaseId": "LSA120",
+    "originalBenchmark": "LSA495_v2_1_repaired_1",
+    "poolDOpened": false
+  }
+}

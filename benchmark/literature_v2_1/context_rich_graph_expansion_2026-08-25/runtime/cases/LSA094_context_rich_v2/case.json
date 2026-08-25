@@ -1,0 +1,154 @@
+{
+  "caseId": "LSA094_context_rich_v2",
+  "classification": "READY_WITH_MINOR_SOURCE_UNCERTAINTY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.0.0",
+    "caseId": "LSA094_context_rich_v2",
+    "originalCaseId": "LSA094",
+    "source": {
+      "pmcid": "PMC12086567",
+      "url": "https://europepmc.org/articles/PMC12086567",
+      "targetPanel": "Fig. 1I",
+      "evidenceSummary": "RalB-GTP pulldown densitometry, resting versus thrombin, n=3; unpaired t test reported."
+    },
+    "fields": {
+      "scientificMessage": {
+        "value": "Thrombin activates RalB",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "experimentalDesign": {
+        "value": "RalB-GTP pulldown densitometry, resting versus thrombin, n=3; unpaired t test reported.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "statisticalUnit": {
+        "value": "pulldown experiment",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "pairingNestingRepeated": {
+        "value": "Encoded explicitly in synthetic rows where supported",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "factorsLevels": {
+        "value": "See display/series semantics",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "primaryContrast": {
+        "value": "Resting versus thrombin",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "referenceRoles": {
+        "value": "Control/reference labels preserved from legend",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "intent": {
+        "value": "Inferential where the legend reports a test; representative pixels remain descriptive",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "displaySet": {
+        "value": "bar/dot",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "analysisSet": {
+        "value": "pulldown experiment",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "comparisonSet": {
+        "value": "Resting versus thrombin",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "annotationSet": {
+        "value": "Only source-supported comparisons",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "graphConvention": {
+        "value": "bar/dot",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "xSemantics": {
+        "value": "condition or numeric time according to panel",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "seriesSemantics": {
+        "value": "scientific condition/time identity",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "facetSemantics": {
+        "value": "time facet only for LSA088",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "yReadout": {
+        "value": "Thrombin activates RalB",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "sampleSizeStructure": {
+        "value": "RalB-GTP pulldown densitometry, resting versus thrombin, n=3; unpaired t test reported.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "axisColorLegend": {
+        "value": "labels preserve source roles; color identifies series",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "uncertainty": {
+        "value": "SD/SEM or distribution as reported",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      }
+    },
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA094_context_rich_v2.o00001",
+      "series": "Resting",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 0.204721,
+      "synthetic": true,
+      "pairId": "experiment.1"
+    },
+    {
+      "observationId": "LSA094_context_rich_v2.o00002",
+      "series": "Resting",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 0.161139,
+      "synthetic": true,
+      "pairId": "experiment.2"
+    },
+    {
+      "observationId": "LSA094_context_rich_v2.o00003",
+      "series": "Resting",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 0.08488,
+      "synthetic": true,
+      "pairId": "experiment.3"
+    },
+    {
+      "observationId": "LSA094_context_rich_v2.o00004",
+      "series": "Thrombin",
+      "experimentalUnitId": "experiment.1",
+      "x": null,
+      "value": 1.080923,
+      "synthetic": true,
+      "pairId": "experiment.1"
+    },
+    {
+      "observationId": "LSA094_context_rich_v2.o00005",
+      "series": "Thrombin",
+      "experimentalUnitId": "experiment.2",
+      "x": null,
+      "value": 0.943748,
+      "synthetic": true,
+      "pairId": "experiment.2"
+    },
+    {
+      "observationId": "LSA094_context_rich_v2.o00006",
+      "series": "Thrombin",
+      "experimentalUnitId": "experiment.3",
+      "x": null,
+      "value": 1.081031,
+      "synthetic": true,
+      "pairId": "experiment.3"
+    }
+  ]
+}

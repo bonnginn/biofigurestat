@@ -1,0 +1,968 @@
+{
+  "schemaVersion": "1.0.0",
+  "selectionQuotas": {
+    "two_group_continuous": 3,
+    "two_group_nonparam": 2,
+    "multi_group": 3,
+    "multi_group_nonparam": 3,
+    "factorial": 3,
+    "paired": 3,
+    "longitudinal": 2,
+    "nested": 3,
+    "proportion": 3,
+    "survival": 3,
+    "correlation": 2,
+    "multiple_testing": 2,
+    "western_blot": 3
+  },
+  "candidateCount": 35,
+  "certifiedReadyCount": 0,
+  "status": "TARGETED_RECONSTRUCTION_REQUIRED_BEFORE_GRAPH_CAPABILITY_USE",
+  "cases": [
+    {
+      "caseId": "LSA135",
+      "designClass": "two_group_continuous",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "simple raw + summary",
+        "continuous outcome"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Transcriptional reprogramming of the A549 cell response to N. farcinica . a Heatmap of the 48 DEGs of.",
+        "sourcePanel": "Fig. 5",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 5,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test",
+        "graphConvention": "heatmap",
+        "sourceNDefinition": "Figure legend reports n=5; nearest explicit unit term: mouse.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA334",
+      "designClass": "two_group_continuous",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "simple raw + summary",
+        "continuous outcome"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: H3K4 hypomethylation affects Drosophila biology across many phenotypic levels (A and B) Pictures of 120 h-old larvae from.",
+        "sourcePanel": "Figure 3",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 14,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=26; nearest explicit unit term: larvae.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA378",
+      "designClass": "two_group_continuous",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "simple raw + summary",
+        "continuous outcome"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: High-fat diet compromises nephrocyte function. Nephrocytes from control Drosophila ( w 1118 , females) fed a regular diet.",
+        "sourcePanel": "Figure 1.",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 6,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=6; nearest explicit unit term: images.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA274",
+      "designClass": "two_group_nonparam",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "distribution",
+        "two-group"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Analysis of the ethanol level in the blood samples by GC-MS The boxplot depicted the intensity of ethanol.",
+        "sourcePanel": "Figure 9",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 4,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Mann–Whitney U test",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=4; nearest explicit unit term: mice.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA324",
+      "designClass": "two_group_nonparam",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "distribution",
+        "two-group"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Cocaine increases branching of Apex2 dopamine axons in cocaine sensitized mice. ( A ) Two representative reconstructions of.",
+        "sourcePanel": "Figure 6.",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 14,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Mann–Whitney U test",
+        "graphConvention": "scatter plot",
+        "sourceNDefinition": "Figure legend reports n=41; nearest explicit unit term: mice.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA210",
+      "designClass": "multi_group",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "multi-group",
+        "selected comparisons"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Piezo1 activation mediates iron overload under elevated matrix stiffness (A and B) Immunofluorescence images of FerroOrange in endothelial.",
+        "sourcePanel": "Figure 4",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 4,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "one-way ANOVA omnibus",
+        "graphConvention": "bar graph",
+        "sourceNDefinition": "Figure legend reports n=3; nearest explicit unit term: images.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA463",
+      "designClass": "multi_group",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "multi-group",
+        "selected comparisons"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Curvature preference for diverse lipid-binding domains. (A) The FYVE domain of HRS (PDB: 1DVP ) displays preference for.",
+        "sourcePanel": "Fig. 3.",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 4,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "one-way ANOVA omnibus",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=3; nearest explicit unit term: samples.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA257",
+      "designClass": "multi_group",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "multi-group",
+        "selected comparisons"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Feeding and starvation affect the proportion and cell cycle activity of Vasa2+/Piwi1+ cells. (A) Schematic illustrating the sampling.",
+        "sourcePanel": "Fig 2",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 4,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "one-way ANOVA omnibus",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=2; nearest explicit unit term: biological replicates.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA053",
+      "designClass": "multi_group_nonparam",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "distribution",
+        "multiple comparisons"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Effect of cisplatin on gene expression and DNA mutations. A Boxplot of the number of indels arising in.",
+        "sourcePanel": "Fig. 2",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 14,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Kruskal–Wallis omnibus",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=16; nearest explicit unit term: rat.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA058",
+      "designClass": "multi_group_nonparam",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "distribution",
+        "multiple comparisons"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Characterization of the major QTL associated with ivermectin resistance (A) QTL between pre- and post-ivermectin treatment on chromosome.",
+        "sourcePanel": "Figure 5",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 4,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Kruskal–Wallis omnibus",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=3; nearest explicit unit term: independent experiments.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA128",
+      "designClass": "multi_group_nonparam",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "distribution",
+        "multiple comparisons"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Design and validation of the adult mouse SAN cell culturing method (A) Steps for obtaining and culturing adult.",
+        "sourcePanel": "Figure 1",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 10,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Kruskal–Wallis omnibus",
+        "graphConvention": "scatter plot",
+        "sourceNDefinition": "Figure legend reports n=10; nearest explicit unit term: mouse.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA077",
+      "designClass": "factorial",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "grouped categorical",
+        "series/facet semantics"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: eIF4E1b interacts with the mRNA cap, eIF4EBP1, and eIF4ENIF1 and localizes to cytoplasmic foci in oocytes and embryos.",
+        "sourcePanel": "Figure 2",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 4,
+          "factors": "genotype × stimulus",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "difference-in-differences Welch contrast",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=3; nearest explicit unit term: independent experiments.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA126",
+      "designClass": "factorial",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "grouped categorical",
+        "series/facet semantics"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Effects of combined hypoxia-ischemia (HI) on cerebral hemodynamics, oxygen metabolism, and mitochondrial bioenergetics in mouse neonates under normothermia.",
+        "sourcePanel": "Figure 2.",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 7,
+          "factors": "genotype × stimulus",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "difference-in-differences Welch contrast",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=7; nearest explicit unit term: rat.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA139",
+      "designClass": "factorial",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "grouped categorical",
+        "series/facet semantics"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Immunogenicity of MERS SS immunogens in mice (A) BALB/cJ mice (N = 10/group) were inoculated with PBS (gray).",
+        "sourcePanel": "Figure 2",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 10,
+          "factors": "genotype × stimulus",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "difference-in-differences Welch contrast",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=10; nearest explicit unit term: mice.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA178",
+      "designClass": "paired",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "paired display",
+        "within-unit identity"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Association with tactoids protects bacterial cells from antibiotic uptake, suggesting the formation of a diffusion barrier. Bar graphs.",
+        "sourcePanel": "Fig. 6",
+        "experimentalDesign": {
+          "statisticalUnit": "stable biological unit followed across time",
+          "biologicalN": 14,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "repeated/matched"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "paired t test",
+        "graphConvention": "bar graph",
+        "sourceNDefinition": "Figure legend reports n=100; nearest explicit unit term: independent experiments.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA300",
+      "designClass": "paired",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "paired display",
+        "within-unit identity"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: TMEM24 PM binding is controlled by DAG and Ca 2+ . (A) TIRF microscopy recording of Ca 2+.",
+        "sourcePanel": "Fig. 1.",
+        "experimentalDesign": {
+          "statisticalUnit": "stable biological unit followed across time",
+          "biologicalN": 5,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "repeated/matched"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "paired t test",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=5; nearest explicit unit term: images.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA233",
+      "designClass": "paired",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "paired display",
+        "within-unit identity"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Cep120 depletion in stromal progenitors causes centrosome loss in the derived cell types. ( A ) Immunofluorescence staining.",
+        "sourcePanel": "Figure EV1",
+        "experimentalDesign": {
+          "statisticalUnit": "stable biological unit followed across time",
+          "biologicalN": 14,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "repeated/matched"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "paired t test",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=620; nearest explicit unit term: mice.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA086",
+      "designClass": "longitudinal",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "continuous time",
+        "repeated trajectory"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Microdomain PM organization of the C-terminal domain of the tubby protein. (A–C) Representative confocal images of CHO cells.",
+        "sourcePanel": "Fig. 1.",
+        "experimentalDesign": {
+          "statisticalUnit": "stable biological unit followed across time",
+          "biologicalN": 11,
+          "factors": "condition",
+          "timeStructure": "0, 6, 12, and 24 h; the same unit is followed across time",
+          "pairing": "repeated/matched"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "AUC per longitudinal unit followed by Welch t test",
+        "graphConvention": "line/time-course plot",
+        "sourceNDefinition": "Figure legend reports n=11; nearest explicit unit term: image.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA090",
+      "designClass": "longitudinal",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "continuous time",
+        "repeated trajectory"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Fluorescence lifetime imaging microscopy (FLIM) of HSA–AF488 interaction with FcRn–mCherry by FRET detection in BMDMs. (A) Schematic of.",
+        "sourcePanel": "FIGURE 6:",
+        "experimentalDesign": {
+          "statisticalUnit": "stable biological unit followed across time",
+          "biologicalN": 8,
+          "factors": "condition",
+          "timeStructure": "0, 6, 12, and 24 h; the same unit is followed across time",
+          "pairing": "repeated/matched"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "AUC per longitudinal unit followed by Welch t test",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=8; nearest explicit unit term: donor.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA157",
+      "designClass": "nested",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "nested raw + summary",
+        "biological-unit summary"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: EML4‐ALK V1 and V3 activation induces the formation of cytoplasmic foci H3122 cells expressing endogenous EML4‐ALK V1 and.",
+        "sourcePanel": "Figure 1",
+        "experimentalDesign": {
+          "statisticalUnit": "independent experiment with nested cells/images",
+          "biologicalN": 3,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test on experiment-level means",
+        "graphConvention": "violin/distribution plot",
+        "sourceNDefinition": "Figure legend reports n=2; nearest explicit unit term: biological replicates.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA249",
+      "designClass": "nested",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "nested raw + summary",
+        "biological-unit summary"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Overexpression of ATG9B disrupts the membrane potential and genomic stability of mitochondria. (A) Representative images of H1299 cells.",
+        "sourcePanel": "FIGURE 3:",
+        "experimentalDesign": {
+          "statisticalUnit": "independent experiment with nested cells/images",
+          "biologicalN": 3,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test on experiment-level means",
+        "graphConvention": "bar graph",
+        "sourceNDefinition": "Figure legend reports n=3; nearest explicit unit term: independent experiments.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA302",
+      "designClass": "nested",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "nested raw + summary",
+        "biological-unit summary"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: CA increases in vitro and in vivo migration and invasion, and blocking CA diminishes the metastatic characteristics of.",
+        "sourcePanel": "Fig. 1.",
+        "experimentalDesign": {
+          "statisticalUnit": "independent experiment with nested cells/images",
+          "biologicalN": 3,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test on experiment-level means",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=3; nearest explicit unit term: independent experiments.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA108",
+      "designClass": "proportion",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "proportion",
+        "numerator/denominator"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Puncta formed by PLD-containing proteins are necessary for actin-independent endocytosis. ( A ) Quantification of the membrane uptake.",
+        "sourcePanel": "Fig. 3.",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 14,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test on biological-unit proportions",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=150; nearest explicit unit term: rat.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA346",
+      "designClass": "proportion",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "proportion",
+        "numerator/denominator"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: miR-184 regulates developmental time point via its target gene Ilp8. (A) Ilp8 mRNA levels in w 1118 (control).",
+        "sourcePanel": "Fig. 4.",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 14,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test on biological-unit proportions",
+        "graphConvention": "bar graph",
+        "sourceNDefinition": "Figure legend reports n=76; nearest explicit unit term: independent experiments.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA385",
+      "designClass": "proportion",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "proportion",
+        "numerator/denominator"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Single-cell transcriptomics identifies unique proinflammatory γδ T cells in the small bowel upon ST8Sia6 reduction expressing NK receptors.",
+        "sourcePanel": "Figure 2.",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 14,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test on biological-unit proportions",
+        "graphConvention": "violin/distribution plot",
+        "sourceNDefinition": "Figure legend reports n=875; nearest explicit unit term: mice.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA120",
+      "designClass": "survival",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "survival",
+        "time-to-event"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Differentiation of ES-D3 cells decreases their efficacy to prevent the development of implanted lung tumors. ( A ).",
+        "sourcePanel": "Fig. 3",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 12,
+          "factors": "condition",
+          "timeStructure": "event/censoring time through day 30",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "log-rank test",
+        "graphConvention": "Kaplan–Meier survival curve",
+        "sourceNDefinition": "Figure legend reports n=8; nearest explicit unit term: mice.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA217",
+      "designClass": "survival",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "survival",
+        "time-to-event"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Mice fed an LPD are more susceptible to disease and mortality following endotoxin and live bacteria administration (A).",
+        "sourcePanel": "Figure 1",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 12,
+          "factors": "condition",
+          "timeStructure": "event/censoring time through day 30",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "log-rank test",
+        "graphConvention": "Kaplan–Meier survival curve",
+        "sourceNDefinition": "Figure legend reports n=6; nearest explicit unit term: mice.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA064",
+      "designClass": "survival",
+      "fidelityClassification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "survival",
+        "time-to-event"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: OV delivered as a second dose does not infect the tumor yet enhances the infection of the initial.",
+        "sourcePanel": "Fig. 1",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 12,
+          "factors": "condition",
+          "timeStructure": "event/censoring time through day 30",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "log-rank test",
+        "graphConvention": "Kaplan–Meier survival curve",
+        "sourceNDefinition": "Figure legend reports n=5; nearest explicit unit term: animals.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA088",
+      "designClass": "correlation",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "regression/correlation",
+        "irregular numeric X"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Fluorescence images of mitochondria transferred to BCC. Fluorescence images of COX8–GFP-transfected BCCs co-cultured with isolated Mito7–mRuby-labeled mitochondria for.",
+        "sourcePanel": "Fig. 1.",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 12,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Spearman correlation",
+        "graphConvention": "scatter plot",
+        "sourceNDefinition": "Figure legend reports n=3; nearest explicit unit term: biological replicate.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA127",
+      "designClass": "correlation",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "regression/correlation",
+        "irregular numeric X"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: Cerebellar oligodendrocyte ablation reduces the synchrony of Purkinje cell (PC) population activity during mouse cerebellar development. ( A.",
+        "sourcePanel": "Figure 2.",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 12,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Spearman correlation",
+        "graphConvention": "scatter plot",
+        "sourceNDefinition": "Figure legend reports n=5; nearest explicit unit term: mice.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA433",
+      "designClass": "multiple_testing",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "multiple readouts",
+        "facets/feature family"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: MER51B and LTR5_Hs activity labels a rare, metastable subpopulation within primed hESCs. ( A ) A representative flow.",
+        "sourcePanel": "Figure 3",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 5,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=2; nearest explicit unit term: biological replicate.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA186",
+      "designClass": "multiple_testing",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "multiple readouts",
+        "facets/feature family"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: IL-17A synergizes with Epo to increase erythropoietic rate in vivo. (A) Experimental design to evaluate IL-17A erythropoietic stimulation.",
+        "sourcePanel": "Fig 2",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 6,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=6; nearest explicit unit term: mice.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA094",
+      "designClass": "western_blot",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "WB",
+        "normalization/provenance"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: RalB is switched “on” upon thrombin stimulation and regulates WPD exocytosis. (A) HUVECs depleted of RalA or RalB.",
+        "sourcePanel": "FIGURE 1:",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 4,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test",
+        "graphConvention": "bar graph",
+        "sourceNDefinition": "Figure legend reports n=3; nearest explicit unit term: image.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA168",
+      "designClass": "western_blot",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "WB",
+        "normalization/provenance"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: PGAM5 cleavage plays an important role in PGAM5–DRP1 interaction. (A) Schematic representation of PGAM5 WT, and the S24F.",
+        "sourcePanel": "Fig. 3.",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 4,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test",
+        "graphConvention": "box plot",
+        "sourceNDefinition": "Figure legend reports n=3; nearest explicit unit term: rat.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    },
+    {
+      "caseId": "LSA180",
+      "designClass": "western_blot",
+      "fidelityClassification": "CONTEXT_REDUCED",
+      "repairStatus": "CONTEXT_OVERLAY_REQUIRED_BEFORE_GRAPH_GOLD_USE",
+      "targetGraphGrammar": [
+        "WB",
+        "normalization/provenance"
+      ],
+      "goldFigureBrief": {
+        "scientificMessage": "Quantitative figure concerning: ASD2Δ-Sh3-overexpression reduces ROCK activation in tubular cells and fibroblasts. a The conserved domains of Shroom3 are shown (PDZ.",
+        "sourcePanel": "Fig. 1",
+        "experimentalDesign": {
+          "statisticalUnit": "independent biological/statistical unit",
+          "biologicalN": 4,
+          "factors": "condition",
+          "timeStructure": "none",
+          "pairing": "independent"
+        },
+        "primaryContrast": "see analysis_scope_note",
+        "inference": "Welch t test",
+        "graphConvention": "bar graph",
+        "sourceNDefinition": "Figure legend reports n=3; nearest explicit unit term: biological replicates.",
+        "xSeriesFacetRule": "Must be reconstructed from figure legend/panel before Graph capture; do not infer from generic condition labels."
+      },
+      "historicalSyntheticReuse": "ALLOWED_ONLY_IF_OVERLAY_DESIGN_AND_UNIT_MATCH_ARE_CONFIRMED"
+    }
+  ]
+}

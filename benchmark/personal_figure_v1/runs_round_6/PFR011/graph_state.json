@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "1.1.0",
+  "caseId": "PFR011",
+  "graphType": "box",
+  "dataSets": {
+    "displaySet": {
+      "conditionIds": [
+        "0 h",
+        "4 h",
+        "8 h",
+        "16 h",
+        "24 h",
+        "48 h"
+      ]
+    },
+    "analysisSet": {
+      "unit": "independent imaging session (reconstructed, n=3)",
+      "status": "ok_app_reconstruction"
+    },
+    "comparisonSet": [
+      {
+        "id": "comparison.PFR011.1",
+        "conditionIds": [
+          "0 h",
+          "4 h"
+        ]
+      },
+      {
+        "id": "comparison.PFR011.2",
+        "conditionIds": [
+          "0 h",
+          "8 h"
+        ]
+      },
+      {
+        "id": "comparison.PFR011.3",
+        "conditionIds": [
+          "0 h",
+          "16 h"
+        ]
+      },
+      {
+        "id": "comparison.PFR011.4",
+        "conditionIds": [
+          "0 h",
+          "24 h"
+        ]
+      },
+      {
+        "id": "comparison.PFR011.5",
+        "conditionIds": [
+          "0 h",
+          "48 h"
+        ]
+      }
+    ],
+    "annotationSet": [
+      {
+        "comparisonId": "comparison.PFR011.1",
+        "display": "significant_only"
+      },
+      {
+        "comparisonId": "comparison.PFR011.2",
+        "display": "significant_only"
+      },
+      {
+        "comparisonId": "comparison.PFR011.3",
+        "display": "significant_only"
+      },
+      {
+        "comparisonId": "comparison.PFR011.4",
+        "display": "significant_only"
+      },
+      {
+        "comparisonId": "comparison.PFR011.5",
+        "display": "significant_only"
+      }
+    ]
+  },
+  "appearance": {
+    "barOutline": true,
+    "barMeanMarker": false,
+    "boxWhiskerMode": "tukey_1_5_iqr",
+    "uncertaintyStyle": "error_bars",
+    "summary": "case_defined",
+    "errorBarSeries": [],
+    "seriesStyles": {}
+  },
+  "axes": {
+    "xSemantic": "categorical",
+    "xTitle": "Serum starvation (h)",
+    "yTitle": "Ndel1 at the centrosome (a.u.)",
+    "gridLines": false,
+    "yMax": null,
+    "tickLabels": "numeric_hours"
+  },
+  "analysis": {
+    "status": "ok_app_reconstruction",
+    "authoritativeSavedResult": true,
+    "resultCount": 1,
+    "modelId": null
+  }
+}

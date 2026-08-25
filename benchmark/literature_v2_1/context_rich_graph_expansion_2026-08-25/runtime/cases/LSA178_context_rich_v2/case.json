@@ -1,0 +1,220 @@
+{
+  "caseId": "LSA178_context_rich_v2",
+  "classification": "READY_WITH_BOUNDED_SOURCE_UNCERTAINTY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA178_context_rich_v2",
+    "originalCaseId": "LSA178",
+    "scientificQuestion": "Does association with Pf4 or fd tactoids reduce gentamicin uptake?",
+    "conditions": [
+      "No phage",
+      "fd associated",
+      "fd non-associated",
+      "Pf4 associated",
+      "Pf4 non-associated",
+      "Pf4 ghost associated",
+      "Pf4 ghost non-associated"
+    ],
+    "statisticalUnit": "independent experiment",
+    "sourceMethod": "source pairwise comparisons",
+    "source": {
+      "pmcid": "PMC10730611",
+      "url": "https://europepmc.org/articles/PMC10730611",
+      "targetPanel": "Fig. 6K",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "Experiment-level summaries are treated as a repeated block; cell counts are display context, not n.",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA178.o1",
+      "series": "No phage",
+      "experimentalUnitId": "unit.1",
+      "pairId": "unit.1",
+      "x": null,
+      "value": 48.8532,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o2",
+      "series": "No phage",
+      "experimentalUnitId": "unit.2",
+      "pairId": "unit.2",
+      "x": null,
+      "value": 46.6054,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o3",
+      "series": "No phage",
+      "experimentalUnitId": "unit.3",
+      "pairId": "unit.3",
+      "x": null,
+      "value": 45.8799,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o4",
+      "series": "fd associated",
+      "experimentalUnitId": "unit.1",
+      "pairId": "unit.1",
+      "x": null,
+      "value": 75.6334,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o5",
+      "series": "fd associated",
+      "experimentalUnitId": "unit.2",
+      "pairId": "unit.2",
+      "x": null,
+      "value": 59.745,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o6",
+      "series": "fd associated",
+      "experimentalUnitId": "unit.3",
+      "pairId": "unit.3",
+      "x": null,
+      "value": 53.0725,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o7",
+      "series": "fd non-associated",
+      "experimentalUnitId": "unit.1",
+      "pairId": "unit.1",
+      "x": null,
+      "value": 71.8119,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o8",
+      "series": "fd non-associated",
+      "experimentalUnitId": "unit.2",
+      "pairId": "unit.2",
+      "x": null,
+      "value": 56.5721,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o9",
+      "series": "fd non-associated",
+      "experimentalUnitId": "unit.3",
+      "pairId": "unit.3",
+      "x": null,
+      "value": 71.3889,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o10",
+      "series": "Pf4 associated",
+      "experimentalUnitId": "unit.1",
+      "pairId": "unit.1",
+      "x": null,
+      "value": 69.5853,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o11",
+      "series": "Pf4 associated",
+      "experimentalUnitId": "unit.2",
+      "pairId": "unit.2",
+      "x": null,
+      "value": 79.7113,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o12",
+      "series": "Pf4 associated",
+      "experimentalUnitId": "unit.3",
+      "pairId": "unit.3",
+      "x": null,
+      "value": 78.0243,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o13",
+      "series": "Pf4 non-associated",
+      "experimentalUnitId": "unit.1",
+      "pairId": "unit.1",
+      "x": null,
+      "value": 96.786,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o14",
+      "series": "Pf4 non-associated",
+      "experimentalUnitId": "unit.2",
+      "pairId": "unit.2",
+      "x": null,
+      "value": 76.196,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o15",
+      "series": "Pf4 non-associated",
+      "experimentalUnitId": "unit.3",
+      "pairId": "unit.3",
+      "x": null,
+      "value": 86.9226,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o16",
+      "series": "Pf4 ghost associated",
+      "experimentalUnitId": "unit.1",
+      "pairId": "unit.1",
+      "x": null,
+      "value": 99.0019,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o17",
+      "series": "Pf4 ghost associated",
+      "experimentalUnitId": "unit.2",
+      "pairId": "unit.2",
+      "x": null,
+      "value": 103.0246,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o18",
+      "series": "Pf4 ghost associated",
+      "experimentalUnitId": "unit.3",
+      "pairId": "unit.3",
+      "x": null,
+      "value": 87.0018,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o19",
+      "series": "Pf4 ghost non-associated",
+      "experimentalUnitId": "unit.1",
+      "pairId": "unit.1",
+      "x": null,
+      "value": 94.5568,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o20",
+      "series": "Pf4 ghost non-associated",
+      "experimentalUnitId": "unit.2",
+      "pairId": "unit.2",
+      "x": null,
+      "value": 109.7188,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA178.o21",
+      "series": "Pf4 ghost non-associated",
+      "experimentalUnitId": "unit.3",
+      "pairId": "unit.3",
+      "x": null,
+      "value": 105.1122,
+      "synthetic": true
+    }
+  ]
+}

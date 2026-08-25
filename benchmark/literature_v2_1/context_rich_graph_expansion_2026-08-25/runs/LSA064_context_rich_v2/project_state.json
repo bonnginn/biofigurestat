@@ -1,0 +1,220 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA064_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA064.o1",
+        "series": "Untreated",
+        "experimentalUnitId": "mouse.Untreated.1",
+        "followUpTime": 19.112,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o2",
+        "series": "Untreated",
+        "experimentalUnitId": "mouse.Untreated.2",
+        "followUpTime": 15.828,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o3",
+        "series": "Untreated",
+        "experimentalUnitId": "mouse.Untreated.3",
+        "followUpTime": 21.302,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o4",
+        "series": "Untreated",
+        "experimentalUnitId": "mouse.Untreated.4",
+        "followUpTime": 23.694,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o5",
+        "series": "Untreated",
+        "experimentalUnitId": "mouse.Untreated.5",
+        "followUpTime": 31.256,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o6",
+        "series": "One VSV dose",
+        "experimentalUnitId": "mouse.One VSV dose.1",
+        "followUpTime": 32.45,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o7",
+        "series": "One VSV dose",
+        "experimentalUnitId": "mouse.One VSV dose.2",
+        "followUpTime": 29.338,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o8",
+        "series": "One VSV dose",
+        "experimentalUnitId": "mouse.One VSV dose.3",
+        "followUpTime": 34.096,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o9",
+        "series": "One VSV dose",
+        "experimentalUnitId": "mouse.One VSV dose.4",
+        "followUpTime": 18.906,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o10",
+        "series": "One VSV dose",
+        "experimentalUnitId": "mouse.One VSV dose.5",
+        "followUpTime": 28.801,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o11",
+        "series": "One VSV dose",
+        "experimentalUnitId": "mouse.One VSV dose.6",
+        "followUpTime": 37.672,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o12",
+        "series": "One VSV dose",
+        "experimentalUnitId": "mouse.One VSV dose.7",
+        "followUpTime": 19.707,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o13",
+        "series": "One VSV dose",
+        "experimentalUnitId": "mouse.One VSV dose.8",
+        "followUpTime": 7.117,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o14",
+        "series": "Two VSV doses",
+        "experimentalUnitId": "mouse.Two VSV doses.1",
+        "followUpTime": 30.666,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o15",
+        "series": "Two VSV doses",
+        "experimentalUnitId": "mouse.Two VSV doses.2",
+        "followUpTime": 34.816,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o16",
+        "series": "Two VSV doses",
+        "experimentalUnitId": "mouse.Two VSV doses.3",
+        "followUpTime": 39.369,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o17",
+        "series": "Two VSV doses",
+        "experimentalUnitId": "mouse.Two VSV doses.4",
+        "followUpTime": 31.061,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o18",
+        "series": "Two VSV doses",
+        "experimentalUnitId": "mouse.Two VSV doses.5",
+        "followUpTime": 30.973,
+        "eventObserved": true,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o19",
+        "series": "Two VSV doses",
+        "experimentalUnitId": "mouse.Two VSV doses.6",
+        "followUpTime": 35.949,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o20",
+        "series": "Two VSV doses",
+        "experimentalUnitId": "mouse.Two VSV doses.7",
+        "followUpTime": 29.829,
+        "eventObserved": false,
+        "synthetic": true
+      },
+      {
+        "observationId": "LSA064.o21",
+        "series": "Two VSV doses",
+        "experimentalUnitId": "mouse.Two VSV doses.8",
+        "followUpTime": 31.514,
+        "eventObserved": false,
+        "synthetic": true
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA064_context_rich_v2",
+    "originalCaseId": "LSA064",
+    "scientificQuestion": "Does a second VSV dose improve survival of CT26LacZ-bearing mice?",
+    "conditions": [
+      "Untreated",
+      "One VSV dose",
+      "Two VSV doses"
+    ],
+    "statisticalUnit": "mouse",
+    "sourceMethod": "log-rank test",
+    "source": {
+      "pmcid": "PMC9761050",
+      "url": "https://europepmc.org/articles/PMC9761050",
+      "targetPanel": "Fig. 1B",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "not_executed",
+    "reason": "Graph capability reconstruction; source analysis is recorded but no synthetic result is represented as the paper result.",
+    "sourceMethod": "log-rank test"
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "survival",
+    "analysisResultAuthority": false,
+    "displaySet": "deterministic synthetic reconstruction",
+    "analysisSet": "withheld unless unit/model is explicitly supported",
+    "comparisonSet": "Does a second VSV dose improve survival of CT26LacZ-bearing mice?",
+    "annotationSet": "none without an authoritative saved result"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:23.659999+00:00",
+    "generator": "scripts/expand_context_rich_graph_subset.py",
+    "methodologyVersion": "context-rich-graph-1.1",
+    "originalCaseId": "LSA064",
+    "candidateFamilyReclassified": "survival",
+    "poolDOpened": false
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "caseId": "PFR054",
+  "status": "unsupported",
+  "reason": "Crown-event display is supported, but source-backed cell/movie/session identity is insufficient to define the inferential unit safely. Events were not treated as biological n.",
+  "gap": "SOURCE_UNCERTAINTY",
+  "results": []
+}

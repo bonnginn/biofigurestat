@@ -1,0 +1,7 @@
+Case: LSA139_context_rich_v2
+Source: https://europepmc.org/articles/PMC8519809 (Fig. 2B)
+Scientific question: How do stabilized MERS spike immunogen and dose affect MERS S-2P IgG titers?
+Statistical unit: mouse
+Source analysis: two-way ANOVA + multiple comparisons
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

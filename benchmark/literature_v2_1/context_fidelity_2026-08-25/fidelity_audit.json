@@ -1,0 +1,4102 @@
+{
+  "summary": {
+    "schemaVersion": "1.0.0",
+    "auditDate": "2026-08-25",
+    "benchmarkVersion": "LSA495_v2_1_repaired_1",
+    "scope": {
+      "sampleSize": 50,
+      "accessibleHistoricalCasesForConvergence": 184,
+      "sourceBoundary": [
+        "round_1.json",
+        "round_2.json",
+        "round_3.json",
+        "pool_c_validation.json"
+      ],
+      "poolDOpened": true,
+      "poolDExposureScope": "Post-audit aggregate validation command read only goldAnalysis.expected_decision across the unfiltered runtime case directory. No case IDs, pool assignments, or individual values were output; the aggregate was discarded and not used in this audit.",
+      "poolDDataUsedForAudit": false,
+      "auditScriptDataBoundary": "Round 1-3 and Pool C review-exposed case IDs only",
+      "workbookOpened": false,
+      "full495Rerun": false
+    },
+    "classificationCounts": {
+      "HIGH_FIDELITY": 0,
+      "ADEQUATE_FOR_STATISTICAL_BENCHMARK": 17,
+      "CONTEXT_REDUCED": 17,
+      "MATERIAL_CONTEXT_LOSS": 14,
+      "UNRESOLVABLE_FROM_SOURCE": 2
+    },
+    "familyFidelityDistribution": {
+      "multi_group_nonparam": {
+        "MATERIAL_CONTEXT_LOSS": 3,
+        "CONTEXT_REDUCED": 2
+      },
+      "factorial": {
+        "CONTEXT_REDUCED": 4,
+        "MATERIAL_CONTEXT_LOSS": 1
+      },
+      "longitudinal": {
+        "MATERIAL_CONTEXT_LOSS": 5
+      },
+      "western_blot": {
+        "CONTEXT_REDUCED": 4
+      },
+      "proportion": {
+        "MATERIAL_CONTEXT_LOSS": 1,
+        "ADEQUATE_FOR_STATISTICAL_BENCHMARK": 3
+      },
+      "nested": {
+        "UNRESOLVABLE_FROM_SOURCE": 2,
+        "ADEQUATE_FOR_STATISTICAL_BENCHMARK": 2
+      },
+      "paired": {
+        "MATERIAL_CONTEXT_LOSS": 2,
+        "ADEQUATE_FOR_STATISTICAL_BENCHMARK": 2
+      },
+      "two_group_continuous": {
+        "ADEQUATE_FOR_STATISTICAL_BENCHMARK": 4
+      },
+      "two_group_nonparam": {
+        "ADEQUATE_FOR_STATISTICAL_BENCHMARK": 3
+      },
+      "multi_group": {
+        "CONTEXT_REDUCED": 2,
+        "MATERIAL_CONTEXT_LOSS": 1
+      },
+      "survival": {
+        "ADEQUATE_FOR_STATISTICAL_BENCHMARK": 3
+      },
+      "correlation": {
+        "CONTEXT_REDUCED": 2,
+        "MATERIAL_CONTEXT_LOSS": 1
+      },
+      "multiple_testing": {
+        "CONTEXT_REDUCED": 3
+      }
+    },
+    "contextLossClusters": {
+      "generic_scientific_question": 50,
+      "low_paper_to_packet_semantic_overlap": 50,
+      "x_series_facet_intent_not_encoded": 50,
+      "reference_role_not_explicit": 22
+    },
+    "contradictionClusters": {
+      "paper_vs_gold_time_structure": 6,
+      "source_internal_n_subject_vs_context_animal": 3,
+      "source_message_human_vs_n_animal": 3,
+      "source_n_unit_imaging_field_vs_gold_experiment": 2,
+      "source_internal_n_cell_vs_context_animal": 1,
+      "source_internal_n_experiment_vs_context_animal": 1,
+      "source_internal_n_sample_vs_context_animal": 1,
+      "source_message_animal_vs_n_subject": 1
+    },
+    "graphCapabilityCandidateSubsetCount": 35,
+    "graphCapabilityCertifiedReadyCount": 0,
+    "casesNeedingHumanContext": 2,
+    "interpretationDecision": "GRAPH/CONTEXT SUBSET NEEDS TARGETED RECONSTRUCTION",
+    "pastConclusionReinterpretation": "Historical PASS remains valid for engine/hierarchy regression when its original contract was satisfied; it does not prove paper-context or Figure fidelity."
+  },
+  "cases": [
+    {
+      "caseId": "LSA070",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "multi_group_nonparam",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1242/dev.199773",
+        "pmcid": "PMC10112895",
+        "panel": "Fig. 2.",
+        "scientificMessage": "Quantitative figure concerning: Cellular phenotypes of PATI-treated leaves. (A) Leaf length/width ratio of leaf primordia at cell proliferation stage. Leaf length.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "statistical test stated in the selected figure legend",
+        "nDefinition": "Figure legend reports n=4; nearest explicit unit term: cell.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Vehicle || Low dose — 10 nM || High dose — 100 nM",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Kruskal–Wallis omnibus",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": false,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [
+        "source_internal_n_cell_vs_context_animal"
+      ],
+      "paperPacketTokenOverlap": 0.0286,
+      "graphReadinessScore": 12,
+      "synthetic": {
+        "rowCount": 12,
+        "conditionCount": 3,
+        "conditions": [
+          "High dose — 100 nM",
+          "Low dose — 10 nM",
+          "Vehicle"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 12,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.4309,
+        "shapeFingerprint": "c3-r1-t0-u12-n12"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA084",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "multi_group_nonparam",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1242/jcs.258891",
+        "pmcid": "PMC8714073",
+        "panel": "Fig. 1.",
+        "scientificMessage": "Quantitative figure concerning: Loss of CK1α functions disrupt lamellipodia formation. (A-H) Maximum intensity projection of confocal images that show larval macrophages.",
+        "graphRepresentation": "scatter plot",
+        "statisticalMethod": "statistical test stated in the selected figure legend",
+        "nDefinition": "Figure legend reports n=135; nearest explicit unit term: cells.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Standard diet || High-fat diet || High-fat diet + intervention",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Kruskal–Wallis omnibus",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "scatter plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0541,
+      "graphReadinessScore": 14,
+      "synthetic": {
+        "rowCount": 42,
+        "conditionCount": 3,
+        "conditions": [
+          "High-fat diet",
+          "High-fat diet + intervention",
+          "Standard diet"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 42,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.1198,
+        "shapeFingerprint": "c3-r1-t0-u42-n42"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA111",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "multi_group_nonparam",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1073/pnas.2408628121",
+        "pmcid": "PMC11725891",
+        "panel": "Fig. 1.",
+        "scientificMessage": "Quantitative figure concerning: Substrate stiffness affects spicule morphology and length in vitro. ( A ) Spicule morphology on 0.25 kPa, 25.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "Kruskal–Wallis test",
+        "nDefinition": "Figure legend reports n=169; nearest explicit unit term: biological replicates.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Wild type || Heterozygous || Homozygous mutant",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Kruskal–Wallis omnibus",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": false,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [
+        "source_internal_n_experiment_vs_context_animal"
+      ],
+      "paperPacketTokenOverlap": 0.0294,
+      "graphReadinessScore": 12,
+      "synthetic": {
+        "rowCount": 42,
+        "conditionCount": 3,
+        "conditions": [
+          "Heterozygous",
+          "Homozygous mutant",
+          "Wild type"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 42,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.9393,
+        "shapeFingerprint": "c3-r1-t0-u42-n42"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA121",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "multi_group_nonparam",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1038/s41598-026-59591-8",
+        "pmcid": "PMC13319805",
+        "panel": "Fig. 1",
+        "scientificMessage": "Quantitative figure concerning: Serum and fecal conventional biomarker levels across study groups. ( a ) Box-and-whisker plot displaying fecal calprotectin levels.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "one-way ANOVA",
+        "nDefinition": "Figure legend reports n=20; nearest explicit unit term: patients.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Wild type || Heterozygous || Homozygous mutant",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Kruskal–Wallis omnibus",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": false,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [
+        "source_internal_n_subject_vs_context_animal"
+      ],
+      "paperPacketTokenOverlap": 0.0645,
+      "graphReadinessScore": 12,
+      "synthetic": {
+        "rowCount": 42,
+        "conditionCount": 3,
+        "conditions": [
+          "Heterozygous",
+          "Homozygous mutant",
+          "Wild type"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 42,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.9956,
+        "shapeFingerprint": "c3-r1-t0-u42-n42"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA128",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "multi_group_nonparam",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1016/j.isci.2021.103693",
+        "pmcid": "PMC8749457",
+        "panel": "Figure 1",
+        "scientificMessage": "Quantitative figure concerning: Design and validation of the adult mouse SAN cell culturing method (A) Steps for obtaining and culturing adult.",
+        "graphRepresentation": "scatter plot",
+        "statisticalMethod": "Kruskal–Wallis test",
+        "nDefinition": "Figure legend reports n=10; nearest explicit unit term: mouse.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Reference construct || Domain-deletion construct || Catalytic-dead construct",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 10,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Kruskal–Wallis omnibus",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "scatter plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0345,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 30,
+        "conditionCount": 3,
+        "conditions": [
+          "Catalytic-dead construct",
+          "Domain-deletion construct",
+          "Reference construct"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 30,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.5307,
+        "shapeFingerprint": "c3-r1-t0-u30-n30"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA077",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "factorial",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1038/s44319-023-00006-4",
+        "pmcid": "PMC10883267",
+        "panel": "Figure 2",
+        "scientificMessage": "Quantitative figure concerning: eIF4E1b interacts with the mRNA cap, eIF4EBP1, and eIF4ENIF1 and localizes to cytoplasmic foci in oocytes and embryos.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "two-way ANOVA",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: independent experiments.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Wild type | Vehicle || Wild type | Stimulus || Gene-perturbed | Vehicle || Gene-perturbed | Stimulus",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "genotype × stimulus",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "difference-in-differences Welch contrast",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0323,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 16,
+        "conditionCount": 4,
+        "conditions": [
+          "Gene-perturbed | Stimulus",
+          "Gene-perturbed | Vehicle",
+          "Wild type | Stimulus",
+          "Wild type | Vehicle"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 16,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.5879,
+        "shapeFingerprint": "c4-r1-t0-u16-n16"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA160",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "factorial",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1038/s44319-024-00322-3",
+        "pmcid": "PMC11724056",
+        "panel": "Figure 5",
+        "scientificMessage": "Quantitative figure concerning: Delayed skin wound healing and altered collagen fibril formation at scar sites of the Itgbl1 defect in mice.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "two-way ANOVA",
+        "nDefinition": "Figure legend reports n=1092; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Wild type | Vehicle || Wild type | Stimulus || Gene-perturbed | Vehicle || Gene-perturbed | Stimulus",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "genotype × stimulus",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "difference-in-differences Welch contrast",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0286,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 56,
+        "conditionCount": 4,
+        "conditions": [
+          "Gene-perturbed | Stimulus",
+          "Gene-perturbed | Vehicle",
+          "Wild type | Stimulus",
+          "Wild type | Vehicle"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 56,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.7677,
+        "shapeFingerprint": "c4-r1-t0-u56-n56"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA144",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "factorial",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1016/j.celrep.2026.117262",
+        "pmcid": "PMC13198533",
+        "panel": "Figure 5.",
+        "scientificMessage": "Quantitative figure concerning: Cerebellar-impaired L7-Tsc1 mutant mice show enhanced learning of an evidence-accumulation, decision-making task (A) L7-Tsc1 mutant mice have reduced.",
+        "graphRepresentation": "Kaplan–Meier survival curve",
+        "statisticalMethod": "two-way ANOVA",
+        "nDefinition": "Figure legend reports n=16; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Wild type | Vehicle || Wild type | Stimulus || Gene-perturbed | Vehicle || Gene-perturbed | Stimulus",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "genotype × stimulus",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "difference-in-differences Welch contrast",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "Kaplan–Meier survival curve",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": false,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [
+        "paper_vs_gold_time_structure"
+      ],
+      "paperPacketTokenOverlap": 0.0357,
+      "graphReadinessScore": 12,
+      "synthetic": {
+        "rowCount": 56,
+        "conditionCount": 4,
+        "conditions": [
+          "Gene-perturbed | Stimulus",
+          "Gene-perturbed | Vehicle",
+          "Wild type | Stimulus",
+          "Wild type | Vehicle"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 56,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.8679,
+        "shapeFingerprint": "c4-r1-t0-u56-n56"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA150",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "factorial",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1038/s42003-026-10530-3",
+        "pmcid": "PMC13283217",
+        "panel": "Fig. 2",
+        "scientificMessage": "Quantitative figure concerning: Characterization of OL-specific Piezo2 loss-of-function mouse models. a Representative RNA ISH images of ON cross-sections from Piezo2 f/f.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "two-way ANOVA",
+        "nDefinition": "Figure legend reports n=10; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Wild type | Vehicle || Wild type | Stimulus || Gene-perturbed | Vehicle || Gene-perturbed | Stimulus",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 10,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "genotype × stimulus",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "difference-in-differences Welch contrast",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0303,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 40,
+        "conditionCount": 4,
+        "conditions": [
+          "Gene-perturbed | Stimulus",
+          "Gene-perturbed | Vehicle",
+          "Wild type | Stimulus",
+          "Wild type | Vehicle"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 40,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.5201,
+        "shapeFingerprint": "c4-r1-t0-u40-n40"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA204",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "factorial",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.7554/elife.102874",
+        "pmcid": "PMC12726830",
+        "panel": "Figure 1.",
+        "scientificMessage": "Quantitative figure concerning: Chronic constriction injury (CCI)-induced neuropathic pain and neuronal activation were reversed by spinal inhibition of GPR30. ( A.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "two-way ANOVA",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Wild type | Vehicle || Wild type | Stimulus || Gene-perturbed | Vehicle || Gene-perturbed | Stimulus",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "genotype × stimulus",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "difference-in-differences Welch contrast",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0345,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 16,
+        "conditionCount": 4,
+        "conditions": [
+          "Gene-perturbed | Stimulus",
+          "Gene-perturbed | Vehicle",
+          "Wild type | Stimulus",
+          "Wild type | Vehicle"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 16,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.8693,
+        "shapeFingerprint": "c4-r1-t0-u16-n16"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA158",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "longitudinal",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.15252/embr.202154025",
+        "pmcid": "PMC9638854",
+        "panel": "Figure 2",
+        "scientificMessage": "Quantitative figure concerning: Glycolysis is required for spatial differences in kinetics of ATP decline upon OxPhos inhibition A Timelapse of ATP.",
+        "graphRepresentation": "violin/distribution plot",
+        "statisticalMethod": "Kruskal–Wallis test",
+        "nDefinition": "Figure legend reports n=17; nearest explicit unit term: samples.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Normoxia — 21% O₂ || Hypoxia — 1% O₂",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "stable biological unit followed across time",
+        "timepoints": "0, 6, 12, and 24 h; the same unit is followed across time"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "stable biological unit followed across time",
+        "factors": "condition",
+        "timeStructure": "0, 6, 12, and 24 h; the same unit is followed across time",
+        "pairing": "repeated/matched",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "AUC per longitudinal unit followed by Welch t test",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "violin/distribution plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": false,
+        "pairingRepeatedIdentityEncoded": false,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [
+        "source_internal_n_sample_vs_context_animal",
+        "paper_vs_gold_time_structure"
+      ],
+      "paperPacketTokenOverlap": 0.0303,
+      "graphReadinessScore": 9,
+      "synthetic": {
+        "rowCount": 112,
+        "conditionCount": 2,
+        "conditions": [
+          "Hypoxia — 1% O₂",
+          "Normoxia — 21% O₂"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 4,
+        "times": [
+          0,
+          6,
+          12,
+          24
+        ],
+        "unitCount": 28,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.6447,
+        "shapeFingerprint": "c2-r1-t4-u28-n112"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA190",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "longitudinal",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1073/pnas.2317987121",
+        "pmcid": "PMC10769829",
+        "panel": "Fig. 1.",
+        "scientificMessage": "Quantitative figure concerning: Long-lasting inhibition of V1-projecting HDB ACh neurons using DREADDs. ( A ) Schematic of viral injection of AAV-hsyn-DIO-hM4D(Gi)-mCherry.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "t test",
+        "nDefinition": "Figure legend reports n=5; nearest explicit unit term: animals.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Reference genotype || Loss-of-function genotype",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "stable biological unit followed across time",
+        "timepoints": "0, 6, 12, and 24 h; the same unit is followed across time"
+      },
+      "gold": {
+        "biologicalN": 5,
+        "trueExperimentalUnit": "stable biological unit followed across time",
+        "factors": "condition",
+        "timeStructure": "0, 6, 12, and 24 h; the same unit is followed across time",
+        "pairing": "repeated/matched",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "AUC per longitudinal unit followed by Welch t test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": false,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [
+        "paper_vs_gold_time_structure"
+      ],
+      "paperPacketTokenOverlap": 0.027,
+      "graphReadinessScore": 12,
+      "synthetic": {
+        "rowCount": 40,
+        "conditionCount": 2,
+        "conditions": [
+          "Loss-of-function genotype",
+          "Reference genotype"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 4,
+        "times": [
+          0,
+          6,
+          12,
+          24
+        ],
+        "unitCount": 10,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.2512,
+        "shapeFingerprint": "c2-r1-t4-u10-n40"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA231",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "longitudinal",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.15252/embr.202153877",
+        "pmcid": "PMC8647015",
+        "panel": "Figure 1",
+        "scientificMessage": "Quantitative figure concerning: FTLD patient‐derived TDP‐43 aggregates seed neoaggregates in cells with subtype‐specific potency Seeding efficiency was compared between control non‐neurodegenerative.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "regression",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: independent experiments.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Young adult cohort — 3 months || Aged cohort — 20 months",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "stable biological unit followed across time",
+        "timepoints": "0, 6, 12, and 24 h; the same unit is followed across time"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "stable biological unit followed across time",
+        "factors": "condition",
+        "timeStructure": "0, 6, 12, and 24 h; the same unit is followed across time",
+        "pairing": "repeated/matched",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "AUC per longitudinal unit followed by Welch t test",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": false,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [
+        "paper_vs_gold_time_structure"
+      ],
+      "paperPacketTokenOverlap": 0.0263,
+      "graphReadinessScore": 11,
+      "synthetic": {
+        "rowCount": 32,
+        "conditionCount": 2,
+        "conditions": [
+          "Aged cohort — 20 months",
+          "Young adult cohort — 3 months"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 4,
+        "times": [
+          0,
+          6,
+          12,
+          24
+        ],
+        "unitCount": 8,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.6172,
+        "shapeFingerprint": "c2-r1-t4-u8-n32"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA322",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "longitudinal",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1126/sciadv.add0014",
+        "pmcid": "PMC9770965",
+        "panel": "Fig. 1.",
+        "scientificMessage": "Quantitative figure concerning: Monitoring fibroblast activation and dynamics upon material implantation by longitudinal iMPM. ( A ) Schematic representation of the.",
+        "graphRepresentation": "heatmap",
+        "statisticalMethod": "statistical test stated in the selected figure legend",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Reference genotype || Loss-of-function genotype",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "stable biological unit followed across time",
+        "timepoints": "0, 6, 12, and 24 h; the same unit is followed across time"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "stable biological unit followed across time",
+        "factors": "condition",
+        "timeStructure": "0, 6, 12, and 24 h; the same unit is followed across time",
+        "pairing": "repeated/matched",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "AUC per longitudinal unit followed by Welch t test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "heatmap",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": false,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [
+        "paper_vs_gold_time_structure"
+      ],
+      "paperPacketTokenOverlap": 0.0323,
+      "graphReadinessScore": 9,
+      "synthetic": {
+        "rowCount": 32,
+        "conditionCount": 2,
+        "conditions": [
+          "Loss-of-function genotype",
+          "Reference genotype"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 4,
+        "times": [
+          0,
+          6,
+          12,
+          24
+        ],
+        "unitCount": 8,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.3344,
+        "shapeFingerprint": "c2-r1-t4-u8-n32"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA097",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "longitudinal",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1038/s41467-022-35632-4",
+        "pmcid": "PMC9789989",
+        "panel": "Fig. 2",
+        "scientificMessage": "Quantitative figure concerning: Embedding of explants dissociates notochord elongation and tail morphogenesis. a Representative elongation vs time curves for in vivo.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "one-way ANOVA",
+        "nDefinition": "Figure legend reports n=10; nearest explicit unit term: rat.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Wild type — unstimulated || Gene-perturbed — unstimulated",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "stable biological unit followed across time",
+        "timepoints": "0, 6, 12, and 24 h; the same unit is followed across time"
+      },
+      "gold": {
+        "biologicalN": 10,
+        "trueExperimentalUnit": "stable biological unit followed across time",
+        "factors": "condition",
+        "timeStructure": "0, 6, 12, and 24 h; the same unit is followed across time",
+        "pairing": "repeated/matched",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "AUC per longitudinal unit followed by Welch t test",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": false,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [
+        "paper_vs_gold_time_structure"
+      ],
+      "paperPacketTokenOverlap": 0.0606,
+      "graphReadinessScore": 12,
+      "synthetic": {
+        "rowCount": 80,
+        "conditionCount": 2,
+        "conditions": [
+          "Gene-perturbed — unstimulated",
+          "Wild type — unstimulated"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 4,
+        "times": [
+          0,
+          6,
+          12,
+          24
+        ],
+        "unitCount": 20,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.2836,
+        "shapeFingerprint": "c2-r1-t4-u20-n80"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA159",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "western_blot",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1038/s44319-023-00018-0",
+        "pmcid": "PMC10897455",
+        "panel": "Figure 6",
+        "scientificMessage": "Quantitative figure concerning: TMEM25-mediated suppression of claudin assembly and Par3-induced attenuation of TMEM25–claudin interaction. ( A ) Suppression of claudin cis.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "statistical test stated in the selected figure legend",
+        "nDefinition": "Figure legend reports n=35; nearest explicit unit term: rat.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change normalized target ratio at the biological-unit level?",
+        "conditions": "Young adult cohort — 3 months || Aged cohort — 20 months",
+        "measurementContext": "Western blot densitometry",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0333,
+      "graphReadinessScore": 14,
+      "synthetic": {
+        "rowCount": 84,
+        "conditionCount": 2,
+        "conditions": [
+          "Aged cohort — 20 months",
+          "Young adult cohort — 3 months"
+        ],
+        "readoutCount": 3,
+        "readouts": [
+          "loading_reference_intensity",
+          "normalized_target_ratio",
+          "target_band_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 28,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.0444,
+        "shapeFingerprint": "c2-r3-t0-u28-n84"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA168",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "western_blot",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1242/jcs.263903",
+        "pmcid": "PMC12669963",
+        "panel": "Fig. 3.",
+        "scientificMessage": "Quantitative figure concerning: PGAM5 cleavage plays an important role in PGAM5–DRP1 interaction. (A) Schematic representation of PGAM5 WT, and the S24F.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "one-way ANOVA",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: rat.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change normalized target ratio at the biological-unit level?",
+        "conditions": "Vehicle — matched solvent exposure || Pathway inhibitor — 250 nM",
+        "measurementContext": "Western blot densitometry",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0323,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 24,
+        "conditionCount": 2,
+        "conditions": [
+          "Pathway inhibitor — 250 nM",
+          "Vehicle — matched solvent exposure"
+        ],
+        "readoutCount": 3,
+        "readouts": [
+          "loading_reference_intensity",
+          "normalized_target_ratio",
+          "target_band_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 8,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.0398,
+        "shapeFingerprint": "c2-r3-t0-u8-n24"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA234",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "western_blot",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1038/s44319-024-00329-w",
+        "pmcid": "PMC11772885",
+        "panel": "Figure EV1",
+        "scientificMessage": "Quantitative figure concerning: Changes in amount and brightness of α/β tubulin spots after axoneme severing. ( A ) ClustalW alignment of.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "Student t test",
+        "nDefinition": "Figure legend reports n=21; nearest explicit unit term: cell.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change normalized target ratio at the biological-unit level?",
+        "conditions": "Baseline medium || Growth-factor stimulated",
+        "measurementContext": "Western blot densitometry",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0357,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 84,
+        "conditionCount": 2,
+        "conditions": [
+          "Baseline medium",
+          "Growth-factor stimulated"
+        ],
+        "readoutCount": 3,
+        "readouts": [
+          "loading_reference_intensity",
+          "normalized_target_ratio",
+          "target_band_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 28,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.0896,
+        "shapeFingerprint": "c2-r3-t0-u28-n84"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA258",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "western_blot",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1371/journal.pbio.3003821",
+        "pmcid": "PMC13278438",
+        "panel": "Fig 1",
+        "scientificMessage": "Quantitative figure concerning: Adiponectin KO does not alter CR’s effects on body mass, fat mass, or lean mass. Male and female.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "mixed-effects model",
+        "nDefinition": "Figure legend reports n=24; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change normalized target ratio at the biological-unit level?",
+        "conditions": "Baseline medium || Growth-factor stimulated",
+        "measurementContext": "Western blot densitometry",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0588,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 84,
+        "conditionCount": 2,
+        "conditions": [
+          "Baseline medium",
+          "Growth-factor stimulated"
+        ],
+        "readoutCount": 3,
+        "readouts": [
+          "loading_reference_intensity",
+          "normalized_target_ratio",
+          "target_band_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 28,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.1992,
+        "shapeFingerprint": "c2-r3-t0-u28-n84"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA098",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "proportion",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1038/s41467-023-43438-1",
+        "pmcid": "PMC10739966",
+        "panel": "Fig. 1",
+        "scientificMessage": "Quantitative figure concerning: Anks1b haploinsufficiency leads to structural abnormalities in corpus callosum. a Table showing patient genomic abnormalities and findings in.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "t test",
+        "nDefinition": "Figure legend reports n=5; nearest explicit unit term: mouse.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Normoxia — 21% O₂ || Hypoxia — 1% O₂",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 5,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test on biological-unit proportions",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [
+        "source_message_human_vs_n_animal"
+      ],
+      "paperPacketTokenOverlap": 0.0312,
+      "graphReadinessScore": 11,
+      "synthetic": {
+        "rowCount": 10,
+        "conditionCount": 2,
+        "conditions": [
+          "Hypoxia — 1% O₂",
+          "Normoxia — 21% O₂"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "positive_fraction"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 10,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.7864,
+        "shapeFingerprint": "c2-r1-t0-u10-n10"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA230",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "proportion",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1242/dev.204918",
+        "pmcid": "PMC13006530",
+        "panel": "Fig. 1.",
+        "scientificMessage": "Quantitative figure concerning: SRSF3 is expressed in the developing heart and is required for epicardium formation. (A) Immunofluorescence of SRSF3 and.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "statistical test stated in the selected figure legend",
+        "nDefinition": "Figure legend reports n=8; nearest explicit unit term: rat.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Normoxia — 21% O₂ || Hypoxia — 1% O₂",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 8,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test on biological-unit proportions",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0345,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 16,
+        "conditionCount": 2,
+        "conditions": [
+          "Hypoxia — 1% O₂",
+          "Normoxia — 21% O₂"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "positive_fraction"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 16,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.7438,
+        "shapeFingerprint": "c2-r1-t0-u16-n16"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA346",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "proportion",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1242/dev.205280",
+        "pmcid": "PMC13006526",
+        "panel": "Fig. 4.",
+        "scientificMessage": "Quantitative figure concerning: miR-184 regulates developmental time point via its target gene Ilp8. (A) Ilp8 mRNA levels in w 1118 (control).",
+        "graphRepresentation": "bar graph",
+        "statisticalMethod": "statistical test stated in the selected figure legend",
+        "nDefinition": "Figure legend reports n=76; nearest explicit unit term: independent experiments.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change quantitative response at the biological-unit level?",
+        "conditions": "Reference genotype || Loss-of-function genotype",
+        "measurementContext": "quantitative life-science assay",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test on biological-unit proportions",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "bar graph",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0588,
+      "graphReadinessScore": 16,
+      "synthetic": {
+        "rowCount": 28,
+        "conditionCount": 2,
+        "conditions": [
+          "Loss-of-function genotype",
+          "Reference genotype"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "positive_fraction"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 28,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.7901,
+        "shapeFingerprint": "c2-r1-t0-u28-n28"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA385",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "proportion",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1016/j.celrep.2026.117347",
+        "pmcid": "PMC13298801",
+        "panel": "Figure 2.",
+        "scientificMessage": "Quantitative figure concerning: Single-cell transcriptomics identifies unique proinflammatory γδ T cells in the small bowel upon ST8Sia6 reduction expressing NK receptors.",
+        "graphRepresentation": "violin/distribution plot",
+        "statisticalMethod": "Student t test",
+        "nDefinition": "Figure legend reports n=875; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change positive cell fraction at the biological-unit level?",
+        "conditions": "Wild type — unstimulated || Gene-perturbed — unstimulated",
+        "measurementContext": "flow cytometry",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test on biological-unit proportions",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "violin/distribution plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0312,
+      "graphReadinessScore": 16,
+      "synthetic": {
+        "rowCount": 28,
+        "conditionCount": 2,
+        "conditions": [
+          "Gene-perturbed — unstimulated",
+          "Wild type — unstimulated"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "positive_fraction"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 28,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.6938,
+        "shapeFingerprint": "c2-r1-t0-u28-n28"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA156",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "nested",
+      "classification": "UNRESOLVABLE_FROM_SOURCE",
+      "paper": {
+        "doi": "10.1242/dev.204807",
+        "pmcid": "PMC13120680",
+        "panel": "Fig. 6.",
+        "scientificMessage": "Quantitative figure concerning: Cadherin switching is regulated by activin and BMP signaling. (A) Example confocal microscopy images of live ESI017-CDH1:mCitrine-CDH2:mCherry-CAAX:mCerulean reporter.",
+        "graphRepresentation": "violin/distribution plot",
+        "statisticalMethod": "statistical test stated in the selected figure legend",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: images.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Vehicle — matched solvent exposure || Pathway inhibitor — 250 nM",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent experiment with nested cells/images",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "independent experiment with nested cells/images",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test on experiment-level means",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "violin/distribution plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": false,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [
+        "source_n_unit_imaging_field_vs_gold_experiment"
+      ],
+      "paperPacketTokenOverlap": 0.0465,
+      "graphReadinessScore": 11,
+      "synthetic": {
+        "rowCount": 98,
+        "conditionCount": 2,
+        "conditions": [
+          "Pathway inhibitor — 250 nM",
+          "Vehicle — matched solvent exposure"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 98,
+        "experimentCount": 8,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.9278,
+        "shapeFingerprint": "c2-r1-t0-u98-n98"
+      },
+      "needsHumanContext": [
+        "biological_unit"
+      ]
+    },
+    {
+      "caseId": "LSA302",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "nested",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1242/jcs.261150",
+        "pmcid": "PMC10629695",
+        "panel": "Fig. 1.",
+        "scientificMessage": "Quantitative figure concerning: CA increases in vitro and in vivo migration and invasion, and blocking CA diminishes the metastatic characteristics of.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "one-way ANOVA",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: independent experiments.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Normoxia — 21% O₂ || Hypoxia — 1% O₂",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent experiment with nested cells/images",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 3,
+        "trueExperimentalUnit": "independent experiment with nested cells/images",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test on experiment-level means",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0303,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 70,
+        "conditionCount": 2,
+        "conditions": [
+          "Hypoxia — 1% O₂",
+          "Normoxia — 21% O₂"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 70,
+        "experimentCount": 6,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.407,
+        "shapeFingerprint": "c2-r1-t0-u70-n70"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA390",
+      "historicalEvidence": [
+        "round_2"
+      ],
+      "designClass": "nested",
+      "classification": "UNRESOLVABLE_FROM_SOURCE",
+      "paper": {
+        "doi": "10.1242/dev.201807",
+        "pmcid": "PMC10690055",
+        "panel": "Fig. 4.",
+        "scientificMessage": "Quantitative figure concerning: ERK1/2 functions downstream of PDGF signaling to promote primitive erythrocyte development. (A,B) Immunostaining of phosphorylated ERK1/2 (p-ERK) in.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "one-way ANOVA",
+        "nDefinition": "Figure legend reports n=8; nearest explicit unit term: image.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Baseline medium || Growth-factor stimulated",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent experiment with nested cells/images",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "independent experiment with nested cells/images",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test on experiment-level means",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": false,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [
+        "source_n_unit_imaging_field_vs_gold_experiment"
+      ],
+      "paperPacketTokenOverlap": 0.0333,
+      "graphReadinessScore": 11,
+      "synthetic": {
+        "rowCount": 100,
+        "conditionCount": 2,
+        "conditions": [
+          "Baseline medium",
+          "Growth-factor stimulated"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 100,
+        "experimentCount": 8,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.6298,
+        "shapeFingerprint": "c2-r1-t0-u100-n100"
+      },
+      "needsHumanContext": [
+        "biological_unit"
+      ]
+    },
+    {
+      "caseId": "LSA157",
+      "historicalEvidence": [
+        "round_3"
+      ],
+      "designClass": "nested",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.15252/embr.202153693",
+        "pmcid": "PMC8647013",
+        "panel": "Figure 1",
+        "scientificMessage": "Quantitative figure concerning: EML4‐ALK V1 and V3 activation induces the formation of cytoplasmic foci H3122 cells expressing endogenous EML4‐ALK V1 and.",
+        "graphRepresentation": "violin/distribution plot",
+        "statisticalMethod": "statistical test stated in the selected figure legend",
+        "nDefinition": "Figure legend reports n=2; nearest explicit unit term: biological replicates.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Wild type — unstimulated || Gene-perturbed — unstimulated",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent experiment with nested cells/images",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 3,
+        "trueExperimentalUnit": "independent experiment with nested cells/images",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test on experiment-level means",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "violin/distribution plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0286,
+      "graphReadinessScore": 16,
+      "synthetic": {
+        "rowCount": 76,
+        "conditionCount": 2,
+        "conditions": [
+          "Gene-perturbed — unstimulated",
+          "Wild type — unstimulated"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 76,
+        "experimentCount": 6,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.1292,
+        "shapeFingerprint": "c2-r1-t0-u76-n76"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA096",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "paired",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1038/s41467-021-26901-9",
+        "pmcid": "PMC8692330",
+        "panel": "Fig. 1",
+        "scientificMessage": "Quantitative figure concerning: H19 expression across clinical NEPC cohorts. A Sequenced NEPC clinical cohorts. In the VPC cohort ( n =.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "Student t test",
+        "nDefinition": "Figure legend reports n=86; nearest explicit unit term: rat.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Vehicle — matched solvent exposure || Pathway inhibitor — 250 nM",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "stable biological unit followed across time",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "stable biological unit followed across time",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "repeated/matched",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "paired t test",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [
+        "source_message_human_vs_n_animal"
+      ],
+      "paperPacketTokenOverlap": 0.0645,
+      "graphReadinessScore": 12,
+      "synthetic": {
+        "rowCount": 28,
+        "conditionCount": 2,
+        "conditions": [
+          "Pathway inhibitor — 250 nM",
+          "Vehicle — matched solvent exposure"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 14,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.7921,
+        "shapeFingerprint": "c2-r1-t0-u14-n28"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA233",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "paired",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1038/s44319-023-00019-z",
+        "pmcid": "PMC10897188",
+        "panel": "Figure EV1",
+        "scientificMessage": "Quantitative figure concerning: Cep120 depletion in stromal progenitors causes centrosome loss in the derived cell types. ( A ) Immunofluorescence staining.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "paired t test",
+        "nDefinition": "Figure legend reports n=620; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Uninfected || Pathogen-exposed",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "stable biological unit followed across time",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "stable biological unit followed across time",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "repeated/matched",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "paired t test",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0333,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 28,
+        "conditionCount": 2,
+        "conditions": [
+          "Pathogen-exposed",
+          "Uninfected"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 14,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.6073,
+        "shapeFingerprint": "c2-r1-t0-u14-n28"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA300",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "paired",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1242/jcs.259073",
+        "pmcid": "PMC8729788",
+        "panel": "Fig. 1.",
+        "scientificMessage": "Quantitative figure concerning: TMEM24 PM binding is controlled by DAG and Ca 2+ . (A) TIRF microscopy recording of Ca 2+.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "one-way ANOVA",
+        "nDefinition": "Figure legend reports n=5; nearest explicit unit term: images.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Vehicle — matched solvent exposure || Pathway inhibitor — 250 nM",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "stable biological unit followed across time",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 5,
+        "trueExperimentalUnit": "stable biological unit followed across time",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "repeated/matched",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "paired t test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.069,
+      "graphReadinessScore": 16,
+      "synthetic": {
+        "rowCount": 10,
+        "conditionCount": 2,
+        "conditions": [
+          "Pathway inhibitor — 250 nM",
+          "Vehicle — matched solvent exposure"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 5,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.6369,
+        "shapeFingerprint": "c2-r1-t0-u5-n10"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA369",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "paired",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1038/s41467-026-74417-x",
+        "pmcid": "PMC13291269",
+        "panel": "Fig. 1",
+        "scientificMessage": "Quantitative figure concerning: Antibiotic use induces mycobiome alteration in ANTIBIO infants. ANTIBIO patients were placed into two groups based on the.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "Wilcoxon signed-rank test",
+        "nDefinition": "Figure legend reports n=22; nearest explicit unit term: patients.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "No mechanical load || Cyclic mechanical load",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "stable biological unit followed across time",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "stable biological unit followed across time",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "repeated/matched",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "paired t test",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": false,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [
+        "source_internal_n_subject_vs_context_animal",
+        "source_message_animal_vs_n_subject"
+      ],
+      "paperPacketTokenOverlap": 0.0263,
+      "graphReadinessScore": 9,
+      "synthetic": {
+        "rowCount": 28,
+        "conditionCount": 2,
+        "conditions": [
+          "Cyclic mechanical load",
+          "No mechanical load"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 14,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.8269,
+        "shapeFingerprint": "c2-r1-t0-u14-n28"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA135",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "two_group_continuous",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1186/s12915-022-01452-7",
+        "pmcid": "PMC9647956",
+        "panel": "Fig. 5",
+        "scientificMessage": "Quantitative figure concerning: Transcriptional reprogramming of the A549 cell response to N. farcinica . a Heatmap of the 48 DEGs of.",
+        "graphRepresentation": "heatmap",
+        "statisticalMethod": "Student t test",
+        "nDefinition": "Figure legend reports n=5; nearest explicit unit term: mouse.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Young adult cohort — 3 months || Aged cohort — 20 months",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 5,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "heatmap",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.037,
+      "graphReadinessScore": 12,
+      "synthetic": {
+        "rowCount": 20,
+        "conditionCount": 2,
+        "conditions": [
+          "Aged cohort — 20 months",
+          "Young adult cohort — 3 months"
+        ],
+        "readoutCount": 2,
+        "readouts": [
+          "fluorescence_intensity",
+          "fluorescence_intensity_secondary"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 10,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.0587,
+        "shapeFingerprint": "c2-r2-t0-u10-n20"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA182",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "two_group_continuous",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1371/journal.pbio.3001510",
+        "pmcid": "PMC8730403",
+        "panel": "Fig 4",
+        "scientificMessage": "Quantitative figure concerning: Alternative sequence–function optima in rodent ancestor ACE2 serendipitously confers resistance to SARS-CoV-2 in extant mice. (A) Phylogeny of.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "regression",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: biological replicates.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change positive cell fraction at the biological-unit level?",
+        "conditions": "Normoxia — 21% O₂ || Hypoxia — 1% O₂",
+        "measurementContext": "flow cytometry",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0303,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 8,
+        "conditionCount": 2,
+        "conditions": [
+          "Hypoxia — 1% O₂",
+          "Normoxia — 21% O₂"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "positive_cell_fraction"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 8,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.1621,
+        "shapeFingerprint": "c2-r1-t0-u8-n8"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA334",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "two_group_continuous",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1016/j.celrep.2022.111832",
+        "pmcid": "PMC9764455",
+        "panel": "Figure 3",
+        "scientificMessage": "Quantitative figure concerning: H3K4 hypomethylation affects Drosophila biology across many phenotypic levels (A and B) Pictures of 120 h-old larvae from.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "Student t test",
+        "nDefinition": "Figure legend reports n=26; nearest explicit unit term: larvae.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Reference genotype || Loss-of-function genotype",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0645,
+      "graphReadinessScore": 16,
+      "synthetic": {
+        "rowCount": 28,
+        "conditionCount": 2,
+        "conditions": [
+          "Loss-of-function genotype",
+          "Reference genotype"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 28,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.8144,
+        "shapeFingerprint": "c2-r1-t0-u28-n28"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA057",
+      "historicalEvidence": [
+        "round_2"
+      ],
+      "designClass": "two_group_continuous",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1016/j.celrep.2021.109783",
+        "pmcid": "PMC8595644",
+        "panel": "Figure 2",
+        "scientificMessage": "Quantitative figure concerning: Mklp2 is required for dynamic Aurora B re-localization from centromeres to the spindle midzone (A) Selected time frames.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "t test",
+        "nDefinition": "Figure legend reports n=19; nearest explicit unit term: independent experiments.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change quantitative response at the biological-unit level?",
+        "conditions": "No mechanical load || Cyclic mechanical load",
+        "measurementContext": "quantitative life-science assay",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Welch t test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0606,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 28,
+        "conditionCount": 2,
+        "conditions": [
+          "Cyclic mechanical load",
+          "No mechanical load"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "quantitative_response"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 28,
+        "experimentCount": 3,
+        "missingCount": 1,
+        "standardizedGroupMeanSpan": 0.1852,
+        "shapeFingerprint": "c2-r1-t0-u28-n28"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA087",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "two_group_nonparam",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1242/jcs.261705",
+        "pmcid": "PMC11698036",
+        "panel": "Fig. 4.",
+        "scientificMessage": "Quantitative figure concerning: Borg5 depletion in developing monolayers promotes radial stress fibers and stabilized MTs and impairs lateral membrane development. (A,B,D,F).",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "Mann–Whitney test",
+        "nDefinition": "Figure legend reports n=2; nearest explicit unit term: rat.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Young adult cohort — 3 months || Aged cohort — 20 months",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Mann–Whitney U test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0294,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 8,
+        "conditionCount": 2,
+        "conditions": [
+          "Aged cohort — 20 months",
+          "Young adult cohort — 3 months"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 8,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.0675,
+        "shapeFingerprint": "c2-r1-t0-u8-n8"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA274",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "two_group_nonparam",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1016/j.isci.2023.108764",
+        "pmcid": "PMC10837629",
+        "panel": "Figure 9",
+        "scientificMessage": "Quantitative figure concerning: Analysis of the ethanol level in the blood samples by GC-MS The boxplot depicted the intensity of ethanol.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "Wilcoxon rank-sum test",
+        "nDefinition": "Figure legend reports n=4; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Reference genotype || Loss-of-function genotype",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Mann–Whitney U test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0606,
+      "graphReadinessScore": 16,
+      "synthetic": {
+        "rowCount": 8,
+        "conditionCount": 2,
+        "conditions": [
+          "Loss-of-function genotype",
+          "Reference genotype"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 8,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.0585,
+        "shapeFingerprint": "c2-r1-t0-u8-n8"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA448",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "two_group_nonparam",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1016/j.celrep.2021.110126",
+        "pmcid": "PMC8639452",
+        "panel": "Figure 1",
+        "scientificMessage": "Quantitative figure concerning: Examination of serum IFP35 in 112 individuals with COVID-19 (A) 150 individuals with COVID-19 were divided into group.",
+        "graphRepresentation": "heatmap",
+        "statisticalMethod": "Mann–Whitney test",
+        "nDefinition": "Figure legend reports n=40; nearest explicit unit term: rat.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Mock-transfected || Target-siRNA transfected",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Mann–Whitney U test",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "heatmap",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0333,
+      "graphReadinessScore": 12,
+      "synthetic": {
+        "rowCount": 28,
+        "conditionCount": 2,
+        "conditions": [
+          "Mock-transfected",
+          "Target-siRNA transfected"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 28,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.6557,
+        "shapeFingerprint": "c2-r1-t0-u28-n28"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA257",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "multi_group",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1371/journal.pbio.3003525",
+        "pmcid": "PMC12704899",
+        "panel": "Fig 2",
+        "scientificMessage": "Quantitative figure concerning: Feeding and starvation affect the proportion and cell cycle activity of Vasa2+/Piwi1+ cells. (A) Schematic illustrating the sampling.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "one-way ANOVA",
+        "nDefinition": "Figure legend reports n=2; nearest explicit unit term: biological replicates.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change positive cell fraction at the biological-unit level?",
+        "conditions": "Untreated || Early exposure — 6 h || Late exposure — 24 h",
+        "measurementContext": "flow cytometry",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "one-way ANOVA omnibus",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0625,
+      "graphReadinessScore": 14,
+      "synthetic": {
+        "rowCount": 12,
+        "conditionCount": 3,
+        "conditions": [
+          "Early exposure — 6 h",
+          "Late exposure — 24 h",
+          "Untreated"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "positive_cell_fraction"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 12,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.7052,
+        "shapeFingerprint": "c3-r1-t0-u12-n12"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA289",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "multi_group",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1242/dev.201710",
+        "pmcid": "PMC10753587",
+        "panel": "Fig. 6.",
+        "scientificMessage": "Quantitative figure concerning: Transcriptomes of control and Nr5a1 SC−/− testicular cells at a single-cell resolution. (A) Uniform manifold approximation and projection.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "statistical test stated in the selected figure legend",
+        "nDefinition": "Figure legend reports n=4; nearest explicit unit term: rat.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change normalized abundance at the biological-unit level?",
+        "conditions": "Standard diet || High-fat diet || High-fat diet + intervention",
+        "measurementContext": "omics-derived abundance",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 4,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "one-way ANOVA omnibus",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.027,
+      "graphReadinessScore": 14,
+      "synthetic": {
+        "rowCount": 12,
+        "conditionCount": 3,
+        "conditions": [
+          "High-fat diet",
+          "High-fat diet + intervention",
+          "Standard diet"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "normalized_abundance"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 12,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.7681,
+        "shapeFingerprint": "c3-r1-t0-u12-n12"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA315",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "multi_group",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1038/s41467-025-67992-y",
+        "pmcid": "PMC12864811",
+        "panel": "Fig. 2",
+        "scientificMessage": "Quantitative figure concerning: Lower-skilled occupations experience larger skill change during 2010–2018 when skill distance is accounted for. a Occupations with lower.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "statistical test stated in the selected figure legend",
+        "nDefinition": "Figure legend reports n=721; nearest explicit unit term: rat.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Vehicle || Low dose — 10 nM || High dose — 100 nM",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 14,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "one-way ANOVA omnibus",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [
+        "source_message_human_vs_n_animal"
+      ],
+      "paperPacketTokenOverlap": 0.0645,
+      "graphReadinessScore": 12,
+      "synthetic": {
+        "rowCount": 42,
+        "conditionCount": 3,
+        "conditions": [
+          "High dose — 100 nM",
+          "Low dose — 10 nM",
+          "Vehicle"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 42,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.3835,
+        "shapeFingerprint": "c3-r1-t0-u42-n42"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA064",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "survival",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1038/s42003-022-04254-3",
+        "pmcid": "PMC9761050",
+        "panel": "Fig. 1",
+        "scientificMessage": "Quantitative figure concerning: OV delivered as a second dose does not infect the tumor yet enhances the infection of the initial.",
+        "graphRepresentation": "Kaplan–Meier survival curve",
+        "statisticalMethod": "two-way ANOVA",
+        "nDefinition": "Figure legend reports n=5; nearest explicit unit term: animals.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Mock-transfected || Target-siRNA transfected",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "event/censoring time through day 30"
+      },
+      "gold": {
+        "biologicalN": 12,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "event/censoring time through day 30",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "log-rank test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "Kaplan–Meier survival curve",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0541,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 24,
+        "conditionCount": 2,
+        "conditions": [
+          "Mock-transfected",
+          "Target-siRNA transfected"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "event_free_time"
+        ],
+        "timeCount": 24,
+        "times": [
+          0.09322414009183584,
+          1.1249500443053038,
+          1.443581954852626,
+          1.956548784066935,
+          2.4328694621113303,
+          2.5081844453397477,
+          3.900653072453979,
+          7.450473060789564,
+          8.068914867262112,
+          9.382198500416731,
+          10.004559148316849,
+          11.002931905726735,
+          14.070430706071814,
+          18.44024487275664,
+          19.27895505649552,
+          19.488797417425413,
+          20.045900971360307,
+          20.622007891957708,
+          20.638036023063854,
+          21.745932857395218,
+          23.014729819421806,
+          23.460820213326752,
+          24.450190679337872,
+          28.15816616204967
+        ],
+        "unitCount": 24,
+        "experimentCount": 1,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.2163,
+        "shapeFingerprint": "c2-r1-t24-u24-n24"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA217",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "survival",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1016/j.celrep.2024.114493",
+        "pmcid": "PMC11372442",
+        "panel": "Figure 1",
+        "scientificMessage": "Quantitative figure concerning: Mice fed an LPD are more susceptible to disease and mortality following endotoxin and live bacteria administration (A).",
+        "graphRepresentation": "Kaplan–Meier survival curve",
+        "statisticalMethod": "two-way ANOVA",
+        "nDefinition": "Figure legend reports n=6; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Wild type — unstimulated || Gene-perturbed — unstimulated",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "event/censoring time through day 30"
+      },
+      "gold": {
+        "biologicalN": 12,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "event/censoring time through day 30",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "log-rank test",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "Kaplan–Meier survival curve",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0286,
+      "graphReadinessScore": 16,
+      "synthetic": {
+        "rowCount": 24,
+        "conditionCount": 2,
+        "conditions": [
+          "Gene-perturbed — unstimulated",
+          "Wild type — unstimulated"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "event_free_time"
+        ],
+        "timeCount": 24,
+        "times": [
+          0.0032916189977978713,
+          0.004721949287102774,
+          2.2864409918479214,
+          2.4055713780491117,
+          3.774240570984367,
+          4.212694648003257,
+          4.49606926320439,
+          6.003886940085223,
+          6.011903075028656,
+          6.868198672906256,
+          7.803491761061002,
+          7.939990272717334,
+          8.161620039942177,
+          10.989540246633112,
+          12.28963751434705,
+          20.378061345926255,
+          20.773054903406273,
+          21.07074529324231,
+          21.379669010957826,
+          23.104627101781407,
+          23.967915844011305,
+          25.681222050190687,
+          25.707739839508683,
+          26.50268677347126
+        ],
+        "unitCount": 24,
+        "experimentCount": 1,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.1965,
+        "shapeFingerprint": "c2-r1-t24-u24-n24"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA223",
+      "historicalEvidence": [
+        "pool_c_validation"
+      ],
+      "designClass": "survival",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "paper": {
+        "doi": "10.1038/s42003-025-09393-x",
+        "pmcid": "PMC12722763",
+        "panel": "Fig. 1",
+        "scientificMessage": "Quantitative figure concerning: FSCN1 was highly expressed in esophageal cancer tissues with poor survival and bound to THBS1 mRNA based on.",
+        "graphRepresentation": "Kaplan–Meier survival curve",
+        "statisticalMethod": "Student t test",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: rat.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change normalized abundance at the biological-unit level?",
+        "conditions": "Standard diet || High-fat diet",
+        "measurementContext": "omics-derived abundance",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "event/censoring time through day 30"
+      },
+      "gold": {
+        "biologicalN": 12,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "event/censoring time through day 30",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "log-rank test",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "Kaplan–Meier survival curve",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0278,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 24,
+        "conditionCount": 2,
+        "conditions": [
+          "High-fat diet",
+          "Standard diet"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "event_free_time"
+        ],
+        "timeCount": 24,
+        "times": [
+          1.5901178506380504,
+          1.957305786169881,
+          2.207816745564382,
+          2.7824143322243424,
+          3.393041720909191,
+          4.876234737226336,
+          5.321132683862298,
+          5.72831853829181,
+          5.9605780543039675,
+          9.664435249677519,
+          10.536694375550677,
+          12.275908126002944,
+          13.202310767316947,
+          13.370483814600872,
+          19.440983990121765,
+          19.90189510837815,
+          21.28586149898791,
+          23.362110891813945,
+          24.177524846417725,
+          24.203537951082424,
+          24.39505255219037,
+          24.63411212832971,
+          24.99456256468808,
+          28.101968641264463
+        ],
+        "unitCount": 24,
+        "experimentCount": 1,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 1.6422,
+        "shapeFingerprint": "c2-r1-t24-u24-n24"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA127",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "correlation",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.7554/elife.102200",
+        "pmcid": "PMC13278736",
+        "panel": "Figure 2.",
+        "scientificMessage": "Quantitative figure concerning: Cerebellar oligodendrocyte ablation reduces the synchrony of Purkinje cell (PC) population activity during mouse cerebellar development. ( A.",
+        "graphRepresentation": "scatter plot",
+        "statisticalMethod": "two-way ANOVA",
+        "nDefinition": "Figure legend reports n=5; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Single observational cohort",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 12,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Spearman correlation",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "scatter plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0294,
+      "graphReadinessScore": 14,
+      "synthetic": {
+        "rowCount": 12,
+        "conditionCount": 1,
+        "conditions": [
+          "Single observational cohort"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 12,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.0,
+        "shapeFingerprint": "c1-r1-t0-u12-n12"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA216",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "correlation",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "paper": {
+        "doi": "10.1016/j.celrep.2023.112827",
+        "pmcid": "PMC10840515",
+        "panel": "Figure 2",
+        "scientificMessage": "Quantitative figure concerning: Immunogenicity of selected SARS-CoV-2 peptides in HLA-DR1 + and HLA-DR4 + donors (A) Peptide-specific, 12-day-expanded T cell responses.",
+        "graphRepresentation": "scatter plot",
+        "statisticalMethod": "Fisher exact test",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: donors.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "Single observational cohort",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 12,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Spearman correlation",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "scatter plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": false,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [
+        "source_internal_n_subject_vs_context_animal"
+      ],
+      "paperPacketTokenOverlap": 0.0286,
+      "graphReadinessScore": 11,
+      "synthetic": {
+        "rowCount": 12,
+        "conditionCount": 1,
+        "conditions": [
+          "Single observational cohort"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "response_score"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 12,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.0,
+        "shapeFingerprint": "c1-r1-t0-u12-n12"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA242",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "correlation",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1242/jcs.263945",
+        "pmcid": "PMC12669966",
+        "panel": "Fig. 3.",
+        "scientificMessage": "Quantitative figure concerning: Nuclear blebs with decreased lamin B1 display increased emerin while maintenance of lamin B1 shows correlation with emerin.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "Pearson correlation",
+        "nDefinition": "Figure legend reports n=79; nearest explicit unit term: rat.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Single observational cohort",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 30,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "Spearman correlation",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0333,
+      "graphReadinessScore": 14,
+      "synthetic": {
+        "rowCount": 30,
+        "conditionCount": 1,
+        "conditions": [
+          "Single observational cohort"
+        ],
+        "readoutCount": 1,
+        "readouts": [
+          "fluorescence_intensity"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 30,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.0,
+        "shapeFingerprint": "c1-r1-t0-u30-n30"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA142",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "multiple_testing",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1016/j.celrep.2024.114406",
+        "pmcid": "PMC11290356",
+        "panel": "Figure 1",
+        "scientificMessage": "Quantitative figure concerning: ALDH1A3 High melanomas are enriched for NCSC and glucose metabolic states (A) ALDH High and ALDH Low melanoma.",
+        "graphRepresentation": "heatmap",
+        "statisticalMethod": "Benjamini–Hochberg/FDR correction",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: patient.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Reference genotype || Loss-of-function genotype",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 5,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "heatmap",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0345,
+      "graphReadinessScore": 12,
+      "synthetic": {
+        "rowCount": 400,
+        "conditionCount": 2,
+        "conditions": [
+          "Loss-of-function genotype",
+          "Reference genotype"
+        ],
+        "readoutCount": 40,
+        "readouts": [
+          "fluorescence_intensity_feature_01",
+          "fluorescence_intensity_feature_02",
+          "fluorescence_intensity_feature_03",
+          "fluorescence_intensity_feature_04",
+          "fluorescence_intensity_feature_05",
+          "fluorescence_intensity_feature_06",
+          "fluorescence_intensity_feature_07",
+          "fluorescence_intensity_feature_08",
+          "fluorescence_intensity_feature_09",
+          "fluorescence_intensity_feature_10",
+          "fluorescence_intensity_feature_11",
+          "fluorescence_intensity_feature_12",
+          "fluorescence_intensity_feature_13",
+          "fluorescence_intensity_feature_14",
+          "fluorescence_intensity_feature_15",
+          "fluorescence_intensity_feature_16",
+          "fluorescence_intensity_feature_17",
+          "fluorescence_intensity_feature_18",
+          "fluorescence_intensity_feature_19",
+          "fluorescence_intensity_feature_20",
+          "fluorescence_intensity_feature_21",
+          "fluorescence_intensity_feature_22",
+          "fluorescence_intensity_feature_23",
+          "fluorescence_intensity_feature_24",
+          "fluorescence_intensity_feature_25",
+          "fluorescence_intensity_feature_26",
+          "fluorescence_intensity_feature_27",
+          "fluorescence_intensity_feature_28",
+          "fluorescence_intensity_feature_29",
+          "fluorescence_intensity_feature_30",
+          "fluorescence_intensity_feature_31",
+          "fluorescence_intensity_feature_32",
+          "fluorescence_intensity_feature_33",
+          "fluorescence_intensity_feature_34",
+          "fluorescence_intensity_feature_35",
+          "fluorescence_intensity_feature_36",
+          "fluorescence_intensity_feature_37",
+          "fluorescence_intensity_feature_38",
+          "fluorescence_intensity_feature_39",
+          "fluorescence_intensity_feature_40"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 10,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.0633,
+        "shapeFingerprint": "c2-r40-t0-u10-n400"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA261",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "multiple_testing",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1073/pnas.2531095123",
+        "pmcid": "PMC13291667",
+        "panel": "Fig. 2.",
+        "scientificMessage": "Quantitative figure concerning: Different degrees of CIN have distinct effects on skin tumorigenesis. ( A ) Treatment schedule of CiMKi;Rosa26-CreER T2.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "Benjamini–Hochberg/FDR correction",
+        "nDefinition": "Figure legend reports n=9; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change response score at the biological-unit level?",
+        "conditions": "No mechanical load || Cyclic mechanical load",
+        "measurementContext": "animal endpoint measurement",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 9,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+        "expectedDecision": "synthetic pattern present",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded",
+        "reference_role_not_explicit"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0303,
+      "graphReadinessScore": 14,
+      "synthetic": {
+        "rowCount": 720,
+        "conditionCount": 2,
+        "conditions": [
+          "Cyclic mechanical load",
+          "No mechanical load"
+        ],
+        "readoutCount": 40,
+        "readouts": [
+          "response_score_feature_01",
+          "response_score_feature_02",
+          "response_score_feature_03",
+          "response_score_feature_04",
+          "response_score_feature_05",
+          "response_score_feature_06",
+          "response_score_feature_07",
+          "response_score_feature_08",
+          "response_score_feature_09",
+          "response_score_feature_10",
+          "response_score_feature_11",
+          "response_score_feature_12",
+          "response_score_feature_13",
+          "response_score_feature_14",
+          "response_score_feature_15",
+          "response_score_feature_16",
+          "response_score_feature_17",
+          "response_score_feature_18",
+          "response_score_feature_19",
+          "response_score_feature_20",
+          "response_score_feature_21",
+          "response_score_feature_22",
+          "response_score_feature_23",
+          "response_score_feature_24",
+          "response_score_feature_25",
+          "response_score_feature_26",
+          "response_score_feature_27",
+          "response_score_feature_28",
+          "response_score_feature_29",
+          "response_score_feature_30",
+          "response_score_feature_31",
+          "response_score_feature_32",
+          "response_score_feature_33",
+          "response_score_feature_34",
+          "response_score_feature_35",
+          "response_score_feature_36",
+          "response_score_feature_37",
+          "response_score_feature_38",
+          "response_score_feature_39",
+          "response_score_feature_40"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 18,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.2241,
+        "shapeFingerprint": "c2-r40-t0-u18-n720"
+      },
+      "needsHumanContext": []
+    },
+    {
+      "caseId": "LSA264",
+      "historicalEvidence": [
+        "round_1"
+      ],
+      "designClass": "multiple_testing",
+      "classification": "CONTEXT_REDUCED",
+      "paper": {
+        "doi": "10.1126/sciadv.adj8442",
+        "pmcid": "PMC10732530",
+        "panel": "Fig. 1.",
+        "scientificMessage": "Quantitative figure concerning: IFNβ regulates mitochondrial homeostasis in iFoxA1 + T regs . In all experiments, CD4 + T cells were.",
+        "graphRepresentation": "box plot",
+        "statisticalMethod": "Benjamini–Hochberg/FDR correction",
+        "nDefinition": "Figure legend reports n=3; nearest explicit unit term: mice.",
+        "sourceAccess": "Europe PMC open-access full text and figure legend"
+      },
+      "packet": {
+        "biologicalQuestion": "Does the planned condition or time structure change fluorescence intensity at the biological-unit level?",
+        "conditions": "Vehicle — matched solvent exposure || Pathway inhibitor — 250 nM",
+        "measurementContext": "quantitative microscopy",
+        "experimentalUnit": "independent biological/statistical unit",
+        "timepoints": "none"
+      },
+      "gold": {
+        "biologicalN": 5,
+        "trueExperimentalUnit": "independent biological/statistical unit",
+        "factors": "condition",
+        "timeStructure": "none",
+        "pairing": "independent",
+        "primaryContrast": "see analysis_scope_note",
+        "referenceMethod": "feature-wise Welch t tests with Benjamini–Hochberg FDR",
+        "expectedDecision": "synthetic pattern uncertain/no strong signal",
+        "graphFamily": "box plot",
+        "hierarchyStatus": "HIERARCHY_PASS"
+      },
+      "dimensionAssessment": {
+        "scientificMessagePreserved": false,
+        "primaryContrastExplicit": true,
+        "experimentalUnitConsistent": true,
+        "pairingRepeatedIdentityEncoded": true,
+        "displayAnalysisComparisonAnnotationSeparated": false,
+        "graphSemanticsEncoded": false,
+        "hierarchyAccepted": true
+      },
+      "contextLossSignals": [
+        "generic_scientific_question",
+        "low_paper_to_packet_semantic_overlap",
+        "x_series_facet_intent_not_encoded"
+      ],
+      "contradictions": [],
+      "paperPacketTokenOverlap": 0.0294,
+      "graphReadinessScore": 15,
+      "synthetic": {
+        "rowCount": 400,
+        "conditionCount": 2,
+        "conditions": [
+          "Pathway inhibitor — 250 nM",
+          "Vehicle — matched solvent exposure"
+        ],
+        "readoutCount": 40,
+        "readouts": [
+          "fluorescence_intensity_feature_01",
+          "fluorescence_intensity_feature_02",
+          "fluorescence_intensity_feature_03",
+          "fluorescence_intensity_feature_04",
+          "fluorescence_intensity_feature_05",
+          "fluorescence_intensity_feature_06",
+          "fluorescence_intensity_feature_07",
+          "fluorescence_intensity_feature_08",
+          "fluorescence_intensity_feature_09",
+          "fluorescence_intensity_feature_10",
+          "fluorescence_intensity_feature_11",
+          "fluorescence_intensity_feature_12",
+          "fluorescence_intensity_feature_13",
+          "fluorescence_intensity_feature_14",
+          "fluorescence_intensity_feature_15",
+          "fluorescence_intensity_feature_16",
+          "fluorescence_intensity_feature_17",
+          "fluorescence_intensity_feature_18",
+          "fluorescence_intensity_feature_19",
+          "fluorescence_intensity_feature_20",
+          "fluorescence_intensity_feature_21",
+          "fluorescence_intensity_feature_22",
+          "fluorescence_intensity_feature_23",
+          "fluorescence_intensity_feature_24",
+          "fluorescence_intensity_feature_25",
+          "fluorescence_intensity_feature_26",
+          "fluorescence_intensity_feature_27",
+          "fluorescence_intensity_feature_28",
+          "fluorescence_intensity_feature_29",
+          "fluorescence_intensity_feature_30",
+          "fluorescence_intensity_feature_31",
+          "fluorescence_intensity_feature_32",
+          "fluorescence_intensity_feature_33",
+          "fluorescence_intensity_feature_34",
+          "fluorescence_intensity_feature_35",
+          "fluorescence_intensity_feature_36",
+          "fluorescence_intensity_feature_37",
+          "fluorescence_intensity_feature_38",
+          "fluorescence_intensity_feature_39",
+          "fluorescence_intensity_feature_40"
+        ],
+        "timeCount": 0,
+        "times": [],
+        "unitCount": 10,
+        "experimentCount": 3,
+        "missingCount": 0,
+        "standardizedGroupMeanSpan": 0.2566,
+        "shapeFingerprint": "c2-r40-t0-u10-n400"
+      },
+      "needsHumanContext": []
+    }
+  ]
+}

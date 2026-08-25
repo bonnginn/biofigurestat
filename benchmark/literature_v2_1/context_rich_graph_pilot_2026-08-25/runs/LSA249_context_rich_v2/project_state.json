@@ -1,0 +1,1309 @@
+{
+  "schemaVersion": "0.3.0",
+  "caseId": "LSA249_context_rich_v2",
+  "dataset": {
+    "sourceStatus": "SYNTHETIC_RECONSTRUCTION",
+    "observations": [
+      {
+        "observationId": "LSA249_context_rich_v2.o00001",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 111.056805,
+        "synthetic": true,
+        "nestedObservationId": "cell.1"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00002",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 105.722899,
+        "synthetic": true,
+        "nestedObservationId": "cell.2"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00003",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 113.878756,
+        "synthetic": true,
+        "nestedObservationId": "cell.3"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00004",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 87.839469,
+        "synthetic": true,
+        "nestedObservationId": "cell.4"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00005",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 104.801417,
+        "synthetic": true,
+        "nestedObservationId": "cell.5"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00006",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 120.009971,
+        "synthetic": true,
+        "nestedObservationId": "cell.6"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00007",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 89.212763,
+        "synthetic": true,
+        "nestedObservationId": "cell.7"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00008",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 67.628662,
+        "synthetic": true,
+        "nestedObservationId": "cell.8"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00009",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 94.284904,
+        "synthetic": true,
+        "nestedObservationId": "cell.9"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00010",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 101.398724,
+        "synthetic": true,
+        "nestedObservationId": "cell.10"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00011",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 109.203704,
+        "synthetic": true,
+        "nestedObservationId": "cell.11"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00012",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 94.962395,
+        "synthetic": true,
+        "nestedObservationId": "cell.12"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00013",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 94.811437,
+        "synthetic": true,
+        "nestedObservationId": "cell.13"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00014",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 103.341303,
+        "synthetic": true,
+        "nestedObservationId": "cell.14"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00015",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 92.849555,
+        "synthetic": true,
+        "nestedObservationId": "cell.15"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00016",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 95.737626,
+        "synthetic": true,
+        "nestedObservationId": "cell.16"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00017",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 113.921107,
+        "synthetic": true,
+        "nestedObservationId": "cell.17"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00018",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 107.901079,
+        "synthetic": true,
+        "nestedObservationId": "cell.18"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00019",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 95.449123,
+        "synthetic": true,
+        "nestedObservationId": "cell.19"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00020",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 118.206339,
+        "synthetic": true,
+        "nestedObservationId": "cell.20"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00021",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 121.849534,
+        "synthetic": true,
+        "nestedObservationId": "cell.21"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00022",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 102.16887,
+        "synthetic": true,
+        "nestedObservationId": "cell.22"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00023",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 89.819305,
+        "synthetic": true,
+        "nestedObservationId": "cell.23"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00024",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 105.740533,
+        "synthetic": true,
+        "nestedObservationId": "cell.24"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00025",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 106.474795,
+        "synthetic": true,
+        "nestedObservationId": "cell.25"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00026",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 100.702388,
+        "synthetic": true,
+        "nestedObservationId": "cell.26"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00027",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 92.017792,
+        "synthetic": true,
+        "nestedObservationId": "cell.27"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00028",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 96.084028,
+        "synthetic": true,
+        "nestedObservationId": "cell.28"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00029",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 81.078298,
+        "synthetic": true,
+        "nestedObservationId": "cell.29"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00030",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 86.736899,
+        "synthetic": true,
+        "nestedObservationId": "cell.30"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00031",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 102.757513,
+        "synthetic": true,
+        "nestedObservationId": "cell.31"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00032",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 86.027562,
+        "synthetic": true,
+        "nestedObservationId": "cell.32"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00033",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 100.244599,
+        "synthetic": true,
+        "nestedObservationId": "cell.33"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00034",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 98.348761,
+        "synthetic": true,
+        "nestedObservationId": "cell.34"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00035",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 74.493921,
+        "synthetic": true,
+        "nestedObservationId": "cell.35"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00036",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 88.966495,
+        "synthetic": true,
+        "nestedObservationId": "cell.36"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00037",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 109.949185,
+        "synthetic": true,
+        "nestedObservationId": "cell.37"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00038",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 119.593361,
+        "synthetic": true,
+        "nestedObservationId": "cell.38"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00039",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 97.986157,
+        "synthetic": true,
+        "nestedObservationId": "cell.39"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00040",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 105.262773,
+        "synthetic": true,
+        "nestedObservationId": "cell.40"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00041",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 96.211588,
+        "synthetic": true,
+        "nestedObservationId": "cell.41"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00042",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 88.34262,
+        "synthetic": true,
+        "nestedObservationId": "cell.42"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00043",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 96.490593,
+        "synthetic": true,
+        "nestedObservationId": "cell.43"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00044",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 85.444023,
+        "synthetic": true,
+        "nestedObservationId": "cell.44"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00045",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 104.38877,
+        "synthetic": true,
+        "nestedObservationId": "cell.45"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00046",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 118.74815,
+        "synthetic": true,
+        "nestedObservationId": "cell.46"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00047",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 97.492856,
+        "synthetic": true,
+        "nestedObservationId": "cell.47"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00048",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 82.662492,
+        "synthetic": true,
+        "nestedObservationId": "cell.48"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00049",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 92.300031,
+        "synthetic": true,
+        "nestedObservationId": "cell.49"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00050",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 103.199736,
+        "synthetic": true,
+        "nestedObservationId": "cell.50"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00051",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 87.189944,
+        "synthetic": true,
+        "nestedObservationId": "cell.51"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00052",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 84.272735,
+        "synthetic": true,
+        "nestedObservationId": "cell.52"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00053",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 121.269688,
+        "synthetic": true,
+        "nestedObservationId": "cell.53"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00054",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 101.903699,
+        "synthetic": true,
+        "nestedObservationId": "cell.54"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00055",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 92.166847,
+        "synthetic": true,
+        "nestedObservationId": "cell.55"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00056",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 104.352967,
+        "synthetic": true,
+        "nestedObservationId": "cell.56"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00057",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 114.820962,
+        "synthetic": true,
+        "nestedObservationId": "cell.57"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00058",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 89.574426,
+        "synthetic": true,
+        "nestedObservationId": "cell.58"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00059",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 86.158115,
+        "synthetic": true,
+        "nestedObservationId": "cell.59"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00060",
+        "series": "Vector",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 119.365407,
+        "synthetic": true,
+        "nestedObservationId": "cell.60"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00061",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 52.599851,
+        "synthetic": true,
+        "nestedObservationId": "cell.1"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00062",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 46.063332,
+        "synthetic": true,
+        "nestedObservationId": "cell.2"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00063",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 55.415298,
+        "synthetic": true,
+        "nestedObservationId": "cell.3"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00064",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 55.058603,
+        "synthetic": true,
+        "nestedObservationId": "cell.4"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00065",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 59.62318,
+        "synthetic": true,
+        "nestedObservationId": "cell.5"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00066",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 48.274501,
+        "synthetic": true,
+        "nestedObservationId": "cell.6"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00067",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 69.112897,
+        "synthetic": true,
+        "nestedObservationId": "cell.7"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00068",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 60.626326,
+        "synthetic": true,
+        "nestedObservationId": "cell.8"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00069",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 52.19193,
+        "synthetic": true,
+        "nestedObservationId": "cell.9"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00070",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 60.020379,
+        "synthetic": true,
+        "nestedObservationId": "cell.10"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00071",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 55.781873,
+        "synthetic": true,
+        "nestedObservationId": "cell.11"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00072",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 45.862271,
+        "synthetic": true,
+        "nestedObservationId": "cell.12"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00073",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 41.437768,
+        "synthetic": true,
+        "nestedObservationId": "cell.13"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00074",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 51.915335,
+        "synthetic": true,
+        "nestedObservationId": "cell.14"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00075",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 40.719588,
+        "synthetic": true,
+        "nestedObservationId": "cell.15"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00076",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 50.18904,
+        "synthetic": true,
+        "nestedObservationId": "cell.16"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00077",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 58.442393,
+        "synthetic": true,
+        "nestedObservationId": "cell.17"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00078",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 52.322492,
+        "synthetic": true,
+        "nestedObservationId": "cell.18"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00079",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 46.576365,
+        "synthetic": true,
+        "nestedObservationId": "cell.19"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00080",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 50.798014,
+        "synthetic": true,
+        "nestedObservationId": "cell.20"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00081",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 47.342385,
+        "synthetic": true,
+        "nestedObservationId": "cell.21"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00082",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 50.976199,
+        "synthetic": true,
+        "nestedObservationId": "cell.22"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00083",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 57.249346,
+        "synthetic": true,
+        "nestedObservationId": "cell.23"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00084",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 47.730113,
+        "synthetic": true,
+        "nestedObservationId": "cell.24"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00085",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 38.998283,
+        "synthetic": true,
+        "nestedObservationId": "cell.25"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00086",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 48.492737,
+        "synthetic": true,
+        "nestedObservationId": "cell.26"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00087",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 63.044586,
+        "synthetic": true,
+        "nestedObservationId": "cell.27"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00088",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 58.217868,
+        "synthetic": true,
+        "nestedObservationId": "cell.28"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00089",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 45.52904,
+        "synthetic": true,
+        "nestedObservationId": "cell.29"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00090",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 54.830558,
+        "synthetic": true,
+        "nestedObservationId": "cell.30"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00091",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 44.593359,
+        "synthetic": true,
+        "nestedObservationId": "cell.31"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00092",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 67.970398,
+        "synthetic": true,
+        "nestedObservationId": "cell.32"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00093",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 55.689221,
+        "synthetic": true,
+        "nestedObservationId": "cell.33"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00094",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 50.762391,
+        "synthetic": true,
+        "nestedObservationId": "cell.34"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00095",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 51.124915,
+        "synthetic": true,
+        "nestedObservationId": "cell.35"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00096",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 57.926373,
+        "synthetic": true,
+        "nestedObservationId": "cell.36"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00097",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 54.390893,
+        "synthetic": true,
+        "nestedObservationId": "cell.37"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00098",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 53.249625,
+        "synthetic": true,
+        "nestedObservationId": "cell.38"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00099",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 47.554562,
+        "synthetic": true,
+        "nestedObservationId": "cell.39"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00100",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 56.563014,
+        "synthetic": true,
+        "nestedObservationId": "cell.40"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00101",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 48.399738,
+        "synthetic": true,
+        "nestedObservationId": "cell.41"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00102",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 56.823771,
+        "synthetic": true,
+        "nestedObservationId": "cell.42"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00103",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 59.004414,
+        "synthetic": true,
+        "nestedObservationId": "cell.43"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00104",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 58.753505,
+        "synthetic": true,
+        "nestedObservationId": "cell.44"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00105",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 52.872242,
+        "synthetic": true,
+        "nestedObservationId": "cell.45"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00106",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 54.980493,
+        "synthetic": true,
+        "nestedObservationId": "cell.46"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00107",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 52.261219,
+        "synthetic": true,
+        "nestedObservationId": "cell.47"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00108",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 51.366465,
+        "synthetic": true,
+        "nestedObservationId": "cell.48"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00109",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 64.410331,
+        "synthetic": true,
+        "nestedObservationId": "cell.49"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00110",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 58.313895,
+        "synthetic": true,
+        "nestedObservationId": "cell.50"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00111",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 52.186898,
+        "synthetic": true,
+        "nestedObservationId": "cell.51"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00112",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 56.82761,
+        "synthetic": true,
+        "nestedObservationId": "cell.52"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00113",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 54.300238,
+        "synthetic": true,
+        "nestedObservationId": "cell.53"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00114",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 51.189052,
+        "synthetic": true,
+        "nestedObservationId": "cell.54"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00115",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 50.729622,
+        "synthetic": true,
+        "nestedObservationId": "cell.55"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00116",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 52.841289,
+        "synthetic": true,
+        "nestedObservationId": "cell.56"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00117",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 60.373965,
+        "synthetic": true,
+        "nestedObservationId": "cell.57"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00118",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.1",
+        "x": null,
+        "value": 54.97514,
+        "synthetic": true,
+        "nestedObservationId": "cell.58"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00119",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.2",
+        "x": null,
+        "value": 51.193518,
+        "synthetic": true,
+        "nestedObservationId": "cell.59"
+      },
+      {
+        "observationId": "LSA249_context_rich_v2.o00120",
+        "series": "ATG9B",
+        "experimentalUnitId": "experiment.3",
+        "x": null,
+        "value": 65.293992,
+        "synthetic": true,
+        "nestedObservationId": "cell.60"
+      }
+    ]
+  },
+  "goldFigureBrief": {
+    "schemaVersion": "1.0.0",
+    "caseId": "LSA249_context_rich_v2",
+    "originalCaseId": "LSA249",
+    "source": {
+      "pmcid": "PMC13322376",
+      "url": "https://europepmc.org/articles/PMC13322376",
+      "targetPanel": "Fig. 3B",
+      "evidenceSummary": "Rho123 intensity, >50 cells per group per experiment, n=3 independent experiments; two-tailed t test."
+    },
+    "fields": {
+      "scientificMessage": {
+        "value": "ATG9B lowers mitochondrial membrane potential",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "experimentalDesign": {
+        "value": "Rho123 intensity, >50 cells per group per experiment, n=3 independent experiments; two-tailed t test.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "statisticalUnit": {
+        "value": "independent experiment summarized from >50 cells",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "pairingNestingRepeated": {
+        "value": "Encoded explicitly in synthetic rows where supported",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "factorsLevels": {
+        "value": "See display/series semantics",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "primaryContrast": {
+        "value": "Vector versus ATG9B",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "referenceRoles": {
+        "value": "Control/reference labels preserved from legend",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "intent": {
+        "value": "Inferential where the legend reports a test; representative pixels remain descriptive",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "displaySet": {
+        "value": "bar/dot with experiment summaries",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "analysisSet": {
+        "value": "independent experiment summarized from >50 cells",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "comparisonSet": {
+        "value": "Vector versus ATG9B",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "annotationSet": {
+        "value": "Only source-supported comparisons",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "graphConvention": {
+        "value": "bar/dot with experiment summaries",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "xSemantics": {
+        "value": "condition or numeric time according to panel",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "seriesSemantics": {
+        "value": "scientific condition/time identity",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "facetSemantics": {
+        "value": "time facet only for LSA088",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "yReadout": {
+        "value": "ATG9B lowers mitochondrial membrane potential",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "sampleSizeStructure": {
+        "value": "Rho123 intensity, >50 cells per group per experiment, n=3 independent experiments; two-tailed t test.",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      },
+      "axisColorLegend": {
+        "value": "labels preserve source roles; color identifies series",
+        "confidence": "INFERRED_HIGH_CONFIDENCE"
+      },
+      "uncertainty": {
+        "value": "SD/SEM or distribution as reported",
+        "confidence": "CONFIRMED_FROM_PAPER"
+      }
+    },
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "analysis": {
+    "status": "ok",
+    "results": [
+      {
+        "request": {
+          "protocolVersion": "0.1.0",
+          "requestId": "request.LSA249",
+          "projectId": "project.LSA249.v2",
+          "analysisId": "analysis.LSA249",
+          "templateId": "D01",
+          "templateVersion": "0.1.0",
+          "method": "welch_t",
+          "contrastConditionIds": [
+            "Vector",
+            "ATG9B"
+          ],
+          "observations": [
+            {
+              "observationId": "LSA249.Vector.experiment.1",
+              "conditionId": "Vector",
+              "experimentalUnitId": "experiment.1Vector",
+              "value": 98.5052327
+            },
+            {
+              "observationId": "LSA249.Vector.experiment.2",
+              "conditionId": "Vector",
+              "experimentalUnitId": "experiment.2Vector",
+              "value": 98.43346195000001
+            },
+            {
+              "observationId": "LSA249.Vector.experiment.3",
+              "conditionId": "Vector",
+              "experimentalUnitId": "experiment.3Vector",
+              "value": 100.80512815
+            },
+            {
+              "observationId": "LSA249.ATG9B.experiment.1",
+              "conditionId": "ATG9B",
+              "experimentalUnitId": "experiment.1ATG9B",
+              "value": 53.521226
+            },
+            {
+              "observationId": "LSA249.ATG9B.experiment.2",
+              "conditionId": "ATG9B",
+              "experimentalUnitId": "experiment.2ATG9B",
+              "value": 54.1464958
+            },
+            {
+              "observationId": "LSA249.ATG9B.experiment.3",
+              "conditionId": "ATG9B",
+              "experimentalUnitId": "experiment.3ATG9B",
+              "value": 52.95051315
+            }
+          ],
+          "options": {
+            "alternative": "two_sided",
+            "confidenceLevel": 0.95,
+            "multiplicityMethod": null
+          }
+        },
+        "result": {
+          "protocolVersion": "0.1.0",
+          "requestId": "request.LSA249",
+          "status": "ok",
+          "engine": {
+            "name": "lsaa-python",
+            "version": "0.14.0",
+            "packages": {
+              "numpy": "2.3.5",
+              "scipy": "1.18.0"
+            }
+          },
+          "estimates": [
+            {
+              "name": "mean_difference",
+              "value": 45.70852928333333,
+              "standardError": 0.8520081071848529,
+              "confidenceInterval": {
+                "level": 0.95,
+                "lower": 42.85686334680155,
+                "upper": 48.5601952198651
+              }
+            }
+          ],
+          "tests": [
+            {
+              "name": "welch_two_sample_t_test",
+              "statisticName": "t",
+              "statistic": 53.64799806231931,
+              "degreesOfFreedom": [
+                2.7572275982664114
+              ],
+              "pValue": 3.0276307701367484e-05,
+              "adjustedPValue": null,
+              "effectSizeName": "hedges_g",
+              "effectSize": 34.950062149082925
+            }
+          ],
+          "diagnostics": [
+            {
+              "code": "assumptions_not_fully_evaluated",
+              "message": "The engine did not claim normality from a small-sample significance test; inspect the replicate distribution and study design."
+            }
+          ],
+          "warnings": [],
+          "completedAt": "2026-08-25T06:44:05.959952+00:00"
+        }
+      }
+    ]
+  },
+  "graph": {
+    "schemaVersion": "1.0.0",
+    "type": "dot_summary",
+    "analysisResultAuthority": true,
+    "displaySet": "all synthetic rows",
+    "analysisSet": "biological-unit summaries or explicit survival units",
+    "comparisonSet": "Vector versus ATG9B",
+    "annotationSet": "Only source-supported comparisons"
+  },
+  "provenance": {
+    "generatedAt": "2026-08-25T06:44:00.139081+00:00",
+    "generator": "scripts/generate_context_rich_graph_pilot.py",
+    "originalCaseId": "LSA249",
+    "originalBenchmark": "LSA495_v2_1_repaired_1",
+    "poolDOpened": false
+  }
+}

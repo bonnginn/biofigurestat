@@ -1,0 +1,53 @@
+{
+  "policy": "Original cases and Round evidence remain immutable.",
+  "entries": [
+    {
+      "originalCaseId": "LSA135",
+      "contextRichCaseId": "LSA135_context_rich_v2"
+    },
+    {
+      "originalCaseId": "LSA086",
+      "contextRichCaseId": "LSA086_context_rich_v2"
+    },
+    {
+      "originalCaseId": "LSA090",
+      "contextRichCaseId": "LSA090_context_rich_v2"
+    },
+    {
+      "originalCaseId": "LSA077",
+      "contextRichCaseId": "LSA077_context_rich_v2"
+    },
+    {
+      "originalCaseId": "LSA126",
+      "contextRichCaseId": "LSA126_context_rich_v2"
+    },
+    {
+      "originalCaseId": "LSA157",
+      "contextRichCaseId": "LSA157_context_rich_v2"
+    },
+    {
+      "originalCaseId": "LSA249",
+      "contextRichCaseId": "LSA249_context_rich_v2"
+    },
+    {
+      "originalCaseId": "LSA094",
+      "contextRichCaseId": "LSA094_context_rich_v2"
+    },
+    {
+      "originalCaseId": "LSA168",
+      "contextRichCaseId": "LSA168_context_rich_v2"
+    },
+    {
+      "originalCaseId": "LSA088",
+      "contextRichCaseId": "LSA088_context_rich_v2"
+    },
+    {
+      "originalCaseId": "LSA120",
+      "contextRichCaseId": "LSA120_context_rich_v2"
+    },
+    {
+      "originalCaseId": "LSA346",
+      "contextRichCaseId": "LSA346_context_rich_v2"
+    }
+  ]
+}

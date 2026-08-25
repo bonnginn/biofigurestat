@@ -18,6 +18,7 @@ export const AnalysisTemplateIdSchema = z.enum([
   "D14",
   "D15",
   "D16",
+  "D17",
 ]);
 
 export const StatisticalMethodSchema = z.enum([
@@ -42,6 +43,7 @@ export const StatisticalMethodSchema = z.enum([
   "pearson_chi_square",
   "mcnemar_exact",
   "simple_linear_regression",
+  "nonlinear_xy_fit",
 ]);
 
 export const AnalysisRecommendationSchema = z.object({
@@ -443,6 +445,45 @@ export const SimpleLinearRegressionEngineRequestSchema = z.object({
   options: AnalysisOptionsSchema.extend({ multiplicityMethod: z.null() }),
 });
 
+const NonlinearParameterMapSchema = z.record(z.string(), z.number().finite());
+const NonlinearBoundsMapSchema = z.record(
+  z.string(),
+  z.object({ lower: z.number().finite(), upper: z.number().finite() }),
+);
+
+export const NonlinearXyFitEngineRequestSchema = z.object({
+  protocolVersion: z.literal("0.14.0"),
+  requestId: EntityIdSchema,
+  projectId: EntityIdSchema,
+  analysisId: EntityIdSchema,
+  templateId: z.literal("D17"),
+  templateVersion: z.string().min(1),
+  method: z.literal("nonlinear_xy_fit"),
+  modelId: z.enum(["one_phase_association", "zero_baseline_association"]),
+  modelSelectionRationale: z.string().min(1),
+  xLabel: z.string().min(1),
+  yLabel: z.string().min(1),
+  xUnit: z.string(),
+  yUnit: z.string(),
+  seriesIds: z.array(EntityIdSchema).min(1),
+  points: z
+    .array(
+      z.object({
+        observationId: EntityIdSchema,
+        experimentalUnitId: EntityIdSchema,
+        seriesId: EntityIdSchema,
+        x: z.number().finite().nonnegative(),
+        y: z.number().finite(),
+      }),
+    )
+    .min(3),
+  initialValues: z.record(EntityIdSchema, NonlinearParameterMapSchema).default({}),
+  bounds: z.record(EntityIdSchema, NonlinearBoundsMapSchema).default({}),
+  /** Generic history compatibility; XY source data remain exclusively in points. */
+  observations: z.array(EngineObservationSchema).max(0).default([]),
+  options: AnalysisOptionsSchema.extend({ multiplicityMethod: z.null() }),
+});
+
 export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion", [
   TwoConditionAnalysisEngineRequestSchema,
   MultiGroupAnalysisEngineRequestSchema,
@@ -457,6 +498,7 @@ export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion
   ContingencyAnalysisEngineRequestSchema,
   FriedmanAnalysisEngineRequestSchema,
   SimpleLinearRegressionEngineRequestSchema,
+  NonlinearXyFitEngineRequestSchema,
 ]);
 
 export const EstimateSchema = z.object({
@@ -498,6 +540,7 @@ export const AnalysisEngineResultSchema = z.object({
     "0.11.0",
     "0.12.0",
     "0.13.0",
+    "0.14.0",
   ]),
   requestId: EntityIdSchema,
   status: z.enum(["ok", "validation_error", "engine_error"]),
@@ -562,6 +605,33 @@ export const AnalysisEngineResultSchema = z.object({
           }),
         )
         .min(2),
+    })
+    .optional(),
+  nonlinearFit: z
+    .object({
+      modelId: z.enum(["one_phase_association", "zero_baseline_association"]),
+      modelVersion: z.string().min(1),
+      modelFormula: z.string().min(1),
+      selectionRationale: z.string().min(1),
+      series: z.array(
+        z.object({
+          seriesId: EntityIdSchema,
+          converged: z.literal(true),
+          parameters: z.array(EstimateSchema).min(2),
+          diagnostics: z.object({
+            n: z.number().int().positive(),
+            distinctX: z.number().int().positive(),
+            residualDegreesOfFreedom: z.number().int().positive(),
+            rss: z.number().finite().nonnegative(),
+            rmse: z.number().finite().nonnegative(),
+            rSquared: z.number().min(0).max(1),
+            aic: z.number().finite(),
+          }),
+          initialValues: NonlinearParameterMapSchema,
+          bounds: NonlinearBoundsMapSchema,
+          fittedCurve: z.array(z.object({ x: z.number().finite(), y: z.number().finite() })).min(2),
+        }),
+      ),
     })
     .optional(),
   diagnostics: z.array(z.object({ code: z.string(), message: z.string() })),

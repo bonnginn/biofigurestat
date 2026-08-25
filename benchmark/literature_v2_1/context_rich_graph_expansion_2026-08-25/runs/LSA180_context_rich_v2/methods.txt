@@ -1,0 +1,7 @@
+Case: LSA180_context_rich_v2
+Source: https://europepmc.org/articles/PMC12852734 (Fig. 1D)
+Scientific question: Does ASD2Δ-Sh3 reduce ROCK activation relative to GFP and WT-Sh3?
+Statistical unit: biological replicate
+Source analysis: unpaired t tests
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

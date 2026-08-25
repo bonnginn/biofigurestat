@@ -117,8 +117,14 @@ export function GraphStatisticsPanel({
   const [methodsCopyStatus, setMethodsCopyStatus] = useState<string | null>(null);
   const [recommendationDecision, setRecommendationDecision] = useState<NonNullable<
     AnalysisRecommendation["decision"]
-  > | null>(initialAnalysis?.recommendation?.decision ?? null);
+  > | null>(
+    initialAnalysis?.recommendation?.decision ??
+      (assessment.recommendedMethod
+        ? { kind: "accepted", selectedMethod: assessment.recommendedMethod }
+        : null),
+  );
   const recommendationDecisionRef = useRef(recommendationDecision);
+  const lastAnalysisContextKeyRef = useRef(analysisContextKey);
   useEffect(() => {
     recommendationDecisionRef.current = recommendationDecision;
   }, [recommendationDecision]);
@@ -233,14 +239,16 @@ export function GraphStatisticsPanel({
                         ? request.conditionIds.join("|")
                         : request.protocolVersion === "0.13.0"
                           ? `${request.xLabel}|${request.yLabel}`
-                          : request.protocolVersion === "0.6.0" ||
-                              request.protocolVersion === "0.7.0" ||
-                              request.protocolVersion === "0.8.0" ||
-                              request.protocolVersion === "0.10.0"
-                            ? request.conditionIds.join("|")
-                            : request.protocolVersion === "0.9.0"
-                              ? `${request.conditionId}|reference:${request.nullValue}`
-                              : request.primaryContrastConditionIds.join("|"),
+                          : request.protocolVersion === "0.14.0"
+                            ? `${request.seriesIds.join("|")}|model:${request.modelId}`
+                            : request.protocolVersion === "0.6.0" ||
+                                request.protocolVersion === "0.7.0" ||
+                                request.protocolVersion === "0.8.0" ||
+                                request.protocolVersion === "0.10.0"
+                              ? request.conditionIds.join("|")
+                              : request.protocolVersion === "0.9.0"
+                                ? `${request.conditionId}|reference:${request.nullValue}`
+                                : request.primaryContrastConditionIds.join("|"),
             correction: request.options.multiplicityMethod,
             protocolVersion: request.protocolVersion,
             mode,
@@ -268,6 +276,11 @@ export function GraphStatisticsPanel({
       firstAssessmentRef.current = false;
       return;
     }
+    const structuralContextChanged = lastAnalysisContextKeyRef.current !== analysisContextKey;
+    lastAnalysisContextKeyRef.current = analysisContextKey;
+    // Choosing a supported method before the first execution is a lightweight interaction,
+    // not a structural data change that should erase the researcher's choice.
+    if (!executedRef.current && !structuralContextChanged) return;
     const previousRequest = lastExecutedRequestRef.current;
     const nextRequest = assessment.request;
     const automaticRerunIsSafe = Boolean(
@@ -285,7 +298,14 @@ export function GraphStatisticsPanel({
       );
     }
     executedRef.current = false;
-    if (!automaticRerunIsSafe) setIndependenceConfirmed(false);
+    if (!automaticRerunIsSafe) {
+      setIndependenceConfirmed(false);
+      const defaultDecision = assessment.recommendedMethod
+        ? ({ kind: "accepted", selectedMethod: assessment.recommendedMethod } as const)
+        : null;
+      setRecommendationDecision(defaultDecision);
+      recommendationDecisionRef.current = defaultDecision;
+    }
     setResult(null);
     onAnalysisChange?.(null);
     setError(null);
@@ -294,16 +314,24 @@ export function GraphStatisticsPanel({
       void executeRequest(nextRequest, "automatic");
     }, 650);
     return () => window.clearTimeout(timer);
-  }, [analysisContextKey, assessment.request, executeRequest, onAnalysisChange]);
+  }, [
+    analysisContextKey,
+    assessment.recommendedMethod,
+    assessment.request,
+    executeRequest,
+    onAnalysisChange,
+  ]);
 
   const run = async () => {
-    if (
-      !assessment.request ||
-      !independenceConfirmed ||
-      plannedComparisonsMissing ||
-      (assessment.recommendedMethod && !recommendationDecision)
-    )
-      return;
+    if (!assessment.request || !independenceConfirmed || plannedComparisonsMissing) return;
+    if (!recommendationDecision && assessment.recommendedMethod) {
+      const decision = {
+        kind: "accepted" as const,
+        selectedMethod: assessment.recommendedMethod,
+      };
+      setRecommendationDecision(decision);
+      recommendationDecisionRef.current = decision;
+    }
     await executeRequest(assessment.request, "manual");
   };
   const primaryTests =
@@ -528,37 +556,12 @@ export function GraphStatisticsPanel({
           ) : null}
           {assessment.recommendedMethod ? (
             <div className="experiment-graph-help" data-recommendation-decision>
-              <button
-                type="button"
-                onClick={() => {
-                  if ((selectedMethod ?? assessment.method) !== assessment.recommendedMethod) {
-                    onSelectedMethodChange?.(
-                      assessment.recommendedMethod as AnalysisRecommendation["recommendedMethod"],
-                    );
-                  }
-                  setRecommendationDecision({
-                    kind: "accepted",
-                    selectedMethod:
-                      assessment.recommendedMethod as AnalysisRecommendation["recommendedMethod"],
-                  });
-                  recordBenchmarkEvent(
-                    "recommendation_decision_recorded",
-                    {
-                      decision: "accepted",
-                      recommendedMethod: assessment.recommendedMethod ?? null,
-                    },
-                    "analysis_only",
-                  );
-                }}
-              >
-                推奨法を使う
-              </button>
               <p>
                 {recommendationDecision
                   ? recommendationDecision.kind === "accepted"
-                    ? `推奨法を明示的に採用しました：${recommendationDecision.selectedMethod}。`
+                    ? `推奨法を選択中：${recommendationDecision.selectedMethod}。別の方法を選ぶと上書き理由を記録します。`
                     : `推奨法を上書きし、${recommendationDecision.selectedMethod}を選択しました。`
-                  : "解析前に、推奨法を使うか別の方法へ上書きするかを明示してください。"}
+                  : "選択中の解析法は実行時にprovenanceへ記録します。"}
               </p>
             </div>
           ) : null}
@@ -588,12 +591,7 @@ export function GraphStatisticsPanel({
           <button
             className="experiment-graph-run-analysis"
             type="button"
-            disabled={
-              !independenceConfirmed ||
-              plannedComparisonsMissing ||
-              running ||
-              Boolean(assessment.recommendedMethod && !recommendationDecision)
-            }
+            disabled={!independenceConfirmed || plannedComparisonsMissing || running}
             onClick={run}
           >
             {running ? "ローカルで解析中…" : "選択した解析を実行"}

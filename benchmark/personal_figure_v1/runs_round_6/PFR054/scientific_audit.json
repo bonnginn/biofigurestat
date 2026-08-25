@@ -1,0 +1,21 @@
+{
+  "caseId": "PFR054",
+  "checks": {
+    "experimentalUnitCorrect": false,
+    "displayUnitSeparatedFromInferentialUnit": true,
+    "pairingRepeatedIdentityCorrect": true,
+    "descriptiveOrInferentialExplicit": true,
+    "comparisonFamilyMatchesQuestion": true,
+    "controlReferenceRolesCorrect": true,
+    "displaySubsetCorrect": true,
+    "analysisSetCorrect": false,
+    "comparisonSetCorrect": true,
+    "annotationSetCorrect": true,
+    "legendFactorSemanticsCorrect": true,
+    "graphConventionAppropriate": true
+  },
+  "uncertaintyRecorded": true,
+  "notes": [
+    "Source-backed inferential hierarchy remains uncertain."
+  ]
+}

@@ -1,0 +1,7 @@
+Case: LSA463_context_rich_v2
+Source: https://europepmc.org/articles/PMC11574359 (Fig. 3A)
+Scientific question: Does the HRS FYVE domain prefer highly curved liposomes?
+Statistical unit: independent sample
+Source analysis: one-way ANOVA + Bonferroni
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

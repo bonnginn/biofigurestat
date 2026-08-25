@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "line",
+  "analysisResultAuthority": false,
+  "displaySet": "all synthetic rows",
+  "analysisSet": "biological-unit summaries or explicit survival units",
+  "comparisonSet": "within-animal hemisphere and baseline contrasts",
+  "annotationSet": "Only source-supported comparisons"
+}

@@ -1,0 +1,7 @@
+Case: PFR043 (OPTO Fig. 5E)
+Source status: SYNTHETIC_RECONSTRUCTION; values are not published raw observations.
+Experimental/statistical unit: independent imaging experiment (n=3)
+Primary contrast: ECFP vs WT; WT vs each mutant
+Inference status: ok.
+Display, analysis, comparison, and annotation sets are stored separately in graph_state.json.
+App method: one-way ANOVA with exactly five prespecified contrasts and Holm adjustment. Rationale: preserves two-stage rescue logic without all-pairs testing.

@@ -1,0 +1,7 @@
+Case: LSA088_context_rich_v2
+Source: https://europepmc.org/articles/PMC12752511 (Fig. 1D/H)
+All observations are deterministic synthetic reconstruction, not published raw data.
+Statistical unit: representative image pixels; N=3 biological replicates is context only
+Primary contrast: descriptive Pearson per time
+Analysis status: ok_descriptive_pixel_level
+Authority: saved local numerical-engine result; Graph does not smooth or recompute analysis.

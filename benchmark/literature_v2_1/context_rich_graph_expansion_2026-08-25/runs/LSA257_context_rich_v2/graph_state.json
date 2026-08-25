@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "line",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "How does refeeding after starvation change the proportion of Vasa2+/Piwi1+ cells?",
+  "annotationSet": "none without an authoritative saved result"
+}

@@ -1,0 +1,1110 @@
+{
+  "schemaVersion": "1.0.0",
+  "auditedCaseCount": 184,
+  "cases": [
+    {
+      "caseId": "LSA053",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA055",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA057",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA058",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA059",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA064",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA070",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA075",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA077",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA078",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA080",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA084",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA086",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA087",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA088",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA090",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA094",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA095",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA096",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA097",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA098",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA100",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA103",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA108",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA111",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA113",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA114",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA118",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA119",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA120",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA121",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA125",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA126",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA127",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA128",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA134",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA135",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA139",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA142",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA143",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA144",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA147",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA148",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA150",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA151",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA152",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA156",
+      "tier": "Excluded / needs repair",
+      "classification": "UNRESOLVABLE_FROM_SOURCE",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA157",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA158",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA159",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA160",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA161",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA162",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA165",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA168",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA177",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA178",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA180",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA182",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA186",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA190",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA193",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA194",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA198",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA200",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA203",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA204",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA206",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA209",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA210",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA213",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA215",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA216",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA217",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA221",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA223",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA224",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA226",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA228",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA230",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA231",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA233",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA234",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA235",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA236",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA241",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA242",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA248",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA249",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA251",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA256",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA257",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA258",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA261",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA263",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA264",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA266",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA267",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA269",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA271",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA272",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA274",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA280",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA281",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA282",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA283",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA284",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA287",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA288",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA289",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA295",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA300",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA302",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA303",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA304",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA310",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA311",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA313",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA315",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA317",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA322",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA324",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA326",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA333",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA334",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA337",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA339",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA343",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA345",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA346",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA347",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA348",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA350",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA353",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA355",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA356",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA367",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA368",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA369",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA375",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA378",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA379",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA380",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA382",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA385",
+      "tier": "Tier G repair queue",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA386",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA387",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA390",
+      "tier": "Excluded / needs repair",
+      "classification": "UNRESOLVABLE_FROM_SOURCE",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA393",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA396",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA397",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA399",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA401",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA404",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA412",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA413",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA415",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA417",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA419",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA421",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA424",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA425",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA427",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA428",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA433",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA434",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA438",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA440",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA442",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA448",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "stratified_fidelity_audit"
+    },
+    {
+      "caseId": "LSA455",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA456",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA460",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA462",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA463",
+      "tier": "Tier G repair queue",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA464",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA467",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA468",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA470",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA471",
+      "tier": "Excluded / needs repair",
+      "classification": "MATERIAL_CONTEXT_LOSS",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA474",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA475",
+      "tier": "Tier S",
+      "classification": "ADEQUATE_FOR_STATISTICAL_BENCHMARK",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA493",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    },
+    {
+      "caseId": "LSA495",
+      "tier": "Tier S",
+      "classification": "CONTEXT_REDUCED",
+      "auditLevel": "non_pool_d_metadata_screen"
+    }
+  ]
+}

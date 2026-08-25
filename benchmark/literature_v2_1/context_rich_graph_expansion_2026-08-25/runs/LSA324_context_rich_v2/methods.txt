@@ -1,0 +1,7 @@
+Case: LSA324_context_rich_v2
+Source: https://europepmc.org/articles/PMC8716107 (Fig. 6B)
+Scientific question: Does cocaine exposure increase dopaminergic-axon branching as a function of axon length?
+Statistical unit: mouse with axons nested within mouse
+Source analysis: two-tailed Mann–Whitney U on branch density
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

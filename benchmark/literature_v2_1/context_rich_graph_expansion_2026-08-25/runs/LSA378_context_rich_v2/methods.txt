@@ -1,0 +1,7 @@
+Case: LSA378_context_rich_v2
+Source: https://europepmc.org/articles/PMC12755883 (Fig. 1B)
+Scientific question: Does a high-fat diet reduce nephrocyte FITC-albumin uptake?
+Statistical unit: fly
+Source analysis: two-tailed Student t test
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.

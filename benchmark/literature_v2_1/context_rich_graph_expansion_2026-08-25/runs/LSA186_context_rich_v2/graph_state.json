@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "type": "heatmap",
+  "analysisResultAuthority": false,
+  "displaySet": "deterministic synthetic reconstruction",
+  "analysisSet": "withheld unless unit/model is explicitly supported",
+  "comparisonSet": "How do IL-17A and Epo change the erythroid-subset landscape in marrow and spleen?",
+  "annotationSet": "none without an authoritative saved result"
+}

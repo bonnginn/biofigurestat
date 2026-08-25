@@ -784,7 +784,6 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("region", { name: "統計ワークスペース" })).toBeVisible();
     expect(screen.queryByRole("combobox", { name: "編集対象" })).toBeNull();
     fireEvent.click(screen.getByRole("checkbox", { name: /同じ実験単位の2条件/ }));
-    fireEvent.click(screen.getByRole("button", { name: "推奨法を使う" }));
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
     await screen.findByRole("group", { name: "統計解析結果" });
     fireEvent.change(screen.getByRole("combobox", { name: "統計注釈の表示" }), {

@@ -114,6 +114,8 @@ function conditionLabels(input: MethodsTextInput): string {
   if (input.request.protocolVersion === "0.12.0") return input.request.conditionIds.join(" vs ");
   if (input.request.protocolVersion === "0.13.0")
     return `${input.request.xLabel} → ${input.request.yLabel}`;
+  if (input.request.protocolVersion === "0.14.0")
+    return `${input.request.seriesIds.join(" vs ")}（${input.request.xLabel} → ${input.request.yLabel}）`;
   const labels = new Map(
     input.design.conditions.map((condition) => [condition.id, condition.label]),
   );
@@ -140,6 +142,8 @@ function allConditionLabels(input: MethodsTextInput): string {
   if (input.request.protocolVersion === "0.12.0") return input.request.conditionIds.join("、");
   if (input.request.protocolVersion === "0.13.0")
     return `${input.request.xLabel}、${input.request.yLabel}`;
+  if (input.request.protocolVersion === "0.14.0")
+    return `${input.request.seriesIds.join("、")}（${input.request.modelId}）`;
   const labels = new Map(
     input.design.conditions.map((condition) => [condition.id, condition.label]),
   );
@@ -276,6 +280,25 @@ function pairwiseResultLines(input: MethodsTextInput, testOffset: number): strin
 
 function executedResultLines(input: MethodsTextInput): string[] {
   const { recommendation, result, design } = input;
+  if (recommendation.templateId === "D17" && result.nonlinearFit) {
+    return [
+      `結果：${result.status === "ok" ? "完了" : result.status}`,
+      `非線形model：${result.nonlinearFit.modelId}（version ${result.nonlinearFit.modelVersion}）`,
+      `式：${result.nonlinearFit.modelFormula}`,
+      `model選択理由：${result.nonlinearFit.selectionRationale}`,
+      ...result.nonlinearFit.series.flatMap((series) => [
+        `・${series.seriesId}：${series.parameters
+          .map(
+            (parameter) =>
+              `${parameter.name}=${numberLabel(parameter.value)}（SE=${numberLabel(parameter.standardError)}、${intervalText(parameter)}）`,
+          )
+          .join("、")}`,
+        `- fit診断：n=${series.diagnostics.n}、distinct X=${series.diagnostics.distinctX}、residual df=${series.diagnostics.residualDegreesOfFreedom}、RSS=${numberLabel(series.diagnostics.rss)}、RMSE=${numberLabel(series.diagnostics.rmse)}、R²=${numberLabel(series.diagnostics.rSquared)}、AIC=${numberLabel(series.diagnostics.aic)}`,
+        `- initial values：${JSON.stringify(series.initialValues)}／bounds：${JSON.stringify(series.bounds)}`,
+      ]),
+      "Graph：raw observationsとsaved authoritative fitted curveを分離して表示。Graph appearance変更ではfitを再計算しない。",
+    ];
+  }
   if (recommendation.templateId === "D11") {
     const test = result.tests[0];
     const labels = new Map(design.conditions.map((condition) => [condition.id, condition.label]));
@@ -381,21 +404,23 @@ export function generateMethodsText(input: MethodsTextInput): string {
   const resultLines = executedResultLines(input);
   const multiplicityNote = request.options.multiplicityMethod
     ? `多重性補正：${request.options.multiplicityMethod}を指定。`
-    : request.protocolVersion === "0.6.0"
-      ? `多重性補正：条件×${repeatedAxisLabel(input)}、条件、${repeatedAxisLabel(input)}の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
-      : request.protocolVersion === "0.7.0"
-        ? `多重性補正：独立条件×${repeatedAxisLabel(input)}の3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
-        : request.protocolVersion === "0.10.0"
-          ? `多重性補正：条件×${repeatedAxisLabel(input)}の3つの事前指定omnibus効果のみを報告し、事後比較は実行していないため指定なし。`
-          : request.protocolVersion === "0.5.0"
-            ? "多重性補正：単一の相関係数を評価したため指定なし。"
-            : request.protocolVersion === "0.8.0"
-              ? "多重性補正：事前指定した単一のlog-rank全体検定のため指定なし。"
-              : request.protocolVersion === "0.9.0"
-                ? "多重性補正：明示した単一の基準値との比較のため指定なし。"
-                : request.protocolVersion === "0.2.0"
-                  ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
-                  : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
+    : request.protocolVersion === "0.14.0"
+      ? "多重性補正：parameter estimationをseriesごとに独立して行い、仮説検定のp値を生成していないため指定なし。"
+      : request.protocolVersion === "0.6.0"
+        ? `多重性補正：条件×${repeatedAxisLabel(input)}、条件、${repeatedAxisLabel(input)}の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
+        : request.protocolVersion === "0.7.0"
+          ? `多重性補正：独立条件×${repeatedAxisLabel(input)}の3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
+          : request.protocolVersion === "0.10.0"
+            ? `多重性補正：条件×${repeatedAxisLabel(input)}の3つの事前指定omnibus効果のみを報告し、事後比較は実行していないため指定なし。`
+            : request.protocolVersion === "0.5.0"
+              ? "多重性補正：単一の相関係数を評価したため指定なし。"
+              : request.protocolVersion === "0.8.0"
+                ? "多重性補正：事前指定した単一のlog-rank全体検定のため指定なし。"
+                : request.protocolVersion === "0.9.0"
+                  ? "多重性補正：明示した単一の基準値との比較のため指定なし。"
+                  : request.protocolVersion === "0.2.0"
+                    ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
+                    : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
   const warnings = [
     "除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。",
     normalizationWarning(design),

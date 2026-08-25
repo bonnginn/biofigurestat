@@ -1,0 +1,5 @@
+{
+  "caseId": "LSA186",
+  "classification": "READY_WITH_BOUNDED_SOURCE_UNCERTAINTY",
+  "note": "The heatmap displays fold changes for many subsets; per-feature inferential annotations are not reconstructed."
+}

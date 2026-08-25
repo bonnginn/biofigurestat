@@ -1,0 +1,6 @@
+Case: PFR020 (NDEL1 Fig. 9F)
+Source status: SYNTHETIC_RECONSTRUCTION; values are not published raw observations.
+Experimental/statistical unit: mouse (n=6 per genotype)
+Primary contrast: WT/WT versus cko/cko within each renal category
+Inference status: ok.
+Display, analysis, comparison, and annotation sets are stored separately in graph_state.json.

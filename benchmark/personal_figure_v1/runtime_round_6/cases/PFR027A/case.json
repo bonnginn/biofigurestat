@@ -1,0 +1,147 @@
+{
+  "caseId": "PFR027A",
+  "paperCode": "OPTO",
+  "panel": "Fig. 2C left",
+  "inferenceMode": "inferential",
+  "statisticalUnit": "independent imaging experiment (n=3)",
+  "primaryContrast": "each construct versus control",
+  "rows": [
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000001",
+      "condition": "control",
+      "series": "control",
+      "x": null,
+      "value": 1.049859,
+      "experimentalUnitId": "experiment.1",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    },
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000002",
+      "condition": "control",
+      "series": "control",
+      "x": null,
+      "value": 0.981546,
+      "experimentalUnitId": "experiment.2",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    },
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000003",
+      "condition": "control",
+      "series": "control",
+      "x": null,
+      "value": 1.015341,
+      "experimentalUnitId": "experiment.3",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    },
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000004",
+      "condition": "RhoA",
+      "series": "RhoA",
+      "x": null,
+      "value": 1.547099,
+      "experimentalUnitId": "experiment.1",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    },
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000005",
+      "condition": "RhoA",
+      "series": "RhoA",
+      "x": null,
+      "value": 1.599795,
+      "experimentalUnitId": "experiment.2",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    },
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000006",
+      "condition": "RhoA",
+      "series": "RhoA",
+      "x": null,
+      "value": 1.621875,
+      "experimentalUnitId": "experiment.3",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    },
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000007",
+      "condition": "Rac1",
+      "series": "Rac1",
+      "x": null,
+      "value": 1.054713,
+      "experimentalUnitId": "experiment.1",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    },
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000008",
+      "condition": "Rac1",
+      "series": "Rac1",
+      "x": null,
+      "value": 1.05003,
+      "experimentalUnitId": "experiment.2",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    },
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000009",
+      "condition": "Rac1",
+      "series": "Rac1",
+      "x": null,
+      "value": 1.134362,
+      "experimentalUnitId": "experiment.3",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    },
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000010",
+      "condition": "Cdc42",
+      "series": "Cdc42",
+      "x": null,
+      "value": 1.000855,
+      "experimentalUnitId": "experiment.1",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    },
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000011",
+      "condition": "Cdc42",
+      "series": "Cdc42",
+      "x": null,
+      "value": 0.991385,
+      "experimentalUnitId": "experiment.2",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    },
+    {
+      "caseId": "PFR027A",
+      "observationId": "PFR027A_R6_O000012",
+      "condition": "Cdc42",
+      "series": "Cdc42",
+      "x": null,
+      "value": 1.012959,
+      "experimentalUnitId": "experiment.3",
+      "synthetic": true,
+      "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+    }
+  ],
+  "graphFamily": "dot",
+  "xLabel": "Construct",
+  "yLabel": "F70s / F50s",
+  "supportClassification": "direct_synthetic",
+  "sourceStatus": "SYNTHETIC_RECONSTRUCTION"
+}

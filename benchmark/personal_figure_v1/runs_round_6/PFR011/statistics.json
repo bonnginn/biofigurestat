@@ -1,0 +1,301 @@
+{
+  "caseId": "PFR011",
+  "status": "ok_app_reconstruction",
+  "unit": "reconstructed session summaries",
+  "results": [
+    {
+      "request": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR011.time",
+        "projectId": "project.PFR011",
+        "analysisId": "analysis.PFR011.time",
+        "templateId": "D03",
+        "templateVersion": "0.1.0",
+        "method": "one_way_anova",
+        "conditionIds": [
+          "0 h",
+          "4 h",
+          "8 h",
+          "16 h",
+          "24 h",
+          "48 h"
+        ],
+        "contrastIntent": "planned_comparisons",
+        "plannedContrastConditionIds": [
+          [
+            "0 h",
+            "4 h"
+          ],
+          [
+            "0 h",
+            "8 h"
+          ],
+          [
+            "0 h",
+            "16 h"
+          ],
+          [
+            "0 h",
+            "24 h"
+          ],
+          [
+            "0 h",
+            "48 h"
+          ]
+        ],
+        "primaryContrastConditionIds": [
+          "0 h",
+          "4 h"
+        ],
+        "observations": [
+          {
+            "observationId": "PFR011.time.0 h.1",
+            "conditionId": "0 h",
+            "value": 0.9865575263157894,
+            "experimentalUnitId": "session.1.0 h"
+          },
+          {
+            "observationId": "PFR011.time.0 h.2",
+            "conditionId": "0 h",
+            "value": 0.9894284,
+            "experimentalUnitId": "session.2.0 h"
+          },
+          {
+            "observationId": "PFR011.time.0 h.3",
+            "conditionId": "0 h",
+            "value": 1.0355063333333334,
+            "experimentalUnitId": "session.3.0 h"
+          },
+          {
+            "observationId": "PFR011.time.4 h.1",
+            "conditionId": "4 h",
+            "value": 0.8954314736842105,
+            "experimentalUnitId": "session.1.4 h"
+          },
+          {
+            "observationId": "PFR011.time.4 h.2",
+            "conditionId": "4 h",
+            "value": 0.91359765,
+            "experimentalUnitId": "session.2.4 h"
+          },
+          {
+            "observationId": "PFR011.time.4 h.3",
+            "conditionId": "4 h",
+            "value": 0.9249046666666667,
+            "experimentalUnitId": "session.3.4 h"
+          },
+          {
+            "observationId": "PFR011.time.8 h.1",
+            "conditionId": "8 h",
+            "value": 0.7706195789473684,
+            "experimentalUnitId": "session.1.8 h"
+          },
+          {
+            "observationId": "PFR011.time.8 h.2",
+            "conditionId": "8 h",
+            "value": 0.7344695,
+            "experimentalUnitId": "session.2.8 h"
+          },
+          {
+            "observationId": "PFR011.time.8 h.3",
+            "conditionId": "8 h",
+            "value": 0.7929822857142858,
+            "experimentalUnitId": "session.3.8 h"
+          },
+          {
+            "observationId": "PFR011.time.16 h.1",
+            "conditionId": "16 h",
+            "value": 0.5358898947368421,
+            "experimentalUnitId": "session.1.16 h"
+          },
+          {
+            "observationId": "PFR011.time.16 h.2",
+            "conditionId": "16 h",
+            "value": 0.47166185,
+            "experimentalUnitId": "session.2.16 h"
+          },
+          {
+            "observationId": "PFR011.time.16 h.3",
+            "conditionId": "16 h",
+            "value": 0.5265017142857142,
+            "experimentalUnitId": "session.3.16 h"
+          },
+          {
+            "observationId": "PFR011.time.24 h.1",
+            "conditionId": "24 h",
+            "value": 0.4305886842105263,
+            "experimentalUnitId": "session.1.24 h"
+          },
+          {
+            "observationId": "PFR011.time.24 h.2",
+            "conditionId": "24 h",
+            "value": 0.4909401,
+            "experimentalUnitId": "session.2.24 h"
+          },
+          {
+            "observationId": "PFR011.time.24 h.3",
+            "conditionId": "24 h",
+            "value": 0.5029001428571429,
+            "experimentalUnitId": "session.3.24 h"
+          },
+          {
+            "observationId": "PFR011.time.48 h.1",
+            "conditionId": "48 h",
+            "value": 0.7357724210526316,
+            "experimentalUnitId": "session.1.48 h"
+          },
+          {
+            "observationId": "PFR011.time.48 h.2",
+            "conditionId": "48 h",
+            "value": 0.67201295,
+            "experimentalUnitId": "session.2.48 h"
+          },
+          {
+            "observationId": "PFR011.time.48 h.3",
+            "conditionId": "48 h",
+            "value": 0.7458694761904762,
+            "experimentalUnitId": "session.3.48 h"
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.95,
+          "multiplicityMethod": "holm_planned_comparisons"
+        }
+      },
+      "result": {
+        "protocolVersion": "0.2.0",
+        "requestId": "request.PFR011.time",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.14.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0",
+            "statsmodels": "0.14.6"
+          }
+        },
+        "estimates": [
+          {
+            "name": "0 h_minus_4 h",
+            "value": 0.09251948976608182,
+            "standardError": 0.02615540337395751,
+            "confidenceInterval": null
+          },
+          {
+            "name": "0 h_minus_8 h",
+            "value": 0.23780696499582288,
+            "standardError": 0.02615540337395751,
+            "confidenceInterval": null
+          },
+          {
+            "name": "0 h_minus_16 h",
+            "value": 0.4924796002088556,
+            "standardError": 0.02615540337395751,
+            "confidenceInterval": null
+          },
+          {
+            "name": "0 h_minus_24 h",
+            "value": 0.5290211108604848,
+            "standardError": 0.02615540337395751,
+            "confidenceInterval": null
+          },
+          {
+            "name": "0 h_minus_48 h",
+            "value": 0.2859458041353383,
+            "standardError": 0.02615540337395751,
+            "confidenceInterval": null
+          }
+        ],
+        "tests": [
+          {
+            "name": "classical_one_way_anova",
+            "statisticName": "F",
+            "statistic": 129.93702009927867,
+            "degreesOfFreedom": [
+              5.0,
+              12.0
+            ],
+            "pValue": 5.095649559350135e-10,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          },
+          {
+            "name": "planned_holm:0 h:4 h",
+            "statisticName": "t",
+            "statistic": 3.537299289301036,
+            "degreesOfFreedom": [
+              12.0
+            ],
+            "pValue": 0.004091100902131847,
+            "adjustedPValue": 0.004091100902131847,
+            "effectSizeName": "hedges_g",
+            "effectSize": 3.3422590232311085
+          },
+          {
+            "name": "planned_holm:0 h:8 h",
+            "statisticName": "t",
+            "statistic": 9.092077900530612,
+            "degreesOfFreedom": [
+              12.0
+            ],
+            "pValue": 9.914360161566153e-07,
+            "adjustedPValue": 1.9828720323132305e-06,
+            "effectSizeName": "hedges_g",
+            "effectSize": 6.65385485606763
+          },
+          {
+            "name": "planned_holm:0 h:16 h",
+            "statisticName": "t",
+            "statistic": 18.82898126890328,
+            "degreesOfFreedom": [
+              12.0
+            ],
+            "pValue": 2.817877746116674e-10,
+            "adjustedPValue": 1.1271510984466695e-09,
+            "effectSizeName": "hedges_g",
+            "effectSize": 12.558372953778898
+          },
+          {
+            "name": "planned_holm:0 h:24 h",
+            "statisticName": "t",
+            "statistic": 20.226073492226163,
+            "degreesOfFreedom": [
+              12.0
+            ],
+            "pValue": 1.2231984562619866e-10,
+            "adjustedPValue": 6.115992281309933e-10,
+            "effectSizeName": "hedges_g",
+            "effectSize": 12.565139307339132
+          },
+          {
+            "name": "planned_holm:0 h:48 h",
+            "statisticName": "t",
+            "statistic": 10.932570989138316,
+            "degreesOfFreedom": [
+              12.0
+            ],
+            "pValue": 1.3556072003487544e-07,
+            "adjustedPValue": 4.066821601046263e-07,
+            "effectSizeName": "hedges_g",
+            "effectSize": 6.644238853878986
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "equal_variance_assumption_selected",
+            "message": "Conventional one-way ANOVA and its pooled-variance comparisons assume equal population variances."
+          },
+          {
+            "code": "planned_pairwise_no_simultaneous_ci",
+            "message": "Only the explicitly selected pairwise comparisons were tested with Holm-adjusted p-values. Simultaneous confidence intervals are not reported for this workflow."
+          }
+        ],
+        "warnings": [],
+        "completedAt": "2026-08-25T06:02:35.155804+00:00"
+      }
+    }
+  ]
+}

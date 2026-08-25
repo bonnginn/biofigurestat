@@ -1,0 +1,135 @@
+{
+  "caseId": "LSA302_context_rich_v2",
+  "classification": "CONTEXT_RICH_READY",
+  "goldFigureBrief": {
+    "schemaVersion": "1.1.0",
+    "caseId": "LSA302_context_rich_v2",
+    "originalCaseId": "LSA302",
+    "scientificQuestion": "Does centrosome amplification increase cell invasion relative to both controls?",
+    "conditions": [
+      "−CA PLK4",
+      "+CA PLK4",
+      "DOX+ PLK4 1–608"
+    ],
+    "statisticalUnit": "independent experiment",
+    "sourceMethod": "one-way ANOVA + Bonferroni",
+    "source": {
+      "pmcid": "PMC10629695",
+      "url": "https://europepmc.org/articles/PMC10629695",
+      "targetPanel": "Fig. 1C",
+      "figureLegendChecked": true
+    },
+    "sourceBoundaryNote": "",
+    "syntheticPolicy": "Values are deterministic synthetic reconstruction, never published raw observations."
+  },
+  "syntheticData": [
+    {
+      "observationId": "LSA302.o1",
+      "series": "−CA PLK4",
+      "experimentalUnitId": "unit.−CA PLK4.1",
+      "pairId": null,
+      "x": null,
+      "value": 47.6855,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA302.o2",
+      "series": "−CA PLK4",
+      "experimentalUnitId": "unit.−CA PLK4.2",
+      "pairId": null,
+      "x": null,
+      "value": 49.7442,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA302.o3",
+      "series": "−CA PLK4",
+      "experimentalUnitId": "unit.−CA PLK4.3",
+      "pairId": null,
+      "x": null,
+      "value": 56.359,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA302.o4",
+      "series": "−CA PLK4",
+      "experimentalUnitId": "unit.−CA PLK4.4",
+      "pairId": null,
+      "x": null,
+      "value": 44.3103,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA302.o5",
+      "series": "+CA PLK4",
+      "experimentalUnitId": "unit.+CA PLK4.1",
+      "pairId": null,
+      "x": null,
+      "value": 60.9202,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA302.o6",
+      "series": "+CA PLK4",
+      "experimentalUnitId": "unit.+CA PLK4.2",
+      "pairId": null,
+      "x": null,
+      "value": 54.3421,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA302.o7",
+      "series": "+CA PLK4",
+      "experimentalUnitId": "unit.+CA PLK4.3",
+      "pairId": null,
+      "x": null,
+      "value": 56.1167,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA302.o8",
+      "series": "+CA PLK4",
+      "experimentalUnitId": "unit.+CA PLK4.4",
+      "pairId": null,
+      "x": null,
+      "value": 62.4227,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA302.o9",
+      "series": "DOX+ PLK4 1–608",
+      "experimentalUnitId": "unit.DOX+ PLK4 1–608.1",
+      "pairId": null,
+      "x": null,
+      "value": 62.3708,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA302.o10",
+      "series": "DOX+ PLK4 1–608",
+      "experimentalUnitId": "unit.DOX+ PLK4 1–608.2",
+      "pairId": null,
+      "x": null,
+      "value": 60.8941,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA302.o11",
+      "series": "DOX+ PLK4 1–608",
+      "experimentalUnitId": "unit.DOX+ PLK4 1–608.3",
+      "pairId": null,
+      "x": null,
+      "value": 60.4672,
+      "synthetic": true
+    },
+    {
+      "observationId": "LSA302.o12",
+      "series": "DOX+ PLK4 1–608",
+      "experimentalUnitId": "unit.DOX+ PLK4 1–608.4",
+      "pairId": null,
+      "x": null,
+      "value": 61.3824,
+      "synthetic": true
+    }
+  ]
+}

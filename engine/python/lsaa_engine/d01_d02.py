@@ -360,6 +360,11 @@ def run_wilcoxon(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def run_request(request: dict[str, Any]) -> dict[str, Any]:
+    if request.get("protocolVersion") == "0.14.0":
+        from .d17 import run_nonlinear_xy
+        if request.get("templateId") == "D17" and request.get("method") == "nonlinear_xy_fit":
+            return run_nonlinear_xy(request)
+        raise ValueError(f"Unsupported template/method combination: {request.get('templateId')}/{request.get('method')}")
     if request.get("protocolVersion") == "0.13.0":
         from .d16 import run_simple_regression
         if request.get("templateId") == "D16" and request.get("method") == "simple_linear_regression":

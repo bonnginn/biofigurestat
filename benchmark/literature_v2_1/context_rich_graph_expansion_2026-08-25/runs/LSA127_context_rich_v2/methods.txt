@@ -1,0 +1,7 @@
+Case: LSA127_context_rich_v2
+Source: https://europepmc.org/articles/PMC13278736 (Fig. 2B)
+Scientific question: Does oligodendrocyte ablation alter microglial density at P13–15?
+Statistical unit: mouse
+Source analysis: Mann–Whitney U test
+Synthetic policy: deterministic reconstruction; no value is represented as published data.
+Analysis status: not executed for Graph capability expansion.
