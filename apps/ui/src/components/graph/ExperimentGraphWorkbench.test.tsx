@@ -1370,12 +1370,18 @@ describe("ExperimentGraphWorkbench", () => {
     );
 
     const box = svg.querySelector(".experiment-graph-distribution-box");
+    const boxHitTarget = svg.querySelector(".experiment-graph-box-hit-target");
+    expect(boxHitTarget).toHaveAttribute("fill", "none");
+    expect(boxHitTarget).toHaveAttribute("stroke", "none");
     fireEvent.click(box!);
     expect(screen.getByRole("combobox", { name: "編集対象" })).toHaveValue("box");
 
     selectInspectorTarget("violin");
     fireEvent.click(screen.getByRole("checkbox", { name: "バイオリンを表示" }));
     const violin = svg.querySelector('[data-graph-layer="violin"]');
+    const violinHitTarget = svg.querySelector(".experiment-graph-violin-hit-target");
+    expect(violinHitTarget).toHaveAttribute("fill", "none");
+    expect(violinHitTarget).toHaveAttribute("stroke", "none");
     fireEvent.click(violin!);
     expect(screen.getByRole("combobox", { name: "編集対象" })).toHaveValue("violin");
     expect(violin).toHaveAttribute("data-selected", "true");

@@ -317,8 +317,8 @@
 
 .experiment-graph-violin-hit-target,
 .experiment-graph-box-hit-target {
-  fill: transparent;
-  stroke: transparent;
+  fill: none;
+  stroke: none;
   stroke-width: 12;
   pointer-events: all;
 }

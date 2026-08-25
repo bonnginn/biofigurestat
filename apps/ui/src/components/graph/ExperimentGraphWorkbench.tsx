@@ -1567,7 +1567,7 @@ function ExperimentGraphSvg({
         const distributionFill = seriesStyle?.fill ?? appearance.distributionFill;
         const distributionFillColor =
           distributionFill === "none"
-            ? "transparent"
+            ? "none"
             : distributionFill === "white"
               ? "#ffffff"
               : distributionFill === "custom"
@@ -1676,7 +1676,12 @@ function ExperimentGraphSvg({
                     stroke: appearance.distributionOutlineColor,
                   }}
                 />
-                <path d={currentViolinPath} className="experiment-graph-violin-hit-target" />
+                <path
+                  d={currentViolinPath}
+                  fill="none"
+                  stroke="none"
+                  className="experiment-graph-violin-hit-target"
+                />
               </g>
             ) : null}
             {shape === "proportion" &&
@@ -1721,6 +1726,8 @@ function ExperimentGraphSvg({
                     y={yFor(rawMaximum)}
                     width={56}
                     height={Math.max(12, yFor(rawMinimum) - yFor(rawMaximum))}
+                    fill="none"
+                    stroke="none"
                     className="experiment-graph-box-hit-target"
                   />
                   <line
