@@ -2,7 +2,7 @@ const readabilityOptions = ["Good", "OK", "Insufficient"];
 const preferenceOptions = ["Like", "Neutral", "Dislike"];
 let manifest;
 const requestedRound = new URLSearchParams(window.location.search).get("round");
-const round = requestedRound === "1" || requestedRound === "3" ? requestedRound : "2";
+const round = ["1", "3", "4"].includes(requestedRound) ? requestedRound : "2";
 const finalOnly = new URLSearchParams(window.location.search).get("view") === "finals";
 let reviewData = { schemaVersion: "1.0.0", updatedAt: null, reviews: {} };
 let index = 0;

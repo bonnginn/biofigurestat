@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REVIEW_PATH = ROOT / "benchmark/personal_figure_v1/review/review_data.json"
 ROUND_2_REVIEW_PATH = ROOT / "benchmark/personal_figure_v1/review/review_round_2.json"
 ROUND_3_REVIEW_PATH = ROOT / "benchmark/personal_figure_v1/review/review_round_3.json"
+ROUND_4_REVIEW_PATH = ROOT / "benchmark/personal_figure_v1/review/review_round_4.json"
 UI_PATH = "/benchmark/personal_figure_v1/comparison_browser/index.html"
 
 
@@ -30,6 +31,8 @@ class ReviewHandler(SimpleHTTPRequestHandler):
             return REVIEW_PATH
         if round_number == ["3"]:
             return ROUND_3_REVIEW_PATH
+        if round_number == ["4"]:
+            return ROUND_4_REVIEW_PATH
         return ROUND_2_REVIEW_PATH
 
     def do_GET(self) -> None:  # noqa: N802
