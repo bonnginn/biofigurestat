@@ -1,0 +1,34 @@
+【Methods】
+解析テンプレート：D03 · 3条件以上の独立群（0.1.0）
+実行手法：Welchの分散分析（welch_anova）
+推奨手法：Welchの分散分析（選択と同じ）
+推奨判断：推奨法を明示的に採用
+実験デザイン：PFR046 personal published-Figure validation／実験単位：unit-level.experimental-unit
+解析した測定項目：nuclear_to_cytosol_ratio (a.u.)
+対応構造：条件間で別々の独立した実験単位。
+統計上のn：si control n=3, siPLCε sequence 1 n=3, siPLCε sequence 3 n=3
+解析条件：si control、siPLCε sequence 1、siPLCε sequence 3
+主比較：si control vs siPLCε sequence 1
+エラーバー：平均±SD（標本標準偏差）
+
+解析結果
+結果：完了
+全体検定：welch_one_way_anova、F=246.1201、自由度 2, 3.6829、p=0.0001
+全体効果量：cohen_f_welch=8.037
+補正済み条件間比較：
+・si control vs siPLCε sequence 1：平均値の差 0.7037（95%信頼区間 0.5974～0.8101）、p=2.57e-5、調整済みp=5.69e-5、hedges_g=15.7037
+・si control vs siPLCε sequence 3：平均値の差 0.4184（95%信頼区間 0.3108～0.526）、p=0.0005、調整済みp=0.0011、hedges_g=10.6837
+・siPLCε sequence 1 vs siPLCε sequence 3：平均値の差 -0.2853（95%信頼区間 -0.3693～-0.2013）、p=0.0005、調整済みp=0.0011、hedges_g=-8.6119
+
+実行エンジン：lsaa-python 0.13.0
+使用パッケージ：numpy 2.3.5, scipy 1.18.0
+アプリケーション：Life Science Analysis App 0.1.0
+完了日時：2026-08-25T00:46:11.765985+00:00
+
+注意事項
+・除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。
+・正規化：実行設定に正規化計画がありません（該当なし／未設定）。
+・比較意図：すべての条件ペア。
+・多重性補正：games_howell_all_pairsを指定。
+時系列の派生値：F/F0。解析window=最初～最後 min。baseline=最初の時点 min。raw時系列と変換設定はプロジェクトに保持。
+Round 5 graph metadata: display, analysis, comparison, and annotation sets are persisted independently. Box whiskers use Tukey 1.5×IQR. Continuous axes show minor ticks without grid lines and do not extrapolate beyond measured X.

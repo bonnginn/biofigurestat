@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0_ROUND_5_GRAPH_SEMANTICS",
+  "sourceRuntime": "runtime_round_4",
+  "purpose": "Round 4 human-review Graph Core semantic corrections",
+  "syntheticValues": "byte-equivalent numeric values after identity-only copy",
+  "poolDOpened": false,
+  "caseIds": [
+    "PFR002",
+    "PFR004",
+    "PFR025",
+    "PFR046",
+    "PFR049",
+    "PFR069"
+  ]
+}

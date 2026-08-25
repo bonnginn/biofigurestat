@@ -1,0 +1,14 @@
+{
+  "benchmarkVersion": "LSA_PERSONAL_FIGURE_v1_0_ROUND_5_GRAPH_SEMANTICS",
+  "caseId": "PFR049",
+  "track": "track_A",
+  "runId": "round5_PFR049_001",
+  "appVersion": "0.1.0",
+  "completedAt": "2026-08-25T02:12:05.040874+00:00",
+  "outcome": "completed",
+  "supportStatus": "direct",
+  "artifactCompleteness": "complete",
+  "humanRatingEntered": false,
+  "finalSvgSha256": "3705cc767bec7d10e93f832e13a5eb088ab3969761bd12124f8d6b317219a394",
+  "finalPngSha256": "ec207d6f145a8b5bead811f673e20057d3e24cbbf74b1152d07c4687f4ddfa37"
+}

@@ -1,0 +1,265 @@
+{
+  "selectedReadoutId": "readout.1",
+  "selectedConditionIds": [
+    "condition.1",
+    "condition.2",
+    "condition.4",
+    "condition.5"
+  ],
+  "displayedConditionIds": [
+    "condition.1",
+    "condition.2",
+    "condition.3",
+    "condition.4",
+    "condition.5",
+    "condition.6"
+  ],
+  "statisticalUnit": "independent experiment",
+  "recommendation": {
+    "templateId": "D03",
+    "templateVersion": "0.1.0",
+    "recommendedMethod": "one_way_anova",
+    "alternativeMethods": [
+      "welch_anova",
+      "kruskal_wallis"
+    ],
+    "reasonCode": "draft_d03_design_assessment",
+    "explanation": "独立した4条件のうち、事前に選んだ2ペアだけを比較し、p値をHolm法で調整します（Ndel1-Myc; siNdel1; Dox−: 3、Ndel1-Myc; siNdel1; Dox+: 3、NDE1-Myc; siNdel1; Dox−: 3、NDE1-Myc; siNdel1; Dox+: 3）。",
+    "statisticalNDefinition": "Ndel1-Myc; siNdel1; Dox− n=3, Ndel1-Myc; siNdel1; Dox+ n=3, NDE1-Myc; siNdel1; Dox− n=3, NDE1-Myc; siNdel1; Dox+ n=3",
+    "multiplicityMethod": "holm_planned_comparisons",
+    "decision": {
+      "kind": "accepted",
+      "selectedMethod": "one_way_anova"
+    }
+  },
+  "recommendedMethod": "one_way_anova",
+  "selectedMethod": "one_way_anova",
+  "recommendationDiffers": false,
+  "contrast": {
+    "intent": "planned_comparisons",
+    "controlConditionId": null,
+    "plannedConditionPairs": [
+      [
+        "condition.1",
+        "condition.2"
+      ],
+      [
+        "condition.4",
+        "condition.5"
+      ]
+    ]
+  },
+  "nByCondition": [
+    {
+      "conditionId": "condition.1",
+      "label": "Ndel1-Myc; siNdel1; Dox−",
+      "n": 3
+    },
+    {
+      "conditionId": "condition.2",
+      "label": "Ndel1-Myc; siNdel1; Dox+",
+      "n": 3
+    },
+    {
+      "conditionId": "condition.4",
+      "label": "NDE1-Myc; siNdel1; Dox−",
+      "n": 3
+    },
+    {
+      "conditionId": "condition.5",
+      "label": "NDE1-Myc; siNdel1; Dox+",
+      "n": 3
+    }
+  ],
+  "correction": "holm_planned_comparisons",
+  "request": {
+    "protocolVersion": "0.2.0",
+    "requestId": "request.draft.graph",
+    "projectId": "project.draft",
+    "analysisId": "analysis.draft.graph",
+    "templateId": "D03",
+    "templateVersion": "0.1.0",
+    "method": "one_way_anova",
+    "conditionIds": [
+      "condition.1",
+      "condition.2",
+      "condition.4",
+      "condition.5"
+    ],
+    "contrastIntent": "planned_comparisons",
+    "plannedContrastConditionIds": [
+      [
+        "condition.1",
+        "condition.2"
+      ],
+      [
+        "condition.4",
+        "condition.5"
+      ]
+    ],
+    "primaryContrastConditionIds": [
+      "condition.1",
+      "condition.2"
+    ],
+    "observations": [
+      {
+        "observationId": "observation.draft.1.1",
+        "conditionId": "condition.1",
+        "value": 46.15384615384615,
+        "experimentalUnitId": "PFR002_C1_E1.condition.1"
+      },
+      {
+        "observationId": "observation.draft.2.1",
+        "conditionId": "condition.1",
+        "value": 51.82481751824818,
+        "experimentalUnitId": "PFR002_C1_E2.condition.1"
+      },
+      {
+        "observationId": "observation.draft.3.1",
+        "conditionId": "condition.1",
+        "value": 49.30555555555556,
+        "experimentalUnitId": "PFR002_C1_E3.condition.1"
+      },
+      {
+        "observationId": "observation.draft.1.2",
+        "conditionId": "condition.2",
+        "value": 15.037593984962406,
+        "experimentalUnitId": "PFR002_C1_E1.condition.2"
+      },
+      {
+        "observationId": "observation.draft.2.2",
+        "conditionId": "condition.2",
+        "value": 12.857142857142856,
+        "experimentalUnitId": "PFR002_C1_E2.condition.2"
+      },
+      {
+        "observationId": "observation.draft.3.2",
+        "conditionId": "condition.2",
+        "value": 17.006802721088434,
+        "experimentalUnitId": "PFR002_C1_E3.condition.2"
+      },
+      {
+        "observationId": "observation.draft.1.3",
+        "conditionId": "condition.4",
+        "value": 45.32374100719424,
+        "experimentalUnitId": "PFR002_C1_E1.condition.4"
+      },
+      {
+        "observationId": "observation.draft.2.3",
+        "conditionId": "condition.4",
+        "value": 50,
+        "experimentalUnitId": "PFR002_C1_E2.condition.4"
+      },
+      {
+        "observationId": "observation.draft.3.3",
+        "conditionId": "condition.4",
+        "value": 47.712418300653596,
+        "experimentalUnitId": "PFR002_C1_E3.condition.4"
+      },
+      {
+        "observationId": "observation.draft.1.4",
+        "conditionId": "condition.5",
+        "value": 38.732394366197184,
+        "experimentalUnitId": "PFR002_C1_E1.condition.5"
+      },
+      {
+        "observationId": "observation.draft.2.4",
+        "conditionId": "condition.5",
+        "value": 42.281879194630875,
+        "experimentalUnitId": "PFR002_C1_E2.condition.5"
+      },
+      {
+        "observationId": "observation.draft.3.4",
+        "conditionId": "condition.5",
+        "value": 37.17948717948718,
+        "experimentalUnitId": "PFR002_C1_E3.condition.5"
+      }
+    ],
+    "options": {
+      "alternative": "two_sided",
+      "confidenceLevel": 0.95,
+      "multiplicityMethod": "holm_planned_comparisons"
+    }
+  },
+  "result": {
+    "protocolVersion": "0.2.0",
+    "requestId": "request.draft.graph",
+    "status": "ok",
+    "engine": {
+      "name": "lsaa-python",
+      "version": "0.13.0",
+      "packages": {
+        "numpy": "2.3.5",
+        "scipy": "1.18.0",
+        "statsmodels": "0.14.6"
+      }
+    },
+    "estimates": [
+      {
+        "name": "condition.1_minus_condition.2",
+        "value": 34.127559888152064,
+        "standardError": 2.0285645672380617,
+        "confidenceInterval": null
+      },
+      {
+        "name": "condition.4_minus_condition.5",
+        "value": 8.280799522510868,
+        "standardError": 2.0285645672380617,
+        "confidenceInterval": null
+      }
+    ],
+    "tests": [
+      {
+        "name": "classical_one_way_anova",
+        "statisticName": "F",
+        "statistic": 121.35063983203258,
+        "degreesOfFreedom": [
+          3,
+          8
+        ],
+        "pValue": 5.215281999889876e-7,
+        "adjustedPValue": null,
+        "effectSizeName": null,
+        "effectSize": null
+      },
+      {
+        "name": "planned_holm:condition.1:condition.2",
+        "statisticName": "t",
+        "statistic": 16.823501918214777,
+        "degreesOfFreedom": [
+          8
+        ],
+        "pValue": 1.5786928727308216e-7,
+        "adjustedPValue": 3.157385745461643e-7,
+        "effectSizeName": "hedges_g",
+        "effectSize": 10.94374044974599
+      },
+      {
+        "name": "planned_holm:condition.4:condition.5",
+        "statisticName": "t",
+        "statistic": 4.0820980787342505,
+        "degreesOfFreedom": [
+          8
+        ],
+        "pValue": 0.0035238967158956447,
+        "adjustedPValue": 0.0035238967158956447,
+        "effectSizeName": "hedges_g",
+        "effectSize": 2.663329125631164
+      }
+    ],
+    "diagnostics": [
+      {
+        "code": "equal_variance_assumption_selected",
+        "message": "Conventional one-way ANOVA and its pooled-variance comparisons assume equal population variances."
+      },
+      {
+        "code": "planned_pairwise_no_simultaneous_ci",
+        "message": "Only the explicitly selected pairwise comparisons were tested with Holm-adjusted p-values. Simultaneous confidence intervals are not reported for this workflow."
+      }
+    ],
+    "warnings": [],
+    "completedAt": "2026-08-25T00:27:27.686497+00:00"
+  },
+  "state": "current",
+  "applicationVersion": "0.1.0"
+}

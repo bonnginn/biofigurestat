@@ -1,0 +1,6 @@
+Descriptive Figure workflow (no inferential test).
+Readout: normalized_cell_area.
+Displayed conditions: Photoactivation.
+Statistical unit retained as: cell.
+Reason: the approved Gold brief specifies a descriptive panel and does not define an inferential comparator or null hypothesis.
+Round 5 graph metadata: display, analysis, comparison, and annotation sets are persisted independently. Box whiskers use Tukey 1.5×IQR. Continuous axes show minor ticks without grid lines and do not extrapolate beyond measured X.
