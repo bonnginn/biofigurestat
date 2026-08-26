@@ -5,7 +5,12 @@ import {
   type AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
 import { parseMatrixPaste, parseSurvivalPaste } from "@lsaa/data-sheet";
-import type { AdaptiveInputSnapshot, ExperimentDesign, Observation, UnitInstance } from "@lsaa/domain";
+import type {
+  AdaptiveInputSnapshot,
+  ExperimentDesign,
+  Observation,
+  UnitInstance,
+} from "@lsaa/domain";
 import {
   createHeatmapGraphSpec,
   createHeatmapModel,
@@ -64,6 +69,27 @@ function downloadBlob(blob: Blob, filename: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+function formatResearcherNumber(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 3 }).format(value);
+}
+
+function formatResearcherPValue(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  if (value > 0 && value < 0.001) return value.toExponential(2);
+  return formatResearcherNumber(value);
+}
+
+function formattedLogRankResult(result: AnalysisEngineResult | null): string | null {
+  const test = result?.tests[0];
+  if (!test) return null;
+  const degrees = test.degreesOfFreedom?.join(", ") ?? "—";
+  const statistic = test.statisticName.toLowerCase().includes("chi")
+    ? `χ²(${degrees})`
+    : `${test.statisticName}(${degrees})`;
+  return `log-rank: ${statistic} = ${formatResearcherNumber(test.statistic)}, p = ${formatResearcherPValue(test.pValue)}`;
+}
+
 export function SpecializedCorePage({
   mode,
   onBack,
@@ -77,9 +103,10 @@ export function SpecializedCorePage({
 }: Props) {
   const activeAdaptiveInput = adaptiveInput ?? initialProject?.state.adaptiveInput ?? undefined;
   const [text, setText] = useState(
-    initialText ?? (mode === "survival"
-      ? "Unit ID\tGroup\tFollow-up time\tStatus\nmouse-1\tControl\t4\tEvent\nmouse-2\tControl\t7\tCensored\nmouse-3\tTreatment\t6\tEvent\nmouse-4\tTreatment\t9\tCensored"
-      : "Feature\tSample 1\tSample 2\tSample 3\nProtein A\t1\t2\tNA\nProtein B\t3\t5\t8"),
+    initialText ??
+      (mode === "survival"
+        ? "Unit ID\tGroup\tFollow-up time\tStatus\nmouse-1\tControl\t4\tEvent\nmouse-2\tControl\t7\tCensored\nmouse-3\tTreatment\t6\tEvent\nmouse-4\tTreatment\t9\tCensored"
+        : "Feature\tSample 1\tSample 2\tSample 3\nProtein A\t1\t2\tNA\nProtein B\t3\t5\t8"),
   );
   const [transform, setTransform] = useState<HeatmapTransform>("none");
   const [rangeMin, setRangeMin] = useState("");
@@ -87,9 +114,11 @@ export function SpecializedCorePage({
   const [missingColor, setMissingColor] = useState("#d1d5db");
   const [showCellValues, setShowCellValues] = useState(false);
   const [result, setResult] = useState<AnalysisEngineResult | null>(
-    () => initialProject?.state.analysisRuns.find(({ state }) => state === "current")?.result ?? null,
+    () =>
+      initialProject?.state.analysisRuns.find(({ state }) => state === "current")?.result ?? null,
   );
   const [message, setMessage] = useState<string | null>(null);
+  const [showLogRankAnnotation, setShowLogRankAnnotation] = useState(false);
   const [literatureCase, setLiteratureCase] = useState<LiteratureExperimenterCase | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const benchmarkRun = useBenchmarkRun();
@@ -147,7 +176,8 @@ export function SpecializedCorePage({
           }, [])
         : [...new Set(parsed.map(({ conditionId }) => conditionId))];
       const unknown = parsed.find(({ conditionId }) => !labels.includes(conditionId));
-      if (unknown) throw new Error(`入力のGroup「${unknown.conditionId}」は保存済み実験構造にありません。`);
+      if (unknown)
+        throw new Error(`入力のGroup「${unknown.conditionId}」は保存済み実験構造にありません。`);
       const conditions = labels.map((label, index) => ({ id: `condition.${index + 1}`, label }));
       const labelToId = new Map(conditions.map(({ id, label }) => [label, id]));
       const rows = parsed.map((row) => ({ ...row, conditionId: labelToId.get(row.conditionId)! }));
@@ -238,9 +268,14 @@ export function SpecializedCorePage({
       wizardDecisions: [{ questionId: "survival.censoring", answer: "explicit_event_status" }],
       createdAt,
     };
-    const adaptivePlannedN = activeAdaptiveInput?.contract.matching.kind === "matched"
-      ? Math.max(...survival.conditions.map(({ id }) => survival.rows.filter((row) => row.conditionId === id).length))
-      : survival.rows.length;
+    const adaptivePlannedN =
+      activeAdaptiveInput?.contract.matching.kind === "matched"
+        ? Math.max(
+            ...survival.conditions.map(
+              ({ id }) => survival.rows.filter((row) => row.conditionId === id).length,
+            ),
+          )
+        : survival.rows.length;
     const design = activeAdaptiveInput
       ? projectContractToExperimentDesign(activeAdaptiveInput.contract, adaptivePlannedN, createdAt)
       : legacyDesign;
@@ -328,26 +363,26 @@ export function SpecializedCorePage({
           timeLabel: "Follow-up time",
         });
         const survivalState = createInitialProjectState({
-            metadata: {
-              projectId: initialProject?.state.metadata.projectId ?? "project.survival",
-              projectName: initialProject?.state.metadata.projectName ?? "Survival analysis",
-              experimentDate: initialProject?.state.metadata.experimentDate || day(),
-              createdAt: initialProject?.state.metadata.createdAt ?? prepared.createdAt,
-              updatedAt: prepared.createdAt,
-            },
-            design: prepared.design,
-            rawRevision: {
-              id: "raw.1",
-              previousRevisionId: null,
-              sourceKind: "paste",
-              createdAt: prepared.createdAt,
-              createdBy: "researcher",
-            },
-            unitInstances: prepared.units,
-            observations: prepared.observations,
-            actor: "researcher",
-            analysis: { recommendation, request: prepared.request, result, graphSpec: spec },
-          });
+          metadata: {
+            projectId: initialProject?.state.metadata.projectId ?? "project.survival",
+            projectName: initialProject?.state.metadata.projectName ?? "Survival analysis",
+            experimentDate: initialProject?.state.metadata.experimentDate || day(),
+            createdAt: initialProject?.state.metadata.createdAt ?? prepared.createdAt,
+            updatedAt: prepared.createdAt,
+          },
+          design: prepared.design,
+          rawRevision: {
+            id: "raw.1",
+            previousRevisionId: null,
+            sourceKind: "paste",
+            createdAt: prepared.createdAt,
+            createdBy: "researcher",
+          },
+          unitInstances: prepared.units,
+          observations: prepared.observations,
+          actor: "researcher",
+          analysis: { recommendation, request: prepared.request, result, graphSpec: spec },
+        });
         const updatedAdaptiveInput = activeAdaptiveInput
           ? updateAdaptiveSurvivalSnapshot(activeAdaptiveInput, text, prepared.createdAt)
           : undefined;
@@ -515,6 +550,7 @@ export function SpecializedCorePage({
           });
         })()
       : null;
+  const logRankDisplay = formattedLogRankResult(result);
   const configuredMin =
     rangeMin.trim() && Number.isFinite(Number(rangeMin)) ? Number(rangeMin) : undefined;
   const configuredMax =
@@ -722,12 +758,14 @@ export function SpecializedCorePage({
         ← 戻る
       </button>
       <AnalysisRouteSwitcher current={mode} onNavigate={onNavigate} />
-      {mode === "survival" && initialProject ? (
+      {mode === "survival" ? (
         <nav aria-label="Common project workspace" className="workspace-mode-tabs">
-          <a href="#survival-data">Data</a>
-          <a href="#survival-graph">Graph</a>
-          <a href="#survival-statistics">Statistics</a>
-          <button type="button" disabled={!saveProject} onClick={() => void save()}>Save</button>
+          <a href="#survival-data">データ</a>
+          <a href="#survival-graph">グラフ</a>
+          <a href="#survival-statistics">統計</a>
+          <button type="button" disabled={!saveProject} onClick={() => void save()}>
+            保存
+          </button>
         </nav>
       ) : null}
       <section className="workspace-panel specialized-workspace-panel">
@@ -849,11 +887,18 @@ export function SpecializedCorePage({
         ) : null}
         {message ? <p role="status">{message}</p> : null}
       </section>
-      <section id={mode === "survival" ? "survival-graph" : undefined} className="workspace-panel specialized-workspace-panel">
+      <section
+        id={mode === "survival" ? "survival-graph" : undefined}
+        className="workspace-panel specialized-workspace-panel"
+      >
         {survival && "error" in survival ? <p role="alert">{survival.error}</p> : null}
         {heatmap && "error" in heatmap ? <p role="alert">{heatmap.error}</p> : null}
         {mode === "survival" && survival && !("error" in survival) ? (
-          <SurvivalGraph ref={svgRef} model={survival.model} />
+          <SurvivalGraph
+            ref={svgRef}
+            model={survival.model}
+            annotation={showLogRankAnnotation ? (logRankDisplay ?? undefined) : undefined}
+          />
         ) : null}
         {mode === "heatmap" && heatmap && !("error" in heatmap) ? (
           <HeatmapGraph
@@ -867,10 +912,27 @@ export function SpecializedCorePage({
         ) : null}
       </section>
       {mode === "survival" ? (
-        <section id="survival-statistics" className="workspace-panel specialized-workspace-panel" aria-label="Statistics workspace">
+        <section
+          id="survival-statistics"
+          className="workspace-panel specialized-workspace-panel"
+          aria-label="Statistics workspace"
+        >
           <h2>Statistics</h2>
-          {result?.tests[0] ? (
-            <p>log-rank {result.tests[0].statisticName}={result.tests[0].statistic}、p={result.tests[0].pValue}</p>
+          {logRankDisplay ? (
+            <>
+              <p>{logRankDisplay}</p>
+              <label className="specialized-statistics-annotation-toggle">
+                <input
+                  type="checkbox"
+                  checked={showLogRankAnnotation}
+                  onChange={(event) => setShowLogRankAnnotation(event.target.checked)}
+                />
+                <span>この保存済みlog-rank結果をグラフに表示</span>
+              </label>
+              <p className="specialized-engine-note">
+                表示だけを切り替えます。解析結果は再計算しません。
+              </p>
+            </>
           ) : (
             <p>解析を実行すると、event/censoringを保持した結果をここに表示します。</p>
           )}

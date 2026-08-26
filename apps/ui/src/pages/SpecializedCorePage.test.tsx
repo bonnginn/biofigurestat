@@ -72,6 +72,13 @@ describe("specialized Core entry pages", () => {
       ),
     );
     expect(await screen.findByText(/log-rank検定が完了/u)).toBeVisible();
+    expect(screen.getByText("log-rank: χ²(1) = 1.2, p = 0.27")).toBeVisible();
+    fireEvent.click(screen.getByRole("checkbox", { name: /保存済みlog-rank結果/ }));
+    expect(
+      screen
+        .getAllByText("log-rank: χ²(1) = 1.2, p = 0.27")
+        .find((element) => element.getAttribute("data-graph-layer") === "statistics-annotation"),
+    ).toBeVisible();
     expect(screen.getByText(/event=1、censored=1/u)).toBeInTheDocument();
     expect(recordBenchmarkEvent).toHaveBeenCalledWith(
       "statistics_executed",

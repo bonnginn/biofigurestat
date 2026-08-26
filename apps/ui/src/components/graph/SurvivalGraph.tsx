@@ -5,8 +5,8 @@ const COLORS = ["#4477AA", "#CC6677", "#228833", "#AA3377", "#66CCEE"];
 
 export const SurvivalGraph = forwardRef<
   SVGSVGElement,
-  { model: KaplanMeierGraphModel; timeLabel?: string }
->(function SurvivalGraph({ model, timeLabel = "Follow-up time" }, ref) {
+  { model: KaplanMeierGraphModel; timeLabel?: string; annotation?: string }
+>(function SurvivalGraph({ model, timeLabel = "Follow-up time", annotation }, ref) {
   const width = 820,
     plotHeight = 410,
     left = 80,
@@ -33,6 +33,7 @@ export const SurvivalGraph = forwardRef<
   const riskTimes = [
     ...new Set(model.groups.flatMap((group) => group.numberAtRisk.map(({ time }) => time))),
   ].sort((a, b) => a - b);
+  const yTicks = [0, 0.25, 0.5, 0.75, 1];
   return (
     <svg
       ref={ref}
@@ -44,6 +45,14 @@ export const SurvivalGraph = forwardRef<
     >
       <line x1={left} y1={top} x2={left} y2={plotHeight - 10} stroke="#111" />
       <line x1={left} y1={plotHeight - 10} x2={width - right} y2={plotHeight - 10} stroke="#111" />
+      {yTicks.map((tick) => (
+        <g key={tick}>
+          <line x1={left - 5} x2={left} y1={y(tick)} y2={y(tick)} stroke="#111" />
+          <text x={left - 10} y={y(tick) + 4} textAnchor="end" fontSize="12">
+            {tick.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")}
+          </text>
+        </g>
+      ))}
       <text
         x={18}
         y={plotHeight / 2}
@@ -55,6 +64,17 @@ export const SurvivalGraph = forwardRef<
       <text x={(left + width - right) / 2} y={plotHeight + 22} textAnchor="middle">
         {timeLabel}
       </text>
+      {annotation ? (
+        <text
+          x={left + 8}
+          y={18}
+          fontSize="13"
+          fontWeight="600"
+          data-graph-layer="statistics-annotation"
+        >
+          {annotation}
+        </text>
+      ) : null}
       {model.groups.map((group, index) => (
         <g key={group.conditionId}>
           <path

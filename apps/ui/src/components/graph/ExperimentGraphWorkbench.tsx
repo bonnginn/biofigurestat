@@ -5336,7 +5336,7 @@ export function ExperimentGraphWorkbench({
             <section className="experiment-graph-statistics-section" aria-label="統計注釈">
               <h3>グラフ上の注釈</h3>
               <p className="experiment-graph-help">
-                Statisticsで保存した解析結果から、表示する比較を選びます。ここでは再計算しません。
+                Statisticsで保存した解析結果から表示します。まず全比較を一括表示し、不要な比較だけを下の一覧から外せます。ここでは再計算しません。
               </p>
               {analysisResult.tests.length > 1 ? (
                 <label className="experiment-graph-field">
@@ -5378,7 +5378,6 @@ export function ExperimentGraphWorkbench({
               </label>
               <button
                 type="button"
-                disabled={statisticsAnnotation.mode === "hidden"}
                 onClick={() => {
                   const test = analysisResult.tests[statisticsAnnotation.testIndex];
                   if (!test) return;
@@ -5429,7 +5428,7 @@ export function ExperimentGraphWorkbench({
               </button>
               <button
                 type="button"
-                disabled={statisticsAnnotation.mode === "hidden"}
+                aria-label="すべての比較をまとめて注釈へ追加"
                 onClick={() => {
                   const mode =
                     statisticsAnnotation.mode === "hidden" ? "symbol" : statisticsAnnotation.mode;
@@ -5478,7 +5477,7 @@ export function ExperimentGraphWorkbench({
                   setStatisticsAnnotations(next);
                 }}
               >
-                すべての比較をまとめて注釈へ追加
+                調整済みの全比較をグラフにまとめて表示
               </button>
               {statisticsAnnotations.length > 0 ? (
                 <ul className="experiment-graph-annotation-list">
@@ -5571,7 +5570,7 @@ export function ExperimentGraphWorkbench({
                             )
                           }
                         >
-                          削除
+                          グラフから外す
                         </button>
                       </li>
                     );

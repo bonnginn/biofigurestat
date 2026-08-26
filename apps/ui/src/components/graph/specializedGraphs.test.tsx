@@ -47,8 +47,17 @@ describe("specialized Core graphs", () => {
     const ref = createRef<SVGSVGElement>();
     render(<SurvivalGraph ref={ref} model={model} timeLabel="Days" />);
     expect(screen.getByText("Number at risk")).toBeVisible();
+    expect(screen.getByText("0.25")).toBeVisible();
+    expect(screen.getByText("0.5")).toBeVisible();
+    expect(screen.getByText("0.75")).toBeVisible();
     expect(ref.current?.querySelectorAll("path")).toHaveLength(2);
     expect(serializeGraphSvg(ref.current!)).toContain("Kaplan–Meier survival graph");
+
+    render(<SurvivalGraph model={model} annotation="log-rank: χ²(1) = 0.972, p = 0.324" />);
+    expect(screen.getByText("log-rank: χ²(1) = 0.972, p = 0.324")).toHaveAttribute(
+      "data-graph-layer",
+      "statistics-annotation",
+    );
   });
 
   it("renders long heatmap labels, missing cells, values, and exportable SVG", () => {

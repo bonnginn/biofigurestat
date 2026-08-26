@@ -141,6 +141,17 @@
   background: #f4f7fa;
 }
 
+.specialized-statistics-annotation-toggle {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center !important;
+  gap: 9px !important;
+}
+
+.specialized-statistics-annotation-toggle input {
+  flex: 0 0 auto;
+}
+
 .specialized-workspace-panel > svg {
   display: block;
   width: 100%;
@@ -1395,7 +1406,19 @@ h3 {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  border: 1px solid #d7dfea;
+  border: 1px solid #315fa9;
+  color: #fff;
+  background: #416fc4;
+  cursor: pointer;
+}
+
+.primary-button:hover:not(:disabled) {
+  border-color: #244d8d;
+  background: #315fa9;
+}
+
+.primary-button:disabled {
+  border-color: #d7dfea;
   color: #8b96a5;
   background: #f3f5f8;
   cursor: not-allowed;
