@@ -122,6 +122,14 @@ describe("project state lineage", () => {
     expect(migrated.experimentWorkspace).toBeNull();
   });
 
+  it("refuses an unknown project schema instead of coercing it through migration", () => {
+    const migrated = migrateProjectState({
+      schemaVersion: "9.9.9",
+      metadata: { projectId: "project.future" },
+    });
+    expect(ProjectStateSchema.safeParse(migrated).success).toBe(false);
+  });
+
   it("adds a design revision before accepting a newly declared nested unit level", () => {
     const initial = createInitialProjectState({
       metadata: {

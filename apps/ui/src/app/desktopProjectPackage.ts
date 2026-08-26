@@ -9,8 +9,22 @@ import {
   type ProjectState,
   type Sha256Function,
 } from "@lsaa/project";
+import { defaultProjectFileName } from "./projectFileName";
 
 const APP_VERSION = "0.1.0";
+
+type ProjectIoStage =
+  | "checksum"
+  | "database_encode"
+  | "container_begin"
+  | "container_write"
+  | "container_commit"
+  | "package_assembly";
+
+function projectIoStageError(stage: ProjectIoStage, error: unknown): Error {
+  const detail = error instanceof Error ? error.message : String(error);
+  return new Error(`PROJECT_IO_STAGE[${stage}]: ${detail}`, { cause: error });
+}
 
 export class TauriProjectContainerStorage implements ProjectPackageStorage {
   async readFile(target: string, relativePath: string): Promise<Uint8Array> {
@@ -19,20 +33,33 @@ export class TauriProjectContainerStorage implements ProjectPackageStorage {
   }
 
   async beginAtomicWrite(target: string): Promise<AtomicProjectWrite> {
-    const transactionId = await invoke<string>("begin_atomic_project_write", { target });
+    let transactionId: string;
+    try {
+      transactionId = await invoke<string>("begin_atomic_project_write", { target });
+    } catch (error) {
+      throw projectIoStageError("container_begin", error);
+    }
     let closed = false;
     return {
       writeFile: async (relativePath, data) => {
         if (closed) throw new Error("Project save transaction is already closed");
-        await invoke("write_project_file", {
-          transactionId,
-          relativePath,
-          data: Array.from(data),
-        });
+        try {
+          await invoke("write_project_file", {
+            transactionId,
+            relativePath,
+            data: Array.from(data),
+          });
+        } catch (error) {
+          throw projectIoStageError("container_write", error);
+        }
       },
       commit: async () => {
         if (closed) throw new Error("Project save transaction is already closed");
-        await invoke("commit_project_write", { transactionId });
+        try {
+          await invoke("commit_project_write", { transactionId });
+        } catch (error) {
+          throw projectIoStageError("container_commit", error);
+        }
         closed = true;
       },
       rollback: async () => {
@@ -46,13 +73,24 @@ export class TauriProjectContainerStorage implements ProjectPackageStorage {
 
 export const browserSha256: Sha256Function = async (data) => {
   const bytes = Uint8Array.from(data);
+  if (isTauri()) {
+    try {
+      return await invoke<string>("sha256_bytes", { data: Array.from(bytes) });
+    } catch (error) {
+      throw projectIoStageError("checksum", error);
+    }
+  }
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 };
 
 class TauriProjectDatabaseCodec implements ProjectDatabaseCodec {
   async encode(state: ProjectState): Promise<Uint8Array> {
-    return Uint8Array.from(await invoke<number[]>("encode_project_database", { state }));
+    try {
+      return Uint8Array.from(await invoke<number[]>("encode_project_database", { state }));
+    } catch (error) {
+      throw projectIoStageError("database_encode", error);
+    }
   }
 
   async decode(database: Uint8Array): Promise<unknown> {
@@ -116,20 +154,26 @@ export async function saveLocalProjectPackage(
     existingTarget ??
     (await save({
       title: "Life Science Analysisプロジェクトを保存",
-      defaultPath: `${state.metadata.projectName}.lsa`,
+      defaultPath: defaultProjectFileName(state.metadata.projectName),
       filters: [{ name: "Life Science Analysis project", extensions: ["lsa"] }],
     }));
   if (selected === null) return null;
 
   const savedAt = new Date().toISOString();
-  const savedState = await saveProjectStatePackage({
-    storage: new TauriProjectContainerStorage(),
-    databaseCodec: new TauriProjectDatabaseCodec(),
-    target: selected,
-    state,
-    sha256: browserSha256,
-    appVersion: APP_VERSION,
-    savedAt,
-  });
+  let savedState: ProjectState;
+  try {
+    savedState = await saveProjectStatePackage({
+      storage: new TauriProjectContainerStorage(),
+      databaseCodec: new TauriProjectDatabaseCodec(),
+      target: selected,
+      state,
+      sha256: browserSha256,
+      appVersion: APP_VERSION,
+      savedAt,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("PROJECT_IO_STAGE[")) throw error;
+    throw projectIoStageError("package_assembly", error);
+  }
   return { state: savedState, target: selected };
 }

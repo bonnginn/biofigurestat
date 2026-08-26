@@ -11,7 +11,7 @@ The application starts from experimental design rather than a test name. Biologi
 - Unsupported scientific structures refuse safely.
 - Research data and diagnostic reports are not uploaded automatically.
 - Benchmark/evaluation infrastructure is development-only and not a production research workflow.
-- This repository is not yet declared a public Alpha release. Expanded scientific benchmarking and native packaging validation remain gates.
+- This repository is not yet declared a public Alpha release. Expanded scientific benchmarking is complete; manual Web review and native packaging validation remain gates.
 
 ## Development
 

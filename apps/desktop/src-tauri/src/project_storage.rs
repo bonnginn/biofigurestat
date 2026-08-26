@@ -1,6 +1,6 @@
 use rusqlite::{params, Connection, OpenFlags};
 use std::collections::HashMap;
-use std::fs::{self, File};
+use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -9,7 +9,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::State;
 
 const MANIFEST_PATH: &str = "manifest.json";
-const DATABASE_PATH: &str = "data/project.sqlite";
+// Keep this aligned with the canonical package manifest assembled by
+// packages/project. The SQLite database is a package-root entry.
+const DATABASE_PATH: &str = "project.sqlite";
+const LEGACY_DATABASE_PATH: &str = "data/project.sqlite";
 const CONTAINER_FORMAT: &str = "lsaa-sqlite-container-v1";
 const MAX_ENTRY_BYTES: u64 = 512 * 1024 * 1024;
 const MAX_CONTAINER_BYTES: u64 = 2 * 1024 * 1024 * 1024;
@@ -71,7 +74,15 @@ fn durable_migration_backup_path(
 
 fn package_database_version(package_root: &Path) -> Option<i64> {
     if package_root.is_dir() {
-        let database = package_root.join(DATABASE_PATH);
+        let canonical_database = package_root.join(DATABASE_PATH);
+        let legacy_database = package_root.join(LEGACY_DATABASE_PATH);
+        let database = if canonical_database.is_file() {
+            canonical_database
+        } else {
+            // Read-only compatibility for early directory packages. New saves
+            // always use the canonical package-root database path.
+            legacy_database
+        };
         if !database.is_file() {
             return None;
         }
@@ -156,11 +167,11 @@ fn collect_staged_files(
             let relative = path
                 .strip_prefix(root)
                 .map_err(|_| "Staged project entry escaped its package root".to_string())?;
-            validated_relative_path(
-                relative
-                    .to_str()
-                    .ok_or_else(|| "Project entry path must be valid UTF-8".to_string())?,
-            )?;
+            let normalized_relative = relative
+                .to_str()
+                .ok_or_else(|| "Project entry path must be valid UTF-8".to_string())?
+                .replace(std::path::MAIN_SEPARATOR, "/");
+            validated_relative_path(&normalized_relative)?;
             output.push(path);
         }
     }
@@ -272,7 +283,10 @@ fn create_single_file_container(staging: &Path, destination: &Path) -> Result<()
         ));
     }
     drop(connection);
-    File::open(destination)
+    OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(destination)
         .and_then(|file| file.sync_all())
         .map_err(|error| format!("Could not flush the staged project file: {error}"))
 }
@@ -297,10 +311,27 @@ fn sync_parent_directory(target: &Path) -> Result<(), String> {
         let parent = target
             .parent()
             .ok_or_else(|| "Project target must have a parent directory".to_string())?;
-        File::open(parent)
-            .and_then(|directory| directory.sync_all())
-            .map_err(|error| format!("Could not flush the project parent directory: {error}"))
+        match File::open(parent).and_then(|directory| directory.sync_all()) {
+            Ok(()) => Ok(()),
+            // APFS and some macOS file-provider volumes do not expose directory fsync
+            // through std::fs. The project file itself has already been flushed and
+            // atomically renamed, so an unsupported directory durability primitive
+            // must not roll back an otherwise valid save.
+            Err(error) if cfg!(target_os = "macos") && directory_sync_is_unsupported(&error) => {
+                Ok(())
+            }
+            Err(error) => Err(format!(
+                "Could not flush the project parent directory: {error}"
+            )),
+        }
     }
+}
+
+#[cfg(unix)]
+fn directory_sync_is_unsupported(error: &std::io::Error) -> bool {
+    // EINVAL and ENOTSUP are the documented/common results for fsync on a
+    // directory or file-provider mount that does not implement this operation.
+    matches!(error.raw_os_error(), Some(22 | 45 | 95))
 }
 
 fn commit_transaction(transaction: &ProjectWriteTransaction, token: &str) -> Result<(), String> {
@@ -519,10 +550,24 @@ mod tests {
 
     #[test]
     fn package_paths_cannot_escape_the_project() {
+        assert!(validated_relative_path("project.sqlite").is_ok());
         assert!(validated_relative_path("data/project.sqlite").is_ok());
         assert!(validated_relative_path("../outside").is_err());
         assert!(validated_relative_path("/absolute").is_err());
         assert!(validated_relative_path("data\\outside").is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn classifies_only_unsupported_directory_sync_errors_as_nonfatal() {
+        for code in [22, 45, 95] {
+            assert!(super::directory_sync_is_unsupported(
+                &std::io::Error::from_raw_os_error(code)
+            ));
+        }
+        assert!(!super::directory_sync_is_unsupported(
+            &std::io::Error::from_raw_os_error(5)
+        ));
     }
 
     #[test]
@@ -555,6 +600,34 @@ mod tests {
             )
             .unwrap(),
             b"condition,value\nA,1\n"
+        );
+        fs::remove_dir_all(parent).expect("remove test directory");
+    }
+
+    #[test]
+    fn commit_accepts_the_canonical_manifest_database_path() {
+        let parent = test_directory("canonical-database-path");
+        let target = parent.join("experiment.lsa");
+        let (token, transaction) = begin_transaction(target.clone()).expect("begin transaction");
+        write_transaction_file(&transaction, "manifest.json", b"manifest")
+            .expect("write manifest");
+
+        let database_path = transaction.staging.join("project.sqlite");
+        let database = Connection::open(&database_path).expect("create canonical database");
+        database
+            .execute_batch("PRAGMA user_version = 1;")
+            .expect("set project database version");
+        drop(database);
+        let expected_database = fs::read(&database_path).expect("read staged database");
+
+        commit_transaction(&transaction, &token).expect("commit canonical package");
+        assert_eq!(
+            read_project_file(
+                target.to_string_lossy().into_owned(),
+                "project.sqlite".to_string()
+            )
+            .expect("read canonical database"),
+            expected_database
         );
         fs::remove_dir_all(parent).expect("remove test directory");
     }

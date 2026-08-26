@@ -11,6 +11,8 @@ const DERIVED_DATASETS_MIGRATION: &str =
     include_str!("../../../../packages/project/migrations/0002_derived_datasets.sql");
 const EXPERIMENT_WORKSPACE_MIGRATION: &str =
     include_str!("../../../../packages/project/migrations/0003_experiment_workspace.sql");
+const ADAPTIVE_INPUT_MIGRATION: &str =
+    include_str!("../../../../packages/project/migrations/0004_adaptive_input.sql");
 static DATABASE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn temporary_database_path() -> Result<PathBuf, String> {
@@ -102,12 +104,12 @@ fn encode_to_path(state: &Value, path: &PathBuf) -> Result<(), String> {
         .map_err(|error| format!("Could not create the project database: {error}"))?;
     connection
         .execute_batch(&format!(
-            "{INITIAL_MIGRATION}\n{DERIVED_DATASETS_MIGRATION}\n{EXPERIMENT_WORKSPACE_MIGRATION}"
+            "{INITIAL_MIGRATION}\n{DERIVED_DATASETS_MIGRATION}\n{EXPERIMENT_WORKSPACE_MIGRATION}\n{ADAPTIVE_INPUT_MIGRATION}"
         ))
         .map_err(|error| format!("Could not initialize the project database: {error}"))?;
     connection
         .execute(
-            "INSERT INTO project_state (singleton, state_schema_version, metadata_json, active_design_revision_id, active_raw_revision_id, experiment_workspace_json) VALUES (1, ?1, ?2, ?3, ?4, ?5)",
+            "INSERT INTO project_state (singleton, state_schema_version, metadata_json, active_design_revision_id, active_raw_revision_id, experiment_workspace_json, adaptive_input_json) VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6)",
             params![
                 required_string(object, "schemaVersion")?,
                 serde_json::to_string(object.get("metadata").ok_or_else(|| "Project state is missing metadata".to_string())?)
@@ -120,6 +122,12 @@ fn encode_to_path(state: &Value, path: &PathBuf) -> Result<(), String> {
                     .map(serde_json::to_string)
                     .transpose()
                     .map_err(|error| format!("Could not encode experiment workspace: {error}"))?,
+                object
+                    .get("adaptiveInput")
+                    .filter(|value| !value.is_null())
+                    .map(serde_json::to_string)
+                    .transpose()
+                    .map_err(|error| format!("Could not encode adaptive input: {error}"))?,
             ],
         )
         .map_err(|error| format!("Could not persist project metadata: {error}"))?;
@@ -271,24 +279,33 @@ fn decode_from_path(path: &PathBuf) -> Result<Value, String> {
     let user_version: i64 = connection
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .map_err(|error| format!("Could not read the project database version: {error}"))?;
-    if user_version != 1 && user_version != 2 && user_version != 3 {
+    if user_version != 1 && user_version != 2 && user_version != 3 && user_version != 4 {
         return Err(format!(
             "Unsupported project database version {user_version}"
         ));
     }
 
-    let (schema_version, metadata_json, active_design, active_raw, workspace_json): (
+    let (schema_version, metadata_json, active_design, active_raw, workspace_json, adaptive_input_json): (
         String,
         String,
         String,
         String,
         Option<String>,
-    ) = if user_version >= 3 {
+        Option<String>,
+    ) = if user_version >= 4 {
+        connection
+            .query_row(
+                "SELECT state_schema_version, metadata_json, active_design_revision_id, active_raw_revision_id, experiment_workspace_json, adaptive_input_json FROM project_state WHERE singleton = 1",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?)),
+            )
+            .map_err(|error| format!("Could not read project state metadata: {error}"))?
+    } else if user_version >= 3 {
         connection
             .query_row(
                 "SELECT state_schema_version, metadata_json, active_design_revision_id, active_raw_revision_id, experiment_workspace_json FROM project_state WHERE singleton = 1",
                 [],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, None)),
             )
             .map_err(|error| format!("Could not read project state metadata: {error}"))?
     } else {
@@ -299,7 +316,7 @@ fn decode_from_path(path: &PathBuf) -> Result<Value, String> {
                     |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
                 )
                 .map_err(|error| format!("Could not read project state metadata: {error}"))?;
-        (legacy.0, legacy.1, legacy.2, legacy.3, None)
+        (legacy.0, legacy.1, legacy.2, legacy.3, None, None)
     };
     let metadata: Value = serde_json::from_str(&metadata_json)
         .map_err(|error| format!("Could not decode project metadata: {error}"))?;
@@ -307,6 +324,11 @@ fn decode_from_path(path: &PathBuf) -> Result<Value, String> {
         .map(|encoded| serde_json::from_str(&encoded))
         .transpose()
         .map_err(|error| format!("Could not decode experiment workspace: {error}"))?
+        .unwrap_or(Value::Null);
+    let adaptive_input: Value = adaptive_input_json
+        .map(|encoded| serde_json::from_str(&encoded))
+        .transpose()
+        .map_err(|error| format!("Could not decode adaptive input: {error}"))?
         .unwrap_or(Value::Null);
     let transformations = if user_version >= 2 {
         read_json_records(&connection, "transformations")?
@@ -338,6 +360,7 @@ fn decode_from_path(path: &PathBuf) -> Result<Value, String> {
         "analysisRuns": read_json_records(&connection, "analysis_runs")?,
         "graphs": read_json_records(&connection, "graphs")?,
         "experimentWorkspace": experiment_workspace,
+        "adaptiveInput": adaptive_input,
         "provenanceEvents": read_json_records(&connection, "provenance_events")?,
     }))
 }
@@ -427,6 +450,14 @@ mod tests {
                 },
                 "graphs": []
             },
+            "adaptiveInput": {
+                "schemaVersion": "0.1.0",
+                "contract": {"contractId":"case-5","experimentName":"Animal survival"},
+                "mapping": {"sourceLabel":"case-5.tsv"},
+                "rawLineage": {"sourceKind":"tsv","rawText":"MouseID\\tTreatment\\tfollow_up\\tevent_observed"},
+                "canonicalObservations": [{"observationId":"adaptive.case-5.1"}],
+                "equivalence": {"status":"equivalent"}
+            },
             "provenanceEvents": [{"id":"event.1","kind":"project_created","targetId":"project.test","occurredAt":"2026-08-20T00:00:00Z"}]
         });
         let path = temporary_database_path().expect("temporary path");
@@ -453,6 +484,7 @@ mod tests {
             "analysisRuns": [],
             "graphs": [],
             "experimentWorkspace": null,
+            "adaptiveInput": null,
             "provenanceEvents": [{"id":"event.1","kind":"project_created","targetId":"project.test","occurredAt":"2026-08-20T00:00:00Z"}]
         });
         let path = temporary_database_path().expect("temporary path");
@@ -485,6 +517,7 @@ mod tests {
             "analysisRuns": [],
             "graphs": [],
             "experimentWorkspace": null,
+            "adaptiveInput": null,
             "provenanceEvents": [{"id":"event.1","kind":"project_created","targetId":"project.v1","occurredAt":"2026-08-20T00:00:00Z"}]
         });
         let path = temporary_database_path().expect("temporary path");

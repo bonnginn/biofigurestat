@@ -21,6 +21,8 @@ from test_d03 import d03_request  # noqa: E402
 from test_d04 import d04_request  # noqa: E402
 from test_d05 import d05_request  # noqa: E402
 from test_d09 import d09_request  # noqa: E402
+from test_d11_d12 import survival_request  # noqa: E402
+from test_d17 import request as d17_request, series as d17_series  # noqa: E402
 
 
 def default_executable() -> Path:
@@ -122,6 +124,8 @@ def smoke_requests() -> list[dict[str, Any]]:
         d05_request(),
         d09_request("pearson"),
         d09_request("spearman"),
+        survival_request(),
+        d17_request(d17_series("WT") + d17_series("Mutant")),
     ]
 
 

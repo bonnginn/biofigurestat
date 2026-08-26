@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 FORBIDDEN_MARKERS = (
+    "benchmark",
     "researcherPacket",
     "paperReference",
     "Paper Reference",
@@ -15,6 +16,10 @@ FORBIDDEN_MARKERS = (
     "trycloudflare.com",
     "Blind benchmark batch",
     "Literature Benchmark合成値",
+    "/api/evaluation",
+    "/literature/case",
+    "/blind-batch/",
+    "personal benchmark synthetic reconstruction",
 )
 
 
@@ -31,8 +36,9 @@ def verify_bundle(bundle: Path) -> list[str]:
         if path.suffix.lower() not in {".html", ".js", ".css", ".json", ".txt"}:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
+        normalized = text.lower()
         for marker in FORBIDDEN_MARKERS:
-            if marker in text:
+            if marker.lower() in normalized:
                 failures.append(f"forbidden marker {marker!r}: {path.relative_to(bundle)}")
     return failures
 

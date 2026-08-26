@@ -17,6 +17,8 @@
     "preview:tunnel": "cloudflared tunnel --url http://127.0.0.1:4173 --no-autoupdate",
     "engine:build:mac": "engine/python/.venv/bin/python engine/python/build_sidecar.py && engine/python/.venv/bin/python engine/python/smoke_sidecar.py",
     "engine:smoke:mac": "engine/python/.venv/bin/python engine/python/smoke_sidecar.py",
+    "engine:build:win": "engine\\python\\.venv\\Scripts\\python.exe engine/python/build_sidecar.py && engine\\python\\.venv\\Scripts\\python.exe engine/python/smoke_sidecar.py",
+    "engine:smoke:win": "engine\\python\\.venv\\Scripts\\python.exe engine/python/smoke_sidecar.py",
     "native:verify:mac": "engine/python/.venv/bin/python scripts/verify_macos_bundle.py && engine/python/.venv/bin/python engine/python/smoke_sidecar.py 'apps/desktop/src-tauri/target/release/bundle/macos/Life Science Analysis.app/Contents/Resources/engine/lsaa-engine'",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
