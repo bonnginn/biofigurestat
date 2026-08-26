@@ -70,9 +70,10 @@ describe("production adaptive-input path", () => {
 
   it("retains missing and unequal rows without scalar imputation", () => {
     const contract = productionContract(traces.traces.find((trace) => trace.surfaceSelection.surfaceId === "compact_unit_matrix")!);
-    const identity = contract.identities[0]!.label;
+    const identities = contract.identities.filter(({ required }) => required);
     const levels = contract.factors[0]!.levels;
-    const text = `${identity}\t${levels.join("\t")}\nunit-1\t1\t\nunit-2\t2\t3`;
+    const rowIdentities = (suffix: string) => identities.map(({ key }) => `${key}-${suffix}`).join("\t");
+    const text = `${identities.map(({ label }) => label).join("\t")}\t${levels.join("\t")}\n${rowIdentities("1")}\t1\t\n${rowIdentities("2")}\t2\t3`;
     const imported = importForSelectedSurface(contract, text, "clipboard", "missing.tsv", "2026-08-26T00:00:00.000Z");
     expect(imported.observations).toHaveLength(4);
     expect(imported.observations.some((row) => Object.values(row.values).includes(null))).toBe(true);

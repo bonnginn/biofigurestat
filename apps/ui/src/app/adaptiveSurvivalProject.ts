@@ -1,8 +1,68 @@
-import type { AdaptiveInputSnapshot, Observation, UnitInstance } from "@lsaa/domain";
+import { AdaptiveColumnMappingSchema, AdaptiveInputSnapshotSchema, CanonicalAdaptiveObservationSchema, type AdaptiveInputSnapshot, type Observation, type UnitInstance } from "@lsaa/domain";
 import { createInitialProjectState, ProjectStateSchema, type ProjectState } from "@lsaa/project";
 import { assertDualWriteEquivalence, projectContractToExperimentDesign } from "@lsaa/adaptive-input";
+import { parseSurvivalPaste } from "@lsaa/data-sheet";
 
 const token = (value: string) => value.normalize("NFKC").replace(/[^A-Za-z0-9._:-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64) || "unit";
+
+/** Rebuilds typed canonical rows after an editable Case 5 reopen. */
+export function updateAdaptiveSurvivalSnapshot(
+  snapshot: AdaptiveInputSnapshot,
+  text: string,
+  updatedAt = new Date().toISOString(),
+): AdaptiveInputSnapshot {
+  const { contract } = snapshot;
+  const readout = contract.readouts.find(({ representation }) => representation === "event_censoring");
+  if (!readout) throw new Error("ADAPTIVE_SURVIVAL_READOUT_MISSING");
+  if (contract.factors.length !== 1) throw new Error("ADAPTIVE_SURVIVAL_EDIT_REQUIRES_SINGLE_GROUP_FACTOR");
+  const factor = contract.factors[0]!;
+  const identityKey = contract.identities.find(({ unitLevelKey }) => unitLevelKey === contract.experimentalUnitLevelKey)?.key ?? contract.identities[0]!.key;
+  const rows = parseSurvivalPaste(text);
+  const observations = rows.map((row, index) => {
+    if (!factor.levels.includes(row.conditionId)) throw new Error(`ADAPTIVE_SURVIVAL_GROUP_MISMATCH:${row.conditionId}`);
+    return CanonicalAdaptiveObservationSchema.parse({
+      observationId: `adaptive.${contract.contractId}.edit.${index + 1}`,
+      readoutKey: readout.key,
+      identities: { [identityKey]: row.unitId },
+      factors: { [factor.key]: row.conditionId },
+      axes: {},
+      hierarchy: {},
+      values: {
+        [`${readout.key}_follow_up`]: row.followUpTime,
+        [`${readout.key}_event_observed`]: row.eventObserved,
+      },
+      missingness: {},
+      sourceRow: index + 2,
+    });
+  });
+  const mapping = AdaptiveColumnMappingSchema.parse({
+    schemaVersion: "0.1.0",
+    sourceLabel: "editable-survival-table.tsv",
+    delimiter: "tab",
+    headerRow: 1,
+    columns: {
+      "Unit ID": { role: "identity", semanticKey: identityKey },
+      Group: { role: "factor", semanticKey: factor.key },
+      "Follow-up time": { role: "value", semanticKey: `${readout.key}_follow_up` },
+      Status: { role: "value", semanticKey: `${readout.key}_event_observed` },
+    },
+    confirmedAt: updatedAt,
+  });
+  return AdaptiveInputSnapshotSchema.parse({
+    ...snapshot,
+    mapping,
+    rawLineage: {
+      schemaVersion: "0.1.0",
+      sourceKind: "clipboard",
+      sourceLabel: "editable-survival-table.tsv",
+      importedAt: updatedAt,
+      rawText: text,
+      sha256: null,
+      transformations: [...(snapshot.rawLineage?.transformations ?? []), "edited in typed survival workspace; event/censoring retained"],
+    },
+    canonicalObservations: observations,
+  });
+}
 
 /** Creates the save/open companion for a typed event/censoring snapshot. */
 export function createAdaptiveSurvivalProject(snapshot: AdaptiveInputSnapshot, now = new Date().toISOString()): ProjectState {

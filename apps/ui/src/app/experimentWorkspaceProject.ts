@@ -81,19 +81,40 @@ function createAdaptiveCanonicalRecords(
   const unitIds = new Map<string, string>();
   const levels = new Map(contract.unitLevels.map((level) => [level.key, level]));
   const identityForLevel = new Map(contract.identities.map((identity) => [identity.unitLevelKey, identity.key]));
-  const rowUnit = (row: typeof snapshot.canonicalObservations[number], levelKey: string): string => {
+  const experimentalIdentityKey = identityForLevel.get(contract.experimentalUnitLevelKey) ?? contract.identities[0]!.key;
+  const experimentSessionFor = (row: typeof snapshot.canonicalObservations[number], conditionIndex: number) => {
+    const semanticIdentity = row.identities[experimentalIdentityKey];
+    if (!semanticIdentity) return undefined;
+    if (draft.conditionAssignment.kind === "matched") {
+      return draft.experiments.find(({ stableUnitId, label }) => stableUnitId === semanticIdentity || label === semanticIdentity)?.id;
+    }
+    const combination = combinations[conditionIndex]!;
+    const identities = [...new Set(snapshot.canonicalObservations
+      .filter((candidate) => contract.factors.every((factor) => candidate.factors[factor.key] === combination[factor.key]))
+      .map((candidate) => candidate.identities[experimentalIdentityKey])
+      .filter((candidate): candidate is string => Boolean(candidate)))];
+    const sessionIndex = identities.indexOf(semanticIdentity);
+    return sessionIndex >= 0 ? draft.experiments[sessionIndex]?.id : undefined;
+  };
+  const rowUnit = (row: typeof snapshot.canonicalObservations[number], levelKey: string, conditionIndex: number): string => {
     const level = levels.get(levelKey);
     if (!level) throw new Error(`ADAPTIVE_UNKNOWN_UNIT_LEVEL:${levelKey}`);
-    const parentId = level.parentKey ? rowUnit(row, level.parentKey) : null;
+    const parentId = level.parentKey ? rowUnit(row, level.parentKey, conditionIndex) : null;
     const identityKey = identityForLevel.get(levelKey);
     const semanticIdentity = (identityKey ? row.identities[identityKey] : undefined) ?? row.hierarchy[levelKey] ?? (levelKey === contract.experimentalUnitLevelKey ? row.identities[contract.identities[0]!.key] : undefined);
     if (!semanticIdentity) throw new Error(`ADAPTIVE_UNIT_IDENTITY_MISSING:${levelKey}:${row.observationId}`);
-    const composite = `${levelKey}|${parentId ?? "root"}|${semanticIdentity}`;
+    const conditionScope = levelKey === contract.experimentalUnitLevelKey && draft.conditionAssignment.kind !== "matched"
+      ? `|condition.${conditionIndex + 1}`
+      : "";
+    const composite = `${levelKey}|${parentId ?? "root"}|${semanticIdentity}${conditionScope}`;
     const existing = unitIds.get(composite);
     if (existing) return existing;
     const id = `unit.adaptive.${adaptiveUnitToken(levelKey)}.${unitIds.size + 1}.r${revisionIndex}`;
     unitIds.set(composite, id);
-    unitInstances.push({ id, levelId: `unit-level.${levelKey}`, parentUnitId: parentId, label: semanticIdentity, metadata: { semanticIdentity, semanticLevel: levelKey } });
+    const experimentSessionId = levelKey === contract.experimentalUnitLevelKey
+      ? experimentSessionFor(row, conditionIndex)
+      : undefined;
+    unitInstances.push({ id, levelId: `unit-level.${levelKey}`, parentUnitId: parentId, label: semanticIdentity, metadata: { semanticIdentity, semanticLevel: levelKey, ...(experimentSessionId ? { experimentSessionId } : {}) } });
     return id;
   };
   const component = (row: typeof snapshot.canonicalObservations[number], readoutKey: string, key: string) => row.values[`${readoutKey}_${key}`] ?? row.values[key];
@@ -126,7 +147,7 @@ function createAdaptiveCanonicalRecords(
     observations.push({
       id: `observation.adaptive.${observations.length + 1}.r${revisionIndex}`,
       rawRevisionId: rawRevision.id,
-      unitInstanceId: rowUnit(row, readout.observationLevelKey),
+      unitInstanceId: rowUnit(row, readout.observationLevelKey, conditionIndex),
       conditionId: `condition.${conditionIndex + 1}`,
       outcomeId: `outcome.${readout.key}`,
       measurement,
@@ -804,11 +825,29 @@ function prepareWorkspaceAnalyses(input: {
         ),
       ),
     );
+    const unitById = new Map(input.records.unitInstances.map((unit) => [unit.id, unit]));
+    const sourceExperimentId = (unitId: string) => {
+      let unit = unitById.get(unitId);
+      const visited = new Set<string>();
+      while (unit && !visited.has(unit.id)) {
+        visited.add(unit.id);
+        const experimentSessionId = unit.metadata.experimentSessionId;
+        if (typeof experimentSessionId === "string") return experimentSessionId;
+        unit = unit.parentUnitId ? unitById.get(unit.parentUnitId) : undefined;
+      }
+      return undefined;
+    };
+    const selectedExperimentIds = new Set(input.draft.experiments.map(({ id }) => id));
+    const selectedTimes = new Set(analysisTimePoints.map(({ value }) => value));
     const selectedRaw = input.records.observations.filter(
       (observation) =>
         observation.outcomeId === graph.selectedReadoutId &&
         observation.sourceLocation !== undefined &&
-        sourceKeys.has(observation.sourceLocation.replace(/^workspace:/, "")),
+        (sourceKeys.has(observation.sourceLocation.replace(/^workspace:/, "")) ||
+          (observation.sourceLocation.startsWith("adaptive:") &&
+            graph.selectedConditionIds.includes(observation.conditionId) &&
+            selectedExperimentIds.has(sourceExperimentId(observation.unitInstanceId) ?? "") &&
+            (analysisTimePoints.length === 0 || (observation.time !== undefined && selectedTimes.has(observation.time))))),
     );
     if (selectedRaw.length === 0) return;
 
@@ -1386,17 +1425,45 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
     adaptiveInput: workspace.adaptiveInput ?? undefined,
   };
   const cells: Record<string, ExperimentCellMap[string]> = {};
-  state.observations
-    .filter((observation) => observation.rawRevisionId === state.activeRawRevisionId)
+  const unitsById = new Map(state.unitInstances.map((unit) => [unit.id, unit]));
+  const experimentalUnitFor = (unitId: string) => {
+    let unit = unitsById.get(unitId);
+    const visited = new Set<string>();
+    while (unit && unit.levelId !== design.experimentalUnitLevelId && unit.parentUnitId && !visited.has(unit.id)) {
+      visited.add(unit.id);
+      unit = unitsById.get(unit.parentUnitId);
+    }
+    return unit?.levelId === design.experimentalUnitLevelId ? unit : undefined;
+  };
+  const activeObservations = state.observations.filter(
+    (observation) => observation.rawRevisionId === state.activeRawRevisionId,
+  );
+  const unitOrderByCondition = new Map<string, string[]>();
+  activeObservations.forEach((observation) => {
+    const experimentalUnitId = experimentalUnitFor(observation.unitInstanceId)?.id;
+    if (!experimentalUnitId) return;
+    const order = unitOrderByCondition.get(observation.conditionId) ?? [];
+    if (!order.includes(experimentalUnitId)) order.push(experimentalUnitId);
+    unitOrderByCondition.set(observation.conditionId, order);
+  });
+  const resolveExperimentId = (observation: Observation) => {
+    const experimentalUnit = experimentalUnitFor(observation.unitInstanceId);
+    const stored = experimentalUnit?.metadata.experimentSessionId;
+    if (typeof stored === "string") return stored;
+    if (!experimentalUnit) return undefined;
+    if (draft.conditionAssignment.kind === "matched") {
+      const semanticIdentity = typeof experimentalUnit.metadata.semanticIdentity === "string"
+        ? experimentalUnit.metadata.semanticIdentity
+        : experimentalUnit.label;
+      return draft.experiments.find(({ stableUnitId, label }) => stableUnitId === semanticIdentity || label === semanticIdentity)?.id;
+    }
+    const legacyIndex = unitOrderByCondition.get(observation.conditionId)?.indexOf(experimentalUnit.id) ?? -1;
+    return legacyIndex >= 0 ? draft.experiments[legacyIndex]?.id : undefined;
+  };
+  activeObservations
     .forEach((observation) => {
-      const unit = state.unitInstances.find(
-        (candidate) => candidate.id === observation.unitInstanceId,
-      );
-      const parent = unit?.parentUnitId
-        ? state.unitInstances.find((candidate) => candidate.id === unit.parentUnitId)
-        : unit;
-      const experimentId = parent?.metadata.experimentSessionId;
-      if (typeof experimentId !== "string") return;
+      const experimentId = resolveExperimentId(observation);
+      if (!experimentId) return;
       const timePoint = draft.time.points.find((point) => point.value === observation.time);
       const persistedKey = observation.sourceLocation?.startsWith("workspace:")
         ? observation.sourceLocation.slice("workspace:".length).split("#source=")[0]

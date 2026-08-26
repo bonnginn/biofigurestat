@@ -8,6 +8,9 @@ import { adaptiveSurvivalPaste, createAdaptiveWorkspace } from "./adaptiveWorksp
 import { createExperimentWorkspaceProject, rehydrateExperimentWorkspace } from "./experimentWorkspaceProject";
 import { ExperimentWorkspace } from "../pages/ExperimentWorkspace";
 import { SpecializedCorePage } from "../pages/SpecializedCorePage";
+import type { SaveProjectAction } from "./projectActions";
+import { createAdaptiveSurvivalProject } from "./adaptiveSurvivalProject";
+import { OpenProjectPage } from "../pages/OpenProjectPage";
 
 const now = "2026-08-26T00:00:00.000Z";
 const base = {
@@ -25,7 +28,7 @@ const cases = [
   },
   {
     id: "manual-2",
-    contract: buildStructureContract({ ...base, experimentName: "Matched illumination", experimentalUnitLabel: "cell", identityLabel: "CellID", readoutLabel: "Intensity", factorName: "Illumination", factorLevels: ["Dark", "Lit"], sameIdentityAcrossConditions: true }),
+    contract: buildStructureContract({ ...base, experimentName: "Matched illumination", experimentalUnitLabel: "cell", identityLabel: "Cell ID", readoutLabel: "Intensity", factorName: "Illumination", factorLevels: ["Dark", "Lit"], sameIdentityAcrossConditions: true }),
     surface: "compact_unit_matrix",
     text: ["CellID\tDark\tLit", ...Array.from({ length: 6 }, (_, index) => `Cell${index + 1}\t${20 + index}\t${25 + index}`)].join("\n"),
     observations: 12,
@@ -55,19 +58,38 @@ function manualSurvivalFixture() {
 }
 
 describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
-  it.each(cases)("$id reaches its selected surface and survives canonical save/open", ({ contract, surface, text, observations }) => {
+  it.each(cases)("$id reaches its selected surface and survives canonical save/open", ({ id, contract, surface, text, observations }) => {
     expect(selectAdaptiveSurface(contract).surfaceId).toBe(surface);
     const imported = importForSelectedSurface(contract, text, "clipboard", "manual-validation", now);
     expect(imported.observations).toHaveLength(observations);
     const workspace = createAdaptiveWorkspace({ contract, observations: imported.observations, mapping: imported.mapping, lineage: imported.lineage, now });
     expect(workspace.status).toBe("ready");
     const state = createExperimentWorkspaceProject({ draft: workspace.draft!, cells: workspace.cells, graphs: [], now });
+    if (id === "manual-2") {
+      expect(workspace.draft?.experiments).toHaveLength(6);
+      expect(state.designRevisions[0]?.design.plannedN).toBe(6);
+      expect(state.unitInstances.filter(({ levelId }) => levelId === state.designRevisions[0]?.design.experimentalUnitLevelId)).toHaveLength(6);
+    }
     const reopened = ProjectStateSchema.parse(JSON.parse(JSON.stringify(state)));
     expect(reopened.observations).toHaveLength(observations);
     expect(reopened.adaptiveInput?.canonicalObservations).toHaveLength(observations);
     expect(reopened.adaptiveInput?.mapping?.sourceLabel).toBe("manual-validation");
     expect(reopened.adaptiveInput?.rawLineage?.rawText).toBe(text);
-    expect(rehydrateExperimentWorkspace(reopened)?.draft.adaptiveInput?.contract).toEqual(contract);
+    const rehydrated = rehydrateExperimentWorkspace(reopened);
+    expect(rehydrated?.draft.adaptiveInput?.contract).toEqual(contract);
+    expect(Object.values(rehydrated?.cells ?? {}).reduce((total, cell) => total + (cell.kind === "nested_continuous" ? cell.rawValues.length : 0), 0)).toBe(observations);
+    expect(reopened.unitInstances.filter(({ levelId }) => levelId === reopened.designRevisions[0]?.design.experimentalUnitLevelId).every(({ metadata }) => typeof metadata.experimentSessionId === "string")).toBe(true);
+    if (id === "manual-3") {
+      const legacyWithoutSessionMetadata = ProjectStateSchema.parse({
+        ...reopened,
+        unitInstances: reopened.unitInstances.map((unit) => {
+          const { experimentSessionId: _removed, ...metadata } = unit.metadata;
+          return { ...unit, metadata };
+        }),
+      });
+      const legacyCells = rehydrateExperimentWorkspace(legacyWithoutSessionMetadata)?.cells ?? {};
+      expect(Object.values(legacyCells).reduce((total, cell) => total + (cell.kind === "nested_continuous" ? cell.rawValues.length : 0), 0)).toBe(40);
+    }
   });
 
   it("manual-5 hands a typed event/censoring surface to the dedicated survival path losslessly", () => {
@@ -80,11 +102,26 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
     expect(handoff).toContain("\tEvent");
   });
 
+  it("manual-5 reopens through the common project entry as an editable typed workspace", () => {
+    const { workspace, handoff } = manualSurvivalFixture();
+    const state = createAdaptiveSurvivalProject(workspace.snapshot, now);
+    render(createElement(OpenProjectPage, {
+      onNavigate: vi.fn(),
+      openProject: vi.fn(async () => null),
+      persistedProject: { state, target: "/tmp/adaptive-survival.lsa" },
+      saveProject: vi.fn<SaveProjectAction>(async (request, target) => ({ state: request, target: target ?? "/tmp/adaptive-survival.lsa" })),
+    }));
+    expect(screen.getByRole("navigation", { name: "Common project workspace" })).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "Survival data" })).toHaveValue(handoff);
+    expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    expect(screen.getByRole("region", { name: "Statistics workspace" })).toBeVisible();
+  });
+
   it("manual-5 reaches survival Graph, Statistics, save, and reopen", async () => {
     const { contract, workspace, handoff } = manualSurvivalFixture();
     const analysisRunner = vi.fn(async (request) => ({ protocolVersion: "0.8.0" as const, requestId: request.requestId, status: "ok" as const, engine: { name: "fixture", version: "1", packages: {} }, estimates: [], tests: [{ name: "log_rank", statisticName: "chi-square", statistic: 1, degreesOfFreedom: [1], pValue: 0.3, adjustedPValue: null, effectSizeName: null, effectSize: null }], survival: { groups: [{ conditionId: "condition.1", n: 6, events: 4, censored: 2, curve: [], censorTimes: [5, 8] }, { conditionId: "condition.2", n: 6, events: 4, censored: 2, curve: [], censorTimes: [6, 9] }] }, diagnostics: [], warnings: [], completedAt: now }));
-    const saveProject = vi.fn(async (state) => ({ state, target: "/tmp/adaptive-survival.lsa" }));
-    render(createElement(SpecializedCorePage, { mode: "survival", onBack: vi.fn(), initialText: handoff, adaptiveInput: workspace.snapshot, analysisRunner, saveProject }));
+    const saveProject = vi.fn<SaveProjectAction>(async (state) => ({ state, target: "/tmp/adaptive-survival.lsa" }));
+    const firstRender = render(createElement(SpecializedCorePage, { mode: "survival", onBack: vi.fn(), initialText: handoff, adaptiveInput: workspace.snapshot, analysisRunner, saveProject }));
     expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" }));
     expect(await screen.findByText(/log-rank検定が完了/)).toBeVisible();
@@ -95,6 +132,23 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
     expect(reopened.observations).toHaveLength(12);
     expect(reopened.observations[0]?.outcomeId).toBe(reopened.designRevisions[0]?.design.outcomes[0]?.id);
     expect(reopened.analysisRuns).toHaveLength(1);
+    firstRender.unmount();
+
+    const reopenedProject = { state: reopened, target: "/tmp/adaptive-survival.lsa" };
+    render(createElement(SpecializedCorePage, { mode: "survival", onBack: vi.fn(), initialText: handoff, initialProject: reopenedProject, analysisRunner, saveProject }));
+    expect(screen.getByRole("navigation", { name: "Common project workspace" })).toBeVisible();
+    const editable = screen.getByRole("textbox", { name: "Survival data" });
+    fireEvent.change(editable, { target: { value: handoff.replace("M1-1\tVehicle\t5\tCensored", "M1-1\tVehicle\t7\tCensored") } });
+    fireEvent.click(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" }));
+    await waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(2));
+    expect(saveProject.mock.calls[1]![1]).toBe(reopenedProject.target);
+    const edited = ProjectStateSchema.parse(saveProject.mock.calls[1]![0]);
+    expect(edited.designRevisions[0]?.design.plannedN).toBe(12);
+    expect(edited.adaptiveInput?.rawLineage?.rawText).toContain("M1-1\tVehicle\t7\tCensored");
+    expect(edited.adaptiveInput?.canonicalObservations[0]?.values.survival_follow_up).toBe(7);
+    expect(edited.observations[0]?.measurement).toEqual({ kind: "time_to_event", followUpTime: 7, eventObserved: false });
   });
 
   it.each(cases)("$id reaches Graph, Statistics, save, and reopen", async ({ contract, text }) => {
