@@ -1,0 +1,6 @@
+PatientID,SpecimenBarcode,Tissue,ProteinAA_ng_mg,RIN,Comment
+P003,P003-T,Tumor,8.41,7.2,
+P001,P001-N,AdjacentNormal,2.18,8.1,
+P002,P002-T,Tumor,7.93,6.9,no adjacent normal collected
+P001,P001-T,Tumor,8.42,7.8,
+P003,P003-N,AdjacentNormal,,7.9,assay failed

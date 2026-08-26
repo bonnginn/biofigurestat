@@ -1,0 +1,10 @@
+Plate: PLATE_2026_08_14
+Reader: Spark-02
+Mode: Absorbance 450 nm
+Well,Sample,OD450,Flag
+A01,D01_rep1,0.812,
+A02,D01_rep2,0.798,
+A03,D01_rep3,OVER,Overflow
+B01,D02_rep1,0.431,
+B03,D02_rep3,0.447,
+B02,D02_rep2,0.438,

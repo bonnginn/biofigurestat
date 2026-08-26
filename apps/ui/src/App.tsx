@@ -35,6 +35,7 @@ import {
   createLiteratureExperimentDraft,
   type LiteratureExperimenterCase,
 } from "./app/literatureBenchmark";
+import type { AdaptiveInputSnapshot } from "@lsaa/domain";
 
 type AppProps = {
   projectActions?: ProjectActions;
@@ -61,6 +62,10 @@ export default function App({ projectActions }: AppProps) {
   const [favoriteDefaults, setFavoriteDefaults] = useState<readonly FavoriteGraphDefault[]>([]);
   const [favorites, setFavorites] = useState<FavoriteDesign[]>(loadFavoriteDesigns);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>(loadRecentProjects);
+  const [adaptiveSurvivalHandoff, setAdaptiveSurvivalHandoff] = useState<{
+    text: string;
+    snapshot: AdaptiveInputSnapshot;
+  } | null>(null);
 
   const recordRecentProject = useCallback((project: OpenedProject) => {
     setRecentProjects(
@@ -104,8 +109,10 @@ export default function App({ projectActions }: AppProps) {
       to: nextRoute,
     });
     const nextPath = pathForRoute(nextRoute);
-    if (window.location.pathname !== nextPath) {
-      window.history.pushState({}, "", nextPath);
+    const adaptiveQuery = new URLSearchParams(window.location.search).get("adaptiveInput");
+    const nextUrl = adaptiveQuery === "1" ? `${nextPath}?adaptiveInput=1` : nextPath;
+    if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
+      window.history.pushState({}, "", nextUrl);
     }
     setRoute(nextRoute);
     recordDiagnosticEvent("route_changed", { route: nextRoute });
@@ -205,6 +212,8 @@ export default function App({ projectActions }: AppProps) {
             onBack={() => navigate("new-experiment")}
             onNavigate={navigate}
             saveProject={browserPreview ? undefined : saveProject}
+            initialText={adaptiveSurvivalHandoff?.text}
+            adaptiveInput={adaptiveSurvivalHandoff?.snapshot}
           />
         );
       case "heatmap":
@@ -245,6 +254,10 @@ export default function App({ projectActions }: AppProps) {
             onSaveFavorite={(draft, graphs) => {
               saveFavoriteDesign(draft, graphs);
               setFavorites(loadFavoriteDesigns());
+            }}
+            onAdaptiveSurvivalReady={(text, snapshot) => {
+              setAdaptiveSurvivalHandoff({ text, snapshot });
+              navigate("survival");
             }}
           />
         );

@@ -1,5 +1,6 @@
 import {
   appendAnalysisExecution,
+  appendDesignRevision,
   appendRawRevision,
   createInitialProjectState,
   ExperimentWorkspaceStateSchema,
@@ -12,6 +13,7 @@ import {
   type DerivedDatasetRevision,
   type DerivedScalarValue,
   type ExperimentDesign,
+  type MeasurementValue,
   type Observation,
   type RawDatasetRevision,
   type TransformationSpec,
@@ -43,6 +45,7 @@ import {
   type ExperimentSetDraft,
 } from "./experimentDraft";
 import { repeatedFactorCanonicalExplanation } from "./repeatedFactorTerminology";
+import { assertDualWriteEquivalence, projectContractToExperimentDesign } from "@lsaa/adaptive-input";
 
 type PersistedWorkspaceGraphState = ExperimentWorkspaceState["graphs"][number];
 
@@ -61,6 +64,78 @@ type CanonicalWorkspaceRecords = Readonly<{
   unitInstances: UnitInstance[];
   observations: Observation[];
 }>;
+
+const adaptiveUnitToken = (value: string) => value.normalize("NFKC").replace(/[^A-Za-z0-9._:-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 36) || "unit";
+
+function createAdaptiveCanonicalRecords(
+  draft: ExperimentSetDraft,
+  rawRevision: RawDatasetRevision,
+  revisionIndex: number,
+): CanonicalWorkspaceRecords | null {
+  const snapshot = draft.adaptiveInput;
+  if (!snapshot) return null;
+  const contract = snapshot.contract;
+  const combinations = contract.factors.reduce<Array<Record<string, string>>>((rows, factor) => rows.flatMap((row) => factor.levels.map((level) => ({ ...row, [factor.key]: level }))), [{}]);
+  const unitInstances: UnitInstance[] = [];
+  const observations: Observation[] = [];
+  const unitIds = new Map<string, string>();
+  const levels = new Map(contract.unitLevels.map((level) => [level.key, level]));
+  const identityForLevel = new Map(contract.identities.map((identity) => [identity.unitLevelKey, identity.key]));
+  const rowUnit = (row: typeof snapshot.canonicalObservations[number], levelKey: string): string => {
+    const level = levels.get(levelKey);
+    if (!level) throw new Error(`ADAPTIVE_UNKNOWN_UNIT_LEVEL:${levelKey}`);
+    const parentId = level.parentKey ? rowUnit(row, level.parentKey) : null;
+    const identityKey = identityForLevel.get(levelKey);
+    const semanticIdentity = (identityKey ? row.identities[identityKey] : undefined) ?? row.hierarchy[levelKey] ?? (levelKey === contract.experimentalUnitLevelKey ? row.identities[contract.identities[0]!.key] : undefined);
+    if (!semanticIdentity) throw new Error(`ADAPTIVE_UNIT_IDENTITY_MISSING:${levelKey}:${row.observationId}`);
+    const composite = `${levelKey}|${parentId ?? "root"}|${semanticIdentity}`;
+    const existing = unitIds.get(composite);
+    if (existing) return existing;
+    const id = `unit.adaptive.${adaptiveUnitToken(levelKey)}.${unitIds.size + 1}.r${revisionIndex}`;
+    unitIds.set(composite, id);
+    unitInstances.push({ id, levelId: `unit-level.${levelKey}`, parentUnitId: parentId, label: semanticIdentity, metadata: { semanticIdentity, semanticLevel: levelKey } });
+    return id;
+  };
+  const component = (row: typeof snapshot.canonicalObservations[number], readoutKey: string, key: string) => row.values[`${readoutKey}_${key}`] ?? row.values[key];
+  for (const row of snapshot.canonicalObservations) {
+    const readout = contract.readouts.find(({ key }) => key === row.readoutKey);
+    if (!readout) throw new Error(`ADAPTIVE_UNKNOWN_READOUT:${row.readoutKey}`);
+    let measurement: MeasurementValue | null = null;
+    if (readout.representation === "scalar") {
+      const value = row.values[readout.key];
+      if (typeof value === "number" && Number.isFinite(value)) measurement = { kind: "scalar", value };
+    } else if (readout.representation === "proportion_counts") {
+      const numerator = component(row, readout.key, readout.componentKeys[0]!);
+      const denominator = component(row, readout.key, readout.componentKeys[1]!);
+      if (typeof numerator === "number" && typeof denominator === "number") measurement = { kind: "proportion", numerator, denominator };
+    } else if (readout.representation === "category_counts") {
+      const counts = Object.fromEntries(readout.componentKeys.flatMap((key) => {
+        const value = component(row, readout.key, key);
+        return typeof value === "number" ? [[key, value]] : [];
+      }));
+      if (Object.keys(counts).length >= 2) measurement = { kind: "categorical_counts", counts };
+    } else if (readout.representation === "target_reference") {
+      const target = component(row, readout.key, "target");
+      const reference = component(row, readout.key, "reference");
+      if (typeof target === "number" && typeof reference === "number" && reference > 0) measurement = { kind: "loading_control_ratio", target, loadingControl: reference, transformationVersion: "0.1.0" };
+    }
+    if (!measurement) continue;
+    const conditionIndex = combinations.findIndex((combination) => contract.factors.every((factor) => combination[factor.key] === row.factors[factor.key]));
+    if (conditionIndex < 0) throw new Error(`ADAPTIVE_CONDITION_MISMATCH:${row.observationId}`);
+    const axisValue = contract.orderedAxes[0] ? row.axes[contract.orderedAxes[0].key] : undefined;
+    observations.push({
+      id: `observation.adaptive.${observations.length + 1}.r${revisionIndex}`,
+      rawRevisionId: rawRevision.id,
+      unitInstanceId: rowUnit(row, readout.observationLevelKey),
+      conditionId: `condition.${conditionIndex + 1}`,
+      outcomeId: `outcome.${readout.key}`,
+      measurement,
+      ...(typeof axisValue === "number" ? { time: axisValue } : {}),
+      sourceLocation: `adaptive:${row.observationId}:row-${row.sourceRow ?? "unknown"}`,
+    });
+  }
+  return { rawRevision, unitInstances, observations };
+}
 
 type PreparedAnalysis = Readonly<{
   graphId: string;
@@ -356,6 +431,7 @@ function createWorkspaceSnapshot(
     timePlan: draft.time,
     experimentSessions: draft.experiments,
     importProvenance: draft.importProvenance,
+    adaptiveInput: draft.adaptiveInput ?? null,
     notPlannedCellKeys: Object.entries(cells)
       .filter(([, cell]) => cell.availability === "not_planned")
       .map(([key]) => key),
@@ -369,6 +445,8 @@ function createCanonicalRecords(
   rawRevision: RawDatasetRevision,
   revisionIndex: number,
 ): CanonicalWorkspaceRecords {
+  const adaptive = createAdaptiveCanonicalRecords(draft, rawRevision, revisionIndex);
+  if (adaptive) return adaptive;
   const unitInstances: UnitInstance[] = [];
   const observations: Observation[] = [];
   for (const experiment of draft.experiments) {
@@ -1164,11 +1242,20 @@ export function createExperimentWorkspaceProject(input: {
     note: "Experiment workspace data",
   };
   const records = createCanonicalRecords(input.draft, input.cells, rawRevision, revisionIndex);
-  const design = input.existingState
+  const plannedN = input.draft.conditionAssignment.kind === "matched"
+    ? input.draft.experiments.length
+    : input.draft.experiments.length * Math.max(1, input.draft.conditions.length);
+  const adaptiveDesign = input.draft.adaptiveInput
+    ? projectContractToExperimentDesign(input.draft.adaptiveInput.contract, plannedN, now)
+    : null;
+  if (adaptiveDesign && input.draft.adaptiveInput) {
+    assertDualWriteEquivalence(input.draft.adaptiveInput.contract, adaptiveDesign, now);
+  }
+  const design = adaptiveDesign ?? (input.existingState
     ? (input.existingState.designRevisions.find(
         (revision) => revision.id === input.existingState?.activeDesignRevisionId,
       )?.design ?? createExperimentWorkspaceDesign(input.draft, now))
-    : createExperimentWorkspaceDesign(input.draft, now);
+    : createExperimentWorkspaceDesign(input.draft, now));
   const projectId =
     input.existingState?.metadata.projectId ?? `project.workspace.${Date.parse(now)}`;
   const prepared = prepareWorkspaceAnalyses({
@@ -1183,8 +1270,15 @@ export function createExperimentWorkspaceProject(input: {
   });
   let state: ProjectState;
   if (input.existingState) {
+    const currentDesign = input.existingState.designRevisions.find(
+      (revision) => revision.id === input.existingState?.activeDesignRevisionId,
+    )?.design;
+    const designChanged = adaptiveDesign && JSON.stringify(currentDesign) !== JSON.stringify(adaptiveDesign);
+    const startingState = designChanged
+      ? appendDesignRevision(input.existingState, adaptiveDesign, actor, now)
+      : input.existingState;
     state = appendRawRevision(
-      input.existingState,
+      startingState,
       records.rawRevision,
       records.unitInstances,
       records.observations,
@@ -1250,6 +1344,7 @@ export function createExperimentWorkspaceProject(input: {
   return ProjectStateSchema.parse({
     ...state,
     experimentWorkspace: createWorkspaceSnapshot(input.draft, input.cells, linkedGraphs),
+    adaptiveInput: input.draft.adaptiveInput ?? null,
   });
 }
 
@@ -1288,6 +1383,7 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
     time: workspace.timePlan,
     experiments: workspace.experimentSessions,
     importProvenance: workspace.importProvenance,
+    adaptiveInput: workspace.adaptiveInput ?? undefined,
   };
   const cells: Record<string, ExperimentCellMap[string]> = {};
   state.observations

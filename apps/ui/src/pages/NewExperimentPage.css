@@ -970,3 +970,17 @@
     border-right: 0;
   }
 }
+.experiment-start__adaptive-alpha {
+  display: grid;
+  gap: .65rem;
+  margin: 1rem 0 1.5rem;
+  padding: 1.25rem;
+  border: 2px solid #3f6f9f;
+  border-radius: 14px;
+  background: #f3f8fc;
+}
+
+.experiment-start__adaptive-alpha h2,
+.experiment-start__adaptive-alpha p { margin: 0; }
+
+.experiment-start__adaptive-alpha .primary-button { justify-self: start; }

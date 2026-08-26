@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { EntityIdSchema, IsoDateTimeSchema } from "./ids";
+import { StructureContractSchema } from "./adaptive-input";
 
-export const DESIGN_SCHEMA_VERSION = "0.2.0" as const;
+export const LEGACY_DESIGN_SCHEMA_VERSION = "0.2.0" as const;
+export const DESIGN_SCHEMA_VERSION = "0.3.0" as const;
 
 export const ExperimentPurposeSchema = z.enum([
   "western_blot",
@@ -194,7 +196,7 @@ export const WizardDecisionSchema = z.object({
 
 export const ExperimentDesignSchema = z
   .object({
-    schemaVersion: z.literal(DESIGN_SCHEMA_VERSION),
+    schemaVersion: z.enum([LEGACY_DESIGN_SCHEMA_VERSION, DESIGN_SCHEMA_VERSION]),
     id: EntityIdSchema,
     name: z.string().min(1),
     purpose: ExperimentPurposeSchema,
@@ -212,6 +214,13 @@ export const ExperimentDesignSchema = z
     comparisons: z.array(DesignComparisonSchema).optional(),
     wizardRuleVersion: z.string().min(1),
     wizardDecisions: z.array(WizardDecisionSchema),
+    adaptiveStructure: z
+      .object({
+        contract: StructureContractSchema,
+        analysisCompatibility: z.enum(["representable", "blocked"]),
+        diagnostics: z.array(z.string()),
+      })
+      .optional(),
     createdAt: IsoDateTimeSchema,
   })
   .superRefine((design, ctx) => {

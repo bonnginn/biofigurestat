@@ -1,3 +1,5 @@
+import type { AdaptiveInputSnapshot } from "@lsaa/domain";
+
 export const EXPERIMENT_DRAFT_VERSION = "0.1.0" as const;
 
 export type ExperimentContext =
@@ -164,6 +166,8 @@ export type ExperimentSetDraft = Readonly<{
     duplicateDecision: "none" | "nested_observations";
     transformations?: readonly string[];
   }>;
+  /** Feature-flagged Alpha companion. Legacy drafts omit it. */
+  adaptiveInput?: AdaptiveInputSnapshot;
 }>;
 
 export type ProportionCellDraft = Readonly<{

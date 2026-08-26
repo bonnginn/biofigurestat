@@ -1,0 +1,9 @@
+Well,Sample,Target,Cq,Call,Plate
+A03,D01_Control,GeneU,23.81,OK,P12
+A04,D01_Control,GeneU,23.74,OK,P12
+B03,D01_Control,RPLP0,18.22,OK,P12
+B04,D01_Control,RPLP0,18.31,OK,P12
+C03,D02_Hypoxia,GeneU,21.14,OK,P12
+C04,D02_Hypoxia,GeneU,Undetermined,No Cq,P12
+D03,D02_Hypoxia,RPLP0,18.09,OK,P12
+D04,D02_Hypoxia,RPLP0,18.15,OK,P12

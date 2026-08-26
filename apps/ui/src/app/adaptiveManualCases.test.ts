@@ -1,0 +1,116 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createElement } from "react";
+import { describe, expect, it, vi } from "vitest";
+import { ProjectStateSchema } from "@lsaa/project";
+import { StructureContractSchema } from "@lsaa/domain";
+import { buildStructureContract, importForSelectedSurface, selectAdaptiveSurface } from "@lsaa/adaptive-input";
+import { adaptiveSurvivalPaste, createAdaptiveWorkspace } from "./adaptiveWorkspace";
+import { createExperimentWorkspaceProject, rehydrateExperimentWorkspace } from "./experimentWorkspaceProject";
+import { ExperimentWorkspace } from "../pages/ExperimentWorkspace";
+import { SpecializedCorePage } from "../pages/SpecializedCorePage";
+
+const now = "2026-08-26T00:00:00.000Z";
+const base = {
+  experimentDescription: "The biological unit, treatment assignment, sample collection, identity reuse, and measurement are explicitly recorded.",
+  readoutRepresentation: "scalar" as const,
+};
+
+const cases = [
+  {
+    id: "manual-1",
+    contract: buildStructureContract({ ...base, experimentName: "Independent drug experiment", experimentalUnitLabel: "culture run", identityLabel: "RunID", readoutLabel: "Signal", factorName: "Treatment", factorLevels: ["Vehicle", "Drug A", "Drug B"], sameIdentityAcrossConditions: false }),
+    surface: "factor_observation_table",
+    text: ["RunID\tTreatment\tSignal", ...["Vehicle", "Drug A", "Drug B"].flatMap((condition, group) => Array.from({ length: 4 }, (_, index) => `${condition[0]}${index + 1}\t${condition}\t${10 + group * 4 + index}`))].join("\n"),
+    observations: 12,
+  },
+  {
+    id: "manual-2",
+    contract: buildStructureContract({ ...base, experimentName: "Matched illumination", experimentalUnitLabel: "cell", identityLabel: "CellID", readoutLabel: "Intensity", factorName: "Illumination", factorLevels: ["Dark", "Lit"], sameIdentityAcrossConditions: true }),
+    surface: "compact_unit_matrix",
+    text: ["CellID\tDark\tLit", ...Array.from({ length: 6 }, (_, index) => `Cell${index + 1}\t${20 + index}\t${25 + index}`)].join("\n"),
+    observations: 12,
+  },
+  {
+    id: "manual-3",
+    contract: buildStructureContract({ ...base, experimentName: "Nested cell morphology", experimentalUnitLabel: "culture dish", identityLabel: "DishID", readoutLabel: "Circularity", factorName: "Treatment", factorLevels: ["Vehicle", "Drug"], sameIdentityAcrossConditions: false, nestedObservationLabel: "cell" }),
+    surface: "nested_observation_table",
+    text: ["DishID\tCell ID\tTreatment\tCircularity", ...["Vehicle", "Drug"].flatMap((condition, group) => Array.from({ length: 4 }, (_, dish) => Array.from({ length: 5 }, (_, cell) => `${condition[0]}${dish + 1}\t${condition[0]}${dish + 1}-C${cell + 1}\t${condition}\t${(0.4 + group * 0.1 + dish * 0.01 + cell * 0.001).toFixed(3)}`)).flat())].join("\n"),
+    observations: 40,
+  },
+  {
+    id: "manual-4",
+    contract: StructureContractSchema.parse({ schemaVersion: "0.1.0", contractId: "manual.4", experimentName: "siRNA rescue factorial", experimentDescription: base.experimentDescription, unitLevels: [{ key: "culture_run", label: "culture run", role: "experimental_unit", parentKey: null }], experimentalUnitLevelKey: "culture_run", identities: [{ key: "runid", label: "RunID", unitLevelKey: "culture_run", required: true }], factors: [{ key: "sirna", label: "siRNA", levels: ["Control", "Target"], unitRole: "between_unit", relationship: "independent", ordered: false, referenceLevel: "Control" }, { key: "construct", label: "Construct", levels: ["Empty", "Rescue"], unitRole: "between_unit", relationship: "independent", ordered: false, referenceLevel: "Empty" }], matching: { kind: "independent", identityKey: null, completeSetsRequired: null }, orderedAxes: [], readouts: [{ key: "expression", label: "Expression", valueType: "continuous", representation: "scalar", componentKeys: ["value"], referenceRole: "none", observationLevelKey: "culture_run", axisKeys: [] }], allowedMissingness: ["not_collected", "assay_failed", "unknown"], rawObservationGrain: "one culture run" }),
+    surface: "factor_observation_table",
+    text: ["RunID\tsiRNA\tConstruct\tExpression", ...["Control\tEmpty", "Control\tRescue", "Target\tEmpty", "Target\tRescue"].flatMap((combination, group) => Array.from({ length: 4 }, (_, index) => `R${group + 1}-${index + 1}\t${combination}\t${50 + group * 10 + index}`))].join("\n"),
+    observations: 16,
+  },
+] as const;
+
+function manualSurvivalFixture() {
+  const contract = buildStructureContract({ ...base, experimentName: "Animal survival", experimentalUnitLabel: "mouse", identityLabel: "MouseID", readoutLabel: "Survival", readoutRepresentation: "event_censoring", factorName: "Treatment", factorLevels: ["Vehicle", "Treatment"], sameIdentityAcrossConditions: false });
+  const text = ["MouseID\tTreatment\tfollow_up\tevent_observed", ...["Vehicle", "Treatment"].flatMap((condition, group) => Array.from({ length: 6 }, (_, index) => `M${group + 1}-${index + 1}\t${condition}\t${5 + index + group}\t${index % 3 === 0 ? "Censored" : "Event"}`))].join("\n");
+  const imported = importForSelectedSurface(contract, text, "tsv", "manual-survival.tsv", now);
+  const workspace = createAdaptiveWorkspace({ contract, observations: imported.observations, mapping: imported.mapping, lineage: imported.lineage, now });
+  return { contract, text, workspace, handoff: adaptiveSurvivalPaste(workspace.snapshot) };
+}
+
+describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
+  it.each(cases)("$id reaches its selected surface and survives canonical save/open", ({ contract, surface, text, observations }) => {
+    expect(selectAdaptiveSurface(contract).surfaceId).toBe(surface);
+    const imported = importForSelectedSurface(contract, text, "clipboard", "manual-validation", now);
+    expect(imported.observations).toHaveLength(observations);
+    const workspace = createAdaptiveWorkspace({ contract, observations: imported.observations, mapping: imported.mapping, lineage: imported.lineage, now });
+    expect(workspace.status).toBe("ready");
+    const state = createExperimentWorkspaceProject({ draft: workspace.draft!, cells: workspace.cells, graphs: [], now });
+    const reopened = ProjectStateSchema.parse(JSON.parse(JSON.stringify(state)));
+    expect(reopened.observations).toHaveLength(observations);
+    expect(reopened.adaptiveInput?.canonicalObservations).toHaveLength(observations);
+    expect(reopened.adaptiveInput?.mapping?.sourceLabel).toBe("manual-validation");
+    expect(reopened.adaptiveInput?.rawLineage?.rawText).toBe(text);
+    expect(rehydrateExperimentWorkspace(reopened)?.draft.adaptiveInput?.contract).toEqual(contract);
+  });
+
+  it("manual-5 hands a typed event/censoring surface to the dedicated survival path losslessly", () => {
+    const { contract, workspace, handoff } = manualSurvivalFixture();
+    expect(selectAdaptiveSurface(contract).surfaceId).toBe("typed_record_table");
+    expect(workspace.status).toBe("dedicated_route_required");
+    expect(handoff.split("\n")).toHaveLength(13);
+    expect(handoff).toContain("Follow-up time\tStatus");
+    expect(handoff).toContain("\tCensored");
+    expect(handoff).toContain("\tEvent");
+  });
+
+  it("manual-5 reaches survival Graph, Statistics, save, and reopen", async () => {
+    const { contract, workspace, handoff } = manualSurvivalFixture();
+    const analysisRunner = vi.fn(async (request) => ({ protocolVersion: "0.8.0" as const, requestId: request.requestId, status: "ok" as const, engine: { name: "fixture", version: "1", packages: {} }, estimates: [], tests: [{ name: "log_rank", statisticName: "chi-square", statistic: 1, degreesOfFreedom: [1], pValue: 0.3, adjustedPValue: null, effectSizeName: null, effectSize: null }], survival: { groups: [{ conditionId: "condition.1", n: 6, events: 4, censored: 2, curve: [], censorTimes: [5, 8] }, { conditionId: "condition.2", n: 6, events: 4, censored: 2, curve: [], censorTimes: [6, 9] }] }, diagnostics: [], warnings: [], completedAt: now }));
+    const saveProject = vi.fn(async (state) => ({ state, target: "/tmp/adaptive-survival.lsa" }));
+    render(createElement(SpecializedCorePage, { mode: "survival", onBack: vi.fn(), initialText: handoff, adaptiveInput: workspace.snapshot, analysisRunner, saveProject }));
+    expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" }));
+    expect(await screen.findByText(/log-rank検定が完了/)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const reopened = ProjectStateSchema.parse(JSON.parse(JSON.stringify(saveProject.mock.calls[0]![0])));
+    expect(reopened.adaptiveInput?.contract).toEqual(contract);
+    expect(reopened.observations).toHaveLength(12);
+    expect(reopened.observations[0]?.outcomeId).toBe(reopened.designRevisions[0]?.design.outcomes[0]?.id);
+    expect(reopened.analysisRuns).toHaveLength(1);
+  });
+
+  it.each(cases)("$id reaches Graph, Statistics, save, and reopen", async ({ contract, text }) => {
+    const imported = importForSelectedSurface(contract, text, "clipboard", "manual-validation", now);
+    const workspace = createAdaptiveWorkspace({ contract, observations: imported.observations, mapping: imported.mapping, lineage: imported.lineage, now });
+    const saveProject = vi.fn(async (state) => ({ state, target: "/tmp/adaptive-manual.lsa" }));
+    render(createElement(ExperimentWorkspace, { initialDraft: workspace.draft!, initialCells: workspace.cells, onBack: vi.fn(), saveProject }));
+    fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
+    fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
+    expect(screen.getByRole("img", { name: /実験単位ごとのグラフ/ })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "統計" }));
+    expect(screen.getByRole("region", { name: "統計ワークスペース" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const reopened = ProjectStateSchema.parse(JSON.parse(JSON.stringify(saveProject.mock.calls[0]![0])));
+    expect(reopened.experimentWorkspace?.graphs).toHaveLength(1);
+    expect(rehydrateExperimentWorkspace(reopened)?.draft.adaptiveInput?.contract).toEqual(contract);
+  });
+});

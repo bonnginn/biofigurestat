@@ -1,0 +1,6 @@
+Plate,Well,Donor,Compound,Dose_uM,Readout,Value,QC
+P3,C04,D02,DrugV,0.3,Viability,0.83,pass
+P3,A01,D01,Vehicle,0,Viability,1.02,pass
+P3,C02,D02,DrugV,0.03,Viability,0.97,pass
+P3,A04,D01,DrugV,0.3,Viability,0.79,pass
+P3,C03,D02,DrugV,0.1,Viability,,edge_well

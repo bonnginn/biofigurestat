@@ -1,0 +1,5 @@
+FCS_File,Sample,Treatment,Gate,Count,ParentCount,AcquiredEvents
+D04_StimBB.fcs,D04,StimulusBB,Marker+,1842,9221,50000
+D01_Control.fcs,D01,Control,Marker+,611,9014,50000
+D04_StimBB.fcs,D04,StimulusBB,LiveSinglet,9221,,50000
+D01_Control.fcs,D01,Control,LiveSinglet,9014,,50000

@@ -1,0 +1,5 @@
+Patient,Organoid,Image,ROI,Area_um2,Treatment,FocusScore
+P02,O02B,O02B_F03.tif,C018,211.4,DrugO,0.94
+P01,O01A,O01A_F01.tif,C001,184.2,Vehicle,0.98
+P02,O02B,O02B_F01.tif,C002,205.7,DrugO,0.91
+P01,O01A,O01A_F01.tif,C002,190.8,Vehicle,0.97

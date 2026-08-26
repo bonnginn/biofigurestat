@@ -34,6 +34,9 @@ import { evaluationMode, evaluationModeIsConfigured } from "../app/evaluationMod
 import { syntheticFixtures, type SyntheticFixture } from "../app/syntheticFixtures";
 import "./NewExperimentPage.css";
 import type { FavoriteGraphDefault } from "../app/favoriteDesigns";
+import type { AdaptiveInputSnapshot } from "@lsaa/domain";
+import { AdaptiveExperimentEntry } from "../components/AdaptiveExperimentEntry";
+import { adaptiveInputFeatureEnabled } from "../app/adaptiveInputFeature";
 
 type NewExperimentPageProps = {
   onNavigate: (route: AppRoute) => void;
@@ -43,9 +46,10 @@ type NewExperimentPageProps = {
   initialDraft?: ExperimentSetDraft | null;
   favoriteGraphDefaults?: readonly FavoriteGraphDefault[];
   onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
+  onAdaptiveSurvivalReady?: (text: string, snapshot: AdaptiveInputSnapshot) => void;
 };
 
-type FlowStage = "context" | "import" | "design" | "confirmation" | "workspace";
+type FlowStage = "context" | "import" | "adaptive" | "design" | "confirmation" | "workspace";
 type DesignStep = 0 | 1 | 2 | 3;
 type FlowStep = DesignStep | 4;
 
@@ -1955,6 +1959,7 @@ export function NewExperimentPage({
   initialDraft = null,
   favoriteGraphDefaults,
   onSaveFavorite,
+  onAdaptiveSurvivalReady,
 }: NewExperimentPageProps) {
   const evaluationPreview = browserPreview && evaluationModeIsConfigured(evaluationMode);
   const [stage, setStage] = useState<FlowStage>(initialDraft ? "confirmation" : "context");
@@ -2138,6 +2143,22 @@ export function NewExperimentPage({
             </p>
             <p className="experiment-start__subtle">統計用語や解析名を先に選ぶ必要はありません。</p>
           </section>
+          {adaptiveInputFeatureEnabled() ? (
+            <section
+              className="experiment-start__adaptive-alpha"
+              aria-labelledby="adaptive-alpha-heading"
+            >
+              <p className="experiment-start__eyebrow">Feature-flagged Alpha</p>
+              <h2 id="adaptive-alpha-heading">実験構造から適切な入力面を作る</h2>
+              <p>
+                experimental
+                unit、identity、condition、反復・階層を定義し、表全体をpasteできます。現行入口は下に残っています。
+              </p>
+              <button className="primary-button" type="button" onClick={() => setStage("adaptive")}>
+                Adaptive inputを試す
+              </button>
+            </section>
+          ) : null}
           <ContextStart
             browserPreview={browserPreview}
             showDemos={!evaluationPreview}
@@ -2155,6 +2176,27 @@ export function NewExperimentPage({
           />
         </>
       )}
+
+      {stage === "adaptive" ? (
+        <AdaptiveExperimentEntry
+          locale={
+            typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("ja")
+              ? "ja"
+              : "en"
+          }
+          onCancel={() => setStage("context")}
+          onReady={(adaptiveDraft, adaptiveCells) => {
+            setDraft(adaptiveDraft);
+            setFixtureCells(adaptiveCells);
+            recordWorkspaceStart(adaptiveDraft, "adaptive_input_alpha");
+            setStage("workspace");
+          }}
+          onSurvivalReady={(text, snapshot) => {
+            if (onAdaptiveSurvivalReady) onAdaptiveSurvivalReady(text, snapshot);
+            else onNavigate("survival");
+          }}
+        />
+      ) : null}
 
       {stage === "import" ? (
         <ExistingDataImport

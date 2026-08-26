@@ -1,0 +1,7 @@
+Image	Lane	SampleName	Band	IntegratedDensity	Background	Comment
+blot7.tif	3	D03_Vehicle	GAPDH	18420	412	
+blot7.tif	1	D01_Vehicle	pAKT	9120	388	left edge
+blot7.tif	1	D01_Vehicle	GAPDH	17950	401	
+blot7.tif	2	D02_StimQ	totalAKT	15120	390	
+blot7.tif	1	D01_Vehicle	totalAKT	14210	376	
+blot7.tif	2	D02_StimQ	pAKT	13240	405	

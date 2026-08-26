@@ -5,7 +5,7 @@ import {
   type AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
 import { parseMatrixPaste, parseSurvivalPaste } from "@lsaa/data-sheet";
-import type { ExperimentDesign, Observation, UnitInstance } from "@lsaa/domain";
+import type { AdaptiveInputSnapshot, ExperimentDesign, Observation, UnitInstance } from "@lsaa/domain";
 import {
   createHeatmapGraphSpec,
   createHeatmapModel,
@@ -13,7 +13,8 @@ import {
   createSurvivalGraphSpec,
   type HeatmapTransform,
 } from "@lsaa/graph-spec";
-import { appendMatrixView, createInitialProjectState } from "@lsaa/project";
+import { appendMatrixView, createInitialProjectState, ProjectStateSchema } from "@lsaa/project";
+import { projectContractToExperimentDesign } from "@lsaa/adaptive-input";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
 import {
   COMPLETE_BENCHMARK_ARTIFACT_NAMES,
@@ -49,6 +50,8 @@ type Props = Readonly<{
   saveProject?: SaveProjectAction;
   analysisRunner?: AnalysisRunner;
   onNavigate?: (route: AppRoute) => void;
+  initialText?: string;
+  adaptiveInput?: AdaptiveInputSnapshot;
 }>;
 const now = () => new Date().toISOString();
 const day = () => new Date().toISOString().slice(0, 10);
@@ -68,11 +71,13 @@ export function SpecializedCorePage({
   saveProject,
   analysisRunner = defaultAnalysisRunner,
   onNavigate,
+  initialText,
+  adaptiveInput,
 }: Props) {
   const [text, setText] = useState(
-    mode === "survival"
+    initialText ?? (mode === "survival"
       ? "Unit ID\tGroup\tFollow-up time\tStatus\nmouse-1\tControl\t4\tEvent\nmouse-2\tControl\t7\tCensored\nmouse-3\tTreatment\t6\tEvent\nmouse-4\tTreatment\t9\tCensored"
-      : "Feature\tSample 1\tSample 2\tSample 3\nProtein A\t1\t2\tNA\nProtein B\t3\t5\t8",
+      : "Feature\tSample 1\tSample 2\tSample 3\nProtein A\t1\t2\tNA\nProtein B\t3\t5\t8"),
   );
   const [transform, setTransform] = useState<HeatmapTransform>("none");
   const [rangeMin, setRangeMin] = useState("");
@@ -161,7 +166,7 @@ export function SpecializedCorePage({
   const createSurvivalState = () => {
     if (!survival || "error" in survival) throw new Error("有効なsurvival表を入力してください");
     const createdAt = now();
-    const design: ExperimentDesign = {
+    const legacyDesign: ExperimentDesign = {
       schemaVersion: "0.2.0",
       id: "design.survival",
       name: "Survival analysis",
@@ -217,9 +222,13 @@ export function SpecializedCorePage({
       wizardDecisions: [{ questionId: "survival.censoring", answer: "explicit_event_status" }],
       createdAt,
     };
+    const design = adaptiveInput
+      ? projectContractToExperimentDesign(adaptiveInput.contract, Math.max(...survival.conditions.map(({ id }) => survival.rows.filter((row) => row.conditionId === id).length)), createdAt)
+      : legacyDesign;
+    const outcomeId = design.outcomes[0]!.id;
     const units: UnitInstance[] = survival.rows.map((row) => ({
       id: row.unitId,
-      levelId: "level.unit",
+      levelId: design.experimentalUnitLevelId,
       parentUnitId: null,
       label: row.unitId,
       metadata: row.metadata,
@@ -229,7 +238,7 @@ export function SpecializedCorePage({
       rawRevisionId: "raw.1",
       unitInstanceId: row.unitId,
       conditionId: row.conditionId,
-      outcomeId: "outcome.survival",
+      outcomeId,
       measurement: {
         kind: "time_to_event",
         followUpTime: row.followUpTime,
@@ -243,7 +252,7 @@ export function SpecializedCorePage({
       design,
       observations,
       unitInstances: units,
-      outcomeId: "outcome.survival",
+      outcomeId,
     });
     return { createdAt, design, units, observations, request };
   };
@@ -299,8 +308,7 @@ export function SpecializedCorePage({
           analysisResultId: result.requestId,
           timeLabel: "Follow-up time",
         });
-        await saveProject(
-          createInitialProjectState({
+        const survivalState = createInitialProjectState({
             metadata: {
               projectId: "project.survival",
               projectName: "Survival analysis",
@@ -320,8 +328,8 @@ export function SpecializedCorePage({
             observations: prepared.observations,
             actor: "researcher",
             analysis: { recommendation, request: prepared.request, result, graphSpec: spec },
-          }),
-        );
+          });
+        await saveProject(adaptiveInput ? ProjectStateSchema.parse({ ...survivalState, adaptiveInput }) : survivalState);
       } else {
         if (!heatmap || "error" in heatmap) throw new Error("有効なmatrixを入力してください");
         const createdAt = now();

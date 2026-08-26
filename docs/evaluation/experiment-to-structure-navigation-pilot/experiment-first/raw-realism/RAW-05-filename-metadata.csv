@@ -1,0 +1,5 @@
+FileName,ObjectID,MeanIntensity,Area_px,QC
+20260820_Dish07_DrugO_T15m_F03_C002.tif,2,188.4,241,pass
+20260820_Dish07_DrugO_T00m_F01_C001.tif,1,122.1,233,pass
+20260820_Dish08_Vehicle_T15m_F02_C004.tif,4,130.7,219,blur
+20260820_Dish07_DrugO_T15m_F03_C001.tif,1,181.2,252,pass

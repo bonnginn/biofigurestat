@@ -1,0 +1,6 @@
+Image,Label,Area,Mean,Min,Max,X,Y,Slice
+D01_Vehicle_F02.tif,cell_003,148.2,121.7,82,188,245.1,118.3,1
+D01_Vehicle_F01.tif,cell_001,132.4,115.2,76,174,105.4,90.2,1
+D02_DrugO_F01.tif,cell_002,156.8,139.1,91,205,188.0,77.6,1
+D01_Vehicle_F01.tif,cell_002,141.9,119.6,80,181,151.2,92.5,1
+D02_DrugO_F01.tif,cell_001,162.5,144.8,94,213,109.7,74.1,1

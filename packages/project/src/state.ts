@@ -6,6 +6,7 @@ import {
 } from "@lsaa/analysis-contracts";
 import {
   EntityIdSchema,
+  AdaptiveInputSnapshotSchema,
   DerivedDatasetRevisionSchema,
   DerivedScalarValueSchema,
   ExperimentDesignSchema,
@@ -190,6 +191,7 @@ export const ExperimentWorkspaceStateSchema = z
         transformations: z.array(z.string()).optional(),
       })
       .optional(),
+    adaptiveInput: AdaptiveInputSnapshotSchema.nullable().optional(),
     notPlannedCellKeys: z.array(z.string().min(1)).default([]),
     graphs: z.array(
       z.object({
@@ -637,6 +639,7 @@ export const ProjectStateSchema = z
     graphs: z.array(PersistedGraphSchema),
     matrixViews: z.array(PersistedMatrixViewSchema).optional(),
     experimentWorkspace: ExperimentWorkspaceStateSchema.nullable().default(null),
+    adaptiveInput: AdaptiveInputSnapshotSchema.nullable().optional(),
     provenanceEvents: z.array(ProvenanceEventSchema).min(1),
   })
   .superRefine((state, ctx) => {
@@ -1034,6 +1037,16 @@ export const ProjectStateSchema = z
       const activeDesign = state.designRevisions.find(
         (revision) => revision.id === state.activeDesignRevisionId,
       )?.design;
+      if (workspace.adaptiveInput) {
+        if (workspace.adaptiveInput.equivalence.status !== "equivalent") {
+          ctx.addIssue({ code: "custom", path: ["experimentWorkspace", "adaptiveInput", "equivalence"], message: "Adaptive input cannot be persisted with a failed dual-write equivalence assertion" });
+        }
+        if (!activeDesign?.adaptiveStructure) {
+          ctx.addIssue({ code: "custom", path: ["experimentWorkspace", "adaptiveInput"], message: "Adaptive input requires the active design dual-write companion" });
+        } else if (JSON.stringify(activeDesign.adaptiveStructure.contract) !== JSON.stringify(workspace.adaptiveInput.contract)) {
+          ctx.addIssue({ code: "custom", path: ["experimentWorkspace", "adaptiveInput", "contract"], message: "Adaptive input and active design contracts differ" });
+        }
+      }
       const conditionIds = new Set(activeDesign?.conditions.map(({ id }) => id) ?? []);
       const outcomeIds = new Set(activeDesign?.outcomes.map(({ id }) => id) ?? []);
       const timePointIds = new Set(workspace.timePlan.points.map(({ id }) => id));
@@ -1156,6 +1169,11 @@ export const ProjectStateSchema = z
         });
       });
     }
+    if (state.adaptiveInput) {
+      const activeDesign = state.designRevisions.find((revision) => revision.id === state.activeDesignRevisionId)?.design;
+      if (state.adaptiveInput.equivalence.status !== "equivalent") ctx.addIssue({ code: "custom", path: ["adaptiveInput", "equivalence"], message: "Top-level adaptive snapshot requires equivalent dual-write state" });
+      if (!activeDesign?.adaptiveStructure || JSON.stringify(activeDesign.adaptiveStructure.contract) !== JSON.stringify(state.adaptiveInput.contract)) ctx.addIssue({ code: "custom", path: ["adaptiveInput", "contract"], message: "Top-level adaptive contract must match the active design" });
+    }
   });
 
 export type ProjectState = z.infer<typeof ProjectStateSchema>;
@@ -1170,6 +1188,7 @@ export function migrateProjectState(input: unknown): unknown {
       ...record,
       schemaVersion: PROJECT_STATE_SCHEMA_VERSION,
       experimentWorkspace: null,
+      adaptiveInput: null,
     };
   }
   return input;
@@ -1247,6 +1266,7 @@ export function createInitialProjectState(input: CreateInitialProjectStateInput)
         : [],
     matrixViews: [],
     experimentWorkspace: null,
+    adaptiveInput: null,
     provenanceEvents: [
       {
         id: `provenance.${input.metadata.projectId}.created`,

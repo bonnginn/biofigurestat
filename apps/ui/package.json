@@ -13,6 +13,7 @@
     "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
+    "@lsaa/adaptive-input": "workspace:*",
     "@lsaa/analysis-contracts": "workspace:*",
     "@lsaa/data-sheet": "workspace:*",
     "@lsaa/domain": "workspace:*",

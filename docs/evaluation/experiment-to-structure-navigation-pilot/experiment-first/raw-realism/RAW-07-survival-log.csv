@@ -1,0 +1,5 @@
+AnimalID,Arm,StartDate,LastSeenDate,EndpointDate,Status,Reason,Operator
+M04,DrugW,2026-06-01,2026-07-10,,0,study_end,KT
+M01,Vehicle,2026-06-01,2026-06-22,2026-06-22,1,tumor_size,AM
+M03,DrugW,2026-06-01,2026-07-02,2026-07-02,1,ulceration,KT
+M02,Vehicle,2026-06-01,2026-06-18,2026-06-18,1,weight_loss,AM
