@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react";
+import { useLayoutEffect, useState, type KeyboardEvent } from "react";
 
 import type {
   ConditionAttributeDraft,
@@ -43,9 +43,11 @@ type NewExperimentPageProps = {
   saveProject?: SaveProjectAction;
   analysisRunner?: AnalysisRunner;
   browserPreview?: boolean;
+  analysisAvailable?: boolean;
   initialDraft?: ExperimentSetDraft | null;
   favoriteGraphDefaults?: readonly FavoriteGraphDefault[];
   onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
+  onDirtyChange?: (dirty: boolean) => void;
   onAdaptiveSurvivalReady?: (text: string, snapshot: AdaptiveInputSnapshot) => void;
 };
 
@@ -119,6 +121,7 @@ type ExperimentEntryRoute = Readonly<{
   correlation?: boolean;
   longitudinal?: boolean;
   singleCohort?: boolean;
+  destination?: AppRoute;
 }>;
 
 export const ENTRY_ROUTES: Readonly<
@@ -142,6 +145,13 @@ export const ENTRY_ROUTES: Readonly<
       title: "その他の培養アッセイ",
       description: "培養単位から得たその他の数値",
       shape: "nested_continuous",
+    },
+    {
+      id: "cell_time_to_event",
+      title: "Cellのevent発生までの時間",
+      description: "死滅、分裂、発症などを追跡し、観察終了時の打ち切りも記録",
+      shape: "nested_continuous",
+      destination: "survival",
     },
   ],
   microscopy_imaging: [
@@ -197,6 +207,13 @@ export const ENTRY_ROUTES: Readonly<
       shape: "nested_continuous",
     },
     {
+      id: "protein_kinetic_fit",
+      title: "時間・濃度に対する反応曲線",
+      description: "観測したX/Yと、選択したmodelによる非線形fit",
+      shape: "nested_continuous",
+      destination: "nonlinear-fit",
+    },
+    {
       id: "protein_other",
       title: "その他の数値測定",
       description: "生化学アッセイの数値",
@@ -223,6 +240,13 @@ export const ENTRY_ROUTES: Readonly<
       description: "同じ個体を複数時点で追跡",
       shape: "nested_continuous",
       longitudinal: true,
+    },
+    {
+      id: "animal_time_to_event",
+      title: "humane endpoint・eventまでの期間",
+      description: "個体を追跡し、eventと観察終了時の打ち切りを記録",
+      shape: "nested_continuous",
+      destination: "survival",
     },
     {
       id: "animal_proportion",
@@ -257,6 +281,20 @@ export const ENTRY_ROUTES: Readonly<
       title: "連続値",
       description: "条件ごとの数値を入力",
       shape: "nested_continuous",
+    },
+    {
+      id: "general_time_to_event",
+      title: "event発生までの時間",
+      description: "対象を追跡し、eventまたは打ち切りまでの時間を入力",
+      shape: "nested_continuous",
+      destination: "survival",
+    },
+    {
+      id: "general_nonlinear_fit",
+      title: "Xに対する非線形な応答",
+      description: "観測したX/Yと、明示したmodelによるfit",
+      shape: "nested_continuous",
+      destination: "nonlinear-fit",
     },
     {
       id: "general_proportion",
@@ -413,6 +451,26 @@ function withSessionCount(
   ];
 }
 
+function matchedUnitLabel(unitLabel: string, index: number): string {
+  return `${unitLabel.trim() || "対応単位"} ${index + 1}`;
+}
+
+function acceptSingleClick(detail: number): boolean {
+  return detail <= 1;
+}
+
+function asMatchedUnits(draft: ExperimentSetDraft): ExperimentSetDraft {
+  return {
+    ...draft,
+    conditionAssignment: { ...draft.conditionAssignment, kind: "matched" },
+    experiments: draft.experiments.map((session, index) => ({
+      ...session,
+      label: matchedUnitLabel(draft.conditionAssignment.unitLabel, index),
+      stableUnitId: session.stableUnitId || `unit.${index + 1}`,
+    })),
+  };
+}
+
 function Stepper({
   activeStep,
   steps,
@@ -443,7 +501,7 @@ function Stepper({
               aria-current={step === activeStep ? "step" : undefined}
               aria-label={`${index + 1}. ${label}`}
               disabled={!enabled}
-              onClick={() => onSelect(step)}
+              onClick={(event) => acceptSingleClick(event.detail) && onSelect(step)}
             >
               <span className="experiment-start__step-number">{index + 1}</span>
               <span>{label}</span>
@@ -493,7 +551,11 @@ function ContextStart({
             <p className="experiment-start__eyebrow">{CONTEXT_LABELS[selectedContext]}</p>
             <h2 id="entry-route-heading">今回、主に何を解析しましたか？</h2>
           </div>
-          <button className="secondary-button" type="button" onClick={onContextBack}>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={(event) => acceptSingleClick(event.detail) && onContextBack()}
+          >
             種類を戻す
           </button>
         </div>
@@ -502,17 +564,19 @@ function ContextStart({
         </p>
         <div className="experiment-start__entry-route-grid">
           {ENTRY_ROUTES[selectedContext].map((route) => (
-            <button key={route.id} type="button" onClick={() => onRouteSelect(route)}>
+            <button
+              key={route.id}
+              type="button"
+              onClick={(event) => acceptSingleClick(event.detail) && onRouteSelect(route)}
+            >
               <strong>{route.title}</strong>
               <span>{route.description}</span>
             </button>
           ))}
         </div>
-        {selectedContext === "animal" ? (
-          <p className="experiment-start__context-note">
-            生存時間・発症までの時間は別の解析族です。この段階では通常の連続値へ変換しません。
-          </p>
-        ) : null}
+        <p className="experiment-start__context-note">
+          eventまでの時間や反応曲線も、この実験分野から選べます。入力時にidentityと観測構造を確認します。
+        </p>
       </section>
     );
   }
@@ -526,7 +590,7 @@ function ContextStart({
         <div className="experiment-start__section-heading">
           <div>
             <p className="experiment-start__eyebrow">
-              {browserPreview ? "Phase A · 手動フロー" : "最初の質問"}
+              {browserPreview ? "実験内容から始める" : "最初の質問"}
             </p>
             <h2 id="context-heading">どのような実験ですか？</h2>
           </div>
@@ -540,7 +604,9 @@ function ContextStart({
               disabled={!option.available}
               key={option.id}
               type="button"
-              onClick={() => option.available && onSelect(option.id)}
+              onClick={(event) =>
+                acceptSingleClick(event.detail) && option.available && onSelect(option.id)
+              }
             >
               <span className={`experiment-start__context-icon context-icon--${index + 1}`}>
                 {index + 1}
@@ -549,9 +615,9 @@ function ContextStart({
                 <span className="experiment-start__context-title">{option.title}</span>
                 <span className="experiment-start__context-description">{option.description}</span>
               </span>
-              <span className="experiment-start__context-status">
-                {option.available ? "利用可能" : "準備中"}
-              </span>
+              {!option.available ? (
+                <span className="experiment-start__context-status">準備中</span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -569,7 +635,7 @@ function ContextStart({
         >
           <div>
             <p className="experiment-start__eyebrow">
-              {browserPreview ? "Phase B · 詳細確認用" : "5分で試す"}
+              {browserPreview ? "合成データで試す" : "5分で試す"}
             </p>
             <h2 id="demo-heading">合成デモデータですぐ試す</h2>
             <p>
@@ -580,7 +646,11 @@ function ContextStart({
           </div>
           <div className="experiment-start__demo-options">
             {fiveMinuteDemos.map((fixture) => (
-              <button key={fixture.id} type="button" onClick={() => onDemoSelect(fixture)}>
+              <button
+                key={fixture.id}
+                type="button"
+                onClick={(event) => acceptSingleClick(event.detail) && onDemoSelect(fixture)}
+              >
                 <strong>{fixture.title}</strong>
                 <span>{fixture.description}</span>
               </button>
@@ -591,7 +661,11 @@ function ContextStart({
               <summary>ほかの合成デモを見る</summary>
               <div className="experiment-start__demo-options">
                 {additionalDemos.map((fixture) => (
-                  <button key={fixture.id} type="button" onClick={() => onDemoSelect(fixture)}>
+                  <button
+                    key={fixture.id}
+                    type="button"
+                    onClick={(event) => acceptSingleClick(event.detail) && onDemoSelect(fixture)}
+                  >
                     <strong>{fixture.title}</strong>
                     <span>{fixture.description}</span>
                   </button>
@@ -603,13 +677,17 @@ function ContextStart({
       ) : null}
       <section className="experiment-start__specialized" aria-labelledby="specialized-heading">
         <details>
-          <summary id="specialized-heading">特殊データ・解析から始める</summary>
-          <p>
-            生存時間、行列、カテゴリ集計など、通常の実験設計とは入力構造が異なるデータはこちらから始めます。
-          </p>
+          <summary id="specialized-heading">既存の解析用データを直接入力する</summary>
+          <p>実験分野を選ばず、整形済みの表や行列を直接入力したい場合の補助入口です。</p>
           <div className="experiment-start__entry-route-grid">
             {specializedAnalysisRoutes.map((route) => (
-              <button key={route.id} type="button" onClick={() => onSpecializedNavigate(route.id)}>
+              <button
+                key={route.id}
+                type="button"
+                onClick={(event) =>
+                  acceptSingleClick(event.detail) && onSpecializedNavigate(route.id)
+                }
+              >
                 <strong>{route.title}</strong>
                 <span>{route.description}</span>
               </button>
@@ -1503,12 +1581,7 @@ function TimeStep({
               checked={draft.conditionAssignment.kind === "matched"}
               name="condition-assignment"
               type="radio"
-              onChange={() =>
-                onUpdate((current) => ({
-                  ...current,
-                  conditionAssignment: { ...current.conditionAssignment, kind: "matched" },
-                }))
-              }
+              onChange={() => onUpdate(asMatchedUnits)}
             />
             <span>
               <strong>同じ単位を条件間で測った</strong>
@@ -1530,6 +1603,10 @@ function TimeStep({
                     ...current.conditionAssignment,
                     unitLabel: event.target.value,
                   },
+                  experiments: current.experiments.map((session, index) => ({
+                    ...session,
+                    label: matchedUnitLabel(event.target.value, index),
+                  })),
                 }))
               }
             />
@@ -1742,6 +1819,8 @@ function ExperimentsStep({
   draft: ExperimentSetDraft;
   onUpdate: (updater: (current: ExperimentSetDraft) => ExperimentSetDraft) => void;
 }) {
+  const matched = draft.conditionAssignment.kind === "matched";
+  const unitLabel = draft.conditionAssignment.unitLabel.trim() || "対応単位";
   const updateSession = (sessionId: string, patch: Partial<ExperimentSessionDraft>) => {
     onUpdate((current) => ({
       ...current,
@@ -1756,43 +1835,75 @@ function ExperimentsStep({
       <div className="experiment-start__section-heading">
         <div>
           <p className="experiment-start__eyebrow">実験設計</p>
-          <h2 id="experiments-heading">実験回を登録してください</h2>
+          <h2 id="experiments-heading">
+            {matched ? `測定した${unitLabel}を登録してください` : "実験回を登録してください"}
+          </h2>
         </div>
-        <span className="experiment-start__hint">実験回ごとに日付を記録します</span>
+        <span className="experiment-start__hint">
+          {matched ? "同じidentityを条件間で保持します" : "実験回ごとに日付を記録します"}
+        </span>
       </div>
       <p className="experiment-start__helper">
-        別の日に行った実験は別の実験回にします。回数はあとでも増減できます。
+        {matched
+          ? `ここでは実験日数ではなく、両条件で追跡した${unitLabel}の数を登録します。各${unitLabel}には固有IDを付け、条件名とは分けて保存します。`
+          : "別の日に行った実験は別の実験回にします。回数はあとでも増減できます。"}
       </p>
       <label className="experiment-start__field experiment-start__experiment-count">
-        <span>実験回数</span>
+        <span>{matched ? `${unitLabel}の数` : "実験回数"}</span>
         <input
-          aria-label="実験回数"
+          aria-label={matched ? `${unitLabel}の数` : "実験回数"}
           max={12}
           min={1}
           type="number"
           value={draft.experiments.length}
           onChange={(event) =>
-            onUpdate((current) => ({
-              ...current,
-              experiments: withSessionCount(current.experiments, Number(event.target.value)),
-            }))
+            onUpdate((current) => {
+              const sessions = withSessionCount(current.experiments, Number(event.target.value));
+              return {
+                ...current,
+                experiments: matched
+                  ? sessions.map((session, index) => ({
+                      ...session,
+                      label: matchedUnitLabel(unitLabel, index),
+                      stableUnitId: session.stableUnitId || `unit.${index + 1}`,
+                    }))
+                  : sessions,
+              };
+            })
           }
         />
       </label>
+      {matched && draft.experiments.length > 1 ? (
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={() =>
+            onUpdate((current) => ({
+              ...current,
+              experiments: current.experiments.map((session) => ({
+                ...session,
+                date: current.experiments[0]?.date ?? session.date,
+              })),
+            }))
+          }
+        >
+          先頭の測定日をすべてに適用
+        </button>
+      ) : null}
       <div className="experiment-start__experiment-list">
         {draft.experiments.map((session, index) => (
           <div className="experiment-start__experiment-row" key={session.id}>
             <span className="experiment-start__experiment-index">{index + 1}</span>
             <label className="experiment-start__field">
-              <span>実験回の名前</span>
+              <span>{matched ? `${unitLabel} ID` : "実験回の名前"}</span>
               <input
-                aria-label={`実験回${index + 1}の名前`}
+                aria-label={matched ? `${unitLabel} ${index + 1}のID` : `実験回${index + 1}の名前`}
                 value={session.label}
                 onChange={(event) => updateSession(session.id, { label: event.target.value })}
               />
             </label>
             <label className="experiment-start__field experiment-start__field--date">
-              <span>実験日</span>
+              <span>{matched ? "測定日" : "実験日"}</span>
               <input
                 aria-label={`${session.label || `実験回${index + 1}`}の実験日`}
                 type="date"
@@ -1956,12 +2067,15 @@ export function NewExperimentPage({
   saveProject,
   analysisRunner = defaultAnalysisRunner,
   browserPreview = false,
+  analysisAvailable = true,
   initialDraft = null,
   favoriteGraphDefaults,
   onSaveFavorite,
+  onDirtyChange,
   onAdaptiveSurvivalReady,
 }: NewExperimentPageProps) {
-  const evaluationPreview = browserPreview && evaluationModeIsConfigured(evaluationMode);
+  const evaluationPreview =
+    import.meta.env.DEV && browserPreview && evaluationModeIsConfigured(evaluationMode);
   const [stage, setStage] = useState<FlowStage>(initialDraft ? "confirmation" : "context");
   const [designStep, setDesignStep] = useState<DesignStep>(0);
   const [furthestStep, setFurthestStep] = useState<FlowStep>(initialDraft ? 4 : 0);
@@ -1972,6 +2086,10 @@ export function NewExperimentPage({
     "existing_data"
   > | null>(null);
   const flowSteps = draft ? flowStepsFor(draft) : ([0, 1, 2, 3, 4] as const);
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [stage]);
 
   const updateDraft = (updater: (current: ExperimentSetDraft) => ExperimentSetDraft) => {
     setDraft((current) => (current ? updater(current) : current));
@@ -1989,6 +2107,10 @@ export function NewExperimentPage({
 
   const selectEntryRoute = (route: ExperimentEntryRoute) => {
     if (!selectedContext) return;
+    if (route.destination) {
+      onNavigate(route.destination);
+      return;
+    }
     const nextDraft = createDraftForEntryRoute(selectedContext, route);
     setDraft(
       browserPreview
@@ -2114,9 +2236,11 @@ export function NewExperimentPage({
         initialDraft={withActiveConditions(draft)}
         initialCells={fixtureCells}
         analysisRunner={analysisRunner}
+        analysisAvailable={analysisAvailable}
         saveProject={saveProject}
         favoriteGraphDefaults={favoriteGraphDefaults}
         onSaveFavorite={onSaveFavorite}
+        onDirtyChange={onDirtyChange}
         onBack={() => (fixtureCells ? goBackToContext() : setStage("confirmation"))}
       />
     );
@@ -2127,7 +2251,11 @@ export function NewExperimentPage({
       <button
         className="back-link"
         type="button"
-        onClick={() => (stage === "context" ? onNavigate("home") : goBackToContext())}
+        onClick={(event) => {
+          if (!acceptSingleClick(event.detail)) return;
+          if (stage === "context") onNavigate("home");
+          else goBackToContext();
+        }}
       >
         <span aria-hidden="true">←</span>{" "}
         {stage === "context" ? "ワークスペースに戻る" : "実験の種類を変更"}
@@ -2238,13 +2366,15 @@ export function NewExperimentPage({
             <button
               className="secondary-button"
               type="button"
-              onClick={() =>
-                designStep === flowSteps[0]
-                  ? goBackToContext()
-                  : setDesignStep(
-                      flowSteps[Math.max(0, flowSteps.indexOf(designStep) - 1)] as DesignStep,
-                    )
-              }
+              onClick={(event) => {
+                if (!acceptSingleClick(event.detail)) return;
+                if (designStep === flowSteps[0]) goBackToContext();
+                else {
+                  setDesignStep(
+                    flowSteps[Math.max(0, flowSteps.indexOf(designStep) - 1)] as DesignStep,
+                  );
+                }
+              }}
             >
               戻る
             </button>
@@ -2252,7 +2382,7 @@ export function NewExperimentPage({
               className="primary-button primary-button--ready"
               disabled={!canAdvance()}
               type="button"
-              onClick={advance}
+              onClick={(event) => acceptSingleClick(event.detail) && advance()}
             >
               {designStep === 3 ? "設計を確認" : "次へ"}
             </button>

@@ -157,7 +157,7 @@ export function createSimpleIndependentContinuousFixture(): SyntheticFixture {
   return {
     id: "simple_independent_continuous",
     title: "Simple 3群（連続値）",
-    description: "3実験回・3独立群の連続値。Internal Alphaの最初の確認用です。",
+    description: "3実験回・3独立群の連続値。基本操作を短時間で確認できます。",
     draft,
     cells,
   };
@@ -412,7 +412,7 @@ export function createInternalAlphaCoreFixture(): SyntheticFixture {
     sessionId: "session.internal-alpha.1",
     stableUnitId: `unit.internal-alpha.${index + 1}`,
     date: "2026-08-22",
-    note: "合成デモ・Internal Alpha保存確認",
+    note: "合成デモ・保存再開確認",
   }));
   const conditions = ["Control", "Stimulated"].map((label, index) => ({
     id: `condition.alpha.${index + 1}`,
@@ -428,7 +428,7 @@ export function createInternalAlphaCoreFixture(): SyntheticFixture {
     version: "0.1.0",
     dataOrigin: "synthetic_demo",
     context: "cell_culture",
-    name: "合成デモ：Internal Alpha Core",
+    name: "合成デモ：保存・再開確認",
     readouts: [
       { id: "readout.alpha.proportion", label: "Marker X陽性率", shape: "proportion" },
       {
@@ -471,7 +471,7 @@ export function createInternalAlphaCoreFixture(): SyntheticFixture {
   });
   return {
     id: "internal_alpha_core",
-    title: "Internal Alpha Core確認",
+    title: "保存・再開の確認",
     description: "4安定単位・2条件・4時点・2測定項目。保存再開を短時間で確認します。",
     draft,
     cells,
@@ -562,7 +562,8 @@ export function createPairedTwoConditionFixture(): SyntheticFixture {
   const draft: ExperimentSetDraft = {
     version: "0.1.0",
     dataOrigin: "synthetic_demo",
-    context: "cell_culture",
+    context: "animal",
+    entryRoute: "animal_numeric",
     name: "合成デモ：同じ個体の2条件比較",
     readouts: [{ id: "readout.paired.proportion", label: "Responder割合", shape: "proportion" }],
     attributes: [{ id: "attribute.phase", label: "条件" }],

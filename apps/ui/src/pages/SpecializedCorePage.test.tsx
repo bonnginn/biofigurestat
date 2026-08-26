@@ -10,6 +10,17 @@ vi.mock("../app/benchmarkEvaluation", async (importOriginal) => ({
 }));
 
 describe("specialized Core entry pages", () => {
+  it("browser previewでは利用できないproject保存をdisabledで示す", () => {
+    render(<SpecializedCorePage mode="survival" onBack={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
+  });
+
+  it("ブラウザレビューでengine未接続ならsurvival実行をdisabledで説明する", () => {
+    render(<SpecializedCorePage mode="survival" onBack={vi.fn()} analysisAvailable={false} />);
+    expect(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeDisabled();
+    expect(screen.getByText(/ブラウザレビューでは解析エンジンを実行できません/)).toBeVisible();
+  });
+
   it("shows a matrix paste as a heatmap and keeps an explicit transform control", () => {
     render(<SpecializedCorePage mode="heatmap" onBack={vi.fn()} />);
     expect(screen.getByRole("img", { name: "Heatmap" })).toBeVisible();

@@ -20,6 +20,7 @@ import { PRODUCT_IDENTITY } from "../../app/productIdentity";
 type GraphStatisticsPanelProps = Readonly<{
   assessment: DraftAnalysisAssessment;
   analysisRunner: AnalysisRunner;
+  analysisAvailable?: boolean;
   initialAnalysis?: WorkspaceGraphAnalysis | null;
   onAnalysisChange?: (analysis: WorkspaceGraphAnalysis | null) => void;
   methodsText?: string | null;
@@ -93,6 +94,7 @@ function diagnosticLabel(code: string): string {
 export function GraphStatisticsPanel({
   assessment,
   analysisRunner,
+  analysisAvailable = true,
   initialAnalysis,
   onAnalysisChange,
   methodsText,
@@ -323,7 +325,13 @@ export function GraphStatisticsPanel({
   ]);
 
   const run = async () => {
-    if (!assessment.request || !independenceConfirmed || plannedComparisonsMissing) return;
+    if (
+      !analysisAvailable ||
+      !assessment.request ||
+      !independenceConfirmed ||
+      plannedComparisonsMissing
+    )
+      return;
     if (!recommendationDecision && assessment.recommendedMethod) {
       const decision = {
         kind: "accepted" as const,
@@ -344,6 +352,13 @@ export function GraphStatisticsPanel({
       : [];
   const diagnosticItems =
     result?.status === "ok" ? [...result.diagnostics, ...result.warnings] : [];
+  const humanMethodLabel = (method: string | null | undefined) =>
+    assessment.methodChoices?.find((choice) => choice.method === method)?.label ??
+    (method === "pearson"
+      ? "Pearson相関"
+      : method === "spearman"
+        ? "Spearman順位相関"
+        : assessment.title.replace(/を推奨$/, ""));
 
   return (
     <section className="experiment-graph-statistics-section" aria-label="このグラフの統計">
@@ -559,8 +574,8 @@ export function GraphStatisticsPanel({
               <p>
                 {recommendationDecision
                   ? recommendationDecision.kind === "accepted"
-                    ? `推奨法を選択中：${recommendationDecision.selectedMethod}。別の方法を選ぶと上書き理由を記録します。`
-                    : `推奨法を上書きし、${recommendationDecision.selectedMethod}を選択しました。`
+                    ? `推奨法を選択中：${humanMethodLabel(recommendationDecision.selectedMethod)}。別の方法を選ぶと上書き理由を記録します。`
+                    : `推奨法を上書きし、${humanMethodLabel(recommendationDecision.selectedMethod)}を選択しました。`
                   : "選択中の解析法は実行時にprovenanceへ記録します。"}
               </p>
             </div>
@@ -568,34 +583,53 @@ export function GraphStatisticsPanel({
           <label className="experiment-graph-confirmation">
             <input
               type="checkbox"
+              aria-label={
+                assessment.request?.protocolVersion === "0.9.0"
+                  ? `各値が別々の${assessment.nByCondition[0]?.label ?? "実験単位"}から得られ、1つの実験単位が複数回数えられていません。`
+                  : correlationAnalysis
+                    ? "各行のXとYが、同じ実験単位から得た1組として正しく対応づけられています。"
+                    : matchedAnalysis
+                      ? `同じ実験単位の${conditionOptions.length || "複数"}条件が、stable unit IDで正しく対応づけられています。`
+                      : "各条件は別々のdish・試料・動物などの実験単位です。同じ個体や同じ試料を両条件で測った対応データではありません。"
+              }
               checked={independenceConfirmed}
               onChange={(event) => setIndependenceConfirmed(event.target.checked)}
             />
             <span>
               {assessment.request?.protocolVersion === "0.9.0"
-                ? `各値が別々の${assessment.nByCondition[0]?.label ?? "実験単位"}から得られ、1つの実験単位が複数回数えられていません。`
+                ? "解析単位と入力値の対応を確認しました。"
                 : correlationAnalysis
-                  ? "各行のXとYが、同じ実験単位から得た1組として正しく対応づけられています。"
+                  ? "XとYの組を確認しました。"
                   : matchedAnalysis
-                    ? `同じ実験単位の${conditionOptions.length || "複数"}条件が、入力シート上で同じ実験回として正しく対応づけられています。`
-                    : "各条件は別々のdish・試料・動物などの実験単位です。同じ個体や同じ試料を両条件で測った対応データではありません。"}
+                    ? "同じ実験単位の対応を確認しました。"
+                    : "条件間で実験単位が独立していることを確認しました。"}
             </span>
           </label>
-          <p className="experiment-graph-help">
-            {correlationAnalysis
-              ? "XとYは同じExpの安定IDで対応づけます。行順や日付の一致だけから組を作りません。"
-              : matchedAnalysis
-                ? "日付の一致から対応を推測していません。実験設計で明示した対応と、完全な組だけを解析します。"
-                : "同じ日に実施しただけでは、自動的に「対応あり」にはしません。同じ単位を両条件で測った場合は実行せず、設計を修正してください。"}
-          </p>
+          <details className="experiment-graph-confirmation-details">
+            <summary>確認内容の詳細</summary>
+            <p className="experiment-graph-help">
+              {correlationAnalysis
+                ? "XとYは同じExpの安定IDで対応づけます。行順や日付の一致だけから組を作りません。"
+                : matchedAnalysis
+                  ? "日付の一致から対応を推測していません。実験設計で明示した対応と、完全な組だけを解析します。"
+                  : "同じ日に実施しただけでは、自動的に「対応あり」にはしません。同じ単位を両条件で測った場合は実行せず、設計を修正してください。"}
+            </p>
+          </details>
           <button
             className="experiment-graph-run-analysis"
             type="button"
-            disabled={!independenceConfirmed || plannedComparisonsMissing || running}
+            disabled={
+              !analysisAvailable || !independenceConfirmed || plannedComparisonsMissing || running
+            }
             onClick={run}
           >
             {running ? "ローカルで解析中…" : "選択した解析を実行"}
           </button>
+          {!analysisAvailable ? (
+            <p className="experiment-graph-help" role="note">
+              このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
+            </p>
+          ) : null}
         </>
       ) : null}
 
@@ -690,7 +724,7 @@ export function GraphStatisticsPanel({
             <dl>
               <div>
                 <dt>検定・モデル</dt>
-                <dd>{assessment.method ?? "—"}</dd>
+                <dd>{humanMethodLabel(assessment.method)}</dd>
               </div>
               <div>
                 <dt>エンジン</dt>

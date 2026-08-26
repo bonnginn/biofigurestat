@@ -48,6 +48,106 @@
   color: #617181;
 }
 
+.specialized-analysis-page {
+  width: min(1180px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+.specialized-workspace-panel {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+  padding: clamp(20px, 3vw, 32px);
+}
+
+.specialized-workspace-panel > h1,
+.specialized-workspace-panel > p {
+  margin: 0;
+}
+
+.specialized-workspace-panel > textarea,
+.specialized-workspace-panel textarea {
+  width: 100%;
+  min-height: 180px;
+  padding: 12px 14px;
+  border: 1px solid #cbd7e3;
+  border-radius: 9px;
+  color: #263445;
+  background: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.specialized-workspace-panel > label,
+.specialized-workspace-panel label:not(.graph-inspector-checkbox) {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-weight: 650;
+}
+
+.specialized-workspace-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+.specialized-workspace-panel select {
+  min-height: 40px;
+  padding: 7px 10px;
+  border: 1px solid #cbd7e3;
+  border-radius: 8px;
+  color: #263445;
+  background: #fff;
+}
+
+.specialized-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  padding: 16px;
+  border: 1px solid #dbe4ee;
+  border-radius: 11px;
+  background: #f8fafc;
+}
+
+.specialized-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  align-items: center;
+  padding-top: 4px;
+}
+
+.specialized-action-bar button,
+.specialized-workspace-panel > button {
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid #c5d2df;
+  border-radius: 8px;
+  color: #36536f;
+  background: #f7fafc;
+  cursor: pointer;
+  font-weight: 720;
+}
+
+.specialized-action-bar button:disabled,
+.specialized-workspace-panel > button:disabled {
+  color: #929daa;
+  background: #f1f3f5;
+  cursor: not-allowed;
+}
+
+.specialized-engine-note {
+  padding: 9px 12px;
+  border-left: 3px solid #7a8da5;
+  color: #526276;
+  background: #f4f7fa;
+}
+
+.specialized-workspace-panel > svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
 .nonlinear-fit-settings {
   display: grid;
   gap: 14px;
@@ -90,6 +190,12 @@
 .nonlinear-fit-series-result table {
   width: 100%;
   border-collapse: collapse;
+}
+
+.nonlinear-fit-parameter-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
 }
 
 .nonlinear-fit-parameter-inputs th,
@@ -155,6 +261,28 @@
   .nonlinear-fit-diagnostics {
     grid-template-columns: 1fr;
   }
+
+  .specialized-analysis-page {
+    width: min(100% - 20px, 1180px);
+  }
+
+  .specialized-settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .specialized-workspace-panel {
+    padding: 16px;
+  }
+
+  .specialized-workspace-panel table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .specialized-action-bar > * {
+    max-width: 100%;
+  }
 }
 
 * {
@@ -198,50 +326,6 @@ button:focus-visible {
   color: #5f4815;
   background: #fff7d9;
   font-size: 1rem;
-}
-
-.benchmark-run-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-  align-items: end;
-  padding: 0.55rem 1.5rem;
-  border-bottom: 1px solid #c9d7e8;
-  background: #eef6ff;
-}
-
-.benchmark-run-bar label {
-  display: grid;
-  gap: 0.15rem;
-  min-width: 8rem;
-}
-
-.benchmark-run-bar label span {
-  color: #52657d;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.benchmark-run-bar input,
-.benchmark-run-bar select,
-.benchmark-run-bar button {
-  min-height: 2.25rem;
-  font: inherit;
-}
-
-.benchmark-case-delivery {
-  display: grid;
-  flex: 1 0 100%;
-  gap: 0.2rem;
-  padding: 0.65rem 0.8rem;
-  border: 1px solid #b7cde5;
-  border-radius: 8px;
-  background: #fff;
-}
-
-.benchmark-case-delivery.is-error {
-  border-color: #d88080;
-  color: #8a2020;
 }
 
 .browser-preview-banner strong {
@@ -1456,6 +1540,21 @@ h3 {
   .empty-page,
   .page-intro {
     padding: 30px 23px;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar {
+    gap: 4px;
+    padding-inline: 10px;
+  }
+
+  .brand > span:last-child {
+    display: none;
+  }
+
+  .topbar-nav {
+    margin-inline: auto 0;
   }
 }
 

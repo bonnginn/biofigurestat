@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import type { OpenedProject } from "./app/projectActions";
 import { listen } from "@tauri-apps/api/event";
 
@@ -31,15 +31,26 @@ import { evaluationModeIsConfigured, evaluationMode } from "./app/evaluationMode
 import { recordBenchmarkEvent } from "./app/benchmarkEvaluation";
 import { recordDiagnosticError, recordDiagnosticEvent } from "./app/diagnostics";
 import { researcherError } from "./app/errorCatalog";
-import {
-  createLiteratureExperimentDraft,
-  type LiteratureExperimenterCase,
-} from "./app/literatureBenchmark";
+import type { LiteratureExperimenterCase } from "./app/literatureBenchmark";
 import type { AdaptiveInputSnapshot } from "@lsaa/domain";
 
 type AppProps = {
   projectActions?: ProjectActions;
 };
+
+const PROJECT_IO_STAGE_LABELS: Record<string, string> = {
+  checksum: "checksum検証",
+  database_encode: "project database作成",
+  container_begin: "保存先の準備",
+  container_write: "project dataの書き込み",
+  container_commit: "保存fileの確定",
+  package_assembly: "project packageの組み立て",
+};
+
+export function projectIoStage(error: unknown): string | null {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.match(/PROJECT_IO_STAGE\[([^\]]+)\]/)?.[1] ?? null;
+}
 
 const browserPreviewProjectActions: ProjectActions = {
   openProject: async () => {
@@ -52,7 +63,8 @@ const browserPreviewProjectActions: ProjectActions = {
 
 export default function App({ projectActions }: AppProps) {
   const browserPreview = projectActions === undefined && !isTauri();
-  const evaluationPreview = browserPreview && evaluationModeIsConfigured(evaluationMode);
+  const evaluationPreview =
+    import.meta.env.DEV && browserPreview && evaluationModeIsConfigured(evaluationMode);
   const activeProjectActions =
     projectActions ?? (browserPreview ? browserPreviewProjectActions : defaultProjectActions);
   const [route, setRoute] = useState<AppRoute>(() => routeFromPath(window.location.pathname));
@@ -62,10 +74,17 @@ export default function App({ projectActions }: AppProps) {
   const [favoriteDefaults, setFavoriteDefaults] = useState<readonly FavoriteGraphDefault[]>([]);
   const [favorites, setFavorites] = useState<FavoriteDesign[]>(loadFavoriteDesigns);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>(loadRecentProjects);
+  const [workspaceDirty, setWorkspaceDirty] = useState(false);
+  const [newExperimentSession, setNewExperimentSession] = useState(0);
   const [adaptiveSurvivalHandoff, setAdaptiveSurvivalHandoff] = useState<{
     text: string;
     snapshot: AdaptiveInputSnapshot;
   } | null>(null);
+  const analysisAvailable = !browserPreview || evaluationPreview;
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [route, newExperimentSession]);
 
   const recordRecentProject = useCallback((project: OpenedProject) => {
     setRecentProjects(
@@ -88,10 +107,18 @@ export default function App({ projectActions }: AppProps) {
         return saved;
       } catch (error) {
         recordDiagnosticError("PROJECT_SAVE_FAILED", error);
+        const failureStage = projectIoStage(error);
+        recordDiagnosticEvent("project_save_failed", { stage: failureStage ?? "unknown" });
         const message = researcherError("PROJECT_SAVE_FAILED");
-        throw new Error(`${message.title}（${message.code}）。${message.nextAction}`, {
-          cause: error,
-        });
+        const stageMessage = failureStage
+          ? `失敗した処理：${PROJECT_IO_STAGE_LABELS[failureStage] ?? failureStage}。`
+          : "";
+        throw new Error(
+          `${message.title}（${message.code}）。${stageMessage}${message.nextAction}`,
+          {
+            cause: error,
+          },
+        );
       }
     },
     [activeProjectActions, recordRecentProject],
@@ -119,15 +146,23 @@ export default function App({ projectActions }: AppProps) {
   }, []);
   const navigateAsFreshStart = useCallback(
     (nextRoute: AppRoute) => {
+      if (
+        workspaceDirty &&
+        !window.confirm("未保存の変更があります。現在の実験を閉じて破棄しますか？")
+      ) {
+        return;
+      }
       setActiveProject(null);
       setSystemOpenError(null);
+      setWorkspaceDirty(false);
       if (nextRoute === "new-experiment") {
         setReusedDraft(null);
         setFavoriteDefaults([]);
+        setNewExperimentSession((session) => session + 1);
       }
       navigate(nextRoute);
     },
-    [navigate],
+    [navigate, workspaceDirty],
   );
   const resetEvaluationCase = useCallback(() => {
     setActiveProject(null);
@@ -138,11 +173,14 @@ export default function App({ projectActions }: AppProps) {
   }, [navigate]);
   const useLiteratureCase = useCallback(
     (source: LiteratureExperimenterCase) => {
-      setActiveProject(null);
-      setSystemOpenError(null);
-      setFavoriteDefaults([]);
-      setReusedDraft(createLiteratureExperimentDraft(source));
-      navigate("new-experiment");
+      if (!import.meta.env.DEV) return;
+      void import("./app/literatureBenchmark").then(({ createLiteratureExperimentDraft }) => {
+        setActiveProject(null);
+        setSystemOpenError(null);
+        setFavoriteDefaults([]);
+        setReusedDraft(createLiteratureExperimentDraft(source));
+        navigate("new-experiment");
+      });
     },
     [navigate],
   );
@@ -199,19 +237,23 @@ export default function App({ projectActions }: AppProps) {
       case "distribution":
         return (
           <CommonCoveragePage
+            key={route}
             mode={route}
             onBack={() => navigate("new-experiment")}
             onNavigate={navigate}
             saveProject={browserPreview ? undefined : saveProject}
+            analysisAvailable={analysisAvailable}
           />
         );
       case "survival":
         return (
           <SpecializedCorePage
+            key={route}
             mode="survival"
             onBack={() => navigate("new-experiment")}
             onNavigate={navigate}
             saveProject={browserPreview ? undefined : saveProject}
+            analysisAvailable={analysisAvailable}
             initialText={adaptiveSurvivalHandoff?.text}
             adaptiveInput={adaptiveSurvivalHandoff?.snapshot}
           />
@@ -219,6 +261,7 @@ export default function App({ projectActions }: AppProps) {
       case "heatmap":
         return (
           <SpecializedCorePage
+            key={route}
             mode="heatmap"
             onBack={() => navigate("new-experiment")}
             onNavigate={navigate}
@@ -245,16 +288,18 @@ export default function App({ projectActions }: AppProps) {
       case "new-experiment":
         return (
           <NewExperimentPage
-            key={reusedDraft ? `reuse:${reusedDraft.name}` : "new"}
+            key={`${reusedDraft ? `reuse:${reusedDraft.name}` : "new"}:${newExperimentSession}`}
             onNavigate={navigate}
             saveProject={browserPreview ? undefined : saveProject}
             browserPreview={browserPreview}
+            analysisAvailable={analysisAvailable}
             initialDraft={reusedDraft}
             favoriteGraphDefaults={favoriteDefaults}
             onSaveFavorite={(draft, graphs) => {
               saveFavoriteDesign(draft, graphs);
               setFavorites(loadFavoriteDesigns());
             }}
+            onDirtyChange={setWorkspaceDirty}
             onAdaptiveSurvivalReady={(text, snapshot) => {
               setAdaptiveSurvivalHandoff({ text, snapshot });
               navigate("survival");

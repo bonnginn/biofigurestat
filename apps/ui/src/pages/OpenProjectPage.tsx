@@ -34,6 +34,8 @@ import { HeatmapGraph } from "../components/graph/HeatmapGraph";
 import { SurvivalGraph } from "../components/graph/SurvivalGraph";
 import { NonlinearFitGraph } from "../components/graph/NonlinearFitGraph";
 import { generateMethodsText } from "../app/methodsText";
+import { adaptiveSurvivalPaste } from "../app/adaptiveWorkspace";
+import { SpecializedCorePage } from "./SpecializedCorePage";
 
 type OpenProjectPageProps = {
   onNavigate: (route: AppRoute) => void;
@@ -193,54 +195,38 @@ function PersistedProjectView({
   const outcome = design.outcomes[0];
   if (!outcome) return <p role="alert">解析項目を復元できません。</p>;
   if (outcome.type === "time_to_event") {
-    try {
-      const model = createKaplanMeierGraphModel(
-        design.conditions,
-        state.observations
-          .filter(
-            (observation) =>
-              observation.rawRevisionId === state.activeRawRevisionId &&
-              observation.outcomeId === outcome.id,
-          )
-          .map((observation) => {
-            if (observation.measurement.kind !== "time_to_event")
-              throw new Error("Survival project contains a non-survival measurement");
-            return {
-              observationId: observation.id,
-              experimentalUnitId: observation.unitInstanceId,
-              conditionId: observation.conditionId,
-              followUpTime: observation.measurement.followUpTime,
-              eventObserved: observation.measurement.eventObserved,
-            };
-          }),
-      );
-      const run = state.analysisRuns.find(
-        (analysis) => analysis.state === "current" && analysis.request.protocolVersion === "0.8.0",
-      );
-      return (
-        <div className="page-stack">
-          <button type="button" onClick={onBack}>
-            ← 戻る
-          </button>
-          <h1>{state.metadata.projectName}</h1>
-          <p>{run ? "Kaplan–Meier / log-rank解析済み" : "Survivalデータを復元しました"}</p>
-          <SurvivalGraph model={model} timeLabel={outcome.unit ?? "Follow-up time"} />
-          {run?.result.tests[0] ? (
-            <p>
-              log-rank {run.result.tests[0].statisticName}={run.result.tests[0].statistic}、p=
-              {run.result.tests[0].pValue}
-            </p>
-          ) : null}
-        </div>
-      );
-    } catch (error) {
-      return (
-        <p role="alert">
-          Survival projectを復元できません：
-          {error instanceof Error ? error.message : "不明なエラー"}
-        </p>
-      );
+    if (!state.adaptiveInput) {
+      try {
+        const model = createKaplanMeierGraphModel(
+          design.conditions,
+          state.observations
+            .filter((observation) => observation.rawRevisionId === state.activeRawRevisionId && observation.outcomeId === outcome.id)
+            .map((observation) => {
+              if (observation.measurement.kind !== "time_to_event") throw new Error("Survival project contains a non-survival measurement");
+              return { observationId: observation.id, experimentalUnitId: observation.unitInstanceId, conditionId: observation.conditionId, followUpTime: observation.measurement.followUpTime, eventObserved: observation.measurement.eventObserved };
+            }),
+        );
+        return (
+          <div className="page-stack">
+            <button type="button" onClick={onBack}>← 戻る</button>
+            <p role="alert">この旧Survival projectには編集に必要なStructureContract・mapping・raw lineageがありません。別のsupported designには変換せず、読み取り専用で表示します。</p>
+            <SurvivalGraph model={model} timeLabel={outcome.unit ?? "Follow-up time"} />
+          </div>
+        );
+      } catch (error) {
+        return <p role="alert">Survival projectを復元できません：{error instanceof Error ? error.message : "不明なエラー"}</p>;
+      }
     }
+    return (
+      <SpecializedCorePage
+        mode="survival"
+        onBack={onBack}
+        saveProject={saveProject}
+        initialProject={project}
+        initialText={adaptiveSurvivalPaste(state.adaptiveInput)}
+        adaptiveInput={state.adaptiveInput}
+      />
+    );
   }
   const activeDerivedRevision = state.derivedDatasetRevisions.find(
     (revision) =>

@@ -76,10 +76,12 @@ export type ExperimentWorkspaceProps = {
   initialProject?: OpenedProject;
   onBack: () => void;
   analysisRunner?: AnalysisRunner;
+  analysisAvailable?: boolean;
   saveProject?: SaveProjectAction;
   onReuseDesign?: (draft: ExperimentSetDraft) => void;
   onSaveFavorite?: (draft: ExperimentSetDraft, graphs: readonly WorkspaceGraphState[]) => void;
   favoriteGraphDefaults?: readonly FavoriteGraphDefault[];
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 type WorkspaceTab = "overview" | `experiment:${string}`;
@@ -336,8 +338,15 @@ function OverviewPanel({ draft, cells }: { draft: ExperimentSetDraft; cells: Exp
           <dd>{draft.name}</dd>
         </div>
         <div>
-          <dt>実験セッション</dt>
-          <dd>{draft.experiments.length}回</dd>
+          <dt>
+            {draft.conditionAssignment.kind === "matched" ? "対応づけた単位" : "実験セッション"}
+          </dt>
+          <dd>
+            {draft.experiments.length}
+            {draft.conditionAssignment.kind === "matched"
+              ? ` ${draft.conditionAssignment.unitLabel || "単位"}`
+              : "回"}
+          </dd>
         </div>
         <div>
           <dt>条件</dt>
@@ -493,10 +502,14 @@ function OverviewPanel({ draft, cells }: { draft: ExperimentSetDraft; cells: Exp
       ) : null}
 
       <div className="experiment-workspace-notice" role="note">
-        <strong>Exp番号について</strong>
+        <strong>
+          {draft.conditionAssignment.kind === "matched"
+            ? `${draft.conditionAssignment.unitLabel || "対応単位"}について`
+            : "Exp番号について"}
+        </strong>
         <p>
           {draft.conditionAssignment.kind === "matched"
-            ? `Exp 1、Exp 2…の各行では、同じ${draft.conditionAssignment.unitLabel}の条件間測定を対応づけています。日付が同じという理由ではなく、実験設計で明示した対応です。`
+            ? `${draft.conditionAssignment.unitLabel || "対応単位"} 1、2…の各行では、同じ${draft.conditionAssignment.unitLabel || "単位"}の条件間測定を対応づけています。これらは実験回数ではありません。`
             : "Exp 1、Exp 2…は実験セッションを整理するための番号です。独立した条件同士を統計的に対応付けるものではありません。"}
         </p>
       </div>
@@ -681,7 +694,7 @@ function ProportionTable({
           {draft.attributes.map((attribute) => (
             <col key={attribute.id} className="experiment-workspace-col-attribute" />
           ))}
-          <col className="experiment-workspace-col-time" />
+          {draft.time.points.length > 0 ? <col className="experiment-workspace-col-time" /> : null}
           <col className="experiment-workspace-col-value" />
           <col className="experiment-workspace-col-value" />
           <col className="experiment-workspace-col-derived" />
@@ -696,7 +709,7 @@ function ProportionTable({
                 {attribute.label || "条件"}
               </th>
             ))}
-            <th scope="col">時間</th>
+            {draft.time.points.length > 0 ? <th scope="col">時間</th> : null}
             <th scope="col">陽性数</th>
             <th scope="col">対象数</th>
             <th scope="col">割合（%）</th>
@@ -719,9 +732,13 @@ function ProportionTable({
             return (
               <tr key={row.key}>
                 <ConditionCells draft={draft} row={row} />
-                <td>
-                  {row.timePoint ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time)) : "—"}
-                </td>
+                {draft.time.points.length > 0 ? (
+                  <td>
+                    {row.timePoint
+                      ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time))
+                      : "—"}
+                  </td>
+                ) : null}
                 <td>
                   <input
                     className="experiment-workspace-number-input"
@@ -791,15 +808,17 @@ function ProportionTable({
                   title="陽性数 ÷ 対象数 × 100（自動計算・編集不可）"
                   aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の計算された割合`}
                 >
-                  <span>{notPlanned ? "予定なし" : formatNumber(percentage(proportionCell))}</span>
-                  <button
-                    className={`experiment-workspace-availability-button ${notPlanned ? "is-active" : ""}`}
-                    type="button"
-                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}を${notPlanned ? "入力対象に戻す" : "測定予定なしにする"}`}
-                    onClick={() => onToggleNotPlanned(key)}
-                  >
-                    {notPlanned ? "戻す" : "予定なし"}
-                  </button>
+                  <span>{notPlanned ? "—" : formatNumber(percentage(proportionCell))}</span>
+                  {notPlanned ? (
+                    <button
+                      className="experiment-workspace-availability-button is-active"
+                      type="button"
+                      aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}を入力対象に戻す`}
+                      onClick={() => onToggleNotPlanned(key)}
+                    >
+                      入力対象に戻す
+                    </button>
+                  ) : null}
                 </td>
               </tr>
             );
@@ -856,7 +875,7 @@ function NestedContinuousTable({
                 {attribute.label || "条件"}
               </th>
             ))}
-            <th scope="col">時間</th>
+            {draft.time.points.length > 0 ? <th scope="col">時間</th> : null}
             <th scope="col">生データ / 要約</th>
           </tr>
         </thead>
@@ -877,9 +896,13 @@ function NestedContinuousTable({
             return (
               <tr key={row.key}>
                 <ConditionCells draft={draft} row={row} />
-                <td>
-                  {row.timePoint ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time)) : "—"}
-                </td>
+                {draft.time.points.length > 0 ? (
+                  <td>
+                    {row.timePoint
+                      ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time))
+                      : "—"}
+                  </td>
+                ) : null}
                 <td>
                   <button
                     className="experiment-workspace-raw-button"
@@ -889,25 +912,194 @@ function NestedContinuousTable({
                     onClick={() => onSelect(key)}
                   >
                     {notPlanned
-                      ? "測定予定なし"
+                      ? "入力対象外"
                       : summary.n > 0
                         ? `n=${summary.n} / 平均 ${formatNumber(summary.mean)}`
                         : "生データを入力"}
                   </button>
-                  <button
-                    className={`experiment-workspace-availability-button ${notPlanned ? "is-active" : ""}`}
-                    type="button"
-                    aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}を${notPlanned ? "入力対象に戻す" : "測定予定なしにする"}`}
-                    onClick={() => onToggleNotPlanned(key)}
-                  >
-                    {notPlanned ? "戻す" : "予定なし"}
-                  </button>
+                  {notPlanned ? (
+                    <button
+                      className="experiment-workspace-availability-button is-active"
+                      type="button"
+                      aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}を入力対象に戻す`}
+                      onClick={() => onToggleNotPlanned(key)}
+                    >
+                      入力対象に戻す
+                    </button>
+                  ) : null}
                 </td>
               </tr>
             );
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function DecimalValueInput({
+  label,
+  value,
+  disabled = false,
+  onChange,
+  onRejectedPaste,
+}: {
+  label: string;
+  value: number | null;
+  disabled?: boolean;
+  onChange: (value: number | null) => void;
+  onRejectedPaste: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const focusedRef = useRef(false);
+  const [draftValue, setDraftValue] = useState(value === null ? "" : String(value));
+
+  useEffect(() => {
+    if (!focusedRef.current) {
+      setDraftValue(value === null ? "" : String(value));
+    }
+  }, [value]);
+
+  const commitIfComplete = (text: string) => {
+    if (text.trim() === "") {
+      onChange(null);
+      return;
+    }
+    const parsed = Number(text);
+    if (Number.isFinite(parsed)) onChange(parsed);
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      aria-label={label}
+      className="experiment-workspace-number-input"
+      disabled={disabled}
+      inputMode="decimal"
+      placeholder="数値を入力"
+      type="text"
+      value={draftValue}
+      onFocus={(event) => {
+        focusedRef.current = true;
+        event.currentTarget.select();
+      }}
+      onChange={(event) => {
+        const text = event.currentTarget.value;
+        setDraftValue(text);
+        commitIfComplete(text);
+      }}
+      onBlur={() => {
+        focusedRef.current = false;
+        const parsed = nullableNumber(draftValue);
+        setDraftValue(parsed === null ? "" : String(parsed));
+        onChange(parsed);
+      }}
+      onPaste={(event) => {
+        const text = event.clipboardData.getData("text");
+        const values = parseNumericPaste(text);
+        if (/\r|\n|\t/.test(text) || values.length > 1) {
+          event.preventDefault();
+          onRejectedPaste();
+        }
+      }}
+    />
+  );
+}
+
+function UnitSummaryContinuousTable({
+  draft,
+  experiment,
+  readout,
+  cells,
+  onChange,
+  onToggleNotPlanned,
+}: {
+  draft: ExperimentSetDraft;
+  experiment: ExperimentSessionDraft;
+  readout: ReadoutDraft;
+  cells: ExperimentCellMap;
+  onChange: (key: string, value: number | null) => void;
+  onToggleNotPlanned: (key: string) => void;
+}) {
+  const rows = rowsFor(draft, experiment.id);
+  const [pasteMessage, setPasteMessage] = useState<string | null>(null);
+  return (
+    <div className="experiment-workspace-table-wrap">
+      <table className="experiment-workspace-table experiment-workspace-table--continuous">
+        <caption>
+          <ReadoutLabel readout={readout} />
+          <small className="experiment-workspace-normalization-status">
+            各欄は1つの実験単位から得た要約値です
+          </small>
+        </caption>
+        <thead>
+          <tr>
+            {draft.attributes.map((attribute) => (
+              <th key={attribute.id} scope="col">
+                {attribute.label || "条件"}
+              </th>
+            ))}
+            {draft.time.points.length > 0 ? <th scope="col">時間</th> : null}
+            <th scope="col">測定値（クリックして入力）</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const key = experimentCellKey({
+              experimentId: experiment.id,
+              conditionId: row.conditionId,
+              readoutId: readout.id,
+              timePointId: row.timePoint?.id,
+            });
+            const cell = cells[key];
+            const value = cell?.kind === "nested_continuous" ? (cell.rawValues[0] ?? null) : null;
+            const notPlanned = cellIsNotPlanned(cell);
+            const label = `${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の${readout.label}`;
+            return (
+              <tr key={row.key}>
+                <ConditionCells draft={draft} row={row} />
+                {draft.time.points.length > 0 ? (
+                  <td>
+                    {row.timePoint
+                      ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time))
+                      : "—"}
+                  </td>
+                ) : null}
+                <td>
+                  <DecimalValueInput
+                    label={label}
+                    value={value}
+                    disabled={notPlanned}
+                    onChange={(nextValue) => onChange(key, nextValue)}
+                    onRejectedPaste={() =>
+                      setPasteMessage(
+                        "この欄には実験単位の要約値を1つだけ入力します。複数値は反映せず、既存値を保持しました。",
+                      )
+                    }
+                  />
+                  {notPlanned ? (
+                    <button
+                      className="experiment-workspace-availability-button is-active"
+                      type="button"
+                      onClick={() => onToggleNotPlanned(key)}
+                    >
+                      入力対象に戻す
+                    </button>
+                  ) : null}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {pasteMessage ? (
+        <p className="experiment-workspace-paste-hint" role="status">
+          {pasteMessage}
+        </p>
+      ) : null}
+      <p className="experiment-workspace-paste-hint">
+        表の「測定値」欄をクリックして、各条件につき1つの数値を入力します。
+      </p>
     </div>
   );
 }
@@ -1073,7 +1265,7 @@ function CategoricalCountsTable({
                 {attribute.label}
               </th>
             ))}
-            <th scope="col">時間</th>
+            {draft.time.points.length > 0 ? <th scope="col">時間</th> : null}
             {categories.map((category) => (
               <th key={category.id} scope="col">
                 {category.label}
@@ -1098,9 +1290,13 @@ function CategoricalCountsTable({
             return (
               <tr key={row.key}>
                 <ConditionCells draft={draft} row={row} />
-                <td>
-                  {row.timePoint ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time)) : "—"}
-                </td>
+                {draft.time.points.length > 0 ? (
+                  <td>
+                    {row.timePoint
+                      ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time))
+                      : "—"}
+                  </td>
+                ) : null}
                 {categories.map((category, columnIndex) => (
                   <td key={category.id}>
                     <input
@@ -1271,7 +1467,7 @@ function WbRatioTable({
                 {attribute.label}
               </th>
             ))}
-            <th scope="col">時間</th>
+            {draft.time.points.length > 0 ? <th scope="col">時間</th> : null}
             {editableFields.map((field) => (
               <th key={field} scope="col">
                 {fieldLabel(field)}
@@ -1336,9 +1532,13 @@ function WbRatioTable({
             return (
               <tr key={row.key}>
                 <ConditionCells draft={draft} row={row} />
-                <td>
-                  {row.timePoint ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time)) : "—"}
-                </td>
+                {draft.time.points.length > 0 ? (
+                  <td>
+                    {row.timePoint
+                      ? timePointLabel(row.timePoint, orderedAxisUnit(draft.time))
+                      : "—"}
+                  </td>
+                ) : null}
                 {editableFields.map((field, columnIndex) => (
                   <td key={field}>
                     <input
@@ -1470,7 +1670,9 @@ function RawSummaryInspector({
         />
       </label>
       <p className="experiment-workspace-inspector-note">
-        細胞やROIは表示用の観測値です。解析に使う実験単位は別に扱います。
+        個々のCell・ROI値はraw
+        observationとして表示します。Statisticsは各実験単位内の要約値を解析し、Cell数をbiological
+        nにはしません。
       </p>
     </aside>
   );
@@ -1522,7 +1724,9 @@ function ExperimentPanel({
               aria-label={`${experiment.label}を削除`}
               onClick={onRemove}
             >
-              実験回を削除
+              {draft.conditionAssignment.kind === "matched"
+                ? `${draft.conditionAssignment.unitLabel || "対応単位"}を削除`
+                : "実験回を削除"}
             </button>
           ) : null}
         </div>
@@ -1586,6 +1790,16 @@ function ExperimentPanel({
               cells={cells}
               onChange={onNestedScalarChange}
             />
+          ) : readout.nestedInputMode === "unit_summary" ? (
+            <UnitSummaryContinuousTable
+              key={readout.id}
+              draft={draft}
+              experiment={experiment}
+              readout={readout}
+              cells={cells}
+              onChange={onNestedScalarChange}
+              onToggleNotPlanned={onToggleNotPlanned}
+            />
           ) : (
             <NestedContinuousTable
               key={readout.id}
@@ -1609,10 +1823,12 @@ export function ExperimentWorkspace({
   initialProject,
   onBack,
   analysisRunner = defaultAnalysisRunner,
+  analysisAvailable = true,
   saveProject,
   onReuseDesign,
   onSaveFavorite,
   favoriteGraphDefaults = [],
+  onDirtyChange,
 }: ExperimentWorkspaceProps) {
   const [draft, setDraft] = useState<ExperimentSetDraft>(initialDraft);
   const [cells, setCells] = useState<ExperimentCellMap>(() => ({
@@ -1624,6 +1840,10 @@ export function ExperimentWorkspace({
   const [sourceNotes, setSourceNotes] = useState<Record<string, string>>({});
   const [showGraph, setShowGraph] = useState(false);
   const [graphWorkspaceMode, setGraphWorkspaceMode] = useState<"graph" | "statistics">("graph");
+
+  useEffect(() => {
+    setSelectedCellKey(null);
+  }, [activeTab]);
   const [showGraphTypeChoice, setShowGraphTypeChoice] = useState(false);
   const [selectedSourceReadoutId, setSelectedSourceReadoutId] = useState(
     initialDraft.readouts[0]?.id ?? "",
@@ -1663,11 +1883,34 @@ export function ExperimentWorkspace({
   const isDirty = currentSnapshot !== savedSnapshotRef.current;
 
   useEffect(() => {
+    onDirtyChange?.(isDirty);
+    return () => onDirtyChange?.(false);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [isDirty]);
+
+  const requestBack = () => {
+    if (isDirty && !window.confirm("未保存の変更があります。この実験を閉じて破棄しますか？"))
+      return;
+    onBack();
+  };
+
+  useEffect(() => {
     if (!showGraphTypeChoice) {
       graphChoiceReturnFocusRef.current?.focus();
       graphChoiceReturnFocusRef.current = null;
       return;
     }
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const dialog = graphChoiceDialogRef.current;
     const focusable = () => [
       ...(dialog?.querySelectorAll<HTMLElement>(
@@ -1695,7 +1938,10 @@ export function ExperimentWorkspace({
       }
     };
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
+    };
   }, [showGraphTypeChoice]);
 
   useEffect(() => {
@@ -1984,7 +2230,15 @@ export function ExperimentWorkspace({
         const match = experiment.id.match(/^experiment\.(\d+)$/);
         return Math.max(maximum, match ? Number(match[1]) : 0);
       }, 0) + 1;
-    const nextExperiment = createExperimentSession(nextIndex);
+    const created = createExperimentSession(nextIndex);
+    const nextExperiment =
+      draft.conditionAssignment.kind === "matched"
+        ? {
+            ...created,
+            label: `${draft.conditionAssignment.unitLabel || "対応単位"} ${draft.experiments.length + 1}`,
+            stableUnitId: `unit.${nextIndex}`,
+          }
+        : created;
     setDraft((previous) => ({
       ...previous,
       experiments: [...previous.experiments, nextExperiment],
@@ -2007,7 +2261,7 @@ export function ExperimentWorkspace({
     if (
       hasEnteredData &&
       !window.confirm(
-        `${experiment.label}に入力済みの測定値があります。この実験回と入力値を削除しますか？`,
+        `${experiment.label}に入力済みの測定値があります。この${draft.conditionAssignment.kind === "matched" ? draft.conditionAssignment.unitLabel || "対応単位" : "実験回"}と入力値を削除しますか？`,
       )
     ) {
       return;
@@ -2142,7 +2396,10 @@ export function ExperimentWorkspace({
       layers: initialLayers,
       appearance: favoriteDefault?.appearance ?? {
         errorBar: "sd",
-        palette: "single",
+        palette:
+          graphType === "line" && draft.time.points.length > 1 && draft.conditions.length > 1
+            ? "colorblind"
+            : "single",
         pointSize: 6,
         pointOpacity: 0.9,
         axisLineWidth: 1.4,
@@ -2154,7 +2411,10 @@ export function ExperimentWorkspace({
         tickFontSize: 17,
         hierarchyFontSize: 17,
         legendFontSize: 16,
-        legendPosition: "hidden",
+        legendPosition:
+          graphType === "line" && draft.time.points.length > 1 && draft.conditions.length > 1
+            ? "top"
+            : "hidden",
         seriesColors: {},
         seriesStyles: {},
         distributionFill: "white",
@@ -2406,7 +2666,7 @@ export function ExperimentWorkspace({
   return (
     <div className="experiment-workspace">
       <header className="experiment-workspace-header">
-        <button className="experiment-workspace-back" type="button" onClick={onBack}>
+        <button className="experiment-workspace-back" type="button" onClick={requestBack}>
           ← 戻る
         </button>
         <div>
@@ -2417,7 +2677,9 @@ export function ExperimentWorkspace({
               ? "細胞・培養"
               : draft.context === "microscopy_imaging"
                 ? "顕微鏡・画像解析"
-                : "実験データ"}{" "}
+                : draft.context === "animal"
+                  ? "動物・個体"
+                  : "実験データ"}{" "}
             · {draft.readouts.map(({ label }) => label).join(" / ")}
           </p>
         </div>
@@ -2846,8 +3108,8 @@ export function ExperimentWorkspace({
                   <legend>作成時に表示するもの</legend>
                   {(
                     [
-                      ["raw", "細胞・ROIなどの測定値"],
-                      ["experiment", "実験単位ごとの点"],
+                      ["raw", "個々の測定値（表示用）"],
+                      ["experiment", "実験単位ごとの要約点（解析用）"],
                       ["overall", "平均"],
                       ["errorBar", "誤差線（初期値 SD）"],
                       ["box", "箱ひげ"],
@@ -2885,6 +3147,11 @@ export function ExperimentWorkspace({
               ) : null}
             </section>
             <div className="experiment-workspace-graph-choice-actions">
+              {!graphTypeSelectionActive ? (
+                <p className="experiment-workspace-graph-choice-required" role="status">
+                  グラフ形式を1つ選んでください。選択するまでグラフは作成できません。
+                </p>
+              ) : null}
               <button type="button" onClick={() => setShowGraphTypeChoice(false)}>
                 キャンセル
               </button>
@@ -2942,7 +3209,10 @@ export function ExperimentWorkspace({
             type="button"
             onClick={addExperiment}
           >
-            ＋ 実験
+            ＋{" "}
+            {draft.conditionAssignment.kind === "matched"
+              ? draft.conditionAssignment.unitLabel || "対応単位"
+              : "実験"}
           </button>
         </nav>
       ) : null}
@@ -3014,6 +3284,7 @@ export function ExperimentWorkspace({
                 cells={cells}
                 workspaceMode={graphWorkspaceMode}
                 analysisRunner={analysisRunner}
+                analysisAvailable={analysisAvailable}
                 initialState={graph}
                 onStateChange={(state) =>
                   setGraphs((current) =>

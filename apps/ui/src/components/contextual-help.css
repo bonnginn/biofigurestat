@@ -53,6 +53,14 @@
   gap: 16px;
 }
 
+.contextual-help-panel > header {
+  position: sticky;
+  z-index: 1;
+  top: -24px;
+  padding: 24px 0 12px;
+  background: #fff;
+}
+
 .contextual-help-panel h2,
 .contextual-help-panel h3,
 .contextual-help-panel p {
@@ -164,6 +172,19 @@
   cursor: pointer;
 }
 
+.contextual-help-footer-actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.contextual-help-panel > footer button.is-secondary {
+  color: #285f91;
+  background: #eaf1f7;
+}
+
 @media (max-width: 620px) {
   .contextual-help-backdrop {
     padding: 10px;
@@ -174,6 +195,11 @@
     padding: 18px;
   }
 
+  .contextual-help-panel > header {
+    top: -18px;
+    padding-top: 18px;
+  }
+
   .contextual-help-suggestions {
     grid-template-columns: 1fr;
   }
@@ -181,5 +207,10 @@
   .contextual-help-panel > footer {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .contextual-help-footer-actions,
+  .contextual-help-footer-actions button {
+    width: 100%;
   }
 }

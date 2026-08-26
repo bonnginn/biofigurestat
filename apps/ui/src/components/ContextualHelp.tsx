@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { contextualHelpSuggestions, type ContextualHelpContext } from "../app/contextualHelp";
 import {
@@ -40,9 +41,12 @@ export function ContextualHelp({
   const suggestions = useMemo(() => contextualHelpSuggestions(context), [context]);
   const selectedTopic = topicId ? scientificHelpTopic(topicId) : null;
   const providerEnabled = helpProviderMayRun(provider, externalProviderOptIn);
+  const closeHelp = () => setOpen(false);
 
   useEffect(() => {
     if (!open) return;
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const panel = panelRef.current;
     const focusable = () =>
       Array.from(
@@ -73,6 +77,7 @@ export function ContextualHelp({
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
       triggerRef.current?.focus();
     };
   }, [open]);
@@ -103,92 +108,108 @@ export function ContextualHelp({
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => setOpen(true)}
+        onClick={() => setOpen((current) => !current)}
       >
         <span aria-hidden="true">?</span> {label}
       </button>
-      {open ? (
-        <div className="contextual-help-backdrop" role="presentation">
-          <section
-            ref={panelRef}
-            className="contextual-help-panel"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-          >
-            <header>
-              <div>
-                <span className="contextual-help-kicker">この画面のHelp</span>
-                <h2 id={titleId}>用語と解析の考え方</h2>
-              </div>
-              <button type="button" aria-label="ヘルプを閉じる" onClick={() => setOpen(false)}>
-                ×
-              </button>
-            </header>
-            <p className="contextual-help-privacy">
-              {provider.processing === "local"
-                ? "この説明は端末内の固定Helpから表示します。データは送信されません。"
-                : providerEnabled
-                  ? "外部providerへ最小限の画面文脈を送ります。rawデータは送信せず、統計結果はローカルで生成されます。"
-                  : "外部providerは無効です。初回利用前に、送信内容を確認して明示的にopt-inする必要があります。"}
-            </p>
-
-            <section aria-labelledby={`${titleId}-suggestions`}>
-              <h3 id={`${titleId}-suggestions`}>現在の文脈に関連する項目</h3>
-              <div className="contextual-help-suggestions">
-                {suggestions.map(({ topic, reason }) => (
-                  <button
-                    key={topic.id}
-                    type="button"
-                    className={topic.id === topicId ? "is-selected" : ""}
-                    onClick={() => selectTopic(topic.id)}
-                  >
-                    <strong>{topic.title}</strong>
-                    <span>{reason}</span>
+      {open
+        ? createPortal(
+            <div
+              className="contextual-help-backdrop"
+              role="presentation"
+              onPointerDown={(event) => {
+                if (event.target === event.currentTarget) closeHelp();
+              }}
+            >
+              <section
+                ref={panelRef}
+                className="contextual-help-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+              >
+                <header>
+                  <div>
+                    <span className="contextual-help-kicker">この画面のHelp</span>
+                    <h2 id={titleId}>用語と解析の考え方</h2>
+                  </div>
+                  <button type="button" aria-label="ヘルプを閉じる" onClick={closeHelp}>
+                    ×
                   </button>
-                ))}
-              </div>
-            </section>
+                </header>
+                <p className="contextual-help-privacy">
+                  {provider.processing === "local"
+                    ? "この説明は端末内の固定Helpから表示します。データは送信されません。"
+                    : providerEnabled
+                      ? "外部providerへ最小限の画面文脈を送ります。rawデータは送信せず、統計結果はローカルで生成されます。"
+                      : "外部providerは無効です。初回利用前に、送信内容を確認して明示的にopt-inする必要があります。"}
+                </p>
 
-            <label className="contextual-help-topic-select">
-              <span>用語集から選ぶ</span>
-              <select
-                value={topicId ?? ""}
-                onChange={(event) =>
-                  setTopicId((event.currentTarget.value || null) as ScientificHelpTopicId | null)
-                }
-              >
-                <option value="">選択してください</option>
-                {scientificHelpTopics.map((topic) => (
-                  <option key={topic.id} value={topic.id}>
-                    {topic.title}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <section aria-labelledby={`${titleId}-suggestions`}>
+                  <h3 id={`${titleId}-suggestions`}>現在の文脈に関連する項目</h3>
+                  <div className="contextual-help-suggestions">
+                    {suggestions.map(({ topic, reason }) => (
+                      <button
+                        key={topic.id}
+                        type="button"
+                        className={topic.id === topicId ? "is-selected" : ""}
+                        onClick={() => selectTopic(topic.id)}
+                      >
+                        <strong>{topic.title}</strong>
+                        <span>{reason}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
 
-            {selectedTopic ? (
-              <article className="contextual-help-answer" aria-live="polite">
-                <h3>{selectedTopic.title}</h3>
-                <p>{selectedTopic.summary}</p>
-                {selectedTopic.limitation ? <p>注意：{selectedTopic.limitation}</p> : null}
-              </article>
-            ) : null}
-            {answer ? <pre className="contextual-help-provider-answer">{answer}</pre> : null}
+                <label className="contextual-help-topic-select">
+                  <span>用語集から選ぶ</span>
+                  <select
+                    value={topicId ?? ""}
+                    onChange={(event) =>
+                      setTopicId(
+                        (event.currentTarget.value || null) as ScientificHelpTopicId | null,
+                      )
+                    }
+                  >
+                    <option value="">選択してください</option>
+                    {scientificHelpTopics.map((topic) => (
+                      <option key={topic.id} value={topic.id}>
+                        {topic.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <footer>
-              <span>Helpは説明専用で、実験設計・データ・統計・Graphを変更しません。</span>
-              <button
-                type="button"
-                onClick={() => void explain()}
-                disabled={pending || !providerEnabled}
-              >
-                {pending ? "説明を準備中…" : "文脈に合わせて説明"}
-              </button>
-            </footer>
-          </section>
-        </div>
-      ) : null}
+                {selectedTopic ? (
+                  <article className="contextual-help-answer" aria-live="polite">
+                    <h3>{selectedTopic.title}</h3>
+                    <p>{selectedTopic.summary}</p>
+                    {selectedTopic.limitation ? <p>注意：{selectedTopic.limitation}</p> : null}
+                  </article>
+                ) : null}
+                {answer ? <pre className="contextual-help-provider-answer">{answer}</pre> : null}
+
+                <footer>
+                  <span>Helpは説明専用で、実験設計・データ・統計・Graphを変更しません。</span>
+                  <div className="contextual-help-footer-actions">
+                    <button
+                      type="button"
+                      onClick={() => void explain()}
+                      disabled={pending || !providerEnabled}
+                    >
+                      {pending ? "説明を準備中…" : "文脈に合わせて説明"}
+                    </button>
+                    <button type="button" className="is-secondary" onClick={closeHelp}>
+                      閉じる
+                    </button>
+                  </div>
+                </footer>
+              </section>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

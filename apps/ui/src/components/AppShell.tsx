@@ -69,7 +69,7 @@ export function AppShell({
         <div className="topbar-status" aria-label="アプリケーションの状態">
           <span className="status-dot" aria-hidden="true" />
           <span>
-            {evaluationPreview
+            {import.meta.env.DEV && evaluationPreview
               ? "合成データ評価環境"
               : browserPreview
                 ? "合成デモ・一時プレビュー"
@@ -89,16 +89,18 @@ export function AppShell({
       {browserPreview ? (
         <div className="browser-preview-banner" role="status">
           <strong>
-            {evaluationPreview ? "開発用Benchmark / Evaluation環境" : "ブラウザUXプレビュー"}
+            {import.meta.env.DEV && evaluationPreview
+              ? "開発用Benchmark / Evaluation環境"
+              : "ブラウザUXプレビュー"}
           </strong>
           <span>
-            {evaluationPreview
+            {import.meta.env.DEV && evaluationPreview
               ? "合成benchmarkデータ専用です。ネイティブ版と同じ固定統計エンジンを使いますが、未発表データを入力しないでください。"
               : "合成デモデータ専用です。プロジェクトの保存・読込とローカル統計解析は無効です。"}
           </span>
         </div>
       ) : null}
-      {evaluationPreview && DevelopmentBenchmarkRunBar ? (
+      {import.meta.env.DEV && evaluationPreview && DevelopmentBenchmarkRunBar ? (
         <Suspense fallback={null}>
           <DevelopmentBenchmarkRunBar
             onNavigateHome={onResetEvaluationCase ?? (() => onNavigate("home"))}

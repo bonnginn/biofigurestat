@@ -42,11 +42,7 @@ import { evaluationMode } from "../app/evaluationMode";
 import { downloadTextFile, serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
 import { generateCommonCoverageMethods } from "../app/commonCoverageMethods";
 import { generateMethodsText } from "../app/methodsText";
-import {
-  fetchLiteratureExperimenterCase,
-  isLiteratureCaseId,
-  type LiteratureExperimenterCase,
-} from "../app/literatureBenchmark";
+import type { LiteratureExperimenterCase } from "../app/literatureBenchmark";
 import { PRODUCT_IDENTITY } from "../app/productIdentity";
 import {
   CountGraph,
@@ -62,6 +58,7 @@ type Props = Readonly<{
   mode: Mode;
   onBack: () => void;
   analysisRunner?: AnalysisRunner;
+  analysisAvailable?: boolean;
   saveProject?: SaveProjectAction;
   onNavigate?: (route: AppRoute) => void;
 }>;
@@ -275,6 +272,7 @@ export function CommonCoveragePage({
   mode,
   onBack,
   analysisRunner = defaultAnalysisRunner,
+  analysisAvailable = true,
   saveProject,
   onNavigate,
 }: Props) {
@@ -315,15 +313,20 @@ export function CommonCoveragePage({
   useEffect(() => {
     const identity = benchmarkRun.identity;
     setLiteratureCase(null);
-    if (!identity || !isLiteratureCaseId(identity.caseId)) return;
+    if (!import.meta.env.DEV || !identity) return;
     let cancelled = false;
-    void fetchLiteratureExperimenterCase(identity)
-      .then((loaded) => {
-        if (!cancelled) setLiteratureCase(loaded);
-      })
-      .catch(() => {
-        if (!cancelled) setLiteratureCase(null);
-      });
+    void import("../app/literatureBenchmark").then(
+      ({ fetchLiteratureExperimenterCase, isLiteratureCaseId }) => {
+        if (!isLiteratureCaseId(identity.caseId)) return;
+        void fetchLiteratureExperimenterCase(identity)
+          .then((loaded) => {
+            if (!cancelled) setLiteratureCase(loaded);
+          })
+          .catch(() => {
+            if (!cancelled) setLiteratureCase(null);
+          });
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -537,9 +540,12 @@ export function CommonCoveragePage({
     }
   };
   let graph: React.ReactNode = null;
+  let graphExportAvailable = false;
   try {
-    if (!("error" in parsed) && parsed.kind === "contingency")
+    if (!("error" in parsed) && parsed.kind === "contingency") {
       graph = <CountGraph ref={svgRef} {...parsed.data} display={display} />;
+      graphExportAvailable = true;
+    }
     if (!("error" in parsed) && parsed.kind === "distribution") {
       validateGraphScale(parsed.data, xScale, "X");
       const model =
@@ -564,6 +570,7 @@ export function CommonCoveragePage({
           xScale={xScale}
         />
       );
+      graphExportAvailable = true;
     }
     if (!("error" in parsed) && parsed.kind === "regression" && result?.regression) {
       const spec = createRegressionGraphSpec({
@@ -586,6 +593,7 @@ export function CommonCoveragePage({
           yScale={yScale}
         />
       );
+      graphExportAvailable = true;
     }
     if (!("error" in parsed) && parsed.kind === "nonlinear-fit" && result?.nonlinearFit) {
       const spec = createNonlinearFitGraphSpec({
@@ -607,6 +615,7 @@ export function CommonCoveragePage({
           )}
         />
       );
+      graphExportAvailable = true;
     }
   } catch (error) {
     graph = <p role="alert">{error instanceof Error ? error.message : "Graphを表示できません"}</p>;
@@ -727,6 +736,7 @@ export function CommonCoveragePage({
 
   useLayoutEffect(() => {
     if (
+      !import.meta.env.DEV ||
       mode !== "regression" ||
       !result ||
       !executedRequest ||
@@ -916,13 +926,13 @@ export function CommonCoveragePage({
     }
   };
   return (
-    <div className="page-stack">
-      <button type="button" onClick={onBack}>
+    <div className="page-stack specialized-analysis-page">
+      <button className="back-link" type="button" onClick={onBack}>
         ← 戻る
       </button>
       <AnalysisRouteSwitcher current={mode} onNavigate={onNavigate} />
-      <section className="workspace-panel">
-        <p className="overline">Common Core</p>
+      <section className="workspace-panel specialized-workspace-panel">
+        <p className="overline">専門解析</p>
         <h1>{titles[mode]}</h1>
         <p>
           {mode === "contingency"
@@ -935,7 +945,7 @@ export function CommonCoveragePage({
                   ? "観測X/Y点に明示した飽和modelをfitします。Graphは保存済み解析結果のcurveだけを描き、見た目の変更では再計算しません。"
                   : "元の個別値を保持した探索的Graphです。検定は自動追加しません。"}
         </p>
-        {mode === "regression" && literatureCase ? (
+        {import.meta.env.DEV && mode === "regression" && literatureCase ? (
           <section className="benchmark-pilot-loader" aria-label="Literature単回帰合成値">
             <div>
               <strong>{literatureCase.caseId}</strong>
@@ -1091,46 +1101,48 @@ export function CommonCoveragePage({
                 指定値は各seriesへ適用し、requestとprovenanceに保存します。空欄はengineのdeterministic
                 defaultです。
               </p>
-              <table className="nonlinear-fit-parameter-inputs">
-                <thead>
-                  <tr>
-                    <th>Parameter</th>
-                    <th>Initial</th>
-                    <th>Lower</th>
-                    <th>Upper</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(["baseline", "plateau", "rate"] as const)
-                    .filter(
-                      (parameter) =>
-                        parameter !== "baseline" || nonlinearModel === "one_phase_association",
-                    )
-                    .map((parameter) => (
-                      <tr key={parameter}>
-                        <th>{parameter}</th>
-                        {(["initial", "lower", "upper"] as const).map((field) => (
-                          <td key={field}>
-                            <input
-                              aria-label={`${parameter} ${field}`}
-                              inputMode="decimal"
-                              value={fitSettings[parameter][field]}
-                              onChange={(event) =>
-                                setFitSettings((current) => ({
-                                  ...current,
-                                  [parameter]: {
-                                    ...current[parameter],
-                                    [field]: event.target.value,
-                                  },
-                                }))
-                              }
-                            />
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+              <div className="nonlinear-fit-parameter-scroll">
+                <table className="nonlinear-fit-parameter-inputs">
+                  <thead>
+                    <tr>
+                      <th>Parameter</th>
+                      <th>Initial</th>
+                      <th>Lower</th>
+                      <th>Upper</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(["baseline", "plateau", "rate"] as const)
+                      .filter(
+                        (parameter) =>
+                          parameter !== "baseline" || nonlinearModel === "one_phase_association",
+                      )
+                      .map((parameter) => (
+                        <tr key={parameter}>
+                          <th>{parameter}</th>
+                          {(["initial", "lower", "upper"] as const).map((field) => (
+                            <td key={field}>
+                              <input
+                                aria-label={`${parameter} ${field}`}
+                                inputMode="decimal"
+                                value={fitSettings[parameter][field]}
+                                onChange={(event) =>
+                                  setFitSettings((current) => ({
+                                    ...current,
+                                    [parameter]: {
+                                      ...current[parameter],
+                                      [field]: event.target.value,
+                                    },
+                                  }))
+                                }
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </details>
           </div>
         ) : null}
@@ -1179,9 +1191,19 @@ export function CommonCoveragePage({
           </>
         ) : null}
         {mode !== "distribution" ? (
-          <button type="button" onClick={() => void run()}>
+          <button
+            className="analysis-run-button"
+            type="button"
+            disabled={!analysisAvailable}
+            onClick={() => void run()}
+          >
             {mode === "nonlinear-fit" ? "選択したmodelでfitを実行" : "解析を実行"}
           </button>
+        ) : null}
+        {mode !== "distribution" && !analysisAvailable ? (
+          <p className="specialized-engine-note" role="note">
+            このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
+          </p>
         ) : null}
         {mode === "nonlinear-fit" ? (
           <button
@@ -1194,6 +1216,7 @@ export function CommonCoveragePage({
         ) : null}
         <button
           type="button"
+          disabled={!graphExportAvailable}
           onClick={() =>
             svgRef.current &&
             downloadTextFile(serializeGraphSvg(svgRef.current), `${mode}.svg`, "image/svg+xml")
@@ -1201,7 +1224,7 @@ export function CommonCoveragePage({
         >
           SVGを書き出す
         </button>
-        {mode === "regression" && benchmarkRun.identity ? (
+        {import.meta.env.DEV && mode === "regression" && benchmarkRun.identity ? (
           <button type="button" onClick={() => void finalizeRegressionBenchmark()}>
             Benchmark runを完了
           </button>
@@ -1209,12 +1232,12 @@ export function CommonCoveragePage({
         {message ? <p role="status">{message}</p> : null}
         {"error" in parsed ? <p role="alert">{parsed.error}</p> : null}
       </section>
-      <section className="workspace-panel">
+      <section className="workspace-panel specialized-workspace-panel">
         {graph}
         {result?.nonlinearFit ? (
           <div className="nonlinear-fit-results" role="region" aria-label="非線形fit結果">
             <header>
-              <p className="overline">Saved analysis authority</p>
+              <p className="overline">保存対象の解析結果</p>
               <h2>Parameter estimates & fit diagnostics</h2>
               <p>
                 Model: <strong>{result.nonlinearFit.modelId}</strong> · version{" "}

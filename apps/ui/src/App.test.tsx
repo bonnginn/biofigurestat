@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-import App from "./App";
+import App, { projectIoStage } from "./App";
 import { createExperimentSetDraft } from "./app/experimentDraft";
 import { createExperimentWorkspaceProject } from "./app/experimentWorkspaceProject";
 import { saveFavoriteDesign } from "./app/favoriteDesigns";
@@ -11,10 +11,42 @@ const desktopTestActions = {
   saveProject: async () => null,
 };
 
+describe("project save diagnostics", () => {
+  it("extracts a privacy-safe save stage without requiring technical details", () => {
+    expect(
+      projectIoStage(
+        new Error("PROJECT_IO_STAGE[container_commit]: Could not replace the project atomically"),
+      ),
+    ).toBe("container_commit");
+    expect(projectIoStage(new Error("unclassified"))).toBeNull();
+  });
+});
+
 describe("workspace home", () => {
   beforeEach(() => {
     localStorage.clear();
     window.history.replaceState({}, "", "/");
+    vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("新しいrouteとfresh-startを常に画面先頭から開く", async () => {
+    render(<App />);
+    const scrollTo = vi.mocked(window.scrollTo);
+    scrollTo.mockClear();
+
+    fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
+
+    fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
+    await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
+    scrollTo.mockClear();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: /新しい実験/ }));
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
   });
 
   it("お気に入りの設計をデータなしで呼び出し、確認画面から修正できる", () => {
@@ -48,6 +80,34 @@ describe("workspace home", () => {
     for (const route of ["favorites", "new-experiment", "recent", "open-project"]) {
       expect(document.querySelector(`[data-primary-route="${route}"]`)).toBeVisible();
     }
+  });
+
+  it("keeps the adaptive feature flag while navigating from Home to New Experiment", () => {
+    window.history.replaceState({}, "", "/?adaptiveInput=1");
+    render(<App />);
+    fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+    expect(window.location.search).toBe("?adaptiveInput=1");
+    expect(screen.getByRole("heading", { name: "実験構造から適切な入力面を作る" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "どのような実験ですか？" })).toBeVisible();
+  });
+
+  it("専門解析を切り替えたときに別familyの入力状態を持ち越さない", () => {
+    render(<App />);
+
+    fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+    fireEvent.click(screen.getByText("既存の解析用データを直接入力する"));
+    fireEvent.click(screen.getByRole("button", { name: /単回帰/ }));
+    fireEvent.change(screen.getByRole("textbox", { name: "X label" }), {
+      target: { value: "前の解析のX" },
+    });
+
+    fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
+      target: { value: "nonlinear-fit" },
+    });
+
+    expect(screen.getByRole("heading", { name: "非線形XYフィッティング" })).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "X label" })).toHaveValue("X");
+    expect(screen.queryByDisplayValue("前の解析のX")).toBeNull();
   });
 
   it("ホームの「プロジェクトを開く」は、直前のprojectでなく毎回file dialogを開く", async () => {
@@ -258,6 +318,7 @@ describe("workspace home", () => {
   });
 
   it("opens deterministic synthetic data without presenting it as research data", () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<App />);
     expect(screen.getByText("ブラウザUXプレビュー")).toBeVisible();
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
@@ -275,6 +336,35 @@ describe("workspace home", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "← 戻る" }));
     expect(screen.getByRole("heading", { name: "合成デモデータですぐ試す" })).toBeVisible();
+  });
+
+  it("未保存workspaceからのtop navigationは破棄確認なしに状態を失わない", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<App />);
+    fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+    fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
+    await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
+
+    fireEvent.click(screen.getByRole("button", { name: /ホーム/ }));
+    expect(confirm).toHaveBeenCalledWith(
+      "未保存の変更があります。現在の実験を閉じて破棄しますか？",
+    );
+    expect(screen.getByRole("heading", { name: "合成デモ：Simple 3群（連続値）" })).toBeVisible();
+
+    confirm.mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: /ホーム/ }));
+    expect(await screen.findByRole("heading", { name: /どの実験を整理しますか？/ })).toBeVisible();
+  });
+
+  it("確認済みの新しい実験操作は同じroute上のworkspaceもfresh startへ戻す", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<App />);
+    fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+    fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
+    await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
+
+    fireEvent.click(screen.getByRole("button", { name: /新しい実験/ }));
+    expect(await screen.findByRole("heading", { name: "何をした実験ですか？" })).toBeVisible();
   });
 
   it("returns to Home with the visible back action", () => {

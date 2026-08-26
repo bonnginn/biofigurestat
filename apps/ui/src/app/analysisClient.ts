@@ -66,9 +66,26 @@ export function createEvaluationAnalysisRunner(config: EvaluationModeConfig): An
   };
 }
 
+export function localEngineFailureMessage(error: unknown): string {
+  const detail = error instanceof Error ? error.message : String(error);
+  if (/requires at least|insufficient residual degrees of freedom/i.test(detail)) {
+    return "非線形fitに必要な異なるX値が不足しています。各seriesの時点数と欠損値を確認してください。入力したデータは保持されています。";
+  }
+  if (/flat|non-identifiable|not identifiable/i.test(detail)) {
+    return "このデータでは非線形fitのparameterを一意に推定できません。変化幅と測定時点を確認してください。入力したデータは保持されています。";
+  }
+  if (/initial .* bounds|bound .* lower < upper/i.test(detail)) {
+    return "非線形fitの初期値またはboundsが不正です。model設定を確認してください。入力したデータは保持されています。";
+  }
+  if (/failed:/i.test(detail)) {
+    return "非線形fitが収束しませんでした。model、初期値、bounds、測定時点を確認してください。入力したデータは保持されています。";
+  }
+  return "ローカル解析エンジンが有効な結果を返せませんでした。入力したデータは保持されています。診断画面で「詳細を記録」を有効にすると原因を確認できます。";
+}
+
 export const defaultAnalysisRunner: AnalysisRunner = async (request) => {
   if (!isTauri()) {
-    if (evaluationModeIsConfigured(evaluationMode)) {
+    if (import.meta.env.DEV && evaluationModeIsConfigured(evaluationMode)) {
       return createEvaluationAnalysisRunner(evaluationMode)(request);
     }
     throw new AnalysisClientError(
@@ -83,10 +100,8 @@ export const defaultAnalysisRunner: AnalysisRunner = async (request) => {
   } catch (error) {
     if (error instanceof AnalysisClientError) throw error;
     recordDiagnosticError("ENGINE_EXECUTION_FAILED", error);
-    throw new AnalysisClientError(
-      "ENGINE_EXECUTION_FAILED",
-      "ローカル解析エンジンが有効な結果を返せませんでした。入力したデータは保持されています。",
-      { cause: error },
-    );
+    throw new AnalysisClientError("ENGINE_EXECUTION_FAILED", localEngineFailureMessage(error), {
+      cause: error,
+    });
   }
 };

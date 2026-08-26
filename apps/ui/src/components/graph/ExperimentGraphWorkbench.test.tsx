@@ -701,6 +701,8 @@ describe("ExperimentGraphWorkbench", () => {
     expect(plannedAnnotation).not.toHaveTextContent("全体 p");
 
     selectInspectorTarget("annotation");
+    fireEvent.click(screen.getByRole("button", { name: "すべての比較をまとめて注釈へ追加" }));
+    expect(screen.getByRole("combobox", { name: `${plannedTestName}の配置形式` })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "この比較を注釈へ追加" }));
     fireEvent.change(
       screen.getByRole("combobox", {

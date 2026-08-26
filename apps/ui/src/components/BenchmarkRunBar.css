@@ -1,0 +1,70 @@
+.benchmark-run-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: end;
+  padding: 0.55rem 1.5rem;
+  border-bottom: 1px solid #c9d7e8;
+  background: #eef6ff;
+}
+
+.benchmark-run-bar label {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 8rem;
+}
+
+.benchmark-run-bar label span {
+  color: #52657d;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.benchmark-run-bar input,
+.benchmark-run-bar select,
+.benchmark-run-bar button {
+  min-height: 2.25rem;
+  font: inherit;
+}
+
+.benchmark-case-delivery {
+  display: grid;
+  flex: 1 0 100%;
+  gap: 0.2rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #b7cde5;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.benchmark-case-delivery.is-error {
+  border-color: #d88080;
+  color: #8a2020;
+}
+
+.benchmark-pilot-loader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid #9db8e7;
+  border-radius: 10px;
+  background: #f2f6ff;
+  color: #23466f;
+}
+
+.benchmark-pilot-loader > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  flex: 1;
+}
+
+.benchmark-pilot-loader span {
+  font-size: 0.88rem;
+}
+
+.benchmark-pilot-loader button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}

@@ -103,8 +103,10 @@ describe("ExperimentWorkspace", () => {
     trigger.focus();
     fireEvent.click(trigger);
     expect(screen.getByRole("dialog", { name: "グラフの基本形を選ぶ" })).toBeVisible();
+    expect(document.body.style.overflow).toBe("hidden");
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog", { name: "グラフの基本形を選ぶ" })).toBeNull();
+    expect(document.body.style.overflow).toBe("");
     expect(trigger).toHaveFocus();
   });
 
@@ -180,8 +182,12 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(dot);
     expect(dot).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "このグラフを作成" })).toBeDisabled();
+    expect(
+      screen.getByText("グラフ形式を1つ選んでください。選択するまでグラフは作成できません。"),
+    ).toBeVisible();
     fireEvent.click(dot);
     expect(screen.getByRole("button", { name: "このグラフを作成" })).toBeEnabled();
+    expect(screen.queryByText(/グラフ形式を1つ選んでください/)).toBeNull();
   });
 
   it("WBのImageJ測定値6列を貼り付け、背景補正値と比を表示する", () => {
@@ -324,22 +330,14 @@ describe("ExperimentWorkspace", () => {
     expect(dateInput).toHaveValue("2026/08/22");
   });
 
-  it("未入力と測定予定なしを区別し、予定なしを入力対象へ戻せる", () => {
+  it("通常の入力表に測定予定なしcontrolを表示しない", () => {
     render(
       <ExperimentWorkspace initialDraft={draftWithTwoConditions("proportion")} onBack={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
 
-    fireEvent.click(screen.getByRole("button", { name: "Controlを測定予定なしにする" }));
-    expect(screen.getByRole("spinbutton", { name: "Controlの陽性数" })).toBeDisabled();
-    expect(screen.getByText("予定なし", { selector: "span" })).toBeVisible();
-
-    fireEvent.click(screen.getByRole("tab", { name: "Overview" }));
-    expect(screen.getByText(/測定予定なし：1セル/)).toBeVisible();
-    expect(screen.getByText(/未入力のセルが5件/)).toBeVisible();
-
-    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
-    fireEvent.click(screen.getByRole("button", { name: "Controlを入力対象に戻す" }));
+    expect(screen.queryByRole("button", { name: /測定予定なし/ })).toBeNull();
+    expect(screen.queryByText("予定なし")).toBeNull();
     expect(screen.getByRole("spinbutton", { name: "Controlの陽性数" })).toBeEnabled();
   });
 
@@ -494,7 +492,14 @@ describe("ExperimentWorkspace", () => {
   });
 
   it("opens a nested raw inspector, derives summary values, and keeps a source note", () => {
-    const draft = draftWithTwoConditions("nested_continuous");
+    const base = draftWithTwoConditions("nested_continuous");
+    const draft = {
+      ...base,
+      readouts: base.readouts.map((readout) => ({
+        ...readout,
+        nestedInputMode: "nested_observations" as const,
+      })),
+    };
     render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
 
     fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
@@ -510,6 +515,42 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByText("n").parentElement).toHaveTextContent("3");
     expect(screen.getByText("平均").parentElement).toHaveTextContent("2.67");
     expect(screen.getByRole("textbox", { name: "出典メモ" })).toHaveValue("ImageJ Results");
+  });
+
+  it("keeps decimal input intermediates and rejects multi-value paste without erasing a summary", () => {
+    const draft = draftWithTwoConditions("nested_continuous");
+    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
+    const input = screen.getByRole("textbox", { name: "Controlの細胞強度" });
+    expect(input).toHaveAttribute("placeholder", "数値を入力");
+    expect(screen.queryByRole("columnheader", { name: "時間" })).toBeNull();
+    expect(screen.getByRole("columnheader", { name: "測定値（クリックして入力）" })).toBeVisible();
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "1." } });
+    expect(input).toHaveValue("1.");
+    fireEvent.change(input, { target: { value: "1.74" } });
+    expect(input).toHaveValue("1.74");
+    fireEvent.paste(input, { clipboardData: { getData: () => "1.2\n1.3" } });
+    expect(input).toHaveValue("1.74");
+    expect(screen.getByRole("status")).toHaveTextContent("複数値は反映せず");
+  });
+
+  it("closes the selected raw-cell inspector when switching experiment tabs", () => {
+    const base = draftWithTwoConditions("nested_continuous");
+    const draft = {
+      ...base,
+      readouts: base.readouts.map((readout) => ({
+        ...readout,
+        nestedInputMode: "nested_observations" as const,
+      })),
+    };
+    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
+    fireEvent.click(screen.getByRole("button", { name: "Controlの生データを開く" }));
+    expect(screen.getByRole("complementary", { name: "生データ／要約" })).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 2" }));
+    expect(screen.queryByRole("complementary", { name: "生データ／要約" })).toBeNull();
   });
 
   it("opens the project-wide graph workbench from an experiment tab and returns to the same sheet", async () => {
@@ -637,6 +678,21 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="unit-trajectory"]')).toHaveLength(8);
+    expect(graph.querySelector('[data-graph-layer="legend"]')).not.toBeNull();
+    expect(graph).toHaveTextContent("Control");
+    expect(graph).toHaveTextContent("Stimulated");
+    fireEvent.change(screen.getByRole("combobox", { name: "編集対象" }), {
+      target: { value: "data" },
+    });
+    expect(screen.getByRole("combobox", { name: "X軸に使う要因" })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "X軸に使う要因" })).toHaveValue("time");
+    expect(screen.getByRole("combobox", { name: "系列に使う要因" })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "系列に使う要因" })).toHaveValue("condition");
+    expect(screen.getByText(/X軸は時間、各条件は色と記号で区別/)).toBeVisible();
+    fireEvent.change(screen.getByRole("combobox", { name: "編集対象" }), {
+      target: { value: "legend" },
+    });
+    expect(screen.getByRole("combobox", { name: "凡例の位置" })).toHaveValue("top");
   });
 
   it("縦断データのAUCを元トレースと分けたGraph sourceとして作成する", () => {

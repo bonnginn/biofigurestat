@@ -20,6 +20,7 @@ describe("NewExperimentPage in benchmark evaluation mode", () => {
 
     expect(screen.getByRole("heading", { name: "何をした実験ですか？" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "合成デモデータですぐ試す" })).toBeNull();
-    expect(screen.getByText("特殊データ・解析から始める")).toBeVisible();
+    expect(screen.getByText("既存の解析用データを直接入力する")).toBeVisible();
+    expect(screen.queryByText("利用可能")).toBeNull();
   });
 });

@@ -39,9 +39,35 @@ describe("ContextualHelp", () => {
     const trigger = screen.getByRole("button", { name: "ヘルプ" });
     fireEvent.click(trigger);
     expect(screen.getByRole("dialog")).toBeVisible();
+    expect(document.body.style.overflow).toBe("hidden");
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(document.body.style.overflow).toBe("");
     expect(trigger).toHaveFocus();
+  });
+
+  it("closes from the footer or by clicking the backdrop", () => {
+    render(<ContextualHelp context={{ surface: "graph" }} />);
+    const trigger = screen.getByRole("button", { name: "ヘルプ" });
+
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole("button", { name: "閉じる" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(trigger);
+    const backdrop = screen.getByRole("dialog").parentElement;
+    expect(backdrop).not.toBeNull();
+    fireEvent.pointerDown(backdrop!);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("uses the Help trigger as an open-close toggle", () => {
+    render(<ContextualHelp context={{ surface: "home" }} />);
+    const trigger = screen.getByRole("button", { name: "ヘルプ" });
+    fireEvent.click(trigger);
+    expect(screen.getByRole("dialog")).toBeVisible();
+    fireEvent.click(trigger);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("passes only the read-only request to the configured provider", async () => {

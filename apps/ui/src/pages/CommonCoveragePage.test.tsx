@@ -104,6 +104,11 @@ const nonlinearRunner: AnalysisRunner = vi.fn(async (request) => {
 });
 
 describe("final common coverage workflows", () => {
+  it("ブラウザレビューでengine未接続なら解析実行をdisabledで説明する", () => {
+    render(<CommonCoveragePage mode="nonlinear-fit" onBack={vi.fn()} analysisAvailable={false} />);
+    expect(screen.getByRole("button", { name: "選択したmodelでfitを実行" })).toBeDisabled();
+    expect(screen.getByText(/ブラウザレビューでは解析エンジンを実行できません/)).toBeVisible();
+  });
   it("runs regression separately from correlation and renders fitted Graph and Methods", async () => {
     render(
       <CommonCoveragePage mode="regression" onBack={vi.fn()} analysisRunner={regressionRunner} />,
@@ -152,11 +157,13 @@ describe("final common coverage workflows", () => {
     );
 
     expect(screen.getByText(/Graphは保存済み解析結果のcurveだけ/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "選択したmodelでfitを実行" }));
     await waitFor(() =>
       expect(screen.getByRole("img", { name: "非線形フィットGraph" })).toBeVisible(),
     );
     expect(screen.getByText("Parameter estimates & fit diagnostics")).toBeVisible();
+    expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
     expect(screen.getAllByText(/R²/).length).toBeGreaterThan(0);
     expect(nonlinearRunner).toHaveBeenCalledWith(
       expect.objectContaining({

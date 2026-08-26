@@ -27,12 +27,26 @@ export function createEvaluationProxy(environment: NodeJS.ProcessEnv): ProxyOpti
   };
 }
 
-export default defineConfig(() => {
+export default defineConfig(({ command }) => {
   const evaluationProxy = createEvaluationProxy(process.env);
   const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
+  const productionBenchmarkRuntime = path
+    .join(repositoryRoot, "apps/ui/src/app/productionBenchmarkRuntime.ts")
+    .replaceAll("\\", "/");
   return {
     base: "./",
     plugins: [react()],
+    resolve:
+      command === "build"
+        ? {
+            alias: [
+              {
+                find: /^.*\/benchmarkEvaluation$/,
+                replacement: productionBenchmarkRuntime,
+              },
+            ],
+          }
+        : undefined,
     server: {
       host: "127.0.0.1",
       port: 1420,

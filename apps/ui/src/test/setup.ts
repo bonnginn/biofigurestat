@@ -6,3 +6,11 @@ if (typeof document !== "undefined" && typeof document.execCommand !== "function
     value: () => false,
   });
 }
+
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "scrollTo", {
+    configurable: true,
+    writable: true,
+    value: () => undefined,
+  });
+}

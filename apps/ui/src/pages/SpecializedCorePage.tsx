@@ -31,14 +31,11 @@ import {
 } from "../app/benchmarkEvaluation";
 import { evaluationMode } from "../app/evaluationMode";
 import { downloadTextFile, serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
-import {
-  fetchLiteratureExperimenterCase,
-  isLiteratureCaseId,
-  type LiteratureExperimenterCase,
-} from "../app/literatureBenchmark";
+import type { LiteratureExperimenterCase } from "../app/literatureBenchmark";
 import { generateMethodsText } from "../app/methodsText";
 import { PRODUCT_IDENTITY } from "../app/productIdentity";
-import type { SaveProjectAction } from "../app/projectActions";
+import type { OpenedProject, SaveProjectAction } from "../app/projectActions";
+import { updateAdaptiveSurvivalSnapshot } from "../app/adaptiveSurvivalProject";
 import type { AppRoute } from "../app/routes";
 import { AnalysisRouteSwitcher } from "../components/AnalysisRouteSwitcher";
 import { HeatmapGraph } from "../components/graph/HeatmapGraph";
@@ -49,9 +46,11 @@ type Props = Readonly<{
   onBack: () => void;
   saveProject?: SaveProjectAction;
   analysisRunner?: AnalysisRunner;
+  analysisAvailable?: boolean;
   onNavigate?: (route: AppRoute) => void;
   initialText?: string;
   adaptiveInput?: AdaptiveInputSnapshot;
+  initialProject?: OpenedProject;
 }>;
 const now = () => new Date().toISOString();
 const day = () => new Date().toISOString().slice(0, 10);
@@ -70,10 +69,13 @@ export function SpecializedCorePage({
   onBack,
   saveProject,
   analysisRunner = defaultAnalysisRunner,
+  analysisAvailable = true,
   onNavigate,
   initialText,
   adaptiveInput,
+  initialProject,
 }: Props) {
+  const activeAdaptiveInput = adaptiveInput ?? initialProject?.state.adaptiveInput ?? undefined;
   const [text, setText] = useState(
     initialText ?? (mode === "survival"
       ? "Unit ID\tGroup\tFollow-up time\tStatus\nmouse-1\tControl\t4\tEvent\nmouse-2\tControl\t7\tCensored\nmouse-3\tTreatment\t6\tEvent\nmouse-4\tTreatment\t9\tCensored"
@@ -84,7 +86,9 @@ export function SpecializedCorePage({
   const [rangeMax, setRangeMax] = useState("");
   const [missingColor, setMissingColor] = useState("#d1d5db");
   const [showCellValues, setShowCellValues] = useState(false);
-  const [result, setResult] = useState<AnalysisEngineResult | null>(null);
+  const [result, setResult] = useState<AnalysisEngineResult | null>(
+    () => initialProject?.state.analysisRuns.find(({ state }) => state === "current")?.result ?? null,
+  );
   const [message, setMessage] = useState<string | null>(null);
   const [literatureCase, setLiteratureCase] = useState<LiteratureExperimenterCase | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -93,11 +97,16 @@ export function SpecializedCorePage({
   useEffect(() => {
     const identity = benchmarkRun.identity;
     setLiteratureCase(null);
-    if (!identity || !isLiteratureCaseId(identity.caseId)) return;
+    if (!import.meta.env.DEV || !identity) return;
     let cancelled = false;
-    void fetchLiteratureExperimenterCase(identity).then((loaded) => {
-      if (!cancelled) setLiteratureCase(loaded);
-    });
+    void import("../app/literatureBenchmark").then(
+      ({ fetchLiteratureExperimenterCase, isLiteratureCaseId }) => {
+        if (!isLiteratureCaseId(identity.caseId)) return;
+        void fetchLiteratureExperimenterCase(identity).then((loaded) => {
+          if (!cancelled) setLiteratureCase(loaded);
+        });
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -131,7 +140,14 @@ export function SpecializedCorePage({
     if (mode !== "survival") return null;
     try {
       const parsed = parseSurvivalPaste(text);
-      const labels = [...new Set(parsed.map(({ conditionId }) => conditionId))];
+      const labels = activeAdaptiveInput
+        ? activeAdaptiveInput.contract.factors.reduce<string[]>((items, factor) => {
+            if (items.length === 0) return [...factor.levels];
+            return items.flatMap((prefix) => factor.levels.map((level) => `${prefix} · ${level}`));
+          }, [])
+        : [...new Set(parsed.map(({ conditionId }) => conditionId))];
+      const unknown = parsed.find(({ conditionId }) => !labels.includes(conditionId));
+      if (unknown) throw new Error(`入力のGroup「${unknown.conditionId}」は保存済み実験構造にありません。`);
       const conditions = labels.map((label, index) => ({ id: `condition.${index + 1}`, label }));
       const labelToId = new Map(conditions.map(({ id, label }) => [label, id]));
       const rows = parsed.map((row) => ({ ...row, conditionId: labelToId.get(row.conditionId)! }));
@@ -152,7 +168,7 @@ export function SpecializedCorePage({
     } catch (error) {
       return { error: error instanceof Error ? error.message : "入力を確認してください" } as const;
     }
-  }, [mode, text]);
+  }, [activeAdaptiveInput, mode, text]);
   const heatmap = useMemo(() => {
     if (mode !== "heatmap") return null;
     try {
@@ -222,8 +238,11 @@ export function SpecializedCorePage({
       wizardDecisions: [{ questionId: "survival.censoring", answer: "explicit_event_status" }],
       createdAt,
     };
-    const design = adaptiveInput
-      ? projectContractToExperimentDesign(adaptiveInput.contract, Math.max(...survival.conditions.map(({ id }) => survival.rows.filter((row) => row.conditionId === id).length)), createdAt)
+    const adaptivePlannedN = activeAdaptiveInput?.contract.matching.kind === "matched"
+      ? Math.max(...survival.conditions.map(({ id }) => survival.rows.filter((row) => row.conditionId === id).length))
+      : survival.rows.length;
+    const design = activeAdaptiveInput
+      ? projectContractToExperimentDesign(activeAdaptiveInput.contract, adaptivePlannedN, createdAt)
       : legacyDesign;
     const outcomeId = design.outcomes[0]!.id;
     const units: UnitInstance[] = survival.rows.map((row) => ({
@@ -247,7 +266,7 @@ export function SpecializedCorePage({
     }));
     const request = createD11EngineRequest({
       requestId: "request.survival.1",
-      projectId: "project.survival",
+      projectId: initialProject?.state.metadata.projectId ?? "project.survival",
       analysisId: "analysis.survival.1",
       design,
       observations,
@@ -310,10 +329,10 @@ export function SpecializedCorePage({
         });
         const survivalState = createInitialProjectState({
             metadata: {
-              projectId: "project.survival",
-              projectName: "Survival analysis",
-              experimentDate: day(),
-              createdAt: prepared.createdAt,
+              projectId: initialProject?.state.metadata.projectId ?? "project.survival",
+              projectName: initialProject?.state.metadata.projectName ?? "Survival analysis",
+              experimentDate: initialProject?.state.metadata.experimentDate || day(),
+              createdAt: initialProject?.state.metadata.createdAt ?? prepared.createdAt,
               updatedAt: prepared.createdAt,
             },
             design: prepared.design,
@@ -329,7 +348,15 @@ export function SpecializedCorePage({
             actor: "researcher",
             analysis: { recommendation, request: prepared.request, result, graphSpec: spec },
           });
-        await saveProject(adaptiveInput ? ProjectStateSchema.parse({ ...survivalState, adaptiveInput }) : survivalState);
+        const updatedAdaptiveInput = activeAdaptiveInput
+          ? updateAdaptiveSurvivalSnapshot(activeAdaptiveInput, text, prepared.createdAt)
+          : undefined;
+        await saveProject(
+          updatedAdaptiveInput
+            ? ProjectStateSchema.parse({ ...survivalState, adaptiveInput: updatedAdaptiveInput })
+            : survivalState,
+          initialProject?.target,
+        );
       } else {
         if (!heatmap || "error" in heatmap) throw new Error("有効なmatrixを入力してください");
         const createdAt = now();
@@ -539,6 +566,7 @@ export function SpecializedCorePage({
 
   useLayoutEffect(() => {
     if (
+      import.meta.env.DEV &&
       mode === "survival" &&
       result &&
       benchmarkRun.identity &&
@@ -689,20 +717,28 @@ export function SpecializedCorePage({
     }
   };
   return (
-    <div className="page-stack">
-      <button type="button" onClick={onBack}>
+    <div className="page-stack specialized-analysis-page">
+      <button className="back-link" type="button" onClick={onBack}>
         ← 戻る
       </button>
       <AnalysisRouteSwitcher current={mode} onNavigate={onNavigate} />
-      <section className="workspace-panel">
-        <p className="overline">Specialized Core</p>
+      {mode === "survival" && initialProject ? (
+        <nav aria-label="Common project workspace" className="workspace-mode-tabs">
+          <a href="#survival-data">Data</a>
+          <a href="#survival-graph">Graph</a>
+          <a href="#survival-statistics">Statistics</a>
+          <button type="button" disabled={!saveProject} onClick={() => void save()}>Save</button>
+        </nav>
+      ) : null}
+      <section className="workspace-panel specialized-workspace-panel">
+        <p className="overline">専門解析</p>
         <h1>{mode === "survival" ? "Survival / time-to-event" : "Heatmap / matrix"}</h1>
         <p>
           {mode === "survival"
             ? "Unit ID・Group・Follow-up time・Event/Censored を貼り付けます。censoringは欠損に変換しません。"
             : "1列目をfeature名、1行目をsample名として表を貼り付けます。空欄とNAは欠損のまま保持します。"}
         </p>
-        {mode === "survival" && literatureCase ? (
+        {import.meta.env.DEV && mode === "survival" && literatureCase ? (
           <section className="benchmark-pilot-loader" aria-label="Literature Survival合成値">
             <div>
               <strong>{literatureCase.caseId}</strong>
@@ -715,7 +751,7 @@ export function SpecializedCorePage({
             </button>
           </section>
         ) : null}
-        <label>
+        <label id={mode === "survival" ? "survival-data" : undefined}>
           表
           <textarea
             aria-label={mode === "survival" ? "Survival data" : "Matrix data"}
@@ -729,7 +765,7 @@ export function SpecializedCorePage({
           />
         </label>
         {mode === "heatmap" ? (
-          <div>
+          <div className="specialized-settings-grid">
             <label>
               Transform{" "}
               <select
@@ -780,9 +816,14 @@ export function SpecializedCorePage({
             </label>
           </div>
         ) : null}
-        <div>
+        <div className="specialized-action-bar">
           {mode === "survival" ? (
-            <button type="button" onClick={() => void runSurvival()}>
+            <button
+              className="analysis-run-button"
+              type="button"
+              disabled={!analysisAvailable}
+              onClick={() => void runSurvival()}
+            >
               Kaplan–Meier + log-rankを実行
             </button>
           ) : null}
@@ -792,18 +833,23 @@ export function SpecializedCorePage({
           <button type="button" onClick={() => void exportPng()}>
             PNGを書き出す
           </button>
-          <button type="button" onClick={() => void save()}>
+          <button type="button" disabled={!saveProject} onClick={() => void save()}>
             プロジェクトを保存
           </button>
-          {mode === "survival" && benchmarkRun.identity ? (
+          {import.meta.env.DEV && mode === "survival" && benchmarkRun.identity ? (
             <button type="button" onClick={() => void finalizeSpecializedBenchmark()}>
               Benchmarkを9 artifactsで完了
             </button>
           ) : null}
         </div>
+        {mode === "survival" && !analysisAvailable ? (
+          <p className="specialized-engine-note" role="note">
+            このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
+          </p>
+        ) : null}
         {message ? <p role="status">{message}</p> : null}
       </section>
-      <section className="workspace-panel">
+      <section id={mode === "survival" ? "survival-graph" : undefined} className="workspace-panel specialized-workspace-panel">
         {survival && "error" in survival ? <p role="alert">{survival.error}</p> : null}
         {heatmap && "error" in heatmap ? <p role="alert">{heatmap.error}</p> : null}
         {mode === "survival" && survival && !("error" in survival) ? (
@@ -820,6 +866,16 @@ export function SpecializedCorePage({
           />
         ) : null}
       </section>
+      {mode === "survival" ? (
+        <section id="survival-statistics" className="workspace-panel specialized-workspace-panel" aria-label="Statistics workspace">
+          <h2>Statistics</h2>
+          {result?.tests[0] ? (
+            <p>log-rank {result.tests[0].statisticName}={result.tests[0].statistic}、p={result.tests[0].pValue}</p>
+          ) : (
+            <p>解析を実行すると、event/censoringを保持した結果をここに表示します。</p>
+          )}
+        </section>
+      ) : null}
       {methods ? (
         <details>
           <summary>Methods</summary>

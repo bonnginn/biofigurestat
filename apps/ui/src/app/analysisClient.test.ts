@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AnalysisEngineRequest, AnalysisEngineResult } from "@lsaa/analysis-contracts";
 
-import { createEvaluationAnalysisRunner } from "./analysisClient";
+import { createEvaluationAnalysisRunner, localEngineFailureMessage } from "./analysisClient";
 
 const request: AnalysisEngineRequest = {
   protocolVersion: "0.1.0",
@@ -72,5 +72,21 @@ describe("evaluation analysis client", () => {
       sourceRevision: null,
     });
     await expect(runner(request)).rejects.toThrow("明示的に設定");
+  });
+});
+
+describe("local engine failure guidance", () => {
+  it("distinguishes insufficient nonlinear-fit data from a missing engine", () => {
+    expect(
+      localEngineFailureMessage(
+        "The local analysis engine failed: D17 K5 requires at least 3 distinct X values",
+      ),
+    ).toContain("異なるX値が不足");
+  });
+
+  it("explains non-identifiable nonlinear parameters", () => {
+    expect(localEngineFailureMessage("D17 K5 fit is non-identifiable")).toContain(
+      "一意に推定できません",
+    );
   });
 });

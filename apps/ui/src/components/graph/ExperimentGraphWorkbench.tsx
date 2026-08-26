@@ -294,6 +294,7 @@ export type ExperimentGraphWorkbenchProps = Readonly<{
   /** `combined` is retained for isolated component harnesses; project UI uses separated workspaces. */
   workspaceMode?: "graph" | "statistics" | "combined";
   analysisRunner?: AnalysisRunner;
+  analysisAvailable?: boolean;
   initialState?: Omit<WorkspaceGraphState, "id" | "displayName">;
   onStateChange?: (state: Omit<WorkspaceGraphState, "id" | "displayName">) => void;
 }>;
@@ -2553,6 +2554,7 @@ export function ExperimentGraphWorkbench({
   onClose,
   workspaceMode = "combined",
   analysisRunner = defaultAnalysisRunner,
+  analysisAvailable = true,
   initialState,
   onStateChange,
 }: ExperimentGraphWorkbenchProps) {
@@ -2861,7 +2863,7 @@ export function ExperimentGraphWorkbench({
     onStateChangeRef.current = onStateChange;
   }, [onStateChange]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onStateChangeRef.current?.(graphStateSnapshot);
   }, [graphStateSnapshot]);
 
@@ -2879,7 +2881,12 @@ export function ExperimentGraphWorkbench({
     analysis: string;
   } | null>(null);
   useEffect(() => {
-    if (!evaluationModeIsConfigured(evaluationMode) || !benchmarkRun.identity) return;
+    if (
+      !import.meta.env.DEV ||
+      !evaluationModeIsConfigured(evaluationMode) ||
+      !benchmarkRun.identity
+    )
+      return;
     const identity = `${benchmarkRun.identity.caseId}:${benchmarkRun.identity.track}:${benchmarkRun.identity.runId}`;
     const previous = benchmarkStateLogRef.current;
     benchmarkStateLogRef.current = {
@@ -3336,6 +3343,7 @@ export function ExperimentGraphWorkbench({
   });
   useLayoutEffect(() => {
     if (
+      !import.meta.env.DEV ||
       !evaluationModeIsConfigured(evaluationMode) ||
       !benchmarkRun.identity ||
       benchmarkRun.defaultGraphCapture ||
@@ -3806,7 +3814,7 @@ export function ExperimentGraphWorkbench({
                 >
                   CSV
                 </button>
-                {evaluationModeIsConfigured(evaluationMode) ? (
+                {import.meta.env.DEV && evaluationModeIsConfigured(evaluationMode) ? (
                   <button
                     type="button"
                     aria-label="Benchmark runを完了"
@@ -3994,6 +4002,41 @@ export function ExperimentGraphWorkbench({
                   ) : null}
                 </select>
               </label>
+              <div className="experiment-graph-layer-shortcuts" aria-label="現在の表示レイヤー">
+                <span>表示中</span>
+                {shape === "nested_continuous" ? (
+                  <button
+                    type="button"
+                    aria-pressed={layers.raw}
+                    onClick={() => setLayers((current) => ({ ...current, raw: !current.raw }))}
+                  >
+                    生データ
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  aria-pressed={layers.experiment}
+                  onClick={() =>
+                    setLayers((current) => ({ ...current, experiment: !current.experiment }))
+                  }
+                >
+                  実験単位の点
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={layers.overall}
+                  onClick={() =>
+                    setLayers((current) => ({ ...current, overall: !current.overall }))
+                  }
+                >
+                  要約
+                </button>
+                {visualSeriesOptions.length > 1 ? (
+                  <button type="button" onClick={() => inspectGraphPart("series-style")}>
+                    系列を編集
+                  </button>
+                ) : null}
+              </div>
             </div>
           ) : (
             <section className="experiment-graph-inspector-section experiment-statistics-source">
@@ -4098,10 +4141,13 @@ export function ExperimentGraphWorkbench({
                     <select
                       aria-label="X軸に使う要因"
                       value={
-                        grouping.x.source === "factor"
-                          ? `factor:${grouping.x.factorId ?? ""}`
-                          : "condition"
+                        axes.xSemantic !== "categorical"
+                          ? "time"
+                          : grouping.x.source === "factor"
+                            ? `factor:${grouping.x.factorId ?? ""}`
+                            : "condition"
                       }
+                      disabled={axes.xSemantic !== "categorical"}
                       onChange={(event) => {
                         const value = event.target.value;
                         setGrouping((current) => ({
@@ -4116,7 +4162,10 @@ export function ExperimentGraphWorkbench({
                         }));
                       }}
                     >
-                      <option value="condition">条件</option>
+                      <option value="time">
+                        {axes.xSemantic === "numeric_covariate" ? axes.xTitle || "数値X" : "時間"}
+                      </option>
+                      <option value="condition">条件の組み合わせ</option>
                       {draft.attributes.map((factor) => (
                         <option key={factor.id} value={`factor:${factor.id}`}>
                           {factor.label}
@@ -4172,10 +4221,13 @@ export function ExperimentGraphWorkbench({
                     <select
                       aria-label="系列に使う要因"
                       value={
-                        grouping.series.source === "factor"
-                          ? `factor:${grouping.series.factorId ?? ""}`
-                          : grouping.series.source
+                        axes.xSemantic !== "categorical"
+                          ? "condition"
+                          : grouping.series.source === "factor"
+                            ? `factor:${grouping.series.factorId ?? ""}`
+                            : grouping.series.source
                       }
+                      disabled={axes.xSemantic !== "categorical"}
                       onChange={(event) => {
                         const value = event.target.value;
                         setGrouping((current) => ({
@@ -4196,6 +4248,9 @@ export function ExperimentGraphWorkbench({
                         }
                       }}
                     >
+                      {axes.xSemantic !== "categorical" ? (
+                        <option value="condition">条件の組み合わせ</option>
+                      ) : null}
                       <option value="none">なし</option>
                       {draft.time.points.length > 0 ? (
                         <option value="time">時間 / numeric X</option>
@@ -4207,6 +4262,12 @@ export function ExperimentGraphWorkbench({
                       ))}
                     </select>
                   </label>
+                  {axes.xSemantic !== "categorical" ? (
+                    <p className="experiment-graph-help">
+                      X軸は{axes.xSemantic === "time" ? "時間" : axes.xTitle || "数値"}
+                      、各条件は色と記号で区別します。
+                    </p>
+                  ) : null}
                   <label className="experiment-graph-field">
                     <span>パネル分割</span>
                     <select
@@ -4393,6 +4454,18 @@ export function ExperimentGraphWorkbench({
                     const nextType = event.target.value as GraphType;
                     setGraphType(nextType);
                     setLayers(defaultLayersForGraphType(nextType, shape));
+                    if (
+                      nextType === "line" &&
+                      draft.time.points.length > 1 &&
+                      activeConditions.length > 1
+                    ) {
+                      setAppearance((current) => ({
+                        ...current,
+                        palette: current.palette === "single" ? "colorblind" : current.palette,
+                        legendPosition:
+                          current.legendPosition === "hidden" ? "top" : current.legendPosition,
+                      }));
+                    }
                   }}
                 >
                   {shape === "categorical_counts" ? (
@@ -5354,6 +5427,59 @@ export function ExperimentGraphWorkbench({
               >
                 この比較を注釈へ追加
               </button>
+              <button
+                type="button"
+                disabled={statisticsAnnotation.mode === "hidden"}
+                onClick={() => {
+                  const mode =
+                    statisticsAnnotation.mode === "hidden" ? "symbol" : statisticsAnnotation.mode;
+                  const next = analysisResult.tests.flatMap<StatisticsAnnotationEntry>(
+                    (test, testIndex) => {
+                      const [, firstConditionId, secondConditionId] = test.name.split(":");
+                      if (!firstConditionId || !secondConditionId) return [];
+                      return [
+                        {
+                          id: `annotation.${testIndex}`,
+                          analysisId: analysisResult.requestId,
+                          comparisonId: test.name,
+                          testIndex,
+                          mode,
+                          showNonSignificant: true,
+                          presentation: "bracket" as const,
+                          endpoints: [
+                            { conditionId: firstConditionId },
+                            { conditionId: secondConditionId },
+                          ],
+                          pValueStatus:
+                            test.adjustedPValue === null
+                              ? ("unadjusted" as const)
+                              : ("adjusted" as const),
+                          lineage: {
+                            ...(sourceMode === "derived_metric"
+                              ? { derivedMetric: timeAnalysis.kind }
+                              : {}),
+                            ...(analysisTimePointId ? { timePointId: analysisTimePointId } : {}),
+                            ...(timeAnalysis.kind !== "selected_timepoint"
+                              ? {
+                                  endpoint: timeAnalysis.kind,
+                                  ...(timeAnalysis.windowStart === undefined
+                                    ? {}
+                                    : { windowStart: timeAnalysis.windowStart }),
+                                  ...(timeAnalysis.windowEnd === undefined
+                                    ? {}
+                                    : { windowEnd: timeAnalysis.windowEnd }),
+                                }
+                              : {}),
+                          },
+                        },
+                      ];
+                    },
+                  );
+                  setStatisticsAnnotations(next);
+                }}
+              >
+                すべての比較をまとめて注釈へ追加
+              </button>
               {statisticsAnnotations.length > 0 ? (
                 <ul className="experiment-graph-annotation-list">
                   {statisticsAnnotations.map((annotation) => {
@@ -6188,6 +6314,7 @@ export function ExperimentGraphWorkbench({
                   <GraphStatisticsPanel
                     assessment={analysisAssessment}
                     analysisRunner={analysisRunner}
+                    analysisAvailable={analysisAvailable}
                     initialAnalysis={initialState?.analysis}
                     onAnalysisChange={setAnalysis}
                     methodsText={methodsText}

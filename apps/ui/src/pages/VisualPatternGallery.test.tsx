@@ -121,6 +121,37 @@ describe("新しい実験の入口", () => {
     expect(screen.getByRole("heading", { name: "何を測りましたか？" })).toBeVisible();
   });
 
+  it("二重クリックの2回目で次の質問まで意図せず進まない", () => {
+    render(<NewExperimentPage onNavigate={() => undefined} />);
+
+    fireEvent.click(document.querySelector('[data-context="cell_culture"]')!, { detail: 1 });
+    fireEvent.click(screen.getByRole("button", { name: /その他の培養アッセイ/ }), { detail: 2 });
+
+    expect(screen.getByRole("heading", { name: "今回、主に何を解析しましたか？" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: /その他の培養アッセイ/ }), { detail: 1 });
+    fireEvent.click(screen.getByRole("button", { name: "次へ" }), { detail: 1 });
+    fireEvent.click(screen.getByRole("button", { name: "次へ" }), { detail: 2 });
+
+    expect(screen.getByRole("heading", { name: "条件を入力してください" })).toBeVisible();
+  });
+
+  it("動物実験からhumane endpointのtime-to-event入力へ到達する", () => {
+    const onNavigate = vi.fn();
+    render(<NewExperimentPage onNavigate={onNavigate} />);
+    fireEvent.click(document.querySelector('[data-context="animal"]')!);
+    fireEvent.click(screen.getByRole("button", { name: /humane endpoint・eventまでの期間/ }));
+    expect(onNavigate).toHaveBeenCalledWith("survival");
+  });
+
+  it("生化学実験から非線形な反応曲線fitへ到達する", () => {
+    const onNavigate = vi.fn();
+    render(<NewExperimentPage onNavigate={onNavigate} />);
+    fireEvent.click(document.querySelector('[data-context="protein_biochemical"]')!);
+    fireEvent.click(screen.getByRole("button", { name: /時間・濃度に対する反応曲線/ }));
+    expect(onNavigate).toHaveBeenCalledWith("nonlinear-fit");
+  });
+
   it("顕微鏡を独立入口にし、Cell・ROIの階層を研究者の言葉で確認する", () => {
     render(<NewExperimentPage onNavigate={() => undefined} />);
     fireEvent.click(document.querySelector('[data-context="microscopy_imaging"]')!);
@@ -216,7 +247,8 @@ describe("新しい実験の入口", () => {
       target: { value: "Intensity" },
     });
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
-    expect(screen.getByRole("heading", { name: "実験回を登録してください" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "測定した試料を登録してください" })).toBeVisible();
+    expect(screen.getByRole("spinbutton", { name: "試料の数" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "順序のある測定軸はありますか？" })).toBeNull();
   });
 
