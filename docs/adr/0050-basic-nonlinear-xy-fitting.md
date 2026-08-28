@@ -22,4 +22,14 @@ PFR062 uses `zero_baseline_association`. Its X variable is reaction time, so Mic
 
 ## Scope boundary
 
-This is not a broad kinetic-model library. Hill models, Michaelis–Menten, inhibition models, shared-parameter global fits, weighting, bootstrap intervals, model selection, and profile-likelihood intervals remain outside this Alpha increment.
+This is not a broad kinetic-model library. Hill models, Michaelis–Menten beyond the bounded extension below, inhibition models, shared-parameter global fits, weighting, bootstrap intervals, model selection, and profile-likelihood intervals remain outside this Alpha increment.
+
+## Addendum — 2026-08-27: bounded Michaelis–Menten extension
+
+The accepted D17 boundary is extended with one explicit `michaelis_menten` model for experiments in which X is substrate concentration and Y is an initial velocity already calculated before the nonlinear fit. The model is `vmax * x / (km + x)` with positive `vmax` and `km`. New Michaelis–Menten requests use D17 template version `0.2.0`; protocol `0.14.0` remains compatible with existing saved association requests, and the initial Michaelis–Menten model version is `0.1.0`.
+
+Substrate-concentration and initial-velocity units are required because they define the units of Km and Vmax. Each fitted series requires at least three distinct positive substrate concentrations and at least one positive observed initial velocity. Invalid bounds, non-positive starting values, flat data, singular uncertainty, and non-convergence remain explicit failures. A fit whose observed substrate range does not reach the fitted Km retains its result but records an extrapolation warning.
+
+Numerical regression uses the official R `datasets::Puromycin` Michaelis–Menten `nls` example as an independent reference. The unweighted treated reference is Vmax approximately `212.68358` and Km approximately `0.06412103`; the untreated reference is Vmax approximately `160.28013` and Km approximately `0.04770831`.
+
+This extension does not convert raw absorbance-over-time traces into initial velocities. It also does not add Hill, substrate-inhibition, IC50/Ki, inhibitor-grid, weighted, shared-parameter/global, mixed-effects, or between-curve hypothesis tests. Those inputs must retain their raw data and stop at the relevant unsupported or derivation-required boundary rather than being coerced into Michaelis–Menten.

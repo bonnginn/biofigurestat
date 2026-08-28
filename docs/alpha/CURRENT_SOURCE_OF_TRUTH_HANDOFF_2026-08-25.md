@@ -11,6 +11,13 @@ Read in this order:
 5. `docs/adr/*.md` — accepted architecture/scientific decisions; ADR 0038 is partially superseded by ADR 0041.
 6. `docs/alpha/CANONICAL_SPEC_INVENTORY_2026-08-25.md` and `docs/alpha/SPEC_IMPLEMENTATION_ALIGNMENT_2026-08-25.md` — this audit's map and reconciliation, not a replacement product spec.
 
+Adaptive experiment-entry authority: `docs/adr/0051-feature-flagged-experiment-first-adaptive-input.md`,
+as amended for the accepted Alpha prototype direction by
+`docs/adr/0052-progressive-semantic-readiness.md` and for the feature-flagged task-oriented entry,
+canonical data views, and Graph-first boundary by
+`docs/adr/0053-task-oriented-entry-and-canonical-data-views.md`. ADR 0052 and ADR 0053 retain
+explicit production-default and human-validation gates.
+
 Warning: `AGENTS.md` names `LifeScience_Analysis_App_UX_Redesign_Prompt_v0.4.md` and `LifeScience_Analysis_App_Spec_v0.2.docx` as higher authorities, but neither is tracked in the current repository. Resolve this before treating repository documentation as self-contained.
 
 ## Current product invariants

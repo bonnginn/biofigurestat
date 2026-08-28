@@ -59,6 +59,13 @@ ADR 0038 は一部 superseded だが、ADR 0041 による置換範囲を明記�
 
 Canonicality の根拠は、明示的な authority 記述、accepted status、後続ADRからの参照、現行コード・テストとの一致である。日付だけでは決めていない。
 
+Post-audit canonical references: `docs/adr/0051-feature-flagged-experiment-first-adaptive-input.md`
+(2026-08-26), as amended for the accepted Alpha prototype direction by
+`docs/adr/0052-progressive-semantic-readiness.md` (2026-08-27), and for the feature-flagged
+task-oriented entry, canonical data views, and Graph-first boundary by
+`docs/adr/0053-task-oriented-entry-and-canonical-data-views.md` (2026-08-28). ADR 0052 and ADR 0053
+do not approve production-default migration or replace its human-validation gates.
+
 ### CURRENT_SUPPORTING / IMPLEMENTATION_NOTE / BENCHMARK_ONLY (19)
 
 - `README.md` — current entry point and safety boundary。ただし expanded benchmark の記述は stale。
@@ -126,4 +133,3 @@ Canonicality の根拠は、明示的な authority 記述、accepted status、�
 5. historical 17文書に front matter または先頭 banner で `HISTORICAL` と後継文書を付記する。
 6. ADR `0007` の重複を、履歴を壊さない alias/index で解消する。
 7. accessibility acceptance criteria を独立した canonical 文書として定義する。
-
