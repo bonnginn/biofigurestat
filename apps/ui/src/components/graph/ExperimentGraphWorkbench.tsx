@@ -14,6 +14,7 @@ import {
   continuousSummary,
   cellIsNotPlanned,
   experimentCellKey,
+  hasSharedSourceConditionUnits,
   normalizeWithinExperiment,
   orderedAxisSemantic,
   orderedAxisTitle,
@@ -34,6 +35,10 @@ import {
   type ContrastIntent,
 } from "../../app/experimentDraftAnalysis";
 import { defaultGraphYTitle, defaultLayersForGraphType } from "../../app/graphDefaults";
+import {
+  createInitialGraphGrouping,
+  swapSingleXFactorAndSeries,
+} from "../../app/graphGrouping";
 import {
   createExperimentWorkspaceDesign,
   createWorkspaceRecommendation,
@@ -840,6 +845,9 @@ function ExperimentGraphSvg({
     }
     return margin.top + ((domainMax - value) / domainRange) * plotHeight;
   };
+  const tickDirection = axes.tickDirection ?? "outside";
+  const xTickDelta = tickDirection === "inside" ? -1 : 1;
+  const yTickDelta = tickDirection === "inside" ? 1 : -1;
   const continuousXMin = continuousXValues.length ? Math.min(...continuousXValues) : 0;
   const continuousXMax = continuousXValues.length ? Math.max(...continuousXValues) : 1;
   const manualXRangeIsValid =
@@ -1173,11 +1181,13 @@ function ExperimentGraphSvg({
         return (
           <g key={`tick-${index}`}>
             <line
-              x1={margin.left - 5}
-              x2={margin.left}
+              x1={margin.left}
+              x2={margin.left + yTickDelta * 5}
               y1={y}
               y2={y}
               className="experiment-graph-tick"
+              data-axis-tick="y"
+              data-tick-direction={tickDirection}
             />
             <text
               x={margin.left - 10}
@@ -1249,9 +1259,11 @@ function ExperimentGraphSvg({
                 x1={xFor(index)}
                 x2={xFor(index)}
                 y1={height - margin.bottom}
-                y2={height - margin.bottom - 6}
+                y2={height - margin.bottom + xTickDelta * 6}
                 className="experiment-graph-category-tick"
                 data-inspector-target="x-axis"
+                data-axis-tick="x"
+                data-tick-direction={tickDirection}
               />
             ),
           )
@@ -1262,9 +1274,11 @@ function ExperimentGraphSvg({
                 x1={xForContinuousValue(value)}
                 x2={xForContinuousValue(value)}
                 y1={height - margin.bottom}
-                y2={height - margin.bottom - 3.5}
+                y2={height - margin.bottom + xTickDelta * 3.5}
                 className="experiment-graph-minor-tick"
                 data-graph-layer="minor-tick"
+                data-axis-tick="x-minor"
+                data-tick-direction={tickDirection}
               />
             )),
             ...continuousTickValues.map((value: number) => (
@@ -1273,8 +1287,10 @@ function ExperimentGraphSvg({
                   x1={xForContinuousValue(value)}
                   x2={xForContinuousValue(value)}
                   y1={height - margin.bottom}
-                  y2={height - margin.bottom - 6}
+                  y2={height - margin.bottom + xTickDelta * 6}
                   className="experiment-graph-category-tick"
+                  data-axis-tick="x"
+                  data-tick-direction={tickDirection}
                 />
                 <text
                   x={xForContinuousValue(value)}
@@ -1288,6 +1304,25 @@ function ExperimentGraphSvg({
               </g>
             )),
           ]}
+      {!continuousLine && axes.showCategoryGroupSeparators
+        ? (hierarchyGroups[0] ?? []).slice(0, -1).map((group, index) => {
+            const nextGroup = hierarchyGroups[0]?.[index + 1];
+            if (!nextGroup) return null;
+            const separatorX = (xFor(group.end) + xFor(nextGroup.start)) / 2;
+            return (
+              <line
+                key={`category-group-separator-${group.key}`}
+                x1={separatorX}
+                x2={separatorX}
+                y1={height - margin.bottom}
+                y2={height - margin.bottom + xTickDelta * 10}
+                className="experiment-graph-category-group-separator"
+                data-graph-layer="category-group-separator"
+                data-tick-direction={tickDirection}
+              />
+            );
+          })
+        : null}
       <text
         x={17}
         y={margin.top + plotHeight / 2}
@@ -2019,6 +2054,7 @@ function CompositionGraphSvg({
   timePointIds,
   graphType,
   appearance,
+  axes,
   svgRef,
 }: {
   draft: ExperimentSetDraft;
@@ -2028,6 +2064,7 @@ function CompositionGraphSvg({
   timePointIds: readonly string[];
   graphType: "stacked" | "stacked_100" | "category_percentage";
   appearance: GraphAppearance;
+  axes: AxisSettings;
   svgRef: RefObject<SVGSVGElement | null>;
 }) {
   const categories = readout.categories ?? [];
@@ -2085,6 +2122,8 @@ function CompositionGraphSvg({
   const colors =
     appearance.palette === "single" ? PALETTES.colorblind : PALETTES[appearance.palette];
   const yTicks = createNiceTicks(0, maximum, 5, null);
+  const tickDirection = axes.tickDirection ?? "outside";
+  const yTickDelta = tickDirection === "inside" ? 1 : -1;
   return (
     <svg
       ref={svgRef}
@@ -2100,11 +2139,13 @@ function CompositionGraphSvg({
       {yTicks.map((tick) => (
         <g key={tick}>
           <line
-            x1={margin.left - 5}
-            x2={margin.left}
+            x1={margin.left}
+            x2={margin.left + yTickDelta * 5}
             y1={yFor(tick)}
             y2={yFor(tick)}
             className="experiment-graph-tick"
+            data-axis-tick="y"
+            data-tick-direction={tickDirection}
           />
           <text
             x={margin.left - 10}
@@ -2276,6 +2317,9 @@ function CorrelationGraphSvg({
   const annotationValue = annotationTest
     ? (annotationTest.adjustedPValue ?? annotationTest.pValue)
     : null;
+  const tickDirection = axes.tickDirection ?? "outside";
+  const xTickDelta = tickDirection === "inside" ? -1 : 1;
+  const yTickDelta = tickDirection === "inside" ? 1 : -1;
   return (
     <svg
       ref={svgRef}
@@ -2302,8 +2346,10 @@ function CorrelationGraphSvg({
             x1={xFor(tick)}
             x2={xFor(tick)}
             y1={height - margin.bottom}
-            y2={height - margin.bottom + 5}
+            y2={height - margin.bottom + xTickDelta * 5}
             className="experiment-graph-tick"
+            data-axis-tick="x"
+            data-tick-direction={tickDirection}
           />
           <text
             x={xFor(tick)}
@@ -2318,11 +2364,13 @@ function CorrelationGraphSvg({
       {yTicks.map((tick) => (
         <g key={`y-${tick}`}>
           <line
-            x1={margin.left - 5}
-            x2={margin.left}
+            x1={margin.left}
+            x2={margin.left + yTickDelta * 5}
             y1={yFor(tick)}
             y2={yFor(tick)}
             className="experiment-graph-tick"
+            data-axis-tick="y"
+            data-tick-direction={tickDirection}
           />
           <text
             x={margin.left - 10}
@@ -2558,6 +2606,11 @@ export function ExperimentGraphWorkbench({
   initialState,
   onStateChange,
 }: ExperimentGraphWorkbenchProps) {
+  const sharedSourceTopology =
+    hasSharedSourceConditionUnits(draft) &&
+    draft.conditionAssignment.matchedTopology?.kind === "distinct_condition_units_shared_source"
+      ? draft.conditionAssignment.matchedTopology
+      : null;
   const [selectedReadoutId, setSelectedReadoutId] = useState(
     initialState?.selectedReadoutId ?? draft.readouts[0]?.id ?? "",
   );
@@ -2621,33 +2674,19 @@ export function ExperimentGraphWorkbench({
       : [];
   });
   const [layers, setLayers] = useState<LayerState>(initialState?.layers ?? DEFAULT_LAYERS);
+  const proposedInitialGrouping = useMemo(
+    () => initialState?.grouping ?? createInitialGraphGrouping(draft),
+    [draft, initialState?.grouping],
+  );
   const [appearance, setAppearance] = useState<GraphAppearance>({
     ...DEFAULT_APPEARANCE,
+    ...(proposedInitialGrouping.series.source !== "none"
+      ? { legendPosition: "top" as const, palette: "condition" as const }
+      : {}),
     ...initialState?.appearance,
   });
   const [graphType, setGraphType] = useState<GraphType>(initialState?.graphType ?? "dot");
-  const [grouping, setGrouping] = useState<GraphGrouping>(() => {
-    if (initialState?.grouping) return initialState.grouping;
-    const xFactors = draft.attributes.filter(
-      ({ proposedVisualRole }) => proposedVisualRole === "x",
-    );
-    const xFactor = xFactors[0];
-    const seriesFactor = draft.attributes.find(
-      ({ proposedVisualRole }) => proposedVisualRole === "series",
-    );
-    const timeAsSeries = draft.time.proposedVisualRole === "series";
-    return {
-      x: xFactor
-        ? { source: "factor", factorId: xFactor.id, factorIds: xFactors.map(({ id }) => id) }
-        : { source: "condition" },
-      series: seriesFactor
-        ? { source: "factor", factorId: seriesFactor.id }
-        : timeAsSeries
-          ? { source: "time" }
-          : { source: "none" },
-      facet: null,
-    };
-  });
+  const [grouping, setGrouping] = useState<GraphGrouping>(proposedInitialGrouping);
   const [axes, setAxes] = useState<AxisSettings>(
     initialState?.axes ?? {
       xSemantic: draft.time.points.length > 0 ? orderedAxisSemantic(draft.time) : "categorical",
@@ -2664,6 +2703,8 @@ export function ExperimentGraphWorkbench({
       yTickMode: "auto",
       yTickInterval: null,
       showMinorTicks: true,
+      tickDirection: "outside",
+      showCategoryGroupSeparators: false,
     },
   );
   const [analysis, setAnalysis] = useState<WorkspaceGraphAnalysis | null>(
@@ -3878,6 +3919,7 @@ export function ExperimentGraphWorkbench({
                       timePointIds={selectedTimePointIds}
                       graphType={graphType}
                       appearance={appearance}
+                      axes={axes}
                       svgRef={svgRef}
                     />
                   ) : graphType === "scatter" && draft.analysisIntent.kind === "correlation" ? (
@@ -3933,15 +3975,17 @@ export function ExperimentGraphWorkbench({
               </div>
             )}
             <p className="experiment-graph-caption">
-              {shape === "categorical_counts"
-                ? "カテゴリ別countを保持し、構成割合を自動計算しています。連続値として扱わず、カテゴリ構成の推論統計はまだ実行しません。"
-                : draft.analysisIntent.kind === "correlation"
-                  ? "各点は同じ実験単位から得たXとYの完全な1組です。行順や日付から対応を推測していません。"
-                  : shape === "wb_ratio"
-                    ? `各点は実験単位（Exp）ごとの${readout.label} / ${readout.referenceLabel ?? "reference"}です。標的とreferenceの生値は別々に保持しています。`
-                    : shape === "proportion"
-                      ? `現在の表示：${activeLayerDescription}。割合と要約は実験単位（Exp）から計算しています。`
-                      : `現在の表示：${activeLayerDescription}。細胞・ROIなどの生データを表示しても、統計上のnは実験単位です。`}
+              {sharedSourceTopology
+                ? `各点は条件別${draft.conditionAssignment.unitLabel}の値です。同じ${sharedSourceTopology.sourceUnitLabel}に由来する組は共有IDで対応づけていますが、条件別${draft.conditionAssignment.unitLabel}は別の実験単位として保持しています。`
+                : shape === "categorical_counts"
+                  ? "カテゴリ別countを保持し、構成割合を自動計算しています。連続値として扱わず、カテゴリ構成の推論統計はまだ実行しません。"
+                  : draft.analysisIntent.kind === "correlation"
+                    ? "各点は同じ実験単位から得たXとYの完全な1組です。行順や日付から対応を推測していません。"
+                    : shape === "wb_ratio"
+                      ? `各点は実験単位（Exp）ごとの${readout.label} / ${readout.referenceLabel ?? "reference"}です。標的とreferenceの生値は別々に保持しています。`
+                      : shape === "proportion"
+                        ? `現在の表示：${activeLayerDescription}。割合と要約は実験単位（Exp）から計算しています。`
+                        : `現在の表示：${activeLayerDescription}。細胞・ROIなどの生データを表示しても、統計上のnは実験単位です。`}
             </p>
             <details className="experiment-graph-data-details">
               <summary>使用データの内訳を表示</summary>
@@ -4085,14 +4129,20 @@ export function ExperimentGraphWorkbench({
               <dl className="experiment-statistics-design-summary">
                 <div>
                   <dt>統計上の単位</dt>
-                  <dd>実験単位（Exp）</dd>
+                  <dd>
+                    {sharedSourceTopology
+                      ? `条件別${draft.conditionAssignment.unitLabel}`
+                      : draft.conditionAssignment.unitLabel}
+                  </dd>
                 </div>
                 <div>
                   <dt>設計の解釈</dt>
                   <dd>
-                    {draft.conditionAssignment.kind === "matched"
-                      ? "同じ実験単位を条件間で比較"
-                      : "条件ごとに別の実験単位"}
+                    {sharedSourceTopology
+                      ? `同じ${sharedSourceTopology.sourceUnitLabel}に由来する条件別${draft.conditionAssignment.unitLabel}を対応づけて比較`
+                      : draft.conditionAssignment.kind === "matched"
+                        ? "同じ実験単位を条件間で比較"
+                        : "条件ごとに別の実験単位"}
                   </dd>
                 </div>
                 <div>
@@ -4166,11 +4216,19 @@ export function ExperimentGraphWorkbench({
                         {axes.xSemantic === "numeric_covariate" ? axes.xTitle || "数値X" : "時間"}
                       </option>
                       <option value="condition">条件の組み合わせ</option>
-                      {draft.attributes.map((factor) => (
-                        <option key={factor.id} value={`factor:${factor.id}`}>
-                          {factor.label}
-                        </option>
-                      ))}
+                      {draft.attributes
+                        .filter(
+                          ({ id }) =>
+                            id !==
+                            (grouping.series.source === "factor"
+                              ? grouping.series.factorId
+                              : undefined) && id !== grouping.facet?.factorId,
+                        )
+                        .map((factor) => (
+                          <option key={factor.id} value={`factor:${factor.id}`}>
+                            {factor.label}
+                          </option>
+                        ))}
                     </select>
                   </label>
                   {grouping.x.source === "factor" && draft.attributes.length > 1 ? (
@@ -4206,7 +4264,7 @@ export function ExperimentGraphWorkbench({
                               id !==
                               (grouping.series.source === "factor"
                                 ? grouping.series.factorId
-                                : undefined),
+                                : undefined) && id !== grouping.facet?.factorId,
                           )
                           .map((factor) => (
                             <option key={factor.id} value={factor.id}>
@@ -4230,14 +4288,24 @@ export function ExperimentGraphWorkbench({
                       disabled={axes.xSemantic !== "categorical"}
                       onChange={(event) => {
                         const value = event.target.value;
-                        setGrouping((current) => ({
-                          ...current,
-                          series: value.startsWith("factor:")
-                            ? { source: "factor", factorId: value.slice(7) }
+                        setGrouping((current) => {
+                          const nextSeries = value.startsWith("factor:")
+                            ? ({ source: "factor", factorId: value.slice(7) } as const)
                             : value === "time"
-                              ? { source: "time" }
-                              : { source: "none" },
-                        }));
+                              ? ({ source: "time" } as const)
+                              : ({ source: "none" } as const);
+                          return {
+                            ...current,
+                            series: nextSeries,
+                            color: nextSeries,
+                            shape: nextSeries,
+                            facet:
+                              nextSeries.source === "factor" &&
+                              current.facet?.factorId === nextSeries.factorId
+                                ? null
+                                : current.facet,
+                          };
+                        });
                         if (value !== "none") {
                           setAppearance((current) => ({
                             ...current,
@@ -4255,13 +4323,37 @@ export function ExperimentGraphWorkbench({
                       {draft.time.points.length > 0 ? (
                         <option value="time">時間 / numeric X</option>
                       ) : null}
-                      {draft.attributes.map((factor) => (
-                        <option key={factor.id} value={`factor:${factor.id}`}>
-                          {factor.label}
-                        </option>
-                      ))}
+                      {draft.attributes
+                        .filter(({ id }) => {
+                          const xFactorIds =
+                            grouping.x.source === "factor"
+                              ? grouping.x.factorIds?.length
+                                ? grouping.x.factorIds
+                                : grouping.x.factorId
+                                  ? [grouping.x.factorId]
+                                  : []
+                              : [];
+                          return !xFactorIds.includes(id) && id !== grouping.facet?.factorId;
+                        })
+                        .map((factor) => (
+                          <option key={factor.id} value={`factor:${factor.id}`}>
+                            {factor.label}
+                          </option>
+                        ))}
                     </select>
                   </label>
+                  {axes.xSemantic === "categorical" &&
+                  swapSingleXFactorAndSeries(grouping) ? (
+                    <button
+                      type="button"
+                      className="experiment-graph-series-style-shortcut"
+                      onClick={() =>
+                        setGrouping((current) => swapSingleXFactorAndSeries(current) ?? current)
+                      }
+                    >
+                      X軸と系列を入れ替える
+                    </button>
+                  ) : null}
                   {axes.xSemantic !== "categorical" ? (
                     <p className="experiment-graph-help">
                       X軸は{axes.xSemantic === "time" ? "時間" : axes.xTitle || "数値"}
@@ -4289,11 +4381,27 @@ export function ExperimentGraphWorkbench({
                       }
                     >
                       <option value="none">なし</option>
-                      {draft.attributes.map((factor) => (
-                        <option key={factor.id} value={factor.id}>
-                          {factor.label}
-                        </option>
-                      ))}
+                      {draft.attributes
+                        .filter(({ id }) => {
+                          const xFactorIds =
+                            grouping.x.source === "factor"
+                              ? grouping.x.factorIds?.length
+                                ? grouping.x.factorIds
+                                : grouping.x.factorId
+                                  ? [grouping.x.factorId]
+                                  : []
+                              : [];
+                          const seriesFactorId =
+                            grouping.series.source === "factor"
+                              ? grouping.series.factorId
+                              : undefined;
+                          return !xFactorIds.includes(id) && id !== seriesFactorId;
+                        })
+                        .map((factor) => (
+                          <option key={factor.id} value={factor.id}>
+                            {factor.label}
+                          </option>
+                        ))}
                     </select>
                   </label>
                   <p className="experiment-graph-help">
@@ -5931,6 +6039,38 @@ export function ExperimentGraphWorkbench({
                     <span>カテゴリと階層ラベルを表示</span>
                   </label>
                   <label className="experiment-graph-field">
+                    <span>軸目盛の向き</span>
+                    <select
+                      aria-label="軸目盛の向き"
+                      value={axes.tickDirection ?? "outside"}
+                      onChange={(event) =>
+                        setAxes((current) => ({
+                          ...current,
+                          tickDirection: event.target.value as "inside" | "outside",
+                        }))
+                      }
+                    >
+                      <option value="outside">グラフの外側</option>
+                      <option value="inside">グラフの内側</option>
+                    </select>
+                  </label>
+                  {axes.xSemantic === "categorical" && grouping.x.source === "factor" ? (
+                    <label className="experiment-graph-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={axes.showCategoryGroupSeparators ?? false}
+                        aria-label="X軸のグループ境界を表示"
+                        onChange={(event) =>
+                          setAxes((current) => ({
+                            ...current,
+                            showCategoryGroupSeparators: event.target.checked,
+                          }))
+                        }
+                      />
+                      <span>X軸のグループ境界を表示</span>
+                    </label>
+                  ) : null}
+                  <label className="experiment-graph-field">
                     <span>カテゴリラベル角度</span>
                     <select
                       value={axes.categoryLabelRotation ?? "none"}
@@ -6312,6 +6452,21 @@ export function ExperimentGraphWorkbench({
                   ) : null}
                   <GraphStatisticsPanel
                     assessment={analysisAssessment}
+                    relationshipAlreadyDeclared={Boolean(draft.adaptiveInput)}
+                    matchedRelationship={
+                      draft.conditionAssignment.kind === "matched"
+                        ? sharedSourceTopology
+                          ? {
+                              kind: "shared_source",
+                              unitLabel: draft.conditionAssignment.unitLabel,
+                              sourceLabel: sharedSourceTopology.sourceUnitLabel,
+                            }
+                          : {
+                              kind: "same_entity",
+                              unitLabel: draft.conditionAssignment.unitLabel,
+                            }
+                        : undefined
+                    }
                     analysisRunner={analysisRunner}
                     analysisAvailable={analysisAvailable}
                     initialAnalysis={initialState?.analysis}

@@ -13,6 +13,7 @@ impl PendingProjectOpen {
         Self(Mutex::new(targets))
     }
 
+    #[cfg(target_os = "macos")]
     pub fn push(&self, target: String) {
         let mut targets = self.0.lock().expect("pending project lock poisoned");
         if !targets.contains(&target) {

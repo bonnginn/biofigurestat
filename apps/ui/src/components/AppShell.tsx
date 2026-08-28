@@ -1,4 +1,4 @@
-import { Suspense, lazy, type PropsWithChildren } from "react";
+import { Suspense, lazy, useLayoutEffect, useRef, type PropsWithChildren } from "react";
 import type { ProjectState } from "@lsaa/project";
 
 import type { AppRoute } from "../app/routes";
@@ -36,6 +36,15 @@ export function AppShell({
   evaluationPreview = false,
   activeProject = null,
 }: AppShellProps) {
+  const mainContentRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    const heading = mainContentRef.current?.querySelector<HTMLElement>("h1");
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
+  }, [route]);
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -110,7 +119,9 @@ export function AppShell({
       ) : null}
 
       <div className="shell-body">
-        <main className="main-content">{children}</main>
+        <main className="main-content" ref={mainContentRef}>
+          {children}
+        </main>
       </div>
     </div>
   );

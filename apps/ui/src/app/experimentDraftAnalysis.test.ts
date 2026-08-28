@@ -252,6 +252,39 @@ describe("temporary experiment-first analysis adapter", () => {
     expect(assessment.reason).toContain("完全な組 2");
   });
 
+  it("pairs shared-source siblings without reusing the source as their experimental-unit ID", () => {
+    const { draft: baseDraft, cells } = fixture(["Vehicle", "Drug"]);
+    const draft = {
+      ...baseDraft,
+      conditionAssignment: {
+        kind: "matched" as const,
+        unitLabel: "dish",
+        matchedTopology: {
+          kind: "distinct_condition_units_shared_source" as const,
+          sourceUnitLabel: "Donor",
+          sourceIdentityLabel: "Donor ID",
+          sourceRole: "block" as const,
+        },
+      },
+    };
+
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+
+    expect(assessment.request).toMatchObject({ templateId: "D02", method: "paired_t" });
+    expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId)).size).toBe(3);
+    expect(
+      new Set(assessment.request?.observations.map(({ experimentalUnitId }) => experimentalUnitId))
+        .size,
+    ).toBe(6);
+    expect(assessment.reason).toContain("同じDonorに由来する条件別dish");
+    expect(assessment.methodChoices?.[0]?.explanation).toContain("条件別試料の差");
+  });
+
   it("executes Wilcoxon only on explicit complete stable pairs", () => {
     const { draft: baseDraft, cells } = fixture(["Before", "After"]);
     const draft = {

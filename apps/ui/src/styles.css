@@ -466,6 +466,15 @@ button:focus-visible {
   padding-inline: clamp(18px, 2.5vw, 38px);
 }
 
+/* Experiment entry is a working surface, not a reading column.  Give the
+ * condition canvas and its live summary the available desktop width and keep
+ * the first actionable field above the fold. */
+.main-content:has(.experiment-start) {
+  width: 100%;
+  max-width: none;
+  padding: 24px clamp(18px, 2.5vw, 38px) 52px;
+}
+
 .persisted-project-view {
   display: grid;
   gap: 24px;
@@ -547,6 +556,10 @@ button:focus-visible {
 .narrow-page {
   width: min(880px, 100%);
   margin: 0 auto;
+}
+
+.narrow-page.experiment-start {
+  width: min(1280px, 100%);
 }
 
 .hero {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AnalysisEngineRequestSchema,
+  AnalysisEngineResultSchema,
   ContingencyAnalysisEngineRequestSchema,
   FriedmanAnalysisEngineRequestSchema,
   SimpleLinearRegressionEngineRequestSchema,
@@ -140,5 +141,142 @@ describe("D17 nonlinear XY contract", () => {
     } as const;
     expect(NonlinearXyFitEngineRequestSchema.parse(request).seriesIds).toEqual(["K5", "K14"]);
     expect(AnalysisEngineRequestSchema.safeParse(request).success).toBe(true);
+  });
+
+  it("accepts precomputed initial velocity for a versioned Michaelis-Menten fit", () => {
+    const request = {
+      protocolVersion: "0.14.0",
+      requestId: "request.michaelis-menten",
+      projectId: "project.enzyme-kinetics",
+      analysisId: "analysis.michaelis-menten",
+      templateId: "D17",
+      templateVersion: "0.2.0",
+      method: "nonlinear_xy_fit",
+      modelId: "michaelis_menten",
+      modelSelectionRationale:
+        "X is substrate concentration and Y is initial velocity calculated before this fit.",
+      xLabel: "Substrate concentration",
+      yLabel: "Initial velocity",
+      xUnit: "mM",
+      yUnit: "µmol/min",
+      seriesIds: ["enzyme.wt"],
+      points: [0.25, 0.5, 1, 2, 5, 10].map((x, index) => ({
+        observationId: `enzyme.wt.${index + 1}`,
+        experimentalUnitId: `reaction.${index + 1}`,
+        seriesId: "enzyme.wt",
+        x,
+        y: (120 * x) / (2.5 + x),
+      })),
+      initialValues: { "enzyme.wt": { vmax: 100, km: 2 } },
+      bounds: {
+        "enzyme.wt": {
+          vmax: { lower: 0, upper: 300 },
+          km: { lower: 0, upper: 50 },
+        },
+      },
+      observations: [],
+      options,
+    } as const;
+
+    expect(NonlinearXyFitEngineRequestSchema.parse(request).modelId).toBe("michaelis_menten");
+    expect(AnalysisEngineRequestSchema.safeParse(request).success).toBe(true);
+  });
+
+  it("requires parameter-defining units for Michaelis-Menten without changing association input", () => {
+    const request = {
+      protocolVersion: "0.14.0",
+      requestId: "request.michaelis-menten",
+      projectId: "project.enzyme-kinetics",
+      analysisId: "analysis.michaelis-menten",
+      templateId: "D17",
+      templateVersion: "0.2.0",
+      method: "nonlinear_xy_fit",
+      modelId: "michaelis_menten",
+      modelSelectionRationale: "Substrate concentration versus precomputed initial velocity.",
+      xLabel: "Substrate concentration",
+      yLabel: "Initial velocity",
+      xUnit: "",
+      yUnit: "",
+      seriesIds: ["enzyme.wt"],
+      points: [0.5, 1, 2].map((x, index) => ({
+        observationId: `enzyme.wt.${index + 1}`,
+        experimentalUnitId: `reaction.${index + 1}`,
+        seriesId: "enzyme.wt",
+        x,
+        y: x,
+      })),
+      initialValues: {},
+      bounds: {},
+      observations: [],
+      options,
+    } as const;
+
+    const parsed = NonlinearXyFitEngineRequestSchema.safeParse(request);
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(parsed.error.issues.map(({ path }) => path.join("."))).toEqual(["xUnit", "yUnit"]);
+    }
+    expect(
+      NonlinearXyFitEngineRequestSchema.safeParse({
+        ...request,
+        templateVersion: "0.1.0",
+        xUnit: "mM",
+        yUnit: "µmol/min",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts versioned Km and Vmax results without adding a curve-comparison test", () => {
+    const parameter = (name: string, value: number) => ({
+      name,
+      value,
+      standardError: 0.01,
+      confidenceInterval: { level: 0.95, lower: value - 0.02, upper: value + 0.02 },
+    });
+    const result = AnalysisEngineResultSchema.parse({
+      protocolVersion: "0.14.0",
+      requestId: "request.michaelis-menten",
+      status: "ok",
+      engine: { name: "lsaa-python", version: "0.7.0", packages: { scipy: "1.18.0" } },
+      estimates: [parameter("enzyme.wt.vmax", 120), parameter("enzyme.wt.km", 2.5)],
+      tests: [],
+      nonlinearFit: {
+        modelId: "michaelis_menten",
+        modelVersion: "0.1.0",
+        modelFormula: "vmax * x / (km + x)",
+        selectionRationale: "Substrate concentration versus precomputed initial velocity.",
+        series: [
+          {
+            seriesId: "enzyme.wt",
+            converged: true,
+            parameters: [parameter("enzyme.wt.vmax", 120), parameter("enzyme.wt.km", 2.5)],
+            diagnostics: {
+              n: 6,
+              distinctX: 6,
+              residualDegreesOfFreedom: 4,
+              rss: 0.2,
+              rmse: 0.22,
+              rSquared: 0.99,
+              aic: -15,
+            },
+            initialValues: { vmax: 100, km: 2 },
+            bounds: {
+              vmax: { lower: 0, upper: 300 },
+              km: { lower: 0, upper: 50 },
+            },
+            fittedCurve: [
+              { x: 0, y: 0 },
+              { x: 10, y: 96 },
+            ],
+          },
+        ],
+      },
+      diagnostics: [],
+      warnings: [],
+      completedAt: "2026-08-27T00:00:00.000Z",
+    });
+
+    expect(result.nonlinearFit?.modelId).toBe("michaelis_menten");
+    expect(result.tests).toEqual([]);
   });
 });

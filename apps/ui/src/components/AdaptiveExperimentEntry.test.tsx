@@ -167,4 +167,32 @@ describe("AdaptiveExperimentEntry accessibility and localization", () => {
     expect(onReady.mock.calls[0]?.[0].adaptiveInput?.contract.factors).toHaveLength(2);
     expect(onReady.mock.calls[0]?.[0].conditions).toHaveLength(4);
   });
+
+  it("persists only a missingness confirmation the researcher actually checked", async () => {
+    const onReady = vi.fn();
+    render(
+      <AdaptiveExperimentEntry
+        locale="ja"
+        onCancel={vi.fn()}
+        onReady={onReady}
+        onSurvivalReady={vi.fn()}
+      />,
+    );
+    answerJapaneseQuestions();
+    fireEvent.click(screen.getByRole("button", { name: "入力面を作る" }));
+    fireEvent.change(screen.getByLabelText("表を貼り付ける"), {
+      target: { value: "CellID\tDark\tLit\nC1\t1\t\nC2\t3\t4" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "この入力面を使う" }));
+    expect(onReady).not.toHaveBeenCalled();
+    const confirmation = await screen.findByLabelText("欠損理由を確認しました");
+    fireEvent.click(confirmation);
+    fireEvent.click(screen.getByRole("button", { name: "この入力面を使う" }));
+
+    await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1));
+    expect(onReady.mock.calls[0]?.[0].adaptiveInput?.targetedConfirmations).toEqual([
+      expect.objectContaining({ key: "classify_missingness_reason", answer: "confirmed" }),
+    ]);
+  });
 });

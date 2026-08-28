@@ -1,6 +1,15 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { createUnresolvedVisualizationProjectState, ProjectStateSchema } from "@lsaa/project";
 import type * as BenchmarkEvaluation from "../app/benchmarkEvaluation";
+import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
+import type {
+  OpenedUnresolvedVisualizationProject,
+  SaveProjectAction,
+  SaveUnresolvedVisualizationProjectAction,
+} from "../app/projectActions";
+import type { SpecializedCoreDraft } from "../app/specializedAnalysisDrafts";
+import { createTimeToEventContractProjection } from "../app/timeToEventProjection";
 import { SpecializedCorePage } from "./SpecializedCorePage";
 
 const recordBenchmarkEvent = vi.hoisted(() => vi.fn());
@@ -9,20 +18,645 @@ vi.mock("../app/benchmarkEvaluation", async (importOriginal) => ({
   recordBenchmarkEvent,
 }));
 
+const survivalExample = [
+  "Unit ID\tGroup\tFollow-up time\tStatus",
+  "mouse-1\tControl\t4\tEvent",
+  "mouse-2\tControl\t7\tCensored",
+  "mouse-3\tTreatment\t6\tEvent",
+  "mouse-4\tTreatment\t9\tCensored",
+].join("\n");
+
+const cellTimeToEventIntent: DedicatedEntryIntent = {
+  schemaVersion: "0.1.0",
+  moduleId: "time_to_event",
+  destination: "survival",
+  sourceContext: "cell_culture",
+  entryRouteId: "cell_first_terminal_event",
+  experimentName: "Cell time-to-first-event",
+  experimentDescription: "Each identified cell is followed until its first event or censoring.",
+  subjectUnitLabel: "Cell",
+  facts: {
+    timeToEventPattern: "single_terminal_event_or_censoring",
+    subjectUnitRelationship: "unknown",
+  },
+};
+
+const directHeatmapIntent: DedicatedEntryIntent = {
+  schemaVersion: "0.1.0",
+  moduleId: "matrix_visualization",
+  destination: "heatmap",
+  sourceContext: "general_assay",
+  entryRouteId: "direct_heatmap",
+  experimentName: "ヒートマップ",
+  experimentDescription: "数値行列を、その配置を保ったまま可視化する",
+  subjectUnitLabel: "Matrix row",
+  facts: {},
+};
+
+const expandAdaptiveStatistics = () =>
+  fireEvent.click(screen.getByRole("button", { name: "統計解析を設定" }));
+
 describe("specialized Core entry pages", () => {
   it("browser previewでは利用できないproject保存をdisabledで示す", () => {
     render(<SpecializedCorePage mode="survival" onBack={vi.fn()} />);
     expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
   });
 
+  it("keeps the direct survival route empty until the researcher explicitly loads an example", () => {
+    render(<SpecializedCorePage mode="survival" onBack={vi.fn()} analysisRunner={vi.fn()} />);
+    expect(screen.getByText("専門解析")).toBeVisible();
+    expect(screen.queryByLabelText("time-to-eventの1行と独立した実験例の関係")).toBeNull();
+    expect(screen.getByLabelText("Survival data")).toHaveValue(
+      "Unit ID\tGroup\tFollow-up time\tStatus",
+    );
+    expect(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeDisabled();
+    expect(screen.queryByRole("img", { name: "Kaplan–Meier survival graph" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "入力形式の例を読み込む（合成値）" }));
+
+    expect(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeEnabled();
+    expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    expect(screen.queryByText(/Records at risk/iu)).toBeNull();
+    expect(screen.getByText("Number at risk")).toBeVisible();
+  });
+
+  it("shows the Graph before statistics while an unresolved or nested row grain stays out of n", () => {
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        analysisRunner={vi.fn()}
+        entryIntent={cellTimeToEventIntent}
+        initialText={survivalExample}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    expect(screen.queryByLabelText("time-to-eventの1行と独立した実験例の関係")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeNull();
+    expandAdaptiveStatistics();
+    expect(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "nested_in_parent" },
+    });
+    expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeDisabled();
+    expect(screen.getByText(/親試料.*IDを含む入力へ進む必要があります/u)).toBeVisible();
+  });
+
+  it("asks the structure-changing assignment-unit question for animal survival", () => {
+    const entryIntent: DedicatedEntryIntent = {
+      schemaVersion: "0.1.0",
+      moduleId: "time_to_event",
+      destination: "survival",
+      sourceContext: "animal",
+      entryRouteId: "animal_time_to_event",
+      experimentName: "humane endpoint・eventまでの期間",
+      experimentDescription: "Each animal is followed to one event or the end of observation.",
+      subjectUnitLabel: "Animal",
+      facts: {
+        timeToEventPattern: "single_terminal_event_or_censoring",
+        subjectUnitRelationship: "unknown",
+      },
+    };
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        analysisRunner={vi.fn()}
+        entryIntent={entryIntent}
+      />,
+    );
+
+    expect(screen.queryByText("群分けと個体間のまとまりはどれですか？")).toBeNull();
+    expect(screen.getByRole("button", { name: "統計解析を設定" })).toBeDisabled();
+    expect(screen.queryByRole("img", { name: "Kaplan–Meier survival graph" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "入力形式の例を読み込む（合成値）" }));
+    expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    expandAdaptiveStatistics();
+    expect(screen.getByText("群分けと個体間のまとまりはどれですか？")).toBeVisible();
+    expect(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係")).toHaveValue(
+      "unknown",
+    );
+    expect(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    expect(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係")).toHaveValue(
+      "subject_is_experimental_unit",
+    );
+    expect(screen.getByText("1匹を独立した1例として扱います。")).toBeVisible();
+  });
+
+  it("saves typed time-to-event data and structure before statistics are requested", async () => {
+    let savedState: Parameters<SaveProjectAction>[0] | null = null;
+    const saveProject = vi.fn<SaveProjectAction>(async (state) => {
+      savedState = state;
+      return { state, target: "C:/tmp/time-to-event.lsa" };
+    });
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        entryIntent={cellTimeToEventIntent}
+        initialText={survivalExample}
+      />,
+    );
+    expandAdaptiveStatistics();
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const state = savedState!;
+    expect(state.analysisRuns).toHaveLength(0);
+    expect(state.adaptiveInput?.canonicalObservations).toHaveLength(4);
+    expect(state.adaptiveInput?.contract.orderedAxes[0]?.sampling).toBe("event_follow_up");
+    expect(screen.getByText(/統計は必要になった時に実行できます/u)).toBeVisible();
+  });
+
+  it("saves a one-group survival graph without fabricating a D11 analysis", async () => {
+    const oneGroup = [
+      "Unit ID\tGroup\tFollow-up time\tStatus",
+      "M01\tUntreated\t4\tEvent",
+      "M02\tUntreated\t7\tEvent",
+      "M03\tUntreated\t9\tCensored",
+    ].join("\n");
+    let savedState: Parameters<SaveProjectAction>[0] | null = null;
+    const saveProject = vi.fn<SaveProjectAction>(async (state) => {
+      savedState = state;
+      return { state, target: "C:/tmp/one-group-survival.lsa" };
+    });
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        entryIntent={cellTimeToEventIntent}
+        initialText={oneGroup}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    expandAdaptiveStatistics();
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    expect(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeDisabled();
+    expect(screen.getByText(/2つ以上の条件を比較/u)).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const state = ProjectStateSchema.parse(savedState);
+    expect(state.analysisRuns).toHaveLength(0);
+    expect(state.adaptiveInput?.canonicalObservations).toHaveLength(3);
+    expect(state.observations).toHaveLength(3);
+  });
+
+  it("saves all-censored survival data and keeps Statistics stopped", async () => {
+    const allCensored = [
+      "Unit ID\tGroup\tFollow-up time\tStatus",
+      "M01\tVehicle\t4\tCensored",
+      "M02\tVehicle\t7\tCensored",
+      "M03\tDrug\t6\tCensored",
+      "M04\tDrug\t9\tCensored",
+    ].join("\n");
+    let savedState: Parameters<SaveProjectAction>[0] | null = null;
+    const saveProject = vi.fn<SaveProjectAction>(async (state) => {
+      savedState = state;
+      return { state, target: "C:/tmp/all-censored-survival.lsa" };
+    });
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        entryIntent={cellTimeToEventIntent}
+        initialText={allCensored}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    expandAdaptiveStatistics();
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    expect(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeDisabled();
+    expect(screen.getByText(/Eventが1件もない/u)).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const state = ProjectStateSchema.parse(savedState);
+    expect(state.analysisRuns).toHaveLength(0);
+    expect(state.adaptiveInput?.canonicalObservations).toHaveLength(4);
+    expect(
+      state.adaptiveInput?.canonicalObservations.every(
+        ({ values }) => values.time_to_event_event_observed === false,
+      ),
+    ).toBe(true);
+  });
+
+  it("imports a CSV file and retains its file lineage in the adaptive project", async () => {
+    let savedState: Parameters<SaveProjectAction>[0] | null = null;
+    const saveProject = vi.fn<SaveProjectAction>(async (state) => {
+      savedState = state;
+      return { state, target: "C:/tmp/imported-survival.lsa" };
+    });
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        entryIntent={cellTimeToEventIntent}
+      />,
+    );
+    const csv = [
+      "Unit ID,Group,Follow-up time,Status",
+      "マウス甲,Control,4,Event",
+      "マウス乙,Treatment,7,Censored",
+    ].join("\r\n");
+    const file = Object.assign(new File([csv], "animal-survival.csv", { type: "text/csv" }), {
+      text: vi.fn(async () => csv),
+    });
+
+    fireEvent.change(screen.getByLabelText("time-to-eventデータファイル"), {
+      target: { files: [file] },
+    });
+    await waitFor(() =>
+      expect(screen.getByLabelText("Survival data")).toHaveValue(csv.replaceAll("\r\n", "\n")),
+    );
+    fireEvent.change(screen.getByLabelText("Follow-up time unit"), {
+      target: { value: "day" },
+    });
+    expandAdaptiveStatistics();
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const state = savedState as Parameters<SaveProjectAction>[0] | null;
+    expect(state?.adaptiveInput?.rawLineage).toMatchObject({
+      sourceKind: "csv",
+      sourceLabel: "animal-survival.csv",
+      rawText: csv,
+    });
+    expect(state?.adaptiveInput?.mapping?.delimiter).toBe("comma");
+    expect(state?.adaptiveInput?.contract.orderedAxes[0]?.unit).toBe("day");
+    expect(screen.getByText("Follow-up time (day)")).toBeVisible();
+  });
+
+  it("previews and saves quoted semicolon time-to-event rows from one parsed table", async () => {
+    const semicolonText = [
+      "Unit ID;Group;Follow-up time;Status;Note",
+      '"cell,1";"Control, baseline";4;Event;"north, cage"',
+      '"cell,2";Treatment;7;Censored;"south, cage"',
+    ].join("\n");
+    let savedState: Parameters<SaveProjectAction>[0] | null = null;
+    const saveProject = vi.fn<SaveProjectAction>(async (state) => {
+      savedState = state;
+      return { state, target: "C:/tmp/semicolon-survival.lsa" };
+    });
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        entryIntent={cellTimeToEventIntent}
+        initialText={semicolonText}
+      />,
+    );
+
+    expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    expandAdaptiveStatistics();
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const state = ProjectStateSchema.parse(savedState);
+    expect(state.adaptiveInput?.mapping?.delimiter).toBe("semicolon");
+    expect(state.adaptiveInput?.canonicalObservations[0]).toMatchObject({
+      identities: { cell_id: "cell,1" },
+      factors: { group: "Control, baseline" },
+      values: { time_to_event_event_observed: true },
+    });
+    expect(state.designRevisions[0]?.design.observationFactors?.[0]?.scientificRole).toBe("time");
+  });
+
+  it("requires an explicit 0/1 event mapping before drawing or compiling", async () => {
+    const numericText =
+      "Unit ID\tGroup\tFollow-up time\tStatus\nM1\tControl\t4\t1\nM2\tTreatment\t7\t0";
+    let savedState: Parameters<SaveProjectAction>[0] | null = null;
+    const saveProject = vi.fn<SaveProjectAction>(async (state) => {
+      savedState = state;
+      return { state, target: "C:/tmp/numeric-status.lsa" };
+    });
+    const firstRender = render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        entryIntent={cellTimeToEventIntent}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Survival data"), {
+      target: { value: numericText },
+    });
+
+    expect(screen.getByLabelText("Status列の0/1 mapping")).toHaveValue("");
+    expect(screen.queryByRole("img", { name: "Kaplan–Meier survival graph" })).toBeNull();
+    fireEvent.change(screen.getByLabelText("Status列の0/1 mapping"), {
+      target: { value: "event_is_1" },
+    });
+    expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    expandAdaptiveStatistics();
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const state = ProjectStateSchema.parse(savedState);
+    expect(
+      state.adaptiveInput?.canonicalObservations.map(
+        ({ values }) => values.time_to_event_event_observed,
+      ),
+    ).toEqual([true, false]);
+    expect(state.adaptiveInput?.targetedConfirmations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: "time_to_event_status_mapping",
+          answer: "1=event;0=censored",
+        }),
+      ]),
+    );
+    expect(state.designRevisions[0]?.design.observationFactors?.[0]?.scientificRole).toBe("time");
+
+    firstRender.unmount();
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        initialProject={{ state, target: "C:/tmp/numeric-status.lsa" }}
+        initialText={numericText}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    expect(screen.queryByLabelText("Status列の0/1 mapping")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(2));
+    const synchronized = ProjectStateSchema.parse(savedState);
+    expect(synchronized.designRevisions).toEqual(state.designRevisions);
+    expect(synchronized.designRevisions[0]?.design.observationFactors?.[0]?.scientificRole).toBe(
+      "time",
+    );
+  });
+
+  it("adopts each successful save as the baseline for consecutive raw revisions", async () => {
+    const savedProjects: Array<NonNullable<Awaited<ReturnType<SaveProjectAction>>>> = [];
+    const saveProject = vi.fn<SaveProjectAction>(async (state, target) => {
+      const saved = {
+        state: ProjectStateSchema.parse(state),
+        target: target ?? "C:/tmp/consecutive-survival.lsa",
+      };
+      savedProjects.push(saved);
+      return saved;
+    });
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        entryIntent={cellTimeToEventIntent}
+        initialText={survivalExample}
+      />,
+    );
+    expandAdaptiveStatistics();
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    const editor = screen.getByRole("textbox", { name: "Survival data" });
+
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(savedProjects).toHaveLength(1));
+    await screen.findByText(/統計は必要になった時に実行できます/u);
+    fireEvent.change(editor, {
+      target: {
+        value: String((editor as HTMLTextAreaElement).value).replace("\t4\tEvent", "\t5\tEvent"),
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(savedProjects).toHaveLength(2));
+    await screen.findByText(/統計は必要になった時に実行できます/u);
+    fireEvent.change(editor, {
+      target: {
+        value: String((editor as HTMLTextAreaElement).value).replace(
+          "mouse-2\tControl\t7\tCensored",
+          "mouse-2\tControl\t8\tCensored",
+        ),
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(savedProjects).toHaveLength(3));
+
+    expect(savedProjects.map(({ state }) => state.rawRevisions.length)).toEqual([1, 2, 3]);
+    expect(
+      savedProjects[2]?.state.rawRevisions.map(({ previousRevisionId }) => previousRevisionId),
+    ).toEqual([null, "raw.adaptive.1", "raw.adaptive.2"]);
+    expect(saveProject.mock.calls[1]?.[1]).toBe("C:/tmp/consecutive-survival.lsa");
+    expect(saveProject.mock.calls[2]?.[1]).toBe("C:/tmp/consecutive-survival.lsa");
+  });
+
+  it("keeps an unsupported event process stopped after a route draft is restored", async () => {
+    const entryIntent: DedicatedEntryIntent = {
+      schemaVersion: "0.1.0",
+      moduleId: "time_to_event",
+      destination: "survival",
+      sourceContext: "animal",
+      entryRouteId: "animal_recurrent_event",
+      experimentName: "Recurrent event study",
+      experimentDescription: "Each animal may experience the same event more than once.",
+      subjectUnitLabel: "Animal",
+      facts: {
+        timeToEventPattern: "recurrent_events",
+        subjectUnitRelationship: "subject_is_experimental_unit",
+      },
+    };
+    let restoredDraft: SpecializedCoreDraft | undefined;
+    const first = render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={vi.fn()}
+        entryIntent={entryIntent}
+        onDraftChange={(draft) => {
+          restoredDraft = draft;
+        }}
+      />,
+    );
+    expect(screen.getByText(/現在の専用入口では構造化できません/u)).toBeVisible();
+    expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
+    await waitFor(() =>
+      expect(restoredDraft?.entryIntent?.facts.timeToEventPattern).toBe("recurrent_events"),
+    );
+    first.unmount();
+
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={vi.fn()}
+        initialDraft={restoredDraft}
+      />,
+    );
+    expect(screen.getByText(/現在の専用入口では構造化できません/u)).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeNull();
+    expect(screen.getByRole("button", { name: "統計解析を設定" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
+  });
+
+  it("makes a rerun the sole current analysis and keeps its active input fingerprint", async () => {
+    let completedIndex = 0;
+    const analysisRunner = vi.fn(async (request) => {
+      completedIndex += 1;
+      return {
+        protocolVersion: "0.8.0" as const,
+        requestId: request.requestId,
+        status: "ok" as const,
+        engine: { name: "fixture", version: "1", packages: {} },
+        estimates: [],
+        tests: [
+          {
+            name: "log_rank",
+            statisticName: "chi-square",
+            statistic: completedIndex,
+            degreesOfFreedom: [1],
+            pValue: 0.3,
+            adjustedPValue: null,
+            effectSizeName: null,
+            effectSize: null,
+          },
+        ],
+        survival: {
+          groups: [
+            {
+              conditionId: "condition.1",
+              n: 2,
+              events: 1,
+              censored: 1,
+              curve: [],
+              censorTimes: [7],
+            },
+            {
+              conditionId: "condition.2",
+              n: 2,
+              events: 1,
+              censored: 1,
+              curve: [],
+              censorTimes: [9],
+            },
+          ],
+        },
+        diagnostics: [],
+        warnings: [],
+        completedAt: `2026-08-27T0${completedIndex}:00:00.000Z`,
+      };
+    });
+    const savedProjects: Array<NonNullable<Awaited<ReturnType<SaveProjectAction>>>> = [];
+    const saveProject = vi.fn<SaveProjectAction>(async (state, target) => {
+      const saved = {
+        state: ProjectStateSchema.parse(state),
+        target: target ?? "C:/tmp/rerun-survival.lsa",
+      };
+      savedProjects.push(saved);
+      return saved;
+    });
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        analysisRunner={analysisRunner}
+        entryIntent={cellTimeToEventIntent}
+        initialText={survivalExample}
+      />,
+    );
+    expandAdaptiveStatistics();
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    const runButton = screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" });
+    const saveButton = screen.getByRole("button", { name: "プロジェクトを保存" });
+
+    fireEvent.click(runButton);
+    await waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(1));
+    await screen.findByText(/log-rank検定が完了/u);
+    fireEvent.click(saveButton);
+    await waitFor(() => expect(savedProjects).toHaveLength(1));
+
+    fireEvent.click(runButton);
+    await waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByText(/χ²\(1\) = 2/u)).toBeVisible());
+    fireEvent.click(saveButton);
+    await waitFor(() => expect(savedProjects).toHaveLength(2));
+
+    const rerunState = savedProjects[1]!.state;
+    expect(rerunState.analysisRuns).toHaveLength(2);
+    expect(rerunState.analysisRuns.map(({ state }) => state)).toEqual(["stale", "current"]);
+    expect(rerunState.graphs.map(({ state }) => state)).toEqual(["stale", "current"]);
+    expect(rerunState.analysisRuns[1]).toMatchObject({
+      inputDesignRevisionId: rerunState.activeDesignRevisionId,
+      inputRawRevisionId: rerunState.activeRawRevisionId,
+      request: { requestId: "request.survival.2" },
+    });
+    const activeDesign = rerunState.designRevisions.find(
+      ({ id }) => id === rerunState.activeDesignRevisionId,
+    )!.design;
+    expect(rerunState.adaptiveInput?.equivalence.designFingerprint).toBe(
+      createTimeToEventContractProjection(rerunState.adaptiveInput!.contract).assertEquivalent(
+        activeDesign,
+      ).designFingerprint,
+    );
+
+    fireEvent.click(saveButton);
+    await waitFor(() => expect(savedProjects).toHaveLength(3));
+    expect(savedProjects[2]!.state.analysisRuns).toHaveLength(2);
+    expect(savedProjects[2]!.state.analysisRuns.map(({ state }) => state)).toEqual([
+      "stale",
+      "current",
+    ]);
+  });
+
   it("ブラウザレビューでengine未接続ならsurvival実行をdisabledで説明する", () => {
     render(<SpecializedCorePage mode="survival" onBack={vi.fn()} analysisAvailable={false} />);
+    expect(screen.queryByRole("button", { name: "統計解析を設定" })).toBeNull();
     expect(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeDisabled();
     expect(screen.getByText(/ブラウザレビューでは解析エンジンを実行できません/)).toBeVisible();
   });
 
-  it("shows a matrix paste as a heatmap and keeps an explicit transform control", () => {
-    render(<SpecializedCorePage mode="heatmap" onBack={vi.fn()} />);
+  it("shows a matrix paste as a heatmap and keeps an explicit transform control", async () => {
+    const saveUnresolvedVisualizationProject = vi.fn<SaveUnresolvedVisualizationProjectAction>();
+    render(
+      <SpecializedCorePage
+        mode="heatmap"
+        onBack={vi.fn()}
+        saveUnresolvedVisualizationProject={saveUnresolvedVisualizationProject}
+      />,
+    );
+    expect(screen.getByRole("heading", { level: 1, name: "ヒートマップ" })).toBeVisible();
+    expect(screen.getByText("値の変換")).toBeVisible();
+    expect(screen.getByRole("option", { name: "変換しない" })).toBeVisible();
+    expect(screen.getByLabelText("Matrix data")).toHaveValue("");
+    expect(screen.queryByRole("img", { name: "Heatmap" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "入力形式の例を読み込む（合成値）" })).toBeNull();
+
+    const matrix = "Feature\tSample A\tSample B\tSample C\nProtein A\t1\t2\tNA\nProtein B\t3\t5\t8";
+    fireEvent.change(screen.getByLabelText("Matrix data"), { target: { value: matrix } });
+
     expect(screen.getByRole("img", { name: "Heatmap" })).toBeVisible();
     expect(screen.getByLabelText("Heatmap transform")).toHaveValue("none");
     expect(document.querySelector('[data-missing="true"]')).not.toBeNull();
@@ -30,6 +664,169 @@ describe("specialized Core entry pages", () => {
       target: { value: "row_z_score" },
     });
     expect(screen.getByTitle(/row_z_score/u)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeEnabled();
+    expect(screen.getByText(/行列の列を生物学的な独立例とみなさず/)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveUnresolvedVisualizationProject).toHaveBeenCalledOnce());
+    const savedState = saveUnresolvedVisualizationProject.mock.calls[0]![0];
+    expect(savedState.projectKind).toBe("unresolved_visualization");
+    expect(savedState.entryIntent).toBe("matrix_visualization");
+    expect(savedState.table.headers).toEqual(["Feature", "Sample A", "Sample B", "Sample C"]);
+    expect(savedState.table.rows[0]).toEqual(["Protein A", "1", "2", "NA"]);
+    expect(savedState.rawLineage.rawText).toBe(matrix);
+    expect(savedState.mapping?.columns).toHaveLength(4);
+    expect(savedState.graphSpecs[0]?.type).toBe("heatmap");
+    expect(savedState.graphSpecs[0]?.dataSource.kind).toBe("visualization_table");
+    expect(savedState.graphSpecs[0]?.heatmap?.transform).toBe("row_z_score");
+    expect("design" in savedState).toBe(false);
+  });
+
+  it("does not present synthetic heatmap values as user data on the direct entry", () => {
+    render(
+      <SpecializedCorePage mode="heatmap" onBack={vi.fn()} entryIntent={directHeatmapIntent} />,
+    );
+
+    expect(screen.getByLabelText("Matrix data")).toHaveValue("");
+    expect(screen.queryByRole("img", { name: "Heatmap" })).toBeNull();
+    expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "入力形式の例を読み込む（合成値）" })).toBeNull();
+    expect(screen.getByRole("button", { name: "保存済みHeatmap projectを開く" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
+  });
+
+  it("opens a heatmap file without treating its columns as biological n", async () => {
+    render(
+      <SpecializedCorePage mode="heatmap" onBack={vi.fn()} entryIntent={directHeatmapIntent} />,
+    );
+    const csv = "Feature,Sample A,Sample B\nProtein A,1,NA\nProtein B,3,5";
+    const file = Object.assign(new File([csv], "matrix.csv", { type: "text/csv" }), {
+      text: async () => csv,
+    });
+
+    fireEvent.change(screen.getByLabelText("ヒートマップ用データファイル"), {
+      target: { files: [file] },
+    });
+
+    expect(await screen.findByText("matrix.csv を読み込みました。")).toBeVisible();
+    expect(screen.getByLabelText("Matrix data")).toHaveValue(csv);
+    expect(screen.getByRole("img", { name: "Heatmap" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
+    expect(screen.getByText(/行列の列を生物学的な独立例とみなさず/u)).toBeVisible();
+  });
+
+  it("refuses a graph-only table at the Heatmap entry instead of changing its intent", async () => {
+    const state = createUnresolvedVisualizationProjectState({
+      metadata: {
+        projectId: "visualization.graph-only-wrong-entry",
+        projectName: "Graph-only table",
+        experimentDate: "",
+        createdAt: "2026-08-28T00:00:00.000Z",
+        updatedAt: "2026-08-28T00:00:00.000Z",
+      },
+      entryIntent: "graph_only",
+      table: {
+        id: "visualization.table.wrong-entry",
+        headers: ["Condition", "Value"],
+        rows: [["Control", "1"]],
+        delimiter: "tab",
+        headerRow: 1,
+      },
+      rawLineage: {
+        sourceKind: "clipboard",
+        sourceLabel: "clipboard",
+        importedAt: "2026-08-28T00:00:00.000Z",
+        rawText: "Condition\tValue\nControl\t1",
+        sha256: null,
+        transformations: ["delimiter_detection"],
+      },
+      actor: "test",
+    });
+    const openUnresolvedVisualizationProject = vi.fn(async () => ({
+      state,
+      target: "C:/tmp/graph-only.lsa",
+    }));
+    render(
+      <SpecializedCorePage
+        mode="heatmap"
+        onBack={vi.fn()}
+        entryIntent={directHeatmapIntent}
+        openUnresolvedVisualizationProject={openUnresolvedVisualizationProject}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "保存済みHeatmap projectを開く" }));
+
+    expect(
+      await screen.findByText("このファイルはHeatmap用のGraph-only projectではありません。"),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Matrix data")).toHaveValue("");
+  });
+
+  it("saves and reopens an unresolved heatmap matrix with its graph settings", async () => {
+    const matrix = "Feature\tSample A\tSample B\nProtein A\t1\t2\nProtein B\t3\t5";
+    let persisted: OpenedUnresolvedVisualizationProject | null = null;
+    const saveUnresolvedVisualizationProject = vi.fn<SaveUnresolvedVisualizationProjectAction>(
+      async (state, target) => {
+        persisted = { state, target: target ?? "C:/tmp/heatmap.lsa" };
+        return persisted;
+      },
+    );
+    const openUnresolvedVisualizationProject = vi.fn(async () => persisted);
+    render(
+      <SpecializedCorePage
+        mode="heatmap"
+        onBack={vi.fn()}
+        saveUnresolvedVisualizationProject={saveUnresolvedVisualizationProject}
+        openUnresolvedVisualizationProject={openUnresolvedVisualizationProject}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Matrix data"), { target: { value: matrix } });
+    fireEvent.change(screen.getByLabelText("Heatmap transform"), {
+      target: { value: "column_z_score" },
+    });
+    fireEvent.change(screen.getByLabelText("Heatmap color minimum"), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByLabelText("Heatmap color maximum"), {
+      target: { value: "6" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveUnresolvedVisualizationProject).toHaveBeenCalledOnce());
+    const firstSaved = saveUnresolvedVisualizationProject.mock.calls[0]![0];
+
+    fireEvent.change(screen.getByLabelText("Heatmap transform"), {
+      target: { value: "none" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "保存済みHeatmap projectを開く" }));
+    await waitFor(() => expect(openUnresolvedVisualizationProject).toHaveBeenCalledOnce());
+    expect(screen.getByLabelText("Matrix data")).toHaveValue(matrix);
+    expect(screen.getByLabelText("Heatmap transform")).toHaveValue("column_z_score");
+    expect(screen.getByLabelText("Heatmap color minimum")).toHaveValue(0);
+    expect(screen.getByLabelText("Heatmap color maximum")).toHaveValue(6);
+
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveUnresolvedVisualizationProject).toHaveBeenCalledTimes(2));
+    const unchangedResave = saveUnresolvedVisualizationProject.mock.calls[1]![0];
+    expect(unchangedResave.table).toEqual(firstSaved.table);
+    expect(unchangedResave.rawLineage).toEqual(firstSaved.rawLineage);
+    expect(unchangedResave.mapping).toEqual(firstSaved.mapping);
+    expect(unchangedResave.graphSpecs).toEqual(firstSaved.graphSpecs);
+    expect(unchangedResave.activeGraphId).toBe(firstSaved.activeGraphId);
+    expect(unchangedResave.provenanceEvents).toEqual(firstSaved.provenanceEvents);
+
+    fireEvent.change(screen.getByLabelText("Heatmap transform"), {
+      target: { value: "row_z_score" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveUnresolvedVisualizationProject).toHaveBeenCalledTimes(3));
+    const revised = saveUnresolvedVisualizationProject.mock.calls[2]![0];
+    expect(revised.graphSpecs).toHaveLength(firstSaved.graphSpecs.length + 1);
+    expect(revised.graphSpecs.slice(0, firstSaved.graphSpecs.length)).toEqual(
+      firstSaved.graphSpecs,
+    );
+    expect(revised.activeGraphId).not.toBe(firstSaved.activeGraphId);
+    expect(revised.graphSpecs.at(-1)?.heatmap?.transform).toBe("row_z_score");
+    expect(revised.rawLineage).toEqual(firstSaved.rawLineage);
   });
 
   it("runs a D11 request from explicit Event/Censored paste", async () => {
@@ -62,9 +859,19 @@ describe("specialized Core entry pages", () => {
       completedAt: "2026-08-24T00:00:00.000Z",
     }));
     render(
-      <SpecializedCorePage mode="survival" onBack={vi.fn()} analysisRunner={analysisRunner} />,
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        analysisRunner={analysisRunner}
+        entryIntent={cellTimeToEventIntent}
+        initialText={survivalExample}
+      />,
     );
     expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    expandAdaptiveStatistics();
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" }));
     await waitFor(() =>
       expect(analysisRunner).toHaveBeenCalledWith(

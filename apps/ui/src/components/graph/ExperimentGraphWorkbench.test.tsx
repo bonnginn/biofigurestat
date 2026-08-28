@@ -365,7 +365,16 @@ describe("ExperimentGraphWorkbench", () => {
     expect(svg.querySelectorAll(".experiment-graph-category-tick")).toHaveLength(3);
     expect(
       [...svg.querySelectorAll<SVGLineElement>(".experiment-graph-category-tick")].every(
-        (tick) => Number(tick.getAttribute("y2")) < Number(tick.getAttribute("y1")),
+        (tick) =>
+          tick.dataset.tickDirection === "outside" &&
+          Number(tick.getAttribute("y2")) > Number(tick.getAttribute("y1")),
+      ),
+    ).toBe(true);
+    expect(
+      [...svg.querySelectorAll<SVGLineElement>('[data-axis-tick="y"]')].every(
+        (tick) =>
+          tick.dataset.tickDirection === "outside" &&
+          Number(tick.getAttribute("x2")) < Number(tick.getAttribute("x1")),
       ),
     ).toBe(true);
   });
@@ -632,6 +641,67 @@ describe("ExperimentGraphWorkbench", () => {
       templateId: "D02",
       method: "wilcoxon_signed_rank",
     });
+  });
+
+  it("describes shared-source matching without implying one physical unit received both conditions", () => {
+    const fixture = createPairedTwoConditionFixture();
+    const draft: ExperimentSetDraft = {
+      ...fixture.draft,
+      conditionAssignment: {
+        kind: "matched",
+        unitLabel: "dish",
+        matchedTopology: {
+          kind: "distinct_condition_units_shared_source",
+          sourceUnitLabel: "Donor",
+          sourceIdentityLabel: "Donor ID",
+          sourceRole: "block",
+        },
+      },
+    };
+    const combined = render(
+      <ExperimentGraphWorkbench draft={draft} cells={fixture.cells} onClose={vi.fn()} />,
+    );
+
+    expect(
+      screen.getByText(/各点は条件別dishの値です。同じDonorに由来する組は共有IDで対応づけています/),
+    ).toBeVisible();
+    combined.unmount();
+    render(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={fixture.cells}
+        workspaceMode="statistics"
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("条件別dish")).toBeVisible();
+    expect(screen.getByText("同じDonorに由来する条件別dishを対応づけて比較")).toBeVisible();
+    expect(
+      screen.getByRole("checkbox", {
+        name: /同じDonorに由来する条件別dishが、共有IDで正しく対応づけられています/,
+      }),
+    ).toBeVisible();
+    expect(screen.queryByRole("checkbox", { name: /同じ実験単位の2条件/ })).toBeNull();
+  });
+
+  it("shows the researcher-defined experimental-unit name in the Statistics summary", () => {
+    const { draft: baseDraft, cells } = proportionFixture();
+    const draft: ExperimentSetDraft = {
+      ...baseDraft,
+      conditionAssignment: { kind: "independent", unitLabel: "culture dish" },
+    };
+
+    render(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={cells}
+        workspaceMode="statistics"
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("culture dish")).toBeVisible();
+    expect(screen.queryByText("実験単位（Exp）")).toBeNull();
   });
 
   it("executes only researcher-selected planned condition pairs with Holm correction", async () => {
@@ -1173,6 +1243,56 @@ describe("ExperimentGraphWorkbench", () => {
     expect(firstRight).toBeCloseTo(secondLeft, 5);
   });
 
+  it("2要因をX群と群内系列へ自動配置し、データを変えずに入れ替えられる", () => {
+    const { draft, cells } = factorialContinuousFixture();
+    const onStateChange = vi.fn();
+    render(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={cells}
+        onStateChange={onStateChange}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("combobox", { name: "X軸に使う要因" })).toHaveValue(
+      "factor:attribute.genotype",
+    );
+    expect(screen.getByRole("combobox", { name: "系列に使う要因" })).toHaveValue(
+      "factor:attribute.treatment",
+    );
+    const svg = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
+    const plottedConditionCount = svg.querySelectorAll("[data-condition-index]").length;
+    expect(plottedConditionCount).toBe(4);
+    expect(svg.querySelector(".experiment-graph-svg-legend")).not.toBeNull();
+    expect(svg.textContent).toContain("Vehicle");
+    expect(svg.textContent).toContain("Stimulus");
+
+    selectInspectorTarget("x-axis");
+    fireEvent.click(screen.getByRole("checkbox", { name: "X軸のグループ境界を表示" }));
+    expect(svg.querySelectorAll('[data-graph-layer="category-group-separator"]')).toHaveLength(1);
+    expect(
+      svg.querySelector('[data-graph-layer="category-group-separator"]'),
+    ).toHaveAttribute("data-tick-direction", "outside");
+    selectInspectorTarget("data");
+
+    fireEvent.click(screen.getByRole("button", { name: "X軸と系列を入れ替える" }));
+
+    expect(screen.getByRole("combobox", { name: "X軸に使う要因" })).toHaveValue(
+      "factor:attribute.treatment",
+    );
+    expect(screen.getByRole("combobox", { name: "系列に使う要因" })).toHaveValue(
+      "factor:attribute.genotype",
+    );
+    expect(svg.querySelectorAll("[data-condition-index]")).toHaveLength(plottedConditionCount);
+    const latest = onStateChange.mock.calls.at(-1)?.[0];
+    expect(latest.selectedConditionIds).toEqual(draft.conditions.map(({ id }) => id));
+    expect(latest.grouping).toMatchObject({
+      x: { factorId: "attribute.treatment" },
+      series: { factorId: "attribute.genotype" },
+    });
+  });
+
   it("Barは階層条件と複数時点でも全24群を省略せず描く", () => {
     const { draft, cells } = createComplexProportionFixture();
     render(<ExperimentGraphWorkbench draft={draft} cells={cells} onClose={vi.fn()} />);
@@ -1466,6 +1586,17 @@ describe("ExperimentGraphWorkbench", () => {
     const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="unit-trajectory"]')).toHaveLength(8);
     expect(graph.querySelectorAll('[data-graph-layer="summary-trend"]')).toHaveLength(2);
+    const majorTicks = [...graph.querySelectorAll<SVGLineElement>('[data-axis-tick="x"]')];
+    const minorTicks = [...graph.querySelectorAll<SVGLineElement>('[data-axis-tick="x-minor"]')];
+    expect(majorTicks.length).toBeGreaterThan(0);
+    expect(minorTicks.length).toBeGreaterThan(0);
+    expect(
+      [...majorTicks, ...minorTicks].every(
+        (tick) =>
+          tick.dataset.tickDirection === "outside" &&
+          Number(tick.getAttribute("y2")) > Number(tick.getAttribute("y1")),
+      ),
+    ).toBe(true);
   });
 
   it("時間点ごとに別サンプルなら個体を結ばない", () => {

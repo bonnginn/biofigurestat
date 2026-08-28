@@ -2,12 +2,15 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import {
   openProjectStatePackage,
+  openUnresolvedVisualizationProjectPackage,
   saveProjectStatePackage,
+  saveUnresolvedVisualizationProjectPackage,
   type AtomicProjectWrite,
   type ProjectDatabaseCodec,
   type ProjectPackageStorage,
   type ProjectState,
   type Sha256Function,
+  type UnresolvedVisualizationProjectState,
 } from "@lsaa/project";
 import { defaultProjectFileName } from "./projectFileName";
 
@@ -127,6 +130,36 @@ export async function openLocalProjectPackage(): Promise<OpenedLocalProject | nu
   return openLocalProjectPackageAt(selected);
 }
 
+export type OpenedLocalUnresolvedVisualizationProject = {
+  state: UnresolvedVisualizationProjectState;
+  target: string;
+};
+
+export async function openLocalUnresolvedVisualizationProjectPackageAt(
+  target: string,
+): Promise<OpenedLocalUnresolvedVisualizationProject> {
+  if (!isTauri()) throw new Error("Local project opening is available in the desktop app only.");
+  const state = await openUnresolvedVisualizationProjectPackage({
+    storage: new TauriProjectContainerStorage(),
+    target,
+    sha256: browserSha256,
+  });
+  return { state, target };
+}
+
+export async function openLocalUnresolvedVisualizationProjectPackage(): Promise<OpenedLocalUnresolvedVisualizationProject | null> {
+  if (!isTauri()) throw new Error("Local project opening is available in the desktop app only.");
+  const selected = await open({
+    directory: false,
+    multiple: false,
+    title: "Open visualization Life Science Analysis project",
+    filters: [{ name: "Life Science Analysis project", extensions: ["lsa"] }],
+  });
+  if (selected === null) return null;
+
+  return openLocalUnresolvedVisualizationProjectPackageAt(selected);
+}
+
 export async function openLegacyLocalProjectPackage(): Promise<OpenedLocalProject | null> {
   if (!isTauri()) throw new Error("Local project opening is available in the desktop app only.");
   const selected = await open({
@@ -165,6 +198,43 @@ export async function saveLocalProjectPackage(
     savedState = await saveProjectStatePackage({
       storage: new TauriProjectContainerStorage(),
       databaseCodec: new TauriProjectDatabaseCodec(),
+      target: selected,
+      state,
+      sha256: browserSha256,
+      appVersion: APP_VERSION,
+      savedAt,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("PROJECT_IO_STAGE[")) throw error;
+    throw projectIoStageError("package_assembly", error);
+  }
+  return { state: savedState, target: selected };
+}
+
+export type SavedLocalUnresolvedVisualizationProject = {
+  state: UnresolvedVisualizationProjectState;
+  target: string;
+};
+
+export async function saveLocalUnresolvedVisualizationProjectPackage(
+  state: UnresolvedVisualizationProjectState,
+  existingTarget?: string,
+): Promise<SavedLocalUnresolvedVisualizationProject | null> {
+  if (!isTauri()) throw new Error("Local project saving is available in the desktop app only.");
+  const selected =
+    existingTarget ??
+    (await save({
+      title: "Visualization Life Science Analysisプロジェクトを保存",
+      defaultPath: defaultProjectFileName(state.metadata.projectName),
+      filters: [{ name: "Life Science Analysis project", extensions: ["lsa"] }],
+    }));
+  if (selected === null) return null;
+
+  const savedAt = new Date().toISOString();
+  let savedState: UnresolvedVisualizationProjectState;
+  try {
+    savedState = await saveUnresolvedVisualizationProjectPackage({
+      storage: new TauriProjectContainerStorage(),
       target: selected,
       state,
       sha256: browserSha256,

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createCoreMultiGroupGraphSpec, createCoreTwoConditionGraphSpec } from "@lsaa/graph-spec";
 import {
+  ExperimentWorkspaceStateSchema,
   ProjectStateSchema,
   appendAnalysisExecution,
+  appendDerivedDatasetArtifacts,
   appendDesignRevision,
   appendRawRevision,
   createInitialProjectState,
@@ -10,6 +12,101 @@ import {
 } from "./state";
 
 const now = "2026-08-20T00:00:00Z";
+
+describe("experiment-workspace graph channel persistence", () => {
+  const workspace = {
+    version: "0.1.0" as const,
+    context: "general_assay" as const,
+    conditionAttributes: [
+      { id: "factor.sex", label: "Sex" },
+      { id: "factor.region", label: "Region" },
+      { id: "factor.readout", label: "Readout" },
+    ],
+    conditions: [{ id: "condition.female.hip", label: "Female / HIP", attributes: {} }],
+    timePlan: { sampling: "none" as const, unit: "h" as const, points: [] },
+    experimentSessions: [{ id: "session.1", label: "Experiment 1", date: "", note: "" }],
+    graphs: [
+      {
+        id: "graph.grouped-channels",
+        displayName: "Grouped expression",
+        selectedReadoutId: "readout.expression",
+        selectedConditionIds: ["condition.female.hip"],
+        selectedTimePointIds: [],
+        graphType: "dot" as const,
+        grouping: {
+          x: { source: "factor" as const, factorId: "factor.sex" },
+          series: { source: "factor" as const, factorId: "factor.region" },
+          color: { source: "factor" as const, factorId: "factor.sex" },
+          shape: { source: "factor" as const, factorId: "factor.region" },
+          facet: {
+            source: "factor" as const,
+            factorId: "factor.readout",
+            axisPolicy: "shared" as const,
+            levelOrder: ["readout.expression", "readout.percentage"],
+          },
+        },
+        layers: { raw: true, experiment: true, overall: true },
+        appearance: {
+          errorBar: "sem" as const,
+          pointSize: 5,
+          axisLineWidth: 1.2,
+          hierarchicalLabels: true,
+        },
+        axes: {
+          xSemantic: "categorical" as const,
+          xTitle: "Sex",
+          xUnit: "",
+          yTitle: "Relative expression",
+          yRangeMode: "auto" as const,
+          yMin: null,
+          yMax: null,
+          yScale: "linear" as const,
+          showCategoryLabels: true,
+          hierarchyOrder: ["factor.sex", "factor.region"],
+          spacing: 1,
+          yTickMode: "auto" as const,
+          yTickInterval: null,
+          tickDirection: "outside" as const,
+          showCategoryGroupSeparators: true,
+        },
+      },
+    ],
+  };
+
+  it("round-trips independent color/shape, series/facet, and categorical axis hints", () => {
+    const parsed = ExperimentWorkspaceStateSchema.parse(workspace);
+    const roundTrip = ExperimentWorkspaceStateSchema.parse(JSON.parse(JSON.stringify(parsed)));
+    const graph = roundTrip.graphs[0];
+
+    expect(graph?.grouping).toMatchObject({
+      series: { source: "factor", factorId: "factor.region" },
+      color: { source: "factor", factorId: "factor.sex" },
+      shape: { source: "factor", factorId: "factor.region" },
+      facet: { factorId: "factor.readout" },
+    });
+    expect(graph?.axes).toMatchObject({
+      tickDirection: "outside",
+      showCategoryGroupSeparators: true,
+    });
+  });
+
+  it("accepts legacy workspace graphs without requiring new channels or axis hints", () => {
+    const legacy = structuredClone(workspace) as unknown as {
+      graphs: Array<{ grouping: Record<string, unknown>; axes: Record<string, unknown> }>;
+    };
+    delete legacy.graphs[0]!.grouping.color;
+    delete legacy.graphs[0]!.grouping.shape;
+    delete legacy.graphs[0]!.axes.tickDirection;
+    delete legacy.graphs[0]!.axes.showCategoryGroupSeparators;
+
+    const parsed = ExperimentWorkspaceStateSchema.parse(legacy);
+
+    expect(parsed.graphs[0]?.grouping?.color).toBeUndefined();
+    expect(parsed.graphs[0]?.grouping?.shape).toBeUndefined();
+    expect(parsed.graphs[0]?.axes.tickDirection).toBeUndefined();
+    expect(parsed.graphs[0]?.axes.showCategoryGroupSeparators).toBeUndefined();
+  });
+});
 
 const design = {
   schemaVersion: "0.2.0" as const,
@@ -167,6 +264,85 @@ describe("project state lineage", () => {
     const revised = appendDesignRevision(initial, nestedDesign, "researcher", now);
     expect(revised.designRevisions).toHaveLength(2);
     expect(revised.activeDesignRevisionId).toContain("design.test.2");
+  });
+
+  it("adds derived artifacts against the active raw revision without a false raw revision", () => {
+    const rawRevisionId = "raw.derived-only.1";
+    const initial = createInitialProjectState({
+      metadata: {
+        projectId: "project.derived-only",
+        projectName: "Derived-only update",
+        experimentDate: "2026-08-20",
+        createdAt: now,
+        updatedAt: now,
+      },
+      design,
+      rawRevision: {
+        id: rawRevisionId,
+        previousRevisionId: null,
+        sourceKind: "manual",
+        createdAt: now,
+        createdBy: "researcher",
+      },
+      unitInstances: units,
+      observations: observations(rawRevisionId),
+      actor: "researcher",
+    });
+    const transformation = {
+      id: "transformation.derived-only.1",
+      version: "0.1.0",
+      method: "replicate_summary" as const,
+      inputRevisionIds: [rawRevisionId],
+      parameters: { center: "mean" },
+    };
+    const revision = {
+      id: "derived.derived-only.1",
+      previousRevisionId: null,
+      sourceRawRevisionId: rawRevisionId,
+      sourceQcRevisionId: null,
+      outcomeId: "outcome.intensity",
+      transformationId: transformation.id,
+      createdAt: "2026-08-20T01:00:00Z",
+      createdBy: "researcher",
+      state: "current" as const,
+      staleReason: null,
+    };
+    const value = {
+      id: "derived-value.derived-only.1",
+      derivedDatasetRevisionId: revision.id,
+      experimentalUnitId: units[0]!.id,
+      conditionId: "condition.control",
+      outcomeId: "outcome.intensity",
+      value: 1,
+      sourceObservationIds: ["observation.1"],
+      sourceUnitIds: [units[0]!.id],
+      subsampleCount: 1,
+    };
+    const revised = appendDerivedDatasetArtifacts(initial, {
+      transformations: [transformation],
+      derivedDatasetRevisions: [revision],
+      derivedValues: [value],
+      actor: "researcher",
+      occurredAt: "2026-08-20T01:00:00Z",
+    });
+
+    expect(revised.rawRevisions).toEqual(initial.rawRevisions);
+    expect(revised.designRevisions).toEqual(initial.designRevisions);
+    expect(revised.transformations).toHaveLength(1);
+    expect(revised.derivedDatasetRevisions).toHaveLength(1);
+    expect(revised.provenanceEvents.slice(initial.provenanceEvents.length)).toEqual([
+      expect.objectContaining({ kind: "transformation_created" }),
+      expect.objectContaining({ kind: "derived_dataset_created" }),
+    ]);
+    expect(() =>
+      appendDerivedDatasetArtifacts(revised, {
+        transformations: [transformation],
+        derivedDatasetRevisions: [revision],
+        derivedValues: [value],
+        actor: "researcher",
+        occurredAt: "2026-08-20T02:00:00Z",
+      }),
+    ).toThrow(/already exists/);
   });
 
   it("reproduces an executed analysis from persisted D10 derived values and rejects broken lineage", () => {

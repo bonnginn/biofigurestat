@@ -17,6 +17,10 @@ import { analysisRequestStructuralFingerprint } from "../../app/analysisRequestF
 import { ContextualHelp } from "../ContextualHelp";
 import { PRODUCT_IDENTITY } from "../../app/productIdentity";
 
+type MatchedRelationship =
+  | Readonly<{ kind: "same_entity"; unitLabel: string }>
+  | Readonly<{ kind: "shared_source"; unitLabel: string; sourceLabel: string }>;
+
 type GraphStatisticsPanelProps = Readonly<{
   assessment: DraftAnalysisAssessment;
   analysisRunner: AnalysisRunner;
@@ -35,6 +39,9 @@ type GraphStatisticsPanelProps = Readonly<{
   onPlannedContrastConditionIdsChange?: (pairs: readonly (readonly [string, string])[]) => void;
   /** Changes whenever this Graph's scientific source/subset changes, even if the shaped request is temporarily identical. */
   analysisContextKey?: string;
+  matchedRelationship?: MatchedRelationship;
+  /** True when the experiment-first interview already established and preserved this relationship. */
+  relationshipAlreadyDeclared?: boolean;
 }>;
 
 function formatNumber(value: number | null | undefined): string {
@@ -63,7 +70,7 @@ function comparisonDisplayLabel(
   return `${label(firstId)} vs ${label(secondId)}`;
 }
 
-function diagnosticLabel(code: string): string {
+function diagnosticLabel(code: string, matchedRelationship?: MatchedRelationship): string {
   if (code === "assumptions_not_fully_evaluated") {
     return "少数例の有意差検定だけで正規性を断定していません。実験単位の分布と実験設計も確認してください。";
   }
@@ -80,6 +87,9 @@ function diagnosticLabel(code: string): string {
     return "Mann–Whitneyは順位と分布の並び方を評価します。追加仮定なしに単なる中央値の検定とは解釈しません。";
   }
   if (code === "paired_rank_test_semantics") {
+    if (matchedRelationship?.kind === "shared_source") {
+      return `Wilcoxonは、共有IDで対応した同じ${matchedRelationship.sourceLabel}由来の条件別${matchedRelationship.unitLabel}の差の符号と順位を評価します。条件別${matchedRelationship.unitLabel}は別の実験単位です。`;
+    }
     return "Wilcoxonは、安定IDで対応した各実験単位内の差の符号と順位を評価します。";
   }
   if (code === "omnibus_only_no_posthoc") {
@@ -108,8 +118,12 @@ export function GraphStatisticsPanel({
   plannedContrastConditionIds = [],
   onPlannedContrastConditionIdsChange,
   analysisContextKey,
+  matchedRelationship,
+  relationshipAlreadyDeclared = false,
 }: GraphStatisticsPanelProps) {
-  const [independenceConfirmed, setIndependenceConfirmed] = useState(Boolean(initialAnalysis));
+  const [independenceConfirmed, setIndependenceConfirmed] = useState(
+    Boolean(initialAnalysis) || relationshipAlreadyDeclared,
+  );
   const [result, setResult] = useState<AnalysisEngineResult | null>(
     initialAnalysis?.result ?? null,
   );
@@ -135,6 +149,8 @@ export function GraphStatisticsPanel({
     assessment.method === "wilcoxon_signed_rank" ||
     assessment.method === "repeated_measures_anova";
   const correlationAnalysis = assessment.method === "pearson" || assessment.method === "spearman";
+  const sharedSourcePairing =
+    matchedRelationship?.kind === "shared_source" ? matchedRelationship : null;
   const effectiveContrastIntent = contrastIntent ?? assessment.contrastIntent;
   const plannedPairChoices = conditionOptions.flatMap((first, firstIndex) =>
     conditionOptions.slice(firstIndex + 1).map((second) => ({ first, second })),
@@ -301,7 +317,7 @@ export function GraphStatisticsPanel({
     }
     executedRef.current = false;
     if (!automaticRerunIsSafe) {
-      setIndependenceConfirmed(false);
+      setIndependenceConfirmed(relationshipAlreadyDeclared);
       const defaultDecision = assessment.recommendedMethod
         ? ({ kind: "accepted", selectedMethod: assessment.recommendedMethod } as const)
         : null;
@@ -322,6 +338,7 @@ export function GraphStatisticsPanel({
     assessment.request,
     executeRequest,
     onAnalysisChange,
+    relationshipAlreadyDeclared,
   ]);
 
   const run = async () => {
@@ -385,7 +402,10 @@ export function GraphStatisticsPanel({
         <strong>{assessment.title}</strong>
         <p>{assessment.reason}</p>
         {assessment.missingCount > 0 ? (
-          <p>未入力または無効なセル：{assessment.missingCount}件</p>
+          <p>
+            表上の空欄または無効な値：{assessment.missingCount}件
+            （条件ごとの件数差による空欄は、解析のnに数えません）
+          </p>
         ) : null}
         {assessment.notPlannedCount > 0 ? (
           <p>測定予定なし（解析対象外）：{assessment.notPlannedCount}件</p>
@@ -580,7 +600,24 @@ export function GraphStatisticsPanel({
               </p>
             </div>
           ) : null}
-          <label className="experiment-graph-confirmation">
+          {relationshipAlreadyDeclared ? (
+            <p
+              className="experiment-graph-confirmation is-declared"
+              role="status"
+              aria-label="実験構造の確認状況"
+            >
+              <strong>実験の組み立てで回答済み：</strong>
+              {matchedAnalysis
+                ? sharedSourcePairing
+                  ? `同じ${sharedSourcePairing.sourceLabel}に由来する条件別${sharedSourcePairing.unitLabel}を共有IDで対応づけます。`
+                  : "同じ実験単位を条件間で対応づけます。"
+                : correlationAnalysis
+                  ? "同じ実験単位から得たXとYを1組として扱います。"
+                  : "条件ごとに別々の実験単位を扱います。"}
+            </p>
+          ) : (
+            <>
+              <label className="experiment-graph-confirmation">
             <input
               type="checkbox"
               aria-label={
@@ -589,7 +626,9 @@ export function GraphStatisticsPanel({
                   : correlationAnalysis
                     ? "各行のXとYが、同じ実験単位から得た1組として正しく対応づけられています。"
                     : matchedAnalysis
-                      ? `同じ実験単位の${conditionOptions.length || "複数"}条件が、stable unit IDで正しく対応づけられています。`
+                      ? sharedSourcePairing
+                        ? `同じ${sharedSourcePairing.sourceLabel}に由来する条件別${sharedSourcePairing.unitLabel}が、共有IDで正しく対応づけられています。条件別${sharedSourcePairing.unitLabel}は別の実験単位です。`
+                        : `同じ実験単位の${conditionOptions.length || "複数"}条件が、stable unit IDで正しく対応づけられています。`
                       : "各条件は別々のdish・試料・動物などの実験単位です。同じ個体や同じ試料を両条件で測った対応データではありません。"
               }
               checked={independenceConfirmed}
@@ -601,20 +640,26 @@ export function GraphStatisticsPanel({
                 : correlationAnalysis
                   ? "XとYの組を確認しました。"
                   : matchedAnalysis
-                    ? "同じ実験単位の対応を確認しました。"
+                    ? sharedSourcePairing
+                      ? "共有する由来と、条件別の実験単位を確認しました。"
+                      : "同じ実験単位の対応を確認しました。"
                     : "条件間で実験単位が独立していることを確認しました。"}
             </span>
-          </label>
-          <details className="experiment-graph-confirmation-details">
-            <summary>確認内容の詳細</summary>
-            <p className="experiment-graph-help">
-              {correlationAnalysis
-                ? "XとYは同じExpの安定IDで対応づけます。行順や日付の一致だけから組を作りません。"
-                : matchedAnalysis
-                  ? "日付の一致から対応を推測していません。実験設計で明示した対応と、完全な組だけを解析します。"
-                  : "同じ日に実施しただけでは、自動的に「対応あり」にはしません。同じ単位を両条件で測った場合は実行せず、設計を修正してください。"}
-            </p>
-          </details>
+              </label>
+              <details className="experiment-graph-confirmation-details">
+                <summary>確認内容の詳細</summary>
+                <p className="experiment-graph-help">
+                  {correlationAnalysis
+                    ? "XとYは同じExpの安定IDで対応づけます。行順や日付の一致だけから組を作りません。"
+                    : matchedAnalysis
+                      ? sharedSourcePairing
+                        ? `日付や行順から対応を推測していません。${sharedSourcePairing.sourceLabel}の共有IDで明示された完全な組だけを解析し、条件別${sharedSourcePairing.unitLabel}のIDは別々に保持します。`
+                        : "日付の一致から対応を推測していません。実験設計で明示した対応と、完全な組だけを解析します。"
+                      : "同じ日に実施しただけでは、自動的に「対応あり」にはしません。同じ単位を両条件で測った場合は実行せず、設計を修正してください。"}
+                </p>
+              </details>
+            </>
+          )}
           <button
             className="experiment-graph-run-analysis"
             type="button"
@@ -715,7 +760,9 @@ export function GraphStatisticsPanel({
             <details className="experiment-graph-analysis-diagnostics">
               <summary>診断と注意（{diagnosticItems.length}件）</summary>
               {diagnosticItems.map((item) => (
-                <p key={`${item.code}-${item.message}`}>{diagnosticLabel(item.code)}</p>
+                <p key={`${item.code}-${item.message}`}>
+                  {diagnosticLabel(item.code, matchedRelationship)}
+                </p>
               ))}
             </details>
           ) : null}

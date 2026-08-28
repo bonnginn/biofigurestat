@@ -7,6 +7,7 @@ import {
 import {
   continuousSummary,
   experimentCellKey,
+  hasSharedSourceConditionUnits,
   normalizeWithinExperiment,
   percentage,
   wbRatio,
@@ -59,6 +60,72 @@ function analysisValue(cell: ExperimentCellMap[string]): number | null {
   if (cell.kind === "categorical_counts") return null;
   if (cell.kind === "wb_ratio") return wbRatio(cell);
   return continuousSummary(cell.rawValues).mean;
+}
+
+/**
+ * The legacy workspace projects independent groups onto one rectangular set of
+ * experiment rows.  With unequal n, the shorter group therefore has projection
+ * cells that never represented a planned biological unit.  Adaptive projects
+ * retain the actual units in canonical observations, so use those records to
+ * distinguish a real, explicitly retained missing value from rectangular
+ * padding.  Matched/repeated designs deliberately keep the stricter rectangular
+ * expectation because an absent partner is an incomplete matched set.
+ */
+function adaptiveIndependentExpectedUnitCount(input: {
+  draft: ExperimentSetDraft;
+  readoutId: string;
+  conditions: readonly ExperimentSetDraft["conditions"][number][];
+  timePointId?: string;
+  usesDerivedTimeMetric: boolean;
+}): number | null {
+  if (input.draft.conditionAssignment.kind !== "independent") return null;
+  const snapshot = input.draft.adaptiveInput;
+  if (!snapshot) return null;
+  const contract = snapshot.contract;
+  const contractReadout = contract.readouts.find(({ key }) => `outcome.${key}` === input.readoutId);
+  if (!contractReadout) return null;
+  const identityKey = contract.identities.find(
+    ({ unitLevelKey }) => unitLevelKey === contract.experimentalUnitLevelKey,
+  )?.key;
+  if (!identityKey) return null;
+
+  const selectedConditionIds = new Set(input.conditions.map(({ id }) => id));
+  const axis = contract.orderedAxes.length === 1 ? contract.orderedAxes[0] : null;
+  const selectedPoint = input.timePointId
+    ? input.draft.time.points.find(({ id }) => id === input.timePointId)
+    : null;
+  const relevantValueKeys =
+    contractReadout.representation === "scalar"
+      ? [contractReadout.key]
+      : contractReadout.componentKeys.map((component) => `${contractReadout.key}_${component}`);
+  const plannedUnits = new Map<string, boolean>();
+
+  snapshot.canonicalObservations.forEach((row) => {
+    if (row.readoutKey !== contractReadout.key) return;
+    const condition = input.conditions.find((candidate) =>
+      contract.factors.every(
+        (factor) => row.factors[factor.key] === candidate.attributes[`factor.${factor.key}`],
+      ),
+    );
+    if (!condition || !selectedConditionIds.has(condition.id)) return;
+    if (
+      !input.usesDerivedTimeMetric &&
+      axis &&
+      selectedPoint &&
+      String(row.axes[axis.key]) !== String(selectedPoint.value)
+    )
+      return;
+    const identity = row.identities[identityKey];
+    if (!identity) return;
+    const unitKey = `${condition.id}\u0000${identity}`;
+    const rowIsNotPlanned =
+      relevantValueKeys.length > 0 &&
+      relevantValueKeys.every((key) => row.missingness[key] === "not_applicable");
+    plannedUnits.set(unitKey, (plannedUnits.get(unitKey) ?? false) || !rowIsNotPlanned);
+  });
+
+  if (plannedUnits.size === 0) return null;
+  return [...plannedUnits.values()].filter(Boolean).length;
 }
 
 export function deriveTimeMetricValue(input: {
@@ -135,6 +202,15 @@ export function assessDraftGraphAnalysis(input: {
 }): DraftAnalysisAssessment {
   const selected = new Set(input.conditionIds);
   const conditions = input.draft.conditions.filter((condition) => selected.has(condition.id));
+  const sharedSource = hasSharedSourceConditionUnits(input.draft);
+  const sharedSourceLabel =
+    input.draft.conditionAssignment.matchedTopology?.kind ===
+    "distinct_condition_units_shared_source"
+      ? input.draft.conditionAssignment.matchedTopology.sourceUnitLabel
+      : "共有した由来";
+  const matchedSetDescription = sharedSource
+    ? `同じ${sharedSourceLabel}に由来する条件別${input.draft.conditionAssignment.unitLabel}`
+    : `同じ${input.draft.conditionAssignment.unitLabel}`;
   if (conditions.length < 1) {
     return {
       state: "unsupported",
@@ -545,7 +621,7 @@ export function assessDraftGraphAnalysis(input: {
         conditionId: condition.id,
         value,
         experimentalUnitId:
-          input.draft.conditionAssignment.kind === "matched"
+          input.draft.conditionAssignment.kind === "matched" && !sharedSource
             ? (experiment.stableUnitId ?? `unit.draft.${experimentIndex + 1}`)
             : `${experiment.stableUnitId ?? `unit.draft.${experimentIndex + 1}`}.${condition.id}`,
         ...(input.draft.conditionAssignment.kind === "matched"
@@ -571,7 +647,15 @@ export function assessDraftGraphAnalysis(input: {
       ).length,
     0,
   );
-  const expectedCount = conditions.length * input.draft.experiments.length - notPlannedCount;
+  const adaptiveExpectedCount = adaptiveIndependentExpectedUnitCount({
+    draft: input.draft,
+    readoutId: input.readoutId,
+    conditions,
+    timePointId: input.timePointId,
+    usesDerivedTimeMetric,
+  });
+  const expectedCount =
+    adaptiveExpectedCount ?? conditions.length * input.draft.experiments.length - notPlannedCount;
   const missingCount = Math.max(0, expectedCount - observations.length);
   const completePairIds =
     input.draft.conditionAssignment.kind === "matched"
@@ -794,7 +878,7 @@ export function assessDraftGraphAnalysis(input: {
     return {
       state: "ready",
       title: "反復測定の分散分析を推奨",
-      reason: `同じ${input.draft.conditionAssignment.unitLabel}の${conditions.length}条件を比較します（完全な単位 ${completePairIds?.size ?? 0}）。条件間比較はHolm法で調整します。${missingCount > 0 ? " 不完全な単位は解析に含めません。" : ""}`,
+      reason: `${matchedSetDescription}の${conditions.length}条件を対応づけて比較します（完全な組 ${completePairIds?.size ?? 0}）。条件間比較はHolm法で調整します。${missingCount > 0 ? " 不完全な組は解析に含めません。" : ""}`,
       method: "repeated_measures_anova",
       recommendedMethod: "repeated_measures_anova",
       methodChoices: [
@@ -802,7 +886,7 @@ export function assessDraftGraphAnalysis(input: {
           method: "repeated_measures_anova",
           level: "recommended",
           label: "推奨を採用：反復測定の分散分析 + Holm",
-          explanation: `同じ${input.draft.conditionAssignment.unitLabel}の完全な${conditions.length}条件の対応を保持します。`,
+          explanation: `${matchedSetDescription}から得た完全な${conditions.length}条件の対応を保持します。`,
           enabled: true,
         },
       ],
@@ -932,7 +1016,7 @@ export function assessDraftGraphAnalysis(input: {
       state: "ready",
       title: matched ? "対応のあるt検定を推奨" : "Welchの2標本t検定を推奨",
       reason: matched
-        ? `同じ${input.draft.conditionAssignment.unitLabel}の2条件を対応づけて比較します（完全な組 ${completePairIds?.size ?? 0}）。`
+        ? `${matchedSetDescription}の2条件を対応づけて比較します（完全な組 ${completePairIds?.size ?? 0}）。`
         : `各条件を別々の実験単位として比較します（${nText}）。等分散を前提にしない方法を既定にしています。`,
       method,
       recommendedMethod,
@@ -942,7 +1026,9 @@ export function assessDraftGraphAnalysis(input: {
               method: "paired_t",
               level: "recommended",
               label: "対応のあるt検定",
-              explanation: "同じ実験単位内の差の平均を評価します。",
+              explanation: sharedSource
+                ? `同じ${sharedSourceLabel}に由来する条件別試料の差を評価します。`
+                : "同じ実験単位内の差の平均を評価します。",
               enabled: true,
             },
             {

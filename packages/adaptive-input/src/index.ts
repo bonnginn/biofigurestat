@@ -6,3 +6,5 @@ export * from "./dual-write";
 export * from "./i18n";
 export * from "./surface-import";
 export * from "./contract-builder";
+export * from "./entry-module-registry";
+export * from "./observation-validator";

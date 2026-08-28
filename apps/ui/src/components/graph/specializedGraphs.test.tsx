@@ -60,6 +60,25 @@ describe("specialized Core graphs", () => {
     );
   });
 
+  it("labels row counts as records until biological n is established", () => {
+    const model = createKaplanMeierGraphModel(
+      [{ id: "A", label: "Control" }],
+      [
+        {
+          observationId: "o1",
+          experimentalUnitId: "cell-1",
+          conditionId: "A",
+          followUpTime: 2,
+          eventObserved: true,
+        },
+      ],
+    );
+    render(<SurvivalGraph model={model} countSemantics="records" />);
+    expect(screen.getByText("Control (records=1)")).toBeVisible();
+    expect(screen.getByText("Records at risk (not biological n)")).toBeVisible();
+    expect(screen.queryByText("Control (n=1)")).toBeNull();
+  });
+
   it("renders long heatmap labels, missing cells, values, and exportable SVG", () => {
     const model = createHeatmapModel(
       {

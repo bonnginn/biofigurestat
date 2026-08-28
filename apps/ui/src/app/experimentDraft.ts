@@ -1,4 +1,10 @@
-import type { AdaptiveInputSnapshot } from "@lsaa/domain";
+import {
+  ADAPTIVE_DESIGN_TEMPLATE_VERSION,
+  AdaptiveDesignTemplateSchema,
+  type AdaptiveDesignTemplate,
+  type AdaptiveInputSnapshot,
+} from "@lsaa/domain";
+import type { ExperimentEntrySourceHistory } from "@lsaa/project";
 
 export const EXPERIMENT_DRAFT_VERSION = "0.1.0" as const;
 
@@ -15,6 +21,14 @@ export type TimeSampling = "none" | "cross_sectional" | "longitudinal";
 export type TimeUnit = "sec" | "min" | "h" | "day";
 export type OrderedAxisSemantic = "time" | "numeric_covariate";
 export type ConditionAssignmentKind = "independent" | "matched";
+export type MatchedConditionTopology =
+  | Readonly<{ kind: "same_entity_across_conditions" }>
+  | Readonly<{
+      kind: "distinct_condition_units_shared_source";
+      sourceUnitLabel: string;
+      sourceIdentityLabel: string;
+      sourceRole: "block" | "sample";
+    }>;
 export type FactorScientificRole =
   | "intervention"
   | "genotype"
@@ -57,6 +71,12 @@ export type TimeAnalysisPlan = Readonly<{
 export type ConditionAssignmentDraft = Readonly<{
   kind: ConditionAssignmentKind;
   unitLabel: string;
+  /**
+   * Optional because historical matched drafts meant the literal same entity.
+   * New adaptive drafts set it explicitly so matched sibling samples are not
+   * presented or persisted as repeated measurements of one physical unit.
+   */
+  matchedTopology?: MatchedConditionTopology;
 }>;
 
 export type ConditionAttributeDraft = Readonly<{
@@ -168,6 +188,10 @@ export type ExperimentSetDraft = Readonly<{
   }>;
   /** Feature-flagged Alpha companion. Legacy drafts omit it. */
   adaptiveInput?: AdaptiveInputSnapshot;
+  /** Read-only evidence from a promoted entry project; never analysis authority. */
+  entrySourceHistory?: ExperimentEntrySourceHistory;
+  /** Data-free, versioned StructureContract template used only for design reuse. */
+  adaptiveTemplate?: AdaptiveDesignTemplate;
 }>;
 
 export type ProportionCellDraft = Readonly<{
@@ -329,6 +353,20 @@ export function activeConditions(draft: ExperimentSetDraft): ConditionDraft[] {
   return draft.conditions.filter(conditionHasContent);
 }
 
+/** Number of physically distinct units that receive the declared conditions. */
+export function plannedExperimentalUnitCount(draft: ExperimentSetDraft): number {
+  const conditionCount = Math.max(1, draft.conditions.length);
+  const separateConditionUnits =
+    draft.conditionAssignment.kind === "independent" || hasSharedSourceConditionUnits(draft);
+  return draft.experiments.length * (separateConditionUnits ? conditionCount : 1);
+}
+
+export function hasSharedSourceConditionUnits(draft: ExperimentSetDraft): boolean {
+  return (
+    draft.conditionAssignment.matchedTopology?.kind === "distinct_condition_units_shared_source"
+  );
+}
+
 export function conditionDisplayLabel(
   condition: ConditionDraft,
   attributes: readonly ConditionAttributeDraft[],
@@ -381,19 +419,66 @@ export function createExperimentSession(index: number): ExperimentSessionDraft {
   };
 }
 
-/** Copies reusable structure only. Measurement cells, graphs, and analysis history live elsewhere. */
-export function reuseExperimentDesign(draft: ExperimentSetDraft): ExperimentSetDraft {
+/**
+ * Canonical data-free boundary for every reusable design path.
+ *
+ * Reconstruct from an allow-list instead of deleting known fields from a live
+ * draft.  This also scrubs legacy Favorites that may contain fields introduced
+ * by older builds or future data-bearing entry extensions.
+ */
+export function sanitizeReusableExperimentDesign(draft: ExperimentSetDraft): ExperimentSetDraft {
+  const templateCandidate = draft.adaptiveInput
+    ? {
+        schemaVersion: ADAPTIVE_DESIGN_TEMPLATE_VERSION,
+        sourceSnapshotVersion: draft.adaptiveInput.schemaVersion,
+        contract: draft.adaptiveInput.contract,
+        surface: draft.adaptiveInput.surface,
+        targetedConfirmations: draft.adaptiveInput.targetedConfirmations,
+      }
+    : draft.adaptiveTemplate
+      ? draft.adaptiveTemplate
+      : undefined;
+  const parsedTemplate = templateCandidate
+    ? AdaptiveDesignTemplateSchema.safeParse(templateCandidate)
+    : null;
+  const adaptiveTemplate: AdaptiveDesignTemplate | undefined = parsedTemplate?.success
+    ? parsedTemplate.data
+    : undefined;
   return {
-    ...draft,
+    version: EXPERIMENT_DRAFT_VERSION,
     dataOrigin: "research",
-    name: `${draft.name}（設計再利用）`,
+    context: draft.context,
+    ...(draft.entryRoute ? { entryRoute: draft.entryRoute } : {}),
+    name: draft.name,
+    readouts: draft.readouts,
+    attributes: draft.attributes,
+    conditions: draft.conditions,
+    ...(draft.controlConditionId ? { controlConditionId: draft.controlConditionId } : {}),
+    ...(draft.comparisons ? { comparisons: draft.comparisons } : {}),
+    analysisIntent: draft.analysisIntent,
+    conditionAssignment: draft.conditionAssignment,
+    time: draft.time,
+    ...(adaptiveTemplate ? { adaptiveTemplate } : {}),
     experiments: draft.experiments.map((experiment, index) => ({
-      ...experiment,
+      id: experiment.id,
       label: `Exp ${index + 1}`,
       sessionId: `session.${index + 1}`,
       stableUnitId: `unit.${index + 1}`,
-      date: today(),
+      date: "",
       note: "",
+    })),
+  };
+}
+
+/** Copies reusable structure only. Measurement cells, graphs, and analysis history live elsewhere. */
+export function reuseExperimentDesign(draft: ExperimentSetDraft): ExperimentSetDraft {
+  const sanitized = sanitizeReusableExperimentDesign(draft);
+  return {
+    ...sanitized,
+    name: `${draft.name}（設計再利用）`,
+    experiments: sanitized.experiments.map((experiment) => ({
+      ...experiment,
+      date: today(),
     })),
   };
 }
@@ -543,6 +628,15 @@ export function expectedAnalysisLabel(draft: ExperimentSetDraft): string {
       : "時間点ごとに別サンプルとして扱う条件と時間の比較候補";
   }
   if (draft.conditionAssignment.kind === "matched") {
+    if (hasSharedSourceConditionUnits(draft)) {
+      const sourceLabel =
+        draft.conditionAssignment.matchedTopology?.kind === "distinct_condition_units_shared_source"
+          ? draft.conditionAssignment.matchedTopology.sourceUnitLabel
+          : "共通の由来";
+      return activeConditions(draft).length > 2
+        ? `同じ${sourceLabel}に由来する条件別${draft.conditionAssignment.unitLabel}の複数条件比較`
+        : `同じ${sourceLabel}に由来する条件別${draft.conditionAssignment.unitLabel}の2条件比較`;
+    }
     return activeConditions(draft).length > 2
       ? "同じ実験単位を対応づけた複数条件の比較"
       : "同じ実験単位を対応づけた2条件の比較";

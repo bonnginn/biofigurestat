@@ -269,6 +269,11 @@
   stroke-width: 0.9;
 }
 
+.experiment-graph-category-group-separator {
+  stroke: #4b5563;
+  stroke-width: 1.4;
+}
+
 .experiment-graph-axis-label,
 .experiment-graph-axis-title,
 .experiment-graph-condition-label,
@@ -892,6 +897,20 @@
   height: 18px;
   margin-top: 3px;
   accent-color: #285f94;
+}
+
+.experiment-graph-confirmation.is-declared {
+  display: block;
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px solid #cfe1db;
+  border-radius: 8px;
+  background: #f3f8f6;
+}
+
+.experiment-graph-confirmation.is-declared strong {
+  margin-right: 0.35em;
+  color: #285f55;
 }
 
 .experiment-graph-statistics-section details {

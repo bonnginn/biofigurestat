@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { OpenedProject } from "./app/projectActions";
 import { listen } from "@tauri-apps/api/event";
 
@@ -33,6 +33,18 @@ import { recordDiagnosticError, recordDiagnosticEvent } from "./app/diagnostics"
 import { researcherError } from "./app/errorCatalog";
 import type { LiteratureExperimenterCase } from "./app/literatureBenchmark";
 import type { AdaptiveInputSnapshot } from "@lsaa/domain";
+import {
+  scopedSpecializedDraft,
+  type SpecializedAnalysisRoute,
+  type SpecializedDraftByRoute,
+  type SpecializedDraftStore,
+} from "./app/specializedAnalysisDrafts";
+import {
+  dedicatedEntryHistoryState,
+  dedicatedEntryIntentForRoute,
+  dedicatedEntryIntentFromHistoryState,
+  type DedicatedEntryIntent,
+} from "./app/dedicatedEntryIntent";
 
 type AppProps = {
   projectActions?: ProjectActions;
@@ -61,12 +73,44 @@ const browserPreviewProjectActions: ProjectActions = {
   },
 };
 
+function UnresolvedVisualizationPersistenceStop({ onBack }: Readonly<{ onBack: () => void }>) {
+  return (
+    <div className="page-stack narrow-page">
+      <button className="back-link" type="button" onClick={onBack}>
+        <span aria-hidden="true">←</span> 新しい実験へ戻る
+      </button>
+      <section className="empty-page" aria-labelledby="visualization-persistence-stop-heading">
+        <span className="empty-icon empty-icon--orange" aria-hidden="true">
+          !
+        </span>
+        <p className="overline">入力を開始する前に停止しました</p>
+        <h1 id="visualization-persistence-stop-heading">Heatmapを開始できません</h1>
+        <p role="alert">
+          行列とGraphを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。
+        </p>
+        <button className="primary-button" type="button" onClick={onBack}>
+          入口へ戻る
+        </button>
+      </section>
+    </div>
+  );
+}
+
 export default function App({ projectActions }: AppProps) {
   const browserPreview = projectActions === undefined && !isTauri();
   const evaluationPreview =
     import.meta.env.DEV && browserPreview && evaluationModeIsConfigured(evaluationMode);
   const activeProjectActions =
     projectActions ?? (browserPreview ? browserPreviewProjectActions : defaultProjectActions);
+  const unresolvedVisualizationPersistence =
+    !browserPreview &&
+    activeProjectActions.saveUnresolvedVisualizationProject &&
+    activeProjectActions.openUnresolvedVisualizationProject
+      ? {
+          save: activeProjectActions.saveUnresolvedVisualizationProject,
+          open: activeProjectActions.openUnresolvedVisualizationProject,
+        }
+      : null;
   const [route, setRoute] = useState<AppRoute>(() => routeFromPath(window.location.pathname));
   const [activeProject, setActiveProject] = useState<OpenedProject | null>(null);
   const [systemOpenError, setSystemOpenError] = useState<string | null>(null);
@@ -75,16 +119,25 @@ export default function App({ projectActions }: AppProps) {
   const [favorites, setFavorites] = useState<FavoriteDesign[]>(loadFavoriteDesigns);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>(loadRecentProjects);
   const [workspaceDirty, setWorkspaceDirty] = useState(false);
+  const specializedDrafts = useRef<SpecializedDraftStore>({});
   const [newExperimentSession, setNewExperimentSession] = useState(0);
   const [adaptiveSurvivalHandoff, setAdaptiveSurvivalHandoff] = useState<{
     text: string;
     snapshot: AdaptiveInputSnapshot;
   } | null>(null);
+  const [dedicatedEntryIntent, setDedicatedEntryIntent] = useState<DedicatedEntryIntent | null>(
+    () => dedicatedEntryIntentFromHistoryState(window.history.state, route),
+  );
   const analysisAvailable = !browserPreview || evaluationPreview;
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [route, newExperimentSession]);
+
+  useEffect(() => {
+    setDedicatedEntryIntent((current) => dedicatedEntryIntentForRoute(current, route));
+    if (route !== "survival") setAdaptiveSurvivalHandoff(null);
+  }, [route]);
 
   const recordRecentProject = useCallback((project: OpenedProject) => {
     setRecentProjects(
@@ -125,12 +178,16 @@ export default function App({ projectActions }: AppProps) {
   );
 
   useEffect(() => {
-    const handlePopState = () => setRoute(routeFromPath(window.location.pathname));
+    const handlePopState = (event: PopStateEvent) => {
+      const nextRoute = routeFromPath(window.location.pathname);
+      setDedicatedEntryIntent(dedicatedEntryIntentFromHistoryState(event.state, nextRoute));
+      setRoute(nextRoute);
+    };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const navigate = useCallback((nextRoute: AppRoute) => {
+  const navigate = useCallback((nextRoute: AppRoute, historyState: unknown = {}) => {
     recordBenchmarkEvent("route_changed", {
       from: routeFromPath(window.location.pathname),
       to: nextRoute,
@@ -139,10 +196,15 @@ export default function App({ projectActions }: AppProps) {
     const adaptiveQuery = new URLSearchParams(window.location.search).get("adaptiveInput");
     const nextUrl = adaptiveQuery === "1" ? `${nextPath}?adaptiveInput=1` : nextPath;
     if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
-      window.history.pushState({}, "", nextUrl);
+      window.history.pushState(historyState, "", nextUrl);
     }
     setRoute(nextRoute);
     recordDiagnosticEvent("route_changed", { route: nextRoute });
+  }, []);
+  const rememberSpecializedDraft = useCallback(function rememberSpecializedDraft<
+    Route extends SpecializedAnalysisRoute,
+  >(draftRoute: Route, draft: SpecializedDraftByRoute[Route]) {
+    specializedDrafts.current = { ...specializedDrafts.current, [draftRoute]: draft };
   }, []);
   const navigateAsFreshStart = useCallback(
     (nextRoute: AppRoute) => {
@@ -158,6 +220,9 @@ export default function App({ projectActions }: AppProps) {
       if (nextRoute === "new-experiment") {
         setReusedDraft(null);
         setFavoriteDefaults([]);
+        specializedDrafts.current = {};
+        setAdaptiveSurvivalHandoff(null);
+        setDedicatedEntryIntent(null);
         setNewExperimentSession((session) => session + 1);
       }
       navigate(nextRoute);
@@ -169,6 +234,9 @@ export default function App({ projectActions }: AppProps) {
     setSystemOpenError(null);
     setReusedDraft(null);
     setFavoriteDefaults([]);
+    specializedDrafts.current = {};
+    setAdaptiveSurvivalHandoff(null);
+    setDedicatedEntryIntent(null);
     navigate("home");
   }, [navigate]);
   const useLiteratureCase = useCallback(
@@ -178,6 +246,9 @@ export default function App({ projectActions }: AppProps) {
         setActiveProject(null);
         setSystemOpenError(null);
         setFavoriteDefaults([]);
+        specializedDrafts.current = {};
+        setAdaptiveSurvivalHandoff(null);
+        setDedicatedEntryIntent(null);
         setReusedDraft(createLiteratureExperimentDraft(source));
         navigate("new-experiment");
       });
@@ -228,6 +299,12 @@ export default function App({ projectActions }: AppProps) {
     };
   }, [activeProjectActions.openProjectTarget, browserPreview, navigate, recordRecentProject]);
 
+  const orderedCurveIntent =
+    dedicatedEntryIntent?.moduleId === "ordered_curve_kinetics" ? dedicatedEntryIntent : undefined;
+  const timeToEventIntent =
+    dedicatedEntryIntent?.moduleId === "time_to_event" ? dedicatedEntryIntent : undefined;
+  const matrixVisualizationIntent =
+    dedicatedEntryIntent?.moduleId === "matrix_visualization" ? dedicatedEntryIntent : undefined;
   const page = (() => {
     switch (route) {
       case "contingency":
@@ -243,6 +320,12 @@ export default function App({ projectActions }: AppProps) {
             onNavigate={navigate}
             saveProject={browserPreview ? undefined : saveProject}
             analysisAvailable={analysisAvailable}
+            initialDraft={scopedSpecializedDraft(
+              specializedDrafts.current[route],
+              route === "nonlinear-fit" ? orderedCurveIntent : undefined,
+            )}
+            onDraftChange={(draft) => rememberSpecializedDraft(route, draft)}
+            entryIntent={route === "nonlinear-fit" ? orderedCurveIntent : undefined}
           />
         );
       case "survival":
@@ -256,9 +339,21 @@ export default function App({ projectActions }: AppProps) {
             analysisAvailable={analysisAvailable}
             initialText={adaptiveSurvivalHandoff?.text}
             adaptiveInput={adaptiveSurvivalHandoff?.snapshot}
+            initialDraft={
+              adaptiveSurvivalHandoff
+                ? undefined
+                : scopedSpecializedDraft(specializedDrafts.current.survival, timeToEventIntent)
+            }
+            onDraftChange={(draft) => rememberSpecializedDraft("survival", draft)}
+            entryIntent={timeToEventIntent}
           />
         );
       case "heatmap":
+        if (!browserPreview && !unresolvedVisualizationPersistence) {
+          return (
+            <UnresolvedVisualizationPersistenceStop onBack={() => navigate("new-experiment")} />
+          );
+        }
         return (
           <SpecializedCorePage
             key={route}
@@ -266,6 +361,11 @@ export default function App({ projectActions }: AppProps) {
             onBack={() => navigate("new-experiment")}
             onNavigate={navigate}
             saveProject={browserPreview ? undefined : saveProject}
+            saveUnresolvedVisualizationProject={unresolvedVisualizationPersistence?.save}
+            openUnresolvedVisualizationProject={unresolvedVisualizationPersistence?.open}
+            initialDraft={specializedDrafts.current.heatmap}
+            onDraftChange={(draft) => rememberSpecializedDraft("heatmap", draft)}
+            entryIntent={matrixVisualizationIntent}
           />
         );
       case "favorites":
@@ -291,6 +391,8 @@ export default function App({ projectActions }: AppProps) {
             key={`${reusedDraft ? `reuse:${reusedDraft.name}` : "new"}:${newExperimentSession}`}
             onNavigate={navigate}
             saveProject={browserPreview ? undefined : saveProject}
+            saveUnresolvedVisualizationProject={unresolvedVisualizationPersistence?.save}
+            openUnresolvedVisualizationProject={unresolvedVisualizationPersistence?.open}
             browserPreview={browserPreview}
             analysisAvailable={analysisAvailable}
             initialDraft={reusedDraft}
@@ -301,8 +403,14 @@ export default function App({ projectActions }: AppProps) {
             }}
             onDirtyChange={setWorkspaceDirty}
             onAdaptiveSurvivalReady={(text, snapshot) => {
+              setDedicatedEntryIntent(null);
               setAdaptiveSurvivalHandoff({ text, snapshot });
               navigate("survival");
+            }}
+            onDedicatedEntryReady={(intent) => {
+              setAdaptiveSurvivalHandoff(null);
+              setDedicatedEntryIntent(intent);
+              navigate(intent.destination, dedicatedEntryHistoryState(intent));
             }}
           />
         );

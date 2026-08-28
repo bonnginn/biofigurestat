@@ -163,6 +163,7 @@ export async function assembleProjectPackage(
   const manifest = ProjectManifestSchema.parse({
     format: "life-science-analysis-project",
     formatVersion: "0.2.0",
+    projectKind: "experiment",
     projectId: state.metadata.projectId,
     metadata: { ...state.metadata, updatedAt: savedAt },
     appVersion,

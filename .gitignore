@@ -3,6 +3,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/target-*/
 apps/desktop/src-tauri/gen/
 engine/python/.venv/
 engine/python/build/

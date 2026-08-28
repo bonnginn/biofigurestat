@@ -16,6 +16,8 @@ export * from "./repeated-condition";
 export * from "./nested-summary";
 export * from "./loading-control-normalization";
 export * from "./time-series-metrics";
+export * from "./adaptive-observation-views";
+export * from "./adaptive-spreadsheet-view-model";
 
 export const DATA_SHEET_SCHEMA_VERSION = "0.1.0" as const;
 

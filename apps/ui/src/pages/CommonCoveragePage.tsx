@@ -1,4 +1,18 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ClipboardEvent,
+} from "react";
+import {
+  parseAdaptiveDelimited,
+  type DelimitedSourceKind,
+  type EntryModuleFacts,
+} from "@lsaa/adaptive-input";
+import type { ExperimentDesign, Observation, UnitInstance } from "@lsaa/domain";
 import {
   AnalysisEngineRequestSchema,
   type AnalysisEngineResult,
@@ -20,10 +34,16 @@ import {
   createRegressionGraphSpec,
   validateGraphScale,
 } from "@lsaa/graph-spec";
-import { createInitialProjectState } from "@lsaa/project";
-import type { ExperimentDesign, Observation, UnitInstance } from "@lsaa/domain";
+import {
+  appendAnalysisExecution,
+  appendDesignRevision,
+  appendRawRevision,
+  createInitialProjectState,
+  ProjectStateSchema,
+  type ProjectState,
+} from "@lsaa/project";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
-import type { SaveProjectAction } from "../app/projectActions";
+import type { OpenedProject, SaveProjectAction } from "../app/projectActions";
 import type { AppRoute } from "../app/routes";
 import {
   COMPLETE_BENCHMARK_ARTIFACT_NAMES,
@@ -42,6 +62,40 @@ import { evaluationMode } from "../app/evaluationMode";
 import { downloadTextFile, serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
 import { generateCommonCoverageMethods } from "../app/commonCoverageMethods";
 import { generateMethodsText } from "../app/methodsText";
+import {
+  DEFAULT_NONLINEAR_MODEL_ID,
+  NONLINEAR_MODEL_DEFINITIONS,
+  isGeneratedNonlinearRationale,
+  nonlinearModelDefinition,
+  nonlinearModelLabel,
+  nonlinearParameterLabel,
+  type NonlinearModelId,
+  type NonlinearParameterId,
+} from "../app/nonlinearModelRegistry";
+import {
+  resolveOrderedCurveAnalysisReadiness,
+  type MichaelisReadoutMeaning,
+} from "../app/orderedCurveAnalysisReadiness";
+import {
+  restoredNonlinearModelSelection,
+  restoredMichaelisReadoutMeaning,
+  withOrderedCurveAnalysisProvenance,
+} from "../app/orderedCurveAnalysisProvenance";
+import type { CommonCoverageDraft } from "../app/specializedAnalysisDrafts";
+import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
+import {
+  createEntryModuleTargetedFactsState,
+  entryModuleTargetedFactsViewModel,
+  updateEntryModuleOrderedAxisCount,
+  updateEntryModuleOrderedCurveSeriesCount,
+  updateEntryModuleTargetedFact,
+} from "../app/entryModuleTargetedFacts";
+import {
+  createOrderedCurveEntry,
+  projectOrderedCurveEntryToLegacyRecords,
+  type OrderedCurveEntryResult,
+  type OrderedCurveRawTextCaptureMode,
+} from "../app/orderedCurveEntry";
 import type { LiteratureExperimenterCase } from "../app/literatureBenchmark";
 import { PRODUCT_IDENTITY } from "../app/productIdentity";
 import {
@@ -61,22 +115,31 @@ type Props = Readonly<{
   analysisAvailable?: boolean;
   saveProject?: SaveProjectAction;
   onNavigate?: (route: AppRoute) => void;
+  initialDraft?: CommonCoverageDraft;
+  onDraftChange?: (draft: CommonCoverageDraft) => void;
+  entryIntent?: DedicatedEntryIntent;
+  initialProject?: OpenedProject;
 }>;
 const defaults: Record<Mode, string> = {
   contingency: "Category\tEvent\tNo event\nControl\t1\t9\nTreatment\t6\t4",
   "repeated-nonparametric":
     "Unit ID\tCondition\tValue\nu1\tBaseline\t8\nu1\tDay 1\t7\nu1\tDay 2\t6\nu2\tBaseline\t9\nu2\tDay 1\t7\nu2\tDay 2\t5\nu3\tBaseline\t6\nu3\tDay 1\t5\nu3\tDay 2\t4",
   regression: "Unit ID\tX\tY\nu1\t1\t2.1\nu2\t2\t4.2\nu3\t3\t5.8\nu4\t4\t8.3\nu5\t5\t9.9",
-  "nonlinear-fit":
-    "Unit ID\tSeries\tX\tY\nK5.r1\tK5\t0\t0\nK5.r1\tK5\t15\t0.55\nK5.r1\tK5\t30\t0.95\nK5.r1\tK5\t60\t1.30\nK5.r1\tK5\t120\t1.52\nK14.r1\tK14\t0\t0\nK14.r1\tK14\t15\t0.35\nK14.r1\tK14\t30\t0.66\nK14.r1\tK14\t60\t1.02\nK14.r1\tK14\t120\t1.28",
+  "nonlinear-fit": nonlinearModelDefinition(DEFAULT_NONLINEAR_MODEL_ID).examplePaste,
   distribution: "1 2 2 3 5 8 13 21 34",
 };
+const ORDERED_CURVE_HEADER = "Unit ID\tSeries\tX\tY";
+
 const titles: Record<Mode, string> = {
   contingency: "Categorical / contingency",
   "repeated-nonparametric": "Repeated nonparametric",
   regression: "Simple linear regression",
-  "nonlinear-fit": "非線形XYフィッティング",
+  "nonlinear-fit": "酵素反応・飽和カーブ",
   distribution: "Histogram / ECDF",
+};
+const dataLabels: Record<Mode, string> = {
+  ...titles,
+  "nonlinear-fit": "非線形XYフィッティング",
 };
 const options = {
   alternative: "two_sided" as const,
@@ -84,16 +147,17 @@ const options = {
   multiplicityMethod: null,
 };
 
-type NonlinearModelId = "one_phase_association" | "zero_baseline_association";
-type NonlinearParameter = "baseline" | "plateau" | "rate";
 type FitSetting = Readonly<{ initial: string; lower: string; upper: string }>;
-const nonlinearModelRationales: Record<NonlinearModelId, string> = {
-  zero_baseline_association:
-    "反応時間に対する単調な飽和過程で、開始時点が0に固定されるため、最小のzero-baseline association modelを選択しました。",
-  one_phase_association:
-    "反応時間に対する単調な飽和過程で、開始値をデータから推定する必要があるため、one-phase association modelを選択しました。",
-};
 type ParsedNonlinear = Readonly<{
+  allPoints: ReadonlyArray<{
+    observationId: string;
+    experimentalUnitId: string;
+    unitLabel: string;
+    seriesId: string;
+    seriesLabel: string;
+    x: number;
+    y: number | null;
+  }>;
   points: ReadonlyArray<{
     observationId: string;
     experimentalUnitId: string;
@@ -108,13 +172,9 @@ type ParsedNonlinear = Readonly<{
 }>;
 
 function parseNonlinearXyPaste(text: string): ParsedNonlinear {
-  const lines = text
-    .trim()
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (lines.length < 4) throw new Error("headerを含め4行以上のX/Yデータが必要です");
-  const header = lines[0]!.split(/\t|,/).map((value) => value.trim().toLowerCase());
+  const delimited = parseAdaptiveDelimited(text);
+  if (delimited.rows.length < 1) throw new Error("headerと1行以上のX/Yデータが必要です");
+  const header = delimited.headers.map((value) => value.trim().toLowerCase());
   const unitIndex = header.findIndex((value) => ["unit id", "unit", "sample id"].includes(value));
   const seriesIndex = header.findIndex((value) => value === "series");
   const xIndex = header.findIndex((value) => value === "x");
@@ -124,14 +184,15 @@ function parseNonlinearXyPaste(text: string): ParsedNonlinear {
   }
   const seriesByLabel = new Map<string, string>();
   const unitByLabel = new Map<string, { id: string; seriesId: string }>();
-  const points = lines.slice(1).map((line, index) => {
-    const cells = line.split(/\t|,/).map((value) => value.trim());
+  const missingTokens = new Set(["", "na", "n/a", "undetermined", "over"]);
+  const allPoints = delimited.rows.map((cells, index) => {
     const unitLabel = cells[unitIndex] ?? "";
     const seriesLabel = cells[seriesIndex] ?? "";
     const x = Number(cells[xIndex]);
-    const y = Number(cells[yIndex]);
-    if (!unitLabel || !seriesLabel || !Number.isFinite(x) || !Number.isFinite(y) || x < 0) {
-      throw new Error(`${index + 2}行目のUnit ID、Series、非負X、有限Yを確認してください`);
+    const rawY = (cells[yIndex] ?? "").trim();
+    const y = missingTokens.has(rawY.toLowerCase()) ? null : Number(rawY);
+    if (!unitLabel || !seriesLabel || !Number.isFinite(x) || (y !== null && !Number.isFinite(y))) {
+      throw new Error(`${index + 2}行目のUnit ID、Series、有限X/Yを確認してください`);
     }
     let seriesId = seriesByLabel.get(seriesLabel);
     if (!seriesId) {
@@ -142,10 +203,6 @@ function parseNonlinearXyPaste(text: string): ParsedNonlinear {
     if (!unit) {
       unit = { id: `unit.${unitByLabel.size + 1}`, seriesId };
       unitByLabel.set(unitLabel, unit);
-    } else if (unit.seriesId !== seriesId) {
-      throw new Error(
-        `Unit ID「${unitLabel}」が複数seriesに使われています。seriesごとに安定IDを分けてください`,
-      );
     }
     return {
       observationId: `observation.${index + 1}`,
@@ -157,7 +214,11 @@ function parseNonlinearXyPaste(text: string): ParsedNonlinear {
       y,
     };
   });
+  const points = allPoints.filter(
+    (point): point is (typeof allPoints)[number] & Readonly<{ y: number }> => point.y !== null,
+  );
   return {
+    allPoints,
     points,
     series: [...seriesByLabel].map(([label, id]) => ({ id, label })),
     units: [...unitByLabel].map(([label, unit]) => ({
@@ -168,14 +229,62 @@ function parseNonlinearXyPaste(text: string): ParsedNonlinear {
   };
 }
 
-function finiteOptional(value: string, label: string) {
-  if (!value.trim()) return undefined;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) throw new Error(`${label}は有限値にしてください`);
-  return parsed;
+function generatedCurveExample(
+  definition: ReturnType<typeof nonlinearModelDefinition>,
+  relationship: "same_physical_material_across_axis" | "separate_material_per_axis_value",
+): string {
+  const lines = definition.examplePaste.split(/\r?\n/);
+  const seriesIds = new Map<string, string>();
+  return lines
+    .map((line, index) => {
+      if (index === 0) return line;
+      const cells = line.split("\t");
+      const series = cells[1] ?? "Series";
+      let seriesId = seriesIds.get(series);
+      if (!seriesId) {
+        seriesId = `curve-${seriesIds.size + 1}`;
+        seriesIds.set(series, seriesId);
+      }
+      cells[0] =
+        relationship === "same_physical_material_across_axis"
+          ? seriesId
+          : `${seriesId}-point-${index}`;
+      return cells.join("\t");
+    })
+    .join("\n");
 }
 
-function createNonlinearDesignData(
+function genericOrderedCurveExample(
+  relationship: "same_physical_material_across_axis" | "separate_material_per_axis_value",
+): string {
+  const unitIds =
+    relationship === "same_physical_material_across_axis"
+      ? ["unit-1", "unit-1", "unit-1"]
+      : ["unit-at-0", "unit-at-1", "unit-at-2"];
+  return [
+    ORDERED_CURVE_HEADER,
+    `${unitIds[0]}\tSeries A\t0\t0`,
+    `${unitIds[1]}\tSeries A\t1\t0.4`,
+    `${unitIds[2]}\tSeries A\t2\t0.8`,
+  ].join("\n");
+}
+
+function isGenericOrderedCurveExample(value: string): boolean {
+  return [
+    genericOrderedCurveExample("same_physical_material_across_axis"),
+    genericOrderedCurveExample("separate_material_per_axis_value"),
+  ].includes(value);
+}
+
+function orderedCurveFileSourceKind(file: Pick<File, "name" | "type">): DelimitedSourceKind {
+  const lowerName = file.name.toLowerCase();
+  if (lowerName.endsWith(".csv") || file.type === "text/csv") return "csv";
+  if (lowerName.endsWith(".tsv") || file.type === "text/tab-separated-values") return "tsv";
+  return "generic_file";
+}
+
+/** Legacy/direct advanced projection retained behind the non-adaptive route. */
+function createLegacyNonlinearDesignData(
   parsed: ParsedNonlinear,
   input: Readonly<{
     xLabel: string;
@@ -268,6 +377,114 @@ function createNonlinearDesignData(
   return { design, units, observations, outcomeId };
 }
 
+function isGeneratedCurveExample(value: string): boolean {
+  return NONLINEAR_MODEL_DEFINITIONS.some((definition) =>
+    [
+      definition.examplePaste,
+      generatedCurveExample(definition, "same_physical_material_across_axis"),
+      generatedCurveExample(definition, "separate_material_per_axis_value"),
+    ].includes(value),
+  );
+}
+
+function finiteOptional(value: string, label: string) {
+  if (!value.trim()) return undefined;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) throw new Error(`${label}は有限値にしてください`);
+  return parsed;
+}
+
+function orderedCurveStatusMessage(entry: OrderedCurveEntryResult | null): string | null {
+  if (!entry || entry.status === "surface_ready") return null;
+  const diagnostics = entry.dualWrite.diagnostics;
+  if (diagnostics.includes("ORDERED_CURVE_STABLE_ID_NOT_REUSED_ACROSS_AXIS")) {
+    return "同じ反応・対象を続けて測った場合は、その対象のUnit IDを複数のX点で同じにしてください。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_SEPARATE_MATERIAL_REUSES_ID_ACROSS_AXIS")) {
+    return "X点ごとに別の反応・試料を用意した場合は、異なるX点へ同じUnit IDを使わないでください。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_UNIT_ID_SPANS_MULTIPLE_SERIES")) {
+    return "同じUnit IDが複数のSeriesにあります。IDは変更せず保持しました。Seriesが条件、別run・個体、別readoutのどれを表すかと、共通の由来をもつかを一般の実験設定で確認してください。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_DUPLICATE_UNIT_AXIS_POINT_REQUIRES_OBSERVATION_LEVEL")) {
+    return "同じUnit ID・Series・Xに複数の値があります。下位の観測単位を定義するまで別の1点へまとめません。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_REQUIRES_TWO_AXIS_LEVELS")) {
+    return "曲線として扱うには、少なくとも2つの異なるX値が必要です。";
+  }
+  if (
+    diagnostics.includes("ORDERED_CURVE_AXIS_LABEL_REQUIRED") ||
+    diagnostics.includes("ORDERED_CURVE_READOUT_LABEL_REQUIRED")
+  ) {
+    return "Graphと保存用の構造を確定するため、横方向に変えたものと測った値の名前を入力してください。X / Yのままでは意味を推測しません。入力済みの値は保持します。";
+  }
+  if (diagnostics.includes("AXIS_POINT_PARENT_RELATIONSHIP_UNRESOLVED")) {
+    return "別々に用意した試料が同じdonor・animal・dish・実験run・batchなどを共有するか確認してください。推測せず入力済みの値を保持します。";
+  }
+  if (diagnostics.includes("SEPARATE_AXIS_MATERIAL_HAS_SHARED_PARENT_REQUIRES_HIERARCHY")) {
+    return "共通の由来または対応関係をもつ試料です。この簡易曲線表で独立した試料へ読み替えず、親IDを保持できる一般の実験設定で続けてください。入力済みの値は保持します。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_SERIES_MEANING_UNRESOLVED")) {
+    return "複数のSeriesが比較条件、別run・個体、別readoutのどれを表すか確認してください。推測せず入力済みの値とIDを保持します。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_SERIES_PARENT_RELATIONSHIP_UNRESOLVED")) {
+    return "異なるSeriesの試料が同じdonor・animal・dish・実験run・batchなどを共有するか確認してください。推測せず入力済みの値とIDを保持します。";
+  }
+  if (
+    diagnostics.includes("ORDERED_CURVE_SERIES_REPLICATES_REQUIRE_RESHAPING") ||
+    diagnostics.includes("ORDERED_CURVE_MULTIPLE_READOUTS_REQUIRE_TYPED_READOUTS") ||
+    diagnostics.includes("ORDERED_CURVE_SERIES_SHARED_PARENT_REQUIRES_HIERARCHY")
+  ) {
+    return "Seriesの意味または対応関係をこの簡易曲線表では安全に保持できません。別条件へ読み替えず、入力済みの値とIDを保持して一般の実験設定で続けます。";
+  }
+  if (
+    diagnostics.some((code) =>
+      [
+        "ORDERED_CURVE_OBSERVATION_ID_INVALID",
+        "ORDERED_CURVE_OBSERVATION_ID_DUPLICATE",
+        "ORDERED_CURVE_UNIT_ID_REQUIRED",
+        "ORDERED_CURVE_SERIES_VALUE_REQUIRED",
+        "ORDERED_CURVE_X_MUST_BE_FINITE",
+        "ORDERED_CURVE_Y_MUST_BE_FINITE",
+      ].includes(code),
+    )
+  ) {
+    return "入力表のUnit ID、Series、X、Yを確認してください。入力済みの値は保持しています。";
+  }
+  if (entry.status === "dual_write_mismatch" || entry.status === "surface_mismatch") {
+    return "実験構造と保存用designの意味が一致しないため停止しました。別のdesignへ変換していません。";
+  }
+  return "実験構造を安全に確定できないため停止しました。入力済みの値は保持しています。";
+}
+
+function nextOrderedCurveRawRevisionId(state: ProjectState): string {
+  let index = state.rawRevisions.length + 1;
+  while (state.rawRevisions.some(({ id }) => id === `raw.nonlinear.${index}`)) index += 1;
+  return `raw.nonlinear.${index}`;
+}
+
+function rawOffsetForTextareaOffset(rawText: string, textareaOffset: number): number {
+  let rawOffset = 0;
+  let normalizedOffset = 0;
+  while (rawOffset < rawText.length && normalizedOffset < textareaOffset) {
+    if (rawText[rawOffset] === "\r" && rawText[rawOffset + 1] === "\n") rawOffset += 2;
+    else rawOffset += 1;
+    normalizedOffset += 1;
+  }
+  return rawOffset;
+}
+
+function replaceTextareaSelectionWithClipboardText(
+  rawText: string,
+  clipboardText: string,
+  selectionStart: number,
+  selectionEnd: number,
+): string {
+  const rawStart = rawOffsetForTextareaOffset(rawText, selectionStart);
+  const rawEnd = rawOffsetForTextareaOffset(rawText, selectionEnd);
+  return `${rawText.slice(0, rawStart)}${clipboardText}${rawText.slice(rawEnd)}`;
+}
+
 export function CommonCoveragePage({
   mode,
   onBack,
@@ -275,40 +492,235 @@ export function CommonCoveragePage({
   analysisAvailable = true,
   saveProject,
   onNavigate,
+  initialDraft,
+  onDraftChange,
+  entryIntent,
+  initialProject,
 }: Props) {
-  const [text, setText] = useState(defaults[mode]),
-    [result, setResult] = useState<AnalysisEngineResult | null>(null),
+  const initialNonlinearRun =
+    mode === "nonlinear-fit"
+      ? initialProject?.state.analysisRuns.find(
+          ({ state, request }) => state === "current" && request.protocolVersion === "0.14.0",
+        )
+      : undefined;
+  const initialNonlinearRequest =
+    initialNonlinearRun?.request.protocolVersion === "0.14.0" ? initialNonlinearRun.request : null;
+  const adaptiveOrderedCurveActive =
+    mode === "nonlinear-fit" &&
+    Boolean(entryIntent || initialProject?.state.adaptiveInput?.contract.orderedAxes.length);
+  const initialAdaptiveSnapshot =
+    mode === "nonlinear-fit" ? initialProject?.state.adaptiveInput : null;
+  const initialOrderedAxis = initialAdaptiveSnapshot?.contract.orderedAxes[0];
+  const initialReadout = initialAdaptiveSnapshot?.contract.readouts[0];
+  const entryCompiledAtRef = useRef(
+    initialProject?.state.adaptiveInput?.rawLineage?.importedAt ?? new Date().toISOString(),
+  );
+  const [persistedBaseline, setPersistedBaseline] = useState<OpenedProject | null>(
+    initialProject ?? null,
+  );
+  const [rawTextCaptureMode, setRawTextCaptureMode] = useState<OrderedCurveRawTextCaptureMode>(
+    initialProject ? "retained_project_lineage" : "browser_editor_value",
+  );
+  const [orderedCurveSource, setOrderedCurveSource] = useState<{
+    sourceKind: DelimitedSourceKind;
+    sourceLabel: string;
+  }>(() => ({
+    sourceKind: initialProject?.state.adaptiveInput?.rawLineage?.sourceKind ?? "clipboard",
+    sourceLabel:
+      initialProject?.state.adaptiveInput?.rawLineage?.sourceLabel ?? "ordered-curve-data",
+  }));
+  const [nonlinearAnalysisSetupVisible, setNonlinearAnalysisSetupVisible] = useState(
+    !adaptiveOrderedCurveActive,
+  );
+  const [text, setText] = useState(
+      initialDraft?.text ??
+        initialAdaptiveSnapshot?.rawLineage?.rawText ??
+        (mode === "nonlinear-fit" ? ORDERED_CURVE_HEADER : defaults[mode]),
+    ),
+    [result, setResult] = useState<AnalysisEngineResult | null>(
+      initialNonlinearRun?.result ?? null,
+    ),
     [executedRequest, setExecutedRequest] = useState<ReturnType<
       typeof AnalysisEngineRequestSchema.parse
-    > | null>(null),
+    > | null>(initialNonlinearRun?.request ?? null),
     [message, setMessage] = useState<string | null>(null);
   const [literatureCase, setLiteratureCase] = useState<LiteratureExperimenterCase | null>(null);
   const [contingencyMethod, setContingencyMethod] = useState<
       "fisher_exact" | "pearson_chi_square" | "mcnemar_exact"
-    >("fisher_exact"),
-    [display, setDisplay] = useState<"count" | "fraction" | "stacked">("count");
-  const [includeIntercept, setIncludeIntercept] = useState(true),
-    [xLabel, setXLabel] = useState("X"),
-    [yLabel, setYLabel] = useState("Y"),
-    [xUnit, setXUnit] = useState(""),
-    [yUnit, setYUnit] = useState(""),
-    [xScale, setXScale] = useState<"linear" | "log10">("linear"),
-    [yScale, setYScale] = useState<"linear" | "log10">("linear"),
-    [showBand, setShowBand] = useState(true);
-  const [distributionType, setDistributionType] = useState<"histogram" | "ecdf">("histogram"),
-    [binCount, setBinCount] = useState(""),
+    >(initialDraft?.contingencyMethod ?? "fisher_exact"),
+    [display, setDisplay] = useState<"count" | "fraction" | "stacked">(
+      initialDraft?.display ?? "count",
+    );
+  const [includeIntercept, setIncludeIntercept] = useState(initialDraft?.includeIntercept ?? true),
+    [xLabel, setXLabel] = useState(
+      initialDraft?.xLabel ?? initialOrderedAxis?.label ?? (adaptiveOrderedCurveActive ? "" : "X"),
+    ),
+    [yLabel, setYLabel] = useState(
+      initialDraft?.yLabel ?? initialReadout?.label ?? (adaptiveOrderedCurveActive ? "" : "Y"),
+    ),
+    [xUnit, setXUnit] = useState(initialDraft?.xUnit ?? initialOrderedAxis?.unit ?? ""),
+    [yUnit, setYUnit] = useState(initialDraft?.yUnit ?? initialNonlinearRequest?.yUnit ?? ""),
+    [xScale, setXScale] = useState<"linear" | "log10">(initialDraft?.xScale ?? "linear"),
+    [yScale, setYScale] = useState<"linear" | "log10">(initialDraft?.yScale ?? "linear"),
+    [showBand, setShowBand] = useState(initialDraft?.showBand ?? true);
+  const [distributionType, setDistributionType] = useState<"histogram" | "ecdf">(
+      initialDraft?.distributionType ?? "histogram",
+    ),
+    [binCount, setBinCount] = useState(initialDraft?.binCount ?? ""),
     svgRef = useRef<SVGSVGElement>(null);
+  const persistedNonlinearModel = restoredNonlinearModelSelection(initialAdaptiveSnapshot);
+  const restoredModel = NONLINEAR_MODEL_DEFINITIONS.some(({ id }) => id === persistedNonlinearModel)
+    ? (persistedNonlinearModel as NonlinearModelId)
+    : undefined;
   const [nonlinearModel, setNonlinearModel] = useState<NonlinearModelId>(
-    "zero_baseline_association",
+    (initialNonlinearRequest?.modelId as NonlinearModelId | undefined) ??
+      restoredModel ??
+      initialDraft?.nonlinearModel ??
+      DEFAULT_NONLINEAR_MODEL_ID,
   );
+  const [nonlinearModelExplicitlySelected, setNonlinearModelExplicitlySelected] = useState(
+    Boolean(initialDraft?.nonlinearModelExplicitlySelected) ||
+      Boolean(initialNonlinearRun) ||
+      Boolean(restoredModel) ||
+      !adaptiveOrderedCurveActive,
+  );
+  const [michaelisReadoutMeaning, setMichaelisReadoutMeaning] = useState<
+    MichaelisReadoutMeaning | undefined
+  >(
+    initialDraft?.michaelisReadoutMeaning ??
+      restoredMichaelisReadoutMeaning(initialAdaptiveSnapshot),
+  );
+  const nonlinearDefinition = nonlinearModelDefinition(nonlinearModel);
   const [modelRationale, setModelRationale] = useState(
-    nonlinearModelRationales.zero_baseline_association,
+    initialDraft?.modelRationale ??
+      initialNonlinearRequest?.modelSelectionRationale ??
+      (adaptiveOrderedCurveActive
+        ? ""
+        : nonlinearModelDefinition(DEFAULT_NONLINEAR_MODEL_ID).defaultRationale),
   );
-  const [fitSettings, setFitSettings] = useState<Record<NonlinearParameter, FitSetting>>({
-    baseline: { initial: "", lower: "", upper: "" },
-    plateau: { initial: "", lower: "", upper: "" },
-    rate: { initial: "", lower: "", upper: "" },
+  const [fitSettings, setFitSettings] = useState<Record<NonlinearParameterId, FitSetting>>(
+    initialDraft
+      ? { ...initialDraft.fitSettings }
+      : {
+          baseline: { initial: "", lower: "", upper: "" },
+          plateau: { initial: "", lower: "", upper: "" },
+          rate: { initial: "", lower: "", upper: "" },
+          vmax: { initial: "", lower: "", upper: "" },
+          km: { initial: "", lower: "", upper: "" },
+        },
+  );
+  const [entryFactsState, setEntryFactsState] = useState(() => {
+    const retainedFact = (key: string) =>
+      initialAdaptiveSnapshot?.targetedConfirmations.find((fact) => fact.key === key)?.answer;
+    const retainedFacts = {
+      orderedAxisMeaning: retainedFact("ordered_axis_meaning"),
+      axisMaterialRelationship: retainedFact("axis_material_relationship"),
+      axisPointParentRelationship: retainedFact("axis_point_parent_relationship"),
+      orderedCurveSeriesMeaning: retainedFact("ordered_curve_series_meaning"),
+      orderedCurveSeriesParentRelationship: retainedFact(
+        "ordered_curve_series_parent_relationship",
+      ),
+      orderedCurveSeriesCount: initialAdaptiveSnapshot?.contract.factors[0]?.levels.length ?? 0,
+      orderedAxisCount: initialAdaptiveSnapshot?.contract.orderedAxes.length ?? 1,
+    } as EntryModuleFacts;
+    return createEntryModuleTargetedFactsState(
+      "ordered_curve_kinetics",
+      initialDraft?.entryModuleFacts ?? entryIntent?.facts ?? retainedFacts,
+    );
   });
+  const entryFactsView = useMemo(
+    () => entryModuleTargetedFactsViewModel(entryFactsState, "ja"),
+    [entryFactsState],
+  );
+  const draft = useMemo<CommonCoverageDraft>(
+    () => ({
+      text,
+      contingencyMethod,
+      display,
+      includeIntercept,
+      xLabel,
+      yLabel,
+      xUnit,
+      yUnit,
+      xScale,
+      yScale,
+      showBand,
+      distributionType,
+      binCount,
+      nonlinearModel,
+      nonlinearModelExplicitlySelected,
+      michaelisReadoutMeaning,
+      modelRationale,
+      fitSettings,
+      entryModuleFacts: entryFactsState.facts,
+      entryIntent,
+    }),
+    [
+      binCount,
+      contingencyMethod,
+      display,
+      distributionType,
+      fitSettings,
+      entryFactsState.facts,
+      entryIntent,
+      includeIntercept,
+      modelRationale,
+      michaelisReadoutMeaning,
+      nonlinearModel,
+      nonlinearModelExplicitlySelected,
+      showBand,
+      text,
+      xLabel,
+      xScale,
+      xUnit,
+      yLabel,
+      yScale,
+      yUnit,
+    ],
+  );
+  const onDraftChangeRef = useRef(onDraftChange);
+  useEffect(() => {
+    onDraftChangeRef.current = onDraftChange;
+  }, [onDraftChange]);
+  useEffect(() => {
+    onDraftChangeRef.current?.(draft);
+  }, [draft]);
+  const selectNonlinearModel = (modelId: NonlinearModelId) => {
+    const nextDefinition = nonlinearModelDefinition(modelId);
+    setNonlinearModel(modelId);
+    setNonlinearModelExplicitlySelected(true);
+    setModelRationale((current) =>
+      !current.trim() || isGeneratedNonlinearRationale(current)
+        ? nextDefinition.defaultRationale
+        : current,
+    );
+    const generatedXLabels = [
+      "X",
+      ...NONLINEAR_MODEL_DEFINITIONS.map(({ suggestedXLabel }) => suggestedXLabel),
+    ];
+    const generatedYLabels = [
+      "Y",
+      ...NONLINEAR_MODEL_DEFINITIONS.map(({ suggestedYLabel }) => suggestedYLabel),
+    ];
+    if (!adaptiveOrderedCurveActive) {
+      setXLabel((current) =>
+        generatedXLabels.includes(current) ? nextDefinition.suggestedXLabel : current,
+      );
+      setYLabel((current) =>
+        generatedYLabels.includes(current) ? nextDefinition.suggestedYLabel : current,
+      );
+    }
+    if (NONLINEAR_MODEL_DEFINITIONS.some(({ examplePaste }) => examplePaste === text)) {
+      setRawTextCaptureMode("browser_editor_value");
+    }
+    setText((current) =>
+      NONLINEAR_MODEL_DEFINITIONS.some(({ examplePaste }) => examplePaste === current)
+        ? nextDefinition.examplePaste
+        : current,
+    );
+    setResult(null);
+    setExecutedRequest(null);
+  };
   const benchmarkRun = useBenchmarkRun();
   useEffect(() => {
     const identity = benchmarkRun.identity;
@@ -369,6 +781,191 @@ export function CommonCoveragePage({
       return { error: error instanceof Error ? error.message : "入力を確認してください" } as const;
     }
   }, [mode, text]);
+  const orderedCurveSeriesCount =
+    !("error" in parsed) && parsed.kind === "nonlinear-fit" ? parsed.data.series.length : 0;
+  useEffect(() => {
+    if (
+      !adaptiveOrderedCurveActive ||
+      entryFactsState.facts.orderedCurveSeriesCount === orderedCurveSeriesCount
+    ) {
+      return;
+    }
+    const updated = updateEntryModuleOrderedCurveSeriesCount(
+      entryFactsState,
+      orderedCurveSeriesCount,
+    );
+    if (updated.ok) setEntryFactsState(updated.state);
+  }, [adaptiveOrderedCurveActive, entryFactsState, orderedCurveSeriesCount]);
+  const orderedCurveEntry = useMemo<OrderedCurveEntryResult | null>(() => {
+    if (!adaptiveOrderedCurveActive || "error" in parsed || parsed.kind !== "nonlinear-fit") {
+      return null;
+    }
+    const existingContract = persistedBaseline?.state.adaptiveInput?.contract;
+    const existingLineage = persistedBaseline?.state.adaptiveInput?.rawLineage;
+    return createOrderedCurveEntry({
+      points: parsed.data.allPoints.map(({ observationId, unitLabel, seriesLabel, x, y }) => ({
+        observationId,
+        unitLabel,
+        seriesLabel,
+        x,
+        y,
+      })),
+      orderedAxisMeaning: entryFactsState.facts.orderedAxisMeaning,
+      axisMaterialRelationship: entryFactsState.facts.axisMaterialRelationship,
+      axisPointParentRelationship: entryFactsState.facts.axisPointParentRelationship,
+      orderedCurveSeriesMeaning: entryFactsState.facts.orderedCurveSeriesMeaning,
+      orderedCurveSeriesParentRelationship:
+        entryFactsState.facts.orderedCurveSeriesParentRelationship,
+      orderedAxisCount: entryFactsState.facts.orderedAxisCount ?? 1,
+      labels: {
+        experimentName:
+          existingContract?.experimentName ??
+          (entryIntent?.experimentName.trim() || "Ordered curve experiment"),
+        experimentDescription:
+          existingContract?.experimentDescription ??
+          (entryIntent?.experimentDescription.trim() ||
+            `${yLabel.trim() || "Y"}を${xLabel.trim() || "X"}に沿ってSeriesごとに測定した実験。`),
+        experimentalUnitLabel:
+          existingContract?.unitLevels.find(
+            ({ key }) => key === existingContract.experimentalUnitLevelKey,
+          )?.label ??
+          (entryIntent?.subjectUnitLabel.trim() || "Experimental unit"),
+        identityLabel: existingContract?.identities[0]?.label ?? "Unit ID",
+        seriesFactorLabel: existingContract?.factors[0]?.label ?? "Series",
+        orderedAxisLabel: xLabel.trim(),
+        readoutLabel: yLabel.trim(),
+      },
+      units: {
+        orderedAxisUnit: xUnit.trim(),
+        readoutUnit: yUnit.trim(),
+      },
+      experimentalUnitLabelSource:
+        existingContract || entryIntent ? "explicit_researcher_fact" : "generated_placeholder",
+      priorRawLineage: existingLineage,
+      rawTextCaptureMode,
+      rawText: text,
+      sourceLabel: orderedCurveSource.sourceLabel,
+      sourceKind: orderedCurveSource.sourceKind,
+      now: entryCompiledAtRef.current,
+    });
+  }, [
+    entryFactsState.facts.axisMaterialRelationship,
+    entryFactsState.facts.axisPointParentRelationship,
+    entryFactsState.facts.orderedCurveSeriesMeaning,
+    entryFactsState.facts.orderedCurveSeriesParentRelationship,
+    entryFactsState.facts.orderedAxisCount,
+    entryFactsState.facts.orderedAxisMeaning,
+    entryIntent,
+    adaptiveOrderedCurveActive,
+    orderedCurveSource.sourceKind,
+    orderedCurveSource.sourceLabel,
+    parsed,
+    persistedBaseline,
+    rawTextCaptureMode,
+    text,
+    xLabel,
+    xUnit,
+    yLabel,
+    yUnit,
+  ]);
+  const orderedCurveRequiresRevision = useMemo(() => {
+    if (orderedCurveEntry?.status !== "surface_ready" || !persistedBaseline) return false;
+    const priorSnapshot = persistedBaseline.state.adaptiveInput;
+    const activeDesign = persistedBaseline.state.designRevisions.find(
+      ({ id }) => id === persistedBaseline.state.activeDesignRevisionId,
+    )?.design;
+    return (
+      !priorSnapshot ||
+      !activeDesign ||
+      priorSnapshot.rawLineage?.rawText !== orderedCurveEntry.rawLineage.rawText ||
+      JSON.stringify(priorSnapshot.contract) !== JSON.stringify(orderedCurveEntry.contract) ||
+      JSON.stringify(priorSnapshot.canonicalObservations) !==
+        JSON.stringify(orderedCurveEntry.canonicalObservations) ||
+      JSON.stringify(activeDesign) !== JSON.stringify(orderedCurveEntry.design)
+    );
+  }, [orderedCurveEntry, persistedBaseline]);
+  const orderedCurveWorkingRawRevisionId = persistedBaseline
+    ? orderedCurveRequiresRevision
+      ? nextOrderedCurveRawRevisionId(persistedBaseline.state)
+      : persistedBaseline.state.activeRawRevisionId
+    : "raw.nonlinear.1";
+  const orderedCurveRecords = useMemo(() => {
+    if (orderedCurveEntry?.status !== "surface_ready") return null;
+    const existingUnitIdsByLabel = persistedBaseline
+      ? Object.fromEntries(
+          persistedBaseline.state.unitInstances.map(({ label, id }) => [label, id]),
+        )
+      : undefined;
+    return projectOrderedCurveEntryToLegacyRecords(
+      orderedCurveEntry,
+      orderedCurveWorkingRawRevisionId,
+      {
+        existingUnitIdsByLabel,
+        observationIdPrefix:
+          orderedCurveWorkingRawRevisionId === "raw.nonlinear.1"
+            ? undefined
+            : orderedCurveWorkingRawRevisionId,
+      },
+    );
+  }, [orderedCurveEntry, orderedCurveWorkingRawRevisionId, persistedBaseline]);
+  const orderedCurveValidationMessage = orderedCurveStatusMessage(orderedCurveEntry);
+  const orderedCurveAnalysisReadiness = useMemo(
+    () =>
+      resolveOrderedCurveAnalysisReadiness({
+        orderedAxisMeaning: entryFactsState.facts.orderedAxisMeaning,
+        axisMaterialRelationship: entryFactsState.facts.axisMaterialRelationship,
+        selectedModel: nonlinearModel,
+        modelExplicitlySelected: nonlinearModelExplicitlySelected,
+        michaelisReadoutMeaning,
+      }),
+    [
+      entryFactsState.facts.axisMaterialRelationship,
+      entryFactsState.facts.orderedAxisMeaning,
+      michaelisReadoutMeaning,
+      nonlinearModel,
+      nonlinearModelExplicitlySelected,
+    ],
+  );
+  const pasteRawText = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const clipboardText = event.clipboardData.getData("text/plain");
+    if (!clipboardText) return;
+    event.preventDefault();
+    setRawTextCaptureMode("clipboard_text_plain_exact");
+    setOrderedCurveSource({ sourceKind: "clipboard", sourceLabel: "clipboard text/plain" });
+    const selectionStart = event.currentTarget.selectionStart;
+    const selectionEnd = event.currentTarget.selectionEnd;
+    setText((current) =>
+      replaceTextareaSelectionWithClipboardText(
+        current,
+        clipboardText,
+        selectionStart,
+        selectionEnd,
+      ),
+    );
+    setResult(null);
+    setExecutedRequest(null);
+  };
+  const loadOrderedCurveFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const rawText = await file.text();
+      setText(rawText);
+      setOrderedCurveSource({
+        sourceKind: orderedCurveFileSourceKind(file),
+        sourceLabel: file.name,
+      });
+      setRawTextCaptureMode("file_text_exact");
+      setResult(null);
+      setExecutedRequest(null);
+      setMessage(`${file.name}を読み込みました。`);
+    } catch {
+      setMessage(`${file.name}を読み込めませんでした。`);
+    } finally {
+      input.value = "";
+    }
+  };
   const run = async () => {
     try {
       setMessage("解析中…");
@@ -440,37 +1037,75 @@ export function CommonCoveragePage({
           options,
         };
       } else if (parsed.kind === "nonlinear-fit") {
+        if (
+          adaptiveOrderedCurveActive &&
+          (orderedCurveEntry?.status !== "surface_ready" || !orderedCurveRecords)
+        ) {
+          throw new Error(
+            orderedCurveValidationMessage ??
+              "実験構造を確定できないため、別のdesignへ変換せずfitを停止しました。",
+          );
+        }
+        if (adaptiveOrderedCurveActive && orderedCurveAnalysisReadiness.status !== "ready") {
+          throw new Error(orderedCurveAnalysisReadiness.message.ja);
+        }
         if (!modelRationale.trim())
           throw new Error("model selectionの科学的理由を記録してください");
-        const parameters: NonlinearParameter[] =
-          nonlinearModel === "one_phase_association"
-            ? ["baseline", "plateau", "rate"]
-            : ["plateau", "rate"];
+        if (nonlinearDefinition.requiresAxisUnits && (!xUnit.trim() || !yUnit.trim())) {
+          throw new Error(
+            "Michaelis–Menten fitでは、基質濃度と反応初速度の単位を両方入力してください",
+          );
+        }
+        if (nonlinearModel === "michaelis_menten" && parsed.data.points.some(({ x }) => x < 0)) {
+          throw new Error(
+            "Michaelis–Menten fitの基質濃度Xは0以上にしてください。入力値は削除していません。",
+          );
+        }
         const initialTemplate: Record<string, number> = {};
         const boundsTemplate: Record<string, { lower: number; upper: number }> = {};
-        for (const parameter of parameters) {
+        for (const parameter of nonlinearDefinition.parameters) {
           const setting = fitSettings[parameter];
-          const initial = finiteOptional(setting.initial, `${parameter} initial value`);
-          const lower = finiteOptional(setting.lower, `${parameter} lower bound`);
-          const upper = finiteOptional(setting.upper, `${parameter} upper bound`);
+          const parameterLabel = nonlinearParameterLabel(nonlinearModel, parameter);
+          const initial = finiteOptional(setting.initial, `${parameterLabel} initial value`);
+          const lower = finiteOptional(setting.lower, `${parameterLabel} lower bound`);
+          const upper = finiteOptional(setting.upper, `${parameterLabel} upper bound`);
           if ((lower === undefined) !== (upper === undefined)) {
-            throw new Error(`${parameter}のboundはlowerとupperを両方指定してください`);
+            throw new Error(`${parameterLabel}のboundはlowerとupperを両方指定してください`);
           }
           if (lower !== undefined && upper !== undefined && lower >= upper) {
-            throw new Error(`${parameter}のboundはlower < upperにしてください`);
+            throw new Error(`${parameterLabel}のboundはlower < upperにしてください`);
+          }
+          if (
+            nonlinearModel === "michaelis_menten" &&
+            ((initial !== undefined && initial <= 0) ||
+              (lower !== undefined && lower < 0) ||
+              (upper !== undefined && upper <= 0))
+          ) {
+            throw new Error(
+              `${parameterLabel}は正のinitial、0以上のlower、正のupperを指定してください`,
+            );
           }
           if (initial !== undefined) initialTemplate[parameter] = initial;
           if (lower !== undefined && upper !== undefined) {
             boundsTemplate[parameter] = { lower, upper };
           }
         }
+        const executionOrdinal =
+          (persistedBaseline?.state.analysisRuns.filter(
+            ({ request: priorRequest }) => priorRequest.protocolVersion === "0.14.0",
+          ).length ?? 0) + 1;
+        const requestSeries = orderedCurveRecords?.series ?? parsed.data.series;
+        const requestPoints = orderedCurveRecords?.points ?? parsed.data.points;
         request = {
           protocolVersion: "0.14.0",
-          requestId: "request.nonlinear.1",
-          projectId: "project.nonlinear",
-          analysisId: "analysis.nonlinear.1",
+          requestId: `request.nonlinear.${executionOrdinal}`,
+          projectId:
+            adaptiveOrderedCurveActive && orderedCurveEntry?.status === "surface_ready"
+              ? `project.${orderedCurveEntry.contract.contractId}`
+              : "project.nonlinear",
+          analysisId: `analysis.nonlinear.${executionOrdinal}`,
           templateId: "D17",
-          templateVersion: "0.1.0",
+          templateVersion: nonlinearDefinition.templateVersion,
           method: "nonlinear_xy_fit",
           modelId: nonlinearModel,
           modelSelectionRationale: modelRationale.trim(),
@@ -478,22 +1113,12 @@ export function CommonCoveragePage({
           yLabel: yLabel.trim() || "Y",
           xUnit: xUnit.trim(),
           yUnit: yUnit.trim(),
-          seriesIds: parsed.data.series.map(({ id }) => id),
-          points: parsed.data.points.map(
-            ({ observationId, experimentalUnitId, seriesId, x, y }) => ({
-              observationId,
-              experimentalUnitId,
-              seriesId,
-              x,
-              y,
-            }),
-          ),
+          seriesIds: requestSeries.map(({ id }) => id),
+          points: requestPoints,
           initialValues: Object.fromEntries(
-            parsed.data.series.map(({ id }) => [id, { ...initialTemplate }]),
+            requestSeries.map(({ id }) => [id, { ...initialTemplate }]),
           ),
-          bounds: Object.fromEntries(
-            parsed.data.series.map(({ id }) => [id, { ...boundsTemplate }]),
-          ),
+          bounds: Object.fromEntries(requestSeries.map(({ id }) => [id, { ...boundsTemplate }])),
           observations: [],
           options,
         };
@@ -513,7 +1138,7 @@ export function CommonCoveragePage({
           parsed.kind === "regression"
             ? "explicit_numeric_covariate"
             : parsed.kind === "nonlinear-fit"
-              ? "explicit_saturating_xy_model"
+              ? nonlinearDefinition.recommendationReasonCode
               : "explicit_core_route",
         recommendationExplanation:
           parsed.kind === "regression"
@@ -595,23 +1220,43 @@ export function CommonCoveragePage({
       );
       graphExportAvailable = true;
     }
-    if (!("error" in parsed) && parsed.kind === "nonlinear-fit" && result?.nonlinearFit) {
-      const spec = createNonlinearFitGraphSpec({
-        graphId: "graph.nonlinear.1",
-        dataSource: { kind: "analysis_result", id: result.requestId, revision: result.requestId },
-        analysisResultId: result.requestId,
-        xLabel: xLabel.trim() || "X",
-        yLabel: yLabel.trim() || "Y",
-        seriesIds: parsed.data.series.map(({ id }) => id),
-      });
+    if (!("error" in parsed) && parsed.kind === "nonlinear-fit" && parsed.data.points.length > 0) {
+      const graphSeries = orderedCurveRecords?.series ?? parsed.data.series;
+      const graphPoints = orderedCurveRecords?.points ?? parsed.data.points;
+      const fittedModel = result?.nonlinearFit
+        ? createNonlinearFitGraphModel(
+            createNonlinearFitGraphSpec({
+              graphId: "graph.nonlinear.1",
+              dataSource: {
+                kind: "analysis_result",
+                id: result.requestId,
+                revision: result.requestId,
+              },
+              analysisResultId: result.requestId,
+              xLabel: xLabel.trim() || "X",
+              yLabel: yLabel.trim() || "Y",
+              seriesIds: graphSeries.map(({ id }) => id),
+            }),
+            graphPoints,
+            result,
+          )
+        : {
+            modelId: "observed_only",
+            series: graphSeries.map(({ id }) => ({
+              seriesId: id,
+              points: graphPoints.filter(({ seriesId }) => seriesId === id),
+              fittedCurve: [],
+            })),
+          };
       graph = (
         <NonlinearFitGraph
           ref={svgRef}
-          model={createNonlinearFitGraphModel(spec, parsed.data.points, result)}
+          model={fittedModel}
+          displayMode={result?.nonlinearFit ? "fitted" : "observed_only"}
           xLabel={`${xLabel.trim() || "X"}${xUnit.trim() ? ` (${xUnit.trim()})` : ""}`}
           yLabel={`${yLabel.trim() || "Y"}${yUnit.trim() ? ` (${yUnit.trim()})` : ""}`}
           seriesLabels={Object.fromEntries(
-            parsed.data.series.map(({ id, label: seriesLabel }) => [id, seriesLabel]),
+            graphSeries.map(({ id, label: seriesLabel }) => [id, seriesLabel]),
           )}
         />
       );
@@ -624,25 +1269,49 @@ export function CommonCoveragePage({
     executedRequest?.protocolVersion === "0.14.0"
       ? {
           templateId: "D17",
-          templateVersion: "0.1.0",
+          templateVersion: executedRequest.templateVersion,
           recommendedMethod: "nonlinear_xy_fit",
           alternativeMethods: [],
-          reasonCode: "explicit_saturating_xy_model",
+          reasonCode: nonlinearModelDefinition(executedRequest.modelId).recommendationReasonCode,
           explanation: executedRequest.modelSelectionRationale,
-          statisticalNDefinition: `${new Set(executedRequest.points.map(({ experimentalUnitId }) => experimentalUnitId)).size} stable units; observed XY points are retained separately from fitted curves`,
+          statisticalNDefinition: !adaptiveOrderedCurveActive
+            ? `${new Set(executedRequest.points.map(({ experimentalUnitId }) => experimentalUnitId)).size} stable units; observed XY points are retained separately from fitted curves`
+            : entryFactsState.facts.axisMaterialRelationship ===
+                "same_physical_material_across_axis"
+              ? `${new Set(executedRequest.points.map(({ experimentalUnitId }) => experimentalUnitId)).size} stable reaction/subject IDs followed across X; repeated XY points are not counted as separate units`
+              : `${new Set(executedRequest.points.map(({ experimentalUnitId }) => experimentalUnitId)).size} distinct reaction/sample records; biological independence is not inferred from separate material alone`,
           multiplicityMethod: null,
           decision: { kind: "accepted", selectedMethod: "nonlinear_xy_fit" },
         }
       : null;
   const nonlinearDesignData =
+    orderedCurveEntry?.status === "surface_ready" && orderedCurveRecords
+      ? {
+          design: orderedCurveEntry.design,
+          units: orderedCurveRecords.units,
+          observations: orderedCurveRecords.observations,
+          outcomeId: orderedCurveRecords.outcomeId,
+          snapshot: withOrderedCurveAnalysisProvenance(
+            orderedCurveEntry.snapshot,
+            {
+              modelId: nonlinearModelExplicitlySelected ? nonlinearModel : undefined,
+              michaelisReadoutMeaning:
+                nonlinearModel === "michaelis_menten" ? michaelisReadoutMeaning : undefined,
+            },
+            entryCompiledAtRef.current,
+          ),
+        }
+      : null;
+  const legacyNonlinearDesignData =
+    !adaptiveOrderedCurveActive &&
     !("error" in parsed) &&
     parsed.kind === "nonlinear-fit" &&
     executedRequest?.protocolVersion === "0.14.0"
-      ? createNonlinearDesignData(parsed.data, {
+      ? createLegacyNonlinearDesignData(parsed.data, {
           xLabel: executedRequest.xLabel,
           yLabel: executedRequest.yLabel,
           yUnit: executedRequest.yUnit,
-          modelId: executedRequest.modelId,
+          modelId: executedRequest.modelId as NonlinearModelId,
           rationale: executedRequest.modelSelectionRationale,
           createdAt: result?.completedAt ?? new Date().toISOString(),
         })
@@ -662,14 +1331,14 @@ export function CommonCoveragePage({
     result && executedRequest
       ? executedRequest.protocolVersion === "0.14.0" &&
         nonlinearRecommendation &&
-        nonlinearDesignData
+        (nonlinearDesignData || legacyNonlinearDesignData)
         ? generateMethodsText({
-            design: nonlinearDesignData.design,
+            design: (nonlinearDesignData ?? legacyNonlinearDesignData)!.design,
             recommendation: nonlinearRecommendation,
             request: executedRequest,
             result,
             graphSpec: nonlinearSpec,
-            outcomeId: nonlinearDesignData.outcomeId,
+            outcomeId: (nonlinearDesignData ?? legacyNonlinearDesignData)!.outcomeId,
           })
         : generateCommonCoverageMethods(executedRequest, result)
       : null;
@@ -679,49 +1348,177 @@ export function CommonCoveragePage({
       setMessage("デスクトップ版で保存できます。");
       return;
     }
-    if (
-      !result ||
-      executedRequest?.protocolVersion !== "0.14.0" ||
-      !nonlinearRecommendation ||
-      !nonlinearDesignData ||
-      !nonlinearSpec
-    ) {
-      setMessage("先に非線形fitを実行してください。");
+    if (!adaptiveOrderedCurveActive) {
+      if (
+        !result ||
+        executedRequest?.protocolVersion !== "0.14.0" ||
+        !nonlinearRecommendation ||
+        !legacyNonlinearDesignData ||
+        !nonlinearSpec
+      ) {
+        setMessage("先に非線形fitを実行してください。");
+        return;
+      }
+      try {
+        const createdAt = result.completedAt;
+        await saveProject(
+          createInitialProjectState({
+            metadata: {
+              projectId: "project.nonlinear",
+              projectName: "Nonlinear XY fitting",
+              experimentDate: createdAt.slice(0, 10),
+              createdAt,
+              updatedAt: createdAt,
+            },
+            design: legacyNonlinearDesignData.design,
+            rawRevision: {
+              id: "raw.nonlinear.1",
+              previousRevisionId: null,
+              sourceKind: "paste",
+              createdAt,
+              createdBy: "researcher",
+              note: "Observed X/Y points retained separately from the authoritative D17 fit result.",
+            },
+            unitInstances: legacyNonlinearDesignData.units,
+            observations: legacyNonlinearDesignData.observations,
+            actor: "researcher",
+            analysis: {
+              recommendation: nonlinearRecommendation,
+              request: executedRequest,
+              result,
+              graphSpec: nonlinearSpec,
+            },
+          }),
+        );
+        setMessage(
+          "model、parameter、診断、raw points、saved fit curveをプロジェクトへ保存しました。",
+        );
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "プロジェクトを保存できませんでした");
+      }
+      return;
+    }
+    if (!nonlinearDesignData || orderedCurveEntry?.status !== "surface_ready") {
+      setMessage(
+        orderedCurveValidationMessage ??
+          "実験構造を確定できないため、別のdesignへ変換せず保存を停止しました。",
+      );
       return;
     }
     try {
-      const createdAt = result.completedAt;
-      await saveProject(
-        createInitialProjectState({
+      const analysisPayload =
+        result &&
+        executedRequest?.protocolVersion === "0.14.0" &&
+        nonlinearRecommendation &&
+        nonlinearSpec
+          ? {
+              recommendation: nonlinearRecommendation,
+              request: executedRequest,
+              result,
+              graphSpec: nonlinearSpec,
+            }
+          : null;
+      const savedAt = new Date().toISOString();
+      const projectName =
+        entryIntent?.experimentName.trim() ||
+        persistedBaseline?.state.metadata.projectName ||
+        nonlinearModelLabel(
+          executedRequest?.protocolVersion === "0.14.0" ? executedRequest.modelId : nonlinearModel,
+        );
+      let projectState: ProjectState;
+      if (!persistedBaseline) {
+        const createdAt = result?.completedAt ?? savedAt;
+        const base = createInitialProjectState({
           metadata: {
-            projectId: "project.nonlinear",
-            projectName: "Nonlinear XY fitting",
+            projectId: `project.${orderedCurveEntry.contract.contractId}`,
+            projectName,
             experimentDate: createdAt.slice(0, 10),
             createdAt,
-            updatedAt: createdAt,
+            updatedAt: savedAt,
           },
           design: nonlinearDesignData.design,
           rawRevision: {
-            id: "raw.nonlinear.1",
+            id: orderedCurveWorkingRawRevisionId,
             previousRevisionId: null,
-            sourceKind: "paste",
+            sourceKind:
+              nonlinearDesignData.snapshot.rawLineage?.sourceKind === "clipboard" ? "paste" : "csv",
+            sourceName: nonlinearDesignData.snapshot.rawLineage?.sourceLabel,
             createdAt,
             createdBy: "researcher",
-            note: "Observed X/Y points retained separately from the authoritative D17 fit result.",
+            note: analysisPayload
+              ? "Observed X/Y points retained separately from the authoritative D17 fit result."
+              : "Observed X/Y points retained before optional nonlinear fitting; observed-only Graph is regenerated deterministically from these rows.",
           },
-          unitInstances: nonlinearDesignData.units,
-          observations: nonlinearDesignData.observations,
+          unitInstances: [...nonlinearDesignData.units],
+          observations: [...nonlinearDesignData.observations],
           actor: "researcher",
-          analysis: {
-            recommendation: nonlinearRecommendation,
-            request: executedRequest,
-            result,
-            graphSpec: nonlinearSpec,
-          },
-        }),
-      );
+          ...(analysisPayload ? { analysis: analysisPayload } : {}),
+        });
+        projectState = ProjectStateSchema.parse({
+          ...base,
+          adaptiveInput: nonlinearDesignData.snapshot,
+        });
+      } else {
+        const baseline = ProjectStateSchema.parse(persistedBaseline.state);
+        if (!baseline.adaptiveInput) {
+          throw new Error("ORDERED_CURVE_EXISTING_ADAPTIVE_SNAPSHOT_MISSING");
+        }
+        if (baseline.metadata.projectId !== `project.${orderedCurveEntry.contract.contractId}`) {
+          throw new Error("ORDERED_CURVE_PROJECT_CONTRACT_ID_MISMATCH");
+        }
+        const activeDesign = baseline.designRevisions.find(
+          ({ id }) => id === baseline.activeDesignRevisionId,
+        )?.design;
+        if (!activeDesign) throw new Error("ORDERED_CURVE_ACTIVE_DESIGN_MISSING");
+        const designChanged =
+          JSON.stringify(activeDesign) !== JSON.stringify(orderedCurveEntry.design);
+        let revised = ProjectStateSchema.parse({ ...baseline, adaptiveInput: null });
+        if (designChanged) {
+          revised = appendDesignRevision(revised, orderedCurveEntry.design, "researcher", savedAt);
+        }
+        if (orderedCurveRequiresRevision) {
+          revised = appendRawRevision(
+            revised,
+            {
+              id: orderedCurveWorkingRawRevisionId,
+              previousRevisionId: revised.activeRawRevisionId,
+              sourceKind: "project_edit",
+              sourceName: nonlinearDesignData.snapshot.rawLineage?.sourceLabel,
+              createdAt: savedAt,
+              createdBy: "researcher",
+              note: "Editable ordered-curve raw table revision",
+            },
+            [...nonlinearDesignData.units],
+            [...nonlinearDesignData.observations],
+            "researcher",
+          );
+        }
+        revised = ProjectStateSchema.parse({
+          ...revised,
+          metadata: { ...revised.metadata, projectName, updatedAt: savedAt },
+          adaptiveInput: nonlinearDesignData.snapshot,
+        });
+        if (
+          analysisPayload &&
+          !revised.analysisRuns.some(
+            ({ request: priorRequest }) =>
+              priorRequest.requestId === analysisPayload.request.requestId,
+          )
+        ) {
+          revised = appendAnalysisExecution(revised, analysisPayload, "researcher");
+        }
+        projectState = ProjectStateSchema.parse({
+          ...revised,
+          metadata: { ...revised.metadata, projectName, updatedAt: savedAt },
+          adaptiveInput: nonlinearDesignData.snapshot,
+        });
+      }
+      const saved = await saveProject(projectState, persistedBaseline?.target);
+      if (saved) setPersistedBaseline(saved);
       setMessage(
-        "model、parameter、診断、raw points、saved fit curveをプロジェクトへ保存しました。",
+        analysisPayload
+          ? "model、parameter、診断、raw points、saved fit curveをプロジェクトへ保存しました。"
+          : "raw points、観測Graphを再現するStructureContract、入力lineageをプロジェクトへ保存しました。",
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "プロジェクトを保存できませんでした");
@@ -925,15 +1722,342 @@ export function CommonCoveragePage({
       setMessage("Regression benchmark artifactを保存できませんでした。");
     }
   };
+  const nonlinearAxisFields =
+    mode === "nonlinear-fit" ? (
+      <div className="nonlinear-fit-axis-fields">
+        <label>
+          {adaptiveOrderedCurveActive ? "横方向に変えたものの名前" : "X label"}
+          <input
+            aria-label={adaptiveOrderedCurveActive ? "横方向に変えたものの名前" : "X label"}
+            value={xLabel}
+            placeholder={
+              adaptiveOrderedCurveActive
+                ? "例：経過時間、基質濃度"
+                : nonlinearDefinition.suggestedXLabel
+            }
+            onChange={(event) => {
+              setXLabel(event.target.value);
+              setResult(null);
+              setExecutedRequest(null);
+            }}
+          />
+        </label>
+        <label>
+          {adaptiveOrderedCurveActive
+            ? "横方向の単位（ない場合は空欄）"
+            : `X unit${nonlinearDefinition.requiresAxisUnits ? "（必須）" : ""}`}
+          <input
+            aria-label={adaptiveOrderedCurveActive ? "横方向の単位" : "X unit"}
+            value={xUnit}
+            placeholder={nonlinearDefinition.xUnitExample}
+            onChange={(event) => {
+              setXUnit(event.target.value);
+              setResult(null);
+              setExecutedRequest(null);
+            }}
+          />
+        </label>
+        <label>
+          {adaptiveOrderedCurveActive ? "測った値の名前" : "Y label"}
+          <input
+            aria-label={adaptiveOrderedCurveActive ? "測った値の名前" : "Y label"}
+            value={yLabel}
+            placeholder={
+              adaptiveOrderedCurveActive
+                ? "例：反応初速度、蛍光強度"
+                : nonlinearDefinition.suggestedYLabel
+            }
+            onChange={(event) => {
+              setYLabel(event.target.value);
+              setResult(null);
+              setExecutedRequest(null);
+            }}
+          />
+        </label>
+        <label>
+          {adaptiveOrderedCurveActive
+            ? "測った値の単位（ない場合は空欄）"
+            : `Y unit${nonlinearDefinition.requiresAxisUnits ? "（必須）" : ""}`}
+          <input
+            aria-label={adaptiveOrderedCurveActive ? "測った値の単位" : "Y unit"}
+            value={yUnit}
+            placeholder={nonlinearDefinition.yUnitExample}
+            onChange={(event) => {
+              setYUnit(event.target.value);
+              setResult(null);
+              setExecutedRequest(null);
+            }}
+          />
+        </label>
+      </div>
+    ) : null;
+  const nonlinearFitSettings =
+    mode === "nonlinear-fit" ? (
+      <div className="nonlinear-fit-settings">
+        <fieldset>
+          <legend>Fit model</legend>
+          {NONLINEAR_MODEL_DEFINITIONS.map((definition) => (
+            <label key={definition.id}>
+              <input
+                type="radio"
+                name="nonlinear-model"
+                value={definition.id}
+                checked={
+                  nonlinearModel === definition.id &&
+                  (!adaptiveOrderedCurveActive || nonlinearModelExplicitlySelected)
+                }
+                onChange={() => selectNonlinearModel(definition.id)}
+              />
+              <span>
+                <strong>{definition.label}</strong>
+                <small>{definition.shortDescription}</small>
+                <small>{definition.formula}</small>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        {nonlinearModel === "michaelis_menten" ? (
+          <>
+            <p className="callout-info">
+              Xには基質濃度、Yには各濃度で求めた反応初速度を入力します。吸光度などの時系列をそのまま入力する欄ではありません。
+            </p>
+            {adaptiveOrderedCurveActive && nonlinearModelExplicitlySelected ? (
+              <label>
+                Yに入力した値は、各基質濃度で求めた反応初速度ですか？
+                <select
+                  aria-label="Michaelis–MentenのY値"
+                  value={michaelisReadoutMeaning ?? ""}
+                  onChange={(event) => {
+                    setMichaelisReadoutMeaning(
+                      (event.target.value || undefined) as MichaelisReadoutMeaning | undefined,
+                    );
+                    setResult(null);
+                    setExecutedRequest(null);
+                  }}
+                >
+                  <option value="">選択してください</option>
+                  <option value="calculated_initial_velocity">
+                    はい。各濃度の反応初速度を計算した値
+                  </option>
+                  <option value="raw_time_series_or_other">
+                    いいえ。吸光度などの時系列、または別の値
+                  </option>
+                  <option value="unknown">判断できない</option>
+                </select>
+              </label>
+            ) : null}
+          </>
+        ) : null}
+        {adaptiveOrderedCurveActive ? (
+          <p className="specialized-engine-note" role="status">
+            {orderedCurveAnalysisReadiness.message.ja}
+          </p>
+        ) : null}
+        <label>
+          Model selectionの理由
+          <textarea
+            aria-label="Model selectionの理由"
+            rows={3}
+            value={modelRationale}
+            onChange={(event) => {
+              setModelRationale(event.target.value);
+              setResult(null);
+              setExecutedRequest(null);
+            }}
+          />
+        </label>
+        {!adaptiveOrderedCurveActive ? nonlinearAxisFields : null}
+        <details>
+          <summary>Initial values / bounds（必要な場合のみ）</summary>
+          <p>
+            指定値は各seriesへ適用し、requestとprovenanceに保存します。空欄はengineのdeterministic
+            defaultです。
+          </p>
+          <div className="nonlinear-fit-parameter-scroll">
+            <table className="nonlinear-fit-parameter-inputs">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Initial</th>
+                  <th>Lower</th>
+                  <th>Upper</th>
+                </tr>
+              </thead>
+              <tbody>
+                {nonlinearDefinition.parameters.map((parameter) => (
+                  <tr key={parameter}>
+                    <th scope="row">{nonlinearParameterLabel(nonlinearModel, parameter)}</th>
+                    {(["initial", "lower", "upper"] as const).map((field) => (
+                      <td key={field}>
+                        <input
+                          aria-label={`${parameter} ${field}`}
+                          inputMode="decimal"
+                          value={fitSettings[parameter][field]}
+                          onChange={(event) => {
+                            setFitSettings((current) => ({
+                              ...current,
+                              [parameter]: {
+                                ...current[parameter],
+                                [field]: event.target.value,
+                              },
+                            }));
+                            setResult(null);
+                            setExecutedRequest(null);
+                          }}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </div>
+    ) : null;
+  const nonlinearRunButton = (
+    <button
+      className="analysis-run-button"
+      type="button"
+      disabled={
+        !analysisAvailable ||
+        "error" in parsed ||
+        parsed.kind !== "nonlinear-fit" ||
+        parsed.data.points.length === 0 ||
+        (adaptiveOrderedCurveActive &&
+          (orderedCurveEntry?.status !== "surface_ready" ||
+            orderedCurveAnalysisReadiness.status !== "ready"))
+      }
+      onClick={() => void run()}
+    >
+      選択したmodelでfitを実行
+    </button>
+  );
+  const nonlinearSaveButton = (
+    <button
+      type="button"
+      aria-describedby={!saveProject ? "nonlinear-save-unavailable-note" : undefined}
+      disabled={
+        !saveProject ||
+        (adaptiveOrderedCurveActive
+          ? orderedCurveEntry?.status !== "surface_ready"
+          : !result?.nonlinearFit)
+      }
+      onClick={() => void saveNonlinearProject()}
+    >
+      {result?.nonlinearFit
+        ? "fit結果をプロジェクトへ保存"
+        : adaptiveOrderedCurveActive
+          ? "入力と観測Graphをプロジェクトへ保存"
+          : "fit結果をプロジェクトへ保存"}
+    </button>
+  );
+  const nonlinearSaveUnavailableNote = !saveProject ? (
+    <p
+      id="nonlinear-save-unavailable-note"
+      className="specialized-engine-note"
+      role="note"
+    >
+      このブラウザレビューではプロジェクトを保存できません。デスクトップ版で利用できます。
+    </p>
+  ) : null;
+  const graphExportButton = (
+    <button
+      type="button"
+      disabled={!graphExportAvailable}
+      onClick={() =>
+        svgRef.current &&
+        downloadTextFile(serializeGraphSvg(svgRef.current), `${mode}.svg`, "image/svg+xml")
+      }
+    >
+      SVGを書き出す
+    </button>
+  );
+  const orderedCurveFactPanel = adaptiveOrderedCurveActive ? (
+    <section className="callout-info" aria-label="曲線データの測定方法">
+      <strong>入力表を決めるための確認</strong>
+      <p>{entryFactsView.summary}</p>
+      {entryFactsView.questions.map((question) => (
+        <label key={question.key}>
+          {question.question}
+          <select
+            aria-label={question.question}
+            value={question.selectedValue ?? ""}
+            onChange={(event) => {
+              const updated = updateEntryModuleTargetedFact(
+                entryFactsState,
+                question.key,
+                event.target.value || null,
+              );
+              if (updated.ok) {
+                if (
+                  question.key === "axis_material_relationship" &&
+                  (isGeneratedCurveExample(text) || isGenericOrderedCurveExample(text)) &&
+                  (event.target.value === "same_physical_material_across_axis" ||
+                    event.target.value === "separate_material_per_axis_value")
+                ) {
+                  const relationship = event.target.value as
+                    "same_physical_material_across_axis" | "separate_material_per_axis_value";
+                  setText(
+                    entryIntent && isGenericOrderedCurveExample(text)
+                      ? genericOrderedCurveExample(relationship)
+                      : generatedCurveExample(nonlinearDefinition, relationship),
+                  );
+                  setRawTextCaptureMode("browser_editor_value");
+                }
+                setEntryFactsState(updated.state);
+                setResult(null);
+                setExecutedRequest(null);
+              }
+            }}
+          >
+            <option value="">選択してください</option>
+            {question.choices.map((choice) => (
+              <option key={choice.value} value={choice.value}>
+                {choice.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ))}
+      <label>
+        <input
+          type="checkbox"
+          checked={(entryFactsState.facts.orderedAxisCount ?? 1) > 1}
+          onChange={(event) => {
+            const updated = updateEntryModuleOrderedAxisCount(
+              entryFactsState,
+              event.target.checked ? 2 : 1,
+            );
+            if (updated.ok) {
+              setEntryFactsState(updated.state);
+              setResult(null);
+              setExecutedRequest(null);
+            }
+          }}
+        />{" "}
+        時間と濃度など、順序のある量を2つ以上同時に変えた
+      </label>
+      <small>
+        入力したX/Y値は回答を変更しても保持します。未対応構造を別の曲線へ自動変換しません。
+      </small>
+    </section>
+  ) : null;
   return (
     <div className="page-stack specialized-analysis-page">
       <button className="back-link" type="button" onClick={onBack}>
         ← 戻る
       </button>
-      <AnalysisRouteSwitcher current={mode} onNavigate={onNavigate} />
+      {adaptiveOrderedCurveActive ? null : (
+        <AnalysisRouteSwitcher current={mode} onNavigate={onNavigate} />
+      )}
       <section className="workspace-panel specialized-workspace-panel">
-        <p className="overline">専門解析</p>
-        <h1>{titles[mode]}</h1>
+        <p className="overline">{adaptiveOrderedCurveActive ? "実験から入力" : "専門解析"}</p>
+        <h1>
+          {entryIntent?.experimentName ??
+            (adaptiveOrderedCurveActive ? initialProject?.state.metadata.projectName : undefined) ??
+            titles[mode]}
+        </h1>
         <p>
           {mode === "contingency"
             ? "独立した実験単位の整数count、または対応binaryの2×2遷移表だけを入力します。percentageをcountへ変換しません。"
@@ -942,7 +2066,9 @@ export function CommonCoveragePage({
               : mode === "regression"
                 ? "相関とは別にOLS回帰を実行します。切片は既定で推定します。"
                 : mode === "nonlinear-fit"
-                  ? "観測X/Y点に明示した飽和modelをfitします。Graphは保存済み解析結果のcurveだけを描き、見た目の変更では再計算しません。"
+                  ? adaptiveOrderedCurveActive
+                    ? "横方向に変えたものと試料の対応を確認してX/Yを入力すると、まず観測点をGraphに表示します。必要な場合だけ「統計解析を設定」からmodelを選びます。入力した値は確認内容を変更しても保持します。"
+                    : "入力直後は観測点を表示し、fit後は保存可能なfit曲線を重ねます。見た目の変更では再計算しません。"
                   : "元の個別値を保持した探索的Graphです。検定は自動追加しません。"}
         </p>
         {import.meta.env.DEV && mode === "regression" && literatureCase ? (
@@ -956,17 +2082,85 @@ export function CommonCoveragePage({
             </button>
           </section>
         ) : null}
+        {orderedCurveFactPanel}
+        {adaptiveOrderedCurveActive ? nonlinearAxisFields : null}
         <textarea
-          aria-label={`${titles[mode]} data`}
+          aria-label={`${dataLabels[mode]} data`}
           rows={9}
           value={text}
+          onPaste={pasteRawText}
           onChange={(e) => {
+            setRawTextCaptureMode("browser_editor_value");
             setText(e.target.value);
             setResult(null);
             setExecutedRequest(null);
           }}
           style={{ width: "100%", fontFamily: "monospace" }}
         />
+        {adaptiveOrderedCurveActive ? (
+          <label>
+            CSV / TSV / TXTを読み込む
+            <input
+              aria-label="CSV / TSV / TXTを読み込む"
+              type="file"
+              accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+              onChange={(event) => void loadOrderedCurveFile(event)}
+            />
+          </label>
+        ) : null}
+        {adaptiveOrderedCurveActive && entryIntent ? (
+          <button
+            type="button"
+            disabled={
+              entryFactsState.facts.axisMaterialRelationship !==
+                "same_physical_material_across_axis" &&
+              entryFactsState.facts.axisMaterialRelationship !== "separate_material_per_axis_value"
+            }
+            onClick={() => {
+              const relationship = entryFactsState.facts.axisMaterialRelationship;
+              if (
+                relationship !== "same_physical_material_across_axis" &&
+                relationship !== "separate_material_per_axis_value"
+              )
+                return;
+              setRawTextCaptureMode("browser_editor_value");
+              setOrderedCurveSource({
+                sourceKind: "tsv",
+                sourceLabel: "synthetic-example.tsv",
+              });
+              setText(genericOrderedCurveExample(relationship));
+              setResult(null);
+              setExecutedRequest(null);
+            }}
+          >
+            入力形式の例を読み込む（合成値）
+          </button>
+        ) : null}
+        {mode === "nonlinear-fit" &&
+        !adaptiveOrderedCurveActive &&
+        text.trim() === ORDERED_CURVE_HEADER ? (
+          <button
+            type="button"
+            onClick={() => {
+              setRawTextCaptureMode("browser_editor_value");
+              setText(nonlinearModelDefinition(nonlinearModel).examplePaste);
+              setResult(null);
+              setExecutedRequest(null);
+            }}
+          >
+            入力形式の例を読み込む（合成値）
+          </button>
+        ) : null}
+        {adaptiveOrderedCurveActive ? (
+          <small>
+            {entryFactsState.facts.axisMaterialRelationship === "same_physical_material_across_axis"
+              ? "同じ反応・対象の行では、Xが変わっても同じUnit IDを使います。"
+              : entryFactsState.facts.axisMaterialRelationship ===
+                  "separate_material_per_axis_value"
+                ? "X点ごとに別の反応・試料を用意した行には、それぞれのUnit IDを付けます。"
+                : "上の2項目を選ぶと、Unit IDの付け方を例に反映します。"}
+          </small>
+        ) : null}
         {mode === "contingency" ? (
           <>
             <label>
@@ -1019,133 +2213,7 @@ export function CommonCoveragePage({
             </label>
           </>
         ) : null}
-        {mode === "nonlinear-fit" ? (
-          <div className="nonlinear-fit-settings">
-            <fieldset>
-              <legend>Fit model</legend>
-              <label>
-                <input
-                  type="radio"
-                  name="nonlinear-model"
-                  value="zero_baseline_association"
-                  checked={nonlinearModel === "zero_baseline_association"}
-                  onChange={() => {
-                    setNonlinearModel("zero_baseline_association");
-                    setModelRationale((current) =>
-                      Object.values(nonlinearModelRationales).includes(current)
-                        ? nonlinearModelRationales.zero_baseline_association
-                        : current,
-                    );
-                    setResult(null);
-                    setExecutedRequest(null);
-                  }}
-                />
-                <span>
-                  <strong>Zero-baseline association</strong>
-                  <small>Y = plateau × (1 − exp(−rate × X))</small>
-                </span>
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="nonlinear-model"
-                  value="one_phase_association"
-                  checked={nonlinearModel === "one_phase_association"}
-                  onChange={() => {
-                    setNonlinearModel("one_phase_association");
-                    setModelRationale((current) =>
-                      Object.values(nonlinearModelRationales).includes(current)
-                        ? nonlinearModelRationales.one_phase_association
-                        : current,
-                    );
-                    setResult(null);
-                    setExecutedRequest(null);
-                  }}
-                />
-                <span>
-                  <strong>One-phase association</strong>
-                  <small>Y = baseline + (plateau − baseline) × (1 − exp(−rate × X))</small>
-                </span>
-              </label>
-            </fieldset>
-            <label>
-              Model selectionの理由
-              <textarea
-                aria-label="Model selectionの理由"
-                rows={3}
-                value={modelRationale}
-                onChange={(event) => {
-                  setModelRationale(event.target.value);
-                  setResult(null);
-                  setExecutedRequest(null);
-                }}
-              />
-            </label>
-            <div className="nonlinear-fit-axis-fields">
-              <label>
-                X label <input value={xLabel} onChange={(event) => setXLabel(event.target.value)} />
-              </label>
-              <label>
-                X unit <input value={xUnit} onChange={(event) => setXUnit(event.target.value)} />
-              </label>
-              <label>
-                Y label <input value={yLabel} onChange={(event) => setYLabel(event.target.value)} />
-              </label>
-              <label>
-                Y unit <input value={yUnit} onChange={(event) => setYUnit(event.target.value)} />
-              </label>
-            </div>
-            <details>
-              <summary>Initial values / bounds（必要な場合のみ）</summary>
-              <p>
-                指定値は各seriesへ適用し、requestとprovenanceに保存します。空欄はengineのdeterministic
-                defaultです。
-              </p>
-              <div className="nonlinear-fit-parameter-scroll">
-                <table className="nonlinear-fit-parameter-inputs">
-                  <thead>
-                    <tr>
-                      <th>Parameter</th>
-                      <th>Initial</th>
-                      <th>Lower</th>
-                      <th>Upper</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(["baseline", "plateau", "rate"] as const)
-                      .filter(
-                        (parameter) =>
-                          parameter !== "baseline" || nonlinearModel === "one_phase_association",
-                      )
-                      .map((parameter) => (
-                        <tr key={parameter}>
-                          <th>{parameter}</th>
-                          {(["initial", "lower", "upper"] as const).map((field) => (
-                            <td key={field}>
-                              <input
-                                aria-label={`${parameter} ${field}`}
-                                inputMode="decimal"
-                                value={fitSettings[parameter][field]}
-                                onChange={(event) =>
-                                  setFitSettings((current) => ({
-                                    ...current,
-                                    [parameter]: {
-                                      ...current[parameter],
-                                      [field]: event.target.value,
-                                    },
-                                  }))
-                                }
-                              />
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </details>
-          </div>
-        ) : null}
+        {mode === "nonlinear-fit" && !adaptiveOrderedCurveActive ? nonlinearFitSettings : null}
         {mode === "distribution" ? (
           <>
             <label>
@@ -1190,67 +2258,114 @@ export function CommonCoveragePage({
             ) : null}
           </>
         ) : null}
-        {mode !== "distribution" ? (
+        {mode === "nonlinear-fit" && !adaptiveOrderedCurveActive ? nonlinearRunButton : null}
+        {mode !== "distribution" && mode !== "nonlinear-fit" ? (
           <button
             className="analysis-run-button"
             type="button"
             disabled={!analysisAvailable}
             onClick={() => void run()}
           >
-            {mode === "nonlinear-fit" ? "選択したmodelでfitを実行" : "解析を実行"}
+            解析を実行
           </button>
         ) : null}
-        {mode !== "distribution" && !analysisAvailable ? (
+        {adaptiveOrderedCurveActive && !entryFactsView.canCompileStructureContract ? (
+          <p className="specialized-engine-note" role="status">
+            X/Y値は入力できます。fitを実行する前に、上の測定方法だけ確認してください。
+          </p>
+        ) : null}
+        {adaptiveOrderedCurveActive &&
+        entryFactsView.canCompileStructureContract &&
+        orderedCurveValidationMessage ? (
+          <p className="specialized-engine-note" role="status">
+            {orderedCurveValidationMessage}
+          </p>
+        ) : null}
+        {adaptiveOrderedCurveActive &&
+        orderedCurveAnalysisReadiness.status === "safe_stop" &&
+        !nonlinearAnalysisSetupVisible ? (
+          <p className="specialized-engine-note" role="status">
+            {orderedCurveAnalysisReadiness.message.ja}
+          </p>
+        ) : null}
+        {mode !== "distribution" && !analysisAvailable && !adaptiveOrderedCurveActive ? (
           <p className="specialized-engine-note" role="note">
             このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
           </p>
         ) : null}
-        {mode === "nonlinear-fit" ? (
-          <button
-            type="button"
-            disabled={!result?.nonlinearFit}
-            onClick={() => void saveNonlinearProject()}
-          >
-            fit結果をプロジェクトへ保存
-          </button>
-        ) : null}
-        <button
-          type="button"
-          disabled={!graphExportAvailable}
-          onClick={() =>
-            svgRef.current &&
-            downloadTextFile(serializeGraphSvg(svgRef.current), `${mode}.svg`, "image/svg+xml")
-          }
-        >
-          SVGを書き出す
-        </button>
+        {mode === "nonlinear-fit" && !adaptiveOrderedCurveActive ? nonlinearSaveButton : null}
+        {mode === "nonlinear-fit" && !adaptiveOrderedCurveActive
+          ? nonlinearSaveUnavailableNote
+          : null}
+        {!adaptiveOrderedCurveActive ? graphExportButton : null}
         {import.meta.env.DEV && mode === "regression" && benchmarkRun.identity ? (
           <button type="button" onClick={() => void finalizeRegressionBenchmark()}>
             Benchmark runを完了
           </button>
         ) : null}
         {message ? <p role="status">{message}</p> : null}
-        {"error" in parsed ? <p role="alert">{parsed.error}</p> : null}
+        {"error" in parsed &&
+        !(mode === "nonlinear-fit" && entryIntent && text.trim() === ORDERED_CURVE_HEADER) ? (
+          <p role="alert">{parsed.error}</p>
+        ) : null}
       </section>
       <section className="workspace-panel specialized-workspace-panel">
         {graph}
+        {mode === "nonlinear-fit" && adaptiveOrderedCurveActive ? (
+          <>
+            <div className="specialized-graph-actions">
+              {nonlinearSaveButton}
+              {graphExportButton}
+            </div>
+            {nonlinearSaveUnavailableNote}
+            {nonlinearAnalysisSetupVisible ? (
+              <section className="nonlinear-analysis-stage" aria-label="統計解析の設定">
+                <header>
+                  <h2>統計解析を設定</h2>
+                  <button type="button" onClick={() => setNonlinearAnalysisSetupVisible(false)}>
+                    設定を閉じる
+                  </button>
+                </header>
+                {nonlinearFitSettings}
+                {nonlinearRunButton}
+                {!analysisAvailable ? (
+                  <p className="specialized-engine-note" role="note">
+                    このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
+                  </p>
+                ) : null}
+              </section>
+            ) : (
+              <button
+                type="button"
+                disabled={
+                  !graphExportAvailable ||
+                  orderedCurveEntry?.status !== "surface_ready" ||
+                  orderedCurveAnalysisReadiness.status === "safe_stop"
+                }
+                onClick={() => setNonlinearAnalysisSetupVisible(true)}
+              >
+                統計解析を設定
+              </button>
+            )}
+          </>
+        ) : null}
         {result?.nonlinearFit ? (
           <div className="nonlinear-fit-results" role="region" aria-label="非線形fit結果">
             <header>
               <p className="overline">保存対象の解析結果</p>
               <h2>Parameter estimates & fit diagnostics</h2>
               <p>
-                Model: <strong>{result.nonlinearFit.modelId}</strong> · version{" "}
-                {result.nonlinearFit.modelVersion}
+                Model: <strong>{nonlinearModelLabel(result.nonlinearFit.modelId)}</strong> · ID{" "}
+                {result.nonlinearFit.modelId} · version {result.nonlinearFit.modelVersion}
               </p>
               <p>{result.nonlinearFit.selectionRationale}</p>
             </header>
             {result.nonlinearFit.series.map((seriesFit) => (
               <section key={seriesFit.seriesId} className="nonlinear-fit-series-result">
                 <h3>
-                  {!("error" in parsed) && parsed.kind === "nonlinear-fit"
-                    ? (parsed.data.series.find(({ id }) => id === seriesFit.seriesId)?.label ??
-                      seriesFit.seriesId)
+                  {orderedCurveRecords
+                    ? (orderedCurveRecords.series.find(({ id }) => id === seriesFit.seriesId)
+                        ?.label ?? seriesFit.seriesId)
                     : seriesFit.seriesId}
                 </h3>
                 <table>
@@ -1265,7 +2380,12 @@ export function CommonCoveragePage({
                   <tbody>
                     {seriesFit.parameters.map((parameter) => (
                       <tr key={parameter.name}>
-                        <th>{parameter.name}</th>
+                        <th scope="row">
+                          {nonlinearParameterLabel(
+                            result.nonlinearFit!.modelId as NonlinearModelId,
+                            parameter.name,
+                          )}
+                        </th>
                         <td>{parameter.value.toPrecision(5)}</td>
                         <td>{parameter.standardError?.toPrecision(4) ?? "—"}</td>
                         <td>

@@ -28,14 +28,32 @@ import type { AppRoute } from "../app/routes";
 import type { ExperimentSetDraft } from "../app/experimentDraft";
 import { rehydrateExperimentWorkspace } from "../app/experimentWorkspaceProject";
 import { DataSheetPage } from "./DataSheetPage";
+import { CommonCoveragePage } from "./CommonCoveragePage";
 import { ExperimentWorkspace } from "./ExperimentWorkspace";
 import { MultiConditionDataSheetPage } from "./MultiConditionDataSheetPage";
 import { HeatmapGraph } from "../components/graph/HeatmapGraph";
 import { SurvivalGraph } from "../components/graph/SurvivalGraph";
 import { NonlinearFitGraph } from "../components/graph/NonlinearFitGraph";
 import { generateMethodsText } from "../app/methodsText";
+import {
+  DEFAULT_NONLINEAR_MODEL_ID,
+  nonlinearModelDefinition,
+  nonlinearModelLabel,
+  nonlinearParameterLabel,
+  type NonlinearModelId,
+  type NonlinearParameterId,
+} from "../app/nonlinearModelRegistry";
 import { adaptiveSurvivalPaste } from "../app/adaptiveWorkspace";
 import { SpecializedCorePage } from "./SpecializedCorePage";
+import type { CommonCoverageDraft } from "../app/specializedAnalysisDrafts";
+import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
+import type {
+  AxisMaterialRelationship,
+  AxisPointParentRelationship,
+  OrderedAxisMeaning,
+  OrderedCurveSeriesMeaning,
+  OrderedCurveSeriesParentRelationship,
+} from "@lsaa/adaptive-input";
 
 type OpenProjectPageProps = {
   onNavigate: (route: AppRoute) => void;
@@ -49,6 +67,116 @@ type OpenProjectPageProps = {
   autoOpen?: boolean;
   initialError?: string | null;
 };
+
+function orderedCurveReopenState(
+  state: OpenedProject["state"],
+): Readonly<{ draft: CommonCoverageDraft; entryIntent: DedicatedEntryIntent }> | null {
+  const snapshot = state.adaptiveInput;
+  if (!snapshot) return null;
+  const axisMeaning = snapshot.targetedConfirmations.find(
+    ({ key }) => key === "ordered_axis_meaning",
+  )?.answer as OrderedAxisMeaning | undefined;
+  const materialRelationship = snapshot.targetedConfirmations.find(
+    ({ key }) => key === "axis_material_relationship",
+  )?.answer as AxisMaterialRelationship | undefined;
+  const pointParentRelationship = snapshot.targetedConfirmations.find(
+    ({ key }) => key === "axis_point_parent_relationship",
+  )?.answer as AxisPointParentRelationship | undefined;
+  const seriesMeaning = snapshot.targetedConfirmations.find(
+    ({ key }) => key === "ordered_curve_series_meaning",
+  )?.answer as OrderedCurveSeriesMeaning | undefined;
+  const seriesParentRelationship = snapshot.targetedConfirmations.find(
+    ({ key }) => key === "ordered_curve_series_parent_relationship",
+  )?.answer as OrderedCurveSeriesParentRelationship | undefined;
+  if (!axisMeaning || !materialRelationship) return null;
+  const contract = snapshot.contract;
+  const axis = contract.orderedAxes[0];
+  const readout = contract.readouts[0];
+  const unitLevel = contract.unitLevels.find(
+    ({ key }) => key === contract.experimentalUnitLevelKey,
+  );
+  if (!axis || !readout || !unitLevel) return null;
+
+  const nonlinearRun = state.analysisRuns.find(
+    ({ state: runState, request }) =>
+      runState === "current" && request.protocolVersion === "0.14.0",
+  );
+  const request = nonlinearRun?.request.protocolVersion === "0.14.0" ? nonlinearRun.request : null;
+  const modelId = (request?.modelId ?? DEFAULT_NONLINEAR_MODEL_ID) as NonlinearModelId;
+  const firstSeriesId = request?.seriesIds[0];
+  const firstInitial = firstSeriesId ? request?.initialValues[firstSeriesId] : undefined;
+  const firstBounds = firstSeriesId ? request?.bounds[firstSeriesId] : undefined;
+  const parameterIds: readonly NonlinearParameterId[] = [
+    "baseline",
+    "plateau",
+    "rate",
+    "vmax",
+    "km",
+  ];
+  const fitSettings = Object.fromEntries(
+    parameterIds.map((parameter) => {
+      const bounds = firstBounds?.[parameter];
+      return [
+        parameter,
+        {
+          initial: firstInitial?.[parameter] === undefined ? "" : String(firstInitial[parameter]),
+          lower: bounds?.lower === undefined ? "" : String(bounds.lower),
+          upper: bounds?.upper === undefined ? "" : String(bounds.upper),
+        },
+      ];
+    }),
+  ) as CommonCoverageDraft["fitSettings"];
+  const readoutUnitDecision = state.designRevisions
+    .find(({ id }) => id === state.activeDesignRevisionId)
+    ?.design.wizardDecisions.find(
+      ({ questionId }) => questionId === "ordered-curve.readout-unit",
+    )?.answer;
+  const entryModuleFacts = {
+    orderedAxisMeaning: axisMeaning,
+    axisMaterialRelationship: materialRelationship,
+    ...(pointParentRelationship ? { axisPointParentRelationship: pointParentRelationship } : {}),
+    ...(seriesMeaning ? { orderedCurveSeriesMeaning: seriesMeaning } : {}),
+    ...(seriesParentRelationship
+      ? { orderedCurveSeriesParentRelationship: seriesParentRelationship }
+      : {}),
+    orderedCurveSeriesCount: contract.factors[0]?.levels.length ?? 0,
+    orderedAxisCount: contract.orderedAxes.length,
+  };
+  return {
+    draft: {
+      text: snapshot.rawLineage?.rawText ?? "",
+      contingencyMethod: "fisher_exact",
+      display: "count",
+      includeIntercept: true,
+      xLabel: axis.label,
+      yLabel: readout.label,
+      xUnit: axis.unit,
+      yUnit: request?.yUnit ?? (typeof readoutUnitDecision === "string" ? readoutUnitDecision : ""),
+      xScale: "linear",
+      yScale: "linear",
+      showBand: true,
+      distributionType: "histogram",
+      binCount: "",
+      nonlinearModel: modelId,
+      nonlinearModelExplicitlySelected: Boolean(request),
+      modelRationale:
+        request?.modelSelectionRationale ?? nonlinearModelDefinition(modelId).defaultRationale,
+      fitSettings,
+      entryModuleFacts,
+    },
+    entryIntent: {
+      schemaVersion: "0.1.0",
+      moduleId: "ordered_curve_kinetics",
+      destination: "nonlinear-fit",
+      sourceContext: "general_assay",
+      entryRouteId: "reopened-adaptive-ordered-curve",
+      experimentName: contract.experimentName,
+      experimentDescription: contract.experimentDescription,
+      subjectUnitLabel: unitLevel.label,
+      facts: entryModuleFacts,
+    },
+  };
+}
 
 function PersistedProjectView({
   project,
@@ -64,6 +192,7 @@ function PersistedProjectView({
   onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
 }) {
   const { state } = project;
+  const [editingOrderedCurve, setEditingOrderedCurve] = useState(false);
   const workspace = rehydrateExperimentWorkspace(state);
   if (workspace) {
     return (
@@ -71,6 +200,7 @@ function PersistedProjectView({
         initialDraft={workspace.draft}
         initialCells={workspace.cells}
         initialGraphs={workspace.graphs}
+        initialDataViewMode={workspace.dataViewMode}
         initialProject={project}
         saveProject={saveProject}
         onBack={onBack}
@@ -108,6 +238,7 @@ function PersistedProjectView({
       </div>
     );
   }
+  const orderedCurveReopen = orderedCurveReopenState(state);
   const nonlinearRun = state.analysisRuns.find(
     (analysis) =>
       analysis.state === "current" &&
@@ -115,7 +246,23 @@ function PersistedProjectView({
       analysis.result.status === "ok" &&
       analysis.result.nonlinearFit,
   );
+  if (orderedCurveReopen && (!nonlinearRun || editingOrderedCurve)) {
+    return (
+      <CommonCoveragePage
+        mode="nonlinear-fit"
+        onBack={() => {
+          if (nonlinearRun) setEditingOrderedCurve(false);
+          else onBack();
+        }}
+        saveProject={saveProject}
+        initialDraft={orderedCurveReopen.draft}
+        entryIntent={orderedCurveReopen.entryIntent}
+        initialProject={project}
+      />
+    );
+  }
   if (nonlinearRun?.request.protocolVersion === "0.14.0" && nonlinearRun.result.nonlinearFit) {
+    const nonlinearModelId = nonlinearRun.request.modelId as NonlinearModelId;
     const graphRecord = state.graphs.find(
       (graph) =>
         graph.state === "current" &&
@@ -151,9 +298,15 @@ function PersistedProjectView({
             <p className="overline">Saved authoritative D17 result</p>
             <h1>{state.metadata.projectName}</h1>
             <p>
+              {nonlinearModelLabel(nonlinearModelId)} · ID{" "}
               {nonlinearRun.result.nonlinearFit.modelId} · model version{" "}
               {nonlinearRun.result.nonlinearFit.modelVersion}
             </p>
+            {orderedCurveReopen ? (
+              <button type="button" onClick={() => setEditingOrderedCurve(true)}>
+                入力を編集して再解析
+              </button>
+            ) : null}
             <NonlinearFitGraph
               model={model}
               xLabel={`${nonlinearRun.request.xLabel}${nonlinearRun.request.xUnit ? ` (${nonlinearRun.request.xUnit})` : ""}`}
@@ -166,7 +319,10 @@ function PersistedProjectView({
                   <h2>{labels[seriesFit.seriesId] ?? seriesFit.seriesId}</h2>
                   <p>
                     {seriesFit.parameters
-                      .map((parameter) => `${parameter.name}=${parameter.value.toPrecision(5)}`)
+                      .map(
+                        (parameter) =>
+                          `${nonlinearParameterLabel(nonlinearModelId, parameter.name)}=${parameter.value.toPrecision(5)}`,
+                      )
                       .join(" · ")}
                   </p>
                   <p>
@@ -200,21 +356,42 @@ function PersistedProjectView({
         const model = createKaplanMeierGraphModel(
           design.conditions,
           state.observations
-            .filter((observation) => observation.rawRevisionId === state.activeRawRevisionId && observation.outcomeId === outcome.id)
+            .filter(
+              (observation) =>
+                observation.rawRevisionId === state.activeRawRevisionId &&
+                observation.outcomeId === outcome.id,
+            )
             .map((observation) => {
-              if (observation.measurement.kind !== "time_to_event") throw new Error("Survival project contains a non-survival measurement");
-              return { observationId: observation.id, experimentalUnitId: observation.unitInstanceId, conditionId: observation.conditionId, followUpTime: observation.measurement.followUpTime, eventObserved: observation.measurement.eventObserved };
+              if (observation.measurement.kind !== "time_to_event")
+                throw new Error("Survival project contains a non-survival measurement");
+              return {
+                observationId: observation.id,
+                experimentalUnitId: observation.unitInstanceId,
+                conditionId: observation.conditionId,
+                followUpTime: observation.measurement.followUpTime,
+                eventObserved: observation.measurement.eventObserved,
+              };
             }),
         );
         return (
           <div className="page-stack">
-            <button type="button" onClick={onBack}>← 戻る</button>
-            <p role="alert">この旧Survival projectには編集に必要なStructureContract・mapping・raw lineageがありません。別のsupported designには変換せず、読み取り専用で表示します。</p>
+            <button type="button" onClick={onBack}>
+              ← 戻る
+            </button>
+            <p role="alert">
+              この旧Survival projectには編集に必要なStructureContract・mapping・raw
+              lineageがありません。別のsupported designには変換せず、読み取り専用で表示します。
+            </p>
             <SurvivalGraph model={model} timeLabel={outcome.unit ?? "Follow-up time"} />
           </div>
         );
       } catch (error) {
-        return <p role="alert">Survival projectを復元できません：{error instanceof Error ? error.message : "不明なエラー"}</p>;
+        return (
+          <p role="alert">
+            Survival projectを復元できません：
+            {error instanceof Error ? error.message : "不明なエラー"}
+          </p>
+        );
       }
     }
     return (
@@ -223,7 +400,9 @@ function PersistedProjectView({
         onBack={onBack}
         saveProject={saveProject}
         initialProject={project}
-        initialText={adaptiveSurvivalPaste(state.adaptiveInput)}
+        initialText={
+          state.adaptiveInput.rawLineage?.rawText ?? adaptiveSurvivalPaste(state.adaptiveInput)
+        }
         adaptiveInput={state.adaptiveInput}
       />
     );

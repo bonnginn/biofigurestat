@@ -175,6 +175,45 @@ describe("Japanese Methods generation", () => {
     expect(text).toContain("numpy 2.3.5");
   });
 
+  it("distinguishes shared-source matching from measuring the same experimental unit", () => {
+    const sharedSourceDesign: ExperimentDesign = {
+      ...design,
+      unitLevels: [
+        {
+          id: "unit.donor",
+          key: "donor",
+          label: "Donor",
+          role: "block",
+          parentLevelId: null,
+        },
+        {
+          ...design.unitLevels[0],
+          label: "condition dish",
+          parentLevelId: "unit.donor",
+        },
+      ],
+      pairing: {
+        kind: "matched",
+        matchLevelId: "unit.donor",
+        completePairsRequired: true,
+      },
+    };
+
+    const text = generateMethodsText({
+      design: sharedSourceDesign,
+      recommendation,
+      request,
+      result,
+      graphSpec: null,
+    });
+
+    expect(text).toContain(
+      "対応構造：同じDonorに由来する条件別condition dishをDonor内で対応づけて比較。",
+    );
+    expect(text).toContain("条件別condition dishは別々の実験単位として保持。");
+    expect(text).not.toContain("同じ／対応づけた実験単位（unit.donor）");
+  });
+
   it("does not imply pairwise testing for an omnibus-only multi-group run", () => {
     const omnibusRequest: AnalysisEngineRequest = {
       protocolVersion: "0.2.0",

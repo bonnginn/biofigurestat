@@ -32,6 +32,7 @@ import {
   type GraphSpec,
   type MatrixData,
 } from "@lsaa/graph-spec";
+import { ExperimentEntrySourceHistorySchema } from "./entry-source-history";
 
 export const PROJECT_STATE_SCHEMA_VERSION = "0.3.0" as const;
 
@@ -140,6 +141,17 @@ export const ExperimentWorkspaceStateSchema = z
       .object({
         kind: z.enum(["independent", "matched"]),
         unitLabel: z.string().min(1),
+        matchedTopology: z
+          .discriminatedUnion("kind", [
+            z.object({ kind: z.literal("same_entity_across_conditions") }),
+            z.object({
+              kind: z.literal("distinct_condition_units_shared_source"),
+              sourceUnitLabel: z.string().min(1),
+              sourceIdentityLabel: z.string().min(1),
+              sourceRole: z.enum(["block", "sample"]),
+            }),
+          ])
+          .optional(),
       })
       .default({ kind: "independent", unitLabel: "実験単位" }),
     timePlan: z.object({
@@ -191,6 +203,9 @@ export const ExperimentWorkspaceStateSchema = z
         transformations: z.array(z.string()).optional(),
       })
       .optional(),
+    /** Immutable ingress evidence; never used as canonical analysis input. */
+    entrySourceHistory: ExperimentEntrySourceHistorySchema.nullable().optional(),
+    dataViewMode: z.enum(["compact", "expanded"]).default("compact"),
     adaptiveInput: AdaptiveInputSnapshotSchema.nullable().optional(),
     notPlannedCellKeys: z.array(z.string().min(1)).default([]),
     graphs: z.array(
@@ -265,6 +280,19 @@ export const ExperimentWorkspaceStateSchema = z
               source: z.enum(["none", "factor", "time"]),
               factorId: EntityIdSchema.optional(),
             }),
+            /** Optional independent visual channels; older workspaces continue to use series. */
+            color: z
+              .object({
+                source: z.enum(["none", "factor", "time"]),
+                factorId: EntityIdSchema.optional(),
+              })
+              .optional(),
+            shape: z
+              .object({
+                source: z.enum(["none", "factor", "time"]),
+                factorId: EntityIdSchema.optional(),
+              })
+              .optional(),
             facet: z
               .object({
                 source: z.enum(["factor"]),
@@ -356,6 +384,8 @@ export const ExperimentWorkspaceStateSchema = z
             xTickMode: z.enum(["auto", "manual"]).optional(),
             xTickInterval: z.number().positive().nullable().optional(),
             showMinorTicks: z.boolean().optional(),
+            tickDirection: z.enum(["inside", "outside"]).optional(),
+            showCategoryGroupSeparators: z.boolean().optional(),
             categoryLabelRotation: z.enum(["none", "minus_30", "minus_45", "minus_90"]).optional(),
             yTitle: z.string(),
             yRangeMode: z.enum(["auto", "manual"]),
@@ -1039,12 +1069,28 @@ export const ProjectStateSchema = z
       )?.design;
       if (workspace.adaptiveInput) {
         if (workspace.adaptiveInput.equivalence.status !== "equivalent") {
-          ctx.addIssue({ code: "custom", path: ["experimentWorkspace", "adaptiveInput", "equivalence"], message: "Adaptive input cannot be persisted with a failed dual-write equivalence assertion" });
+          ctx.addIssue({
+            code: "custom",
+            path: ["experimentWorkspace", "adaptiveInput", "equivalence"],
+            message:
+              "Adaptive input cannot be persisted with a failed dual-write equivalence assertion",
+          });
         }
         if (!activeDesign?.adaptiveStructure) {
-          ctx.addIssue({ code: "custom", path: ["experimentWorkspace", "adaptiveInput"], message: "Adaptive input requires the active design dual-write companion" });
-        } else if (JSON.stringify(activeDesign.adaptiveStructure.contract) !== JSON.stringify(workspace.adaptiveInput.contract)) {
-          ctx.addIssue({ code: "custom", path: ["experimentWorkspace", "adaptiveInput", "contract"], message: "Adaptive input and active design contracts differ" });
+          ctx.addIssue({
+            code: "custom",
+            path: ["experimentWorkspace", "adaptiveInput"],
+            message: "Adaptive input requires the active design dual-write companion",
+          });
+        } else if (
+          JSON.stringify(activeDesign.adaptiveStructure.contract) !==
+          JSON.stringify(workspace.adaptiveInput.contract)
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["experimentWorkspace", "adaptiveInput", "contract"],
+            message: "Adaptive input and active design contracts differ",
+          });
         }
       }
       const conditionIds = new Set(activeDesign?.conditions.map(({ id }) => id) ?? []);
@@ -1170,9 +1216,25 @@ export const ProjectStateSchema = z
       });
     }
     if (state.adaptiveInput) {
-      const activeDesign = state.designRevisions.find((revision) => revision.id === state.activeDesignRevisionId)?.design;
-      if (state.adaptiveInput.equivalence.status !== "equivalent") ctx.addIssue({ code: "custom", path: ["adaptiveInput", "equivalence"], message: "Top-level adaptive snapshot requires equivalent dual-write state" });
-      if (!activeDesign?.adaptiveStructure || JSON.stringify(activeDesign.adaptiveStructure.contract) !== JSON.stringify(state.adaptiveInput.contract)) ctx.addIssue({ code: "custom", path: ["adaptiveInput", "contract"], message: "Top-level adaptive contract must match the active design" });
+      const activeDesign = state.designRevisions.find(
+        (revision) => revision.id === state.activeDesignRevisionId,
+      )?.design;
+      if (state.adaptiveInput.equivalence.status !== "equivalent")
+        ctx.addIssue({
+          code: "custom",
+          path: ["adaptiveInput", "equivalence"],
+          message: "Top-level adaptive snapshot requires equivalent dual-write state",
+        });
+      if (
+        !activeDesign?.adaptiveStructure ||
+        JSON.stringify(activeDesign.adaptiveStructure.contract) !==
+          JSON.stringify(state.adaptiveInput.contract)
+      )
+        ctx.addIssue({
+          code: "custom",
+          path: ["adaptiveInput", "contract"],
+          message: "Top-level adaptive contract must match the active design",
+        });
     }
   });
 
@@ -1439,11 +1501,85 @@ export function appendRawRevision(
   });
 }
 
+/**
+ * Persists a new deterministic transformation/derived dataset against the
+ * current immutable raw revision without pretending that the raw data changed.
+ * Analysis execution can then reference the derived revision in the same save.
+ */
+export function appendDerivedDatasetArtifacts(
+  stateInput: ProjectState,
+  input: Readonly<{
+    transformations: TransformationSpec[];
+    derivedDatasetRevisions: DerivedDatasetRevision[];
+    derivedValues: DerivedScalarValue[];
+    actor: string;
+    occurredAt: string;
+  }>,
+): ProjectState {
+  const state = ProjectStateSchema.parse(stateInput);
+  if (
+    input.transformations.length === 0 &&
+    input.derivedDatasetRevisions.length === 0 &&
+    input.derivedValues.length === 0
+  )
+    return state;
+  const existingTransformationIds = new Set(state.transformations.map(({ id }) => id));
+  const existingRevisionIds = new Set(state.derivedDatasetRevisions.map(({ id }) => id));
+  const existingValueIds = new Set(state.derivedValues.map(({ id }) => id));
+  input.transformations.forEach(({ id }) => {
+    if (existingTransformationIds.has(id))
+      throw new Error(`Transformation ${id} already exists in project history`);
+    existingTransformationIds.add(id);
+  });
+  input.derivedDatasetRevisions.forEach((revision) => {
+    if (existingRevisionIds.has(revision.id))
+      throw new Error(`Derived dataset ${revision.id} already exists in project history`);
+    if (revision.sourceRawRevisionId !== state.activeRawRevisionId)
+      throw new Error("A new derived dataset must reference the active raw revision");
+    existingRevisionIds.add(revision.id);
+  });
+  input.derivedValues.forEach(({ id }) => {
+    if (existingValueIds.has(id))
+      throw new Error(`Derived value ${id} already exists in project history`);
+    existingValueIds.add(id);
+  });
+  return ProjectStateSchema.parse({
+    ...state,
+    metadata: { ...state.metadata, updatedAt: input.occurredAt },
+    transformations: [...state.transformations, ...input.transformations],
+    derivedDatasetRevisions: [...state.derivedDatasetRevisions, ...input.derivedDatasetRevisions],
+    derivedValues: [...state.derivedValues, ...input.derivedValues],
+    provenanceEvents: [
+      ...state.provenanceEvents,
+      ...input.transformations.map((transformation) => ({
+        id: `provenance.${transformation.id}.created`,
+        kind: "transformation_created" as const,
+        targetId: transformation.id,
+        occurredAt: input.occurredAt,
+        actor: input.actor,
+        detail: `${transformation.method} transformation ${transformation.version} created with source-observation lineage.`,
+      })),
+      ...input.derivedDatasetRevisions.map((revision) => ({
+        id: `provenance.${revision.id}.created`,
+        kind: "derived_dataset_created" as const,
+        targetId: revision.id,
+        occurredAt: input.occurredAt,
+        actor: input.actor,
+        detail: `Derived dataset created from ${revision.sourceRawRevisionId} using ${revision.transformationId}.`,
+      })),
+    ],
+  });
+}
+
 export function appendDesignRevision(
   stateInput: ProjectState,
   design: ExperimentDesign,
   actor: string,
   createdAt: string,
+  synchronizedAdaptiveWorkspace?: Readonly<{
+    adaptiveInput: ProjectState["adaptiveInput"];
+    experimentWorkspace: ProjectState["experimentWorkspace"];
+  }>,
 ): ProjectState {
   const state = ProjectStateSchema.parse(stateInput);
   const previousRevision = state.designRevisions.find(
@@ -1478,6 +1614,7 @@ export function appendDesignRevision(
       state: "stale" as const,
       staleReason,
     })),
+    ...(synchronizedAdaptiveWorkspace ?? {}),
     provenanceEvents: [
       ...state.provenanceEvents,
       {

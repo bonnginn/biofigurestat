@@ -24,6 +24,30 @@ describe("context-specific experiment routes", () => {
     expect(draft.analysisIntent.kind).toBe("group_comparison");
   });
 
+  it.each([
+    ["cell_culture", "cell_count_growth", "細胞数・増殖", ""],
+    ["cell_culture", "cell_other_assay", "培養アッセイ測定値", ""],
+    ["microscopy_imaging", "microscopy_fluorescence", "蛍光強度", "a.u."],
+    ["microscopy_imaging", "microscopy_cell_roi", "Cell・ROI測定値", ""],
+    ["microscopy_imaging", "microscopy_morphology", "形態・サイズ", ""],
+    ["microscopy_imaging", "microscopy_tracking", "移動・tracking", ""],
+    ["protein_biochemical", "protein_amount", "タンパク質量・濃度", ""],
+    ["protein_biochemical", "protein_activity", "活性", ""],
+    ["protein_biochemical", "protein_other", "生化学アッセイ測定値", ""],
+    ["animal", "animal_numeric", "個体の数値測定", ""],
+    ["animal", "animal_longitudinal", "個体の経時測定", ""],
+    ["general_assay", "general_single_cohort", "測定値", ""],
+    ["general_assay", "general_continuous", "測定値", ""],
+  ] as const)(
+    "uses a route-matched readout default for %s/%s",
+    (context, id, expectedLabel, expectedUnit) => {
+      expect(route(context, id).readouts[0]).toMatchObject({
+        label: expectedLabel,
+        unit: expectedUnit,
+      });
+    },
+  );
+
   it("maps tracking and repeated-animal shortcuts to same-unit time", () => {
     expect(route("microscopy_imaging", "microscopy_tracking").time.sampling).toBe("longitudinal");
     const animal = route("animal", "animal_longitudinal");
@@ -32,14 +56,14 @@ describe("context-specific experiment routes", () => {
   });
 
   it.each([
-    ["cell_culture", "cell_count_growth", [0, 2, 1, 3, 4]],
+    ["cell_culture", "cell_count_growth", [0, 1, 2, 3, 4]],
     ["cell_culture", "cell_positive_proportion", [0, 1, 2, 3, 4]],
-    ["microscopy_imaging", "microscopy_fluorescence", [0, 2, 1, 3, 4]],
-    ["microscopy_imaging", "microscopy_tracking", [0, 2, 1, 3, 4]],
+    ["microscopy_imaging", "microscopy_fluorescence", [0, 1, 2, 3, 4]],
+    ["microscopy_imaging", "microscopy_tracking", [0, 1, 2, 3, 4]],
     ["protein_biochemical", "protein_wb", [0, 1, 3, 4]],
     ["protein_biochemical", "protein_activity", [0, 1, 2, 3, 4]],
-    ["animal", "animal_longitudinal", [0, 2, 1, 3, 4]],
-    ["animal", "animal_numeric", [0, 2, 1, 3, 4]],
+    ["animal", "animal_longitudinal", [0, 1, 2, 3, 4]],
+    ["animal", "animal_numeric", [0, 1, 2, 3, 4]],
     ["general_assay", "general_continuous", [0, 1, 2, 3, 4]],
   ] as const)("uses only relevant questions for %s/%s", (context, id, expected) => {
     expect(flowStepsFor(route(context, id))).toEqual(expected);

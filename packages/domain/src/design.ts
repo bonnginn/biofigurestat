@@ -285,13 +285,6 @@ export const ExperimentDesignSchema = z
         }
       });
     });
-    if (design.conditions.length >= 2 && design.primaryContrast === null) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["primaryContrast"],
-        message: "Multi-condition designs require an explicit primary contrast",
-      });
-    }
     if (design.conditions.length === 1 && design.primaryContrast !== null) {
       ctx.addIssue({
         code: "custom",

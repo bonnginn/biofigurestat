@@ -33,6 +33,10 @@ export const ProjectManifestSchema = z
   .object({
     format: z.literal("life-science-analysis-project"),
     formatVersion: z.literal(PROJECT_FORMAT_VERSION),
+    /** Selects the state reader without implying biological semantics. */
+    projectKind: z
+      .enum(["experiment", "unresolved_visualization", "progressive_experiment"])
+      .default("experiment"),
     projectId: EntityIdSchema,
     metadata: ProjectMetadataSchema,
     appVersion: z.string().min(1),

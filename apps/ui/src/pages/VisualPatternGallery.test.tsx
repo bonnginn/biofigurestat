@@ -172,8 +172,17 @@ describe("新しい実験の入口", () => {
     fireEvent.click(document.querySelector('[data-context="animal"]')!);
     fireEvent.click(screen.getByRole("button", { name: /経時測定/ }));
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "行1：条件" }), {
+      target: { value: "Control" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "行2：条件" }), {
+      target: { value: "Treatment" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "次へ" }));
 
-    expect(screen.getByRole("heading", { name: "順序のある測定軸はありますか？" })).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "条件間の試料の関係と測定軸を確認します" }),
+    ).toBeVisible();
     expect(screen.getByRole("radio", { name: /同じ単位を各時間点で測った/ })).toBeChecked();
     expect(screen.getByRole("textbox", { name: "時間点" })).toBeVisible();
   });
@@ -216,6 +225,7 @@ describe("新しい実験の入口", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "数値軸の水準" }), {
       target: { value: "10, 20, 30" },
     });
+    fireEvent.click(screen.getByRole("radio", { name: /軸水準ごとに別のサンプル/ }));
 
     expect(screen.getByRole("button", { name: "次へ" })).toBeEnabled();
   });
@@ -249,7 +259,9 @@ describe("新しい実験の入口", () => {
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
     expect(screen.getByRole("heading", { name: "測定した試料を登録してください" })).toBeVisible();
     expect(screen.getByRole("spinbutton", { name: "試料の数" })).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "順序のある測定軸はありますか？" })).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "条件間の試料の関係と測定軸を確認します" }),
+    ).toBeNull();
   });
 
   it("測定項目から条件・時間・実験回を順に確認できる", () => {
@@ -306,9 +318,13 @@ describe("新しい実験の入口", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
 
-    expect(screen.getByRole("heading", { name: "順序のある測定軸はありますか？" })).toBeVisible();
-    expect(screen.getByRole("radio", { name: /条件ごとに別の単位/ })).toBeChecked();
+    expect(
+      screen.getByRole("heading", { name: "条件間の試料の関係と測定軸を確認します" }),
+    ).toBeVisible();
+    expect(screen.getByRole("radio", { name: /条件ごとに別の単位/ })).not.toBeChecked();
+    fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別の単位/ }));
     fireEvent.click(screen.getByRole("radio", { name: "順序のある測定軸を追加する" }));
+    fireEvent.click(screen.getByRole("radio", { name: /^時間同じ単位/ }));
     expect(screen.getByRole("textbox", { name: "時間点" })).toHaveValue("");
     fireEvent.change(screen.getByRole("textbox", { name: "時間点" }), {
       target: { value: "," },
@@ -390,10 +406,13 @@ describe("新しい実験の入口", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
 
+    fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別の単位/ }));
     fireEvent.click(screen.getByRole("radio", { name: "順序のある測定軸を追加する" }));
+    fireEvent.click(screen.getByRole("radio", { name: /^時間同じ単位/ }));
     fireEvent.change(screen.getByRole("textbox", { name: "時間点" }), {
       target: { value: "24, 48" },
     });
+    fireEvent.click(screen.getByRole("radio", { name: /時間点ごとに別のサンプル/ }));
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
 
     const dates = screen.getAllByLabelText(/実験日$/);

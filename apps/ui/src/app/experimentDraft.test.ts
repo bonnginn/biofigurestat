@@ -11,6 +11,7 @@ import {
   normalizeWithinExperiment,
   parseNumericPaste,
   percentage,
+  plannedExperimentalUnitCount,
   reuseExperimentDesign,
   wbCorrectedBandValue,
   wbRatio,
@@ -52,6 +53,41 @@ describe("experiment-first UX draft", () => {
       "condition.1",
       "condition.2",
     ]);
+  });
+
+  it("counts matched-source condition children separately from literal same-entity measurements", () => {
+    const base = createExperimentSetDraft("cell_culture", "proportion");
+    const conditions = base.conditions.slice(0, 2);
+    expect(plannedExperimentalUnitCount({ ...base, conditions })).toBe(6);
+    expect(
+      plannedExperimentalUnitCount({
+        ...base,
+        conditions,
+        conditionAssignment: {
+          kind: "matched",
+          unitLabel: "Cell",
+          matchedTopology: { kind: "same_entity_across_conditions" },
+        },
+      }),
+    ).toBe(3);
+    const sharedSourceDraft = {
+      ...base,
+      conditions,
+      conditionAssignment: {
+        kind: "matched" as const,
+        unitLabel: "condition dish",
+        matchedTopology: {
+          kind: "distinct_condition_units_shared_source" as const,
+          sourceUnitLabel: "Donor culture",
+          sourceIdentityLabel: "Donor ID",
+          sourceRole: "block" as const,
+        },
+      },
+    };
+    expect(plannedExperimentalUnitCount(sharedSourceDraft)).toBe(6);
+    expect(expectedAnalysisLabel(sharedSourceDraft)).toBe(
+      "同じDonor cultureに由来する条件別condition dishの2条件比較",
+    );
   });
 
   it("describes time-course expectations without choosing a named test", () => {

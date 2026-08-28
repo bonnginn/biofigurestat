@@ -13,6 +13,7 @@ import {
   type DelimitedSourceKind,
 } from "./import-adapter";
 import { selectAdaptiveSurface } from "./surface-selector";
+import { assertCanonicalObservationsForContract } from "./observation-validator";
 
 export type SurfaceImportResult = Readonly<{
   observations: readonly CanonicalAdaptiveObservation[];
@@ -114,5 +115,9 @@ export function importForSelectedSurface(
   const mapping = surface === "compact_unit_matrix" || surface === "repeated_axis_matrix"
     ? AdaptiveColumnMappingSchema.parse({ schemaVersion: "0.1.0", sourceLabel, delimiter: parsed.delimiter, headerRow: 1, columns, confirmedAt: now })
     : suggestAdaptiveColumnMapping(contract, parsed, sourceLabel, now);
+  // Wide matrix adapters construct canonical rows directly rather than going
+  // through canonicalizeAdaptiveRows. Keep the same semantic contract boundary
+  // for every surface so an absent factor/axis cannot silently become a row.
+  assertCanonicalObservationsForContract(contract, observations);
   return { observations, mapping, lineage: createAdaptiveRawLineage(sourceKind, sourceLabel, text, now), confirmations: [...confirmations] };
 }

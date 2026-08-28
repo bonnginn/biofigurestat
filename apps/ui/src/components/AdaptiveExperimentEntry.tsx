@@ -148,17 +148,13 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
     if (!contract) return;
     try {
       const imported = importForSelectedSurface(contract, rawText, sourceKind, sourceLabel);
-      const workspace = createAdaptiveWorkspace({
-        contract,
-        observations: imported.observations,
-        mapping: imported.mapping,
-        lineage: imported.lineage,
-      });
       setPreview(imported.observations.slice(0, 8));
       setImportConfirmations(imported.confirmations);
-      const pending = [...confirmations.map(({ key }) => key), ...imported.confirmations].filter(
-        (key) => !confirmed.has(key),
-      );
+      const requiredConfirmationKeys = [
+        ...confirmations.map(({ key }) => key),
+        ...imported.confirmations,
+      ];
+      const pending = requiredConfirmationKeys.filter((key) => !confirmed.has(key));
       if (pending.length) {
         setMessage(
           locale === "ja"
@@ -167,6 +163,16 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
         );
         return;
       }
+      const confirmedAt = new Date().toISOString();
+      const workspace = createAdaptiveWorkspace({
+        contract,
+        observations: imported.observations,
+        mapping: imported.mapping,
+        lineage: imported.lineage,
+        confirmedTargetedConfirmations: [
+          ...new Set(requiredConfirmationKeys),
+        ].map((key) => ({ key, answer: "confirmed", confirmedAt })),
+      });
       if (workspace.status === "dedicated_route_required") {
         onSurvivalReady(adaptiveSurvivalPaste(workspace.snapshot), workspace.snapshot);
         return;
@@ -461,14 +467,15 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
           <input
             type="checkbox"
             checked={confirmed.has(confirmation.key)}
-            onChange={(event) =>
+            onChange={(event) => {
+              const checked = event.currentTarget.checked;
               setConfirmed((current) => {
                 const next = new Set(current);
-                if (event.currentTarget.checked) next.add(confirmation.key);
+                if (checked) next.add(confirmation.key);
                 else next.delete(confirmation.key);
                 return next;
-              })
-            }
+              });
+            }}
           />
           <span>{confirmation.reason}</span>
         </label>
@@ -478,14 +485,15 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
           <input
             type="checkbox"
             checked={confirmed.has(key)}
-            onChange={(event) =>
+            onChange={(event) => {
+              const checked = event.currentTarget.checked;
               setConfirmed((current) => {
                 const next = new Set(current);
-                if (event.currentTarget.checked) next.add(key);
+                if (checked) next.add(key);
                 else next.delete(key);
                 return next;
-              })
-            }
+              });
+            }}
           />
           <span>
             {locale === "ja" ? "欠損理由を確認しました" : "I confirmed the missingness reason"}

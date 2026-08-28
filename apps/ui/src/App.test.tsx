@@ -4,12 +4,20 @@ import App, { projectIoStage } from "./App";
 import { createExperimentSetDraft } from "./app/experimentDraft";
 import { createExperimentWorkspaceProject } from "./app/experimentWorkspaceProject";
 import { saveFavoriteDesign } from "./app/favoriteDesigns";
+import type { ProjectActions } from "./app/projectActions";
 import { rememberRecentProject } from "./app/recentProjects";
 
 const desktopTestActions = {
   openProject: async () => null,
   saveProject: async () => null,
 };
+
+const unresolvedBridgeCases = [
+  { bridgeCase: "none", hasUnresolvedSave: false, hasUnresolvedOpen: false },
+  { bridgeCase: "save-only", hasUnresolvedSave: true, hasUnresolvedOpen: false },
+  { bridgeCase: "open-only", hasUnresolvedSave: false, hasUnresolvedOpen: true },
+  { bridgeCase: "both", hasUnresolvedSave: true, hasUnresolvedOpen: true },
+] as const;
 
 describe("project save diagnostics", () => {
   it("extracts a privacy-safe save stage without requiring technical details", () => {
@@ -73,8 +81,8 @@ describe("workspace home", () => {
     render(<App />);
 
     expect(document.querySelectorAll("[data-primary-route]")).toHaveLength(4);
-    expect(screen.getByText("実験の内容を先に整理")).toBeVisible();
-    expect(screen.getByText(/背景、測定項目、条件、時間、実験回を短い質問/)).toBeVisible();
+    expect(screen.getByText("実験から始めるか、専用シートへ直接進む")).toBeVisible();
+    expect(screen.getByText(/生存時間、濃度–反応、ヒートマップ/)).toBeVisible();
     expect(screen.queryByText(/対応のある生物学的単位/)).not.toBeInTheDocument();
     expect(screen.queryByText(/解析前に推定された構造/)).not.toBeInTheDocument();
     for (const route of ["favorites", "new-experiment", "recent", "open-project"]) {
@@ -87,8 +95,245 @@ describe("workspace home", () => {
     render(<App />);
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
     expect(window.location.search).toBe("?adaptiveInput=1");
-    expect(screen.getByRole("heading", { name: "実験構造から適切な入力面を作る" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "どのような実験ですか？" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "何から始めますか？" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "実験から始めるを開く" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "ヒートマップを開く" })).toBeEnabled();
+    expect(screen.queryByText(/保存・再開する接続がそろっていない/)).toBeNull();
+  });
+
+  it.each(unresolvedBridgeCases)(
+    "keeps Graph-only and Heatmap fail-closed with $bridgeCase unresolved bridges",
+    async ({ hasUnresolvedSave, hasUnresolvedOpen }) => {
+      window.history.replaceState({}, "", "/?adaptiveInput=1");
+      const standardOpen = vi.fn(async () => null);
+      const standardSave = vi.fn(async () => null);
+      const unresolvedOpen = vi.fn(async () => null);
+      const unresolvedSave = vi.fn(async () => null);
+      const projectActions: ProjectActions = {
+        openProject: standardOpen,
+        saveProject: standardSave,
+        ...(hasUnresolvedOpen ? { openUnresolvedVisualizationProject: unresolvedOpen } : {}),
+        ...(hasUnresolvedSave ? { saveUnresolvedVisualizationProject: unresolvedSave } : {}),
+      };
+      render(<App projectActions={projectActions} />);
+
+      fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+      const graphOnlyEntry = screen.getByRole("button", {
+        name: "手元の表からGraphを作るを開く",
+      });
+      const heatmapEntry = screen.getByRole("button", { name: "ヒートマップを開く" });
+      const persistenceAvailable = hasUnresolvedSave && hasUnresolvedOpen;
+      if (!persistenceAvailable) {
+        expect(graphOnlyEntry).toBeDisabled();
+        expect(heatmapEntry).toBeDisabled();
+        expect(screen.getByText(/Graph用データを保存・再開する接続がそろっていない/)).toBeVisible();
+        expect(screen.getByText(/行列とGraphを保存・再開する接続がそろっていない/)).toBeVisible();
+        fireEvent.click(graphOnlyEntry);
+        fireEvent.click(heatmapEntry);
+        expect(window.location.pathname).toBe("/new-experiment");
+        expect(unresolvedSave).not.toHaveBeenCalled();
+        expect(unresolvedOpen).not.toHaveBeenCalled();
+        expect(standardOpen).not.toHaveBeenCalled();
+        expect(standardSave).not.toHaveBeenCalled();
+        return;
+      }
+
+      expect(graphOnlyEntry).toBeEnabled();
+      fireEvent.click(graphOnlyEntry);
+      fireEvent.change(screen.getByRole("textbox", { name: "Graph用の表" }), {
+        target: { value: "X\tY\n0\t1\n1\t2" },
+      });
+      fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
+        target: { value: "0" },
+      });
+      fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
+        target: { value: "1" },
+      });
+
+      const graphOnlySave = screen.getByRole("button", {
+        name: "このGraph用データを保存",
+      });
+      const graphOnlyOpen = screen.queryByRole("button", {
+        name: "保存したGraph用データを開く",
+      });
+      expect(graphOnlySave).toBeEnabled();
+      fireEvent.click(graphOnlySave);
+      await waitFor(() => expect(unresolvedSave).toHaveBeenCalledOnce());
+      expect(graphOnlyOpen).toBeVisible();
+      fireEvent.click(graphOnlyOpen!);
+      await waitFor(() => expect(unresolvedOpen).toHaveBeenCalledOnce());
+      expect(window.location.pathname).toBe("/new-experiment");
+      expect(standardOpen).not.toHaveBeenCalled();
+      expect(standardSave).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole("button", { name: "入口へ戻る" }));
+      const reopenedHeatmapEntry = screen.getByRole("button", { name: "ヒートマップを開く" });
+      expect(reopenedHeatmapEntry).toBeEnabled();
+      fireEvent.click(reopenedHeatmapEntry);
+      fireEvent.change(screen.getByLabelText("Matrix data"), {
+        target: { value: "Feature\tSample A\tSample B\nProtein A\t1\t2" },
+      });
+
+      const heatmapSave = screen.getByRole("button", { name: "プロジェクトを保存" });
+      const heatmapOpen = screen.getByRole("button", {
+        name: "保存済みHeatmap projectを開く",
+      });
+      expect(heatmapSave).toBeEnabled();
+      fireEvent.click(heatmapSave);
+      await waitFor(() => expect(unresolvedSave).toHaveBeenCalledTimes(2));
+      expect(heatmapOpen).toBeEnabled();
+      fireEvent.click(heatmapOpen);
+      await waitFor(() => expect(unresolvedOpen).toHaveBeenCalledTimes(2));
+      const bridgeNote = screen.queryByText(
+        /ブラウザレビューではHeatmap projectの保存・開くは利用できません/,
+      );
+      expect(bridgeNote).toBeNull();
+      expect(window.location.pathname).toBe("/heatmap");
+      expect(standardOpen).not.toHaveBeenCalled();
+      expect(standardSave).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(unresolvedBridgeCases)(
+    "gates direct /heatmap with paired persistence for $bridgeCase bridges",
+    async ({ hasUnresolvedSave, hasUnresolvedOpen }) => {
+      window.history.replaceState({}, "", "/heatmap");
+      const unresolvedOpen = vi.fn(async () => null);
+      const unresolvedSave = vi.fn(async () => null);
+      render(
+        <App
+          projectActions={{
+            openProject: async () => null,
+            saveProject: async () => null,
+            ...(hasUnresolvedOpen ? { openUnresolvedVisualizationProject: unresolvedOpen } : {}),
+            ...(hasUnresolvedSave ? { saveUnresolvedVisualizationProject: unresolvedSave } : {}),
+          }}
+        />,
+      );
+
+      if (!hasUnresolvedSave || !hasUnresolvedOpen) {
+        expect(screen.getByRole("heading", { name: "Heatmapを開始できません" })).toBeVisible();
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          "行列とGraphを保存・再開する接続がそろっていません",
+        );
+        expect(screen.queryByLabelText("Matrix data")).toBeNull();
+        expect(unresolvedSave).not.toHaveBeenCalled();
+        expect(unresolvedOpen).not.toHaveBeenCalled();
+        return;
+      }
+
+      expect(screen.getByRole("heading", { name: "ヒートマップ" })).toBeVisible();
+      fireEvent.change(screen.getByLabelText("Matrix data"), {
+        target: {
+          value: "Feature\tSample A\tSample B\nProtein A\t1\t2\nProtein B\t3\t5",
+        },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+      await waitFor(() => expect(unresolvedSave).toHaveBeenCalledOnce());
+      fireEvent.click(screen.getByRole("button", { name: "保存済みHeatmap projectを開く" }));
+      await waitFor(() => expect(unresolvedOpen).toHaveBeenCalledOnce());
+    },
+  );
+
+  it.each(unresolvedBridgeCases)(
+    "gates the compatibility Heatmap path with paired persistence for $bridgeCase bridges",
+    ({ hasUnresolvedSave, hasUnresolvedOpen }) => {
+      const unresolvedOpen = vi.fn(async () => null);
+      const unresolvedSave = vi.fn(async () => null);
+      render(
+        <App
+          projectActions={{
+            openProject: async () => null,
+            saveProject: async () => null,
+            ...(hasUnresolvedOpen ? { openUnresolvedVisualizationProject: unresolvedOpen } : {}),
+            ...(hasUnresolvedSave ? { saveUnresolvedVisualizationProject: unresolvedSave } : {}),
+          }}
+        />,
+      );
+
+      fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+      fireEvent.click(screen.getByText("既存の解析用データを直接入力する"));
+      fireEvent.click(screen.getByRole("button", { name: /ヒートマップ/ }));
+
+      expect(window.location.pathname).toBe("/heatmap");
+      if (!hasUnresolvedSave || !hasUnresolvedOpen) {
+        expect(screen.getByRole("heading", { name: "Heatmapを開始できません" })).toBeVisible();
+        expect(screen.queryByLabelText("Matrix data")).toBeNull();
+        expect(unresolvedSave).not.toHaveBeenCalled();
+        expect(unresolvedOpen).not.toHaveBeenCalled();
+        return;
+      }
+
+      expect(screen.getByRole("heading", { name: "ヒートマップ" })).toBeVisible();
+      expect(screen.getByLabelText("Matrix data")).toBeVisible();
+      expect(screen.getByRole("button", { name: "保存済みHeatmap projectを開く" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
+      fireEvent.change(screen.getByLabelText("Matrix data"), {
+        target: {
+          value: "Feature\tSample A\tSample B\nProtein A\t1\t2\nProtein B\t3\t5",
+        },
+      });
+      expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeEnabled();
+    },
+  );
+
+  it("allows a clearly labeled no-persistence Heatmap only in browser preview", () => {
+    window.history.replaceState({}, "", "/heatmap");
+    render(<App />);
+
+    expect(screen.getByRole("heading", { name: "ヒートマップ" })).toBeVisible();
+    expect(screen.getByLabelText("Matrix data")).toBeVisible();
+    const saveButton = screen.getByRole("button", { name: "プロジェクトを保存" });
+    const openButton = screen.getByRole("button", { name: "保存済みHeatmap projectを開く" });
+    expect(saveButton).toBeDisabled();
+    expect(openButton).toBeDisabled();
+    const unavailableNote = screen.getByText(
+      /ブラウザレビューではHeatmap projectの保存・開くは利用できません/,
+    );
+    expect(unavailableNote).toBeVisible();
+    expect(saveButton).toHaveAttribute("aria-describedby", unavailableNote.id);
+    expect(openButton).toHaveAttribute("aria-describedby", unavailableNote.id);
+  });
+
+  it.each([
+    {
+      button: "生存時間（Kaplan–Meier）を開く",
+      path: "/survival",
+      heading: "生存時間",
+      dataLabel: "Survival data",
+      header: "Unit ID\tGroup\tFollow-up time\tStatus",
+    },
+    {
+      button: "酵素反応・飽和カーブを開く",
+      path: "/nonlinear-fit",
+      heading: "酵素反応・飽和カーブ",
+      dataLabel: "非線形XYフィッティング data",
+      header: "Unit ID\tSeries\tX\tY",
+    },
+    {
+      button: "ヒートマップを開く",
+      path: "/heatmap",
+      heading: "ヒートマップ",
+      dataLabel: "Matrix data",
+      header: "",
+    },
+  ])("reloads $button as the same empty safe entry instead of a legacy demo", (example) => {
+    window.history.replaceState({}, "", "/?adaptiveInput=1");
+    const firstView = render(<App />);
+    fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+    fireEvent.click(screen.getByRole("button", { name: example.button }));
+
+    expect(window.location.pathname).toBe(example.path);
+    expect(screen.getByRole("heading", { name: example.heading })).toHaveFocus();
+    expect(screen.getByLabelText(example.dataLabel)).toHaveValue(example.header);
+
+    firstView.unmount();
+    render(<App />);
+
+    expect(screen.getByRole("heading", { name: example.heading })).toBeVisible();
+    expect(screen.getByLabelText(example.dataLabel)).toHaveValue(example.header);
+    expect(screen.queryByRole("combobox", { name: "専門解析を切り替える" })).toBeNull();
   });
 
   it("専門解析を切り替えたときに別familyの入力状態を持ち越さない", () => {
@@ -105,9 +350,68 @@ describe("workspace home", () => {
       target: { value: "nonlinear-fit" },
     });
 
-    expect(screen.getByRole("heading", { name: "非線形XYフィッティング" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "酵素反応・飽和カーブ" })).toBeVisible();
     expect(screen.getByRole("textbox", { name: "X label" })).toHaveValue("X");
     expect(screen.queryByDisplayValue("前の解析のX")).toBeNull();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
+      target: { value: "regression" },
+    });
+
+    expect(screen.getByRole("heading", { name: "Simple linear regression" })).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "X label" })).toHaveValue("前の解析のX");
+  });
+
+  it("専門解析を往復してもrouteごとの入力表と表示設定を失わない", () => {
+    window.history.replaceState({}, "", "/survival");
+    render(<App />);
+
+    const survivalText =
+      "Unit ID\tGroup\tFollow-up time\tStatus\nmouse-audit\tControl\t12\tCensored";
+    fireEvent.change(screen.getByRole("textbox", { name: "Survival data" }), {
+      target: { value: survivalText },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
+      target: { value: "heatmap" },
+    });
+
+    const heatmapText = "Feature\tSample audit\nProtein audit\t7";
+    fireEvent.change(screen.getByRole("textbox", { name: "Matrix data" }), {
+      target: { value: heatmapText },
+    });
+    fireEvent.change(screen.getByLabelText("Heatmap transform"), {
+      target: { value: "row_z_score" },
+    });
+
+    fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
+      target: { value: "survival" },
+    });
+    expect(screen.getByRole("textbox", { name: "Survival data" })).toHaveValue(survivalText);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
+      target: { value: "heatmap" },
+    });
+    expect(screen.getByRole("textbox", { name: "Matrix data" })).toHaveValue(heatmapText);
+    expect(screen.getByLabelText("Heatmap transform")).toHaveValue("row_z_score");
+    expect(screen.getByText(/入力途中の内容は解析ごとに一時保持/)).toBeVisible();
+  });
+
+  it("専門解析から入口へ戻って同じ解析を開き直しても入力を失わない", () => {
+    window.history.replaceState({}, "", "/regression");
+    render(<App />);
+
+    const input = "Unit ID\tX\tY\naudit-1\t1\t3\naudit-2\t2\t6";
+    fireEvent.change(screen.getByRole("textbox", { name: "Simple linear regression data" }), {
+      target: { value: input },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "← 戻る" }));
+    expect(screen.getByRole("heading", { name: "何をした実験ですか？" })).toBeVisible();
+
+    window.history.pushState({}, "", "/regression");
+    fireEvent.popState(window);
+    expect(screen.getByRole("textbox", { name: "Simple linear regression data" })).toHaveValue(
+      input,
+    );
   });
 
   it("ホームの「プロジェクトを開く」は、直前のprojectでなく毎回file dialogを開く", async () => {

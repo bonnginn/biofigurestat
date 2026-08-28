@@ -19,7 +19,7 @@ export function AnalysisRouteSwitcher({
           </option>
         ))}
       </select>
-      <small>同じローカル解析workspace内で切り替えます。</small>
+      <small>入力途中の内容は解析ごとに一時保持します。プロジェクト保存とは別です。</small>
     </nav>
   );
 }

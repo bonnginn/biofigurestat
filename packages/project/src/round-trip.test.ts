@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { appendMatrixView, createInitialProjectState } from "./state";
+import { appendMatrixView, createInitialProjectState, ProjectStateSchema } from "./state";
+import { createUnresolvedVisualizationProjectState } from "./unresolved-visualization";
+import { createUnresolvedVisualizationPromotionHistory } from "./entry-source-history";
 import { createHeatmapGraphSpec } from "@lsaa/graph-spec";
 import {
   openProjectStatePackage,
@@ -175,6 +177,104 @@ describe("populated project round trip", () => {
     expect(reopened).toEqual(saved);
     expect(storage.packages.get("/projects/wb.lsa")?.has("project.sqlite")).toBe(true);
     expect(storage.packages.get("/projects/wb.lsa")?.has("raw/exports/canonical.csv")).toBe(true);
+  });
+
+  it("reopens exact unresolved entry history without making it canonical data", async () => {
+    const storage = new MemoryStorage();
+    const source = createUnresolvedVisualizationProjectState({
+      metadata: {
+        projectId: "visualization.roundtrip-source",
+        projectName: "Roundtrip source",
+        experimentDate: "",
+        createdAt: "2026-08-20T00:00:00Z",
+        updatedAt: "2026-08-20T00:00:00Z",
+      },
+      entryIntent: "graph_only",
+      table: {
+        id: "table.roundtrip-source",
+        headers: ["Condition", "Value"],
+        rows: [["Dark", "1"]],
+        delimiter: "tab",
+        headerRow: 1,
+      },
+      rawLineage: {
+        sourceKind: "clipboard",
+        sourceLabel: "clipboard",
+        importedAt: "2026-08-20T00:00:00Z",
+        rawText: "Condition\tValue\nDark\t1",
+        sha256: null,
+        transformations: ["delimiter_detection"],
+      },
+      mapping: {
+        schemaVersion: "0.1.0",
+        sourceLabel: "clipboard",
+        delimiter: "tab",
+        headerRow: 1,
+        columns: [
+          { index: 0, header: "Condition", role: "x" },
+          { index: 1, header: "Value", role: "y" },
+        ],
+        identityDecision: "no_id",
+        confirmedAt: "2026-08-20T00:00:00Z",
+      },
+      actor: "researcher",
+    });
+    const entrySourceHistory = createUnresolvedVisualizationPromotionHistory({
+      sourceState: source,
+      promotedWorkspaceGraphId: null,
+      capturedAt: "2026-08-20T00:30:00Z",
+    });
+    const base = fixtureState();
+    const state = ProjectStateSchema.parse({
+      ...base,
+      experimentWorkspace: {
+        version: "0.1.0",
+        dataOrigin: "research",
+        context: "protein_biochemical",
+        readoutDefinitions: [],
+        conditionAttributes: [{ id: "factor.condition", label: "Condition" }],
+        conditions: [
+          {
+            id: "condition.dark",
+            label: "Dark",
+            attributes: { "factor.condition": "Dark" },
+          },
+          {
+            id: "condition.light",
+            label: "Light",
+            attributes: { "factor.condition": "Light" },
+          },
+        ],
+        analysisIntent: { kind: "group_comparison" },
+        conditionAssignment: { kind: "independent", unitLabel: "Dish" },
+        timePlan: { sampling: "none", unit: "h", points: [] },
+        experimentSessions: [{ id: "experiment.1", label: "Exp 1", date: "2026-08-20", note: "" }],
+        entrySourceHistory,
+        dataViewMode: "compact",
+        adaptiveInput: null,
+        notPlannedCellKeys: [],
+        graphs: [],
+      },
+    });
+    const saved = await saveProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/promoted.lsa",
+      state,
+      sha256,
+      appVersion: "0.1.0",
+      savedAt: "2026-08-20T01:00:00Z",
+    });
+    const reopened = await openProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/promoted.lsa",
+      sha256,
+    });
+
+    expect(reopened.experimentWorkspace?.entrySourceHistory).toEqual(entrySourceHistory);
+    expect(reopened.rawRevisions).toEqual(saved.rawRevisions);
+    expect(reopened.activeRawRevisionId).toBe(saved.activeRawRevisionId);
   });
 
   it("reopens immutable raw heatmap data, transform provenance, and missing values", async () => {

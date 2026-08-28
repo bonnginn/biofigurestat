@@ -448,6 +448,27 @@ mod tests {
                     "duplicateDecision":"none",
                     "transformations":["numeric value parse; source retained"]
                 },
+                "entrySourceHistory": {
+                    "schemaVersion": "0.1.0",
+                    "entries": [{
+                        "id": "entry-source.visualization.test.revision.2",
+                        "kind": "unresolved_visualization_promotion",
+                        "capturedAt": "2026-08-20T00:30:00Z",
+                        "sourceState": {
+                            "projectKind": "unresolved_visualization",
+                            "schemaVersion": "0.2.0",
+                            "activeDataRevisionId": "revision.2",
+                            "activeGraphId": "graph.current",
+                            "dataRevisions": [{"id":"revision.1"},{"id":"revision.2"}],
+                            "graphSpecs": [{"id":"graph.old"},{"id":"graph.current"}]
+                        },
+                        "promotion": {
+                            "sourceActiveDataRevisionId": "revision.2",
+                            "sourceActiveGraphId": "graph.current",
+                            "promotedWorkspaceGraphId": "graph.current"
+                        }
+                    }]
+                },
                 "graphs": []
             },
             "adaptiveInput": {

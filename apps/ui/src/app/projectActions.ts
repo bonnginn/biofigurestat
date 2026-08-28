@@ -1,4 +1,4 @@
-import type { ProjectState } from "@lsaa/project";
+import type { ProjectState, UnresolvedVisualizationProjectState } from "@lsaa/project";
 
 /**
  * The only state a desktop save adapter may receive is a fully validated
@@ -22,11 +22,27 @@ export type SaveProjectAction = (
   existingTarget?: string,
 ) => Promise<OpenedProject | null>;
 
+/** A graph/table project deliberately has no experiment design or analysis request. */
+export type OpenedUnresolvedVisualizationProject = Readonly<{
+  state: UnresolvedVisualizationProjectState;
+  target: string;
+}>;
+
+export type OpenUnresolvedVisualizationProjectAction =
+  () => Promise<OpenedUnresolvedVisualizationProject | null>;
+
+export type SaveUnresolvedVisualizationProjectAction = (
+  request: UnresolvedVisualizationProjectState,
+  existingTarget?: string,
+) => Promise<OpenedUnresolvedVisualizationProject | null>;
+
 export type ProjectActions = Readonly<{
   openProject: OpenProjectAction;
   openLegacyProject?: OpenProjectAction;
   openProjectTarget?: OpenProjectTargetAction;
   saveProject?: SaveProjectAction;
+  openUnresolvedVisualizationProject?: OpenUnresolvedVisualizationProjectAction;
+  saveUnresolvedVisualizationProject?: SaveUnresolvedVisualizationProjectAction;
 }>;
 
 /**

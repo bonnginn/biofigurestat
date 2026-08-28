@@ -86,9 +86,10 @@ export const specializedAnalysisRoutes = [
   {
     id: "nonlinear-fit",
     path: "/nonlinear-fit",
-    title: "非線形XYフィット",
-    description: "時間依存などの飽和曲線をローカルでfitします。",
-    japaneseDescription: "観測点と保存済みfit curve、parameter、診断を分離して保持します。",
+    title: "酵素反応・飽和カーブ",
+    description: "基質濃度–初速度、または時間–応答を、対応するmodelの選択後にfitします。",
+    japaneseDescription:
+      "観測点と保存済みfit curve、parameter、診断を分離して保持します。Michaelis–Mentenには計算済み初速度を入力します。",
     eyebrow: "10",
     accent: "blue",
   },

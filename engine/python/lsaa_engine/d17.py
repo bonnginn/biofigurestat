@@ -21,15 +21,41 @@ def _zero_baseline_association(x: np.ndarray, plateau: float, rate: float) -> np
     return plateau * (1.0 - np.exp(-rate * x))
 
 
+def _michaelis_menten(x: np.ndarray, vmax: float, km: float) -> np.ndarray:
+    return vmax * x / (km + x)
+
+
 MODELS: dict[str, tuple[Callable[..., np.ndarray], tuple[str, ...]]] = {
     "one_phase_association": (_association, ("baseline", "plateau", "rate")),
     "zero_baseline_association": (_zero_baseline_association, ("plateau", "rate")),
+    "michaelis_menten": (_michaelis_menten, ("vmax", "km")),
+}
+
+MODEL_FORMULAS = {
+    "one_phase_association": "baseline + (plateau - baseline) * (1 - exp(-rate * x))",
+    "zero_baseline_association": "plateau * (1 - exp(-rate * x))",
+    "michaelis_menten": "vmax * x / (km + x)",
 }
 
 
 def _defaults(model_id: str, x: np.ndarray, y: np.ndarray) -> tuple[list[float], list[float], list[float]]:
     span = max(float(np.ptp(y)), max(abs(float(np.mean(y))), 1.0) * 0.05)
     x_span = float(np.ptp(x))
+    if model_id == "michaelis_menten":
+        positive_x = x[x > 0]
+        vmax = max(float(np.max(y)), span, 1e-12)
+        half_maximum = vmax / 2.0
+        positive_indices = np.flatnonzero(x > 0)
+        closest = min(positive_indices, key=lambda index: abs(float(y[index]) - half_maximum))
+        km = float(x[closest])
+        return (
+            [vmax, km],
+            [0.0, 0.0],
+            [
+                max(vmax * 100.0, span * 100.0, 1.0),
+                max(float(np.max(positive_x)) * 100.0, km * 100.0),
+            ],
+        )
     rate = 2.0 / x_span
     if model_id == "one_phase_association":
         return (
@@ -50,8 +76,18 @@ def _fit_series(request: dict[str, Any], series_id: str, points: list[dict[str, 
     x = np.asarray([point["x"] for point in points], dtype=float)
     y = np.asarray([point["y"] for point in points], dtype=float)
     if np.any(x < 0):
-        raise ValueError("D17 association models require non-negative X values")
+        raise ValueError("D17 models require non-negative X values")
     unique_x = np.unique(x)
+    if model_id == "michaelis_menten":
+        positive_x = np.unique(x[x > 0])
+        if len(positive_x) < 3:
+            raise ValueError(
+                f"D17 {series_id} Michaelis-Menten requires at least 3 distinct positive substrate concentrations"
+            )
+        if float(np.max(y)) <= 0:
+            raise ValueError(
+                f"D17 {series_id} Michaelis-Menten requires at least one positive initial velocity"
+            )
     if len(unique_x) < len(parameter_names) + 1:
         raise ValueError(
             f"D17 {series_id} requires at least {len(parameter_names) + 1} distinct X values"
@@ -69,6 +105,13 @@ def _fit_series(request: dict[str, Any], series_id: str, points: list[dict[str, 
             upper[index] = float(supplied_bounds[name]["upper"])
         if not lower[index] < upper[index]:
             raise ValueError(f"D17 {series_id} bound for {name} must have lower < upper")
+        if model_id == "michaelis_menten":
+            if initial[index] <= 0:
+                raise ValueError(f"D17 {series_id} Michaelis-Menten initial {name} must be positive")
+            if lower[index] < 0 or upper[index] <= 0:
+                raise ValueError(
+                    f"D17 {series_id} Michaelis-Menten bounds for {name} must be non-negative with a positive upper bound"
+                )
         if not lower[index] <= initial[index] <= upper[index]:
             raise ValueError(f"D17 {series_id} initial {name} must be inside its bounds")
     try:
@@ -99,6 +142,8 @@ def _fit_series(request: dict[str, Any], series_id: str, points: list[dict[str, 
     r_squared = 1.0 - rss / tss if tss > 0 else 0.0
     if model_id == "one_phase_association" and parameters[1] <= parameters[0]:
         raise ValueError(f"D17 {series_id} fitted plateau does not exceed baseline")
+    if model_id == "michaelis_menten" and np.any(parameters <= 0):
+        raise ValueError(f"D17 {series_id} Michaelis-Menten parameters must be positive")
     standard_errors = np.sqrt(np.diag(covariance))
     if not np.all(np.isfinite(standard_errors)):
         raise ValueError(f"D17 {series_id} parameter uncertainty is not identifiable")
@@ -157,6 +202,13 @@ def run_nonlinear_xy(request: dict[str, Any]) -> dict[str, Any]:
     model_id = request["modelId"]
     if model_id not in MODELS:
         raise ValueError(f"Unsupported D17 model: {model_id}")
+    if model_id == "michaelis_menten":
+        if request.get("templateVersion") != "0.2.0":
+            raise ValueError("D17 Michaelis-Menten requires template version 0.2.0")
+        if not str(request.get("xUnit", "")).strip():
+            raise ValueError("D17 Michaelis-Menten requires a substrate-concentration unit")
+        if not str(request.get("yUnit", "")).strip():
+            raise ValueError("D17 Michaelis-Menten requires an initial-velocity unit")
     declared = request["seriesIds"]
     if len(declared) != len(set(declared)):
         raise ValueError("D17 series IDs must be unique")
@@ -175,11 +227,7 @@ def run_nonlinear_xy(request: dict[str, Any]) -> dict[str, Any]:
     result["nonlinearFit"] = {
         "modelId": model_id,
         "modelVersion": "0.1.0",
-        "modelFormula": (
-            "baseline + (plateau - baseline) * (1 - exp(-rate * x))"
-            if model_id == "one_phase_association"
-            else "plateau * (1 - exp(-rate * x))"
-        ),
+        "modelFormula": MODEL_FORMULAS[model_id],
         "selectionRationale": request["modelSelectionRationale"],
         "series": fits,
     }
@@ -189,4 +237,24 @@ def run_nonlinear_xy(request: dict[str, Any]) -> dict[str, Any]:
             "message": "Fitted curves and parameters were computed by the deterministic local SciPy engine and persisted as the authoritative analysis result.",
         }
     ]
+    if model_id == "michaelis_menten":
+        for fit in fits:
+            km = next(
+                parameter["value"]
+                for parameter in fit["parameters"]
+                if parameter["name"].endswith(".km")
+            )
+            observed_maximum = max(
+                point["x"] for point in points_by_series[fit["seriesId"]]
+            )
+            if observed_maximum < km:
+                result["warnings"].append(
+                    {
+                        "code": "michaelis_menten_substrate_range_below_km",
+                        "message": (
+                            f"{fit['seriesId']} has no observed substrate concentration at or above the fitted Km; "
+                            "Km and Vmax depend strongly on extrapolation."
+                        ),
+                    }
+                )
     return result

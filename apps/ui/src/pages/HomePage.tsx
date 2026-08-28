@@ -13,10 +13,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
           <p className="overline">研究ワークスペース / 01</p>
           <h1 id="home-heading">どの実験を整理しますか？</h1>
           <p className="hero-lead">
-            入口を選ぶと、実験の背景と行った操作を整理しながら、入力からグラフまで進めます。
-          </p>
-          <p className="hero-japanese">
-            実験で行った操作を答えると、設計に合った入力画面へ進みます。
+            新規作成、よく使う設計、保存済みプロジェクトから作業を始められます。
           </p>
         </div>
         <div className="hero-orbit" aria-hidden="true">
@@ -47,9 +44,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
           ◎
         </span>
         <div>
-          <strong>実験の内容を先に整理</strong>
+          <strong>実験から始めるか、専用シートへ直接進む</strong>
           <p>
-            細胞・培養などの背景、測定項目、条件、時間、実験回を短い質問で整理してから入力を始めます。
+            新しい実験では、処理・群分けと測定内容から入力表を作れます。生存時間、濃度–反応、ヒートマップは専用の入力形式を選べます。
           </p>
         </div>
       </aside>

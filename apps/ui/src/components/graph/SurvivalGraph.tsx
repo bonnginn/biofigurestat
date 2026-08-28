@@ -5,8 +5,16 @@ const COLORS = ["#4477AA", "#CC6677", "#228833", "#AA3377", "#66CCEE"];
 
 export const SurvivalGraph = forwardRef<
   SVGSVGElement,
-  { model: KaplanMeierGraphModel; timeLabel?: string; annotation?: string }
->(function SurvivalGraph({ model, timeLabel = "Follow-up time", annotation }, ref) {
+  {
+    model: KaplanMeierGraphModel;
+    timeLabel?: string;
+    annotation?: string;
+    countSemantics?: "biological_n" | "records";
+  }
+>(function SurvivalGraph(
+  { model, timeLabel = "Follow-up time", annotation, countSemantics = "biological_n" },
+  ref,
+) {
   const width = 820,
     plotHeight = 410,
     left = 80,
@@ -112,12 +120,12 @@ export const SurvivalGraph = forwardRef<
             strokeWidth="3"
           />
           <text x={width - 172} y={50 + index * 22} fontSize="13">
-            {group.label} (n={group.n})
+            {group.label} ({countSemantics === "biological_n" ? "n" : "records"}={group.n})
           </text>
         </g>
       ))}
       <text x={left} y={plotHeight + 50} fontWeight="600">
-        Number at risk
+        {countSemantics === "biological_n" ? "Number at risk" : "Records at risk (not biological n)"}
       </text>
       {riskTimes.map((time) => (
         <text key={time} x={x(time)} y={plotHeight + 50} textAnchor="middle" fontSize="11">

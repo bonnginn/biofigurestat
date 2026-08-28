@@ -451,38 +451,63 @@ const NonlinearBoundsMapSchema = z.record(
   z.object({ lower: z.number().finite(), upper: z.number().finite() }),
 );
 
-export const NonlinearXyFitEngineRequestSchema = z.object({
-  protocolVersion: z.literal("0.14.0"),
-  requestId: EntityIdSchema,
-  projectId: EntityIdSchema,
-  analysisId: EntityIdSchema,
-  templateId: z.literal("D17"),
-  templateVersion: z.string().min(1),
-  method: z.literal("nonlinear_xy_fit"),
-  modelId: z.enum(["one_phase_association", "zero_baseline_association"]),
-  modelSelectionRationale: z.string().min(1),
-  xLabel: z.string().min(1),
-  yLabel: z.string().min(1),
-  xUnit: z.string(),
-  yUnit: z.string(),
-  seriesIds: z.array(EntityIdSchema).min(1),
-  points: z
-    .array(
-      z.object({
-        observationId: EntityIdSchema,
-        experimentalUnitId: EntityIdSchema,
-        seriesId: EntityIdSchema,
-        x: z.number().finite().nonnegative(),
-        y: z.number().finite(),
-      }),
-    )
-    .min(3),
-  initialValues: z.record(EntityIdSchema, NonlinearParameterMapSchema).default({}),
-  bounds: z.record(EntityIdSchema, NonlinearBoundsMapSchema).default({}),
-  /** Generic history compatibility; XY source data remain exclusively in points. */
-  observations: z.array(EngineObservationSchema).max(0).default([]),
-  options: AnalysisOptionsSchema.extend({ multiplicityMethod: z.null() }),
-});
+export const NonlinearXyFitEngineRequestSchema = z
+  .object({
+    protocolVersion: z.literal("0.14.0"),
+    requestId: EntityIdSchema,
+    projectId: EntityIdSchema,
+    analysisId: EntityIdSchema,
+    templateId: z.literal("D17"),
+    templateVersion: z.string().min(1),
+    method: z.literal("nonlinear_xy_fit"),
+    modelId: z.enum(["one_phase_association", "zero_baseline_association", "michaelis_menten"]),
+    modelSelectionRationale: z.string().min(1),
+    xLabel: z.string().min(1),
+    yLabel: z.string().min(1),
+    xUnit: z.string(),
+    yUnit: z.string(),
+    seriesIds: z.array(EntityIdSchema).min(1),
+    points: z
+      .array(
+        z.object({
+          observationId: EntityIdSchema,
+          experimentalUnitId: EntityIdSchema,
+          seriesId: EntityIdSchema,
+          x: z.number().finite().nonnegative(),
+          y: z.number().finite(),
+        }),
+      )
+      .min(3),
+    initialValues: z.record(EntityIdSchema, NonlinearParameterMapSchema).default({}),
+    bounds: z.record(EntityIdSchema, NonlinearBoundsMapSchema).default({}),
+    /** Generic history compatibility; XY source data remain exclusively in points. */
+    observations: z.array(EngineObservationSchema).max(0).default([]),
+    options: AnalysisOptionsSchema.extend({ multiplicityMethod: z.null() }),
+  })
+  .superRefine((request, context) => {
+    if (request.modelId !== "michaelis_menten") return;
+    if (request.templateVersion !== "0.2.0") {
+      context.addIssue({
+        code: "custom",
+        path: ["templateVersion"],
+        message: "Michaelis-Menten requires D17 template version 0.2.0",
+      });
+    }
+    if (!request.xUnit.trim()) {
+      context.addIssue({
+        code: "custom",
+        path: ["xUnit"],
+        message: "Michaelis-Menten requires an explicit substrate-concentration unit",
+      });
+    }
+    if (!request.yUnit.trim()) {
+      context.addIssue({
+        code: "custom",
+        path: ["yUnit"],
+        message: "Michaelis-Menten requires an explicit initial-velocity unit",
+      });
+    }
+  });
 
 export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion", [
   TwoConditionAnalysisEngineRequestSchema,
@@ -609,7 +634,7 @@ export const AnalysisEngineResultSchema = z.object({
     .optional(),
   nonlinearFit: z
     .object({
-      modelId: z.enum(["one_phase_association", "zero_baseline_association"]),
+      modelId: z.enum(["one_phase_association", "zero_baseline_association", "michaelis_menten"]),
       modelVersion: z.string().min(1),
       modelFormula: z.string().min(1),
       selectionRationale: z.string().min(1),

@@ -12,6 +12,11 @@ import type {
 import type { GraphSpec } from "@lsaa/graph-spec";
 
 import { methodLabel, templateLabel } from "./recommendationLabels";
+import {
+  nonlinearModelLabel,
+  nonlinearParameterLabel,
+  type NonlinearModelId,
+} from "./nonlinearModelRegistry";
 import { PRODUCT_IDENTITY } from "./productIdentity";
 
 export type MethodsTextInput = Readonly<{
@@ -182,6 +187,16 @@ function normalizationWarning(design: ExperimentDesign): string {
 
 function pairingLabel(design: ExperimentDesign): string {
   if (design.pairing.kind === "matched") {
+    const matchLevelId = design.pairing.matchLevelId;
+    if (matchLevelId !== design.experimentalUnitLevelId) {
+      const sourceLevel = design.unitLevels.find(({ id }) => id === matchLevelId);
+      const experimentalUnitLevel = design.unitLevels.find(
+        ({ id }) => id === design.experimentalUnitLevelId,
+      );
+      const sourceLabel = sourceLevel?.label ?? "共有する由来";
+      const experimentalUnitLabel = experimentalUnitLevel?.label ?? "条件別の実験単位";
+      return `対応構造：同じ${sourceLabel}に由来する条件別${experimentalUnitLabel}を${sourceLabel}内で対応づけて比較。条件別${experimentalUnitLabel}は別々の実験単位として保持。`;
+    }
     return `対応構造：同じ／対応づけた実験単位（${design.pairing.matchLevelId}）を条件間で比較。`;
   }
   if (design.pairing.kind === "blocked") {
@@ -281,16 +296,17 @@ function pairwiseResultLines(input: MethodsTextInput, testOffset: number): strin
 function executedResultLines(input: MethodsTextInput): string[] {
   const { recommendation, result, design } = input;
   if (recommendation.templateId === "D17" && result.nonlinearFit) {
+    const modelId = result.nonlinearFit.modelId as NonlinearModelId;
     return [
       `結果：${result.status === "ok" ? "完了" : result.status}`,
-      `非線形model：${result.nonlinearFit.modelId}（version ${result.nonlinearFit.modelVersion}）`,
+      `非線形model：${nonlinearModelLabel(modelId)}（ID ${modelId}、version ${result.nonlinearFit.modelVersion}）`,
       `式：${result.nonlinearFit.modelFormula}`,
       `model選択理由：${result.nonlinearFit.selectionRationale}`,
       ...result.nonlinearFit.series.flatMap((series) => [
         `・${series.seriesId}：${series.parameters
           .map(
             (parameter) =>
-              `${parameter.name}=${numberLabel(parameter.value)}（SE=${numberLabel(parameter.standardError)}、${intervalText(parameter)}）`,
+              `${nonlinearParameterLabel(modelId, parameter.name)}${nonlinearParameterLabel(modelId, parameter.name) === parameter.name ? "" : `（${parameter.name}）`}=${numberLabel(parameter.value)}（SE=${numberLabel(parameter.standardError)}、${intervalText(parameter)}）`,
           )
           .join("、")}`,
         `- fit診断：n=${series.diagnostics.n}、distinct X=${series.diagnostics.distinctX}、residual df=${series.diagnostics.residualDegreesOfFreedom}、RSS=${numberLabel(series.diagnostics.rss)}、RMSE=${numberLabel(series.diagnostics.rmse)}、R²=${numberLabel(series.diagnostics.rSquared)}、AIC=${numberLabel(series.diagnostics.aic)}`,

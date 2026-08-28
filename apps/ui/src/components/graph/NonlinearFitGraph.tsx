@@ -11,6 +11,7 @@ function linearScale(value: number, min: number, max: number, start: number, end
 }
 
 function ticks(min: number, max: number, count = 5) {
+  if (min === max) return [min];
   return Array.from({ length: count }, (_, index) => min + ((max - min) * index) / (count - 1));
 }
 
@@ -18,7 +19,7 @@ function label(value: number) {
   return new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 3 }).format(value);
 }
 
-/** Renders only the authoritative fittedCurve preserved in a saved D17 result. */
+/** Renders observed XY first, then only an authoritative fittedCurve from D17. */
 export const NonlinearFitGraph = forwardRef<
   SVGSVGElement,
   {
@@ -26,8 +27,12 @@ export const NonlinearFitGraph = forwardRef<
     xLabel: string;
     yLabel: string;
     seriesLabels?: Readonly<Record<string, string>>;
+    displayMode?: "observed_only" | "fitted";
   }
->(function NonlinearFitGraph({ model, xLabel, yLabel, seriesLabels = {} }, ref) {
+>(function NonlinearFitGraph(
+  { model, xLabel, yLabel, seriesLabels = {}, displayMode = "fitted" },
+  ref,
+) {
   const allX = model.series.flatMap(({ points, fittedCurve }) => [
     ...points.map(({ x }) => x),
     ...fittedCurve.map(({ x }) => x),
@@ -47,14 +52,25 @@ export const NonlinearFitGraph = forwardRef<
     <svg
       ref={ref}
       role="img"
-      aria-label="非線形フィットGraph"
+      aria-label={displayMode === "fitted" ? "非線形フィットGraph" : "観測X/Y Graph"}
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       width={WIDTH}
       height={HEIGHT}
-      data-fit-model={model.modelId}
+      data-fit-model={displayMode === "fitted" ? model.modelId : undefined}
+      data-graph-mode={displayMode}
     >
       {ticks(yMin, yMax).map((value) => (
         <g key={`y.${value}`}>
+          <line
+            x1={MARGIN.left}
+            y1={y(value)}
+            x2={MARGIN.left - 6}
+            y2={y(value)}
+            stroke="#111"
+            className="nonlinear-fit-axis-tick"
+            data-axis-tick="y"
+            data-tick-direction="outside"
+          />
           <line
             x1={MARGIN.left}
             y1={y(value)}
@@ -75,6 +91,9 @@ export const NonlinearFitGraph = forwardRef<
             x2={x(value)}
             y2={HEIGHT - MARGIN.bottom + 6}
             stroke="#111"
+            className="nonlinear-fit-axis-tick"
+            data-axis-tick="x"
+            data-tick-direction="outside"
           />
           <text x={x(value)} y={HEIGHT - MARGIN.bottom + 24} textAnchor="middle" fontSize="13">
             {label(value)}
@@ -104,13 +123,15 @@ export const NonlinearFitGraph = forwardRef<
           .join(" ");
         return (
           <g key={series.seriesId} data-fit-series={series.seriesId}>
-            <path
-              d={curve}
-              fill="none"
-              stroke={color}
-              strokeWidth="3"
-              data-graph-layer="authoritative-fitted-curve"
-            />
+            {displayMode === "fitted" ? (
+              <path
+                d={curve}
+                fill="none"
+                stroke={color}
+                strokeWidth="3"
+                data-graph-layer="authoritative-fitted-curve"
+              />
+            ) : null}
             {series.points.map((point) => (
               <circle
                 key={point.observationId}
@@ -127,14 +148,16 @@ export const NonlinearFitGraph = forwardRef<
                 </title>
               </circle>
             ))}
-            <line
-              x1={WIDTH - MARGIN.right - 150}
-              y1={MARGIN.top + 12 + index * 24}
-              x2={WIDTH - MARGIN.right - 124}
-              y2={MARGIN.top + 12 + index * 24}
-              stroke={color}
-              strokeWidth="3"
-            />
+            {displayMode === "fitted" ? (
+              <line
+                x1={WIDTH - MARGIN.right - 150}
+                y1={MARGIN.top + 12 + index * 24}
+                x2={WIDTH - MARGIN.right - 124}
+                y2={MARGIN.top + 12 + index * 24}
+                stroke={color}
+                strokeWidth="3"
+              />
+            ) : null}
             <circle
               cx={WIDTH - MARGIN.right - 137}
               cy={MARGIN.top + 12 + index * 24}
@@ -156,7 +179,9 @@ export const NonlinearFitGraph = forwardRef<
         {yLabel}
       </text>
       <text x={MARGIN.left} y="22" fontSize="12" fill="#536171">
-        observed points + saved {model.modelId} fit
+        {displayMode === "fitted"
+          ? `observed points + saved ${model.modelId} fit`
+          : "observed X/Y points"}
       </text>
     </svg>
   );

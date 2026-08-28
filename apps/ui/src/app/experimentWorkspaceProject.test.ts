@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AnalysisEngineResult } from "@lsaa/analysis-contracts";
+import { buildStructureContract } from "@lsaa/adaptive-input";
+import { CanonicalAdaptiveObservationSchema } from "@lsaa/domain";
 import { ProjectStateSchema } from "@lsaa/project";
 
 import {
@@ -15,12 +17,14 @@ import {
 } from "./experimentWorkspaceProject";
 import { assessDraftGraphAnalysis } from "./experimentDraftAnalysis";
 import { buildExistingDataWorkspace, parseExistingDataText } from "./existingDataImport";
+import { createAdaptiveWorkspace } from "./adaptiveWorkspace";
 import {
   createComplexProportionFixture,
   createCategoricalCompositionFixture,
   createInternalAlphaCoreFixture,
   createLongitudinalFixture,
   createMultipleReadoutFixture,
+  createNestedContinuousFixture,
   createWbReferenceFixture,
   createXyCorrelationFixture,
 } from "./syntheticFixtures";
@@ -165,6 +169,28 @@ function fixture(): {
 }
 
 describe("experiment workspace project adapter", () => {
+  it("compact／expandedの表示選択を科学的データとは別に保存・復元する", () => {
+    const { draft, cells } = fixture();
+    const state = createExperimentWorkspaceProject({
+      draft,
+      cells,
+      graphs: [],
+      dataViewMode: "expanded",
+      now: "2026-08-21T02:00:00.000Z",
+    });
+
+    expect(state.experimentWorkspace?.dataViewMode).toBe("expanded");
+    expect(rehydrateExperimentWorkspace(state)?.dataViewMode).toBe("expanded");
+    const legacyCompatible = ProjectStateSchema.parse({
+      ...state,
+      experimentWorkspace: {
+        ...state.experimentWorkspace!,
+        dataViewMode: undefined,
+      },
+    });
+    expect(legacyCompatible.experimentWorkspace?.dataViewMode).toBe("compact");
+  });
+
   it("実験回IDと安定した生物学的単位IDを保存・再読込で分離して保つ", () => {
     const fixture = createLongitudinalFixture();
     const state = createExperimentWorkspaceProject({
@@ -406,6 +432,119 @@ describe("experiment workspace project adapter", () => {
     const reopened = rehydrateExperimentWorkspace(state);
     expect(reopened?.graphs[0]?.analysis?.result.status).toBe("ok");
     expect(reopened?.graphs[0]?.analysisRunId).toBe(state.analysisRuns[0]?.id);
+  });
+
+  it("多因子のX・系列・色・点形と軸設定をGraphSpecへlosslessに投影する", () => {
+    const fixture = createNestedContinuousFixture();
+    const timePointId = fixture.draft.time.points[0]!.id;
+    const assessment = assessDraftGraphAnalysis({
+      draft: fixture.draft,
+      cells: fixture.cells,
+      readoutId: fixture.draft.readouts[0].id,
+      conditionIds: fixture.draft.conditions.map(({ id }) => id),
+      timePointId,
+    });
+    if (!assessment.request) throw new Error("factorial fixture should be analyzable");
+    const result: AnalysisEngineResult = {
+      protocolVersion: assessment.request.protocolVersion,
+      requestId: assessment.request.requestId,
+      status: "ok",
+      engine: { name: "fixture", version: "1", packages: {} },
+      estimates: [],
+      tests: [],
+      diagnostics: [],
+      warnings: [],
+      completedAt: "2026-08-21T04:45:00.000Z",
+    };
+    const appearance: WorkspaceGraphState["appearance"] = {
+      ...TEST_APPEARANCE,
+      palette: "condition",
+      legendPosition: "top",
+      seriesStyles: {
+        "attribute.treatment:+": {
+          color: "#cc6677",
+          pointStyle: "triangle",
+          legendLabel: "Treatment +",
+          visible: true,
+        },
+      },
+    };
+    const axes: WorkspaceGraphState["axes"] = {
+      ...testAxes("Fluorescence intensity", ["attribute.group"]),
+      xTitle: "Group",
+      tickDirection: "outside",
+      showCategoryGroupSeparators: true,
+    };
+    const graph: WorkspaceGraphState = {
+      id: "graph.factorial.channels",
+      displayName: "Group × Treatment",
+      analysisRunId: null,
+      selectedReadoutId: fixture.draft.readouts[0].id,
+      selectedConditionIds: fixture.draft.conditions.map(({ id }) => id),
+      selectedTimePointIds: [timePointId],
+      analysisTimePointId: timePointId,
+      graphType: "dot",
+      grouping: {
+        x: {
+          source: "factor",
+          factorId: "attribute.group",
+          factorIds: ["attribute.group"],
+        },
+        series: { source: "factor", factorId: "attribute.treatment" },
+        color: { source: "factor", factorId: "attribute.group" },
+        shape: { source: "factor", factorId: "attribute.treatment" },
+        facet: null,
+      },
+      layers: {
+        raw: true,
+        distribution: false,
+        experiment: true,
+        overall: true,
+        violin: false,
+        box: false,
+        errorBar: true,
+        connectingLine: false,
+      },
+      appearance,
+      axes,
+      analysis: { request: assessment.request, result },
+    };
+
+    const state = createExperimentWorkspaceProject({
+      draft: fixture.draft,
+      cells: fixture.cells,
+      graphs: [graph],
+      now: "2026-08-21T04:45:00.000Z",
+    });
+
+    expect(state.graphs[0]?.spec).toMatchObject({
+      mappings: {
+        x: "attribute.group",
+        xHierarchy: ["attribute.group"],
+        series: "attribute.treatment",
+        color: "attribute.group",
+        shape: "attribute.treatment",
+      },
+      appearance: {
+        seriesStyles: {
+          "attribute.treatment:+": {
+            pointStyle: "triangle",
+            legendLabel: "Treatment +",
+          },
+        },
+      },
+      axes: {
+        xLabel: "Group",
+        tickDirection: "outside",
+        showCategoryGroupSeparators: true,
+      },
+    });
+    expect(rehydrateExperimentWorkspace(state)?.graphs[0]?.grouping).toMatchObject({
+      x: { factorId: "attribute.group" },
+      series: { factorId: "attribute.treatment" },
+      color: { factorId: "attribute.group" },
+      shape: { factorId: "attribute.treatment" },
+    });
   });
 
   it("細胞・ROIの解析は実験単位平均のderived lineageを保存する", () => {
@@ -902,6 +1041,136 @@ describe("experiment workspace project adapter", () => {
       subsetA[0],
       subsetB[0],
     ]);
+  });
+
+  it("shared-source解析の親pair IDと条件別child unit IDを保存・再表示でも分離する", () => {
+    const now = "2026-08-26T00:00:00.000Z";
+    const contract = buildStructureContract({
+      experimentName: "Donor split",
+      experimentDescription: "Each donor culture was split into vehicle and drug dishes.",
+      experimentalUnitLabel: "condition dish",
+      identityLabel: "Dish ID",
+      readoutLabel: "Signal",
+      readoutRepresentation: "scalar",
+      factorName: "Treatment",
+      factorLevels: ["Vehicle", "Drug"],
+      sameIdentityAcrossConditions: false,
+      conditionEntityRelationship: {
+        kind: "distinct_condition_units_shared_source",
+        sourceUnitLabel: "Donor",
+        sourceIdentityLabel: "Donor ID",
+        sourceRole: "block",
+        completeSetsRequired: true,
+      },
+    });
+    const observations = [
+      ["D1", "dish-1", "Vehicle", 1],
+      ["D1", "dish-1", "Drug", 2],
+      ["D2", "dish-1", "Vehicle", 3],
+      ["D2", "dish-1", "Drug", 4],
+    ].map(([donor, dish, treatment, value], index) =>
+      CanonicalAdaptiveObservationSchema.parse({
+        observationId: `shared-source.${index + 1}`,
+        readoutKey: "signal",
+        identities: { donorid: donor, dishid: dish },
+        factors: { treatment },
+        axes: {},
+        hierarchy: {},
+        values: { signal: value },
+        missingness: {},
+        sourceRow: index + 2,
+      }),
+    );
+    const workspace = createAdaptiveWorkspace({
+      contract,
+      observations,
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    if (!workspace.draft) throw new Error("Shared-source workspace should be ready");
+    const assessment = assessDraftGraphAnalysis({
+      draft: workspace.draft,
+      cells: workspace.cells,
+      readoutId: workspace.draft.readouts[0].id,
+      conditionIds: workspace.draft.conditions.map(({ id }) => id),
+    });
+    if (!assessment.request) throw new Error("Shared-source workspace should be analyzable");
+    const result: AnalysisEngineResult = {
+      protocolVersion: assessment.request.protocolVersion,
+      requestId: assessment.request.requestId,
+      status: "ok",
+      engine: { name: "fixture", version: "1", packages: {} },
+      estimates: [],
+      tests: [],
+      diagnostics: [],
+      warnings: [],
+      completedAt: now,
+    };
+    const graph: WorkspaceGraphState = {
+      id: "graph.shared-source",
+      displayName: "Shared-source signal",
+      analysisRunId: null,
+      selectedReadoutId: workspace.draft.readouts[0].id,
+      selectedConditionIds: workspace.draft.conditions.map(({ id }) => id),
+      selectedTimePointIds: [],
+      analysisTimePointId: null,
+      graphType: "paired_dot",
+      layers: {
+        raw: false,
+        distribution: false,
+        experiment: true,
+        overall: true,
+        violin: false,
+        box: false,
+        errorBar: true,
+        connectingLine: true,
+      },
+      appearance: TEST_APPEARANCE,
+      axes: testAxes("Signal", ["factor.treatment"]),
+      statisticsAnnotation: { mode: "hidden", testIndex: 0 },
+      analysis: { request: assessment.request, result },
+    };
+
+    const state = createExperimentWorkspaceProject({
+      draft: workspace.draft,
+      cells: workspace.cells,
+      graphs: [graph],
+      now,
+    });
+    const experimentalUnits = state.unitInstances.filter(
+      ({ levelId }) => levelId === "unit-level.conditiondish",
+    );
+    const sourceUnits = state.unitInstances.filter(({ levelId }) => levelId === "unit-level.donor");
+    expect(experimentalUnits).toHaveLength(4);
+    expect(sourceUnits).toHaveLength(2);
+    expect(new Set(experimentalUnits.map(({ parentUnitId }) => parentUnitId))).toEqual(
+      new Set(sourceUnits.map(({ id }) => id)),
+    );
+
+    const persistedRequest = state.analysisRuns[0]?.request;
+    expect(persistedRequest?.observations).toHaveLength(4);
+    expect(
+      new Set(persistedRequest?.observations.map(({ experimentalUnitId }) => experimentalUnitId)),
+    ).toHaveProperty("size", 4);
+    expect(new Set(persistedRequest?.observations.map(({ pairId }) => pairId))).toHaveProperty(
+      "size",
+      2,
+    );
+    expect(state.graphs[0]?.spec.mappings.pair).toBe("pairId");
+
+    const reopened = rehydrateExperimentWorkspace(
+      ProjectStateSchema.parse(JSON.parse(JSON.stringify(state))),
+    );
+    expect(reopened?.draft.conditionAssignment.matchedTopology).toEqual({
+      kind: "distinct_condition_units_shared_source",
+      sourceUnitLabel: "Donor",
+      sourceIdentityLabel: "Donor ID",
+      sourceRole: "block",
+    });
+    expect(
+      new Set(reopened?.graphs[0]?.analysis?.request.observations.map(({ pairId }) => pairId)),
+    ).toHaveProperty("size", 2);
   });
 
   it("D09 scatter解析とX-Y対応を保存し同じworkspaceへ戻せる", () => {

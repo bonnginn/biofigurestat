@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type KeyboardEvent } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import type {
   ConditionAttributeDraft,
@@ -24,7 +24,11 @@ import {
   withActiveConditions,
 } from "../app/experimentDraft";
 import { specializedAnalysisRoutes, type AppRoute } from "../app/routes";
-import type { SaveProjectAction } from "../app/projectActions";
+import type {
+  OpenUnresolvedVisualizationProjectAction,
+  SaveProjectAction,
+  SaveUnresolvedVisualizationProjectAction,
+} from "../app/projectActions";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
 import { ConditionTimePreview } from "../components/ConditionTimePreview";
 import { ExistingDataImport } from "../components/ExistingDataImport";
@@ -35,12 +39,34 @@ import { syntheticFixtures, type SyntheticFixture } from "../app/syntheticFixtur
 import "./NewExperimentPage.css";
 import type { FavoriteGraphDefault } from "../app/favoriteDesigns";
 import type { AdaptiveInputSnapshot } from "@lsaa/domain";
+import {
+  createUnresolvedVisualizationPromotionHistory,
+  type UnresolvedVisualizationProjectState,
+} from "@lsaa/project";
 import { AdaptiveExperimentEntry } from "../components/AdaptiveExperimentEntry";
+import { BiologicalExperimentSetup } from "../components/BiologicalExperimentSetup";
+import {
+  NewExperimentEntryHub,
+  type NewExperimentEntryId,
+} from "../components/NewExperimentEntryHub";
+import { createAdaptiveWorkspace } from "../app/adaptiveWorkspace";
+import { createBiologicalSetupPresentation } from "../app/adaptiveStructureRevision";
 import { adaptiveInputFeatureEnabled } from "../app/adaptiveInputFeature";
+import { bridgeGraphOnlyTableToStatistics } from "../app/graphOnlyStatisticsBridge";
+import { rebindGraphOnlyGraphsToWorkspace } from "../app/graphOnlyWorkspaceGraph";
+import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
+import { GraphOnlyVisualizationPage } from "./GraphOnlyVisualizationPage";
+import {
+  createDedicatedEntryIntent,
+  type DedicatedEntryIntent,
+  type DedicatedEntryModuleId,
+} from "../app/dedicatedEntryIntent";
 
 type NewExperimentPageProps = {
   onNavigate: (route: AppRoute) => void;
   saveProject?: SaveProjectAction;
+  saveUnresolvedVisualizationProject?: SaveUnresolvedVisualizationProjectAction;
+  openUnresolvedVisualizationProject?: OpenUnresolvedVisualizationProjectAction;
   analysisRunner?: AnalysisRunner;
   browserPreview?: boolean;
   analysisAvailable?: boolean;
@@ -49,11 +75,81 @@ type NewExperimentPageProps = {
   onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
   onDirtyChange?: (dirty: boolean) => void;
   onAdaptiveSurvivalReady?: (text: string, snapshot: AdaptiveInputSnapshot) => void;
+  onDedicatedEntryReady?: (intent: DedicatedEntryIntent) => void;
+  /** Test/debug access only. Production rollback is controlled by the feature flag. */
+  showCompatibilityEntry?: boolean;
 };
 
-type FlowStage = "context" | "import" | "adaptive" | "design" | "confirmation" | "workspace";
+type FlowStage =
+  | "context"
+  | "import"
+  | "graph-only"
+  | "biological"
+  | "adaptive"
+  | "design"
+  | "confirmation"
+  | "workspace";
 type DesignStep = 0 | 1 | 2 | 3;
 type FlowStep = DesignStep | 4;
+type ExplicitStructureAnswers = Readonly<{
+  conditionAssignment: boolean;
+  orderedAxis: boolean;
+  axisSemantic: boolean;
+  axisSampling: boolean;
+  sharedSourceSplit: boolean;
+}>;
+
+export function biologicalWorkspaceStopMessage(diagnostics: readonly string[]): string {
+  const mixedGrain = diagnostics.some((diagnostic) =>
+    diagnostic.includes("heterogeneous_readout_grains"),
+  );
+  const mixedAxis = diagnostics.some((diagnostic) =>
+    diagnostic.includes("heterogeneous_readout_axes"),
+  );
+  if (mixedGrain && mixedAxis) {
+    return "測定項目ごとに、Cell・ROIなど個別の値か試料全体の値か、また時間・距離の系列で測ったかが異なります。現在の入力画面は違いを1つの表へ強制せず、ここで停止しました。回答と条件表は保持されています。";
+  }
+  if (mixedGrain) {
+    return "測定項目ごとに、Cell・ROIなど個別の値か試料全体の値かが異なります。現在の入力画面は違いを1つの表へ強制せず、ここで停止しました。回答と条件表は保持されています。";
+  }
+  if (mixedAxis) {
+    return "時間・距離の系列で測った項目と、系列の最後などで1回だけ測った項目が混在しています。現在の入力画面は違いを1つの表へ強制せず、ここで停止しました。回答と条件表は保持されています。";
+  }
+  return "この実験内容は現在の入力画面へ安全に変換できません。入力内容は保持されています。";
+}
+
+function graphOnlyBiologicalInitial(state: UnresolvedVisualizationProjectState) {
+  const xColumn = state.mapping?.columns.find(({ role }) => role === "x");
+  const yColumn = state.mapping?.columns.find(({ role }) => role === "y");
+  if (!xColumn || !yColumn) return undefined;
+  const levels = [
+    ...new Set(state.table.rows.map((row) => row[xColumn.index]?.trim() ?? "").filter(Boolean)),
+  ];
+  return {
+    title: state.metadata.projectName,
+    measurementLabel: yColumn.header,
+    conditionBlocks: [{ name: xColumn.header, levels }],
+    statisticsHandoff: true,
+    notice:
+      "Graph用の元表は保持しています。横軸の値と測定項目を候補として入れました。実際の対象・試料と条件間の関係だけ追加してください。",
+  } as const;
+}
+
+const UNANSWERED_STRUCTURE: ExplicitStructureAnswers = {
+  conditionAssignment: false,
+  orderedAxis: false,
+  axisSemantic: false,
+  axisSampling: false,
+  sharedSourceSplit: false,
+};
+
+const CONFIRMED_STRUCTURE: ExplicitStructureAnswers = {
+  conditionAssignment: true,
+  orderedAxis: true,
+  axisSemantic: true,
+  axisSampling: true,
+  sharedSourceSplit: false,
+};
 
 const READOUT_OPTIONS: ReadonlyArray<{
   shape: ReadoutShape;
@@ -67,8 +163,8 @@ const READOUT_OPTIONS: ReadonlyArray<{
   },
   {
     shape: "nested_continuous",
-    title: "強度・サイズ・形態",
-    description: "実験単位ごとにまとめた測定値を入力します。",
+    title: "数値（細胞数・強度・サイズなど）",
+    description: "各試料やCell・ROIについて記録した数値を入力します。",
   },
   {
     shape: "categorical_counts",
@@ -95,17 +191,6 @@ export function flowStepsFor(draft: ExperimentSetDraft): readonly FlowStep[] {
   if (draft.entryRoute === "protein_wb" || draft.analysisIntent.kind === "correlation") {
     return [0, 1, 3, 4];
   }
-  if (
-    draft.entryRoute === "cell_count_growth" ||
-    draft.entryRoute === "microscopy_fluorescence" ||
-    draft.entryRoute === "microscopy_cell_roi" ||
-    draft.entryRoute === "microscopy_morphology" ||
-    draft.entryRoute === "microscopy_tracking" ||
-    draft.entryRoute === "animal_numeric" ||
-    draft.entryRoute === "animal_longitudinal"
-  ) {
-    return [0, 2, 1, 3, 4];
-  }
   return [0, 1, 2, 3, 4];
 }
 
@@ -118,11 +203,39 @@ type ExperimentEntryRoute = Readonly<{
   title: string;
   description: string;
   shape: ReadoutShape;
+  defaultReadout?: Readonly<{
+    label: string;
+    unit: string;
+  }>;
   correlation?: boolean;
   longitudinal?: boolean;
   singleCohort?: boolean;
   destination?: AppRoute;
+  entryModuleId?: DedicatedEntryModuleId;
 }>;
+
+function inferredStructureAnswersForRoute(route: ExperimentEntryRoute): ExplicitStructureAnswers {
+  const correlation = Boolean(route.correlation);
+  const longitudinal = Boolean(route.longitudinal);
+  return {
+    conditionAssignment: correlation || Boolean(route.singleCohort),
+    orderedAxis: correlation || longitudinal,
+    axisSemantic: longitudinal,
+    axisSampling: longitudinal,
+    sharedSourceSplit: false,
+  };
+}
+
+function structureAnswersAreComplete(
+  draft: ExperimentSetDraft,
+  answers: ExplicitStructureAnswers,
+): boolean {
+  if (!answers.conditionAssignment || answers.sharedSourceSplit) return false;
+  if (draft.entryRoute === "protein_wb") return true;
+  if (!answers.orderedAxis) return false;
+  if (draft.time.sampling === "none") return true;
+  return answers.axisSemantic && answers.axisSampling;
+}
 
 export const ENTRY_ROUTES: Readonly<
   Record<Exclude<ExperimentContext, "existing_data">, readonly ExperimentEntryRoute[]>
@@ -133,6 +246,7 @@ export const ENTRY_ROUTES: Readonly<
       title: "細胞数・増殖",
       description: "cell number、増殖、growth assay",
       shape: "nested_continuous",
+      defaultReadout: { label: "細胞数・増殖", unit: "" },
     },
     {
       id: "cell_positive_proportion",
@@ -145,13 +259,15 @@ export const ENTRY_ROUTES: Readonly<
       title: "その他の培養アッセイ",
       description: "培養単位から得たその他の数値",
       shape: "nested_continuous",
+      defaultReadout: { label: "培養アッセイ測定値", unit: "" },
     },
     {
       id: "cell_time_to_event",
-      title: "Cellのevent発生までの時間",
-      description: "死滅、分裂、発症などを追跡し、観察終了時の打ち切りも記録",
+      title: "Cellの最初のevent発生までの時間",
+      description: "最初の死滅・分裂・発症までを追跡し、観察終了時の打ち切りも記録",
       shape: "nested_continuous",
       destination: "survival",
+      entryModuleId: "time_to_event",
     },
   ],
   microscopy_imaging: [
@@ -160,24 +276,28 @@ export const ENTRY_ROUTES: Readonly<
       title: "蛍光強度",
       description: "実験単位の要約、またはCell・ROIの値",
       shape: "nested_continuous",
+      defaultReadout: { label: "蛍光強度", unit: "a.u." },
     },
     {
       id: "microscopy_cell_roi",
       title: "Cell・ROIごとの測定",
       description: "強度、長さ、距離などの数値",
       shape: "nested_continuous",
+      defaultReadout: { label: "Cell・ROI測定値", unit: "" },
     },
     {
       id: "microscopy_morphology",
       title: "形態・サイズ",
       description: "面積、長さ、形状指標など",
       shape: "nested_continuous",
+      defaultReadout: { label: "形態・サイズ", unit: "" },
     },
     {
       id: "microscopy_tracking",
       title: "移動・tracking",
       description: "速度、移動距離、軌跡、time-lapse",
       shape: "nested_continuous",
+      defaultReadout: { label: "移動・tracking", unit: "" },
       longitudinal: true,
     },
     {
@@ -199,25 +319,30 @@ export const ENTRY_ROUTES: Readonly<
       title: "タンパク質量・濃度",
       description: "定量値を条件間で比較",
       shape: "nested_continuous",
+      defaultReadout: { label: "タンパク質量・濃度", unit: "" },
     },
     {
       id: "protein_activity",
       title: "活性",
       description: "酵素活性などの数値",
       shape: "nested_continuous",
+      defaultReadout: { label: "活性", unit: "" },
     },
     {
       id: "protein_kinetic_fit",
       title: "時間・濃度に対する反応曲線",
-      description: "観測したX/Yと、選択したmodelによる非線形fit",
+      description:
+        "時間に対する飽和過程、または基質濃度と計算済み初速度からVmax・Kmを求める非線形fit",
       shape: "nested_continuous",
       destination: "nonlinear-fit",
+      entryModuleId: "ordered_curve_kinetics",
     },
     {
       id: "protein_other",
       title: "その他の数値測定",
       description: "生化学アッセイの数値",
       shape: "nested_continuous",
+      defaultReadout: { label: "生化学アッセイ測定値", unit: "" },
     },
     {
       id: "protein_xy",
@@ -233,12 +358,14 @@ export const ENTRY_ROUTES: Readonly<
       title: "個体の数値測定",
       description: "体重、腫瘍体積、血糖、行動スコアなど",
       shape: "nested_continuous",
+      defaultReadout: { label: "個体の数値測定", unit: "" },
     },
     {
       id: "animal_longitudinal",
       title: "経時測定",
       description: "同じ個体を複数時点で追跡",
       shape: "nested_continuous",
+      defaultReadout: { label: "個体の経時測定", unit: "" },
       longitudinal: true,
     },
     {
@@ -247,6 +374,7 @@ export const ENTRY_ROUTES: Readonly<
       description: "個体を追跡し、eventと観察終了時の打ち切りを記録",
       shape: "nested_continuous",
       destination: "survival",
+      entryModuleId: "time_to_event",
     },
     {
       id: "animal_proportion",
@@ -274,6 +402,7 @@ export const ENTRY_ROUTES: Readonly<
       title: "単一コホート・1群",
       description: "1群の分布表示、記述統計、明示した基準値との比較",
       shape: "nested_continuous",
+      defaultReadout: { label: "測定値", unit: "" },
       singleCohort: true,
     },
     {
@@ -281,20 +410,23 @@ export const ENTRY_ROUTES: Readonly<
       title: "連続値",
       description: "条件ごとの数値を入力",
       shape: "nested_continuous",
+      defaultReadout: { label: "測定値", unit: "" },
     },
     {
       id: "general_time_to_event",
-      title: "event発生までの時間",
-      description: "対象を追跡し、eventまたは打ち切りまでの時間を入力",
+      title: "最初のevent発生までの時間",
+      description: "対象を追跡し、最初のeventまたは打ち切りまでの時間を入力",
       shape: "nested_continuous",
       destination: "survival",
+      entryModuleId: "time_to_event",
     },
     {
       id: "general_nonlinear_fit",
       title: "Xに対する非線形な応答",
-      description: "観測したX/Yと、明示したmodelによるfit",
+      description: "観測したX/Yと、明示した飽和またはMichaelis–Menten modelによるfit",
       shape: "nested_continuous",
       destination: "nonlinear-fit",
+      entryModuleId: "ordered_curve_kinetics",
     },
     {
       id: "general_proportion",
@@ -351,8 +483,9 @@ export function createDraftForEntryRoute(
       : baseDraft;
   return {
     ...routedDraft,
-    readouts: routedDraft.readouts.map((readout) => ({
+    readouts: routedDraft.readouts.map((readout, index) => ({
       ...readout,
+      ...(index === 0 && route.defaultReadout ? route.defaultReadout : {}),
       ...(readout.shape === "nested_continuous"
         ? {
             nestedInputMode:
@@ -462,12 +595,26 @@ function acceptSingleClick(detail: number): boolean {
 function asMatchedUnits(draft: ExperimentSetDraft): ExperimentSetDraft {
   return {
     ...draft,
-    conditionAssignment: { ...draft.conditionAssignment, kind: "matched" },
+    conditionAssignment: {
+      ...draft.conditionAssignment,
+      kind: "matched",
+      matchedTopology: { kind: "same_entity_across_conditions" },
+    },
     experiments: draft.experiments.map((session, index) => ({
       ...session,
       label: matchedUnitLabel(draft.conditionAssignment.unitLabel, index),
       stableUnitId: session.stableUnitId || `unit.${index + 1}`,
     })),
+  };
+}
+
+function asIndependentUnits(draft: ExperimentSetDraft): ExperimentSetDraft {
+  return {
+    ...draft,
+    conditionAssignment: {
+      kind: "independent",
+      unitLabel: draft.conditionAssignment.unitLabel,
+    },
   };
 }
 
@@ -1109,12 +1256,112 @@ function ReadoutStep({
   );
 }
 
-function ConditionsStep({
+function ConditionUnitRelationship({
   draft,
   onUpdate,
+  explicitAnswers,
+  onExplicitAnswersUpdate,
 }: {
   draft: ExperimentSetDraft;
   onUpdate: (updater: (current: ExperimentSetDraft) => ExperimentSetDraft) => void;
+  explicitAnswers: ExplicitStructureAnswers;
+  onExplicitAnswersUpdate: (
+    updater: (current: ExplicitStructureAnswers) => ExplicitStructureAnswers,
+  ) => void;
+}) {
+  return (
+    <fieldset className="experiment-start__fieldset">
+      <legend>各条件で測った対象・試料は、どのような関係ですか？</legend>
+      <p className="experiment-start__helper">
+        統計手法ではなく、実際に対象・試料を準備して条件を割り当てた関係を選んでください。
+      </p>
+      <div className="experiment-start__radio-row">
+        <label className="experiment-start__radio-card">
+          <input
+            checked={
+              explicitAnswers.conditionAssignment &&
+              !explicitAnswers.sharedSourceSplit &&
+              draft.conditionAssignment.kind === "independent"
+            }
+            name="condition-unit-relationship"
+            type="radio"
+            onChange={() => {
+              onExplicitAnswersUpdate((current) => ({
+                ...current,
+                conditionAssignment: true,
+                sharedSourceSplit: false,
+              }));
+              onUpdate(asIndependentUnits);
+            }}
+          />
+          <span>
+            <strong>条件ごとに別の単位を準備・処理した</strong>
+            <small>条件間で同じ対象・試料のIDとして対応づけません。</small>
+          </span>
+        </label>
+        <label className="experiment-start__radio-card">
+          <input
+            checked={
+              explicitAnswers.conditionAssignment &&
+              !explicitAnswers.sharedSourceSplit &&
+              draft.conditionAssignment.kind === "matched"
+            }
+            name="condition-unit-relationship"
+            type="radio"
+            onChange={() => {
+              onExplicitAnswersUpdate((current) => ({
+                ...current,
+                conditionAssignment: true,
+                sharedSourceSplit: false,
+              }));
+              onUpdate(asMatchedUnits);
+            }}
+          />
+          <span>
+            <strong>同じ単位を条件間で測った</strong>
+            <small>同じ対象そのものを複数条件で測り、各条件の値を1組として入力できます。</small>
+          </span>
+        </label>
+        <label className="experiment-start__radio-card">
+          <input
+            checked={explicitAnswers.sharedSourceSplit}
+            name="condition-unit-relationship"
+            type="radio"
+            onChange={() =>
+              onExplicitAnswersUpdate((current) => ({
+                ...current,
+                conditionAssignment: false,
+                sharedSourceSplit: true,
+              }))
+            }
+          />
+          <span>
+            <strong>同じ由来試料を分けて各条件に割り当てた</strong>
+            <small>例：同じドナーや調製試料から分けた、条件ごとの別ディッシュ・別試料。</small>
+          </span>
+        </label>
+      </div>
+      {explicitAnswers.sharedSourceSplit ? (
+        <p className="experiment-start__validation" role="status">
+          この入口はまだ、共有した由来IDと条件ごとの別の対象・試料IDを同時に保持できません。別の実験構造へ読み替えず、この選択のまま停止しています。入力した条件名は画面内に保持されます。
+        </p>
+      ) : null}
+    </fieldset>
+  );
+}
+
+function ConditionsStep({
+  draft,
+  onUpdate,
+  explicitAnswers,
+  onExplicitAnswersUpdate,
+}: {
+  draft: ExperimentSetDraft;
+  onUpdate: (updater: (current: ExperimentSetDraft) => ExperimentSetDraft) => void;
+  explicitAnswers: ExplicitStructureAnswers;
+  onExplicitAnswersUpdate: (
+    updater: (current: ExplicitStructureAnswers) => ExplicitStructureAnswers,
+  ) => void;
 }) {
   if (draft.analysisIntent.kind === "correlation") {
     return (
@@ -1493,6 +1740,14 @@ function ConditionsStep({
           対照は必要な場合だけ明示してください。名前がControl・WT・Vehicleでも自動判定せず、選んだ条件IDを保存します。
         </p>
       ) : null}
+      {draft.entryRoute === "protein_wb" ? (
+        <ConditionUnitRelationship
+          draft={draft}
+          onUpdate={onUpdate}
+          explicitAnswers={explicitAnswers}
+          onExplicitAnswersUpdate={onExplicitAnswersUpdate}
+        />
+      ) : null}
     </section>
   );
 }
@@ -1500,9 +1755,15 @@ function ConditionsStep({
 function TimeStep({
   draft,
   onUpdate,
+  explicitAnswers,
+  onExplicitAnswersUpdate,
 }: {
   draft: ExperimentSetDraft;
   onUpdate: (updater: (current: ExperimentSetDraft) => ExperimentSetDraft) => void;
+  explicitAnswers: ExplicitStructureAnswers;
+  onExplicitAnswersUpdate: (
+    updater: (current: ExplicitStructureAnswers) => ExplicitStructureAnswers,
+  ) => void;
 }) {
   if (draft.analysisIntent.kind === "correlation") {
     return (
@@ -1522,6 +1783,7 @@ function TimeStep({
     );
   }
   const hasOrderedAxis = draft.time.sampling !== "none";
+  const hasMultipleConditions = activeConditions(draft).length > 1;
   const axisSemantic = orderedAxisSemantic(draft.time);
   const [pointsText, setPointsText] = useState(() =>
     draft.time.points.map((point) => point.value).join(", "),
@@ -1547,106 +1809,105 @@ function TimeStep({
       <div className="experiment-start__section-heading">
         <div>
           <p className="experiment-start__eyebrow">実験設計</p>
-          <h2 id="time-heading">順序のある測定軸はありますか？</h2>
+          <h2 id="time-heading">
+            {hasMultipleConditions
+              ? "条件間の試料の関係と測定軸を確認します"
+              : "測定軸を確認します"}
+          </h2>
         </div>
         <span className="experiment-start__hint">
-          時間や距離など、順序のある測定がなければそのまま進めます
+          {hasMultipleConditions
+            ? "まず条件間で何を共有したかを確認します"
+            : "時間や距離などがなければ「順序のある測定軸なし」を選んでください"}
         </span>
       </div>
-      <fieldset className="experiment-start__fieldset">
-        <legend>条件ごとに測った単位は同じですか？</legend>
-        <p className="experiment-start__helper">
-          日付ではなく、同じディッシュ・動物・細胞などを条件間で実際に対応づけたかを選びます。
-        </p>
-        <div className="experiment-start__radio-row">
-          <label className="experiment-start__radio-card">
-            <input
-              checked={draft.conditionAssignment.kind === "independent"}
-              name="condition-assignment"
-              type="radio"
-              onChange={() =>
-                onUpdate((current) => ({
-                  ...current,
-                  conditionAssignment: { ...current.conditionAssignment, kind: "independent" },
-                }))
-              }
-            />
-            <span>
-              <strong>条件ごとに別の単位</strong>
-              <small>例：条件ごとに別々のディッシュや動物を使った。</small>
-            </span>
-          </label>
-          <label className="experiment-start__radio-card">
-            <input
-              checked={draft.conditionAssignment.kind === "matched"}
-              name="condition-assignment"
-              type="radio"
-              onChange={() => onUpdate(asMatchedUnits)}
-            />
-            <span>
-              <strong>同じ単位を条件間で測った</strong>
-              <small>例：同じ動物・細胞・試料を両条件で測った。</small>
-            </span>
-          </label>
-        </div>
-        {draft.conditionAssignment.kind === "matched" ? (
-          <label className="experiment-start__field experiment-start__field--small">
-            <span>対応づけた単位</span>
-            <input
-              aria-label="対応づけた単位"
-              placeholder="例：動物、細胞、試料"
-              value={draft.conditionAssignment.unitLabel}
-              onChange={(event) =>
-                onUpdate((current) => ({
-                  ...current,
-                  conditionAssignment: {
-                    ...current.conditionAssignment,
-                    unitLabel: event.target.value,
-                  },
-                  experiments: current.experiments.map((session, index) => ({
-                    ...session,
-                    label: matchedUnitLabel(event.target.value, index),
-                  })),
-                }))
-              }
-            />
-          </label>
-        ) : null}
-      </fieldset>
-      <fieldset className="experiment-start__fieldset">
-        <legend>測定軸</legend>
-        <div className="experiment-start__radio-row">
-          <label className="experiment-start__radio-card">
-            <input
-              checked={!hasOrderedAxis}
-              name="time-mode"
-              type="radio"
-              onChange={() => setTimeMode("none")}
-            />
-            <span>順序のある測定軸なし</span>
-          </label>
-          <label className="experiment-start__radio-card">
-            <input
-              checked={hasOrderedAxis}
-              name="time-mode"
-              type="radio"
-              onChange={() => setTimeMode("cross_sectional")}
-            />
-            <span>順序のある測定軸を追加する</span>
-          </label>
-        </div>
-      </fieldset>
-      {hasOrderedAxis && (
+      {hasMultipleConditions ? (
+        <ConditionUnitRelationship
+          draft={draft}
+          onUpdate={onUpdate}
+          explicitAnswers={explicitAnswers}
+          onExplicitAnswersUpdate={onExplicitAnswersUpdate}
+        />
+      ) : null}
+      {draft.conditionAssignment.kind === "matched" && !explicitAnswers.sharedSourceSplit ? (
+        <label className="experiment-start__field experiment-start__field--small">
+          <span>対応づけた単位</span>
+          <input
+            aria-label="対応づけた単位"
+            placeholder="例：動物、細胞、試料"
+            value={draft.conditionAssignment.unitLabel}
+            onChange={(event) =>
+              onUpdate((current) => ({
+                ...current,
+                conditionAssignment: {
+                  ...current.conditionAssignment,
+                  unitLabel: event.target.value,
+                },
+                experiments: current.experiments.map((session, index) => ({
+                  ...session,
+                  label: matchedUnitLabel(event.target.value, index),
+                })),
+              }))
+            }
+          />
+        </label>
+      ) : null}
+      {!explicitAnswers.sharedSourceSplit ? (
+        <fieldset className="experiment-start__fieldset">
+          <legend>測定軸</legend>
+          <div className="experiment-start__radio-row">
+            <label className="experiment-start__radio-card">
+              <input
+                checked={explicitAnswers.orderedAxis && !hasOrderedAxis}
+                name="time-mode"
+                type="radio"
+                onChange={() => {
+                  onExplicitAnswersUpdate((current) => ({
+                    ...current,
+                    orderedAxis: true,
+                    axisSemantic: false,
+                    axisSampling: false,
+                  }));
+                  setTimeMode("none");
+                }}
+              />
+              <span>順序のある測定軸なし</span>
+            </label>
+            <label className="experiment-start__radio-card">
+              <input
+                checked={explicitAnswers.orderedAxis && hasOrderedAxis}
+                name="time-mode"
+                type="radio"
+                onChange={() => {
+                  onExplicitAnswersUpdate((current) => ({
+                    ...current,
+                    orderedAxis: true,
+                    axisSemantic: false,
+                    axisSampling: false,
+                  }));
+                  setTimeMode("cross_sectional");
+                }}
+              />
+              <span>順序のある測定軸を追加する</span>
+            </label>
+          </div>
+        </fieldset>
+      ) : null}
+      {!explicitAnswers.sharedSourceSplit && hasOrderedAxis && (
         <div className="experiment-start__time-details">
           <fieldset className="experiment-start__fieldset">
             <legend>この軸は何を表しますか？</legend>
             <div className="experiment-start__radio-row">
               <label className="experiment-start__radio-card">
                 <input
-                  checked={axisSemantic === "time"}
+                  checked={explicitAnswers.axisSemantic && axisSemantic === "time"}
                   name="ordered-axis-semantic"
                   type="radio"
-                  onChange={() =>
+                  onChange={() => {
+                    onExplicitAnswersUpdate((current) => ({
+                      ...current,
+                      axisSemantic: true,
+                    }));
                     onUpdate((current) => ({
                       ...current,
                       time: {
@@ -1655,8 +1916,8 @@ function TimeStep({
                         axisTitle: "Time",
                         axisUnit: current.time.unit,
                       },
-                    }))
-                  }
+                    }));
+                  }}
                 />
                 <span>
                   <strong>時間</strong>
@@ -1665,10 +1926,14 @@ function TimeStep({
               </label>
               <label className="experiment-start__radio-card">
                 <input
-                  checked={axisSemantic === "numeric_covariate"}
+                  checked={explicitAnswers.axisSemantic && axisSemantic === "numeric_covariate"}
                   name="ordered-axis-semantic"
                   type="radio"
-                  onChange={() =>
+                  onChange={() => {
+                    onExplicitAnswersUpdate((current) => ({
+                      ...current,
+                      axisSemantic: true,
+                    }));
                     onUpdate((current) => ({
                       ...current,
                       time: {
@@ -1683,8 +1948,8 @@ function TimeStep({
                             ? current.time.axisUnit || "µm"
                             : "µm",
                       },
-                    }))
-                  }
+                    }));
+                  }}
                 />
                 <span>
                   <strong>時間以外の数値軸</strong>
@@ -1780,10 +2045,18 @@ function TimeStep({
             <div className="experiment-start__radio-row">
               <label className="experiment-start__radio-card">
                 <input
-                  checked={draft.time.sampling === "cross_sectional"}
+                  checked={
+                    explicitAnswers.axisSampling && draft.time.sampling === "cross_sectional"
+                  }
                   name="time-sampling"
                   type="radio"
-                  onChange={() => setTimeMode("cross_sectional")}
+                  onChange={() => {
+                    onExplicitAnswersUpdate((current) => ({
+                      ...current,
+                      axisSampling: true,
+                    }));
+                    setTimeMode("cross_sectional");
+                  }}
                 />
                 <span>
                   <strong>{axisSemantic === "time" ? "時間点" : "軸水準"}ごとに別のサンプル</strong>
@@ -1792,10 +2065,16 @@ function TimeStep({
               </label>
               <label className="experiment-start__radio-card">
                 <input
-                  checked={draft.time.sampling === "longitudinal"}
+                  checked={explicitAnswers.axisSampling && draft.time.sampling === "longitudinal"}
                   name="time-sampling"
                   type="radio"
-                  onChange={() => setTimeMode("longitudinal")}
+                  onChange={() => {
+                    onExplicitAnswersUpdate((current) => ({
+                      ...current,
+                      axisSampling: true,
+                    }));
+                    setTimeMode("longitudinal");
+                  }}
                 />
                 <span>
                   <strong>
@@ -1840,13 +2119,13 @@ function ExperimentsStep({
           </h2>
         </div>
         <span className="experiment-start__hint">
-          {matched ? "同じidentityを条件間で保持します" : "実験回ごとに日付を記録します"}
+          {matched ? "同じidentityを条件間で保持します" : "日付だけで独立したnを決めません"}
         </span>
       </div>
       <p className="experiment-start__helper">
         {matched
           ? `ここでは実験日数ではなく、両条件で追跡した${unitLabel}の数を登録します。各${unitLabel}には固有IDを付け、条件名とは分けて保存します。`
-          : "別の日に行った実験は別の実験回にします。回数はあとでも増減できます。"}
+          : "1つの実験回には、各条件の測定値を1つずつ入力します。同じ日に独立なdishを3枚ずつ測った場合は、同じ日付の実験回を3つ登録してください。条件間で同じ行にあっても、対応ありとは解釈しません。"}
       </p>
       <label className="experiment-start__field experiment-start__experiment-count">
         <span>{matched ? `${unitLabel}の数` : "実験回数"}</span>
@@ -1941,9 +2220,7 @@ function DesignConfirmation({
   const readoutLabel =
     draft.readouts.length > 1
       ? `${draft.readouts.length}測定項目`
-      : readout?.shape === "proportion"
-        ? "数・割合"
-        : "強度・サイズ・形態";
+      : (READOUT_OPTIONS.find((option) => option.shape === readout?.shape)?.title ?? "測定値");
   const timeLabel =
     draft.time.sampling === "none"
       ? "順序のある測定軸なし"
@@ -2065,6 +2342,8 @@ function DesignConfirmation({
 export function NewExperimentPage({
   onNavigate,
   saveProject,
+  saveUnresolvedVisualizationProject,
+  openUnresolvedVisualizationProject,
   analysisRunner = defaultAnalysisRunner,
   browserPreview = false,
   analysisAvailable = true,
@@ -2073,6 +2352,8 @@ export function NewExperimentPage({
   onSaveFavorite,
   onDirtyChange,
   onAdaptiveSurvivalReady,
+  onDedicatedEntryReady,
+  showCompatibilityEntry = false,
 }: NewExperimentPageProps) {
   const evaluationPreview =
     import.meta.env.DEV && browserPreview && evaluationModeIsConfigured(evaluationMode);
@@ -2080,16 +2361,53 @@ export function NewExperimentPage({
   const [designStep, setDesignStep] = useState<DesignStep>(0);
   const [furthestStep, setFurthestStep] = useState<FlowStep>(initialDraft ? 4 : 0);
   const [draft, setDraft] = useState<ExperimentSetDraft | null>(initialDraft);
+  const [explicitStructureAnswers, setExplicitStructureAnswers] =
+    useState<ExplicitStructureAnswers>(initialDraft ? CONFIRMED_STRUCTURE : UNANSWERED_STRUCTURE);
   const [fixtureCells, setFixtureCells] = useState<ExperimentCellMap | undefined>();
+  const [fixtureGraphs, setFixtureGraphs] = useState<readonly WorkspaceGraphState[] | undefined>();
   const [selectedContext, setSelectedContext] = useState<Exclude<
     ExperimentContext,
     "existing_data"
   > | null>(null);
+  const [compatibilityEntryVisible, setCompatibilityEntryVisible] = useState(false);
+  const [pendingGraphOnlyState, setPendingGraphOnlyState] =
+    useState<UnresolvedVisualizationProjectState | null>(null);
+  const [biologicalHandoffError, setBiologicalHandoffError] = useState<string | null>(null);
+  const pageRootRef = useRef<HTMLDivElement>(null);
+  const returnFocusEntryRef = useRef<NewExperimentEntryId | null>(null);
   const flowSteps = draft ? flowStepsFor(draft) : ([0, 1, 2, 3, 4] as const);
+  const taskEntryHubEnabled = adaptiveInputFeatureEnabled();
+  const unresolvedVisualizationPersistenceAvailable = Boolean(
+    saveUnresolvedVisualizationProject && openUnresolvedVisualizationProject,
+  );
+  const unresolvedVisualizationEntryAvailable =
+    browserPreview || unresolvedVisualizationPersistenceAvailable;
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    const root = pageRootRef.current;
+    if (!root) return;
+    if (stage === "context" && returnFocusEntryRef.current) {
+      const entryId = returnFocusEntryRef.current;
+      returnFocusEntryRef.current = null;
+      const trigger = root.querySelector<HTMLButtonElement>(
+        `[data-entry-id="${entryId}"] button:not(:disabled)`,
+      );
+      if (trigger) {
+        trigger.focus({ preventScroll: true });
+        return;
+      }
+    }
+    const heading = root.querySelector<HTMLElement>("h1");
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
   }, [stage]);
+
+  const enterStageFromHub = (entryId: NewExperimentEntryId, nextStage: FlowStage) => {
+    returnFocusEntryRef.current = entryId;
+    setStage(nextStage);
+  };
 
   const updateDraft = (updater: (current: ExperimentSetDraft) => ExperimentSetDraft) => {
     setDraft((current) => (current ? updater(current) : current));
@@ -2098,7 +2416,9 @@ export function NewExperimentPage({
   const selectContext = (context: ExperimentContext) => {
     if (context === "existing_data") {
       setDraft(null);
+      setExplicitStructureAnswers(UNANSWERED_STRUCTURE);
       setFixtureCells(undefined);
+      setFixtureGraphs(undefined);
       setStage("import");
       return;
     }
@@ -2108,10 +2428,29 @@ export function NewExperimentPage({
   const selectEntryRoute = (route: ExperimentEntryRoute) => {
     if (!selectedContext) return;
     if (route.destination) {
+      if (
+        route.entryModuleId &&
+        (route.destination === "survival" || route.destination === "nonlinear-fit") &&
+        adaptiveInputFeatureEnabled() &&
+        onDedicatedEntryReady
+      ) {
+        onDedicatedEntryReady(
+          createDedicatedEntryIntent({
+            moduleId: route.entryModuleId,
+            destination: route.destination,
+            sourceContext: selectedContext,
+            entryRouteId: route.id,
+            experimentName: route.title,
+            experimentDescription: route.description,
+          }),
+        );
+        return;
+      }
       onNavigate(route.destination);
       return;
     }
     const nextDraft = createDraftForEntryRoute(selectedContext, route);
+    setExplicitStructureAnswers(inferredStructureAnswersForRoute(route));
     setDraft(
       browserPreview
         ? {
@@ -2122,6 +2461,7 @@ export function NewExperimentPage({
         : nextDraft,
     );
     setFixtureCells(undefined);
+    setFixtureGraphs(undefined);
     setDesignStep(0);
     setFurthestStep(0);
     setStage("design");
@@ -2129,11 +2469,34 @@ export function NewExperimentPage({
 
   const goBackToContext = () => {
     setDraft(null);
+    setExplicitStructureAnswers(UNANSWERED_STRUCTURE);
     setFixtureCells(undefined);
+    setFixtureGraphs(undefined);
     setDesignStep(0);
     setFurthestStep(0);
     setStage("context");
     setSelectedContext(null);
+    setCompatibilityEntryVisible(false);
+  };
+
+  const openDedicatedEntry = (
+    moduleId: DedicatedEntryModuleId,
+    destination: Extract<AppRoute, "survival" | "nonlinear-fit" | "heatmap">,
+    entryRouteId: string,
+    experimentName: string,
+    experimentDescription: string,
+  ) => {
+    if (!onDedicatedEntryReady) return;
+    onDedicatedEntryReady(
+      createDedicatedEntryIntent({
+        moduleId,
+        destination,
+        sourceContext: "general_assay",
+        entryRouteId,
+        experimentName,
+        experimentDescription,
+      }),
+    );
   };
 
   const canAdvance = () => {
@@ -2154,16 +2517,24 @@ export function NewExperimentPage({
         activeConditions(draft).length >= (draft.analysisIntent.kind === "single_cohort" ? 1 : 2) &&
         (draft.analysisIntent.kind !== "single_cohort" ||
           draft.analysisIntent.mode === "descriptive" ||
-          Number.isFinite(draft.analysisIntent.referenceValue))
+          Number.isFinite(draft.analysisIntent.referenceValue)) &&
+        (draft.entryRoute !== "protein_wb" ||
+          structureAnswersAreComplete(draft, explicitStructureAnswers))
       );
     }
     if (designStep === 2)
       return (
-        draft.time.sampling === "none" ||
-        (draft.time.points.length > 0 &&
-          (orderedAxisSemantic(draft.time) === "time" || Boolean(draft.time.axisTitle?.trim())))
+        structureAnswersAreComplete(draft, explicitStructureAnswers) &&
+        (draft.time.sampling === "none" ||
+          (draft.time.points.length > 0 &&
+            (orderedAxisSemantic(draft.time) === "time" || Boolean(draft.time.axisTitle?.trim()))))
       );
-    return draft.experiments.length > 0 && draft.experiments.every((experiment) => experiment.date);
+    return (
+      draft.experiments.length > 0 &&
+      draft.experiments.every((experiment) => experiment.date) &&
+      (!(flowSteps.includes(2) || draft.entryRoute === "protein_wb") ||
+        structureAnswersAreComplete(draft, explicitStructureAnswers))
+    );
   };
 
   const designIsComplete = () => {
@@ -2180,6 +2551,8 @@ export function NewExperimentPage({
       (draft.analysisIntent.kind !== "single_cohort" ||
         draft.analysisIntent.mode === "descriptive" ||
         Number.isFinite(draft.analysisIntent.referenceValue)) &&
+      (!(flowSteps.includes(2) || draft.entryRoute === "protein_wb") ||
+        structureAnswersAreComplete(draft, explicitStructureAnswers)) &&
       (draft.time.sampling === "none" ||
         (draft.time.points.length > 0 &&
           (orderedAxisSemantic(draft.time) === "time" || Boolean(draft.time.axisTitle?.trim())))) &&
@@ -2233,8 +2606,10 @@ export function NewExperimentPage({
   if (stage === "workspace" && draft) {
     return (
       <ExperimentWorkspace
+        rootRef={pageRootRef}
         initialDraft={withActiveConditions(draft)}
         initialCells={fixtureCells}
+        initialGraphs={fixtureGraphs}
         analysisRunner={analysisRunner}
         analysisAvailable={analysisAvailable}
         saveProject={saveProject}
@@ -2247,63 +2622,234 @@ export function NewExperimentPage({
   }
 
   return (
-    <div className="page-stack narrow-page experiment-start">
-      <button
-        className="back-link"
-        type="button"
-        onClick={(event) => {
-          if (!acceptSingleClick(event.detail)) return;
-          if (stage === "context") onNavigate("home");
-          else goBackToContext();
-        }}
-      >
-        <span aria-hidden="true">←</span>{" "}
-        {stage === "context" ? "ワークスペースに戻る" : "実験の種類を変更"}
-      </button>
+    <div className="page-stack narrow-page experiment-start" ref={pageRootRef}>
+      {stage !== "graph-only" ? (
+        <button
+          className="back-link"
+          type="button"
+          onClick={(event) => {
+            if (!acceptSingleClick(event.detail)) return;
+            if (stage === "context") onNavigate("home");
+            else goBackToContext();
+          }}
+        >
+          <span aria-hidden="true">←</span>{" "}
+          {stage === "context" ? "ワークスペースに戻る" : "実験の種類を変更"}
+        </button>
+      ) : null}
 
       {stage === "context" && (
         <>
-          <section className="experiment-start__intro" aria-labelledby="new-experiment-heading">
-            <p className="experiment-start__eyebrow">新しい実験</p>
-            <h1 id="new-experiment-heading">何をした実験ですか？</h1>
-            <p>
-              実験の背景を選び、短い質問に答えていくと、あなたの実験に合った入力シートにつながります。
-            </p>
-            <p className="experiment-start__subtle">統計用語や解析名を先に選ぶ必要はありません。</p>
-          </section>
-          {adaptiveInputFeatureEnabled() ? (
-            <section
-              className="experiment-start__adaptive-alpha"
-              aria-labelledby="adaptive-alpha-heading"
-            >
-              <p className="experiment-start__eyebrow">Feature-flagged Alpha</p>
-              <h2 id="adaptive-alpha-heading">実験構造から適切な入力面を作る</h2>
-              <p>
-                experimental
-                unit、identity、condition、反復・階層を定義し、表全体をpasteできます。現行入口は下に残っています。
-              </p>
-              <button className="primary-button" type="button" onClick={() => setStage("adaptive")}>
-                Adaptive inputを試す
-              </button>
-            </section>
-          ) : null}
-          <ContextStart
-            browserPreview={browserPreview}
-            showDemos={!evaluationPreview}
-            onSelect={selectContext}
-            selectedContext={selectedContext}
-            onRouteSelect={selectEntryRoute}
-            onContextBack={() => setSelectedContext(null)}
-            onDemoSelect={(fixture) => {
-              setDraft(fixture.draft);
-              setFixtureCells(fixture.cells);
-              recordWorkspaceStart(fixture.draft, `synthetic_fixture:${fixture.id}`);
-              setStage("workspace");
-            }}
-            onSpecializedNavigate={onNavigate}
-          />
+          {taskEntryHubEnabled && !compatibilityEntryVisible ? (
+            <NewExperimentEntryHub
+              onGeneral={() => {
+                setBiologicalHandoffError(null);
+                setFixtureGraphs(undefined);
+                enterStageFromHub("general", "biological");
+              }}
+              onGraphOnly={() => {
+                setPendingGraphOnlyState(null);
+                setFixtureGraphs(undefined);
+                enterStageFromHub("graphOnly", "graph-only");
+              }}
+              onSurvival={() =>
+                openDedicatedEntry(
+                  "time_to_event",
+                  "survival",
+                  "direct_time_to_event",
+                  "生存時間",
+                  "各対象のeventまたは観察終了までの期間を記録する実験",
+                )
+              }
+              onOrderedCurve={() =>
+                openDedicatedEntry(
+                  "ordered_curve_kinetics",
+                  "nonlinear-fit",
+                  "direct_ordered_curve",
+                  "酵素反応・飽和カーブ",
+                  "基質濃度–初速度、または時間–応答を記録し、対応するmodelを選んだ後だけfitする実験",
+                )
+              }
+              onHeatmap={() =>
+                openDedicatedEntry(
+                  "matrix_visualization",
+                  "heatmap",
+                  "direct_heatmap",
+                  "ヒートマップ",
+                  "既存の数値行列を、その配置を保ったまま可視化する",
+                )
+              }
+              onCompatibility={
+                showCompatibilityEntry ? () => setCompatibilityEntryVisible(true) : undefined
+              }
+              availability={{
+                graphOnly: {
+                  available: unresolvedVisualizationEntryAvailable,
+                  reason:
+                    "Graph用データを保存・再開する接続がそろっていないため、この環境では開始できません。",
+                },
+                survival: {
+                  available: Boolean(onDedicatedEntryReady),
+                  reason: "実験情報を保った専用入力への接続を利用できません。",
+                },
+                orderedCurve: {
+                  available: Boolean(onDedicatedEntryReady),
+                  reason: "実験情報を保った専用入力への接続を利用できません。",
+                },
+                heatmap: {
+                  available:
+                    Boolean(onDedicatedEntryReady) && unresolvedVisualizationEntryAvailable,
+                  reason: onDedicatedEntryReady
+                    ? "行列とGraphを保存・再開する接続がそろっていないため、この環境では開始できません。"
+                    : "行列を保った専用入力への接続を利用できません。",
+                },
+              }}
+            />
+          ) : (
+            <>
+              <section className="experiment-start__intro" aria-labelledby="new-experiment-heading">
+                <p className="experiment-start__eyebrow">
+                  {taskEntryHubEnabled ? "以前の入口" : "新しい実験"}
+                </p>
+                <h1 id="new-experiment-heading">何をした実験ですか？</h1>
+                <p>
+                  実験の背景を選び、短い質問に答えていくと、あなたの実験に合った入力シートにつながります。
+                </p>
+                <p className="experiment-start__subtle">
+                  統計用語や解析名を先に選ぶ必要はありません。
+                </p>
+                {taskEntryHubEnabled ? (
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => {
+                      setCompatibilityEntryVisible(false);
+                      setSelectedContext(null);
+                    }}
+                  >
+                    新しい入口へ戻る
+                  </button>
+                ) : null}
+              </section>
+              <ContextStart
+                browserPreview={browserPreview}
+                showDemos={!evaluationPreview}
+                onSelect={selectContext}
+                selectedContext={selectedContext}
+                onRouteSelect={selectEntryRoute}
+                onContextBack={() => setSelectedContext(null)}
+                onDemoSelect={(fixture) => {
+                  setDraft(fixture.draft);
+                  setFixtureCells(fixture.cells);
+                  setFixtureGraphs(undefined);
+                  recordWorkspaceStart(fixture.draft, `synthetic_fixture:${fixture.id}`);
+                  setStage("workspace");
+                }}
+                onSpecializedNavigate={onNavigate}
+              />
+              {taskEntryHubEnabled ? (
+                <section className="experiment-start__specialized" aria-label="高度な互換入力">
+                  <details>
+                    <summary>高度な表構造を直接指定する</summary>
+                    <p>検証中の技術入力画面です。通常は「実験から始める」を使用してください。</p>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => setStage("adaptive")}
+                    >
+                      技術入力画面を開く
+                    </button>
+                  </details>
+                </section>
+              ) : null}
+            </>
+          )}
         </>
       )}
+
+      {stage === "biological" ? (
+        <>
+          <BiologicalExperimentSetup
+            enabled={taskEntryHubEnabled}
+            externalError={biologicalHandoffError}
+            initial={
+              pendingGraphOnlyState ? graphOnlyBiologicalInitial(pendingGraphOnlyState) : undefined
+            }
+            onCancel={() => {
+              setBiologicalHandoffError(null);
+              setStage(pendingGraphOnlyState ? "graph-only" : "context");
+            }}
+            onReady={(result) => {
+              try {
+                const presentation = createBiologicalSetupPresentation(result);
+                if (presentation.status === "stopped") {
+                  setBiologicalHandoffError(
+                    "条件表と実験構造の対応を安全に確認できませんでした。入力内容は保持されています。",
+                  );
+                  return false;
+                }
+                const { contract } = result;
+                const promoted = pendingGraphOnlyState
+                  ? bridgeGraphOnlyTableToStatistics(pendingGraphOnlyState, contract)
+                  : null;
+                if (promoted?.status === "stopped") {
+                  setBiologicalHandoffError(promoted.reason);
+                  return false;
+                }
+                const workspace = createAdaptiveWorkspace({
+                  contract,
+                  observations: promoted?.observations ?? [],
+                  mapping: promoted?.mapping ?? null,
+                  lineage: promoted?.lineage ?? null,
+                  biologicalSetup: presentation.presentation,
+                });
+                if (workspace.status !== "ready" || !workspace.draft) {
+                  setBiologicalHandoffError(biologicalWorkspaceStopMessage(workspace.diagnostics));
+                  return false;
+                }
+                const reboundGraphs = pendingGraphOnlyState
+                  ? rebindGraphOnlyGraphsToWorkspace({
+                      state: pendingGraphOnlyState,
+                      contract,
+                      draft: workspace.draft,
+                    })
+                  : ({ status: "ready", graphs: [] } as const);
+                if (reboundGraphs.status === "stopped") {
+                  setBiologicalHandoffError(reboundGraphs.reason);
+                  return false;
+                }
+                const promotedDraft = pendingGraphOnlyState
+                  ? {
+                      ...workspace.draft,
+                      entrySourceHistory: createUnresolvedVisualizationPromotionHistory({
+                        sourceState: pendingGraphOnlyState,
+                        promotedWorkspaceGraphId: reboundGraphs.graphs[0]?.id ?? null,
+                        capturedAt: new Date().toISOString(),
+                      }),
+                    }
+                  : workspace.draft;
+                setBiologicalHandoffError(null);
+                setPendingGraphOnlyState(null);
+                setDraft(promotedDraft);
+                setFixtureCells(workspace.cells);
+                setFixtureGraphs(reboundGraphs.graphs);
+                recordWorkspaceStart(
+                  promotedDraft,
+                  promoted ? "graph_only_statistics_bridge" : "biological_experiment_setup_alpha",
+                );
+                returnFocusEntryRef.current = null;
+                setStage("workspace");
+                return true;
+              } catch {
+                setBiologicalHandoffError(
+                  "入力画面の準備中に実験内容を確認できませんでした。入力内容は保持されています。",
+                );
+                return false;
+              }
+            }}
+          />
+        </>
+      ) : null}
 
       {stage === "adaptive" ? (
         <AdaptiveExperimentEntry
@@ -2316,6 +2862,7 @@ export function NewExperimentPage({
           onReady={(adaptiveDraft, adaptiveCells) => {
             setDraft(adaptiveDraft);
             setFixtureCells(adaptiveCells);
+            setFixtureGraphs(undefined);
             recordWorkspaceStart(adaptiveDraft, "adaptive_input_alpha");
             setStage("workspace");
           }}
@@ -2331,8 +2878,24 @@ export function NewExperimentPage({
           onReady={({ draft: importedDraft, cells }) => {
             setDraft(importedDraft);
             setFixtureCells(cells);
+            setFixtureGraphs(undefined);
             recordWorkspaceStart(importedDraft, "existing_data_import");
             setStage("workspace");
+          }}
+        />
+      ) : null}
+
+      {stage === "graph-only" ? (
+        <GraphOnlyVisualizationPage
+          onNavigate={onNavigate}
+          onBack={() => setStage("context")}
+          saveProject={saveUnresolvedVisualizationProject}
+          openProject={openUnresolvedVisualizationProject}
+          initialState={pendingGraphOnlyState}
+          onStatisticsStructureRequested={(state) => {
+            setPendingGraphOnlyState(state);
+            setBiologicalHandoffError(null);
+            setStage("biological");
           }}
         />
       ) : null}
@@ -2359,8 +2922,22 @@ export function NewExperimentPage({
             onSelect={selectFlowStep}
           />
           {designStep === 0 && <ReadoutStep draft={draft} onUpdate={updateDraft} />}
-          {designStep === 1 && <ConditionsStep draft={draft} onUpdate={updateDraft} />}
-          {designStep === 2 && <TimeStep draft={draft} onUpdate={updateDraft} />}
+          {designStep === 1 && (
+            <ConditionsStep
+              draft={draft}
+              onUpdate={updateDraft}
+              explicitAnswers={explicitStructureAnswers}
+              onExplicitAnswersUpdate={setExplicitStructureAnswers}
+            />
+          )}
+          {designStep === 2 && (
+            <TimeStep
+              draft={draft}
+              onUpdate={updateDraft}
+              explicitAnswers={explicitStructureAnswers}
+              onExplicitAnswersUpdate={setExplicitStructureAnswers}
+            />
+          )}
           {designStep === 3 && <ExperimentsStep draft={draft} onUpdate={updateDraft} />}
           <div className="experiment-start__form-actions">
             <button

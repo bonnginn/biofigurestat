@@ -8,6 +8,80 @@ const dataSource = {
 };
 
 describe("Core D01/D02 graph specifications", () => {
+  it("round-trips grouped categories with independent color and shape channels", () => {
+    const parsed = GraphSpecSchema.parse({
+      id: "graph.grouped-channels",
+      version: "0.1.0",
+      type: "grouped_dot",
+      dataSource: { kind: "raw_revision", id: "raw.grouped", revision: "1" },
+      analysisResultId: null,
+      mappings: {
+        x: "factor.sex",
+        xHierarchy: ["factor.sex", "factor.region"],
+        y: "value",
+        series: "factor.region",
+        color: "factor.sex",
+        shape: "factor.region",
+        facet: "factor.readout",
+      },
+      summary: { center: "mean", interval: "sem" },
+      appearance: {
+        palette: ["#cc6677", "#4477aa"],
+        pointSize: 5,
+        opacity: 1,
+        showRawPoints: true,
+        showPairedLines: false,
+        seriesStyles: {
+          "region.hip": { pointStyle: "circle", legendLabel: "HIP" },
+          "region.ffcc": { pointStyle: "triangle", legendLabel: "FFCC" },
+        },
+      },
+      axes: {
+        yStartAtZero: false,
+        yScale: "linear",
+        xLabel: "Sex",
+        yLabel: "Relative expression",
+        tickDirection: "outside",
+        showCategoryGroupSeparators: true,
+      },
+      facet: { factorId: "factor.readout", levelOrder: ["readout.a", "readout.b"] },
+    });
+
+    const roundTrip = GraphSpecSchema.parse(JSON.parse(JSON.stringify(parsed)));
+
+    expect(roundTrip.mappings).toMatchObject({
+      series: "factor.region",
+      color: "factor.sex",
+      shape: "factor.region",
+      facet: "factor.readout",
+    });
+    expect(roundTrip.axes).toMatchObject({
+      tickDirection: "outside",
+      showCategoryGroupSeparators: true,
+    });
+    expect(roundTrip.appearance.seriesStyles["region.ffcc"]?.pointStyle).toBe("triangle");
+  });
+
+  it("adds backward-compatible axis defaults to older GraphSpec payloads", () => {
+    const spec = createCoreTwoConditionGraphSpec({
+      graphId: "graph.legacy-defaults",
+      templateId: "D01",
+      dataSource,
+      yLabel: "Response",
+      yStartAtZero: false,
+    });
+    const legacyPayload = structuredClone(spec) as Record<string, unknown> & {
+      axes: Record<string, unknown>;
+    };
+    delete legacyPayload.axes.tickDirection;
+    delete legacyPayload.axes.showCategoryGroupSeparators;
+
+    const parsed = GraphSpecSchema.parse(legacyPayload);
+
+    expect(parsed.axes.tickDirection).toBe("outside");
+    expect(parsed.axes.showCategoryGroupSeparators).toBe(false);
+  });
+
   it("preserves factor-aware series, auxiliary reference, and saved-result annotations", () => {
     const parsed = GraphSpecSchema.parse({
       id: "graph.factor-aware",

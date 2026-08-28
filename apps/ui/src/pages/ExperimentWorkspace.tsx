@@ -8,9 +8,14 @@ import {
   useRef,
   useState,
 } from "react";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, Ref } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import {
+  assessCompactEditability,
+  type CompactScalarObservationIdFactoryContext,
+} from "@lsaa/data-sheet";
+import type { CanonicalAdaptiveObservation } from "@lsaa/domain";
 
 import {
   continuousSummary,
@@ -42,6 +47,15 @@ import {
 } from "../app/experimentDraft";
 import { ExperimentGraphWorkbench } from "../components/graph/ExperimentGraphWorkbench";
 import {
+  WorkspaceNestedMeasurementSheet,
+  type WorkspaceDataViewMode,
+} from "../components/WorkspaceNestedMeasurementSheet";
+import { AdaptiveCanonicalSpreadsheet } from "../components/AdaptiveCanonicalSpreadsheet";
+import {
+  BiologicalExperimentSetup,
+  type BiologicalExperimentSetupResult,
+} from "../components/BiologicalExperimentSetup";
+import {
   CurrentDataGraphPreview,
   GraphTypeThumbnail,
   type CreatableGraphType,
@@ -60,6 +74,14 @@ import {
 import "./ExperimentWorkspace.css";
 import type { FavoriteGraphDefault } from "../app/favoriteDesigns";
 import { recordBenchmarkEvent } from "../app/benchmarkEvaluation";
+import { createAdaptiveWorkspace } from "../app/adaptiveWorkspace";
+import { synchronizeAdaptiveDraft } from "../app/adaptiveCanonicalStore";
+import {
+  checkAdaptiveStructureRevisionCompatibility,
+  createBiologicalSetupPresentation,
+  createBiologicalSetupPrefill,
+  type BiologicalSetupPrefill,
+} from "../app/adaptiveStructureRevision";
 
 const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
   ? lazy(() =>
@@ -73,6 +95,7 @@ export type ExperimentWorkspaceProps = {
   initialDraft: ExperimentSetDraft;
   initialCells?: ExperimentCellMap;
   initialGraphs?: readonly WorkspaceGraphState[];
+  initialDataViewMode?: WorkspaceDataViewMode;
   initialProject?: OpenedProject;
   onBack: () => void;
   analysisRunner?: AnalysisRunner;
@@ -82,9 +105,15 @@ export type ExperimentWorkspaceProps = {
   onSaveFavorite?: (draft: ExperimentSetDraft, graphs: readonly WorkspaceGraphState[]) => void;
   favoriteGraphDefaults?: readonly FavoriteGraphDefault[];
   onDirtyChange?: (dirty: boolean) => void;
+  rootRef?: Ref<HTMLDivElement>;
 };
 
 type WorkspaceTab = "overview" | `experiment:${string}`;
+
+type AdaptiveStructureRevisionSession = Readonly<{
+  sourceDraft: ExperimentSetDraft;
+  prefill: BiologicalSetupPrefill;
+}>;
 
 type CellDescriptor = {
   key: string;
@@ -102,6 +131,95 @@ type TableRow = {
   conditionLabel: string;
   timePoint: TimePointDraft | null;
 };
+
+const stableCoordinate = (value: unknown): string => {
+  const normalize = (candidate: unknown): unknown =>
+    Array.isArray(candidate)
+      ? candidate.map(normalize)
+      : candidate && typeof candidate === "object"
+        ? Object.fromEntries(
+            Object.entries(candidate)
+              .sort(([left], [right]) => left.localeCompare(right))
+              .map(([key, entry]) => [key, normalize(entry)]),
+          )
+        : candidate;
+  return JSON.stringify(normalize(value));
+};
+
+function graphReferencesRemainStable(
+  before: ExperimentSetDraft,
+  after: ExperimentSetDraft,
+  graph: WorkspaceGraphState,
+): boolean {
+  const oldConditions = new Map(before.conditions.map((condition) => [condition.id, condition]));
+  const newConditions = new Map(after.conditions.map((condition) => [condition.id, condition]));
+  const conditionIds = new Set([
+    ...graph.selectedConditionIds,
+    ...(graph.analysisConditionIds ?? []),
+    ...(graph.dataSets?.displaySet.conditionIds ?? []),
+    ...(graph.dataSets?.analysisSet.conditionIds ?? []),
+  ]);
+  if (
+    [...conditionIds].some(
+      (id) =>
+        !oldConditions.has(id) ||
+        !newConditions.has(id) ||
+        stableCoordinate(oldConditions.get(id)?.attributes) !==
+          stableCoordinate(newConditions.get(id)?.attributes),
+    )
+  )
+    return false;
+
+  const oldReadout = before.readouts.find(({ id }) => id === graph.selectedReadoutId);
+  const newReadout = after.readouts.find(({ id }) => id === graph.selectedReadoutId);
+  if (!oldReadout || !newReadout || oldReadout.shape !== newReadout.shape) return false;
+
+  const oldPoints = new Map(before.time.points.map((point) => [point.id, point.value]));
+  const newPoints = new Map(after.time.points.map((point) => [point.id, point.value]));
+  const timePointIds = new Set([
+    ...graph.selectedTimePointIds,
+    ...(graph.analysisTimePointId ? [graph.analysisTimePointId] : []),
+    ...(graph.dataSets?.displaySet.timePointIds ?? []),
+    ...(graph.dataSets?.analysisSet.timePointIds ?? []),
+  ]);
+  if (
+    [...timePointIds].some(
+      (id) => !oldPoints.has(id) || !newPoints.has(id) || oldPoints.get(id) !== newPoints.get(id),
+    )
+  )
+    return false;
+
+  const oldFactorIds = new Set(before.attributes.map(({ id }) => id));
+  const newFactorIds = new Set(after.attributes.map(({ id }) => id));
+  const referencedFactorIds = [
+    ...(graph.grouping?.x.factorIds ?? []),
+    ...(graph.grouping?.x.factorId ? [graph.grouping.x.factorId] : []),
+    ...(graph.grouping?.series.factorId ? [graph.grouping.series.factorId] : []),
+    ...(graph.grouping?.color?.factorId ? [graph.grouping.color.factorId] : []),
+    ...(graph.grouping?.shape?.factorId ? [graph.grouping.shape.factorId] : []),
+    ...(graph.grouping?.facet?.factorId ? [graph.grouping.facet.factorId] : []),
+  ];
+  return referencedFactorIds.every((id) => oldFactorIds.has(id) && newFactorIds.has(id));
+}
+
+function invalidateGraphAnalysis(graph: WorkspaceGraphState): WorkspaceGraphState {
+  return {
+    ...graph,
+    analysisRunId: null,
+    analysis: null,
+    statisticsAnnotation: { mode: "hidden", testIndex: 0 },
+    statisticsAnnotations: [],
+    ...(graph.dataSets
+      ? {
+          dataSets: {
+            ...graph.dataSets,
+            comparisonSet: [],
+            annotationSet: [],
+          },
+        }
+      : {}),
+  };
+}
 
 function timePointsFor(draft: ExperimentSetDraft): Array<TimePointDraft | null> {
   return draft.time.points.length > 0 ? [...draft.time.points] : [null];
@@ -248,6 +366,26 @@ type ProportionPasteRequest = Readonly<{
   text: string;
 }>;
 
+type OverviewScalarPasteRequest = Readonly<{
+  readoutId: string;
+  startExperiment: number;
+  startCondition: number;
+  text: string;
+}>;
+
+type OverviewProportionPasteRequest = Readonly<{
+  readoutId: string;
+  startExperiment: number;
+  /** Zero-based index in the editable-only sequence: positive, eligible, positive, eligible… */
+  startColumn: number;
+  text: string;
+}>;
+
+type OverviewScalarPasteResult = Readonly<{
+  accepted: boolean;
+  message: string;
+}>;
+
 function proportionPasteRows(text: string): string[][] {
   const rows = text
     .replace(/\r\n?/g, "\n")
@@ -279,6 +417,13 @@ function cellIsComplete(cell: ExperimentCellDraft | undefined): boolean {
   return cell.rawValues.length > 0;
 }
 
+function proportionValidationMessage(cell: ProportionCellDraft): string | null {
+  if (cell.positive === null || cell.eligible === null) return null;
+  if (cell.positive > cell.eligible) return "陽性数が対象数を超えています。";
+  if (cell.eligible === 0) return "対象数が0のため、割合を計算できません。";
+  return null;
+}
+
 function ReadoutLabel({ readout }: { readout: ReadoutDraft }) {
   return (
     <span className="experiment-workspace-readout-label">
@@ -288,7 +433,363 @@ function ReadoutLabel({ readout }: { readout: ReadoutDraft }) {
   );
 }
 
-function OverviewPanel({ draft, cells }: { draft: ExperimentSetDraft; cells: ExperimentCellMap }) {
+function sharedSourceTopology(draft: ExperimentSetDraft) {
+  const topology = draft.conditionAssignment.matchedTopology;
+  return topology?.kind === "distinct_condition_units_shared_source" ? topology : null;
+}
+
+function matrixRelationshipCopy(draft: ExperimentSetDraft): string {
+  const sharedSource = sharedSourceTopology(draft);
+  if (sharedSource) {
+    return `同じ行は同じ${sharedSource.sourceUnitLabel}に由来する組です。各条件の${draft.conditionAssignment.unitLabel}は別の実験単位として保持します。`;
+  }
+  return draft.conditionAssignment.kind === "matched"
+    ? "同じ行は、条件間で対応づけた同じ対象です。"
+    : "各条件の値を入力順に横へ並べています。同じ行は同じ対象やpairを意味しません。";
+}
+
+function matrixRowHeading(draft: ExperimentSetDraft): string {
+  const sharedSource = sharedSourceTopology(draft);
+  if (sharedSource) return sharedSource.sourceIdentityLabel;
+  return draft.conditionAssignment.kind === "matched"
+    ? draft.conditionAssignment.unitLabel || "対象ID"
+    : "入力行";
+}
+
+function independentAdaptiveInputRows(draft: ExperimentSetDraft): boolean {
+  return Boolean(
+    draft.adaptiveInput &&
+    draft.conditionAssignment.kind === "independent" &&
+    !sharedSourceTopology(draft),
+  );
+}
+
+function matchedSetLabel(draft: ExperimentSetDraft): string {
+  const sharedSource = sharedSourceTopology(draft);
+  return sharedSource
+    ? `${sharedSource.sourceUnitLabel}の組`
+    : draft.conditionAssignment.unitLabel || "対応単位";
+}
+
+function OverviewUnitSummaryMatrix({
+  draft,
+  readout,
+  cells,
+  onChange,
+  onPaste,
+}: {
+  draft: ExperimentSetDraft;
+  readout: ReadoutDraft;
+  cells: ExperimentCellMap;
+  onChange: (key: string, value: number | null) => void;
+  onPaste: (request: OverviewScalarPasteRequest) => OverviewScalarPasteResult;
+}) {
+  const [pasteMessage, setPasteMessage] = useState<string | null>(null);
+
+  return (
+    <section
+      className="experiment-workspace-overview-section experiment-workspace-quick-entry"
+      aria-labelledby="overview-quick-entry-heading"
+    >
+      <div className="experiment-workspace-quick-entry-heading">
+        <div>
+          <h3 id="overview-quick-entry-heading">まとめて入力</h3>
+          <p>
+            左上のセルを選び、Excelから行列をそのまま貼り付けられます。空欄はmissingとして保持します。
+          </p>
+        </div>
+        <span>Excel貼り付け対応</span>
+      </div>
+      <div className="experiment-workspace-overview-condition-wrap">
+        <table
+          className="experiment-workspace-overview-condition-table experiment-workspace-quick-entry-table"
+          aria-label={`${readout.label}をまとめて入力`}
+        >
+          <caption>
+            <ReadoutLabel readout={readout} />
+            <small>{matrixRelationshipCopy(draft)}</small>
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">{matrixRowHeading(draft)}</th>
+              {draft.conditions.map((condition) => (
+                <th scope="col" key={condition.id}>
+                  {condition.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {draft.experiments.map((experiment, experimentIndex) => (
+              <tr key={experiment.id}>
+                <th scope="row">{experiment.label}</th>
+                {draft.conditions.map((condition, conditionIndex) => {
+                  const key = experimentCellKey({
+                    experimentId: experiment.id,
+                    conditionId: condition.id,
+                    readoutId: readout.id,
+                  });
+                  const cell = cells[key];
+                  const value =
+                    cell?.kind === "nested_continuous" ? (cell.rawValues[0] ?? null) : null;
+                  const notPlanned = cellIsNotPlanned(cell);
+                  return (
+                    <td key={condition.id}>
+                      <DecimalValueInput
+                        label={`${experiment.label}・${condition.label}の${readout.label}`}
+                        value={value}
+                        disabled={notPlanned}
+                        onChange={(nextValue) => onChange(key, nextValue)}
+                        onRejectedPaste={() =>
+                          setPasteMessage(
+                            "複数値は、表の左上セルから行列として貼り付けてください。",
+                          )
+                        }
+                        onMatrixPaste={(text) => {
+                          const result = onPaste({
+                            readoutId: readout.id,
+                            startExperiment: experimentIndex,
+                            startCondition: conditionIndex,
+                            text,
+                          });
+                          setPasteMessage(result.message);
+                          return result.accepted;
+                        }}
+                      />
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {pasteMessage ? (
+        <p className="experiment-workspace-paste-hint" role="status">
+          {pasteMessage}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function OverviewProportionMatrix({
+  draft,
+  readout,
+  cells,
+  onChange,
+  onPaste,
+}: {
+  draft: ExperimentSetDraft;
+  readout: ReadoutDraft;
+  cells: ExperimentCellMap;
+  onChange: (key: string, field: "positive" | "eligible", value: number | null) => void;
+  onPaste: (request: OverviewProportionPasteRequest) => OverviewScalarPasteResult;
+}) {
+  const [pasteMessage, setPasteMessage] = useState<string | null>(null);
+
+  return (
+    <section
+      className="experiment-workspace-overview-section experiment-workspace-quick-entry"
+      aria-labelledby="overview-proportion-quick-entry-heading"
+    >
+      <div className="experiment-workspace-quick-entry-heading">
+        <div>
+          <h3 id="overview-proportion-quick-entry-heading">まとめて入力</h3>
+          <p>
+            各条件は「陽性数・対象数」の2列です。Excelから矩形のまま貼り付けられ、割合は自動計算します。
+          </p>
+        </div>
+        <span>Excel貼り付け対応</span>
+      </div>
+      <div className="experiment-workspace-overview-condition-wrap">
+        <table
+          className="experiment-workspace-overview-condition-table experiment-workspace-quick-entry-table experiment-workspace-quick-entry-table--proportion"
+          aria-label={`${readout.label}をまとめて入力`}
+          style={{ minWidth: `${Math.max(40, 8 + draft.conditions.length * 14)}rem` }}
+        >
+          <caption>
+            <ReadoutLabel readout={readout} />
+            <small>{matrixRelationshipCopy(draft)}</small>
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" rowSpan={2}>
+                {matrixRowHeading(draft)}
+              </th>
+              {draft.conditions.map((condition) => (
+                <th scope="colgroup" colSpan={2} key={condition.id}>
+                  {draft.attributes.length > 1 ? (
+                    <span className="experiment-workspace-quick-entry-condition-parts">
+                      {draft.attributes.map((attribute, index) => (
+                        <span key={attribute.id}>
+                          <small>{attribute.label || `条件${index + 1}`}</small>
+                          {condition.attributes[attribute.id]?.trim() || "—"}
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    condition.label
+                  )}
+                </th>
+              ))}
+            </tr>
+            <tr>
+              {draft.conditions.flatMap((condition) => [
+                <th scope="col" key={`${condition.id}:positive`}>
+                  陽性数
+                </th>,
+                <th scope="col" key={`${condition.id}:eligible`}>
+                  対象数 <small>割合（自動）</small>
+                </th>,
+              ])}
+            </tr>
+          </thead>
+          <tbody>
+            {draft.experiments.map((experiment, experimentIndex) => (
+              <tr key={experiment.id}>
+                <th scope="row">{experiment.label}</th>
+                {draft.conditions.flatMap((condition, conditionIndex) => {
+                  const key = experimentCellKey({
+                    experimentId: experiment.id,
+                    conditionId: condition.id,
+                    readoutId: readout.id,
+                  });
+                  const cell = cells[key];
+                  const proportionCell: ProportionCellDraft =
+                    cell?.kind === "proportion"
+                      ? cell
+                      : { kind: "proportion", positive: null, eligible: null };
+                  const notPlanned = cellIsNotPlanned(proportionCell);
+                  const validationMessage = proportionValidationMessage(proportionCell);
+                  const validationId = `overview-proportion-validation-${experimentIndex}-${conditionIndex}`;
+                  const handlePaste = (startColumn: number, text: string) => {
+                    const result = onPaste({
+                      readoutId: readout.id,
+                      startExperiment: experimentIndex,
+                      startColumn,
+                      text,
+                    });
+                    setPasteMessage(result.message);
+                  };
+                  return [
+                    <td key={`${condition.id}:positive`}>
+                      <input
+                        className="experiment-workspace-number-input"
+                        aria-label={`${experiment.label}・${condition.label}の陽性数`}
+                        type="number"
+                        disabled={notPlanned}
+                        aria-invalid={Boolean(validationMessage) || undefined}
+                        aria-describedby={validationMessage ? validationId : undefined}
+                        min="0"
+                        step="1"
+                        value={proportionCell.positive ?? ""}
+                        onFocus={(event) => event.currentTarget.select()}
+                        onWheel={(event) => event.currentTarget.blur()}
+                        onChange={(event) => {
+                          setPasteMessage(null);
+                          onChange(key, "positive", countValue(event.currentTarget.value));
+                        }}
+                        onPaste={(event) => {
+                          event.preventDefault();
+                          handlePaste(conditionIndex * 2, event.clipboardData.getData("text"));
+                        }}
+                      />
+                    </td>,
+                    <td
+                      className="experiment-workspace-proportion-source-cell"
+                      key={`${condition.id}:eligible`}
+                    >
+                      <input
+                        className="experiment-workspace-number-input"
+                        aria-label={`${experiment.label}・${condition.label}の対象数`}
+                        type="number"
+                        disabled={notPlanned}
+                        aria-invalid={Boolean(validationMessage) || undefined}
+                        aria-describedby={validationMessage ? validationId : undefined}
+                        min="0"
+                        step="1"
+                        value={proportionCell.eligible ?? ""}
+                        onFocus={(event) => event.currentTarget.select()}
+                        onWheel={(event) => event.currentTarget.blur()}
+                        onChange={(event) => {
+                          setPasteMessage(null);
+                          onChange(key, "eligible", countValue(event.currentTarget.value));
+                        }}
+                        onPaste={(event) => {
+                          event.preventDefault();
+                          handlePaste(conditionIndex * 2 + 1, event.clipboardData.getData("text"));
+                        }}
+                      />
+                      <span
+                        role="note"
+                        className="experiment-workspace-proportion-inline-result"
+                        aria-label={`${experiment.label}・${condition.label}の計算された割合`}
+                        title="陽性数 ÷ 対象数 × 100（自動計算・編集不可）"
+                      >
+                        {notPlanned
+                          ? "—"
+                          : percentage(proportionCell) === null
+                            ? "—"
+                            : `${formatNumber(percentage(proportionCell))}%`}
+                      </span>
+                      {validationMessage ? (
+                        <small
+                          className="experiment-workspace-proportion-validation"
+                          id={validationId}
+                          role="alert"
+                        >
+                          {validationMessage}
+                        </small>
+                      ) : null}
+                    </td>,
+                  ];
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {pasteMessage ? (
+        <p className="experiment-workspace-paste-hint" role="status" aria-live="polite">
+          {pasteMessage}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+function OverviewPanel({
+  draft,
+  cells,
+  onProportionChange,
+  onProportionPaste,
+  onNestedScalarChange,
+  onNestedScalarPaste,
+  onNestedCellChange,
+  dataViewMode,
+  onDataViewModeChange,
+  canonicalSpreadsheet,
+}: {
+  draft: ExperimentSetDraft;
+  cells: ExperimentCellMap;
+  onProportionChange: (key: string, field: "positive" | "eligible", value: number | null) => void;
+  onProportionPaste: (request: OverviewProportionPasteRequest) => OverviewScalarPasteResult;
+  onNestedScalarChange: (key: string, value: number | null) => void;
+  onNestedScalarPaste: (request: OverviewScalarPasteRequest) => OverviewScalarPasteResult;
+  onNestedCellChange: (key: string, cell: NestedContinuousCellDraft) => void;
+  dataViewMode: WorkspaceDataViewMode;
+  onDataViewModeChange: (mode: WorkspaceDataViewMode) => void;
+  canonicalSpreadsheet?: Readonly<{
+    observations: readonly CanonicalAdaptiveObservation[];
+    readOnly: boolean;
+    onObservationsChange: (observations: readonly CanonicalAdaptiveObservation[]) => void;
+    nextObservationId: (context: CompactScalarObservationIdFactoryContext) => string;
+    nextExperimentalUnitIdentity: (
+      context: CompactScalarObservationIdFactoryContext & { observationId: string },
+    ) => string;
+  }>;
+}) {
   const totalCells =
     draft.experiments.length *
     draft.conditions.length *
@@ -299,6 +800,14 @@ function OverviewPanel({ draft, cells }: { draft: ExperimentSetDraft; cells: Exp
   const completedCells = Object.values(cells).filter(cellIsComplete).length;
   const missingCells = Math.max(plannedCells - completedCells, 0);
   const progress = plannedCells === 0 ? 0 : Math.round((completedCells / plannedCells) * 100);
+  const onlyReadout =
+    draft.time.points.length === 0 && draft.readouts.length === 1 ? draft.readouts[0] : null;
+  const quickEntryReadout =
+    onlyReadout?.shape === "proportion" ||
+    (onlyReadout?.shape === "nested_continuous" && onlyReadout.nestedInputMode === "unit_summary")
+      ? onlyReadout
+      : null;
+  const sharedSource = sharedSourceTopology(draft);
 
   return (
     <section
@@ -307,113 +816,197 @@ function OverviewPanel({ draft, cells }: { draft: ExperimentSetDraft; cells: Exp
     >
       <div className="experiment-workspace-panel-heading">
         <div>
-          <p className="experiment-workspace-eyebrow">実験の確認</p>
-          <h2 id="experiment-overview-heading">入力状況</h2>
+          <p className="experiment-workspace-eyebrow">
+            {canonicalSpreadsheet || quickEntryReadout ? "データ" : "実験の確認"}
+          </p>
+          <h2 id="experiment-overview-heading">
+            {canonicalSpreadsheet
+              ? canonicalSpreadsheet.readOnly
+                ? "測定値を確認"
+                : "測定値を入力"
+              : quickEntryReadout
+                ? "測定値を入力"
+                : "入力状況"}
+          </h2>
         </div>
       </div>
 
-      <div className="experiment-workspace-progress" aria-label="入力の進み具合">
-        <div className="experiment-workspace-progress-topline">
-          <strong>
-            {completedCells} / {plannedCells} セル入力済み
-          </strong>
-          <span>{progress}%</span>
-        </div>
-        <div className="experiment-workspace-progress-track" aria-hidden="true">
-          <span style={{ width: `${progress}%` }} />
-        </div>
-        <p>
-          {missingCells > 0
-            ? `未入力のセルが${missingCells}件あります。途中の状態でもグラフを作成できます。`
-            : "必要なセルがすべて入力されています。"}
-        </p>
-        {notPlannedCells > 0 ? (
-          <p>測定予定なし：{notPlannedCells}セル（進捗・解析から除外）</p>
-        ) : null}
-      </div>
+      {canonicalSpreadsheet && draft.adaptiveInput ? (
+        <AdaptiveCanonicalSpreadsheet
+          embedded
+          contract={draft.adaptiveInput.contract}
+          observations={canonicalSpreadsheet.observations}
+          mode={dataViewMode}
+          onModeChange={onDataViewModeChange}
+          onObservationsChange={canonicalSpreadsheet.onObservationsChange}
+          nextObservationId={canonicalSpreadsheet.nextObservationId}
+          nextExperimentalUnitIdentity={canonicalSpreadsheet.nextExperimentalUnitIdentity}
+          readOnly={canonicalSpreadsheet.readOnly}
+        />
+      ) : quickEntryReadout?.shape === "proportion" ? (
+        <OverviewProportionMatrix
+          draft={draft}
+          readout={quickEntryReadout}
+          cells={cells}
+          onChange={onProportionChange}
+          onPaste={onProportionPaste}
+        />
+      ) : quickEntryReadout?.shape === "nested_continuous" ? (
+        <OverviewUnitSummaryMatrix
+          draft={draft}
+          readout={quickEntryReadout}
+          cells={cells}
+          onChange={onNestedScalarChange}
+          onPaste={onNestedScalarPaste}
+        />
+      ) : null}
 
-      <dl className="experiment-workspace-summary-grid">
-        <div>
-          <dt>実験セット</dt>
-          <dd>{draft.name}</dd>
-        </div>
-        <div>
-          <dt>
-            {draft.conditionAssignment.kind === "matched" ? "対応づけた単位" : "実験セッション"}
-          </dt>
-          <dd>
-            {draft.experiments.length}
-            {draft.conditionAssignment.kind === "matched"
-              ? ` ${draft.conditionAssignment.unitLabel || "単位"}`
-              : "回"}
-          </dd>
-        </div>
-        <div>
-          <dt>条件</dt>
-          <dd>{draft.conditions.length}条件</dd>
-        </div>
-        <div>
-          <dt>時間</dt>
-          <dd>
-            {draft.time.points.length > 0
-              ? draft.time.points
-                  .map((point) => timePointLabel(point, orderedAxisUnit(draft.time)))
-                  .join("、")
-              : "時間点なし"}
-          </dd>
-        </div>
-      </dl>
+      {!canonicalSpreadsheet ? (
+        <WorkspaceNestedMeasurementSheet
+          draft={draft}
+          cells={cells}
+          mode={dataViewMode}
+          onModeChange={onDataViewModeChange}
+          onCellChange={onNestedCellChange}
+        />
+      ) : null}
 
-      <div className="experiment-workspace-overview-section">
-        <h3>条件の構成</h3>
-        <div className="experiment-workspace-overview-condition-wrap">
-          <table className="experiment-workspace-overview-condition-table" aria-label="条件の構成">
-            <thead>
-              <tr>
-                <th scope="col">No.</th>
-                {draft.attributes.map((attribute) => (
-                  <th scope="col" key={attribute.id}>
-                    {attribute.label}
-                  </th>
-                ))}
-                {draft.attributes.length === 0 ? <th scope="col">条件</th> : null}
-              </tr>
-            </thead>
-            <tbody>
-              {draft.conditions.map((condition, index) => (
-                <tr key={condition.id}>
-                  <th scope="row">{index + 1}</th>
-                  {draft.attributes.length > 0 ? (
-                    conditionAttributeValues(draft, condition.id).map((value, valueIndex) => (
-                      <td key={draft.attributes[valueIndex]?.id ?? valueIndex}>{value}</td>
-                    ))
-                  ) : (
-                    <td>{condition.label}</td>
-                  )}
-                </tr>
+      {canonicalSpreadsheet ? (
+        <div
+          className="experiment-workspace-progress is-compact"
+          aria-label={
+            canonicalSpreadsheet.readOnly ? "保持している測定値の件数" : "入力した測定値の件数"
+          }
+        >
+          <div className="experiment-workspace-progress-topline">
+            <strong>{canonicalSpreadsheet.observations.length}件の測定値</strong>
+          </div>
+          <p>
+            {canonicalSpreadsheet.readOnly
+              ? "元の表との対応を保ったまま、条件ごとの件数と個々の測定値を確認できます。"
+              : "条件ごとの件数が異なっていても、そのまま保持します。"}
+          </p>
+        </div>
+      ) : (
+        <div
+          className={`experiment-workspace-progress${quickEntryReadout ? " is-compact" : ""}`}
+          aria-label="入力の進み具合"
+        >
+          <div className="experiment-workspace-progress-topline">
+            <strong>
+              {completedCells} / {plannedCells} セル入力済み
+            </strong>
+            <span>{progress}%</span>
+          </div>
+          <div className="experiment-workspace-progress-track" aria-hidden="true">
+            <span style={{ width: `${progress}%` }} />
+          </div>
+          <p>
+            {missingCells > 0
+              ? `未入力のセルが${missingCells}件あります。途中の状態でもグラフを作成できます。`
+              : "必要なセルがすべて入力されています。"}
+          </p>
+          {notPlannedCells > 0 ? (
+            <p>測定予定なし：{notPlannedCells}セル（進捗・解析から除外）</p>
+          ) : null}
+        </div>
+      )}
+
+      {!quickEntryReadout && !canonicalSpreadsheet ? (
+        <>
+          <dl className="experiment-workspace-summary-grid">
+            <div>
+              <dt>実験セット</dt>
+              <dd>{draft.name}</dd>
+            </div>
+            <div>
+              <dt>
+                {sharedSource
+                  ? `${sharedSource.sourceUnitLabel}の組`
+                  : draft.conditionAssignment.kind === "matched"
+                    ? "対応づけた単位"
+                    : "実験セッション"}
+              </dt>
+              <dd>
+                {draft.experiments.length}
+                {sharedSource
+                  ? `組（条件別${draft.conditionAssignment.unitLabel}は${draft.experiments.length * draft.conditions.length}）`
+                  : draft.conditionAssignment.kind === "matched"
+                    ? ` ${draft.conditionAssignment.unitLabel || "単位"}`
+                    : "回"}
+              </dd>
+            </div>
+            <div>
+              <dt>条件</dt>
+              <dd>{draft.conditions.length}条件</dd>
+            </div>
+            <div>
+              <dt>時間</dt>
+              <dd>
+                {draft.time.points.length > 0
+                  ? draft.time.points
+                      .map((point) => timePointLabel(point, orderedAxisUnit(draft.time)))
+                      .join("、")
+                  : "時間点なし"}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="experiment-workspace-overview-section">
+            <h3>条件の構成</h3>
+            <div className="experiment-workspace-overview-condition-wrap">
+              <table
+                className="experiment-workspace-overview-condition-table"
+                aria-label="条件の構成"
+              >
+                <thead>
+                  <tr>
+                    <th scope="col">No.</th>
+                    {draft.attributes.map((attribute) => (
+                      <th scope="col" key={attribute.id}>
+                        {attribute.label}
+                      </th>
+                    ))}
+                    {draft.attributes.length === 0 ? <th scope="col">条件</th> : null}
+                  </tr>
+                </thead>
+                <tbody>
+                  {draft.conditions.map((condition, index) => (
+                    <tr key={condition.id}>
+                      <th scope="row">{index + 1}</th>
+                      {draft.attributes.length > 0 ? (
+                        conditionAttributeValues(draft, condition.id).map((value, valueIndex) => (
+                          <td key={draft.attributes[valueIndex]?.id ?? valueIndex}>{value}</td>
+                        ))
+                      ) : (
+                        <td>{condition.label}</td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="experiment-workspace-overview-section">
+            <h3>測定項目</h3>
+            <ul className="experiment-workspace-readout-list">
+              {draft.readouts.map((readout) => (
+                <li key={readout.id}>
+                  <ReadoutLabel readout={readout} />
+                  <span>
+                    {readout.shape === "proportion"
+                      ? "陽性数 / 対象数から割合を表示"
+                      : readout.shape === "wb_ratio"
+                        ? `${readout.label} / ${readout.referenceLabel ?? "reference"}を派生値として表示`
+                        : "生データから実験単位ごとの要約を表示"}
+                  </span>
+                </li>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="experiment-workspace-overview-section">
-        <h3>測定項目</h3>
-        <ul className="experiment-workspace-readout-list">
-          {draft.readouts.map((readout) => (
-            <li key={readout.id}>
-              <ReadoutLabel readout={readout} />
-              <span>
-                {readout.shape === "proportion"
-                  ? "陽性数 / 対象数から割合を表示"
-                  : readout.shape === "wb_ratio"
-                    ? `${readout.label} / ${readout.referenceLabel ?? "reference"}を派生値として表示`
-                    : "生データから実験単位ごとの要約を表示"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
+            </ul>
+          </div>
+        </>
+      ) : null}
 
       {draft.importProvenance ? (
         <details className="experiment-workspace-overview-section">
@@ -501,18 +1094,28 @@ function OverviewPanel({ draft, cells }: { draft: ExperimentSetDraft; cells: Exp
         </details>
       ) : null}
 
-      <div className="experiment-workspace-notice" role="note">
-        <strong>
-          {draft.conditionAssignment.kind === "matched"
-            ? `${draft.conditionAssignment.unitLabel || "対応単位"}について`
-            : "Exp番号について"}
-        </strong>
-        <p>
-          {draft.conditionAssignment.kind === "matched"
-            ? `${draft.conditionAssignment.unitLabel || "対応単位"} 1、2…の各行では、同じ${draft.conditionAssignment.unitLabel || "単位"}の条件間測定を対応づけています。これらは実験回数ではありません。`
-            : "Exp 1、Exp 2…は実験セッションを整理するための番号です。独立した条件同士を統計的に対応付けるものではありません。"}
-        </p>
-      </div>
+      {!canonicalSpreadsheet ? (
+        <div className="experiment-workspace-notice" role="note">
+          <strong>
+            {sharedSource
+              ? `${sharedSource.sourceUnitLabel}と条件別${draft.conditionAssignment.unitLabel}について`
+              : draft.conditionAssignment.kind === "matched"
+                ? `${draft.conditionAssignment.unitLabel || "対応単位"}について`
+                : independentAdaptiveInputRows(draft)
+                  ? "入力行について"
+                  : "Exp番号について"}
+          </strong>
+          <p>
+            {sharedSource
+              ? `各行は1つの${sharedSource.sourceIdentityLabel}を表します。条件ごとの${draft.conditionAssignment.unitLabel}は別の実験単位で、同じ${sharedSource.sourceUnitLabel}に由来する組として対応づけます。`
+              : draft.conditionAssignment.kind === "matched"
+                ? `${draft.conditionAssignment.unitLabel || "対応単位"} 1、2…の各行では、同じ${draft.conditionAssignment.unitLabel || "単位"}の条件間測定を対応づけています。これらは実験回数ではありません。`
+                : independentAdaptiveInputRows(draft)
+                  ? "入力行1、2…は条件ごとの値を横に並べるための表示位置です。同じ行にある別条件の値を、同じ対象やpairとして扱いません。"
+                  : "Exp 1、Exp 2…は実験セッションを整理するための番号です。独立した条件同士を統計的に対応付けるものではありません。"}
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -593,29 +1196,49 @@ function ExperimentMeta({
   experiment: ExperimentSessionDraft;
   onChange: (patch: Partial<ExperimentSessionDraft>) => void;
 }) {
+  const sharedSource = sharedSourceTopology(draft);
   return (
     <div className="experiment-workspace-meta">
       <label>
-        <span>実験回ID</span>
+        <span>{independentAdaptiveInputRows(draft) ? "入力行ID" : "実験回ID"}</span>
         <input
-          aria-label={`${experiment.label}の実験回ID`}
+          aria-label={`${experiment.label}の${independentAdaptiveInputRows(draft) ? "入力行ID" : "実験回ID"}`}
           type="text"
           value={experiment.sessionId ?? experiment.id}
           onChange={(event) => onChange({ sessionId: event.currentTarget.value })}
         />
       </label>
       <label>
-        <span>生物学的単位ID</span>
+        <span>
+          {sharedSource
+            ? sharedSource.sourceIdentityLabel
+            : independentAdaptiveInputRows(draft)
+              ? "入力行の内部ID"
+              : "生物学的単位ID"}
+        </span>
         <input
-          aria-label={`${experiment.label}の生物学的単位ID`}
+          aria-label={`${experiment.label}の${
+            sharedSource
+              ? sharedSource.sourceIdentityLabel
+              : independentAdaptiveInputRows(draft)
+                ? "入力行の内部ID"
+                : "生物学的単位ID"
+          }`}
           type="text"
+          disabled={Boolean(sharedSource && draft.adaptiveInput)}
           value={experiment.stableUnitId ?? experiment.id}
           onChange={(event) => onChange({ stableUnitId: event.currentTarget.value })}
         />
         <small>
-          {draft.conditionAssignment.kind === "matched"
-            ? `同じ${draft.conditionAssignment.unitLabel}を条件間で対応づけるID`
-            : "実験回とは別に保存。この設計では条件間のpairは作らない"}
+          {sharedSource
+            ? draft.adaptiveInput
+              ? `条件別${draft.conditionAssignment.unitLabel}を対応づける共有IDです。取込時のlineageと一致させるため、この画面では変更できません。`
+              : `条件別${draft.conditionAssignment.unitLabel}を同じ${sharedSource.sourceUnitLabel}由来として対応づけるID`
+            : draft.conditionAssignment.kind === "matched"
+              ? `同じ${draft.conditionAssignment.unitLabel}を条件間で対応づけるID`
+              : independentAdaptiveInputRows(draft)
+                ? "この表示行を識別する内部IDです。各条件の生物学的単位IDではなく、条件間のpairも作りません。"
+                : "実験回とは別に保存。この設計では条件間のpairは作らない"}
         </small>
       </label>
       <label>
@@ -729,6 +1352,8 @@ function ProportionTable({
                 ? cell
                 : { kind: "proportion", positive: null, eligible: null };
             const notPlanned = cellIsNotPlanned(proportionCell);
+            const validationMessage = proportionValidationMessage(proportionCell);
+            const validationId = `proportion-validation-${experiment.id}-${rowIndex}`;
             return (
               <tr key={row.key}>
                 <ConditionCells draft={draft} row={row} />
@@ -745,6 +1370,8 @@ function ProportionTable({
                     aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の陽性数`}
                     type="number"
                     disabled={notPlanned}
+                    aria-invalid={Boolean(validationMessage) || undefined}
+                    aria-describedby={validationMessage ? validationId : undefined}
                     min="0"
                     step="1"
                     data-grid-row={rowIndex}
@@ -777,6 +1404,8 @@ function ProportionTable({
                     aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の対象数`}
                     type="number"
                     disabled={notPlanned}
+                    aria-invalid={Boolean(validationMessage) || undefined}
+                    aria-describedby={validationMessage ? validationId : undefined}
                     min="0"
                     step="1"
                     data-grid-row={rowIndex}
@@ -809,6 +1438,15 @@ function ProportionTable({
                   aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の計算された割合`}
                 >
                   <span>{notPlanned ? "—" : formatNumber(percentage(proportionCell))}</span>
+                  {validationMessage ? (
+                    <small
+                      className="experiment-workspace-proportion-validation"
+                      id={validationId}
+                      role="alert"
+                    >
+                      {validationMessage}
+                    </small>
+                  ) : null}
                   {notPlanned ? (
                     <button
                       className="experiment-workspace-availability-button is-active"
@@ -943,12 +1581,14 @@ function DecimalValueInput({
   disabled = false,
   onChange,
   onRejectedPaste,
+  onMatrixPaste,
 }: {
   label: string;
   value: number | null;
   disabled?: boolean;
   onChange: (value: number | null) => void;
   onRejectedPaste: () => void;
+  onMatrixPaste?: (text: string) => boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const focusedRef = useRef(false);
@@ -999,7 +1639,13 @@ function DecimalValueInput({
         const values = parseNumericPaste(text);
         if (/\r|\n|\t/.test(text) || values.length > 1) {
           event.preventDefault();
-          onRejectedPaste();
+          if (onMatrixPaste) {
+            const accepted = onMatrixPaste(text);
+            if (accepted) {
+              const firstToken = proportionPasteRows(text)[0]?.[0]?.trim() ?? "";
+              setDraftValue(firstToken === "" ? "" : String(Number(firstToken)));
+            }
+          } else onRejectedPaste();
         }
       }}
     />
@@ -1707,15 +2353,20 @@ function ExperimentPanel({
   onRemove: () => void;
   canRemove: boolean;
 }) {
+  const sharedSource = sharedSourceTopology(draft);
   return (
     <section className="experiment-workspace-panel" aria-labelledby={`${experiment.id}-heading`}>
       <div className="experiment-workspace-panel-heading">
         <h2 id={`${experiment.id}-heading`}>データ入力</h2>
         <div className="experiment-workspace-session-actions">
           <span className="experiment-workspace-session-badge">
-            {draft.conditionAssignment.kind === "matched"
-              ? `対応する${draft.conditionAssignment.unitLabel}`
-              : "独立したセッション"}
+            {sharedSource
+              ? `同じ${sharedSource.sourceUnitLabel}に由来する組`
+              : draft.conditionAssignment.kind === "matched"
+                ? `対応する${draft.conditionAssignment.unitLabel}`
+                : independentAdaptiveInputRows(draft)
+                  ? "条件ごとの独立した値を並べる入力行"
+                  : "独立したセッション"}
           </span>
           {canRemove ? (
             <button
@@ -1725,8 +2376,10 @@ function ExperimentPanel({
               onClick={onRemove}
             >
               {draft.conditionAssignment.kind === "matched"
-                ? `${draft.conditionAssignment.unitLabel || "対応単位"}を削除`
-                : "実験回を削除"}
+                ? `${matchedSetLabel(draft)}を削除`
+                : independentAdaptiveInputRows(draft)
+                  ? "入力行を削除"
+                  : "実験回を削除"}
             </button>
           ) : null}
         </div>
@@ -1734,9 +2387,11 @@ function ExperimentPanel({
       <details className="experiment-workspace-session-details">
         <summary>実験情報（{experiment.date || "日付未入力"}）</summary>
         <p className="experiment-workspace-session-note">
-          {draft.conditionAssignment.kind === "matched"
-            ? `各条件を同じ${draft.conditionAssignment.unitLabel}の測定として対応づけます。`
-            : "条件間の対応は作らず、独立した実験単位として扱います。"}
+          {sharedSource
+            ? `同じ${sharedSource.sourceUnitLabel}に由来する、条件別の${draft.conditionAssignment.unitLabel}を対応づけています。各条件の${draft.conditionAssignment.unitLabel}は別の実験単位です。`
+            : draft.conditionAssignment.kind === "matched"
+              ? `各条件を同じ${draft.conditionAssignment.unitLabel}の測定として対応づけます。`
+              : "条件間の対応は作らず、独立した実験単位として扱います。"}
         </p>
         <ExperimentMeta draft={draft} experiment={experiment} onChange={onExperimentChange} />
       </details>
@@ -1820,6 +2475,7 @@ export function ExperimentWorkspace({
   initialDraft,
   initialCells,
   initialGraphs = [],
+  initialDataViewMode = "compact",
   initialProject,
   onBack,
   analysisRunner = defaultAnalysisRunner,
@@ -1829,8 +2485,10 @@ export function ExperimentWorkspace({
   onSaveFavorite,
   favoriteGraphDefaults = [],
   onDirtyChange,
+  rootRef,
 }: ExperimentWorkspaceProps) {
   const [draft, setDraft] = useState<ExperimentSetDraft>(initialDraft);
+  const sharedSource = sharedSourceTopology(draft);
   const [cells, setCells] = useState<ExperimentCellMap>(() => ({
     ...createCellsForDraft(initialDraft),
     ...initialCells,
@@ -1839,6 +2497,74 @@ export function ExperimentWorkspace({
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null);
   const [sourceNotes, setSourceNotes] = useState<Record<string, string>>({});
   const [showGraph, setShowGraph] = useState(false);
+  const [dataViewMode, setDataViewMode] = useState<WorkspaceDataViewMode>(initialDataViewMode);
+  const canonicalSpreadsheetPresentation = useMemo(() => {
+    const snapshot = draft.adaptiveInput;
+    if (!snapshot) return { enabled: false, readOnly: false } as const;
+    const hasSourceLineage = Boolean(
+      snapshot.mapping ||
+      snapshot.rawLineage ||
+      snapshot.canonicalObservations.some(({ sourceRow }) => sourceRow !== null),
+    );
+    const compactEditable =
+      assessCompactEditability(snapshot.contract, snapshot.canonicalObservations).status ===
+      "editable";
+    return {
+      // Imported and graph-only-promoted data must remain visible even though
+      // source lineage makes direct canonical editing unsafe.  Other complex
+      // adaptive structures continue to use their structure-specific sheet.
+      enabled: hasSourceLineage || compactEditable,
+      readOnly: hasSourceLineage,
+    } as const;
+  }, [draft.adaptiveInput]);
+  const adaptiveObservationCounterRef = useRef(0);
+  const nextAdaptiveObservationId = useCallback(
+    ({ existingObservationIds }: CompactScalarObservationIdFactoryContext) => {
+      const existing = new Set(existingObservationIds);
+      let candidate = "";
+      do {
+        adaptiveObservationCounterRef.current += 1;
+        candidate = `adaptive.${draft.adaptiveInput?.contract.contractId ?? "contract"}.direct.${adaptiveObservationCounterRef.current}`;
+      } while (existing.has(candidate));
+      return candidate;
+    },
+    [draft.adaptiveInput?.contract.contractId],
+  );
+  const nextAdaptiveExperimentalUnitIdentity = useCallback(
+    ({ targetCoordinates, ordinal }: CompactScalarObservationIdFactoryContext) => {
+      const contract = draft.adaptiveInput?.contract;
+      const conditionCoordinates = contract
+        ? contract.factors
+            .map((factor) => targetCoordinates.factors[factor.key])
+            .filter((value): value is string => Boolean(value?.trim()))
+            .join(" · ")
+        : "";
+      return `${conditionCoordinates || "Observed"} ${ordinal}`;
+    },
+    [draft.adaptiveInput?.contract],
+  );
+  const replaceAdaptiveObservations = useCallback(
+    (observations: readonly CanonicalAdaptiveObservation[]) => {
+      const snapshot = draft.adaptiveInput;
+      if (!snapshot) throw new Error("ADAPTIVE_CONTRACT_MISSING");
+      const rebuilt = createAdaptiveWorkspace({
+        contract: snapshot.contract,
+        observations,
+        mapping: snapshot.mapping,
+        lineage: snapshot.rawLineage,
+        confirmedTargetedConfirmations: snapshot.targetedConfirmations,
+      });
+      if (rebuilt.status !== "ready" || !rebuilt.draft) {
+        throw new Error(
+          rebuilt.diagnostics.join(" / ") || "入力した値を実験ワークスペースへ反映できません。",
+        );
+      }
+      setDraft({ ...rebuilt.draft, entrySourceHistory: draft.entrySourceHistory });
+      setCells(rebuilt.cells);
+      setActiveTab("overview");
+    },
+    [draft.adaptiveInput, draft.entrySourceHistory],
+  );
   const [graphWorkspaceMode, setGraphWorkspaceMode] = useState<"graph" | "statistics">("graph");
 
   useEffect(() => {
@@ -1867,6 +2593,11 @@ export function ExperimentWorkspace({
   const [renamingGraphId, setRenamingGraphId] = useState<string | null>(null);
   const [graphRenameDraft, setGraphRenameDraft] = useState("");
   const [savedProject, setSavedProject] = useState<OpenedProject | undefined>(initialProject);
+  const [structureRevisionSession, setStructureRevisionSession] =
+    useState<AdaptiveStructureRevisionSession | null>(null);
+  const [structureRevisionError, setStructureRevisionError] = useState<string | null>(null);
+  const structureRevisionTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const restoreStructureRevisionFocusRef = useRef(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [analysisInvalidationMessage, setAnalysisInvalidationMessage] = useState<string | null>(
@@ -1874,13 +2605,19 @@ export function ExperimentWorkspace({
   );
   const scientificSourceSnapshot = JSON.stringify({ draft, cells });
   const previousScientificSourceRef = useRef(scientificSourceSnapshot);
-  const currentSnapshot = JSON.stringify({ draft, cells, graphs });
+  const currentSnapshot = JSON.stringify({ draft, cells, graphs, dataViewMode });
   const savedSnapshotRef = useRef(initialProject ? currentSnapshot : "");
   const graphWorkspaceRef = useRef<HTMLDivElement | null>(null);
   const graphChoiceDialogRef = useRef<HTMLElement | null>(null);
   const graphChoiceReturnFocusRef = useRef<HTMLElement | null>(null);
   const focusCreatedGraphRef = useRef(false);
   const isDirty = currentSnapshot !== savedSnapshotRef.current;
+
+  useEffect(() => {
+    if (structureRevisionSession || !restoreStructureRevisionFocusRef.current) return;
+    restoreStructureRevisionFocusRef.current = false;
+    structureRevisionTriggerRef.current?.focus();
+  }, [structureRevisionSession]);
 
   useEffect(() => {
     onDirtyChange?.(isDirty);
@@ -2127,6 +2864,186 @@ export function ExperimentWorkspace({
     }));
   };
 
+  const applyOverviewScalarPaste = ({
+    readoutId,
+    startExperiment,
+    startCondition,
+    text,
+  }: OverviewScalarPasteRequest): OverviewScalarPasteResult => {
+    const rows = proportionPasteRows(text);
+    if (rows.length === 0) {
+      return {
+        accepted: false,
+        message: "貼り付けられる値がありません。既存の値は変更していません。",
+      };
+    }
+
+    const updates: Array<{ key: string; value: number | null }> = [];
+    for (const [rowOffset, tokens] of rows.entries()) {
+      const experiment = draft.experiments[startExperiment + rowOffset];
+      if (!experiment) {
+        return {
+          accepted: false,
+          message: "貼り付け範囲が実験回の数を超えています。既存の値は変更していません。",
+        };
+      }
+      for (const [columnOffset, token] of tokens.entries()) {
+        const condition = draft.conditions[startCondition + columnOffset];
+        if (!condition) {
+          return {
+            accepted: false,
+            message: "貼り付け範囲が条件の数を超えています。既存の値は変更していません。",
+          };
+        }
+        const trimmed = token.trim();
+        const value = trimmed === "" ? null : Number(trimmed);
+        if (value !== null && !Number.isFinite(value)) {
+          return {
+            accepted: false,
+            message: `数値として読めない値「${trimmed}」があります。既存の値は変更していません。`,
+          };
+        }
+        const key = experimentCellKey({
+          experimentId: experiment.id,
+          conditionId: condition.id,
+          readoutId,
+        });
+        if (cellIsNotPlanned(cells[key]) && value !== null) {
+          return {
+            accepted: false,
+            message: `${experiment.label}・${condition.label}は測定予定なしです。既存の値は変更していません。`,
+          };
+        }
+        updates.push({ key, value });
+      }
+    }
+
+    setCells((previous) => {
+      const next = { ...previous };
+      updates.forEach(({ key, value }) => {
+        if (cellIsNotPlanned(next[key]) && value === null) return;
+        next[key] = {
+          kind: "nested_continuous",
+          rawValues: value === null ? [] : [value],
+          source: "paste",
+        };
+      });
+      return next;
+    });
+    return {
+      accepted: true,
+      message: `貼り付け完了：${updates.length}セルを更新しました。空欄はmissingとして保持しています。`,
+    };
+  };
+
+  const applyOverviewProportionPaste = ({
+    readoutId,
+    startExperiment,
+    startColumn,
+    text,
+  }: OverviewProportionPasteRequest): OverviewScalarPasteResult => {
+    const rows = proportionPasteRows(text);
+    if (rows.length === 0) {
+      return {
+        accepted: false,
+        message: "貼り付けられる値がありません。既存の値は変更していません。",
+      };
+    }
+
+    type Update = Readonly<{
+      key: string;
+      field: "positive" | "eligible";
+      value: number | null;
+    }>;
+    const updates: Update[] = [];
+    const proposed = new Map<string, Pick<ProportionCellDraft, "positive" | "eligible">>();
+    const editableColumnCount = draft.conditions.length * 2;
+
+    for (const [rowOffset, tokens] of rows.entries()) {
+      const experiment = draft.experiments[startExperiment + rowOffset];
+      if (!experiment) {
+        return {
+          accepted: false,
+          message: "貼り付け範囲が実験回の数を超えています。既存の値は変更していません。",
+        };
+      }
+      for (const [columnOffset, token] of tokens.entries()) {
+        const editableColumn = startColumn + columnOffset;
+        if (editableColumn >= editableColumnCount) {
+          return {
+            accepted: false,
+            message: "貼り付け範囲が条件の入力列を超えています。既存の値は変更していません。",
+          };
+        }
+        const condition = draft.conditions[Math.floor(editableColumn / 2)];
+        const field = editableColumn % 2 === 0 ? "positive" : "eligible";
+        const trimmed = token.trim();
+        const value = trimmed === "" ? null : countValue(trimmed);
+        if (trimmed !== "" && value === null) {
+          return {
+            accepted: false,
+            message: `0以上の整数として読めない値「${trimmed}」があります。既存の値は変更していません。`,
+          };
+        }
+        const key = experimentCellKey({
+          experimentId: experiment.id,
+          conditionId: condition.id,
+          readoutId,
+        });
+        const current = cells[key];
+        if (cellIsNotPlanned(current)) {
+          if (value !== null) {
+            return {
+              accepted: false,
+              message: `${experiment.label}・${condition.label}は測定予定なしです。既存の値は変更していません。`,
+            };
+          }
+          continue;
+        }
+        const currentCell: ProportionCellDraft =
+          current?.kind === "proportion"
+            ? current
+            : { kind: "proportion", positive: null, eligible: null };
+        const next = proposed.get(key) ?? {
+          positive: currentCell.positive,
+          eligible: currentCell.eligible,
+        };
+        proposed.set(key, { ...next, [field]: value });
+        updates.push({ key, field, value });
+      }
+    }
+
+    for (const [key, next] of proposed) {
+      if (next.positive !== null && next.eligible !== null && next.positive > next.eligible) {
+        const descriptor = findCellDescriptor(draft, key);
+        const sourceLabel = descriptor
+          ? `${descriptor.experiment.label}・${descriptor.conditionLabel}`
+          : "貼り付け先";
+        return {
+          accepted: false,
+          message: `${sourceLabel}で陽性数が対象数を超えています。既存の値は変更していません。`,
+        };
+      }
+    }
+
+    setCells((previous) => {
+      const next = { ...previous };
+      updates.forEach(({ key, field, value }) => {
+        const current = next[key];
+        const proportionCell: ProportionCellDraft =
+          current?.kind === "proportion"
+            ? current
+            : { kind: "proportion", positive: null, eligible: null };
+        next[key] = { ...proportionCell, [field]: value };
+      });
+      return next;
+    });
+    return {
+      accepted: true,
+      message: `貼り付け完了：${updates.length}セルを更新しました。空欄はmissingとして保持しています。`,
+    };
+  };
+
   const updateCategoricalCount = (key: string, categoryId: string, value: number | null) => {
     setCells((previous) => {
       const current = previous[key];
@@ -2235,10 +3152,15 @@ export function ExperimentWorkspace({
       draft.conditionAssignment.kind === "matched"
         ? {
             ...created,
-            label: `${draft.conditionAssignment.unitLabel || "対応単位"} ${draft.experiments.length + 1}`,
+            label: `${matchedSetLabel(draft)} ${draft.experiments.length + 1}`,
             stableUnitId: `unit.${nextIndex}`,
           }
-        : created;
+        : independentAdaptiveInputRows(draft)
+          ? {
+              ...created,
+              label: `入力行 ${draft.experiments.length + 1}`,
+            }
+          : created;
     setDraft((previous) => ({
       ...previous,
       experiments: [...previous.experiments, nextExperiment],
@@ -2261,7 +3183,7 @@ export function ExperimentWorkspace({
     if (
       hasEnteredData &&
       !window.confirm(
-        `${experiment.label}に入力済みの測定値があります。この${draft.conditionAssignment.kind === "matched" ? draft.conditionAssignment.unitLabel || "対応単位" : "実験回"}と入力値を削除しますか？`,
+        `${experiment.label}に入力済みの測定値があります。この${draft.conditionAssignment.kind === "matched" ? matchedSetLabel(draft) : "実験回"}と入力値を削除しますか？`,
       )
     ) {
       return;
@@ -2583,6 +3505,127 @@ export function ExperimentWorkspace({
     setGraphRenameDraft("");
   };
 
+  const closeAdaptiveStructureRevision = () => {
+    setStructureRevisionError(null);
+    restoreStructureRevisionFocusRef.current = true;
+    setStructureRevisionSession(null);
+  };
+
+  const beginAdaptiveStructureRevision = () => {
+    if (!draft.adaptiveInput) return;
+    try {
+      // Capture the live cell edits into a lossless canonical snapshot without
+      // mutating the workspace that must remain recoverable on Cancel.
+      const sourceDraft = synchronizeAdaptiveDraft({
+        draft,
+        cells,
+        now: new Date().toISOString(),
+      });
+      const sourceContract = sourceDraft.adaptiveInput?.contract;
+      if (!sourceContract) throw new Error("ADAPTIVE_CONTRACT_MISSING");
+      const retainedSetup = sourceDraft.adaptiveInput?.biologicalSetup;
+      const initial = createBiologicalSetupPrefill(
+        retainedSetup ? { contract: sourceContract, ...retainedSetup } : sourceContract,
+      );
+      if (initial.status === "stopped") {
+        setAnalysisInvalidationMessage(initial.reason);
+        return;
+      }
+      setStructureRevisionError(null);
+      setStructureRevisionSession({ sourceDraft, prefill: initial.prefill });
+    } catch (error) {
+      setAnalysisInvalidationMessage(
+        actionErrorMessage(
+          error,
+          "現在の測定値を安全に保持できないため、実験の組み立て編集を開始しませんでした。",
+        ),
+      );
+    }
+  };
+
+  const applyAdaptiveStructureRevision = (result: BiologicalExperimentSetupResult): boolean => {
+    const session = structureRevisionSession;
+    const sourceSnapshot = session?.sourceDraft.adaptiveInput;
+    if (!session || !sourceSnapshot) return false;
+
+    // A no-op revision must not touch any workspace state, dirty marker,
+    // persisted baseline, Graph, analysis, mapping, or raw lineage.
+    if (JSON.stringify(result.contract) === JSON.stringify(session.prefill.originalContract)) {
+      closeAdaptiveStructureRevision();
+      return true;
+    }
+
+    const compatibility = checkAdaptiveStructureRevisionCompatibility({
+      previousContract: session.prefill.originalContract,
+      nextContract: result.contract,
+      canonicalObservations: sourceSnapshot.canonicalObservations,
+      mapping: sourceSnapshot.mapping,
+    });
+    if (compatibility.status === "stopped") {
+      setStructureRevisionError(
+        `${compatibility.reason} 入力済みデータは変更されていません。「変更せず戻る」で元のワークスペースへ戻れます。`,
+      );
+      return false;
+    }
+
+    const presentation = createBiologicalSetupPresentation(result);
+    if (presentation.status === "stopped") {
+      setStructureRevisionError(
+        "変更後の条件表と実験構造の対応を確認できません。入力済みデータは変更されていません。",
+      );
+      return false;
+    }
+
+    const rebuilt = createAdaptiveWorkspace({
+      contract: result.contract,
+      observations: sourceSnapshot.canonicalObservations,
+      mapping: sourceSnapshot.mapping,
+      lineage: sourceSnapshot.rawLineage,
+      confirmedTargetedConfirmations: sourceSnapshot.targetedConfirmations,
+      biologicalSetup: presentation.presentation,
+    });
+    if (rebuilt.status !== "ready" || !rebuilt.draft) {
+      setStructureRevisionError(
+        "変更後の構造へ既存データを安全に対応づけられません。入力済みデータは変更されていません。",
+      );
+      return false;
+    }
+    const rebuiltSnapshot = rebuilt.draft.adaptiveInput;
+    if (
+      !rebuiltSnapshot ||
+      JSON.stringify(rebuiltSnapshot.canonicalObservations) !==
+        JSON.stringify(sourceSnapshot.canonicalObservations) ||
+      JSON.stringify(rebuiltSnapshot.mapping) !== JSON.stringify(sourceSnapshot.mapping) ||
+      JSON.stringify(rebuiltSnapshot.rawLineage) !== JSON.stringify(sourceSnapshot.rawLineage)
+    ) {
+      setStructureRevisionError(
+        "既存データまたは元データ履歴が変わる可能性を検出したため、変更を適用しませんでした。",
+      );
+      return false;
+    }
+
+    const graphCoordinatesStable = graphs.every((graph) =>
+      graphReferencesRemainStable(draft, rebuilt.draft!, graph),
+    );
+    setGraphs(graphCoordinatesStable ? graphs.map(invalidateGraphAnalysis) : []);
+    setDraft({
+      ...rebuilt.draft,
+      entrySourceHistory: session.sourceDraft.entrySourceHistory,
+    });
+    setCells(rebuilt.cells);
+    setActiveTab("overview");
+    setSelectedCellKey(null);
+    setShowGraph(false);
+    setActiveGraphId(null);
+    closeAdaptiveStructureRevision();
+    setAnalysisInvalidationMessage(
+      graphCoordinatesStable
+        ? "実験の組み立てを更新しました。測定値とGraphの外観は保持し、以前の解析結果・p値注釈・Methodsは外しました。"
+        : "実験の組み立てを更新しました。測定値は保持しましたが、条件の参照を一意に保てないGraphは安全のためワークスペースから外しました。保存済みprojectの旧履歴は残ります。",
+    );
+    return true;
+  };
+
   const handleSave = useCallback(
     async (saveAs = false) => {
       if (!saveProject) return;
@@ -2593,6 +3636,7 @@ export function ExperimentWorkspace({
           draft,
           cells,
           graphs,
+          dataViewMode,
           existingState: savedProject?.state,
         });
         const saved = await saveProject(state, saveAs ? undefined : savedProject?.target);
@@ -2609,7 +3653,7 @@ export function ExperimentWorkspace({
         setSaveMessage(actionErrorMessage(error, "プロジェクトを保存できませんでした。"));
       }
     },
-    [cells, currentSnapshot, draft, graphs, saveProject, savedProject],
+    [cells, currentSnapshot, dataViewMode, draft, graphs, saveProject, savedProject],
   );
   const handleSaveRef = useRef(handleSave);
   useLayoutEffect(() => {
@@ -2642,6 +3686,25 @@ export function ExperimentWorkspace({
     };
   }, [handleSave]);
 
+  if (structureRevisionSession) {
+    return (
+      <BiologicalExperimentSetup
+        enabled
+        externalError={structureRevisionError}
+        initial={{
+          ...structureRevisionSession.prefill,
+          revisionMode: true,
+          notice:
+            "入力済みの測定値と元データ履歴は、変更を安全に適用できると確認するまで現在のワークスペースに保持されます。",
+        }}
+        onCancel={() => {
+          closeAdaptiveStructureRevision();
+        }}
+        onReady={applyAdaptiveStructureRevision}
+      />
+    );
+  }
+
   const workspaceTabs: WorkspaceTab[] = [
     "overview",
     ...draft.experiments.map(({ id }) => `experiment:${id}` as WorkspaceTab),
@@ -2664,7 +3727,7 @@ export function ExperimentWorkspace({
   };
 
   return (
-    <div className="experiment-workspace">
+    <div className="experiment-workspace" ref={rootRef}>
       <header className="experiment-workspace-header">
         <button className="experiment-workspace-back" type="button" onClick={requestBack}>
           ← 戻る
@@ -2751,6 +3814,15 @@ export function ExperimentWorkspace({
             ) : null}
           </div>
         </details>
+        {draft.adaptiveInput ? (
+          <button
+            ref={structureRevisionTriggerRef}
+            type="button"
+            onClick={beginAdaptiveStructureRevision}
+          >
+            実験の組み立てを修正
+          </button>
+        ) : null}
         <button
           className={!showGraph ? "is-active" : ""}
           type="button"
@@ -2984,7 +4056,9 @@ export function ExperimentWorkspace({
                               : graphType === "violin"
                                 ? "各条件・時点の分布を見る"
                                 : graphType === "paired_dot"
-                                  ? "同じ単位の変化を見る"
+                                  ? sharedSource
+                                    ? `同じ${sharedSource.sourceUnitLabel}に由来する組の差を見る`
+                                    : "同じ単位の変化を見る"
                                   : "実験単位ごとの値を見る"}
                     </strong>
                     <small>データ構造に合う初期表示。選択は後から変更できます。</small>
@@ -3114,7 +4188,10 @@ export function ExperimentWorkspace({
                       ["errorBar", "誤差線（初期値 SD）"],
                       ["box", "箱ひげ"],
                       ["violin", "分布（Violin）"],
-                      ["connectingLine", "同じ単位を結ぶ線"],
+                      [
+                        "connectingLine",
+                        sharedSource ? "同じ由来に属する点を結ぶ線" : "同じ単位を結ぶ線",
+                      ],
                     ] as const
                   ).map(([layer, label]) => {
                     const disabled =
@@ -3168,7 +4245,7 @@ export function ExperimentWorkspace({
         </div>
       ) : null}
 
-      {!showGraph ? (
+      {!showGraph && !canonicalSpreadsheetPresentation.enabled ? (
         <nav className="experiment-workspace-tabs" aria-label="実験の表示切り替え">
           <div role="tablist" aria-label="実験タブ">
             <button
@@ -3211,8 +4288,10 @@ export function ExperimentWorkspace({
           >
             ＋{" "}
             {draft.conditionAssignment.kind === "matched"
-              ? draft.conditionAssignment.unitLabel || "対応単位"
-              : "実験"}
+              ? matchedSetLabel(draft)
+              : independentAdaptiveInputRows(draft)
+                ? "入力行"
+                : "実験"}
           </button>
         </nav>
       ) : null}
@@ -3303,7 +4382,30 @@ export function ExperimentWorkspace({
         <main className="experiment-workspace-main">
           {activeTab === "overview" ? (
             <div id="workspace-panel-0" role="tabpanel" aria-labelledby="workspace-tab-0">
-              <OverviewPanel draft={draft} cells={cells} />
+              <OverviewPanel
+                draft={draft}
+                cells={cells}
+                onProportionChange={updateProportion}
+                onProportionPaste={applyOverviewProportionPaste}
+                onNestedScalarChange={updateNestedScalar}
+                onNestedScalarPaste={applyOverviewScalarPaste}
+                onNestedCellChange={(key, cell) =>
+                  setCells((current) => ({ ...current, [key]: cell }))
+                }
+                dataViewMode={dataViewMode}
+                onDataViewModeChange={setDataViewMode}
+                canonicalSpreadsheet={
+                  canonicalSpreadsheetPresentation.enabled && draft.adaptiveInput
+                    ? {
+                        observations: draft.adaptiveInput.canonicalObservations,
+                        readOnly: canonicalSpreadsheetPresentation.readOnly,
+                        onObservationsChange: replaceAdaptiveObservations,
+                        nextObservationId: nextAdaptiveObservationId,
+                        nextExperimentalUnitIdentity: nextAdaptiveExperimentalUnitIdentity,
+                      }
+                    : undefined
+                }
+              />
             </div>
           ) : (
             draft.experiments.map((experiment, index) => {

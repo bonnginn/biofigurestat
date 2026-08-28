@@ -4,6 +4,7 @@ import type { AnalysisEngineResult } from "@lsaa/analysis-contracts";
 
 import {
   createExperimentSetDraft,
+  experimentCellKey,
   type ExperimentSetDraft,
   type ReadoutShape,
 } from "../app/experimentDraft";
@@ -67,11 +68,11 @@ describe("ExperimentWorkspace", () => {
     };
   }
 
-  it("shows a read-only overview and collects proportion counts in an experiment tab", () => {
+  it("offers proportion quick entry in Overview and keeps the experiment-tab editor", () => {
     const draft = draftWithTwoConditions("proportion");
     render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
 
-    expect(screen.getByRole("heading", { name: "入力状況" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "測定値を入力" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: "Exp 1" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Exp 2" })).toBeInTheDocument();
@@ -94,6 +95,359 @@ describe("ExperimentWorkspace", () => {
     expect(document.querySelector(".experiment-workspace-col-derived")).toBeInTheDocument();
     expect(screen.queryByText("Exp番号について")).not.toBeInTheDocument();
     expect(screen.getByText(/実験情報（/)).toBeInTheDocument();
+  });
+
+  it("shows existing proportion source counts and the calculated percentage in Overview", () => {
+    const draft = draftWithTwoConditions("proportion");
+    const key = experimentCellKey({
+      experimentId: draft.experiments[0].id,
+      conditionId: draft.conditions[0].id,
+      readoutId: draft.readouts[0].id,
+    });
+    render(
+      <ExperimentWorkspace
+        initialDraft={draft}
+        initialCells={{ [key]: { kind: "proportion", positive: 5, eligible: 20 } }}
+        onBack={vi.fn()}
+      />,
+    );
+
+    const table = screen.getByRole("table", { name: "Marker X陽性率をまとめて入力" });
+    expect(within(table).getByRole("spinbutton", { name: "Exp 1・Controlの陽性数" })).toHaveValue(
+      5,
+    );
+    expect(within(table).getByRole("spinbutton", { name: "Exp 1・Controlの対象数" })).toHaveValue(
+      20,
+    );
+    expect(within(table).getByLabelText("Exp 1・Controlの計算された割合")).toHaveTextContent("25%");
+    expect(within(table).queryByRole("columnheader", { name: "割合（%）" })).toBeNull();
+    expect(
+      screen.getByText(
+        "各条件の値を入力順に横へ並べています。同じ行は同じ対象やpairを意味しません。",
+      ),
+    ).toBeVisible();
+  });
+
+  it("pastes all proportion source columns, keeps unequal missing cells, and propagates to Exp tabs", () => {
+    const draft = draftWithTwoConditions("proportion");
+    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+
+    const table = screen.getByRole("table", { name: "Marker X陽性率をまとめて入力" });
+    const first = within(table).getByRole("spinbutton", {
+      name: "Exp 1・Controlの陽性数",
+    });
+    fireEvent.paste(first, {
+      clipboardData: { getData: () => "5\t10\t2\t8\n6\t12\t\t\n7\t14\t3\t6" },
+    });
+
+    expect(first).toHaveValue(5);
+    expect(within(table).getByLabelText("Exp 1・Treatmentの計算された割合")).toHaveTextContent(
+      "25%",
+    );
+    expect(within(table).getByRole("spinbutton", { name: "Exp 2・Treatmentの陽性数" })).toHaveValue(
+      null,
+    );
+    expect(within(table).getByRole("spinbutton", { name: "Exp 2・Treatmentの対象数" })).toHaveValue(
+      null,
+    );
+    expect(screen.getByText("5 / 6 セル入力済み")).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("12セルを更新");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 3" }));
+    expect(screen.getByRole("spinbutton", { name: "Controlの陽性数" })).toHaveValue(7);
+    expect(screen.getByRole("spinbutton", { name: "Controlの対象数" })).toHaveValue(14);
+    expect(screen.getByRole("spinbutton", { name: "Treatmentの陽性数" })).toHaveValue(3);
+    expect(screen.getByRole("spinbutton", { name: "Treatmentの対象数" })).toHaveValue(6);
+  });
+
+  it.each([
+    ["a decimal count", "1.5", "0以上の整数として読めない値"],
+    ["a pasted range overflow", "4\t10\t2\t8\t1", "条件の入力列を超えています"],
+    ["a pasted row overflow", "4\n5\n6\n7", "実験回の数を超えています"],
+    ["positive greater than eligible", "9\t8", "陽性数が対象数を超えています"],
+  ])("rejects %s atomically in the proportion Overview matrix", (_case, text, message) => {
+    const draft = draftWithTwoConditions("proportion");
+    const key = experimentCellKey({
+      experimentId: draft.experiments[0].id,
+      conditionId: draft.conditions[0].id,
+      readoutId: draft.readouts[0].id,
+    });
+    render(
+      <ExperimentWorkspace
+        initialDraft={draft}
+        initialCells={{ [key]: { kind: "proportion", positive: 3, eligible: 10 } }}
+        onBack={vi.fn()}
+      />,
+    );
+
+    const table = screen.getByRole("table", { name: "Marker X陽性率をまとめて入力" });
+    const first = within(table).getByRole("spinbutton", {
+      name: "Exp 1・Controlの陽性数",
+    });
+    fireEvent.paste(first, { clipboardData: { getData: () => text } });
+
+    expect(first).toHaveValue(3);
+    expect(within(table).getByRole("spinbutton", { name: "Exp 1・Controlの対象数" })).toHaveValue(
+      10,
+    );
+    expect(within(table).getByRole("spinbutton", { name: "Exp 1・Treatmentの陽性数" })).toHaveValue(
+      null,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(message);
+    expect(screen.getByRole("status")).toHaveTextContent("既存の値は変更していません");
+  });
+
+  it("rejects a nonblank paste into a not-planned proportion cell without partial updates", () => {
+    const draft = draftWithTwoConditions("proportion");
+    const controlKey = experimentCellKey({
+      experimentId: draft.experiments[0].id,
+      conditionId: draft.conditions[0].id,
+      readoutId: draft.readouts[0].id,
+    });
+    const treatmentKey = experimentCellKey({
+      experimentId: draft.experiments[0].id,
+      conditionId: draft.conditions[1].id,
+      readoutId: draft.readouts[0].id,
+    });
+    render(
+      <ExperimentWorkspace
+        initialDraft={draft}
+        initialCells={{
+          [controlKey]: { kind: "proportion", positive: 3, eligible: 10 },
+          [treatmentKey]: {
+            kind: "proportion",
+            positive: null,
+            eligible: null,
+            availability: "not_planned",
+          },
+        }}
+        onBack={vi.fn()}
+      />,
+    );
+
+    const table = screen.getByRole("table", { name: "Marker X陽性率をまとめて入力" });
+    const first = within(table).getByRole("spinbutton", {
+      name: "Exp 1・Controlの陽性数",
+    });
+    fireEvent.paste(first, { clipboardData: { getData: () => "4\t10\t2\t8" } });
+
+    expect(first).toHaveValue(3);
+    expect(within(table).getByRole("spinbutton", { name: "Exp 1・Controlの対象数" })).toHaveValue(
+      10,
+    );
+    expect(
+      within(table).getByRole("spinbutton", { name: "Exp 1・Treatmentの陽性数" }),
+    ).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("測定予定なしです");
+    expect(screen.getByRole("status")).toHaveTextContent("既存の値は変更していません");
+  });
+
+  it("states matched-row semantics in the proportion Overview matrix", () => {
+    const fixture = createPairedTwoConditionFixture();
+    render(
+      <ExperimentWorkspace
+        initialDraft={fixture.draft}
+        initialCells={fixture.cells}
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("同じ行は、条件間で対応づけた同じ対象です。")).toBeVisible();
+    expect(screen.getByRole("columnheader", { name: "個体" })).toBeVisible();
+  });
+
+  it("shows a shared source without calling condition-specific units the same experimental unit", () => {
+    const fixture = createPairedTwoConditionFixture();
+    const draft: ExperimentSetDraft = {
+      ...fixture.draft,
+      conditionAssignment: {
+        kind: "matched",
+        unitLabel: "dish",
+        matchedTopology: {
+          kind: "distinct_condition_units_shared_source",
+          sourceUnitLabel: "Donor",
+          sourceIdentityLabel: "Donor ID",
+          sourceRole: "block",
+        },
+      },
+    };
+    render(
+      <ExperimentWorkspace initialDraft={draft} initialCells={fixture.cells} onBack={vi.fn()} />,
+    );
+
+    expect(screen.getByRole("columnheader", { name: "Donor ID" })).toBeVisible();
+    expect(
+      screen.getByText(
+        "同じ行は同じDonorに由来する組です。各条件のdishは別の実験単位として保持します。",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText("同じ行は、条件間で対応づけた同じ対象です。")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
+    expect(screen.getByText("同じDonorに由来する組の差を見る")).toBeVisible();
+  });
+
+  it("counts shared-source rows and condition-specific units separately in Overview", () => {
+    const fixture = createPairedTwoConditionFixture();
+    const draft: ExperimentSetDraft = {
+      ...fixture.draft,
+      readouts: [
+        ...fixture.draft.readouts,
+        { id: "readout.second", label: "Second readout", shape: "proportion" },
+      ],
+      conditionAssignment: {
+        kind: "matched",
+        unitLabel: "dish",
+        matchedTopology: {
+          kind: "distinct_condition_units_shared_source",
+          sourceUnitLabel: "Donor",
+          sourceIdentityLabel: "Donor ID",
+          sourceRole: "block",
+        },
+      },
+    };
+    render(
+      <ExperimentWorkspace initialDraft={draft} initialCells={fixture.cells} onBack={vi.fn()} />,
+    );
+
+    const summary = screen.getByText("Donorの組").closest("div");
+    expect(summary).not.toBeNull();
+    expect(within(summary!).getByText("4組（条件別dishは8）")).toBeVisible();
+  });
+
+  it("keeps inconsistent source counts visible but flags them until corrected", () => {
+    const draft = draftWithTwoConditions("proportion");
+    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+
+    const table = screen.getByRole("table", { name: "Marker X陽性率をまとめて入力" });
+    const positive = within(table).getByRole("spinbutton", {
+      name: "Exp 1・Controlの陽性数",
+    });
+    const eligible = within(table).getByRole("spinbutton", {
+      name: "Exp 1・Controlの対象数",
+    });
+    fireEvent.change(positive, { target: { value: "9" } });
+    fireEvent.change(eligible, { target: { value: "8" } });
+
+    expect(positive).toHaveValue(9);
+    expect(eligible).toHaveValue(8);
+    expect(positive).toHaveAttribute("aria-invalid", "true");
+    expect(eligible).toHaveAttribute("aria-invalid", "true");
+    expect(within(table).getByRole("alert")).toHaveTextContent("陽性数が対象数を超えています");
+    expect(within(table).getByLabelText("Exp 1・Controlの計算された割合")).toHaveTextContent("—");
+    expect(screen.getByText("0 / 6 セル入力済み")).toBeVisible();
+
+    fireEvent.change(eligible, { target: { value: "10" } });
+    expect(positive).not.toHaveAttribute("aria-invalid");
+    expect(eligible).not.toHaveAttribute("aria-invalid");
+    expect(within(table).queryByRole("alert")).toBeNull();
+    expect(within(table).getByLabelText("Exp 1・Controlの計算された割合")).toHaveTextContent("90%");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
+    expect(screen.getByRole("spinbutton", { name: "Controlの陽性数" })).toHaveValue(9);
+    expect(screen.getByRole("spinbutton", { name: "Controlの対象数" })).toHaveValue(10);
+  });
+
+  it("keeps proportion quick entry bounded to one readout without an ordered axis", () => {
+    const base = draftWithTwoConditions("proportion");
+    const timed: ExperimentSetDraft = {
+      ...base,
+      time: { sampling: "cross_sectional", unit: "h", points: [{ id: "time.24", value: 24 }] },
+    };
+    const firstRender = render(<ExperimentWorkspace initialDraft={timed} onBack={vi.fn()} />);
+    expect(screen.queryByRole("table", { name: "Marker X陽性率をまとめて入力" })).toBeNull();
+    firstRender.unmount();
+
+    const multiple: ExperimentSetDraft = {
+      ...base,
+      readouts: [...base.readouts, { id: "readout.2", label: "別の陽性率", shape: "proportion" }],
+    };
+    render(<ExperimentWorkspace initialDraft={multiple} onBack={vi.fn()} />);
+    expect(screen.queryByRole("table", { name: "Marker X陽性率をまとめて入力" })).toBeNull();
+  });
+
+  it("enters a complete unit-summary matrix from Overview with one Excel paste", () => {
+    const draft = draftWithTwoConditions("nested_continuous");
+    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+
+    expect(screen.getByRole("heading", { name: "測定値を入力" })).toBeVisible();
+    const table = screen.getByRole("table", { name: "細胞強度をまとめて入力" });
+    expect(screen.queryByRole("table", { name: "条件の構成" })).toBeNull();
+    const first = within(table).getByRole("textbox", {
+      name: "Exp 1・Controlの細胞強度",
+    });
+    fireEvent.paste(first, {
+      clipboardData: { getData: () => "10\t14\n11\t16\n9\t15" },
+    });
+
+    expect(first).toHaveValue("10");
+    expect(within(table).getByRole("textbox", { name: "Exp 2・Controlの細胞強度" })).toHaveValue(
+      "11",
+    );
+    expect(within(table).getByRole("textbox", { name: "Exp 3・Treatmentの細胞強度" })).toHaveValue(
+      "15",
+    );
+    expect(screen.getByText("6 / 6 セル入力済み")).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("6セルを更新");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 2" }));
+    expect(screen.getByRole("textbox", { name: "Controlの細胞強度" })).toHaveValue("11");
+    expect(screen.getByRole("textbox", { name: "Treatmentの細胞強度" })).toHaveValue("16");
+  });
+
+  it("rejects an invalid Overview matrix atomically and retains existing values", () => {
+    const draft = draftWithTwoConditions("nested_continuous");
+    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+
+    const table = screen.getByRole("table", { name: "細胞強度をまとめて入力" });
+    const first = within(table).getByRole("textbox", {
+      name: "Exp 1・Controlの細胞強度",
+    });
+    fireEvent.change(first, { target: { value: "5" } });
+    fireEvent.paste(first, {
+      clipboardData: { getData: () => "1\tbad\n3\t4" },
+    });
+
+    expect(first).toHaveValue("5");
+    expect(within(table).getByRole("textbox", { name: "Exp 1・Treatmentの細胞強度" })).toHaveValue(
+      "",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("既存の値は変更していません");
+    expect(screen.getByText("1 / 6 セル入力済み")).toBeVisible();
+  });
+
+  it("keeps blank pasted cells as missing instead of forcing equal sample counts", () => {
+    const draft = draftWithTwoConditions("nested_continuous");
+    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+
+    const table = screen.getByRole("table", { name: "細胞強度をまとめて入力" });
+    const first = within(table).getByRole("textbox", {
+      name: "Exp 1・Controlの細胞強度",
+    });
+    fireEvent.paste(first, {
+      clipboardData: { getData: () => "10\t14\n11\t\n9\t15" },
+    });
+
+    expect(within(table).getByRole("textbox", { name: "Exp 2・Treatmentの細胞強度" })).toHaveValue(
+      "",
+    );
+    expect(within(table).getByRole("textbox", { name: "Exp 3・Treatmentの細胞強度" })).toHaveValue(
+      "15",
+    );
+    expect(screen.getByText("5 / 6 セル入力済み")).toBeVisible();
+  });
+
+  it("does not flatten nested raw observations into the Overview scalar matrix", () => {
+    const base = draftWithTwoConditions("nested_continuous");
+    const draft = {
+      ...base,
+      readouts: [{ ...base.readouts[0], nestedInputMode: "nested_observations" as const }],
+    };
+    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+
+    expect(screen.queryByRole("heading", { name: "まとめて入力" })).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
+    expect(screen.getByRole("button", { name: "Controlの生データを開く" })).toBeVisible();
   });
 
   it("closes the graph-choice dialog with Escape and restores trigger focus", () => {
@@ -304,10 +658,16 @@ describe("ExperimentWorkspace", () => {
     expect(screen.queryByRole("rowheader", { name: "control / -" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: "Overview" }));
-    const conditionTable = screen.getByRole("table", { name: "条件の構成" });
-    expect(within(conditionTable).getByRole("columnheader", { name: "siRNA" })).toBeVisible();
-    expect(within(conditionTable).getByRole("columnheader", { name: "Dox" })).toBeVisible();
-    expect(within(conditionTable).getAllByRole("rowheader")).toHaveLength(2);
+    const quickEntryTable = screen.getByRole("table", {
+      name: "Marker X陽性率をまとめて入力",
+    });
+    expect(
+      within(quickEntryTable).getByRole("columnheader", { name: "siRNA control Dox -" }),
+    ).toBeVisible();
+    expect(
+      within(quickEntryTable).getByRole("columnheader", { name: "siRNA control Dox +" }),
+    ).toBeVisible();
+    expect(within(quickEntryTable).getAllByRole("rowheader")).toHaveLength(3);
     expect(screen.queryByText("control / - / control / +")).not.toBeInTheDocument();
   });
 

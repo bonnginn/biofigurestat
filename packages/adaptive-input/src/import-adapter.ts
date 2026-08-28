@@ -7,6 +7,7 @@ import {
   type CanonicalAdaptiveObservation,
   type StructureContract,
 } from "@lsaa/domain";
+import { assertCanonicalObservationsForContract } from "./observation-validator";
 
 export type DelimitedSourceKind = "clipboard" | "csv" | "tsv" | "generic_file";
 
@@ -75,6 +76,20 @@ export function suggestAdaptiveColumnMapping(
 
 const numericOrText = (value: string): string | number => value !== "" && Number.isFinite(Number(value)) ? Number(value) : value;
 
+function identityAppliesToReadout(
+  contract: StructureContract,
+  readout: StructureContract["readouts"][number],
+  identity: StructureContract["identities"][number],
+): boolean {
+  const levels = new Map(contract.unitLevels.map((level) => [level.key, level]));
+  let level = levels.get(readout.observationLevelKey);
+  while (level) {
+    if (level.key === identity.unitLevelKey) return true;
+    level = level.parentKey ? levels.get(level.parentKey) : undefined;
+  }
+  return false;
+}
+
 export function canonicalizeAdaptiveRows(
   contract: StructureContract,
   parsed: ParsedAdaptiveInput,
@@ -82,7 +97,7 @@ export function canonicalizeAdaptiveRows(
 ): { observations: CanonicalAdaptiveObservation[]; confirmations: string[] } {
   const missingTokens = new Set(["", "NA", "N/A", "Undetermined", "OVER"]);
   const confirmations = new Set<string>();
-  const observations = parsed.rows.map((row, rowIndex) => {
+  const observations = parsed.rows.flatMap((row, rowIndex) => {
     const identities: Record<string, string> = {};
     const factors: Record<string, string> = {};
     const axes: Record<string, string | number> = {};
@@ -102,16 +117,58 @@ export function canonicalizeAdaptiveRows(
         if (missingTokens.has(raw)) { missingness[assignment.semanticKey] = "unknown"; confirmations.add("classify_missingness_reason"); }
       }
     });
-    for (const identity of contract.identities.filter(({ required }) => required)) {
-      if (!identities[identity.key]) throw new Error(`ADAPTIVE_REQUIRED_IDENTITY_MISSING:${identity.key}:row_${rowIndex + 2}`);
-    }
     for (const factor of contract.factors) {
       const value = factors[factor.key];
       if (value !== undefined && !factor.levels.includes(value)) throw new Error(`ADAPTIVE_UNKNOWN_FACTOR_LEVEL:${factor.key}:${value}`);
     }
-    const readout = contract.readouts.find((candidate) => Object.keys(values).some((key) => key === candidate.key || key.startsWith(`${candidate.key}_`))) ?? contract.readouts[0]!;
-    return CanonicalAdaptiveObservationSchema.parse({ observationId: `adaptive.${contract.contractId}.${rowIndex + 1}`, readoutKey: readout.key, identities, factors, axes, hierarchy, values, missingness, sourceRow: rowIndex + 2 });
+    const readoutsInRow = contract.readouts.filter((candidate) =>
+      Object.keys(values).some(
+        (key) => key === candidate.key || key.startsWith(`${candidate.key}_`),
+      ),
+    );
+    // A typed-record paste may be wide (one source row contains several
+    // readouts from the same unit).  Keep one canonical observation per
+    // readout instead of assigning the complete row to whichever readout
+    // happens to be listed first.  A conventional one-readout row retains
+    // the historical ID shape for round-trip compatibility.
+    const rowReadouts = readoutsInRow.length ? readoutsInRow : [contract.readouts[0]!];
+    return rowReadouts.map((readout, readoutIndex) => {
+      for (const identity of contract.identities.filter(
+        (candidate) => candidate.required && identityAppliesToReadout(contract, readout, candidate),
+      )) {
+        if (!identities[identity.key])
+          throw new Error(
+            `ADAPTIVE_REQUIRED_IDENTITY_MISSING:${identity.key}:row_${rowIndex + 2}`,
+          );
+      }
+      const readoutValues = Object.fromEntries(
+        Object.entries(values).filter(
+          ([key]) => key === readout.key || key.startsWith(`${readout.key}_`),
+        ),
+      );
+      const readoutMissingness = Object.fromEntries(
+        Object.entries(missingness).filter(
+          ([key]) => key === readout.key || key.startsWith(`${readout.key}_`),
+        ),
+      );
+      const observationId =
+        rowReadouts.length === 1
+          ? `adaptive.${contract.contractId}.${rowIndex + 1}`
+          : `adaptive.${contract.contractId}.${rowIndex + 1}.${readoutIndex + 1}`;
+      return CanonicalAdaptiveObservationSchema.parse({
+        observationId,
+        readoutKey: readout.key,
+        identities,
+        factors,
+        axes,
+        hierarchy,
+        values: readoutValues,
+        missingness: readoutMissingness,
+        sourceRow: rowIndex + 2,
+      });
+    });
   });
+  assertCanonicalObservationsForContract(contract, observations);
   return { observations, confirmations: [...confirmations] };
 }
 

@@ -1,0 +1,175 @@
+.nested-measurement-sheet {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line, #d7dfeb);
+}
+
+.nested-measurement-sheet__heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.nested-measurement-sheet__heading h3,
+.nested-measurement-sheet__heading p {
+  margin: 0;
+}
+
+.nested-measurement-sheet__heading p {
+  margin-top: 3px;
+  color: #65758b;
+}
+
+.nested-measurement-sheet__structure-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 3px solid #177f6c;
+  color: #33485f;
+  background: #f2f8f6;
+  line-height: 1.45;
+}
+
+.nested-measurement-sheet__view-switch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 3px;
+  border: 1px solid #cbd7e5;
+  border-radius: 9px;
+  background: #f3f6fa;
+}
+
+.nested-measurement-sheet__view-switch button {
+  padding: 7px 11px;
+  border: 0;
+  border-radius: 7px;
+  color: #485a71;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.nested-measurement-sheet__view-switch button[aria-pressed="true"] {
+  color: #0f594d;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(31, 54, 78, 0.13);
+}
+
+.nested-measurement-sheet__table-wrap {
+  max-height: min(60vh, 660px);
+  overflow: auto;
+  border: 1px solid #cbd7e5;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.nested-measurement-sheet table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.nested-measurement-sheet th,
+.nested-measurement-sheet td {
+  min-width: 112px;
+  padding: 6px;
+  border-right: 1px solid #dbe3ec;
+  border-bottom: 1px solid #dbe3ec;
+  background: #fff;
+  text-align: left;
+  vertical-align: top;
+}
+
+.nested-measurement-sheet thead th {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  background: #eef3f8;
+}
+
+.nested-measurement-sheet tbody th {
+  position: sticky;
+  z-index: 1;
+  left: 0;
+  background: #f7f9fc;
+}
+
+.nested-measurement-sheet input,
+.nested-measurement-sheet textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 104px;
+  padding: 6px 7px;
+  border: 1px solid #c5d1df;
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+}
+
+.nested-measurement-sheet textarea {
+  min-height: 52px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.nested-measurement-sheet input:focus,
+.nested-measurement-sheet textarea:focus {
+  border-color: #177f6c;
+  outline: 2px solid rgba(23, 127, 108, 0.2);
+  outline-offset: 0;
+}
+
+.nested-measurement-sheet input[aria-invalid="true"],
+.nested-measurement-sheet textarea[aria-invalid="true"] {
+  border-color: #bd3c3c;
+}
+
+.nested-measurement-sheet__compact-cell {
+  display: grid;
+  gap: 4px;
+}
+
+.nested-measurement-sheet__compact-cell small,
+.nested-measurement-sheet__expanded-value small {
+  max-width: 220px;
+  color: #8a4b26;
+  line-height: 1.35;
+}
+
+.nested-measurement-sheet__expanded-value {
+  display: grid;
+  gap: 4px;
+}
+
+.nested-measurement-sheet__caption,
+.nested-measurement-sheet__assistive-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.nested-measurement-sheet tr.is-entry-row td,
+.nested-measurement-sheet tr.is-entry-row th {
+  background: #fbfcfe;
+}
+
+@media (max-width: 760px) {
+  .nested-measurement-sheet__heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .nested-measurement-sheet__view-switch {
+    align-self: flex-start;
+  }
+}

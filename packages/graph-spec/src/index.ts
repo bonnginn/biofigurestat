@@ -49,7 +49,13 @@ export const GraphSpecSchema = z
     version: z.literal("0.1.0"),
     type: GraphTypeSchema,
     dataSource: z.object({
-      kind: z.enum(["raw_revision", "derived_dataset", "analysis_result"]),
+      kind: z.enum([
+        "raw_revision",
+        "derived_dataset",
+        "analysis_result",
+        /** A graph-only table is not a biological raw revision or an analysis result. */
+        "visualization_table",
+      ]),
       id: EntityIdSchema,
       revision: z.string().min(1),
     }),
@@ -63,6 +69,8 @@ export const GraphSpecSchema = z
       /** First-class visual series mapping. `color` remains a backward-compatible channel. */
       series: z.string().min(1).optional(),
       color: z.string().optional(),
+      /** Independent marker-shape channel; it may intentionally differ from color or series. */
+      shape: z.string().min(1).optional(),
       pair: z.string().optional(),
       facet: z.string().optional(),
       auxiliaryReference: z.string().optional(),
@@ -113,6 +121,10 @@ export const GraphSpecSchema = z
       xLabel: z.string(),
       yLabel: z.string(),
       showMinorTicks: z.boolean().default(true),
+      /** Scientific figures conventionally place axis ticks outside the plotting area. */
+      tickDirection: z.enum(["inside", "outside"]).default("outside"),
+      /** Renderer hint for boundaries between adjacent categorical x groups. */
+      showCategoryGroupSeparators: z.boolean().default(false),
     }),
     distribution: z
       .object({

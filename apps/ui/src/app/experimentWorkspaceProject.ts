@@ -1,5 +1,6 @@
 import {
   appendAnalysisExecution,
+  appendDerivedDatasetArtifacts,
   appendDesignRevision,
   appendRawRevision,
   createInitialProjectState,
@@ -36,16 +37,22 @@ import { GraphSpecSchema } from "@lsaa/graph-spec";
 
 import {
   experimentCellKey,
+  hasSharedSourceConditionUnits,
   normalizeWithinExperiment,
   orderedAxisSemantic,
   orderedAxisTitle,
   orderedAxisUnit,
+  plannedExperimentalUnitCount,
   wbCorrectedBandValue,
   type ExperimentCellMap,
   type ExperimentSetDraft,
 } from "./experimentDraft";
 import { repeatedFactorCanonicalExplanation } from "./repeatedFactorTerminology";
-import { assertDualWriteEquivalence, projectContractToExperimentDesign } from "@lsaa/adaptive-input";
+import { synchronizeAdaptiveDraft } from "./adaptiveCanonicalStore";
+import {
+  assertDualWriteEquivalence,
+  projectContractToExperimentDesign,
+} from "@lsaa/adaptive-input";
 
 type PersistedWorkspaceGraphState = ExperimentWorkspaceState["graphs"][number];
 
@@ -65,7 +72,130 @@ type CanonicalWorkspaceRecords = Readonly<{
   observations: Observation[];
 }>;
 
-const adaptiveUnitToken = (value: string) => value.normalize("NFKC").replace(/[^A-Za-z0-9._:-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 36) || "unit";
+/**
+ * Scientific revision decisions must not depend on object insertion order.
+ * Volatile schema timestamps are removed at their known typed boundaries,
+ * never recursively (a source column named "createdAt" is still real data).
+ */
+function semanticFingerprint(value: unknown): string {
+  const normalize = (candidate: unknown): unknown => {
+    if (Array.isArray(candidate)) return candidate.map(normalize);
+    if (candidate && typeof candidate === "object") {
+      return Object.fromEntries(
+        Object.entries(candidate)
+          .sort(([left], [right]) => left.localeCompare(right))
+          .map(([key, nested]) => [key, normalize(nested)]),
+      );
+    }
+    return candidate;
+  };
+  return JSON.stringify(normalize(value));
+}
+
+function adaptiveRawPayload(snapshot: NonNullable<ExperimentSetDraft["adaptiveInput"]>) {
+  const mapping = snapshot.mapping
+    ? (({ confirmedAt: _confirmedAt, ...semantic }) => semantic)(snapshot.mapping)
+    : null;
+  const rawLineage = snapshot.rawLineage
+    ? (({ importedAt: _importedAt, ...semantic }) => semantic)(snapshot.rawLineage)
+    : null;
+  return {
+    canonicalObservations: snapshot.canonicalObservations,
+    mapping,
+    rawLineage,
+  };
+}
+
+function designSemanticPayload(design: ExperimentDesign | undefined) {
+  if (!design) return null;
+  const { createdAt: _createdAt, ...semantic } = design;
+  return semantic;
+}
+
+function activeCanonicalRecords(state: ProjectState): CanonicalWorkspaceRecords {
+  const rawRevision = state.rawRevisions.find(({ id }) => id === state.activeRawRevisionId);
+  if (!rawRevision) throw new Error("ACTIVE_RAW_REVISION_MISSING");
+  return {
+    rawRevision,
+    // Unit IDs are immutable across raw revisions. Keeping the complete unit
+    // registry lets analysis preparation resolve every active observation's
+    // parent chain without manufacturing another raw revision.
+    unitInstances: state.unitInstances,
+    observations: state.observations.filter(
+      ({ rawRevisionId }) => rawRevisionId === state.activeRawRevisionId,
+    ),
+  };
+}
+
+function nextWorkspaceArtifactRevisionIndex(state: ProjectState): number {
+  const ids = [
+    ...state.unitInstances.map(({ id }) => id),
+    ...state.observations.map(({ id }) => id),
+    ...state.transformations.map(({ id }) => id),
+    ...state.derivedDatasetRevisions.map(({ id }) => id),
+    ...state.derivedValues.map(({ id }) => id),
+    ...state.analysisRuns.flatMap((run) => [run.id, run.request.requestId]),
+    ...state.graphs.flatMap((graph) => [graph.id, graph.spec.id]),
+  ];
+  const highestPersistedIndex = ids.reduce((highest, id) => {
+    const index = Number(id.match(/\.r(\d+)(?:\.|$)/)?.[1] ?? 0);
+    return Math.max(highest, index);
+  }, state.rawRevisions.length);
+  return highestPersistedIndex + 1;
+}
+
+function pendingAnalysisGraphs(
+  graphs: readonly WorkspaceGraphState[],
+  existingState: ProjectState | undefined,
+  upstreamChanged: boolean,
+): WorkspaceGraphState[] {
+  if (!existingState || upstreamChanged) return [...graphs];
+  const persistedGraphs = new Map(
+    (existingState.experimentWorkspace?.graphs ?? []).map((graph) => [graph.id, graph]),
+  );
+  return graphs.filter((graph) => {
+    const persistedGraph = persistedGraphs.get(graph.id);
+    if (!persistedGraph) return true;
+    const derivationPayload = (candidate: WorkspaceGraphState | PersistedWorkspaceGraphState) => ({
+      selectedReadoutId: candidate.selectedReadoutId,
+      selectedConditionIds: candidate.selectedConditionIds,
+      selectedTimePointIds: candidate.selectedTimePointIds,
+      analysisTimePointId: candidate.analysisTimePointId,
+      analysisMetric: candidate.analysisMetric,
+    });
+    if (
+      semanticFingerprint(derivationPayload(graph)) !==
+      semanticFingerprint(derivationPayload(persistedGraph))
+    )
+      return true;
+    if (!graph.analysis) return false;
+    const persistedRun = persistedGraph?.analysisRunId
+      ? existingState.analysisRuns.find(({ id }) => id === persistedGraph.analysisRunId)
+      : undefined;
+    if (!persistedRun) return true;
+    return (
+      semanticFingerprint({
+        request: graph.analysis.request,
+        result: graph.analysis.result,
+        recommendation: graph.analysis.recommendation ?? null,
+        recommendedMethod: graph.analysis.recommendedMethod ?? null,
+      }) !==
+      semanticFingerprint({
+        request: persistedRun.request,
+        result: persistedRun.result,
+        recommendation: persistedRun.recommendation,
+        recommendedMethod: persistedRun.recommendation.recommendedMethod,
+      })
+    );
+  });
+}
+
+const adaptiveUnitToken = (value: string) =>
+  value
+    .normalize("NFKC")
+    .replace(/[^A-Za-z0-9._:-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 36) || "unit";
 
 function createAdaptiveCanonicalRecords(
   draft: ExperimentSetDraft,
@@ -75,73 +205,138 @@ function createAdaptiveCanonicalRecords(
   const snapshot = draft.adaptiveInput;
   if (!snapshot) return null;
   const contract = snapshot.contract;
-  const combinations = contract.factors.reduce<Array<Record<string, string>>>((rows, factor) => rows.flatMap((row) => factor.levels.map((level) => ({ ...row, [factor.key]: level }))), [{}]);
+  const combinations = contract.factors.reduce<Array<Record<string, string>>>(
+    (rows, factor) =>
+      rows.flatMap((row) => factor.levels.map((level) => ({ ...row, [factor.key]: level }))),
+    [{}],
+  );
   const unitInstances: UnitInstance[] = [];
   const observations: Observation[] = [];
   const unitIds = new Map<string, string>();
   const levels = new Map(contract.unitLevels.map((level) => [level.key, level]));
-  const identityForLevel = new Map(contract.identities.map((identity) => [identity.unitLevelKey, identity.key]));
-  const experimentalIdentityKey = identityForLevel.get(contract.experimentalUnitLevelKey) ?? contract.identities[0]!.key;
-  const experimentSessionFor = (row: typeof snapshot.canonicalObservations[number], conditionIndex: number) => {
-    const semanticIdentity = row.identities[experimentalIdentityKey];
+  const identityForLevel = new Map(
+    contract.identities.map((identity) => [identity.unitLevelKey, identity.key]),
+  );
+  const experimentalIdentityKey =
+    identityForLevel.get(contract.experimentalUnitLevelKey) ?? contract.identities[0]!.key;
+  const sharedSourceConditionUnits = hasSharedSourceConditionUnits(draft);
+  const sessionIdentityKey =
+    draft.conditionAssignment.kind === "matched"
+      ? (contract.matching.identityKey ?? experimentalIdentityKey)
+      : experimentalIdentityKey;
+  const experimentSessionFor = (
+    row: (typeof snapshot.canonicalObservations)[number],
+    conditionIndex: number,
+  ) => {
+    const semanticIdentity = row.identities[sessionIdentityKey];
     if (!semanticIdentity) return undefined;
     if (draft.conditionAssignment.kind === "matched") {
-      return draft.experiments.find(({ stableUnitId, label }) => stableUnitId === semanticIdentity || label === semanticIdentity)?.id;
+      return draft.experiments.find(
+        ({ stableUnitId, label }) =>
+          stableUnitId === semanticIdentity || label === semanticIdentity,
+      )?.id;
     }
     const combination = combinations[conditionIndex]!;
-    const identities = [...new Set(snapshot.canonicalObservations
-      .filter((candidate) => contract.factors.every((factor) => candidate.factors[factor.key] === combination[factor.key]))
-      .map((candidate) => candidate.identities[experimentalIdentityKey])
-      .filter((candidate): candidate is string => Boolean(candidate)))];
+    const identities = [
+      ...new Set(
+        snapshot.canonicalObservations
+          .filter((candidate) =>
+            contract.factors.every(
+              (factor) => candidate.factors[factor.key] === combination[factor.key],
+            ),
+          )
+          .map((candidate) => candidate.identities[experimentalIdentityKey])
+          .filter((candidate): candidate is string => Boolean(candidate)),
+      ),
+    ];
     const sessionIndex = identities.indexOf(semanticIdentity);
     return sessionIndex >= 0 ? draft.experiments[sessionIndex]?.id : undefined;
   };
-  const rowUnit = (row: typeof snapshot.canonicalObservations[number], levelKey: string, conditionIndex: number): string => {
+  const rowUnit = (
+    row: (typeof snapshot.canonicalObservations)[number],
+    levelKey: string,
+    conditionIndex: number,
+  ): string => {
     const level = levels.get(levelKey);
     if (!level) throw new Error(`ADAPTIVE_UNKNOWN_UNIT_LEVEL:${levelKey}`);
     const parentId = level.parentKey ? rowUnit(row, level.parentKey, conditionIndex) : null;
     const identityKey = identityForLevel.get(levelKey);
-    const semanticIdentity = (identityKey ? row.identities[identityKey] : undefined) ?? row.hierarchy[levelKey] ?? (levelKey === contract.experimentalUnitLevelKey ? row.identities[contract.identities[0]!.key] : undefined);
-    if (!semanticIdentity) throw new Error(`ADAPTIVE_UNIT_IDENTITY_MISSING:${levelKey}:${row.observationId}`);
-    const conditionScope = levelKey === contract.experimentalUnitLevelKey && draft.conditionAssignment.kind !== "matched"
-      ? `|condition.${conditionIndex + 1}`
-      : "";
+    const semanticIdentity =
+      (identityKey ? row.identities[identityKey] : undefined) ??
+      row.hierarchy[levelKey] ??
+      (levelKey === contract.experimentalUnitLevelKey
+        ? row.identities[contract.identities[0]!.key]
+        : undefined);
+    if (!semanticIdentity)
+      throw new Error(`ADAPTIVE_UNIT_IDENTITY_MISSING:${levelKey}:${row.observationId}`);
+    const conditionScope =
+      levelKey === contract.experimentalUnitLevelKey &&
+      (draft.conditionAssignment.kind !== "matched" || sharedSourceConditionUnits)
+        ? `|condition.${conditionIndex + 1}`
+        : "";
     const composite = `${levelKey}|${parentId ?? "root"}|${semanticIdentity}${conditionScope}`;
     const existing = unitIds.get(composite);
     if (existing) return existing;
     const id = `unit.adaptive.${adaptiveUnitToken(levelKey)}.${unitIds.size + 1}.r${revisionIndex}`;
     unitIds.set(composite, id);
-    const experimentSessionId = levelKey === contract.experimentalUnitLevelKey
-      ? experimentSessionFor(row, conditionIndex)
-      : undefined;
-    unitInstances.push({ id, levelId: `unit-level.${levelKey}`, parentUnitId: parentId, label: semanticIdentity, metadata: { semanticIdentity, semanticLevel: levelKey, ...(experimentSessionId ? { experimentSessionId } : {}) } });
+    const experimentSessionId =
+      levelKey === contract.experimentalUnitLevelKey
+        ? experimentSessionFor(row, conditionIndex)
+        : undefined;
+    unitInstances.push({
+      id,
+      levelId: `unit-level.${levelKey}`,
+      parentUnitId: parentId,
+      label: semanticIdentity,
+      metadata: {
+        semanticIdentity,
+        semanticLevel: levelKey,
+        ...(experimentSessionId ? { experimentSessionId } : {}),
+      },
+    });
     return id;
   };
-  const component = (row: typeof snapshot.canonicalObservations[number], readoutKey: string, key: string) => row.values[`${readoutKey}_${key}`] ?? row.values[key];
+  const component = (
+    row: (typeof snapshot.canonicalObservations)[number],
+    readoutKey: string,
+    key: string,
+  ) => row.values[`${readoutKey}_${key}`] ?? row.values[key];
   for (const row of snapshot.canonicalObservations) {
     const readout = contract.readouts.find(({ key }) => key === row.readoutKey);
     if (!readout) throw new Error(`ADAPTIVE_UNKNOWN_READOUT:${row.readoutKey}`);
     let measurement: MeasurementValue | null = null;
     if (readout.representation === "scalar") {
       const value = row.values[readout.key];
-      if (typeof value === "number" && Number.isFinite(value)) measurement = { kind: "scalar", value };
+      if (typeof value === "number" && Number.isFinite(value))
+        measurement = { kind: "scalar", value };
     } else if (readout.representation === "proportion_counts") {
       const numerator = component(row, readout.key, readout.componentKeys[0]!);
       const denominator = component(row, readout.key, readout.componentKeys[1]!);
-      if (typeof numerator === "number" && typeof denominator === "number") measurement = { kind: "proportion", numerator, denominator };
+      if (typeof numerator === "number" && typeof denominator === "number")
+        measurement = { kind: "proportion", numerator, denominator };
     } else if (readout.representation === "category_counts") {
-      const counts = Object.fromEntries(readout.componentKeys.flatMap((key) => {
-        const value = component(row, readout.key, key);
-        return typeof value === "number" ? [[key, value]] : [];
-      }));
+      const counts = Object.fromEntries(
+        readout.componentKeys.flatMap((key) => {
+          const value = component(row, readout.key, key);
+          return typeof value === "number" ? [[key, value]] : [];
+        }),
+      );
       if (Object.keys(counts).length >= 2) measurement = { kind: "categorical_counts", counts };
     } else if (readout.representation === "target_reference") {
       const target = component(row, readout.key, "target");
       const reference = component(row, readout.key, "reference");
-      if (typeof target === "number" && typeof reference === "number" && reference > 0) measurement = { kind: "loading_control_ratio", target, loadingControl: reference, transformationVersion: "0.1.0" };
+      if (typeof target === "number" && typeof reference === "number" && reference > 0)
+        measurement = {
+          kind: "loading_control_ratio",
+          target,
+          loadingControl: reference,
+          transformationVersion: "0.1.0",
+        };
     }
     if (!measurement) continue;
-    const conditionIndex = combinations.findIndex((combination) => contract.factors.every((factor) => combination[factor.key] === row.factors[factor.key]));
+    const conditionIndex = combinations.findIndex((combination) =>
+      contract.factors.every((factor) => combination[factor.key] === row.factors[factor.key]),
+    );
     if (conditionIndex < 0) throw new Error(`ADAPTIVE_CONDITION_MISMATCH:${row.observationId}`);
     const axisValue = contract.orderedAxes[0] ? row.axes[contract.orderedAxes[0].key] : undefined;
     observations.push({
@@ -187,6 +382,16 @@ export function createExperimentWorkspaceDesign(
   draft: ExperimentSetDraft,
   createdAt: string,
 ): ExperimentDesign {
+  if (hasSharedSourceConditionUnits(draft)) {
+    if (draft.adaptiveInput) {
+      return projectContractToExperimentDesign(
+        draft.adaptiveInput.contract,
+        plannedExperimentalUnitCount(draft),
+        createdAt,
+      );
+    }
+    throw new Error("SHARED_SOURCE_REQUIRES_ADAPTIVE_CONTRACT_PROJECTION");
+  }
   const factors = draft.attributes.flatMap((attribute) => {
     const values = [
       ...new Set(
@@ -326,7 +531,7 @@ export function createExperimentWorkspaceDesign(
             completePairsRequired: true,
           }
         : { kind: "independent" },
-    plannedN: draft.experiments.length,
+    plannedN: plannedExperimentalUnitCount(draft),
     normalizationPlans: draft.readouts.flatMap((readout) => [
       ...(readout.shape === "wb_ratio"
         ? [
@@ -436,6 +641,7 @@ function createWorkspaceSnapshot(
   draft: ExperimentSetDraft,
   cells: ExperimentCellMap,
   graphs: readonly WorkspaceGraphState[],
+  dataViewMode: "compact" | "expanded",
 ): ExperimentWorkspaceState {
   return ExperimentWorkspaceStateSchema.parse({
     version: "0.1.0",
@@ -452,6 +658,8 @@ function createWorkspaceSnapshot(
     timePlan: draft.time,
     experimentSessions: draft.experiments,
     importProvenance: draft.importProvenance,
+    entrySourceHistory: draft.entrySourceHistory ?? null,
+    dataViewMode,
     adaptiveInput: draft.adaptiveInput ?? null,
     notPlannedCellKeys: Object.entries(cells)
       .filter(([, cell]) => cell.availability === "not_planned")
@@ -837,6 +1045,35 @@ function prepareWorkspaceAnalyses(input: {
       }
       return undefined;
     };
+    const unitAtLevel = (unitId: string, levelId: string) => {
+      let unit = unitById.get(unitId);
+      const visited = new Set<string>();
+      while (unit && !visited.has(unit.id)) {
+        visited.add(unit.id);
+        if (unit.levelId === levelId) return unit.id;
+        unit = unit.parentUnitId ? unitById.get(unit.parentUnitId) : undefined;
+      }
+      return undefined;
+    };
+    const experimentalUnitIdFor = (unitId: string) => {
+      const experimentalUnitId = unitAtLevel(unitId, input.design.experimentalUnitLevelId);
+      if (!experimentalUnitId) {
+        throw new Error(
+          `EXPERIMENTAL_UNIT_ANCESTOR_NOT_FOUND:${unitId}:${input.design.experimentalUnitLevelId}`,
+        );
+      }
+      return experimentalUnitId;
+    };
+    const matchedPairIdFor = (experimentalUnitId: string) => {
+      if (input.design.pairing.kind !== "matched") return undefined;
+      const pairId = unitAtLevel(experimentalUnitId, input.design.pairing.matchLevelId);
+      if (!pairId) {
+        throw new Error(
+          `MATCH_LEVEL_ANCESTOR_NOT_FOUND:${experimentalUnitId}:${input.design.pairing.matchLevelId}`,
+        );
+      }
+      return pairId;
+    };
     const selectedExperimentIds = new Set(input.draft.experiments.map(({ id }) => id));
     const selectedTimes = new Set(analysisTimePoints.map(({ value }) => value));
     const selectedRaw = input.records.observations.filter(
@@ -847,7 +1084,8 @@ function prepareWorkspaceAnalyses(input: {
           (observation.sourceLocation.startsWith("adaptive:") &&
             graph.selectedConditionIds.includes(observation.conditionId) &&
             selectedExperimentIds.has(sourceExperimentId(observation.unitInstanceId) ?? "") &&
-            (analysisTimePoints.length === 0 || (observation.time !== undefined && selectedTimes.has(observation.time))))),
+            (analysisTimePoints.length === 0 ||
+              (observation.time !== undefined && selectedTimes.has(observation.time))))),
     );
     if (selectedRaw.length === 0) return;
 
@@ -876,10 +1114,7 @@ function prepareWorkspaceAnalyses(input: {
       >();
       selectedRaw.forEach((observation) => {
         if (observation.time === undefined) return;
-        const unit = input.records.unitInstances.find(
-          ({ id }) => id === observation.unitInstanceId,
-        );
-        const experimentalUnitId = unit?.parentUnitId ?? observation.unitInstanceId;
+        const experimentalUnitId = experimentalUnitIdFor(observation.unitInstanceId);
         const key = `${experimentalUnitId}\u0000${observation.conditionId}\u0000${observation.time}`;
         const current = grouped.get(key);
         grouped.set(key, {
@@ -961,10 +1196,7 @@ function prepareWorkspaceAnalyses(input: {
       const grouped = new Map<string, Observation[]>();
       selectedRaw.forEach((observation) => {
         if (observation.time === undefined) return;
-        const unit = input.records.unitInstances.find(
-          ({ id }) => id === observation.unitInstanceId,
-        );
-        const experimentalUnitId = unit?.parentUnitId ?? observation.unitInstanceId;
+        const experimentalUnitId = experimentalUnitIdFor(observation.unitInstanceId);
         const key = `${experimentalUnitId}\u0000${observation.conditionId}\u0000${observation.time}`;
         grouped.set(key, [...(grouped.get(key) ?? []), observation]);
       });
@@ -1019,7 +1251,9 @@ function prepareWorkspaceAnalyses(input: {
         conditionId: value.conditionId,
         value: value.value,
         experimentalUnitId: value.experimentalUnitId,
-        ...(input.design.pairing.kind === "matched" ? { pairId: value.experimentalUnitId } : {}),
+        ...(input.design.pairing.kind === "matched"
+          ? { pairId: matchedPairIdFor(value.experimentalUnitId) }
+          : {}),
       }));
     } else if (readout?.shape === "nested_continuous") {
       derivedDatasetRevisionId = `derived.workspace.${graph.id}.r${input.revisionIndex}`;
@@ -1042,15 +1276,19 @@ function prepareWorkspaceAnalyses(input: {
         conditionId: value.conditionId,
         value: value.value,
         experimentalUnitId: value.experimentalUnitId,
-        ...(input.design.pairing.kind === "matched" ? { pairId: value.experimentalUnitId } : {}),
+        ...(input.design.pairing.kind === "matched"
+          ? { pairId: matchedPairIdFor(value.experimentalUnitId) }
+          : {}),
       }));
     } else {
       analysisObservations = selectedRaw.map((observation) => ({
         observationId: observation.id,
         conditionId: observation.conditionId,
         value: measurementNumericValue(observation.measurement),
-        experimentalUnitId: observation.unitInstanceId,
-        ...(input.design.pairing.kind === "matched" ? { pairId: observation.unitInstanceId } : {}),
+        experimentalUnitId: experimentalUnitIdFor(observation.unitInstanceId),
+        ...(input.design.pairing.kind === "matched"
+          ? { pairId: matchedPairIdFor(experimentalUnitIdFor(observation.unitInstanceId)) }
+          : {}),
       }));
     }
 
@@ -1145,6 +1383,27 @@ function prepareWorkspaceAnalyses(input: {
     const variableConditionIds =
       request.protocolVersion === "0.5.0" ? request.variableConditionIds : null;
     const interval = graph.appearance.errorBar;
+    const xFactorIds =
+      graph.grouping?.x.source === "factor"
+        ? (graph.grouping.x.factorIds ??
+          (graph.grouping.x.factorId ? [graph.grouping.x.factorId] : []))
+        : [];
+    const visualMapping = (
+      channel:
+        | NonNullable<WorkspaceGraphState["grouping"]>["series"]
+        | NonNullable<NonNullable<WorkspaceGraphState["grouping"]>["color"]>
+        | NonNullable<NonNullable<WorkspaceGraphState["grouping"]>["shape"]>
+        | undefined,
+    ) =>
+      channel?.source === "factor"
+        ? channel.factorId
+        : channel?.source === "time"
+          ? "time"
+          : undefined;
+    const seriesMapping = visualMapping(graph.grouping?.series);
+    const colorMapping = visualMapping(graph.grouping?.color) ?? seriesMapping ?? "conditionId";
+    const shapeMapping = visualMapping(graph.grouping?.shape) ?? seriesMapping;
+    const facetMapping = graph.grouping?.facet?.factorId;
     const graphSpec = GraphSpecSchema.parse({
       id: `${graph.id}.r${input.revisionIndex}`,
       version: "0.1.0",
@@ -1197,16 +1456,25 @@ function prepareWorkspaceAnalyses(input: {
         ),
       },
       mappings: {
-        x: variableConditionIds?.[0] ?? "conditionId",
-        xHierarchy:
-          graph.grouping?.x.source === "factor"
-            ? (graph.grouping.x.factorIds ??
-              (graph.grouping.x.factorId ? [graph.grouping.x.factorId] : []))
-            : [],
+        x: variableConditionIds?.[0] ?? xFactorIds[0] ?? "conditionId",
+        xHierarchy: xFactorIds,
         y: "value",
-        ...(request.templateId === "D09" ? {} : { color: "conditionId" }),
+        ...(request.templateId === "D09"
+          ? {}
+          : {
+              ...(seriesMapping ? { series: seriesMapping } : {}),
+              color: colorMapping,
+              ...(shapeMapping ? { shape: shapeMapping } : {}),
+              ...(facetMapping ? { facet: facetMapping } : {}),
+            }),
         ...(request.templateId === "D02" || request.templateId === "D09"
-          ? { pair: "experimentalUnitId" }
+          ? {
+              pair:
+                input.design.pairing.kind === "matched" &&
+                input.design.pairing.matchLevelId !== input.design.experimentalUnitLevelId
+                  ? "pairId"
+                  : "experimentalUnitId",
+            }
           : {}),
       },
       summary:
@@ -1227,6 +1495,7 @@ function prepareWorkspaceAnalyses(input: {
         boxWhiskerMode: graph.appearance.boxWhiskerMode ?? "tukey_1_5_iqr",
         uncertaintyStyle: graph.appearance.uncertaintyStyle ?? "error_bars",
         ribbonOpacity: graph.appearance.ribbonOpacity ?? 0.18,
+        seriesStyles: graph.appearance.seriesStyles,
       },
       axes: {
         yStartAtZero: readout?.shape === "proportion",
@@ -1235,14 +1504,27 @@ function prepareWorkspaceAnalyses(input: {
           request.templateId === "D09"
             ? (input.draft.conditions.find(({ id }) => id === variableConditionIds?.[0])?.label ??
               "X")
-            : "Condition",
+            : graph.axes.xTitle.trim() ||
+              input.draft.attributes.find(({ id }) => id === xFactorIds[0])?.label ||
+              "Condition",
         yLabel:
           request.templateId === "D09"
             ? (input.draft.conditions.find(({ id }) => id === variableConditionIds?.[1])?.label ??
               "Y")
             : (readout?.label ?? "Value"),
         showMinorTicks: graph.axes.showMinorTicks ?? true,
+        tickDirection: graph.axes.tickDirection,
+        showCategoryGroupSeparators: graph.axes.showCategoryGroupSeparators,
       },
+      ...(graph.grouping?.facet
+        ? {
+            facet: {
+              factorId: graph.grouping.facet.factorId,
+              levelOrder: graph.grouping.facet.levelOrder,
+              axisPolicy: graph.grouping.facet.axisPolicy,
+            },
+          }
+        : {}),
     });
     analyses.push({
       graphId: graph.id,
@@ -1266,82 +1548,136 @@ export function createExperimentWorkspaceProject(input: {
   draft: ExperimentSetDraft;
   cells: ExperimentCellMap;
   graphs: readonly WorkspaceGraphState[];
+  dataViewMode?: "compact" | "expanded";
   existingState?: ProjectState;
   now?: string;
 }): ProjectState {
   const now = input.now ?? new Date().toISOString();
-  const actor = "local-user";
-  const revisionIndex = (input.existingState?.rawRevisions.length ?? 0) + 1;
-  const rawRevision: RawDatasetRevision = {
-    id: `raw.workspace.${revisionIndex}`,
-    previousRevisionId: input.existingState?.activeRawRevisionId ?? null,
-    sourceKind: input.existingState ? "project_edit" : "manual",
-    createdAt: now,
-    createdBy: actor,
-    note: "Experiment workspace data",
-  };
-  const records = createCanonicalRecords(input.draft, input.cells, rawRevision, revisionIndex);
-  const plannedN = input.draft.conditionAssignment.kind === "matched"
-    ? input.draft.experiments.length
-    : input.draft.experiments.length * Math.max(1, input.draft.conditions.length);
-  const adaptiveDesign = input.draft.adaptiveInput
-    ? projectContractToExperimentDesign(input.draft.adaptiveInput.contract, plannedN, now)
-    : null;
-  if (adaptiveDesign && input.draft.adaptiveInput) {
-    assertDualWriteEquivalence(input.draft.adaptiveInput.contract, adaptiveDesign, now);
+  const draft = synchronizeAdaptiveDraft({ draft: input.draft, cells: input.cells, now });
+  if (hasSharedSourceConditionUnits(draft) && !draft.adaptiveInput) {
+    throw new Error("SHARED_SOURCE_REQUIRES_ADAPTIVE_CONTRACT_PROJECTION");
   }
-  const design = adaptiveDesign ?? (input.existingState
-    ? (input.existingState.designRevisions.find(
-        (revision) => revision.id === input.existingState?.activeDesignRevisionId,
-      )?.design ?? createExperimentWorkspaceDesign(input.draft, now))
-    : createExperimentWorkspaceDesign(input.draft, now));
+  const actor = "local-user";
+  const plannedN = plannedExperimentalUnitCount(draft);
+  const adaptiveDesign = draft.adaptiveInput
+    ? projectContractToExperimentDesign(draft.adaptiveInput.contract, plannedN, now)
+    : null;
+  if (adaptiveDesign && draft.adaptiveInput) {
+    assertDualWriteEquivalence(draft.adaptiveInput.contract, adaptiveDesign, now);
+  }
+  const design =
+    adaptiveDesign ??
+    (input.existingState
+      ? (input.existingState.designRevisions.find(
+          (revision) => revision.id === input.existingState?.activeDesignRevisionId,
+        )?.design ?? createExperimentWorkspaceDesign(draft, now))
+      : createExperimentWorkspaceDesign(draft, now));
+  const currentDesign = input.existingState?.designRevisions.find(
+    (revision) => revision.id === input.existingState?.activeDesignRevisionId,
+  )?.design;
+  const designChanged = Boolean(
+    input.existingState &&
+    adaptiveDesign &&
+    semanticFingerprint(designSemanticPayload(currentDesign)) !==
+      semanticFingerprint(designSemanticPayload(adaptiveDesign)),
+  );
+  const persistedAdaptive =
+    input.existingState?.adaptiveInput ?? input.existingState?.experimentWorkspace?.adaptiveInput;
+  const rawChanged = input.existingState
+    ? draft.adaptiveInput && persistedAdaptive
+      ? semanticFingerprint(adaptiveRawPayload(draft.adaptiveInput)) !==
+        semanticFingerprint(adaptiveRawPayload(persistedAdaptive))
+      : true
+    : true;
+  const rawRevisionIndex = input.existingState
+    ? input.existingState.rawRevisions.length + (rawChanged ? 1 : 0)
+    : 1;
+  const artifactRevisionIndex =
+    input.existingState && !rawChanged
+      ? nextWorkspaceArtifactRevisionIndex(input.existingState)
+      : rawRevisionIndex;
+  const rawRevision: RawDatasetRevision = rawChanged
+    ? {
+        id: `raw.workspace.${rawRevisionIndex}`,
+        previousRevisionId: input.existingState?.activeRawRevisionId ?? null,
+        sourceKind: input.existingState ? "project_edit" : "manual",
+        createdAt: now,
+        createdBy: actor,
+        note: "Experiment workspace data",
+      }
+    : activeCanonicalRecords(input.existingState!).rawRevision;
+  const records = rawChanged
+    ? createCanonicalRecords(draft, input.cells, rawRevision, rawRevisionIndex)
+    : activeCanonicalRecords(input.existingState!);
   const projectId =
     input.existingState?.metadata.projectId ?? `project.workspace.${Date.parse(now)}`;
+  const analysesToPersist = pendingAnalysisGraphs(
+    input.graphs,
+    input.existingState,
+    rawChanged || designChanged,
+  );
   const prepared = prepareWorkspaceAnalyses({
-    draft: input.draft,
-    graphs: input.graphs,
+    draft,
+    graphs: analysesToPersist,
     records,
     design,
     projectId,
-    revisionIndex,
+    revisionIndex: artifactRevisionIndex,
     now,
     actor,
   });
   let state: ProjectState;
   if (input.existingState) {
-    const currentDesign = input.existingState.designRevisions.find(
-      (revision) => revision.id === input.existingState?.activeDesignRevisionId,
-    )?.design;
-    const designChanged = adaptiveDesign && JSON.stringify(currentDesign) !== JSON.stringify(adaptiveDesign);
     const startingState = designChanged
-      ? appendDesignRevision(input.existingState, adaptiveDesign, actor, now)
+      ? appendDesignRevision(input.existingState, adaptiveDesign!, actor, now, {
+          adaptiveInput: draft.adaptiveInput ?? null,
+          experimentWorkspace: createWorkspaceSnapshot(
+            draft,
+            input.cells,
+            input.graphs,
+            input.dataViewMode ??
+              input.existingState.experimentWorkspace?.dataViewMode ??
+              "compact",
+          ),
+        })
       : input.existingState;
-    state = appendRawRevision(
-      startingState,
-      records.rawRevision,
-      records.unitInstances,
-      records.observations,
-      actor,
-      prepared.transformations,
-      prepared.derivedDatasetRevisions,
-      prepared.derivedValues,
-    );
+    if (rawChanged) {
+      state = appendRawRevision(
+        startingState,
+        records.rawRevision,
+        records.unitInstances,
+        records.observations,
+        actor,
+        prepared.transformations,
+        prepared.derivedDatasetRevisions,
+        prepared.derivedValues,
+      );
+    } else {
+      state = appendDerivedDatasetArtifacts(startingState, {
+        transformations: prepared.transformations,
+        derivedDatasetRevisions: prepared.derivedDatasetRevisions,
+        derivedValues: prepared.derivedValues,
+        actor,
+        occurredAt: now,
+      });
+    }
     state = ProjectStateSchema.parse({
       ...state,
       metadata: {
         ...state.metadata,
-        projectName: input.draft.name,
+        projectName: draft.name,
+        updatedAt: now,
         experimentDate:
-          input.draft.experiments.find((experiment) => experiment.date)?.date ??
+          draft.experiments.find((experiment) => experiment.date)?.date ??
           state.metadata.experimentDate,
       },
     });
   } else {
-    const firstDate = input.draft.experiments.find((experiment) => experiment.date)?.date;
+    const firstDate = draft.experiments.find((experiment) => experiment.date)?.date;
     state = createInitialProjectState({
       metadata: {
         projectId,
-        projectName: input.draft.name,
+        projectName: draft.name,
         experimentDate: firstDate ?? "",
         createdAt: now,
         updatedAt: now,
@@ -1376,14 +1712,27 @@ export function createExperimentWorkspaceProject(input: {
       `analysis-run.${analysis.request.requestId}`,
     ]),
   );
+  const previousGraphRunIds = new Map(
+    (input.existingState?.experimentWorkspace?.graphs ?? []).map((graph) => [
+      graph.id,
+      graph.analysisRunId,
+    ]),
+  );
   const linkedGraphs = input.graphs.map((graph) => ({
     ...graph,
-    analysisRunId: graphRunIds.get(graph.id) ?? null,
+    analysisRunId:
+      graphRunIds.get(graph.id) ??
+      (graph.analysis ? (previousGraphRunIds.get(graph.id) ?? null) : null),
   }));
   return ProjectStateSchema.parse({
     ...state,
-    experimentWorkspace: createWorkspaceSnapshot(input.draft, input.cells, linkedGraphs),
-    adaptiveInput: input.draft.adaptiveInput ?? null,
+    experimentWorkspace: createWorkspaceSnapshot(
+      draft,
+      input.cells,
+      linkedGraphs,
+      input.dataViewMode ?? "compact",
+    ),
+    adaptiveInput: draft.adaptiveInput ?? null,
   });
 }
 
@@ -1391,6 +1740,7 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
   draft: ExperimentSetDraft;
   cells: ExperimentCellMap;
   graphs: WorkspaceGraphState[];
+  dataViewMode: "compact" | "expanded";
 } | null {
   const workspace = state.experimentWorkspace;
   if (!workspace) return null;
@@ -1422,6 +1772,7 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
     time: workspace.timePlan,
     experiments: workspace.experimentSessions,
     importProvenance: workspace.importProvenance,
+    entrySourceHistory: workspace.entrySourceHistory ?? undefined,
     adaptiveInput: workspace.adaptiveInput ?? undefined,
   };
   const cells: Record<string, ExperimentCellMap[string]> = {};
@@ -1429,7 +1780,12 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
   const experimentalUnitFor = (unitId: string) => {
     let unit = unitsById.get(unitId);
     const visited = new Set<string>();
-    while (unit && unit.levelId !== design.experimentalUnitLevelId && unit.parentUnitId && !visited.has(unit.id)) {
+    while (
+      unit &&
+      unit.levelId !== design.experimentalUnitLevelId &&
+      unit.parentUnitId &&
+      !visited.has(unit.id)
+    ) {
       visited.add(unit.id);
       unit = unitsById.get(unit.parentUnitId);
     }
@@ -1452,75 +1808,79 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
     if (typeof stored === "string") return stored;
     if (!experimentalUnit) return undefined;
     if (draft.conditionAssignment.kind === "matched") {
-      const semanticIdentity = typeof experimentalUnit.metadata.semanticIdentity === "string"
-        ? experimentalUnit.metadata.semanticIdentity
-        : experimentalUnit.label;
-      return draft.experiments.find(({ stableUnitId, label }) => stableUnitId === semanticIdentity || label === semanticIdentity)?.id;
+      const semanticIdentity =
+        typeof experimentalUnit.metadata.semanticIdentity === "string"
+          ? experimentalUnit.metadata.semanticIdentity
+          : experimentalUnit.label;
+      return draft.experiments.find(
+        ({ stableUnitId, label }) =>
+          stableUnitId === semanticIdentity || label === semanticIdentity,
+      )?.id;
     }
-    const legacyIndex = unitOrderByCondition.get(observation.conditionId)?.indexOf(experimentalUnit.id) ?? -1;
+    const legacyIndex =
+      unitOrderByCondition.get(observation.conditionId)?.indexOf(experimentalUnit.id) ?? -1;
     return legacyIndex >= 0 ? draft.experiments[legacyIndex]?.id : undefined;
   };
-  activeObservations
-    .forEach((observation) => {
-      const experimentId = resolveExperimentId(observation);
-      if (!experimentId) return;
-      const timePoint = draft.time.points.find((point) => point.value === observation.time);
-      const persistedKey = observation.sourceLocation?.startsWith("workspace:")
-        ? observation.sourceLocation.slice("workspace:".length).split("#source=")[0]
-        : null;
-      const key =
-        persistedKey ??
-        experimentCellKey({
-          experimentId,
-          conditionId: observation.conditionId,
-          readoutId: observation.outcomeId,
-          timePointId: timePoint?.id,
-        });
-      if (observation.measurement.kind === "proportion") {
-        cells[key] = {
-          kind: "proportion",
-          positive: observation.measurement.numerator,
-          eligible: observation.measurement.denominator,
-        };
-      }
-      if (observation.measurement.kind === "scalar") {
-        const existing = cells[key];
-        const encodedSource = observation.sourceLocation?.split("#source=")[1];
-        cells[key] = {
-          kind: "nested_continuous",
-          source: "paste",
-          rawValues: [
-            ...(existing?.kind === "nested_continuous" ? existing.rawValues : []),
-            observation.measurement.value,
-          ],
-          sourceLocations: [
-            ...(existing?.kind === "nested_continuous" ? (existing.sourceLocations ?? []) : []),
-            ...(encodedSource ? [decodeURIComponent(encodedSource)] : []),
-          ],
-        };
-      }
-      if (observation.measurement.kind === "categorical_counts") {
-        cells[key] = {
-          kind: "categorical_counts",
-          counts: observation.measurement.counts,
-        };
-      }
-      if (observation.measurement.kind === "loading_control_ratio") {
-        const source = observation.measurement.sourceMeasurements;
-        cells[key] = {
-          kind: "wb_ratio",
-          target: source ? null : observation.measurement.target,
-          reference: source ? null : observation.measurement.loadingControl,
-          ...(source
-            ? {
-                inputMode: "imagej_mean_background_area" as const,
-                targetSource: source.target,
-                referenceSource: source.loadingControl,
-              }
-            : {}),
-        };
-      }
-    });
+  activeObservations.forEach((observation) => {
+    const experimentId = resolveExperimentId(observation);
+    if (!experimentId) return;
+    const timePoint = draft.time.points.find((point) => point.value === observation.time);
+    const persistedKey = observation.sourceLocation?.startsWith("workspace:")
+      ? observation.sourceLocation.slice("workspace:".length).split("#source=")[0]
+      : null;
+    const key =
+      persistedKey ??
+      experimentCellKey({
+        experimentId,
+        conditionId: observation.conditionId,
+        readoutId: observation.outcomeId,
+        timePointId: timePoint?.id,
+      });
+    if (observation.measurement.kind === "proportion") {
+      cells[key] = {
+        kind: "proportion",
+        positive: observation.measurement.numerator,
+        eligible: observation.measurement.denominator,
+      };
+    }
+    if (observation.measurement.kind === "scalar") {
+      const existing = cells[key];
+      const encodedSource = observation.sourceLocation?.split("#source=")[1];
+      cells[key] = {
+        kind: "nested_continuous",
+        source: "paste",
+        rawValues: [
+          ...(existing?.kind === "nested_continuous" ? existing.rawValues : []),
+          observation.measurement.value,
+        ],
+        sourceLocations: [
+          ...(existing?.kind === "nested_continuous" ? (existing.sourceLocations ?? []) : []),
+          ...(encodedSource ? [decodeURIComponent(encodedSource)] : []),
+        ],
+      };
+    }
+    if (observation.measurement.kind === "categorical_counts") {
+      cells[key] = {
+        kind: "categorical_counts",
+        counts: observation.measurement.counts,
+      };
+    }
+    if (observation.measurement.kind === "loading_control_ratio") {
+      const source = observation.measurement.sourceMeasurements;
+      cells[key] = {
+        kind: "wb_ratio",
+        target: source ? null : observation.measurement.target,
+        reference: source ? null : observation.measurement.loadingControl,
+        ...(source
+          ? {
+              inputMode: "imagej_mean_background_area" as const,
+              targetSource: source.target,
+              referenceSource: source.loadingControl,
+            }
+          : {}),
+      };
+    }
+  });
   workspace.notPlannedCellKeys.forEach((key) => {
     const readoutId = key.split("::").at(-1);
     const readout = draft.readouts.find(({ id }) => id === readoutId);
@@ -1570,5 +1930,5 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
         : { analysis: null }),
     };
   });
-  return { draft, cells, graphs };
+  return { draft, cells, graphs, dataViewMode: workspace.dataViewMode };
 }
