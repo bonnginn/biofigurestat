@@ -286,6 +286,15 @@ describe("production UI adapter over the 65-case Gold set", () => {
       factorLevels: ["Before", "After"],
       sameIdentityAcrossConditions: true,
     });
+    const emptyMatched = createAdaptiveWorkspace({
+      contract: matchedContract,
+      observations: [],
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    expect(emptyMatched.status).toBe("ready");
+    expect(emptyMatched.draft?.experiments[0]?.label).toBe("Cell 1");
     const researcherIdentities = ["Run Alpha", "実験回 2", "A B", "A-B"];
     const matchedObservations = researcherIdentities.flatMap((identity, identityIndex) =>
       ["Before", "After"].map((condition, conditionIndex) =>

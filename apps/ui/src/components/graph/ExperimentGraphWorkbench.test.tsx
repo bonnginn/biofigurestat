@@ -834,7 +834,8 @@ describe("ExperimentGraphWorkbench", () => {
     expect(screen.getByText("代替案")).toBeVisible();
     expect(screen.getByText("詳細設定")).toBeVisible();
     fireEvent.click(screen.getByRole("radio", { name: /Mann–Whitney/ }));
-    expect(screen.getByText(/推奨法を上書き/)).toBeVisible();
+    expect(screen.getByText(/推奨とは異なる方法/)).toBeVisible();
+    expect(screen.getByText(/この選択は解析履歴へ記録/)).toBeVisible();
     fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
     await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));

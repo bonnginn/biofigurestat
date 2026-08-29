@@ -1102,6 +1102,7 @@ export function BiologicalExperimentSetup({
                   </div>
                   <button
                     ref={addBlockControlRef}
+                    className="biological-setup__add-factor"
                     type="button"
                     onClick={() =>
                       setBlocks((current) => {
@@ -1114,7 +1115,7 @@ export function BiologicalExperimentSetup({
                       })
                     }
                   >
-                    ＋ 処理・群分けを追加
+                    ＋ 別の種類の処理・群分けを追加
                   </button>
                 </div>
                 <div className="biological-setup__section-intro">

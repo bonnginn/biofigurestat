@@ -682,7 +682,7 @@ export function GraphOnlyVisualizationPage({
         <p className="experiment-start__eyebrow">表からGraph</p>
         <h1>手元の表からGraphを作る</h1>
         <p>
-          表の列を明示的に指定して、数値を説明用Graphとして表示します。実験構造や統計的なnは推測しません。
+          表の列を指定してGraphを作ります。実験構造や統計的なnは、統計を使うまで質問しません。
         </p>
       </header>
 
@@ -758,7 +758,7 @@ export function GraphOnlyVisualizationPage({
           }}
           ariaLabel="Graph用データシート"
           caption="Graph用データ"
-          minimumRows={9}
+          minimumRows={6}
           minimumColumns={4}
           testIdPrefix="graph-only"
           replaceOnPasteAtOrigin
@@ -862,7 +862,7 @@ export function GraphOnlyVisualizationPage({
         <div className="graph-only__result-heading">
           <h2 id="graph-only-result-heading">3. Graph</h2>
           <span className={canGraph ? "graph-only__ready" : "graph-only__waiting"}>
-            {canGraph ? "表示できます" : "列の指定を待っています"}
+            {canGraph ? "Graphを表示中" : "列の指定を待っています"}
           </span>
         </div>
         {canGraph ? (

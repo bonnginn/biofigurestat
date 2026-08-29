@@ -140,6 +140,8 @@ describe("Graph-only visualization entry", () => {
     expect(screen.getAllByRole("button", { name: /入口へ戻る|実験の種類を変更/ })).toHaveLength(1);
     expect(screen.getByRole("region", { name: "Graph用データシート" })).toBeVisible();
     expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("X / condition");
+    expect(screen.getByTestId("graph-only-cell-5-0")).toBeVisible();
+    expect(screen.queryByTestId("graph-only-cell-6-0")).toBeNull();
     expect(screen.getByText(/直接入力用のX列とY列だけを最初からGraphへ対応付け/)).toBeVisible();
     expect(
       screen.getByText(/貼り付け・ファイル読込では列の意味を推測せず指定を解除/),

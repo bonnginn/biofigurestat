@@ -4,6 +4,35 @@ export const EXTERNAL_LLM_GUIDE_VERSION = "0.1.0" as const;
 export const EXTERNAL_LLM_GUIDE_URL =
   "https://raw.githubusercontent.com/bonnginn/life-science-analysis-app/main/docs/help/EXTERNAL_LLM_ASSIST_GUIDE_v0.1.md";
 
+export type ExternalLlmImprovementRequest = Readonly<{
+  placement: "experiment_setup" | "statistics";
+  requestedChange?: string;
+  externalLlmResponse?: string;
+}>;
+
+export function createExternalLlmImprovementRequest(
+  input: ExternalLlmImprovementRequest,
+): string {
+  const placement =
+    input.placement === "statistics" ? "Statistics（統計の選択・解釈）" : "Experiment setup（実験入力）";
+  return [
+    "Life Science Analysis App（LSA）の改善要望です。",
+    `対象アプリ: ${PRODUCT_IDENTITY.displayNameJa} ${PRODUCT_IDENTITY.version}（build ${PRODUCT_IDENTITY.buildRevision}）`,
+    `対象画面: ${placement}`,
+    "",
+    "実装してほしい内容:",
+    input.requestedChange?.trim() || "（利用者による記載なし）",
+    "",
+    "外部LLMから得た回答（参考情報・未検証）:",
+    input.externalLlmResponse?.trim() || "（添付なし）",
+    "",
+    "注意:",
+    "- 外部LLMの回答は提案であり、LSAの仕様や科学的妥当性を保証するものではありません。",
+    "- 実装前に、既存仕様、scientific semantics、再現可能なgeneric issueかを確認してください。",
+    "- この文章は利用者が内容を確認して手動で共有したものです。LSAから自動送信されていません。",
+  ].join("\n");
+}
+
 const line = (label: string, value: string | null | undefined): string =>
   `- ${label}: ${value?.trim() || "まだ回答していません"}`;
 

@@ -14,6 +14,7 @@
 - The researcher-facing problem-report link is a static, explicitly configured HTTPS form URL. No project data, diagnostic report, or query parameter is appended automatically; the researcher chooses whether to copy or save a redacted report.
 - Contextual Help uses a local deterministic glossary. No cloud LLM provider, product API key, or automatic model call is configured.
 - The optional “外部LLMに相談する” control creates an editable question for the researcher to copy manually. It links to the public, versioned application guide and does not send the prompt or project to an external service. The generated question includes experiment structure or statistical intent but excludes measurement values by default; the researcher controls any later edits and the external service they choose.
+- The optional “相談結果から改善要望を作る” step accepts only text the researcher deliberately pastes or writes, labels the external answer as unverified reference material, and copies a reviewable request locally. It does not execute the answer, submit an issue, or upload the request. Researchers should omit measurements and identifying research text.
 - Any future automatic external Help provider remains out of scope unless separately approved. It must be opt-in and disclose the exact structured context before first use. Raw measurements remain excluded by default.
 
 ## Evaluation isolation

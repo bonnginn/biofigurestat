@@ -441,7 +441,9 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     ).not.toBeChecked();
     expect(screen.getByLabelText("処理・群分けの入力方法")).toBeVisible();
     expect(screen.getByRole("button", { name: "入力表を作る（入力内容の末尾）" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "＋ 処理・群分けを追加" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "＋ 別の種類の処理・群分けを追加" }),
+    ).toBeVisible();
     expect(
       screen.queryByText(/StructureContract|factor|level|identity|ordered axis|nested|統計/i),
     ).toBeNull();
@@ -705,7 +707,9 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "処理・群分け 1の名前" }), {
       target: { value: "siRNA" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "＋ 処理・群分けを追加" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "＋ 別の種類の処理・群分けを追加" }),
+    );
     fireEvent.change(screen.getByRole("textbox", { name: "処理・群分け 2の名前" }), {
       target: { value: "Dox" },
     });
@@ -733,11 +737,15 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "処理・群分け 1の名前" }), {
       target: { value: "A" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "＋ 処理・群分けを追加" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "＋ 別の種類の処理・群分けを追加" }),
+    );
     fireEvent.change(screen.getByRole("textbox", { name: "処理・群分け 2の名前" }), {
       target: { value: "B" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "＋ 処理・群分けを追加" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "＋ 別の種類の処理・群分けを追加" }),
+    );
     fireEvent.change(screen.getByRole("textbox", { name: "処理・群分け 3の名前" }), {
       target: { value: "C" },
     });
@@ -745,7 +753,9 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     fireEvent.click(screen.getByRole("button", { name: "処理・群分け 2（B）を削除" }));
     expect(screen.getByRole("button", { name: "処理・群分け 2（C）を削除" })).toHaveFocus();
 
-    fireEvent.click(screen.getByRole("button", { name: "＋ 処理・群分けを追加" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "＋ 別の種類の処理・群分けを追加" }),
+    );
     fireEvent.change(screen.getByRole("textbox", { name: "処理・群分け 3の名前" }), {
       target: { value: "D" },
     });
@@ -753,7 +763,9 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     expect(screen.getByRole("button", { name: "処理・群分け 2（C）を削除" })).toHaveFocus();
 
     fireEvent.click(screen.getByRole("button", { name: "処理・群分け 2（C）を削除" }));
-    expect(screen.getByRole("button", { name: "＋ 処理・群分けを追加" })).toHaveFocus();
+    expect(
+      screen.getByRole("button", { name: "＋ 別の種類の処理・群分けを追加" }),
+    ).toHaveFocus();
   });
 
   it("moves additional-readout deletion focus to the next, previous, then add control", () => {

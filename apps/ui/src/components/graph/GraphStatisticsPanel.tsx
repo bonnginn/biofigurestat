@@ -786,8 +786,8 @@ export function GraphStatisticsPanel({
               <p>
                 {recommendationDecision
                   ? recommendationDecision.kind === "accepted"
-                    ? `推奨法を選択中：${humanMethodLabel(recommendationDecision.selectedMethod)}。別の方法を選ぶと上書き理由を記録します。`
-                    : `推奨法を上書きし、${humanMethodLabel(recommendationDecision.selectedMethod)}を選択しました。`
+                    ? `推奨法を選択中：${humanMethodLabel(recommendationDecision.selectedMethod)}。別の方法を選ぶと、その選択を解析履歴へ記録します。`
+                    : `推奨とは異なる方法として${humanMethodLabel(recommendationDecision.selectedMethod)}を選択中です。この選択は解析履歴へ記録されます。`
                   : "選択中の解析法は実行時にprovenanceへ記録します。"}
               </p>
             </div>

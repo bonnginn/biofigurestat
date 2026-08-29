@@ -1,12 +1,27 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  createExternalLlmImprovementRequest,
   createExperimentConsultationPrompt,
   createStatisticsConsultationPrompt,
   EXTERNAL_LLM_GUIDE_URL,
 } from "./externalLlmConsultation";
 
 describe("external LLM consultation prompt boundary", () => {
+  it("creates a reviewed improvement request without claiming that the LLM answer is authoritative", () => {
+    const request = createExternalLlmImprovementRequest({
+      placement: "statistics",
+      requestedChange: "比較目的を選ぶ説明を短くしてほしい",
+      externalLlmResponse: "対照群との比較を先に確認するとよい",
+    });
+
+    expect(request).toContain("比較目的を選ぶ説明を短くしてほしい");
+    expect(request).toContain("対照群との比較を先に確認するとよい");
+    expect(request).toContain("参考情報・未検証");
+    expect(request).toContain("LSAから自動送信されていません");
+    expect(request).toContain("Statistics（統計の選択・解釈）");
+  });
+
   it("generates a one-question-at-a-time experiment interview against the versioned guide", () => {
     const prompt = createExperimentConsultationPrompt({
       title: "siRNA rescue",

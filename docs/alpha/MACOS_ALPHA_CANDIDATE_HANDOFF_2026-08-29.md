@@ -7,7 +7,7 @@ This is the current macOS build and reduced-human-gate handoff. It supersedes
 overwrite that historical evidence.
 
 - Branch: `codex/native-hardening-2026-08-28`
-- Remote HEAD when prepared: `729649b1296e7010db47cec93dbc2648060454db`
+- Base HEAD before the latest UX follow-up: `26e8df8c92324ff3d5b217264d3ff40f2a61d3d8`
 - Minimum product commit: `417c024` (`visible value === canonical value` hardening)
 - Pool D: not accessed
 - Product route: experiment-first task hub; do not enable the historical feature flag
@@ -29,14 +29,22 @@ git pull --ff-only origin codex/native-hardening-2026-08-28
 git merge-base --is-ancestor 417c024 HEAD
 git status --short
 
-corepack pnpm install --frozen-lockfile
-NODE_OPTIONS=--localstorage-file=/private/tmp/lsaa-vitest-localstorage.json pnpm test
-pnpm typecheck
-pnpm lint
-pnpm engine:build:mac
-VITE_LSAA_BUILD_REVISION="$(git rev-parse --short HEAD)-alpha.20260829.mac1" pnpm tauri:build
-pnpm native:verify:mac
+node --version
+npm --version
+npx --yes pnpm@11.19.0 install --frozen-lockfile
+NODE_OPTIONS=--localstorage-file=/private/tmp/lsaa-vitest-localstorage.json npx --yes pnpm@11.19.0 test
+npx --yes pnpm@11.19.0 typecheck
+npx --yes pnpm@11.19.0 lint
+npx --yes pnpm@11.19.0 engine:build:mac
+VITE_LSAA_BUILD_REVISION="$(git rev-parse --short HEAD)-alpha.20260829.mac1" npx --yes pnpm@11.19.0 tauri:build
+npx --yes pnpm@11.19.0 native:verify:mac
 ```
+
+The repository pins `pnpm@11.19.0`. The commands deliberately use `npx` so a
+Mac without the optional `corepack` executable can build without installing a
+global package. If `node` or `npm` itself is unavailable, stop and report that
+prerequisite failure. Do not replace the pinned pnpm version with the latest
+version.
 
 Do not use `VITE_EXPERIMENT_FIRST_ADAPTIVE_INPUT=1`; the intended Alpha route is
 already the production default. Do not modify fixtures or expected results to
@@ -120,11 +128,15 @@ and ordered coordinates, and no coercion into an ordinary scalar design.
    save/cancel/discard behavior.
 2. Export SVG, PNG, and CSV; copy the Graph to the clipboard and paste it into
    PowerPoint/Keynote or another native image-aware application.
-3. Copy an external-LLM consultation prompt and export a privacy-reduced
-   diagnostic report.
+3. Copy an external-LLM consultation prompt. Paste a synthetic answer into
+   `相談結果から改善要望を作る`, add a short requested change, and copy the
+   resulting implementation request.
+4. Export a privacy-reduced diagnostic report.
 
 PASS requires no silent data loss, no console window, working native exports,
 and no research values, labels, paths, or clipboard/file content in telemetry.
+The improvement request must remain a reviewed manual copy action: it must not
+execute or submit the external answer automatically.
 
 ## Hard failure rules
 

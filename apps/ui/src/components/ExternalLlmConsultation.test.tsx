@@ -33,4 +33,34 @@ describe("ExternalLlmConsultation", () => {
       expect(screen.getByRole("status")).toHaveTextContent("相談文をコピーしました"),
     );
   });
+
+  it("turns a reviewed LLM answer into a manual improvement-request copy", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    render(<ExternalLlmConsultation prompt="相談内容" placement="experiment_setup" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "外部LLMに相談する" }));
+    fireEvent.click(screen.getByText("相談結果から改善要望を作る"));
+    const copyButton = screen.getByRole("button", { name: "実装要望をコピー" });
+    expect(copyButton).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("外部LLMの回答（任意）"), {
+      target: { value: "質問を短くするとよい" },
+    });
+    fireEvent.change(screen.getByLabelText("実装してほしい内容"), {
+      target: { value: "選択肢の違いを例で示してほしい" },
+    });
+    fireEvent.click(copyButton);
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const copied = String(writeText.mock.calls[0]?.[0]);
+    expect(copied).toContain("選択肢の違いを例で示してほしい");
+    expect(copied).toContain("質問を短くするとよい");
+    expect(copied).toContain("参考情報・未検証");
+    expect(copied).not.toContain("相談内容");
+    expect(screen.getByRole("status")).toHaveTextContent("実装要望をコピーしました");
+  });
 });

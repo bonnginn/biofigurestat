@@ -281,7 +281,7 @@ export function createAdaptiveWorkspace(input: {
     id: `adaptive-session.${index + 1}`,
     label:
       contract.matching.kind === "matched"
-        ? (matchedIdentities[index] ?? `Unit ${index + 1}`)
+        ? (matchedIdentities[index] ?? `${experimentalUnitLabel} ${index + 1}`)
         : `入力行 ${index + 1}`,
     stableUnitId:
       contract.matching.kind === "matched" ? `adaptive-unit.${index + 1}` : `unit.${index + 1}`,
