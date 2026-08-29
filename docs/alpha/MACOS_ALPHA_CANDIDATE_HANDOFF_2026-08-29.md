@@ -8,7 +8,7 @@ overwrite that historical evidence.
 
 - Branch: `codex/native-hardening-2026-08-28`
 - Base HEAD before the latest UX follow-up: `26e8df8c92324ff3d5b217264d3ff40f2a61d3d8`
-- Minimum candidate commit: `fbe9d36` (includes the application-level Quit guard, explicit Node 26 test Storage isolation, Graph-only value-paste mapping preservation, and adjacent reasons for disabled Survival Statistics actions)
+- Minimum candidate commit: `9fb16ab` (includes the application-level Quit guard, explicit Node 26 test Storage isolation, Graph-only value-paste mapping preservation, adjacent reasons for disabled Survival Statistics actions, matched-analysis inclusion summaries, spreadsheet focus/Tab hardening, bounded violin geometry, and the shared Graph-workspace visual follow-up)
 - Pool D: not accessed
 - Product route: experiment-first task hub; do not enable the historical feature flag
 - Expected artifact: `apps/desktop/src-tauri/target/release/bundle/macos/Life Science Analysis.app`
@@ -26,7 +26,7 @@ analysis or omit a failing verifier.
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor fbe9d36 HEAD
+git merge-base --is-ancestor 9fb16ab HEAD
 git status --short
 
 node --version

@@ -14,6 +14,13 @@ The fix is implemented in `9e1f68c` and awaits rebuilt macOS native revalidation
 entry hub and adaptive experiment path remain the intended default; the older compatibility path is
 not the intended product route. Public distribution is not approved.
 
+The 2026-08-30 P1 follow-up now also keeps matched-analysis inclusion explicit, bounds violin
+geometry to observed values, hardens spreadsheet focus/Tab behavior without page jumps, clarifies
+the directly treated experimental target, improves Graph-only descriptive rendering, and uses the
+same Graph workspace presentation for Graph-only and specialist routes. Browser review confirmed
+the common worksheet and Graph shell for Survival and ordered-curve/enzyme entry; native behavior
+still requires the macOS gate below.
+
 The dated engineering evidence and public-distribution blockers are recorded in
 `docs/alpha/ALPHA_CANDIDATE_READINESS_2026-08-29.md`.
 The executable macOS build and reduced native-human gate are specified in
@@ -36,7 +43,7 @@ The executable macOS build and reduced native-human gate are specified in
 
 The eight semantic UX cases and hard-failure rules in
 `docs/alpha/PRODUCTION_UX_ACCEPTANCE_GATE_2026-08-28.md` remain authoritative. Routine revalidation
-is reduced to the four composite tasks recorded there. Current automated evidence includes 1,080 UI
+is reduced to the four composite tasks recorded there. Current automated evidence includes 1,084 UI
 tests, 290 semantic-package tests, 190 experiment-first prototype tests, 63 Python-engine tests,
 19 passing Rust native tests (plus one development-environment round trip ignored in the ordinary
 run), and a real Rust→Python engine round trip. The recorded Windows x64 NSIS candidate predates the
