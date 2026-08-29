@@ -331,27 +331,34 @@ export default function App({
   useEffect(() => {
     if (!isTauri()) return;
     let disposed = false;
-    let stopListening: (() => void) | undefined;
+    let stopListeningForClose: (() => void) | undefined;
+    let stopListeningForAppExit: (() => void) | undefined;
     const appWindow = getCurrentWindow();
+    const requestNativeApplicationExit = () => {
+      requestWorkspaceExitRef.current({
+        actionLabel: "アプリを終了する",
+        proceed: async () => {
+          await invoke("exit_application");
+        },
+      });
+    };
     void appWindow
       .onCloseRequested((event) => {
         event.preventDefault();
-        requestWorkspaceExitRef.current({
-          actionLabel: "アプリを閉じる",
-          proceed: async () => {
-            // Final termination is performed by Rust after this shared unsaved-workspace guard.
-            // WebView close/destroy commands are intentionally not part of the least-privilege ACL.
-            await invoke("exit_application");
-          },
-        });
+        requestNativeApplicationExit();
       })
       .then((unlisten) => {
         if (disposed) unlisten();
-        else stopListening = unlisten;
+        else stopListeningForClose = unlisten;
       });
+    void listen("app-exit-request", requestNativeApplicationExit).then((unlisten) => {
+      if (disposed) unlisten();
+      else stopListeningForAppExit = unlisten;
+    });
     return () => {
       disposed = true;
-      stopListening?.();
+      stopListeningForClose?.();
+      stopListeningForAppExit?.();
     };
   }, []);
 

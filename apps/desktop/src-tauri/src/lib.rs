@@ -21,6 +21,13 @@ fn exit_application(app: tauri::AppHandle) {
     app.exit(0);
 }
 
+fn exit_requires_workspace_guard(exit_code: Option<i32>) -> bool {
+    // Tauri reports user-initiated application Quit with no code. The UI calls
+    // `exit_application` only after its save/cancel/discard guard, which produces
+    // a programmatic request with an explicit code and must be allowed through.
+    exit_code.is_none()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -37,15 +44,13 @@ pub fn run() {
             let save_as = MenuItemBuilder::with_id("project-save-as", "Save As…")
                 .accelerator("CmdOrCtrl+Shift+S")
                 .build(app)?;
-            let mut file_menu_builder = SubmenuBuilder::new(app, "File")
+            let exit = MenuItemBuilder::with_id("app-exit", "終了").build(app)?;
+            let file_menu_builder = SubmenuBuilder::new(app, "File")
                 .item(&open)
                 .item(&save)
-                .item(&save_as);
-            #[cfg(not(target_os = "macos"))]
-            {
-                let exit = MenuItemBuilder::with_id("app-exit", "Exit").build(app)?;
-                file_menu_builder = file_menu_builder.separator().item(&exit);
-            }
+                .item(&save_as)
+                .separator()
+                .item(&exit);
             let file_menu = file_menu_builder.build()?;
             let menu = Menu::default(app.handle())?;
             // Replace Tauri's default File menu instead of prepending a second File menu.
@@ -96,6 +101,13 @@ pub fn run() {
         .expect("error while building Life Science Analysis");
 
     app.run(|app_handle, event| {
+        if let tauri::RunEvent::ExitRequested { code, api, .. } = &event {
+            if exit_requires_workspace_guard(*code) {
+                api.prevent_exit();
+                let _ = app_handle.emit("app-exit-request", ());
+            }
+        }
+
         if matches!(event, tauri::RunEvent::Ready) {
             if let Some(window) = app_handle.get_webview_window("main") {
                 let _ = window.show();
@@ -124,4 +136,20 @@ pub fn run() {
             let _ = app_handle.emit("project-open-request", targets);
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::exit_requires_workspace_guard;
+
+    #[test]
+    fn user_quit_requires_the_workspace_guard() {
+        assert!(exit_requires_workspace_guard(None));
+    }
+
+    #[test]
+    fn approved_programmatic_exit_is_not_guarded_twice() {
+        assert!(!exit_requires_workspace_guard(Some(0)));
+        assert!(!exit_requires_workspace_guard(Some(1)));
+    }
 }
