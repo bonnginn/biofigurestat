@@ -3,6 +3,10 @@
 Date: 2026-08-24  
 Status: decision support only; no product or repository rename is authorized
 
+> **2026-08-30 decision:** The user selected **BioFigureStat** and the cell/box-plot circular mark.
+> ADR 0054 is the current authority. This earlier shortlist remains historical decision support and
+> is not rewritten as though BioFigureStat had been one of its candidates.
+
 ## Scope and screening method
 
 The development name `Life Science Analysis App` describes the category but is not distinctive.

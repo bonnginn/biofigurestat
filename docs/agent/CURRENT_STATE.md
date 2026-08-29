@@ -7,7 +7,7 @@ references, schemas, or test evidence.
 
 ## Product phase
 
-The application is a local-first, experiment-first Alpha candidate undergoing native hardening. The
+BioFigureStat is a local-first, experiment-first Alpha candidate undergoing native hardening. The
 2026-08-30 macOS gate passed canonical integrity, matched/nested semantics, specialist routes, and
 native export, but found a release-blocking application-menu Quit path that discarded unsaved work.
 The fix is implemented in `9e1f68c` and awaits rebuilt macOS native revalidation. The task-oriented
@@ -43,15 +43,14 @@ The executable macOS build and reduced native-human gate are specified in
 
 The eight semantic UX cases and hard-failure rules in
 `docs/alpha/PRODUCTION_UX_ACCEPTANCE_GATE_2026-08-28.md` remain authoritative. Routine revalidation
-is reduced to the four composite tasks recorded there. Current automated evidence includes 1,084 UI
-tests, 290 semantic-package tests, 190 experiment-first prototype tests, 63 Python-engine tests,
-19 passing Rust native tests (plus one development-environment round trip ignored in the ordinary
-run), and a real Rust→Python engine round trip. The recorded Windows x64 NSIS candidate predates the
-native Quit fix and must be rebuilt before distribution. That earlier candidate contained
-the progressive experiment-entry, canonical-value integrity, and current bounded UX changes was
-built on 2026-08-29 with SHA-256
-`A41033350B86F9E9D7E7108AC259D9BEFB5654EC456ADC25A582D2215582BD19` and build revision
-`13c68e6-alpha.20260829.6`. Node 26 test environments now install an explicit in-memory Storage for
+is reduced to the four composite tasks recorded there. Current automated evidence includes 1,090 UI
+tests across 121 files, the semantic-package and experiment-first suites, 63 Python-engine tests,
+22 passing Rust native tests (plus one development-environment round trip ignored in the ordinary
+run), and a real Rust→Python engine round trip. The current Windows x64 NSIS candidate includes the
+BioFigureStat identity, project tabs, native Excel import, and telemetry collector client. It was
+built on 2026-08-30 from implementation commit `4a68448` with SHA-256
+`B80DE5B6060CE91B7CBBD057132DFCA87B3CDB11DC7B234AD50C7CC7127728A7`; Windows bundle verification
+and the packaged Python-sidecar smoke passed. Node 26 test environments install an explicit in-memory Storage for
 each isolated jsdom window rather than reading Node's unavailable or process-level localStorage.
 The macOS native candidate must also be rebuilt from the current branch before the next native
 human gate.
@@ -72,6 +71,13 @@ execute, or treat the external answer as product authority.
 
 Browser review does not close native gates. Automated semantic tests do not establish human
 navigation success.
+
+The current Alpha branch also contains three newly accepted ingress/lifecycle capabilities awaiting
+final packaged validation: a disk-backed project tab strip with the shared unsaved-work guard,
+native `.xls`/`.xlsx`/`.xlsm`/`.xlsb` worksheet import through a bounded Rust adapter, and a
+strictly allowlisted Cloudflare Workers/D1 telemetry collector. The collector is fail-closed and is
+not a production service until its account, endpoint, public ingestion key, CSP/CORS origins,
+privacy contact and deployment region are approved and configured. See ADR 0055.
 
 ## Known bounded gaps
 

@@ -72,6 +72,10 @@ Current engineering evidence and the reduced human gate are summarized in
 - [ ] BEFORE ALPHA — Windows clean-machine create/save/quit/reopen/export/recovery smoke passes on a real `.lsa` file.
 - [ ] BEFORE ALPHA — `.lsa` file association and migration from the oldest supported fixture are verified in packaged builds.
 - [x] COMPLETE — native PNG clipboard paths are implemented for macOS and Windows; target-application paste compatibility remains part of clean-machine smoke.
+- [x] COMPLETE — saved `.lsa` projects can be retained as disk-backed tabs in one window; tab selection and active-tab close reuse the shared Save / Discard / Cancel guard.
+- [ ] BEFORE ALPHA — packaged tab switching, failed-open recovery, active/inactive close, and non-ASCII project paths are manually verified on macOS and Windows.
+- [x] COMPLETE — native `.xls`, `.xlsx`, `.xlsm`, and `.xlsb` import uses the bounded Rust worksheet adapter, preserves internal blanks, exposes sheet choice, and never executes formula code.
+- [ ] BEFORE ALPHA — representative real Excel workbooks (multiple sheets, dates, formulas, blanks, non-ASCII labels) are imported in packaged macOS and Windows builds and checked against the source workbook.
 
 ## Provenance / Methods
 
@@ -89,7 +93,8 @@ Current engineering evidence and the reduced human gate are summarized in
 - [x] COMPLETE — evaluation mode is development-gated; production CSP and restricted Tauri permissions exist.
 - [x] COMPLETE — the 2026-08-29 production Web bundle passed the evaluation/Gold/tunnel/source-map/secret forbidden-string scan before Windows packaging.
 - [ ] BEFORE ALPHA — CSP, file-dialog scope, sidecar invocation and diagnostic export are smoke-tested on both platforms.
-- [ ] BEFORE ALPHA — before configuring a remote telemetry endpoint, approve its operator, hosting region, remote retention period and deletion/contact procedure, then publish the corresponding user-facing notice, including that ordinary IP/HTTP transport metadata may be handled by that operator. Bump `USAGE_TELEMETRY_CONSENT_NOTICE_VERSION` to an explicit `remote-*` notice, require fresh opt-in, discard local-only-notice queues rather than silently uploading them, and allow only the approved endpoint origin in the packaged CSP/CORS configuration; prior opt-out remains respected. Until then the fail-closed local-only configuration makes no external telemetry request.
+- [x] COMPLETE — the Alpha collector implementation uses Cloudflare Workers/D1, exact-schema validation, size/rate limits, deduplication, 90-day deletion, and no source-IP database field. The client uses a fresh `remote-*` notice and discards earlier local-only queues.
+- [ ] BEFORE ALPHA — approve the Cloudflare account owner/deployment region, exact endpoint and public ingestion key, privacy/deletion contact, then deploy D1 migrations and the Worker; allow only that endpoint in packaged CSP and only exact Tauri origins in CORS. Verify opt-in upload, retry, opt-out purge and scheduled deletion in staging before public distribution.
 - [ ] BEFORE ALPHA — approve the researcher-facing feedback-form provider, form fields, privacy/retention notice and support contact; configure its static HTTPS URL; verify external opening on packaged macOS/Windows; and name the owner/process for moving submissions into a private internal issue tracker. The application must not append project data or diagnostics automatically.
 - [ ] BEFORE ALPHA — external security review is completed or a named owner/risk acceptance is recorded before public distribution.
 - [-] POST-ALPHA — cloud sync, collaboration and external AI Help remain out of scope unless separately approved.
@@ -125,9 +130,10 @@ Current engineering evidence and the reduced human gate are summarized in
 - [x] COMPLETE — production Web build and automated Web forbidden-string scan exist.
 - [x] COMPLETE — macOS ARM64 app/engine resource mapping and verifier exist.
 - [x] COMPLETE — Windows icon/version/file-association base configuration exists.
-- [ ] BEFORE ALPHA — final product identity, icon, bundle identifier and version/build revision are injected.
+- [x] COMPLETE — product identity and icon are BioFigureStat across the Web shell and native artifacts; the existing bundle identifier and `.lsa` format remain stable for compatibility (ADR 0054).
+- [ ] BEFORE ALPHA — final version/build revision is injected and the BioFigureStat name/icon are checked in installed Windows and macOS artifacts.
 - [ ] BEFORE ALPHA — macOS signing identity, notarization/stapling and DMG or approved delivery method pass.
-- [x] COMPLETE — Windows bundle override, x64 engine resource mapping, release compile and NSIS generation pass; the 2026-08-29 installer checksum is recorded in `CURRENT_STATE.md`.
+- [x] COMPLETE — Windows bundle override, x64 engine resource mapping, release compile and NSIS generation pass; the 2026-08-30 BioFigureStat installer checksum is recorded in `CURRENT_STATE.md`.
 - [ ] BEFORE ALPHA — packaged artifact scan passes and installation/uninstallation behavior is documented.
 - [-] POST-ALPHA — Store distribution and automatic updater are out of the current Alpha scope.
 

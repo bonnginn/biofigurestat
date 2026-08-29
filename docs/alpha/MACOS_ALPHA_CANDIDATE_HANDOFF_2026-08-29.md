@@ -8,10 +8,10 @@ overwrite that historical evidence.
 
 - Branch: `codex/native-hardening-2026-08-28`
 - Base HEAD before the latest UX follow-up: `26e8df8c92324ff3d5b217264d3ff40f2a61d3d8`
-- Minimum candidate commit: `9fb16ab` (includes the application-level Quit guard, explicit Node 26 test Storage isolation, Graph-only value-paste mapping preservation, adjacent reasons for disabled Survival Statistics actions, matched-analysis inclusion summaries, spreadsheet focus/Tab hardening, bounded violin geometry, and the shared Graph-workspace visual follow-up)
+- Minimum candidate commit: `4a68448` (includes the existing native/UX hardening plus the BioFigureStat identity, disk-backed project tabs, native Excel workbook import, and consent-versioned telemetry client)
 - Pool D: not accessed
 - Product route: experiment-first task hub; do not enable the historical feature flag
-- Expected artifact: `apps/desktop/src-tauri/target/release/bundle/macos/Life Science Analysis.app`
+- Expected artifact: `apps/desktop/src-tauri/target/release/bundle/macos/BioFigureStat.app`
 
 The browser preview is not evidence for native Statistics, save/open, clipboard,
 file association, signing, or sidecar behavior.
@@ -26,7 +26,7 @@ analysis or omit a failing verifier.
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 9fb16ab HEAD
+git merge-base --is-ancestor 4a68448 HEAD
 git status --short
 
 node --version
@@ -77,11 +77,11 @@ bundle SHA-256:
 Use these commands for the final artifact details:
 
 ```bash
-APP="apps/desktop/src-tauri/target/release/bundle/macos/Life Science Analysis.app"
+APP="apps/desktop/src-tauri/target/release/bundle/macos/BioFigureStat.app"
 codesign --display --verbose=4 "$APP"
 codesign --verify --deep --strict "$APP"
-ditto -c -k --keepParent "$APP" /tmp/Life-Science-Analysis-macOS.zip
-shasum -a 256 /tmp/Life-Science-Analysis-macOS.zip
+ditto -c -k --keepParent "$APP" /tmp/BioFigureStat-macOS.zip
+shasum -a 256 /tmp/BioFigureStat-macOS.zip
 ```
 
 Ad-hoc signing is acceptable only for this private human gate. It is not
@@ -142,11 +142,22 @@ and ordered coordinates, and no coercion into an ordinary scalar design.
    `相談結果から改善要望を作る`, add a short requested change, and copy the
    resulting implementation request.
 4. Export a privacy-reduced diagnostic report.
+5. Keep two saved `.lsa` projects open as tabs. Switch between them, close an inactive tab, then
+   close an active dirty tab using Cancel and Save in separate attempts.
+6. Import one real `.xlsx` workbook with multiple worksheets, internal blank cells, a date, a
+   formula, and non-ASCII labels. Select the second worksheet and compare the visible table with
+   Excel. Repeat once with a legacy `.xls` file.
+7. Review the fresh BioFigureStat telemetry consent. Confirm opt-out makes no remote request and
+   clears queued usage events; confirm the diagnostic export contains no research values, labels,
+   file paths, or clipboard/file content. Remote upload itself is tested only after the exact Alpha
+   endpoint and CSP are configured.
 
 PASS requires no silent data loss, no console window, working native exports,
 and no research values, labels, paths, or clipboard/file content in telemetry.
 The improvement request must remain a reviewed manual copy action: it must not
-execute or submit the external answer automatically.
+execute or submit the external answer automatically. Tab switching must preserve each saved
+project, and Excel import must preserve the chosen worksheet's rectangular structure without
+executing formulas.
 
 ## Hard failure rules
 
