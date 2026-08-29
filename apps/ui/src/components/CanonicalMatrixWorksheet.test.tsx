@@ -753,6 +753,71 @@ describe("CanonicalMatrixWorksheet", () => {
     expect(secondRow.map(({ observationId }) => observationId)).toContain("obs.animal.2.control");
   });
 
+  it("keeps Tab focus in the second matched row after committing its first condition", () => {
+    const matchedContract = makeContract({
+      factors: [
+        {
+          key: "condition",
+          label: "Condition",
+          levels: ["control", "drug"],
+          unitRole: "within_unit",
+          relationship: "paired",
+          ordered: false,
+          referenceLevel: "control",
+        },
+      ],
+      matching: {
+        kind: "matched",
+        identityKey: "unit_id",
+        completeSetsRequired: false,
+      },
+    });
+    const matchedObservations = [
+      makeObservation({
+        id: "obs.cell.1.control",
+        value: 10,
+        factors: { condition: "control" },
+        identities: { unit_id: "Cell 1" },
+      }),
+      makeObservation({
+        id: "obs.cell.1.drug",
+        value: 12,
+        factors: { condition: "drug" },
+        identities: { unit_id: "Cell 1" },
+      }),
+      makeObservation({
+        id: "obs.cell.2.control",
+        value: 20,
+        factors: { condition: "control" },
+        identities: { unit_id: "Cell 2" },
+      }),
+    ];
+    render(
+      <WorksheetHarness contract={matchedContract} initialObservations={matchedObservations} />,
+    );
+
+    const secondIdentity = screen.getByRole("textbox", { name: "Dish ID 2" });
+    const secondControl = screen.getByRole("textbox", { name: "Cell 2・control・Response" });
+    const secondDrug = screen.getByRole("textbox", { name: "Cell 2・drug・Response" });
+
+    secondIdentity.focus();
+    fireEvent.keyDown(secondIdentity, { key: "Tab" });
+    expect(secondControl).toHaveFocus();
+    fireEvent.change(secondControl, { target: { value: "20.5" } });
+    fireEvent.keyDown(secondControl, { key: "Tab" });
+
+    expect(secondDrug).toHaveFocus();
+    expect(currentObservations()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          identities: { unit_id: "Cell 2" },
+          factors: { condition: "control" },
+          values: { value: 20.5 },
+        }),
+      ]),
+    );
+  });
+
   it("edits an explicit matched row ID across every condition without using row alignment", () => {
     const matchedContract = makeContract({
       factors: [
