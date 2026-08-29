@@ -35,13 +35,15 @@ The executable macOS build and reduced native-human gate are specified in
 
 The eight semantic UX cases and hard-failure rules in
 `docs/alpha/PRODUCTION_UX_ACCEPTANCE_GATE_2026-08-28.md` remain authoritative. Routine revalidation
-is reduced to the four composite tasks recorded there. Current automated evidence includes 1,077 UI
+is reduced to the four composite tasks recorded there. Current automated evidence includes 1,078 UI
 tests, 290 semantic-package tests, 190 experiment-first prototype tests, 63 Python-engine tests,
 Rust native tests, and a real Rust→Python engine round trip. A Windows x64 NSIS candidate containing
 the progressive experiment-entry, canonical-value integrity, and current bounded UX changes was
 built on 2026-08-29 with SHA-256
 `D2276BC3D11856CA4F908C515E8C849A2E875CA5D0A146A561015775E7003C7A` and build revision
-`97976b5-alpha.20260829.4`. The macOS native candidate must still be rebuilt from the current branch
+`97976b5-alpha.20260829.4`. Node 26 test environments now bind feature flags to each isolated
+jsdom window rather than a process-level shared localStorage file. The macOS native candidate must
+still be rebuilt from the current branch
 before the next native human gate.
 
 The highest-value remaining evidence is:

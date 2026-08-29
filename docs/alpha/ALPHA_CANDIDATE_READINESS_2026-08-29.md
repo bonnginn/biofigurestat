@@ -33,7 +33,7 @@ entry and must not be presented as the default.
 
 | Area | Current result |
 | --- | ---: |
-| UI tests | 1,077 passed |
+| UI tests | 1,078 passed |
 | Semantic package tests | 290 passed |
 | Experiment-first prototype tests | 190 passed |
 | Python engine tests | 63 passed |
@@ -74,16 +74,17 @@ still require clean-machine confirmation with this exact installer.
 The authoritative command sequence, artifact evidence template, and reduced four-task gate are in
 `MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md`. The concise commands below remain a quick reference.
 
-Use Apple Silicon macOS and build from the verified branch. `97976b5` is the minimum product
-commit for the current reduced gate.
+Use Apple Silicon macOS and build from the verified branch. `3e14935` is the minimum commit for
+the current reduced gate; it includes the Node 26 test-isolation correction on top of the verified
+product candidate.
 
 ```bash
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 97976b5 HEAD
+git merge-base --is-ancestor 3e14935 HEAD
 npx --yes pnpm@11.19.0 install --frozen-lockfile
-NODE_OPTIONS=--localstorage-file=/private/tmp/lsaa-vitest-localstorage.json npx --yes pnpm@11.19.0 test
+npx --yes pnpm@11.19.0 test
 npx --yes pnpm@11.19.0 typecheck
 npx --yes pnpm@11.19.0 lint
 npx --yes pnpm@11.19.0 engine:build:mac

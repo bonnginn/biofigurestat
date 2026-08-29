@@ -8,7 +8,7 @@ overwrite that historical evidence.
 
 - Branch: `codex/native-hardening-2026-08-28`
 - Base HEAD before the latest UX follow-up: `26e8df8c92324ff3d5b217264d3ff40f2a61d3d8`
-- Minimum product commit: `97976b5` (canonical-value hardening plus current bounded UX/LLM follow-up)
+- Minimum candidate commit: `3e14935` (verified product candidate plus Node 26 test isolation)
 - Pool D: not accessed
 - Product route: experiment-first task hub; do not enable the historical feature flag
 - Expected artifact: `apps/desktop/src-tauri/target/release/bundle/macos/Life Science Analysis.app`
@@ -26,13 +26,13 @@ analysis or omit a failing verifier.
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 97976b5 HEAD
+git merge-base --is-ancestor 3e14935 HEAD
 git status --short
 
 node --version
 npm --version
 npx --yes pnpm@11.19.0 install --frozen-lockfile
-NODE_OPTIONS=--localstorage-file=/private/tmp/lsaa-vitest-localstorage.json npx --yes pnpm@11.19.0 test
+npx --yes pnpm@11.19.0 test
 npx --yes pnpm@11.19.0 typecheck
 npx --yes pnpm@11.19.0 lint
 npx --yes pnpm@11.19.0 engine:build:mac
@@ -45,6 +45,10 @@ Mac without the optional `corepack` executable can build without installing a
 global package. If `node` or `npm` itself is unavailable, stop and report that
 prerequisite failure. Do not replace the pinned pnpm version with the latest
 version.
+
+Do not add Node's `--localstorage-file` option. The UI test setup deliberately
+binds unqualified `localStorage` access to each isolated jsdom window; a shared
+Node file can leak feature flags or consent state between Vitest workers.
 
 Do not use `VITE_EXPERIMENT_FIRST_ADAPTIVE_INPUT=1`; the intended Alpha route is
 already the production default. Do not modify fixtures or expected results to
