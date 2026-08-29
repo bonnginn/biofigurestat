@@ -122,7 +122,7 @@ pub fn read_spreadsheet_workbook(target: String) -> Result<ImportedSpreadsheetWo
 
 #[cfg(test)]
 mod tests {
-    use super::{cell_text, supported_extension, trim_sheet};
+    use super::{cell_text, read_spreadsheet_workbook, supported_extension, trim_sheet};
     use calamine::Data;
     use std::path::Path;
 
@@ -148,5 +148,41 @@ mod tests {
     fn normalizes_embedded_delimiters_without_changing_numbers() {
         assert_eq!(cell_text(&Data::Float(1.25)), "1.25");
         assert_eq!(cell_text(&Data::String("A\tB\nC".into())), "A B C");
+    }
+
+    #[test]
+    fn reads_a_real_multisheet_xlsx_without_collapsing_its_structure() {
+        let target = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests")
+            .join("fixtures")
+            .join("biofigurestat-import-reference.xlsx");
+        let imported = read_spreadsheet_workbook(target.to_string_lossy().into_owned())
+            .expect("the reference workbook should import");
+
+        assert_eq!(imported.file_name, "biofigurestat-import-reference.xlsx");
+        assert_eq!(imported.sheets.len(), 2);
+        assert_eq!(imported.sheets[0].name, "Primary Data");
+        assert_eq!(imported.sheets[0].formula_cell_count, 3);
+        assert_eq!(
+            imported.sheets[0].rows[0],
+            [
+                "Sample ID",
+                "Treatment",
+                "Measurement",
+                "Optional note",
+                "Normalized",
+            ]
+        );
+        assert_eq!(imported.sheets[0].rows[1][0], "dish-01");
+        assert_eq!(imported.sheets[0].rows[1][2], "1.25");
+        assert_eq!(imported.sheets[0].rows[1][3], "");
+        assert_eq!(imported.sheets[0].rows[2][3], "kept");
+
+        assert_eq!(imported.sheets[1].name, "日本語データ");
+        assert_eq!(imported.sheets[1].rows[0], ["実験日", "試料ID", "条件", "測定値"]);
+        assert!(!imported.sheets[1].rows[1][0].is_empty());
+        assert_eq!(imported.sheets[1].rows[1][1], "培養皿-1");
+        assert_eq!(imported.sheets[1].rows[2][3], "101.5");
+        assert_eq!(imported.sheets[1].rows[3][3], "-0.25");
     }
 }
