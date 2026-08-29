@@ -11,6 +11,9 @@ adaptive worksheet, Graph, Statistics, specialist routes, project lifecycle, dia
 LLM consultation prompt, and consent-gated usage telemetry have automated evidence. Public Alpha is
 not approved until the external and native-human gates below are completed.
 
+The requirement-by-requirement evidence audit is recorded in
+`ALPHA_OBJECTIVE_COMPLETION_AUDIT_2026-08-29.md`.
+
 ## Alpha product path
 
 The default New Experiment path is task-oriented rather than the older wizard:

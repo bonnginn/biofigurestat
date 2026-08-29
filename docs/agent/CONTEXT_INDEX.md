@@ -68,7 +68,8 @@ Open older Graph ADRs only when the current ones explicitly depend on them.
 - Known limitations: `docs/alpha/KNOWN_LIMITATIONS.md`
 - Diagnostics: `docs/alpha/DIAGNOSTICS_AND_ERROR_ARCHITECTURE.md`
 - Windows setup/audits: `docs/WINDOWS_BENCHMARK_DEVELOPMENT_SETUP.md` and the relevant dated audit
-- macOS handoff: `docs/MAC_HUMAN_REVALIDATION_HANDOFF_2026-08-26.md`
+- Current macOS Alpha handoff: `docs/alpha/MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md`
+- Historical macOS validation evidence: `docs/MAC_HUMAN_REVALIDATION_HANDOFF_2026-08-26.md`
 
 Browser preview is not evidence for native engine execution, save/open, packaging, signing, or
 migration. Keep those evidence types separate.
