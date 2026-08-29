@@ -8,7 +8,7 @@ overwrite that historical evidence.
 
 - Branch: `codex/native-hardening-2026-08-28`
 - Base HEAD before the latest UX follow-up: `26e8df8c92324ff3d5b217264d3ff40f2a61d3d8`
-- Minimum candidate commit: `d779b6b` (verified product candidate plus explicit Node 26 test Storage isolation, Graph-only value-paste mapping preservation, and adjacent reasons for disabled Survival Statistics actions)
+- Minimum candidate commit: `fbe9d36` (includes the application-level Quit guard, explicit Node 26 test Storage isolation, Graph-only value-paste mapping preservation, and adjacent reasons for disabled Survival Statistics actions)
 - Pool D: not accessed
 - Product route: experiment-first task hub; do not enable the historical feature flag
 - Expected artifact: `apps/desktop/src-tauri/target/release/bundle/macos/Life Science Analysis.app`
@@ -26,7 +26,7 @@ analysis or omit a failing verifier.
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor d779b6b HEAD
+git merge-base --is-ancestor fbe9d36 HEAD
 git status --short
 
 node --version
@@ -88,6 +88,11 @@ Ad-hoc signing is acceptable only for this private human gate. It is not
 evidence for public distribution, notarization, or Gatekeeper delivery.
 
 ## Reduced human gate
+
+Before the four tasks, open a saved project, edit one value, and choose the macOS application-menu
+Quit action. Verify Save, Cancel, and discard in separate attempts. Any silent exit remains a hard
+failure. Also confirm the running build revision so Launch Services does not substitute a stale app
+bundle with the same Bundle ID.
 
 Use the newly built `.app`, not a browser preview or an older installed copy.
 Record PASS/FAIL and one short note per task. Stop immediately for a hard

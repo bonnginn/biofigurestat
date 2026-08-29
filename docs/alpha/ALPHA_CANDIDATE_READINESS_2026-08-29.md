@@ -2,14 +2,16 @@
 
 ## Decision
 
-**Engineering status:** `READY FOR TARGETED HUMAN REVALIDATION`
+**Engineering status:** `NATIVE CANDIDATE REBUILD AND REVALIDATION REQUIRED`
 
 **Public distribution status:** `PUBLIC ALPHA BLOCKED`
 
-The current tree contains an engineering Alpha candidate: the intended experiment-first entry,
+The current tree contains the intended experiment-first entry,
 adaptive worksheet, Graph, Statistics, specialist routes, project lifecycle, diagnostics, external
-LLM consultation prompt, and consent-gated usage telemetry have automated evidence. Public Alpha is
-not approved until the external and native-human gates below are completed.
+LLM consultation prompt, and consent-gated usage telemetry. The 2026-08-30 macOS gate found silent
+unsaved-work loss through application-menu Quit. Commit `9e1f68c` implements the application-level
+guard, but no current Windows or macOS artifact contains and proves that fix yet. Public Alpha is not
+approved until the rebuilt native-human and external gates below are completed.
 
 The requirement-by-requirement evidence audit is recorded in
 `ALPHA_OBJECTIVE_COMPLETION_AUDIT_2026-08-29.md`.
@@ -33,11 +35,11 @@ entry and must not be presented as the default.
 
 | Area | Current result |
 | --- | ---: |
-| UI tests | 1,079 passed |
+| UI tests | 1,080 passed |
 | Semantic package tests | 290 passed |
 | Experiment-first prototype tests | 190 passed |
 | Python engine tests | 63 passed |
-| Rust native tests | 17 passed, 1 development-environment round trip ignored in the ordinary run |
+| Rust native tests | 19 passed, 1 development-environment round trip ignored in the ordinary run |
 | Real Rust → packaged Python-engine round trip | Passed for representative D01, D03 and D04 requests |
 | Windows sidecar smoke | D01–D17 passed; engine `0.14.0` |
 | UI typecheck | Passed |
@@ -58,7 +60,9 @@ machine.
 - Build revision: `13c68e6-alpha.20260829.6`
 - Build time: 2026-08-29 17:54 JST
 
-This Windows artifact contains the progressive experiment-entry, shared Graph workspace,
+This Windows artifact predates the application-level Quit fix in `9e1f68c` and is retained only as
+earlier engineering evidence; rebuild it before further distribution. It contains the progressive
+experiment-entry, shared Graph workspace,
 canonical-value integrity changes, bounded UX clarifications, and manual external-LLM
 implementation-request copy, Graph-only value-paste mapping preservation, and adjacent reasons for
 disabled Survival Statistics actions through `13c68e6`. It passed the Windows bundle verifier, release

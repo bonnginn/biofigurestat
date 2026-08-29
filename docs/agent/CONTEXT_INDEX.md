@@ -69,6 +69,7 @@ Open older Graph ADRs only when the current ones explicitly depend on them.
 - Diagnostics: `docs/alpha/DIAGNOSTICS_AND_ERROR_ARCHITECTURE.md`
 - Windows setup/audits: `docs/WINDOWS_BENCHMARK_DEVELOPMENT_SETUP.md` and the relevant dated audit
 - Current macOS Alpha handoff: `docs/alpha/MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md`
+- Latest native macOS manual result: `docs/alpha/MACOS_ALPHA_MANUAL_GATE_RESULTS_2026-08-30.md`
 - Historical macOS validation evidence: `docs/MAC_HUMAN_REVALIDATION_HANDOFF_2026-08-26.md`
 
 Browser preview is not evidence for native engine execution, save/open, packaging, signing, or

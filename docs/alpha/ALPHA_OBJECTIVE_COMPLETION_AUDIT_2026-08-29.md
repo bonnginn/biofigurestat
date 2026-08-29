@@ -27,9 +27,9 @@ approve public distribution.
 | Ordered X/Y and enzyme workflow | `CommonCoveragePage` exposes the same workspace tabs and `GraphWorkspaceFrame`; tests cover observed Graph, deliberate model selection, safe-stops, CSV/clipboard lineage, exact reopen, D17 execution, enzyme fit, and save/open | Proven for implemented workflow; native sidecar/export remains in Task 3 |
 | Shared Graph layout | `GraphWorkspaceFrame` keeps the inspector available in side-by-side mode and moves it below the expanded Graph without hiding settings | Proven by component test and prior browser QA |
 | Researcher-facing entry | Biological questions, live summary, adaptive surface selection, identity/nesting/matching propagation, and safe stops are covered by the production-path and semantic suites. External review supports the direction but does not freeze wording | Engineering evidence complete; first-time human navigation remains external evidence |
-| Native Windows candidate | Build revision `13c68e6-alpha.20260829.6`; Windows bundle verifier, release-content verifier, and D01–D17 packaged sidecar smoke passed; installer SHA-256 `A41033350B86F9E9D7E7108AC259D9BEFB5654EC456ADC25A582D2215582BD19` | Engineering artifact proven; clean-machine human gate outstanding |
-| macOS handoff | `MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md` contains exact branch, minimum commit, build commands, verifier, signing/hash evidence fields, hard failures, and four reduced tasks. Commit `d779b6b` installs explicit per-jsdom in-memory Storage without reading Node 26 ambient localStorage, `84dc119` preserves direct X/Y mapping when values are pasted under unchanged Graph-only headers, and `13c68e6` explains disabled Survival Statistics actions without weakening safe-stop behavior | Handoff proven; `.app` build and Mac human evidence not yet available |
-| Regression baseline | Full UI: 119 files / 1,079 tests, including execution with a shared Node localStorage file present; focused external-LLM request boundary: 2 files / 6 tests; typecheck, changed-file lint, production Web build, Windows bundle verification, and release-content verification passed | Proven for current Windows-side baseline |
+| Native Windows candidate | The earlier build revision `13c68e6-alpha.20260829.6` passed bundle, release-content, and D01–D17 packaged sidecar verification, but predates the application-level Quit fix | Rebuild required before further distribution |
+| macOS handoff | The 2026-08-30 native gate passed build, canonical integrity, matched/nested semantics, specialist routes, and exports, but application-menu Quit silently discarded dirty state. Commit `9e1f68c` routes user Quit through the shared guard; `fbe9d36` is the minimum next candidate | Native rebuild and focused Quit revalidation required |
+| Regression baseline | Full UI: 119 files / 1,080 tests; Rust: 19 passed and 1 development-only round trip ignored; focused external-LLM request boundary: 2 files / 6 tests; typecheck, changed-file lint, and production Web build passed | Proven for the current Windows-side baseline; native Quit remains a human gate |
 | External-LLM improvement request | Consultation remains copy-only; deliberately pasted external advice is marked unverified, combined with the researcher's explicit requested change, and copied without automatic execution or submission | Proven by focused tests and browser interaction; feedback provider remains a human decision |
 | Reduced human gate | Four tasks cover canonical integrity, matched/nested semantics, specialist routes, and lifecycle/native export; hard failures are explicit | Ready to execute |
 
@@ -48,9 +48,10 @@ approve public distribution.
 
 These are missing evidence, not hidden implementation claims:
 
-1. Apple Silicon `.app` build, macOS bundle verifier, signing identity, and
-   artifact hash.
-2. The four-task macOS native human result.
+1. Rebuild the Apple Silicon `.app` from at least `fbe9d36` and repeat native
+   application-menu Quit with Save, Cancel, and discard.
+2. Revalidate affected P1 workflows after the remaining Graph, specialist-route,
+   spreadsheet-focus, and result-clarity changes.
 3. Windows clean-machine repetition of the same short native gate.
 4. Public-distribution decisions for signing/notarization, product identity,
    feedback provider, telemetry operator/region/retention, published external
@@ -62,7 +63,7 @@ default.
 
 ## Audit judgment
 
-**ENGINEERING ALPHA CANDIDATE READY; NATIVE HUMAN EVIDENCE INCOMPLETE**
+**PRODUCTION MIGRATION BLOCKED; P0 FIX AWAITS NATIVE REVALIDATION**
 
 No further case expansion is justified before the short native gate. A hard
 failure in that gate reopens only the affected generic path plus its regression
