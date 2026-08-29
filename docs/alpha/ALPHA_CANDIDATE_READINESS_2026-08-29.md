@@ -30,7 +30,7 @@ entry and must not be presented as the default.
 
 | Area | Current result |
 | --- | ---: |
-| UI tests | 1,057 passed |
+| UI tests | 1,071 passed |
 | Semantic package tests | 289 passed |
 | Experiment-first prototype tests | 190 passed |
 | Python engine tests | 63 passed |
@@ -53,6 +53,10 @@ machine.
 - Size: `46,621,436` bytes
 - SHA-256: `49076A477447F5A8AD2488B338B374E17B80EABE3F80474A9E2311537817BF9D`
 - Build time: 2026-08-29 11:50 JST
+
+This Windows artifact predates the progressive experiment-entry changes at `0d9165c`. It remains
+historical native evidence, not the binary for the next human pass. Rebuild Windows and macOS from
+the current `codex/native-hardening-2026-08-28` branch before revalidation.
 
 This is an unsigned engineering candidate, not a public release. The packaged executable is
 verified as PE subsystem `Windows GUI (2)` so it does not own a command-prompt window. Windows
