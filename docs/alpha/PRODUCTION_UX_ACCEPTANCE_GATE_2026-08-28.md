@@ -115,6 +115,45 @@ date, run, or pair. These structures must stop safely; the application must not 
 ordinary matched or independent designs. Human blind navigation and manual native save/reopen remain
 separate acceptance evidence.
 
+## External first-impression review triage (2026-08-29)
+
+An external first-impression review was compared with ADR 0051–0053. It is supporting UX evidence,
+not a new product authority. The following items reinforce the accepted experiment-first direction
+and are added to the next focused UX backlog:
+
+1. **P1 — Earned-complexity fast path.** A low-ambiguity experiment with one treatment dimension,
+   two conditions, one readout, separate experimental units, and no repeated, nested, or ordered
+   observations must reach its generated two-condition worksheet without seeing questions for
+   structures it did not declare. The biological relationship between conditions may be omitted
+   only when it is already known from an explicit earlier answer; two table columns alone never
+   establish independence. “Simple” remains an outcome of the biological answers, not a separate
+   t-test or ANOVA entry template.
+2. **P1 — Native-shape data entry.** The adaptive sheet must accept ordinary researcher tables
+   without requiring pre-reshaping into an LSA-specific long or wide schema. Two independent
+   conditions use a two-condition compact sheet; matched data use identity by condition; repeated
+   data use identity by ordered coordinate; nested observations use the detailed parent/child
+   sheet. Compact and expanded projections remain views of the same canonical records under ADR
+   0053, not separate stores.
+3. **P1 — Concise Statistics rationale.** The Statistics surface must show a short first layer in
+   the form `推奨: <method>` and `理由: <design + comparison purpose>`. Assumptions, diagnostics,
+   multiplicity details, and alternatives may expand below it. Recommendation is driven primarily
+   by the declared experimental structure and comparison purpose. A Shapiro–Wilk or other
+   normality pre-test is neither a mandatory gate nor an automatic method switch.
+4. **P2 — Researcher-language regression rule.** Researcher-facing questions continue to ask
+   observable experimental facts, such as whether the same mouse was measured at several times or
+   several cells came from one dish. `paired`, `nested`, `identity`, `factor`, and related Contract
+   terms remain internal or explanatory/advanced vocabulary; they are not required answers in the
+   ordinary entry path.
+
+These are not adopted from the review: method-first t-test/ANOVA quick templates, mandatory
+normality-test decisions, or a blanket conclusion that the complete Graph engine is not
+publication-ready. Graph quality remains assessed per supported graph family and workflow evidence.
+
+The next focused human pass records whether the ordinary two-condition case reaches the expected
+worksheet without irrelevant branches, whether an existing rectangular table pastes without
+external reshaping, and whether the researcher can explain the displayed method rationale. These
+checks supplement rather than restart the frozen Core 65 or the eight semantic acceptance cases.
+
 ## Reduced Alpha human revalidation
 
 The eight cases above remain the semantic acceptance set, but they are not all repeated manually
