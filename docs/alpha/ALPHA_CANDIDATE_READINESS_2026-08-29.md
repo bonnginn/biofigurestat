@@ -33,7 +33,7 @@ entry and must not be presented as the default.
 
 | Area | Current result |
 | --- | ---: |
-| UI tests | 1,075 passed |
+| UI tests | 1,077 passed |
 | Semantic package tests | 290 passed |
 | Experiment-first prototype tests | 190 passed |
 | Python engine tests | 63 passed |
@@ -42,7 +42,7 @@ entry and must not be presented as the default.
 | Windows sidecar smoke | D01–D17 passed; engine `0.14.0` |
 | UI typecheck | Passed |
 | UI lint | Passed |
-| Production Web build | Passed with revision `417c024-alpha.20260829.3` |
+| Production Web build | Passed with revision `97976b5-alpha.20260829.4` |
 | Release-bundle forbidden-content scan | Passed |
 | Windows Tauri release and NSIS generation | Passed |
 
@@ -53,15 +53,16 @@ machine.
 ## Windows candidate
 
 - Installer: `apps/desktop/src-tauri/target/release/bundle/nsis/Life Science Analysis_0.1.0_x64-setup.exe`
-- Size: `46,631,388` bytes
-- SHA-256: `037F8DE573651B709BBE9BD27498C0BBCA07561C213D2534F7AFC8E8E078BF5B`
-- Build revision: `417c024-alpha.20260829.3`
-- Build time: 2026-08-29 16:02 JST
+- Size: `46,631,746` bytes
+- SHA-256: `D2276BC3D11856CA4F908C515E8C849A2E875CA5D0A146A561015775E7003C7A`
+- Build revision: `97976b5-alpha.20260829.4`
+- Build time: 2026-08-29 16:56 JST
 
-This Windows artifact contains the progressive experiment-entry, shared Graph workspace, and
-canonical-value integrity changes through `417c024`. It passed the Windows bundle verifier; the
-unchanged packaged engine passed the D01–D17 sidecar smoke on the preceding candidate. Clean-machine
-human validation is still required.
+This Windows artifact contains the progressive experiment-entry, shared Graph workspace,
+canonical-value integrity changes, bounded UX clarifications, and manual external-LLM
+implementation-request copy through `97976b5`. It passed the Windows bundle verifier, release
+content verifier, and D01–D17 packaged-engine sidecar smoke. Clean-machine human validation is
+still required.
 
 This is an unsigned engineering candidate, not a public release. The packaged executable is
 verified as PE subsystem `Windows GUI (2)` so it does not own a command-prompt window. Windows
@@ -73,21 +74,21 @@ still require clean-machine confirmation with this exact installer.
 The authoritative command sequence, artifact evidence template, and reduced four-task gate are in
 `MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md`. The concise commands below remain a quick reference.
 
-Use Apple Silicon macOS and build from the verified branch. `417c024` is the minimum verified
-baseline; a later descendant is acceptable only when it contains no unreviewed product changes.
+Use Apple Silicon macOS and build from the verified branch. `97976b5` is the minimum product
+commit for the current reduced gate.
 
 ```bash
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 417c024 HEAD
-corepack pnpm install --frozen-lockfile
-NODE_OPTIONS=--localstorage-file=/private/tmp/lsaa-vitest-localstorage.json pnpm test
-pnpm typecheck
-pnpm lint
-pnpm engine:build:mac
-pnpm tauri:build
-pnpm native:verify:mac
+git merge-base --is-ancestor 97976b5 HEAD
+npx --yes pnpm@11.19.0 install --frozen-lockfile
+NODE_OPTIONS=--localstorage-file=/private/tmp/lsaa-vitest-localstorage.json npx --yes pnpm@11.19.0 test
+npx --yes pnpm@11.19.0 typecheck
+npx --yes pnpm@11.19.0 lint
+npx --yes pnpm@11.19.0 engine:build:mac
+npx --yes pnpm@11.19.0 tauri:build
+npx --yes pnpm@11.19.0 native:verify:mac
 ```
 
 The production build enables the experiment-first task hub by default. Do not add the historical
@@ -126,7 +127,17 @@ native evidence.
   PE-header verifier prevents a console-attached executable from being accepted again.
 - Windows PNG clipboard export uses a native registered PNG clipboard format.
 - External-LLM help generates a bounded consultation prompt without an in-product LLM API or measured
-  values. The external guide must be published before its GitHub link is relied upon.
+  values. A deliberately pasted answer and researcher-written change request can be copied as an
+  explicitly unverified implementation request; neither path sends or executes content. The
+  external guide must be published before its GitHub link is relied upon.
+- Matched empty-state tabs use the researcher-facing experimental-unit name consistently rather
+  than mixing `Unit 1` with later named units.
+- Adding another treatment dimension is visually and verbally distinguished from progressing to
+  the next step.
+- Selecting a non-recommended statistical method says that the choice is recorded, without falsely
+  implying that a free-text override reason was captured.
+- Graph-only entry begins with a compact five-row spreadsheet that expands as needed and describes
+  its role as Graph-first rather than an explanatory preview.
 - Usage telemetry remains off until explicit consent. With no approved remote endpoint, it fails
   closed and remains local-only; research values, labels, notes, paths, clipboard/file content and
   free text are excluded.
@@ -144,7 +155,8 @@ candidate; the detailed steps and hard-failure rules remain in
 3. **Specialist routes:** one Survival table and one ordered X/Y table; verify Data → Graph →
    Statistics → save/reopen and native export.
 4. **Lifecycle and support:** edit a saved project, exercise Home/New/Open/close with unsaved changes,
-   copy an external-LLM consultation prompt and export privacy-reduced diagnostics.
+   copy an external-LLM consultation prompt, create a reviewed implementation-request copy from a
+   synthetic answer, and export privacy-reduced diagnostics.
 
 Re-run all eight semantic UX cases only after a change to structure mapping, canonical observation
 identity, condition-combination status, or save/open migration.

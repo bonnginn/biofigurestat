@@ -8,7 +8,7 @@ overwrite that historical evidence.
 
 - Branch: `codex/native-hardening-2026-08-28`
 - Base HEAD before the latest UX follow-up: `26e8df8c92324ff3d5b217264d3ff40f2a61d3d8`
-- Minimum product commit: `417c024` (`visible value === canonical value` hardening)
+- Minimum product commit: `97976b5` (canonical-value hardening plus current bounded UX/LLM follow-up)
 - Pool D: not accessed
 - Product route: experiment-first task hub; do not enable the historical feature flag
 - Expected artifact: `apps/desktop/src-tauri/target/release/bundle/macos/Life Science Analysis.app`
@@ -26,7 +26,7 @@ analysis or omit a failing verifier.
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 417c024 HEAD
+git merge-base --is-ancestor 97976b5 HEAD
 git status --short
 
 node --version

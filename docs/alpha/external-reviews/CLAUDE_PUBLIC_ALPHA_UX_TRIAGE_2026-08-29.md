@@ -64,13 +64,26 @@ StructureContract boundary, or the deterministic Biological Interview plan.
 
 - Graph engine redesign, new statistical families, specialist architecture
   changes, and an input-architecture pivot are not supported by this review.
-- `Unit 1` versus `neuron 2`, the add-factor button, alternative-method copy,
-  report-form configuration, and About expand/close are P2/polish candidates,
-  not P0/P1 findings from the available evidence. They require generic
-  reproduction or convergence with manual evidence before product changes.
+- At initial triage, `Unit 1` versus `neuron 2`, the add-factor button,
+  alternative-method copy, report-form configuration, and About expand/close
+  were P2/polish candidates rather than P0/P1 findings.
 - Undo/redo is not exposed by the current adaptive worksheet, so there is no
   existing undo/redo state transition to validate for this defect. Adding it is
   a separate feature decision, not a review-driven P0 fix.
+
+## Generic P2 follow-up — 2026-08-29
+
+Subsequent manual evidence and generic inspection justified three bounded
+clarifications without changing the architecture: empty matched tabs now use
+the experimental-unit label consistently; the add-factor action explicitly
+says it adds a different treatment/grouping dimension; and alternative-method
+copy no longer claims that a reason was recorded when no reason field exists.
+
+Report-form configuration remains an external provider/privacy decision. A
+separate local-only path now converts a deliberately pasted external-LLM answer
+and researcher-written change into a reviewable implementation-request copy.
+It does not submit an issue or execute the answer. About expand/close remains a
+bounded polish item without convergent evidence of task failure.
 
 ## REVIEW_ENVIRONMENT_LIMITATIONS
 

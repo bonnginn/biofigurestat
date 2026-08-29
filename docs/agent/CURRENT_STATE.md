@@ -35,13 +35,14 @@ The executable macOS build and reduced native-human gate are specified in
 
 The eight semantic UX cases and hard-failure rules in
 `docs/alpha/PRODUCTION_UX_ACCEPTANCE_GATE_2026-08-28.md` remain authoritative. Routine revalidation
-is reduced to the four composite tasks recorded there. Current automated evidence includes 1,075 UI
+is reduced to the four composite tasks recorded there. Current automated evidence includes 1,077 UI
 tests, 290 semantic-package tests, 190 experiment-first prototype tests, 63 Python-engine tests,
 Rust native tests, and a real Rust→Python engine round trip. A Windows x64 NSIS candidate containing
-the progressive experiment-entry and canonical-value integrity changes was built on 2026-08-29
-with SHA-256 `037F8DE573651B709BBE9BD27498C0BBCA07561C213D2534F7AFC8E8E078BF5B`.
-The macOS native candidate
-must still be rebuilt from the current branch before the next native human gate.
+the progressive experiment-entry, canonical-value integrity, and current bounded UX changes was
+built on 2026-08-29 with SHA-256
+`D2276BC3D11856CA4F908C515E8C849A2E875CA5D0A146A561015775E7003C7A` and build revision
+`97976b5-alpha.20260829.4`. The macOS native candidate must still be rebuilt from the current branch
+before the next native human gate.
 
 The highest-value remaining evidence is:
 
@@ -51,6 +52,11 @@ The highest-value remaining evidence is:
 - real assistive-technology and localization validation;
 - provider/notice decisions for opt-in remote telemetry and the feedback form;
 - lifecycle validation for the remaining bounded semantic gaps.
+
+External-LLM assistance remains a manual, user-controlled boundary. The application can create a
+measurement-free consultation prompt and can turn a deliberately pasted answer plus the
+researcher's own requested change into a reviewable implementation-request copy. It does not send,
+execute, or treat the external answer as product authority.
 
 Browser review does not close native gates. Automated semantic tests do not establish human
 navigation success.
