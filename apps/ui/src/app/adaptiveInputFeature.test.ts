@@ -18,6 +18,10 @@ afterEach(() => {
 describe("adaptive input feature flag", () => {
   it("uses the isolated jsdom storage instead of a Node process-level store", () => {
     expect(globalThis.localStorage).toBe(window.localStorage);
+    window.localStorage.setItem("isolated-storage-check", "available");
+    expect(globalThis.localStorage.getItem("isolated-storage-check")).toBe("available");
+    globalThis.localStorage.removeItem("isolated-storage-check");
+    expect(window.localStorage.getItem("isolated-storage-check")).toBeNull();
   });
 
   it("is opt-in in the test environment and can be enabled per URL or durable local setting", () => {
