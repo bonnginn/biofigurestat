@@ -92,7 +92,12 @@
 
 .graph-only__svg text {
   fill: currentColor;
-  font-size: 12px;
+  font-size: 16px;
+}
+
+.graph-only__svg .experiment-graph-axis-title {
+  font-size: 21px;
+  font-weight: 650;
 }
 
 .graph-only__series-line {
