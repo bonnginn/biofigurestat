@@ -913,7 +913,10 @@ function ExperimentGraphSvg({
   };
   const graphInnerWidth = continuousLine ? 720 : categoryLayout.innerWidth;
   const width = margin.left + margin.right + graphInnerWidth;
-  const yAxisTitleX = Math.max(20, margin.left - 38);
+  // Keep the title visually attached to the Y axis. The previous 38 px gap
+  // looked like a separate page label once the chart was fitted to a wide
+  // workspace, especially with short scientific readout names.
+  const yAxisTitleX = Math.max(20, margin.left - 30);
   const extraLabelHeight = Math.max(0, hierarchyDepth - 1) * 27;
   const xAxisTitleHeight = renderedXAxisTitle ? 34 : 0;
   const statisticsLegendLabels = [

@@ -540,6 +540,14 @@ export function GraphStatisticsPanel({
             <p>{assessment.reason}</p>
           </>
         )}
+        {assessment.analysisSetSummary ? (
+          <div className="experiment-graph-analysis-set" role="status">
+            <strong>解析対象:</strong> {assessment.analysisSetSummary}
+            {assessment.graphAnalysisSetDifference ? (
+              <p>{assessment.graphAnalysisSetDifference}</p>
+            ) : null}
+          </div>
+        ) : null}
         {assessment.missingCount > 0 ? (
           <p>
             表上の空欄または無効な値：{assessment.missingCount}件

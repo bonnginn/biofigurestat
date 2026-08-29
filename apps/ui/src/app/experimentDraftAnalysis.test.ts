@@ -299,6 +299,10 @@ describe("temporary experiment-first analysis adapter", () => {
     expect(assessment.request?.observations).toHaveLength(4);
     expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId)).size).toBe(2);
     expect(assessment.reason).toContain("完全な組 2");
+    expect(assessment.analysisSetSummary).toBe(
+      "完全な対応組 2組を統計解析に使います。対応相手がそろわない観測 1件は解析から除外します。",
+    );
+    expect(assessment.graphAnalysisSetDifference).toContain("Graphには入力済みの観測を残します");
   });
 
   it("pairs shared-source siblings without reusing the source as their experimental-unit ID", () => {

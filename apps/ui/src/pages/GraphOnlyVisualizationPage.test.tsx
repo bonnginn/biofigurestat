@@ -108,7 +108,7 @@ describe("Graph-only visualization entry", () => {
         origin: "direct_table",
         uncertainty: "none",
         rawPointsVisible: true,
-        summaryVisible: false,
+        summaryVisible: true,
       });
     });
     fireEvent.click(screen.getByRole("button", { name: "統計を確認" }));
@@ -179,6 +179,7 @@ describe("Graph-only visualization entry", () => {
     });
 
     expect(screen.getByRole("img", { name: /ValueをConditionごと/ })).toBeVisible();
+    expect(document.querySelectorAll("[data-graph-only-summary='mean']")).toHaveLength(4);
     fireEvent.click(screen.getByRole("button", { name: "このGraph用データを保存" }));
     await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
     expect(recordUsageMilestone).toHaveBeenCalledWith("home", "project_saved");
@@ -236,7 +237,8 @@ describe("Graph-only visualization entry", () => {
     );
     expect(xPositions).toHaveLength(3);
     expect(xPositions[2]! - xPositions[1]!).toBeGreaterThan((xPositions[1]! - xPositions[0]!) * 7);
-    expect(screen.getByText(/横軸の数値間隔を保って表示/)).toBeVisible();
+    expect(screen.getByText(/同じ系列の点を入力したXの順に結んで/)).toBeVisible();
+    expect(graph.querySelectorAll("[data-graph-only-series-line='true']")).toHaveLength(1);
     expect(screen.getByRole("button", { name: "グラフをコピー" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();

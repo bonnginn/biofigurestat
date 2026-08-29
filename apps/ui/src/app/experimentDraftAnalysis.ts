@@ -51,6 +51,8 @@ export type DraftAnalysisAssessment = Readonly<{
   nByCondition: readonly { conditionId: string; label: string; n: number }[];
   nDisplay?: string;
   statisticalNDefinition?: string;
+  analysisSetSummary?: string;
+  graphAnalysisSetDifference?: string;
   missingCount: number;
   notPlannedCount: number;
   request: AnalysisEngineRequest | null;
@@ -750,9 +752,6 @@ export function assessDraftGraphAnalysis(input: {
     conditions,
     observations,
   });
-  const inputDiagnosticProperties = incompleteMatchedDiagnostic
-    ? { inputDiagnostics: [incompleteMatchedDiagnostic] as const }
-    : {};
   const completePairIds =
     input.draft.conditionAssignment.kind === "matched"
       ? new Set(
@@ -763,6 +762,23 @@ export function assessDraftGraphAnalysis(input: {
           ),
         )
       : null;
+  const unmatchedObservationCount = completePairIds
+    ? observations.filter((observation) => !completePairIds.has(observation.pairId ?? "")).length
+    : 0;
+  const inputDiagnosticProperties = {
+    ...(incompleteMatchedDiagnostic
+      ? { inputDiagnostics: [incompleteMatchedDiagnostic] as const }
+      : {}),
+    ...(completePairIds
+      ? {
+          analysisSetSummary: `完全な対応組 ${completePairIds.size}組を統計解析に使います。対応相手がそろわない観測 ${unmatchedObservationCount}件は解析から除外します。`,
+          graphAnalysisSetDifference:
+            unmatchedObservationCount > 0
+              ? "Graphには入力済みの観測を残します。統計解析だけが完全な対応組に限定されます。"
+              : "Graphと統計解析は、同じ完全な対応組を使用します。",
+        }
+      : {}),
+  };
   const requestObservations = completePairIds
     ? observations.filter((observation) => completePairIds.has(observation.pairId ?? ""))
     : observations;

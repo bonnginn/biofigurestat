@@ -479,7 +479,7 @@ export function GraphOnlyVisualizationPage({
       origin: "direct_table",
       uncertainty: "none",
       rawPointsVisible: true,
-      summaryVisible: false,
+      summaryVisible: true,
     });
   }, [canGraph]);
 

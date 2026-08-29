@@ -8,10 +8,16 @@ export function violinDensityPath(
   const minimum = Math.min(...values);
   const maximum = Math.max(...values);
   const observedRange = maximum - minimum;
+  // A violin describes the density within the observed extent. In
+  // particular, identical or nearly identical values must not manufacture a
+  // one-sided tail above the largest measurement.
+  if (observedRange <= Number.EPSILON) return null;
   const scale = Math.max(Math.abs(minimum), Math.abs(maximum), Number.EPSILON);
-  const range = Math.max(observedRange, scale * 0.08, Number.EPSILON);
-  const bandwidth = Math.max(range / 7, 0.001);
-  const samples = Array.from({ length: 24 }, (_, index) => minimum + (range * index) / 23);
+  const bandwidth = Math.max(observedRange / 7, scale * 0.01, 0.001);
+  const samples = Array.from(
+    { length: 24 },
+    (_, index) => minimum + (observedRange * index) / 23,
+  );
   const densities = samples.map((sample) =>
     values.reduce((sum, value) => {
       const z = (sample - value) / bandwidth;

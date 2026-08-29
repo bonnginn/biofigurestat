@@ -95,6 +95,17 @@
   font-size: 12px;
 }
 
+.graph-only__series-line {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.graph-only__summary-line {
+  stroke-linecap: square;
+  stroke-width: 2.6;
+}
+
 .graph-only__figure figcaption {
   color: #5d6e6b;
   font-size: 0.85rem;

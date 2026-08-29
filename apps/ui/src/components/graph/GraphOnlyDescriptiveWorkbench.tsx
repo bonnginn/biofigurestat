@@ -183,6 +183,35 @@ export function GraphOnlyDescriptiveWorkbench({
     );
   };
   const resolvedTitle = presentation.title.trim() || "表から作成したGraph";
+  const categoricalSummaries = numericXAxis
+    ? []
+    : categories.flatMap((category) => {
+        const categoryPoints = points.filter((point) => point.xRaw === category);
+        const keys = seriesKeys.length ? seriesKeys : [""];
+        return keys.flatMap((series) => {
+          const values = categoryPoints
+            .filter((point) => point.series === series)
+            .map((point) => point.y);
+          return values.length
+            ? [
+                {
+                  category,
+                  series,
+                  mean: values.reduce((sum, value) => sum + value, 0) / values.length,
+                },
+              ]
+            : [];
+        });
+      });
+  const numericSeries = (seriesKeys.length ? seriesKeys : [""]).map((series) => ({
+    series,
+    points: points
+      .filter((point) => point.series === series)
+      .slice()
+      .sort((leftPoint, rightPoint) =>
+        (leftPoint.xNumeric as number) - (rightPoint.xNumeric as number),
+      ),
+  }));
 
   const canvas = (
     <figure className="graph-only__figure">
@@ -279,13 +308,32 @@ export function GraphOnlyDescriptiveWorkbench({
                 </g>
               );
             })}
+        {numericXAxis
+          ? numericSeries.map(({ series, points: seriesPoints }) => {
+              if (seriesPoints.length < 2) return null;
+              const seriesIndex = Math.max(0, seriesKeys.indexOf(series));
+              return (
+                <polyline
+                  key={`line.${series}`}
+                  className="graph-only__series-line"
+                  data-graph-only-series-line="true"
+                  points={seriesPoints
+                    .map((point) => `${xPosition(point)},${yPosition(point.y)}`)
+                    .join(" ")}
+                  fill="none"
+                  stroke={presentation.palette[seriesIndex % presentation.palette.length]}
+                />
+              );
+            })
+          : null}
         {points.map((point) => {
           const seriesIndex = Math.max(0, seriesKeys.indexOf(point.series));
           const fill = presentation.palette[seriesIndex % presentation.palette.length]!;
           const categoricalSeriesOffset =
             !numericXAxis && seriesKeys.length > 1
-              ? (seriesIndex - (seriesKeys.length - 1) / 2) * 10
+              ? (seriesIndex - (seriesKeys.length - 1) / 2) * 18
               : 0;
+          const jitter = numericXAxis ? 0 : ((point.rowIndex % 5) - 2) * 2.2;
           return (
             <circle
               key={`${point.rowIndex}.${point.xRaw}.${point.y}`}
@@ -293,7 +341,7 @@ export function GraphOnlyDescriptiveWorkbench({
               data-graph-only-point="true"
               data-source-x={point.xRaw}
               data-source-y={point.y}
-              cx={xPosition(point) + categoricalSeriesOffset}
+              cx={xPosition(point) + categoricalSeriesOffset + jitter}
               cy={yPosition(point.y)}
               r={presentation.pointSize}
               fill={fill}
@@ -301,6 +349,28 @@ export function GraphOnlyDescriptiveWorkbench({
             />
           );
         })}
+        {!numericXAxis
+          ? categoricalSummaries.map(({ category, series, mean }) => {
+              const seriesIndex = Math.max(0, seriesKeys.indexOf(series));
+              const seriesOffset =
+                seriesKeys.length > 1 ? (seriesIndex - (seriesKeys.length - 1) / 2) * 18 : 0;
+              const x =
+                xPosition({ rowIndex: -1, xRaw: category, xNumeric: null, y: mean, series }) +
+                seriesOffset;
+              return (
+                <line
+                  key={`mean.${category}.${series}`}
+                  className="graph-only__summary-line"
+                  data-graph-only-summary="mean"
+                  x1={x - 11}
+                  x2={x + 11}
+                  y1={yPosition(mean)}
+                  y2={yPosition(mean)}
+                  stroke={presentation.palette[seriesIndex % presentation.palette.length]}
+                />
+              );
+            })
+          : null}
         <text
           className="experiment-graph-axis-title"
           x={left + plotWidth / 2}
@@ -341,8 +411,8 @@ export function GraphOnlyDescriptiveWorkbench({
       </svg>
       <figcaption>
         {numericXAxis
-          ? "横軸の数値間隔を保って表示しています。統計的な比較は含みません。"
-          : "表のカテゴリを入力順に表示しています。統計的な比較は含みません。"}
+          ? "横軸の数値間隔を保ち、同じ系列の点を入力したXの順に結んでいます。統計的なfitや比較は含みません。"
+          : "表のカテゴリを入力順に表示し、短い横線で各カテゴリの平均を示します。統計的な比較は含みません。"}
       </figcaption>
     </figure>
   );

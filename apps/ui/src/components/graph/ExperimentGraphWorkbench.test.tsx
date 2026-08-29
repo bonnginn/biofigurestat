@@ -481,7 +481,7 @@ describe("ExperimentGraphWorkbench", () => {
     const yAxisTitle = [
       ...svg.querySelectorAll<SVGTextElement>(".experiment-graph-axis-title"),
     ].find((node) => node.getAttribute("transform")?.startsWith("rotate(-90"));
-    expect(Number(yAxisTitle?.getAttribute("x"))).toBe(Number(svg.dataset.leftMargin) - 38);
+    expect(Number(yAxisTitle?.getAttribute("x"))).toBe(Number(svg.dataset.leftMargin) - 30);
 
     const exported = serializeGraphSvg(svg);
     const exportedSvg = new DOMParser().parseFromString(exported, "image/svg+xml");
