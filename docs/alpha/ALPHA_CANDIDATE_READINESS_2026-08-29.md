@@ -33,7 +33,7 @@ entry and must not be presented as the default.
 
 | Area | Current result |
 | --- | ---: |
-| UI tests | 1,078 passed |
+| UI tests | 1,079 passed |
 | Semantic package tests | 290 passed |
 | Experiment-first prototype tests | 190 passed |
 | Python engine tests | 63 passed |
@@ -74,15 +74,15 @@ still require clean-machine confirmation with this exact installer.
 The authoritative command sequence, artifact evidence template, and reduced four-task gate are in
 `MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md`. The concise commands below remain a quick reference.
 
-Use Apple Silicon macOS and build from the verified branch. `3e14935` is the minimum commit for
-the current reduced gate; it includes the Node 26 test-isolation correction on top of the verified
-product candidate.
+Use Apple Silicon macOS and build from the verified branch. `84dc119` is the minimum commit for
+the current reduced gate; it includes the Node 26 test-isolation correction and the latest
+Graph-only direct-paste UX correction on top of the verified product candidate.
 
 ```bash
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 3e14935 HEAD
+git merge-base --is-ancestor 84dc119 HEAD
 npx --yes pnpm@11.19.0 install --frozen-lockfile
 npx --yes pnpm@11.19.0 test
 npx --yes pnpm@11.19.0 typecheck
@@ -139,6 +139,9 @@ native evidence.
   implying that a free-text override reason was captured.
 - Graph-only entry begins with a compact five-row spreadsheet that expands as needed and describes
   its role as Graph-first rather than an explanatory preview.
+- Pasting values below unchanged Graph-only headers preserves the initial X/Y mapping and renders
+  immediately. A paste or file import that changes the headers still clears the mapping and asks
+  the researcher to assign column meaning explicitly.
 - Usage telemetry remains off until explicit consent. With no approved remote endpoint, it fails
   closed and remains local-only; research values, labels, notes, paths, clipboard/file content and
   free text are excluded.

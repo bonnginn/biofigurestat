@@ -35,7 +35,7 @@ The executable macOS build and reduced native-human gate are specified in
 
 The eight semantic UX cases and hard-failure rules in
 `docs/alpha/PRODUCTION_UX_ACCEPTANCE_GATE_2026-08-28.md` remain authoritative. Routine revalidation
-is reduced to the four composite tasks recorded there. Current automated evidence includes 1,078 UI
+is reduced to the four composite tasks recorded there. Current automated evidence includes 1,079 UI
 tests, 290 semantic-package tests, 190 experiment-first prototype tests, 63 Python-engine tests,
 Rust native tests, and a real Rust→Python engine round trip. A Windows x64 NSIS candidate containing
 the progressive experiment-entry, canonical-value integrity, and current bounded UX changes was
