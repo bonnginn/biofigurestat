@@ -33,11 +33,12 @@ The dated engineering evidence and public-distribution blockers are recorded in
 
 The eight semantic UX cases and hard-failure rules in
 `docs/alpha/PRODUCTION_UX_ACCEPTANCE_GATE_2026-08-28.md` remain authoritative. Routine revalidation
-is reduced to the four composite tasks recorded there. Current automated evidence includes 1,071 UI
+is reduced to the four composite tasks recorded there. Current automated evidence includes 1,075 UI
 tests, 290 semantic-package tests, 190 experiment-first prototype tests, 63 Python-engine tests,
 Rust native tests, and a real Rust→Python engine round trip. A Windows x64 NSIS candidate containing
-the progressive experiment-entry changes was built on 2026-08-29 with SHA-256
-`23899574227D9CD85EBD7F0340AD6606EB951505A3B03512FED8FFA74285507D`. The macOS native candidate
+the progressive experiment-entry and canonical-value integrity changes was built on 2026-08-29
+with SHA-256 `037F8DE573651B709BBE9BD27498C0BBCA07561C213D2534F7AFC8E8E078BF5B`.
+The macOS native candidate
 must still be rebuilt from the current branch before the next native human gate.
 
 The highest-value remaining evidence is:

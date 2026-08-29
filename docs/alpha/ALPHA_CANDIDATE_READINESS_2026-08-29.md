@@ -30,7 +30,7 @@ entry and must not be presented as the default.
 
 | Area | Current result |
 | --- | ---: |
-| UI tests | 1,071 passed |
+| UI tests | 1,075 passed |
 | Semantic package tests | 290 passed |
 | Experiment-first prototype tests | 190 passed |
 | Python engine tests | 63 passed |
@@ -39,7 +39,7 @@ entry and must not be presented as the default.
 | Windows sidecar smoke | D01–D17 passed; engine `0.14.0` |
 | UI typecheck | Passed |
 | UI lint | Passed |
-| Production Web build | Passed with revision `3086c66-alpha.20260829.1` |
+| Production Web build | Passed with revision `417c024-alpha.20260829.3` |
 | Release-bundle forbidden-content scan | Passed |
 | Windows Tauri release and NSIS generation | Passed |
 
@@ -50,14 +50,15 @@ machine.
 ## Windows candidate
 
 - Installer: `apps/desktop/src-tauri/target/release/bundle/nsis/Life Science Analysis_0.1.0_x64-setup.exe`
-- Size: `46,632,774` bytes
-- SHA-256: `23899574227D9CD85EBD7F0340AD6606EB951505A3B03512FED8FFA74285507D`
-- Build revision: `3086c66-alpha.20260829.1`
-- Build time: 2026-08-29 15:22 JST
+- Size: `46,631,388` bytes
+- SHA-256: `037F8DE573651B709BBE9BD27498C0BBCA07561C213D2534F7AFC8E8E078BF5B`
+- Build revision: `417c024-alpha.20260829.3`
+- Build time: 2026-08-29 16:02 JST
 
-This Windows artifact contains the progressive experiment-entry changes through `0d9165c` and the
-verified documentation baseline at `3086c66`. It passed the Windows bundle verifier and D01–D17
-sidecar smoke. Clean-machine human validation is still required.
+This Windows artifact contains the progressive experiment-entry, shared Graph workspace, and
+canonical-value integrity changes through `417c024`. It passed the Windows bundle verifier; the
+unchanged packaged engine passed the D01–D17 sidecar smoke on the preceding candidate. Clean-machine
+human validation is still required.
 
 This is an unsigned engineering candidate, not a public release. The packaged executable is
 verified as PE subsystem `Windows GUI (2)` so it does not own a command-prompt window. Windows
@@ -66,14 +67,14 @@ still require clean-machine confirmation with this exact installer.
 
 ## macOS native build handoff
 
-Use Apple Silicon macOS and build from the verified branch. `27500c5` is the minimum verified
+Use Apple Silicon macOS and build from the verified branch. `417c024` is the minimum verified
 baseline; a later descendant is acceptable only when it contains no unreviewed product changes.
 
 ```bash
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 27500c5 HEAD
+git merge-base --is-ancestor 417c024 HEAD
 corepack pnpm install --frozen-lockfile
 NODE_OPTIONS=--localstorage-file=/private/tmp/lsaa-vitest-localstorage.json pnpm test
 pnpm typecheck
@@ -96,6 +97,11 @@ native evidence.
 
 - Independent worksheets no longer make researchers type generated internal IDs during ordinary
   entry; IDs remain stable and can be revealed or edited when necessary.
+- Wide-grid blur commits the exact browser-visible value rather than a prior render's draft. The
+  same values are regression-checked through Tab entry, overwrite, decimal, paste, view switching,
+  Graph generation, and save/reopen; `visible value === canonical value` is an invariant.
+- Spreadsheet focus prevents native recentering and scrolls only the nearest amount required to
+  reveal an off-screen target, avoiding unnecessary horizontal jumps during sequential entry.
 - Spreadsheet keyboard flow advances across a row and returns to the first editable cell on the next
   row.
 - Positive/total-count entry accepts the first typed count and retains both raw components while the
