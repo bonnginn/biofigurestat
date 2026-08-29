@@ -356,6 +356,87 @@ describe("CanonicalMatrixWorksheet", () => {
     expect(screen.getByRole("textbox", { name: "入力行 1・control・Response" })).toHaveValue("10");
   });
 
+  it("commits the exact visible value when blur occurs before a React draft render", () => {
+    render(<WorksheetHarness initialObservations={[]} />);
+    const cell = screen.getByRole("textbox", {
+      name: "入力行 1・control・Response",
+    }) as HTMLInputElement;
+    const nativeValueSetter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      "value",
+    )?.set;
+    expect(nativeValueSetter).toBeDefined();
+
+    // Reproduce the integrity boundary directly: the browser-visible value
+    // has advanced, while React has not yet rendered an onChange update.
+    nativeValueSetter!.call(cell, "101");
+    expect(cell).toHaveValue("101");
+    fireEvent.blur(cell);
+
+    expect(cell).toHaveValue("101");
+    expect(currentObservations()).toEqual([
+      expect.objectContaining({
+        factors: { condition: "control" },
+        values: { value: 101 },
+      }),
+    ]);
+  });
+
+  it("keeps keyboard, overwrite, decimal, and view values identical to canonical observations", () => {
+    function IntegrityHarness() {
+      const [observations, setObservations] = useState<readonly CanonicalAdaptiveObservation[]>([]);
+      const [mode, setMode] = useState<"compact" | "expanded">("compact");
+      return (
+        <>
+          <AdaptiveCanonicalSpreadsheet
+            contract={makeContract()}
+            observations={observations}
+            mode={mode}
+            onModeChange={setMode}
+            onObservationsChange={setObservations}
+            nextObservationId={nextObservationId}
+            nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
+            worksheetRows={[]}
+          />
+          <output data-testid="canonical-observations">{JSON.stringify(observations)}</output>
+        </>
+      );
+    }
+    render(<IntegrityHarness />);
+    const labels = [
+      "入力行 1・control・Response",
+      "入力行 1・drug・Response",
+      "入力行 2・control・Response",
+      "入力行 2・drug・Response",
+    ];
+    const values = ["97", "60", "101", "55"];
+
+    labels.forEach((label, index) => {
+      const input = screen.getByRole("textbox", { name: label });
+      input.focus();
+      fireEvent.change(input, { target: { value: values[index] } });
+      fireEvent.keyDown(input, { key: "Tab" });
+    });
+
+    const overwrite = screen.getByRole("textbox", { name: labels[0] });
+    fireEvent.change(overwrite, { target: { value: "12.5" } });
+    fireEvent.blur(overwrite);
+
+    const canonicalValues = currentObservations().map(({ values: rowValues }) => rowValues.value);
+    expect(canonicalValues).toEqual([12.5, 60, 101, 55]);
+    ["12.5", "60", "101", "55"].forEach((value, index) => {
+      expect(screen.getByRole("textbox", { name: labels[index] })).toHaveValue(value);
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "1測定1行" }));
+    const expanded = screen.getByRole("table", { name: "すべての値を表示" });
+    expect(within(expanded).getByDisplayValue("12.5")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("60")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("101")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("55")).toBeVisible();
+    expect(within(expanded).queryByDisplayValue("97101")).toBeNull();
+  });
+
   it("uses an independent ID entered before a rectangular value paste", () => {
     render(<WorksheetHarness initialObservations={[]} />);
     fireEvent.click(screen.getByRole("button", { name: "対象・試料IDを表示／編集" }));

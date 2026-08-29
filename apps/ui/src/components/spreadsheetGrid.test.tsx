@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
 
@@ -79,6 +79,22 @@ describe("spreadsheet grid interaction", () => {
     expect(screen.getByRole("textbox", { name: "0:2" })).toHaveFocus();
     fireEvent.keyDown(document.activeElement!, { key: "Tab" });
     expect(screen.getByRole("textbox", { name: "1:0" })).toHaveFocus();
+  });
+
+  it("moves focus without changing the worksheet scroll position", () => {
+    render(<Grid />);
+    const first = screen.getByRole("textbox", { name: "0:0" });
+    const next = screen.getByRole("textbox", { name: "0:2" });
+    const focus = vi.spyOn(next, "focus");
+    const scrollIntoView = vi.fn();
+    next.scrollIntoView = scrollIntoView;
+
+    first.focus();
+    fireEvent.keyDown(first, { key: "Tab" });
+
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
+    expect(next).toHaveFocus();
   });
 
   it("uses horizontal arrows for date-like cells without a caret API", () => {

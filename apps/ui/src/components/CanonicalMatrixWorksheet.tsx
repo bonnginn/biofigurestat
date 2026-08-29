@@ -1026,9 +1026,12 @@ function MatrixCell({
     setError(null);
   }, [canonicalValue]);
 
-  const commit = () => {
+  const commit = (draftText = text) => {
     if (column.derived) return;
-    const trimmed = text.trim();
+    // Read the value visible in the input at blur time. This avoids a narrow
+    // React render-lag window where the DOM already shows the last keystroke
+    // but the prior render's local state would otherwise be committed.
+    const trimmed = draftText.trim();
     const value = trimmed === "" ? null : Number(trimmed);
     if (value !== null && !Number.isFinite(value)) {
       setError("数値を入力してください");
@@ -1099,7 +1102,7 @@ function MatrixCell({
         disabled={readOnly}
         inputMode="decimal"
         value={text}
-        onBlur={commit}
+        onBlur={(event) => commit(event.currentTarget.value)}
         onChange={(event) => {
           setText(event.currentTarget.value);
           setError(null);

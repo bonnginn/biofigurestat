@@ -166,6 +166,11 @@ describe("adaptive production path regressions", () => {
     fireEvent.paste(firstCell, {
       clipboardData: { getData: () => "12.5\t15\n13.5\t16\n\t17" },
     });
+    const overwrittenCell = screen.getByRole("textbox", {
+      name: "入力行 2・Control・Fluorescence intensity",
+    });
+    fireEvent.change(overwrittenCell, { target: { value: "101" } });
+    fireEvent.blur(overwrittenCell);
     expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("5件の測定値");
     expect(screen.queryByRole("navigation", { name: "実験の表示切り替え" })).toBeNull();
     expect(screen.queryByRole("button", { name: /＋ 入力行/ })).toBeNull();
@@ -215,12 +220,18 @@ describe("adaptive production path regressions", () => {
       within(expanded).getByRole("textbox", {
         name: "Control 2のFluorescence intensity",
       }),
-    ).toHaveValue("13.5");
+    ).toHaveValue("101");
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
     await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(2));
     const saved = saveProject.mock.calls[1]![0];
     expect(saved.adaptiveInput?.canonicalObservations).toHaveLength(5);
+    expect(
+      saved.adaptiveInput?.canonicalObservations.flatMap(({ values }) => Object.values(values)),
+    ).toEqual(expect.arrayContaining([12.5, 101, 15, 16, 17]));
+    expect(
+      saved.adaptiveInput?.canonicalObservations.flatMap(({ values }) => Object.values(values)),
+    ).not.toContain(97101);
     expect(
       saved.observations.filter(({ rawRevisionId }) => rawRevisionId === saved.activeRawRevisionId),
     ).toHaveLength(5);
@@ -267,11 +278,18 @@ describe("adaptive production path regressions", () => {
         ({ factors }) => factors.treatment === "Drug",
       ),
     ).toHaveLength(3);
+    expect(
+      reopened?.draft.adaptiveInput?.canonicalObservations.flatMap(({ values }) =>
+        Object.values(values),
+      ),
+    ).toContain(101);
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     expect(screen.getByRole("img", { name: /実験単位ごとのグラフ/ })).toBeVisible();
     expect(screen.getByLabelText(/Control 入力行 1の実験単位平均/)).toBeVisible();
+    expect(screen.getByLabelText(/Control 入力行 2の実験単位平均: 101/)).toBeVisible();
+    expect(screen.queryByLabelText(/97101/)).toBeNull();
     expect(screen.queryByLabelText(/Control Run 1/)).toBeNull();
     expect(screen.queryByRole("region", { name: "統計ワークスペース" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "統計" }));

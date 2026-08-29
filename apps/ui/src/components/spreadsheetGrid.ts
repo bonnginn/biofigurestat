@@ -28,7 +28,11 @@ function coordinate(control: SpreadsheetControl): { row: number; column: number 
 }
 
 function focusControl(control: SpreadsheetControl) {
-  control.focus();
+  // Native focus may horizontally recenter a wide worksheet even when the
+  // adjacent cell is already visible. Preserve the current viewport first,
+  // then request only the minimum movement needed for an off-screen target.
+  control.focus({ preventScroll: true });
+  control.scrollIntoView?.({ block: "nearest", inline: "nearest" });
   if (control instanceof HTMLInputElement) control.select();
 }
 
