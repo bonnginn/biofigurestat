@@ -433,7 +433,7 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     expect(screen.queryByRole("heading", { name: "実験の条件と測定内容" })).toBeNull();
     rerender(<BiologicalExperimentSetup enabled onReady={onReady} />);
     expect(screen.getByRole("textbox", { name: "処理・群分け 1の名前" })).toBeVisible();
-    expect(screen.getAllByRole("textbox", { name: /行 \d+ 列 \d+/ })).toHaveLength(5);
+    expect(screen.getAllByRole("textbox", { name: /行 \d+ 列 \d+/ })).toHaveLength(2);
     expect(
       screen.getByRole("checkbox", {
         name: "処理・群分け 1に親グループ列を追加する",
@@ -497,12 +497,14 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     first.focus();
     fireEvent.keyDown(first, { key: "ArrowRight" });
     expect(screen.getByRole("textbox", { name: "行 1 列 2" })).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "処理・群分け 1に列を追加" }));
+    screen.getByRole("textbox", { name: "行 1 列 2" }).focus();
     fireEvent.keyDown(document.activeElement!, { key: "Tab" });
     expect(screen.getByRole("textbox", { name: "行 1 列 3" })).toHaveFocus();
 
     fireEvent.click(screen.getByRole("button", { name: "処理・群分け 1に行を追加" }));
     fireEvent.keyDown(screen.getByRole("textbox", { name: "行 1 列 3" }), { key: "Enter" });
-    expect(screen.getByRole("textbox", { name: "行 2 列 3" })).toHaveFocus();
+    expect(screen.getByRole("textbox", { name: "行 2 列 1" })).toHaveFocus();
   });
 
   it("asks readout-specific child and axis questions only for multiple measurements", () => {
@@ -691,7 +693,7 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     expect(screen.getByRole("textbox", { name: "行 2 列 2" })).toHaveValue("100");
     fireEvent.click(screen.getByRole("button", { name: "処理・群分け 1（薬剤）に行を追加" }));
     fireEvent.click(screen.getByRole("button", { name: "処理・群分け 1（薬剤）に列を追加" }));
-    expect(screen.getByRole("textbox", { name: "行 3 列 6" })).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "行 3 列 3" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
     expect(screen.getByText(/測定項目と、各条件を実験するために用いた対象・試料/)).toBeVisible();
     expect(screen.getByRole("textbox", { name: "行 2 列 2" })).toHaveValue("100");

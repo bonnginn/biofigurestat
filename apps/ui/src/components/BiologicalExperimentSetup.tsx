@@ -101,7 +101,7 @@ export type BiologicalExperimentSetupProps = Readonly<{
 // Condition levels are normally entered left-to-right. Additional rows are
 // created only when the researcher asks for a real parent/subgroup dimension.
 const VISIBLE_ROWS = 1;
-const VISIBLE_VALUE_COLUMNS = 5;
+const VISIBLE_VALUE_COLUMNS = 2;
 
 type PendingDeletionFocus = Readonly<{
   collection: "blocks" | "readouts";
