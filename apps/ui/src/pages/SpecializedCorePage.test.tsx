@@ -220,7 +220,15 @@ describe("specialized Core entry pages", () => {
     );
 
     expect(screen.queryByText("群分けと個体間のまとまりはどれですか？")).toBeNull();
-    expect(screen.getByRole("button", { name: "統計解析を設定" })).toBeDisabled();
+    const statisticsSetupButton = screen.getByRole("button", { name: "統計解析を設定" });
+    expect(statisticsSetupButton).toBeDisabled();
+    expect(statisticsSetupButton).toHaveAttribute(
+      "aria-describedby",
+      "survival-graph-setup-disabled-reason",
+    );
+    expect(
+      screen.getByText("あと1項目：対象ID・群・観察期間・Statusを入力してください。"),
+    ).toBeVisible();
     expect(screen.queryByRole("img", { name: "Kaplan–Meier survival graph" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "入力形式の例を読み込む（合成値）" }));
     expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
@@ -606,7 +614,15 @@ describe("specialized Core entry pages", () => {
     );
     expect(screen.getByText(/現在の専用入口では構造化できません/u)).toBeVisible();
     expect(screen.queryByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeNull();
-    expect(screen.getByRole("button", { name: "統計解析を設定" })).toBeDisabled();
+    const statisticsSetupButton = screen.getByRole("button", { name: "統計解析を設定" });
+    expect(statisticsSetupButton).toBeDisabled();
+    expect(statisticsSetupButton).toHaveAttribute(
+      "aria-describedby",
+      "survival-graph-setup-disabled-reason",
+    );
+    expect(
+      screen.getByText("このevent経過は現在の専用入口では解析できません。"),
+    ).toBeVisible();
     expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
   });
 

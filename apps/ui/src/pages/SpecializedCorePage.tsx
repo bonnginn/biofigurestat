@@ -1748,6 +1748,16 @@ export function SpecializedCorePage({
     mode === "survival" &&
     ((survival && "error" in survival && /numeric mapping/iu.test(survival.error ?? "")) ||
       numericStatusMapping !== null);
+  const survivalStatisticsSetupBlockedReason =
+    directTimeToEventEntry?.status === "safe_unsupported"
+      ? "このevent経過は現在の専用入口では解析できません。"
+      : !survivalTableHasRows
+        ? "あと1項目：対象ID・群・観察期間・Statusを入力してください。"
+        : numericStatusMappingRequired && numericStatusMapping === null
+          ? "あと1項目：Status列の0/1の意味を選んでください。"
+          : !survival || "error" in survival
+            ? "入力表のエラーを修正すると、統計解析を設定できます。"
+            : null;
   const timeToEventUnitPanel =
     experimentFirstEntry &&
     mode === "survival" &&
@@ -1832,13 +1842,29 @@ export function SpecializedCorePage({
         </p>
       ) : null}
       {experimentFirstEntry && !statisticsSetupExpanded ? (
-        <button
-          type="button"
-          disabled={!survival || "error" in survival}
-          onClick={() => setStatisticsSetupExpanded(true)}
-        >
-          統計解析を設定
-        </button>
+        <>
+          <button
+            type="button"
+            disabled={Boolean(survivalStatisticsSetupBlockedReason)}
+            aria-describedby={
+              survivalStatisticsSetupBlockedReason
+                ? "survival-statistics-setup-disabled-reason"
+                : undefined
+            }
+            onClick={() => setStatisticsSetupExpanded(true)}
+          >
+            統計解析を設定
+          </button>
+          {survivalStatisticsSetupBlockedReason ? (
+            <small
+              id="survival-statistics-setup-disabled-reason"
+              className="specialized-engine-note"
+              role="status"
+            >
+              {survivalStatisticsSetupBlockedReason}
+            </small>
+          ) : null}
+        </>
       ) : (
         <>
           {timeToEventUnitPanel}
@@ -1954,16 +1980,32 @@ export function SpecializedCorePage({
         Graphの見た目を変更しても、Kaplan–Meier推定やlog-rank検定は再計算しません。
       </p>
       {experimentFirstEntry && !statisticsSetupExpanded ? (
-        <button
-          type="button"
-          disabled={!survival || "error" in survival}
-          onClick={() => {
-            setStatisticsSetupExpanded(true);
-            setSurvivalInspectorTab("statistics");
-          }}
-        >
-          統計解析を設定
-        </button>
+        <>
+          <button
+            type="button"
+            disabled={Boolean(survivalStatisticsSetupBlockedReason)}
+            aria-describedby={
+              survivalStatisticsSetupBlockedReason
+                ? "survival-graph-setup-disabled-reason"
+                : undefined
+            }
+            onClick={() => {
+              setStatisticsSetupExpanded(true);
+              setSurvivalInspectorTab("statistics");
+            }}
+          >
+            統計解析を設定
+          </button>
+          {survivalStatisticsSetupBlockedReason ? (
+            <small
+              id="survival-graph-setup-disabled-reason"
+              className="specialized-engine-note"
+              role="status"
+            >
+              {survivalStatisticsSetupBlockedReason}
+            </small>
+          ) : null}
+        </>
       ) : null}
     </div>
   );
