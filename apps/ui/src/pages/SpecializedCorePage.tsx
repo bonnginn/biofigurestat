@@ -2248,20 +2248,24 @@ export function SpecializedCorePage({
               setText(nextText);
               if (mode === "survival") {
                 setTimeToEventInputSource({
-                  kind: "clipboard",
+                  kind: source === "workbook_import" ? "generic_file" : "clipboard",
                   label:
                     source === "clipboard"
                       ? "time-to-event-spreadsheet-paste"
-                      : "time-to-event-spreadsheet-edit",
+                      : source === "workbook_import"
+                        ? "time-to-event-excel-workbook"
+                        : "time-to-event-spreadsheet-edit",
                 });
                 setNumericStatusMapping(null);
               } else {
                 setHeatmapInputSource({
-                  kind: "clipboard",
+                  kind: source === "workbook_import" ? "generic_file" : "clipboard",
                   label:
                     source === "clipboard"
                       ? "heatmap-spreadsheet-paste"
-                      : "heatmap-spreadsheet-edit",
+                      : source === "workbook_import"
+                        ? "heatmap-excel-workbook"
+                        : "heatmap-spreadsheet-edit",
                 });
               }
               setResult(null);

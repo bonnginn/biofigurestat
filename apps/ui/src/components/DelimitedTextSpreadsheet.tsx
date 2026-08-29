@@ -1,9 +1,22 @@
-import { useEffect, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useState,
+  type ClipboardEvent,
+  type CSSProperties,
+  type KeyboardEvent,
+} from "react";
 
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
+import {
+  importLocalSpreadsheetWorkbook,
+  spreadsheetWorkbookImportAvailable,
+  spreadsheetRowsToTsv,
+  type ImportedSpreadsheetWorkbook,
+  type SpreadsheetWorkbookImporter,
+} from "../app/spreadsheetWorkbookImport";
 import "./DelimitedTextSpreadsheet.css";
 
-type ChangeSource = "cell_edit" | "clipboard";
+type ChangeSource = "cell_edit" | "clipboard" | "workbook_import";
 
 type Props = Readonly<{
   value: string;
@@ -14,6 +27,7 @@ type Props = Readonly<{
   caption?: string;
   testIdPrefix?: string;
   replaceOnPasteAtOrigin?: boolean;
+  workbookImporter?: SpreadsheetWorkbookImporter;
 }>;
 
 type ParsedGrid = Readonly<{
@@ -85,7 +99,10 @@ function encodedCell(value: string, delimiter: ParsedGrid["delimiter"]): string 
     : normalized;
 }
 
-function serializeGrid(rows: readonly (readonly string[])[], delimiter: ParsedGrid["delimiter"]): string {
+function serializeGrid(
+  rows: readonly (readonly string[])[],
+  delimiter: ParsedGrid["delimiter"],
+): string {
   const retained = rows.map((row) => [...row]);
   while (retained.length > 1 && retained.at(-1)?.every((value) => value === "")) retained.pop();
   const lastColumn = retained.reduce((maximum, row) => {
@@ -96,9 +113,9 @@ function serializeGrid(rows: readonly (readonly string[])[], delimiter: ParsedGr
   }, 0);
   return retained
     .map((row) =>
-      Array.from({ length: lastColumn + 1 }, (_, index) => encodedCell(row[index] ?? "", delimiter)).join(
-        delimiter,
-      ),
+      Array.from({ length: lastColumn + 1 }, (_, index) =>
+        encodedCell(row[index] ?? "", delimiter),
+      ).join(delimiter),
     )
     .join("\n");
 }
@@ -123,8 +140,17 @@ export function DelimitedTextSpreadsheet({
   caption = "データ表",
   testIdPrefix,
   replaceOnPasteAtOrigin = false,
+  workbookImporter = importLocalSpreadsheetWorkbook,
 }: Props) {
   const [spreadsheetZoom, setSpreadsheetZoom] = useState<number>(initialSpreadsheetZoom);
+  const [importedWorkbook, setImportedWorkbook] = useState<ImportedSpreadsheetWorkbook | null>(
+    null,
+  );
+  const [selectedSheetIndex, setSelectedSheetIndex] = useState(0);
+  const [workbookImportError, setWorkbookImportError] = useState<string | null>(null);
+  const [workbookImporting, setWorkbookImporting] = useState(false);
+  const workbookImportEnabled =
+    workbookImporter !== importLocalSpreadsheetWorkbook || spreadsheetWorkbookImportAvailable();
   const parsed = parseGrid(value);
   const contentColumns = parsed.rows.reduce((maximum, row) => Math.max(maximum, row.length), 0);
   const rowCount = Math.max(minimumRows, parsed.rows.length + 1);
@@ -132,9 +158,7 @@ export function DelimitedTextSpreadsheet({
   const rows = rectangularRows(parsed.rows, rowCount, columnCount);
 
   const changeSpreadsheetZoom = (direction: -1 | 1) => {
-    const currentIndex = SPREADSHEET_ZOOM_LEVELS.findIndex(
-      (level) => level === spreadsheetZoom,
-    );
+    const currentIndex = SPREADSHEET_ZOOM_LEVELS.findIndex((level) => level === spreadsheetZoom);
     const boundedIndex = Math.min(
       SPREADSHEET_ZOOM_LEVELS.length - 1,
       Math.max(0, (currentIndex < 0 ? 3 : currentIndex) + direction),
@@ -186,6 +210,34 @@ export function DelimitedTextSpreadsheet({
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     moveSpreadsheetFocus(event);
+  };
+
+  const applyImportedSheet = (workbook: ImportedSpreadsheetWorkbook, sheetIndex: number) => {
+    const sheet = workbook.sheets[sheetIndex];
+    if (!sheet) return;
+    onChange(spreadsheetRowsToTsv(sheet.rows), "workbook_import");
+  };
+
+  const openWorkbook = async () => {
+    setWorkbookImporting(true);
+    setWorkbookImportError(null);
+    try {
+      const workbook = await workbookImporter();
+      if (!workbook) return;
+      const firstNonEmpty = workbook.sheets.findIndex((sheet) => sheet.rows.length > 0);
+      const initialSheet = firstNonEmpty >= 0 ? firstNonEmpty : 0;
+      setImportedWorkbook(workbook);
+      setSelectedSheetIndex(initialSheet);
+      applyImportedSheet(workbook, initialSheet);
+    } catch (error) {
+      setWorkbookImportError(
+        error instanceof Error && error.message.trim()
+          ? error.message
+          : "Excel workbookを読み込めませんでした。",
+      );
+    } finally {
+      setWorkbookImporting(false);
+    }
   };
 
   return (
@@ -252,6 +304,51 @@ export function DelimitedTextSpreadsheet({
         </table>
       </div>
       <p>Excelから範囲をコピーし、左上のセルへそのまま貼り付けられます。空欄も保持します。</p>
+      <div className="delimited-spreadsheet__workbook-import">
+        <button
+          type="button"
+          onClick={() => void openWorkbook()}
+          disabled={workbookImporting || !workbookImportEnabled}
+          title={
+            workbookImportEnabled ? undefined : "XLS / XLSX直接読込はデスクトップ版で利用できます"
+          }
+        >
+          {workbookImporting ? "Excelを読込中…" : "XLS / XLSXを直接読み込む"}
+        </button>
+        {!workbookImportEnabled ? <span>デスクトップ版で利用できます</span> : null}
+        {importedWorkbook && importedWorkbook.sheets.length > 1 ? (
+          <label>
+            worksheet
+            <select
+              aria-label="読み込むworksheet"
+              value={selectedSheetIndex}
+              onChange={(event) => {
+                const nextIndex = Number(event.currentTarget.value);
+                setSelectedSheetIndex(nextIndex);
+                applyImportedSheet(importedWorkbook, nextIndex);
+              }}
+            >
+              {importedWorkbook.sheets.map((sheet, index) => (
+                <option key={`${sheet.name}:${index}`} value={index}>
+                  {sheet.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        {importedWorkbook ? (
+          <span role="status">
+            {importedWorkbook.fileName} / {importedWorkbook.sheets[selectedSheetIndex]?.name}
+          </span>
+        ) : null}
+        {(importedWorkbook?.sheets[selectedSheetIndex]?.formulaCellCount ?? 0) > 0 ? (
+          <p role="note">
+            数式セル {importedWorkbook?.sheets[selectedSheetIndex]?.formulaCellCount}
+            件は、Excel保存時の計算結果を読み込みました。BioFigureStat内では数式を再計算しません。
+          </p>
+        ) : null}
+        {workbookImportError ? <p role="alert">{workbookImportError}</p> : null}
+      </div>
     </div>
   );
 }

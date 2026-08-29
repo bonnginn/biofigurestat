@@ -18,7 +18,7 @@ describe("external LLM consultation prompt boundary", () => {
     expect(request).toContain("比較目的を選ぶ説明を短くしてほしい");
     expect(request).toContain("対照群との比較を先に確認するとよい");
     expect(request).toContain("参考情報・未検証");
-    expect(request).toContain("LSAから自動送信されていません");
+    expect(request).toContain("BioFigureStatから自動送信されていません");
     expect(request).toContain("Statistics（統計の選択・解釈）");
   });
 

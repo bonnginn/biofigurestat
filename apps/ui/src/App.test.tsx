@@ -40,7 +40,9 @@ describe("project save diagnostics", () => {
       ),
     ).toBe("container_commit");
     expect(projectIoStage(new Error("unclassified"))).toBeNull();
-    expect(projectIoStage(new Error("PROJECT_IO_STAGE[Secret Study]: raw value 12.345"))).toBeNull();
+    expect(
+      projectIoStage(new Error("PROJECT_IO_STAGE[Secret Study]: raw value 12.345")),
+    ).toBeNull();
   });
 });
 
@@ -143,9 +145,7 @@ describe("workspace home", () => {
       await screen.findByRole("heading", { name: heading });
       fireEvent.click(screen.getByRole("button", { name: "← 戻る" }));
 
-      expect(
-        screen.queryByRole("dialog", { name: "この実験を保存しますか？" }),
-      ).toBeNull();
+      expect(screen.queryByRole("dialog", { name: "この実験を保存しますか？" })).toBeNull();
       expect(window.location.pathname).toBe("/new-experiment");
       expect(
         screen.getByRole("heading", {
@@ -775,6 +775,125 @@ describe("workspace home", () => {
     fireEvent.click(screen.getByRole("button", { name: /ホーム/ }));
     fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
     await waitFor(() => expect(openProject).toHaveBeenCalledTimes(2));
+  });
+
+  it("keeps multiple saved projects in one window and reopens the selected tab", async () => {
+    const makeProject = (name: string, target: string) => {
+      const base = createExperimentSetDraft("cell_culture", "proportion");
+      const draft = {
+        ...base,
+        name,
+        conditions: base.conditions.slice(0, 2).map((condition, index) => ({
+          ...condition,
+          label: index === 0 ? "Control" : "Treatment",
+          attributes: { "attribute.1": index === 0 ? "Control" : "Treatment" },
+        })),
+      };
+      return {
+        state: createExperimentWorkspaceProject({
+          draft,
+          cells: {},
+          graphs: [],
+          now: "2026-08-30T00:00:00.000Z",
+        }),
+        target,
+      };
+    };
+    const first = makeProject("Drug response", "/tmp/drug-response.lsa");
+    const second = makeProject("Survival pilot", "/tmp/survival-pilot.lsa");
+    const picker = vi
+      .fn()
+      .mockResolvedValueOnce({ kind: "experiment" as const, project: first })
+      .mockResolvedValueOnce({ kind: "experiment" as const, project: second });
+    const openTarget = vi.fn(async (target: string) => ({
+      kind: "experiment" as const,
+      project: target === first.target ? first : second,
+    }));
+    render(
+      <App
+        projectActions={{
+          openProject: async () => null,
+          openAnyProject: picker,
+          openAnyProjectTarget: openTarget,
+          saveProject: async () => null,
+        }}
+      />,
+    );
+
+    fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
+    await waitFor(() => expect(picker).toHaveBeenCalledOnce());
+    expect(await screen.findByRole("tab", { name: "Drug response" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "＋ 開く" }));
+    await waitFor(() => expect(picker).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole("tab", { name: "Survival pilot" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("tab", { name: "Drug response" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Drug response" }));
+    await waitFor(() => expect(openTarget).toHaveBeenCalledWith(first.target));
+    expect(screen.getByRole("tab", { name: "Drug response" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  it("keeps the active tab when opening its replacement fails during close", async () => {
+    const makeProject = (name: string, target: string) => {
+      const base = createExperimentSetDraft("cell_culture", "proportion");
+      const draft = {
+        ...base,
+        name,
+        conditions: base.conditions.slice(0, 2).map((condition, index) => ({
+          ...condition,
+          label: index === 0 ? "Control" : "Treatment",
+          attributes: { "attribute.1": index === 0 ? "Control" : "Treatment" },
+        })),
+      };
+      return {
+        state: createExperimentWorkspaceProject({
+          draft,
+          cells: {},
+          graphs: [],
+          now: "2026-08-30T00:00:00.000Z",
+        }),
+        target,
+      };
+    };
+    const first = makeProject("First project", "/tmp/first-project.lsa");
+    const second = makeProject("Second project", "/tmp/second-project.lsa");
+    const picker = vi
+      .fn()
+      .mockResolvedValueOnce({ kind: "experiment" as const, project: first })
+      .mockResolvedValueOnce({ kind: "experiment" as const, project: second });
+    const openTarget = vi.fn(async () => {
+      throw new Error("Project is temporarily unavailable");
+    });
+    render(
+      <App
+        projectActions={{
+          openProject: async () => null,
+          openAnyProject: picker,
+          openAnyProjectTarget: openTarget,
+          saveProject: async () => null,
+        }}
+      />,
+    );
+
+    fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
+    await screen.findByRole("tab", { name: "First project" });
+    fireEvent.click(screen.getByRole("button", { name: "＋ 開く" }));
+    await screen.findByRole("tab", { name: "Second project" });
+    fireEvent.click(screen.getByRole("button", { name: "Second projectを閉じる" }));
+
+    await waitFor(() => expect(openTarget).toHaveBeenCalledWith(first.target));
+    expect(await screen.findByText("Project is temporarily unavailable")).toBeVisible();
+    expect(screen.getByRole("tab", { name: "Second project" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("tab", { name: "First project" })).toBeVisible();
   });
 
   it("opens one common .lsa result and routes a Graph-only project to its editor", async () => {

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Life Science Analysis",
+  "productName": "BioFigureStat",
   "version": "0.1.0",
   "identifier": "jp.ac.mie.lifescience.analysis",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Life Science Analysis",
+        "title": "BioFigureStat",
         "width": 1280,
         "height": 900,
         "minWidth": 900,
@@ -25,13 +25,13 @@
     }
   },
   "bundle": {
-    "active": false,
+    "active": true,
     "targets": "all",
     "fileAssociations": [
       {
         "ext": ["lsa"],
-        "name": "Life Science Analysis Project",
-        "description": "Life Science Analysis project package",
+        "name": "BioFigureStat Project",
+        "description": "BioFigureStat project package",
         "role": "Editor",
         "rank": "Owner",
         "mimeType": "application/x-lifescience-analysis-project",

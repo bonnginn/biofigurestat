@@ -52,7 +52,7 @@ def main() -> int:
         type=Path,
         default=Path(
             "apps/desktop/src-tauri/target/release/bundle/nsis/"
-            "Life Science Analysis_0.1.0_x64-setup.exe"
+            "BioFigureStat_0.1.0_x64-setup.exe"
         ),
     )
     args = parser.parse_args()

@@ -9,6 +9,7 @@ import { ContextualHelp } from "./ContextualHelp";
 import { AboutPanel } from "./AboutPanel";
 import { UsageTelemetryController } from "./UsageTelemetryController";
 import { useUsageConsent } from "../app/usageTelemetry";
+import { ProjectTabBar, type ProjectTab } from "./ProjectTabBar";
 import "./DiagnosticPanel.css";
 import "./AboutPanel.css";
 
@@ -26,6 +27,12 @@ type AppShellProps = PropsWithChildren<{
   browserPreview?: boolean;
   evaluationPreview?: boolean;
   activeProject?: ProjectState | null;
+  projectTabs?: readonly ProjectTab[];
+  activeProjectTarget?: string | null;
+  workspaceDirty?: boolean;
+  onSelectProjectTab?: (target: string) => void;
+  onCloseProjectTab?: (target: string) => void;
+  onOpenProject?: () => void;
 }>;
 
 export function AppShell({
@@ -37,6 +44,12 @@ export function AppShell({
   browserPreview = false,
   evaluationPreview = false,
   activeProject = null,
+  projectTabs = [],
+  activeProjectTarget = null,
+  workspaceDirty = false,
+  onSelectProjectTab,
+  onCloseProjectTab,
+  onOpenProject,
 }: AppShellProps) {
   const mainContentRef = useRef<HTMLElement>(null);
   const usageConsent = useUsageConsent();
@@ -52,9 +65,7 @@ export function AppShell({
     <div className="app-shell">
       <header className="topbar">
         <button className="brand" type="button" onClick={() => onNavigate("home")}>
-          <span className="brand-mark" aria-hidden="true">
-            {PRODUCT_IDENTITY.shortMark}
-          </span>
+          <img className="brand-mark" src="/biofigurestat-icon.png" alt="" aria-hidden="true" />
           <span>
             <span className="brand-title">{PRODUCT_IDENTITY.displayNameJa}</span>
             <span className="brand-subtitle">ローカル研究ワークスペース</span>
@@ -99,6 +110,17 @@ export function AppShell({
         <AboutPanel />
         <DiagnosticPanel route={route} project={activeProject} />
       </header>
+
+      {onSelectProjectTab && onCloseProjectTab && onOpenProject ? (
+        <ProjectTabBar
+          tabs={projectTabs}
+          activeTarget={activeProjectTarget}
+          activeDirty={workspaceDirty}
+          onSelect={onSelectProjectTab}
+          onClose={onCloseProjectTab}
+          onOpen={onOpenProject}
+        />
+      ) : null}
 
       {browserPreview ? (
         <div className="browser-preview-banner" role="status">

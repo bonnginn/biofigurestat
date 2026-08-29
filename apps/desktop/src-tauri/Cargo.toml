@@ -1,8 +1,8 @@
 [package]
 name = "lifescience-analysis-app"
 version = "0.1.0"
-description = "Local-first desktop shell for Life Science Analysis"
-authors = ["Life Science Analysis contributors"]
+description = "Local-first desktop shell for BioFigureStat"
+authors = ["BioFigureStat contributors"]
 edition = "2021"
 rust-version = "1.77.2"
 
@@ -16,6 +16,8 @@ tauri-build = { version = "=2.6.3", features = [] }
 [dependencies]
 tauri = { version = "=2.11.4", features = [] }
 serde_json = "=1.0.151"
+serde = { version = "=1.0.228", features = ["derive"] }
 sha2 = "=0.10.9"
 tauri-plugin-dialog = "=2.7.2"
 rusqlite = { version = "=0.40.2", features = ["bundled"] }
+calamine = { version = "=0.26.1", features = ["dates"] }

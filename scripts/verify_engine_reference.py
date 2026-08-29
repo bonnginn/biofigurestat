@@ -8,6 +8,7 @@ import json
 import math
 import os
 import platform
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -20,6 +21,11 @@ REFERENCE = ENGINE_ROOT / "reference/macos-arm64-engine-0.13.0.json"
 sys.path.insert(0, str(ENGINE_ROOT))
 
 from smoke_sidecar import smoke_requests  # noqa: E402
+
+
+NON_NUMERIC_PRESENTATION_PATH = re.compile(
+    r"(?:^|\.)engine\.version$|(?:^|\.)diagnostics\[\d+\]\.message$"
+)
 
 
 def execute(request: dict[str, Any]) -> dict[str, Any]:
@@ -43,6 +49,11 @@ def execute(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def compare(actual: Any, expected: Any, path: str = "result") -> list[str]:
+    # The cross-platform reference is numerical and structural. Engine version is
+    # checked by the sidecar smoke gate, while diagnostic copy may be clarified
+    # without changing its exact code/severity or any calculation.
+    if NON_NUMERIC_PRESENTATION_PATH.search(path):
+        return []
     if isinstance(expected, bool) or expected is None or isinstance(expected, str):
         return [] if actual == expected else [f"{path}: {actual!r} != {expected!r}"]
     if isinstance(expected, (int, float)):

@@ -177,9 +177,16 @@ export function UsageTelemetryController({ route }: Readonly<{ route: AppRoute }
                 ONにすると、複数回の利用をまとめるためのランダムなアプリID、起動ごとのセッションID、操作日時、アプリ・ビルド版、OS種別を記録します。
               </p>
               {uploadConfigured ? (
-                <p>
-                  このビルドには送信先が設定されています。送信時には、通信に伴うIPアドレスなどの通信情報が送信先で扱われる可能性があります。
-                </p>
+                <>
+                  <p>
+                    このビルドは、同意後の利用情報をBioFigureStatの利用情報受付へ送信します。受付基盤はCloudflare
+                    Workers / D1で、イベント保持期間は90日です。
+                  </p>
+                  <p>
+                    送信時には、通信に伴うIPアドレスなどの通信情報がCloudflareで一時的に扱われる可能性がありますが、BioFigureStatのevent
+                    databaseには保存しません。
+                  </p>
+                </>
               ) : (
                 <p>このビルドには送信先が設定されていないため、外部への送信は行いません。</p>
               )}

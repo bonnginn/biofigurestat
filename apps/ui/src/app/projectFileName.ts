@@ -11,5 +11,5 @@ export function defaultProjectFileName(projectName: string): string {
     .replace(/[. ]+$/g, "")
     .trim()
     .slice(0, 120);
-  return `${stem || "Life Science Analysis project"}.lsa`;
+  return `${stem || "BioFigureStat project"}.lsa`;
 }

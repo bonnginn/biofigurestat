@@ -56,10 +56,7 @@ import {
   metadataForPersistence,
   type ProjectMetadataDraft,
 } from "../app/projectMetadata";
-import type {
-  RegisterWorkspaceSaveHandler,
-  RequestWorkspaceExit,
-} from "../app/workspaceLifecycle";
+import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import {
   methodLabel,
   recommendationExplanation,
@@ -926,7 +923,7 @@ export function MultiConditionDataSheetPage({
             sourceKind: hasPastedValues ? "paste" : "manual",
             sourceName: hasPastedValues
               ? "ImageJ / clipboard table"
-              : `Life Science Analysis ${recommendation.templateId} data sheet`,
+              : `BioFigureStat ${recommendation.templateId} data sheet`,
             createdAt: now,
             createdBy: "local-user",
             note: `Canonical observations created from a validated ${recommendation.templateId} data sheet.`,

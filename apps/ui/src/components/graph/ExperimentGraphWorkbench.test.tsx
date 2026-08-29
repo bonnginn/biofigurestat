@@ -723,7 +723,7 @@ describe("ExperimentGraphWorkbench", () => {
     fireEvent.click(screen.getByText("解析エンジンと再現情報"));
     expect(screen.getByText("fixture-engine 0.1.0")).toBeVisible();
     expect(screen.getByText("scipy 1")).toBeVisible();
-    expect(screen.getByText("Life Science Analysis App 0.1.0")).toBeVisible();
+    expect(screen.getByText("BioFigureStat 0.1.0")).toBeVisible();
     const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelector('[data-graph-layer="statistics-annotation"]')).toBeNull();
     fireEvent.change(screen.getByRole("combobox", { name: "統計注釈の表示" }), {

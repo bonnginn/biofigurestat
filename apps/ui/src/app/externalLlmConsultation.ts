@@ -16,7 +16,7 @@ export function createExternalLlmImprovementRequest(
   const placement =
     input.placement === "statistics" ? "Statistics（統計の選択・解釈）" : "Experiment setup（実験入力）";
   return [
-    "Life Science Analysis App（LSA）の改善要望です。",
+    "BioFigureStatの改善要望です。",
     `対象アプリ: ${PRODUCT_IDENTITY.displayNameJa} ${PRODUCT_IDENTITY.version}（build ${PRODUCT_IDENTITY.buildRevision}）`,
     `対象画面: ${placement}`,
     "",
@@ -27,9 +27,9 @@ export function createExternalLlmImprovementRequest(
     input.externalLlmResponse?.trim() || "（添付なし）",
     "",
     "注意:",
-    "- 外部LLMの回答は提案であり、LSAの仕様や科学的妥当性を保証するものではありません。",
+    "- 外部LLMの回答は提案であり、BioFigureStatの仕様や科学的妥当性を保証するものではありません。",
     "- 実装前に、既存仕様、scientific semantics、再現可能なgeneric issueかを確認してください。",
-    "- この文章は利用者が内容を確認して手動で共有したものです。LSAから自動送信されていません。",
+    "- この文章は利用者が内容を確認して手動で共有したものです。BioFigureStatから自動送信されていません。",
   ].join("\n");
 }
 
@@ -59,8 +59,8 @@ export function createExperimentConsultationPrompt(
         .join("\n")
     : "まだ入力していません";
   return [
-    "Life Science Analysis App（LSA）への実験入力について相談します。",
-    "最初に次のLSA使用ガイドを参照してください。ソースコード全体を推測で解釈しないでください。",
+    "BioFigureStatへの実験入力について相談します。",
+    "最初に次のBioFigureStat使用ガイドを参照してください。ソースコード全体を推測で解釈しないでください。",
     EXTERNAL_LLM_GUIDE_URL,
     `対象アプリ: ${PRODUCT_IDENTITY.displayNameJa} ${PRODUCT_IDENTITY.version}（build ${PRODUCT_IDENTITY.buildRevision}）`,
     "",
@@ -68,8 +68,8 @@ export function createExperimentConsultationPrompt(
     "1. 私が実際に行った実験について、生命科学の言葉で一度に1問ずつ質問してください。",
     "2. biological n、同じ対象の反復、共通材料から分けた別試料、Cell/ROI等の階層を混同しないでください。",
     "3. 分からない意味は推測せず、結果が変わる点だけ確認してください。",
-    "4. 情報が揃ったら、LSA画面の各欄へ何を入力・選択するかを順番に示してください。",
-    "5. 現在LSAが安全に表現できない構造なら、近い別設計へ置き換えず、その制限を明示してください。",
+    "4. 情報が揃ったら、BioFigureStat画面の各欄へ何を入力・選択するかを順番に示してください。",
+    "5. 現在BioFigureStatが安全に表現できない構造なら、近い別設計へ置き換えず、その制限を明示してください。",
     "6. 統計手法名から実験構造を逆算しないでください。",
     "",
     "現在までに入力した内容:",
@@ -105,29 +105,29 @@ export function createStatisticsConsultationPrompt(
     .map(([condition, n]) => `${condition}: n=${n}`)
     .join(" / ");
   return [
-    "Life Science Analysis App（LSA）で選ぶ統計について相談します。",
-    "最初に次のLSA使用ガイドを参照してください。ソースコード全体を推測で解釈しないでください。",
+    "BioFigureStatで選ぶ統計について相談します。",
+    "最初に次のBioFigureStat使用ガイドを参照してください。ソースコード全体を推測で解釈しないでください。",
     EXTERNAL_LLM_GUIDE_URL,
     `対象アプリ: ${PRODUCT_IDENTITY.displayNameJa} ${PRODUCT_IDENTITY.version}（build ${PRODUCT_IDENTITY.buildRevision}）`,
     "",
     "重要:",
     "- 以下には測定値そのものを含めていません。",
-    "- あなたは統計値を計算せず、実験構造、比較目的、前提、LSAでの選択を案内してください。",
+    "- あなたは統計値を計算せず、実験構造、比較目的、前提、BioFigureStatでの選択を案内してください。",
     "- biological n、対応、階層、反復を行番号から推測しないでください。",
     "- 不足情報があれば、一度に1問ずつ質問してください。",
-    "- LSAが提供しない解析を、近い別手法へ無理に置き換えないでください。",
+    "- BioFigureStatが提供しない解析を、近い別手法へ無理に置き換えないでください。",
     "",
-    "LSAに現在表示されている内容:",
+    "BioFigureStatに現在表示されている内容:",
     line("条件", context.conditions.join(" / ")),
     line("条件ごとの実験単位数", nText),
     line("条件間の関係", context.relationship),
-    line("LSAの推奨表示", context.methodTitle),
+    line("BioFigureStatの推奨表示", context.methodTitle),
     line("推奨理由", context.methodReason),
     line("現在選択中の方法", context.selectedMethod ?? null),
     `- 空欄・無効値: ${context.missingCount}件`,
     `- 実施していない測定: ${context.notPlannedCount}件`,
     "",
     "私が科学的に何と何を比較したいかを最初に質問し、その目的に現在の選択が合うか確認してください。",
-    "最後に、LSAのStatistics画面で選ぶ項目と、結果を解釈するときの注意を具体的に示してください。",
+    "最後に、BioFigureStatのStatistics画面で選ぶ項目と、結果を解釈するときの注意を具体的に示してください。",
   ].join("\n");
 }

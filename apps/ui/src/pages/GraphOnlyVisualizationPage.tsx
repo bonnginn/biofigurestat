@@ -681,9 +681,7 @@ export function GraphOnlyVisualizationPage({
       <header className="graph-only__header">
         <p className="experiment-start__eyebrow">表からGraph</p>
         <h1>手元の表からGraphを作る</h1>
-        <p>
-          表の列を指定してGraphを作ります。実験構造や統計的なnは、統計を使うまで質問しません。
-        </p>
+        <p>表の列を指定してGraphを作ります。実験構造や統計的なnは、統計を使うまで質問しません。</p>
       </header>
 
       <section className="graph-only__input" aria-labelledby="graph-only-input-heading">
@@ -764,6 +762,9 @@ export function GraphOnlyVisualizationPage({
               // entry and must retain the direct X/Y mapping. A paste that
               // changes the table schema still requires explicit remapping.
               if (headersChanged) resetImportedMapping();
+            } else if (source === "workbook_import") {
+              setSourceLabel("excel workbook import");
+              resetImportedMapping();
             }
           }}
           ariaLabel="Graph用データシート"
@@ -791,8 +792,8 @@ export function GraphOnlyVisualizationPage({
             }}
           />
           <small>
-            現在は文字形式のCSV / TSV / TXTに対応しています。XLS /
-            XLSXの直接読込と、任意の行だけを解析対象から外す操作はまだ対応していません。
+            CSV / TSV / TXTはここから、XLS / XLSX / XLSM /
+            XLSBは上のExcel読込から開けます。任意の行だけを解析対象から外す操作は未対応です。
           </small>
         </label>
         {parsedResult.error ? (

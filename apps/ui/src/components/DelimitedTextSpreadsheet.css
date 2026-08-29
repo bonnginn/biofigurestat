@@ -143,3 +143,21 @@
   color: var(--muted, #5c6f69);
   font-size: 0.84rem;
 }
+
+.delimited-spreadsheet__workbook-import {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.delimited-spreadsheet__workbook-import label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.delimited-spreadsheet__workbook-import p {
+  flex-basis: 100%;
+  color: #9a2f2f;
+}

@@ -575,6 +575,12 @@ export function OpenProjectPage({
   const [openedProject, setOpenedProject] = useState<OpenedProject | null>(null);
   const autoOpenAttempted = useRef(false);
 
+  useEffect(() => {
+    if (!initialError) return;
+    setStatus("error");
+    setMessage(initialError);
+  }, [initialError]);
+
   const handleOpen = useCallback(async () => {
     setStatus("opening");
     setMessage(null);

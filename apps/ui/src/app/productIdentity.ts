@@ -1,7 +1,7 @@
 export const PRODUCT_IDENTITY = {
-  developmentName: "Life Science Analysis App",
-  displayNameJa: "ライフサイエンス解析",
-  shortMark: "LS",
+  developmentName: "BioFigureStat",
+  displayNameJa: "BioFigureStat",
+  shortMark: "BFS",
   version: "0.1.0",
   expectedEngineVersion: "0.14.0",
   licenseStatus: "Alpha testing license not yet selected",

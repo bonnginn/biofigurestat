@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DelimitedTextSpreadsheet } from "./DelimitedTextSpreadsheet";
@@ -156,5 +156,73 @@ describe("DelimitedTextSpreadsheet", () => {
       target: { value: "Response" },
     });
     expect(onChange).toHaveBeenLastCalledWith("Unit ID\tSeries\tX\tResponse", "cell_edit");
+  });
+
+  it("imports XLS/XLSX worksheets into the same authoritative grid and lets the user switch sheets", async () => {
+    const onChange = vi.fn();
+    const workbookImporter = vi.fn(async () => ({
+      fileName: "experiment.xlsx",
+      sheets: [
+        {
+          name: "Summary",
+          rows: [
+            ["Condition", "Value"],
+            ["Control", "1.2"],
+          ],
+          formulaCellCount: 1,
+        },
+        {
+          name: "Raw",
+          rows: [
+            ["ID", "Value"],
+            ["cell-1", "4.5"],
+          ],
+        },
+      ],
+    }));
+    render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Graph sheet"
+        value={"X\tY"}
+        onChange={onChange}
+        workbookImporter={workbookImporter}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "XLS / XLSXを直接読み込む" }));
+    await waitFor(() => expect(workbookImporter).toHaveBeenCalledOnce());
+    expect(onChange).toHaveBeenCalledWith("Condition\tValue\nControl\t1.2", "workbook_import");
+    expect(screen.getByRole("status")).toHaveTextContent("experiment.xlsx / Summary");
+    expect(screen.getByRole("note")).toHaveTextContent("数式セル 1件");
+
+    fireEvent.change(screen.getByRole("combobox", { name: "読み込むworksheet" }), {
+      target: { value: "1" },
+    });
+    expect(onChange).toHaveBeenLastCalledWith("ID\tValue\ncell-1\t4.5", "workbook_import");
+  });
+
+  it("keeps the existing grid when workbook selection is cancelled or fails", async () => {
+    const onChange = vi.fn();
+    const workbookImporter = vi
+      .fn<() => Promise<null>>()
+      .mockResolvedValueOnce(null)
+      .mockRejectedValueOnce(new Error("Workbook is encrypted"));
+    render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Graph sheet"
+        value={"X\tY"}
+        onChange={onChange}
+        workbookImporter={workbookImporter}
+      />,
+    );
+
+    const button = screen.getByRole("button", { name: "XLS / XLSXを直接読み込む" });
+    fireEvent.click(button);
+    await waitFor(() => expect(workbookImporter).toHaveBeenCalledTimes(1));
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.click(button);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Workbook is encrypted");
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

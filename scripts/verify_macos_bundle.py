@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 APP = (
     ROOT
-    / "apps/desktop/src-tauri/target/release/bundle/macos/Life Science Analysis.app"
+    / "apps/desktop/src-tauri/target/release/bundle/macos/BioFigureStat.app"
 )
 
 

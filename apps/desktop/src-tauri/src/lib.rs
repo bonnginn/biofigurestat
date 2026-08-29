@@ -8,6 +8,7 @@ mod export_file;
 mod project_database;
 mod project_open;
 mod project_storage;
+mod spreadsheet_import;
 
 use tauri::{
     menu::{Menu, MenuItemBuilder, SubmenuBuilder},
@@ -96,9 +97,10 @@ pub fn run() {
             project_storage::read_project_file,
             project_database::encode_project_database,
             project_database::decode_project_database,
+            spreadsheet_import::read_spreadsheet_workbook,
         ])
         .build(tauri::generate_context!())
-        .expect("error while building Life Science Analysis");
+        .expect("error while building BioFigureStat");
 
     app.run(|app_handle, event| {
         if let tauri::RunEvent::ExitRequested { code, api, .. } = &event {

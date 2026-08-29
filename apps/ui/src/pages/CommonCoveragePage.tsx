@@ -2444,9 +2444,13 @@ export function CommonCoveragePage({
               caption="Unit ID、Series、X、Y"
               minimumColumns={4}
               value={text}
-              onChange={(nextText) => {
+              onChange={(nextText, source) => {
                 setRawTextCaptureMode("browser_editor_value");
-                setOrderedCurveSource({ sourceKind: "clipboard", sourceLabel: "spreadsheet edit" });
+                setOrderedCurveSource({
+                  sourceKind: source === "workbook_import" ? "generic_file" : "clipboard",
+                  sourceLabel:
+                    source === "workbook_import" ? "excel workbook import" : "spreadsheet edit",
+                });
                 setText(nextText);
                 setResult(null);
                 setExecutedRequest(null);

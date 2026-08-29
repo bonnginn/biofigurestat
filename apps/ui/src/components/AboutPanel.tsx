@@ -74,7 +74,9 @@ export function AboutPanel() {
             ) : null}
             {usageConsent === "opted_in" && usageTelemetryUploadConfigured() ? (
               <p className="about-usage-note">
-                送信時には、通信に伴うIPアドレスなどの通信情報が送信先で扱われる可能性があります。
+                Cloudflare Workers /
+                D1のBioFigureStat利用情報受付へ送信し、eventは90日後に削除します。通信時のIPアドレスはCloudflareで一時的に扱われる可能性がありますが、event
+                databaseには保存しません。
               </p>
             ) : null}
             {usageConsent === "opted_in" && browserRequestsNoTracking() ? (

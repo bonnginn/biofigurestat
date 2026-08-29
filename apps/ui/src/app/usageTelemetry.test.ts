@@ -9,6 +9,7 @@ import {
   USAGE_TELEMETRY_SCHEMA_VERSION,
   UsageTelemetryService,
   resolveConfiguredUsageTelemetryEndpoint,
+  resolveConfiguredUsageTelemetryIngestKey,
 } from "./usageTelemetry";
 
 class MemoryStorage implements Storage {
@@ -109,9 +110,7 @@ describe("consent-first usage telemetry", () => {
     seedCurrentOptIn(storage);
     storage.setItem(
       "lsaa.usage-telemetry.queue.v2",
-      currentQueue([
-        attributedRouteView({ rawMeasurement: "should-never-leave-storage" }),
-      ]),
+      currentQueue([attributedRouteView({ rawMeasurement: "should-never-leave-storage" })]),
     );
     const service = new UsageTelemetryService(fixedOptions(storage));
     (
@@ -207,11 +206,11 @@ describe("consent-first usage telemetry", () => {
     }
   });
 
-  it("cannot activate an environment endpoint under a local-only consent notice", () => {
+  it("activates only a credential-free HTTPS endpoint under an explicit remote notice", () => {
     expect(
       resolveConfiguredUsageTelemetryEndpoint(
         "https://usage.example.test/v1/batch",
-        USAGE_TELEMETRY_CONSENT_NOTICE_VERSION,
+        "local-only-2026-08-28",
       ),
     ).toBeNull();
     expect(
@@ -220,6 +219,11 @@ describe("consent-first usage telemetry", () => {
         "remote-alpha-2026-09-01",
       ),
     ).toBe("https://usage.example.test/v1/batch");
+    expect(USAGE_TELEMETRY_CONSENT_NOTICE_VERSION).toMatch(/^remote-/u);
+    expect(resolveConfiguredUsageTelemetryIngestKey("alpha-key_1234567890")).toBe(
+      "alpha-key_1234567890",
+    );
+    expect(resolveConfiguredUsageTelemetryIngestKey("short")).toBeNull();
   });
 
   it("keeps the app path nonblocking and retains the queue when upload fails", async () => {
@@ -423,10 +427,7 @@ describe("consent-first usage telemetry", () => {
 
   it("drops the legacy un-attributed queue instead of relabeling it", () => {
     seedCurrentOptIn(storage);
-    storage.setItem(
-      "lsaa.usage-telemetry.queue.v1",
-      JSON.stringify([attributedRouteView()]),
-    );
+    storage.setItem("lsaa.usage-telemetry.queue.v1", JSON.stringify([attributedRouteView()]));
     const service = new UsageTelemetryService(fixedOptions(storage));
     expect(service.queuedEventsForTest()).toHaveLength(0);
     expect(storage.getItem("lsaa.usage-telemetry.queue.v1")).toBeNull();
@@ -438,14 +439,13 @@ describe("consent-first usage telemetry", () => {
     const oldOccurredAt = new Date(nowMs - USAGE_TELEMETRY_MAX_QUEUE_AGE_MS - 1).toISOString();
     storage.setItem(
       "lsaa.usage-telemetry.queue.v2",
-      currentQueue([
-        attributedRouteView({ occurredAt: oldOccurredAt }),
-        attributedRouteView(),
-      ]),
+      currentQueue([attributedRouteView({ occurredAt: oldOccurredAt }), attributedRouteView()]),
     );
     const service = new UsageTelemetryService(fixedOptions(storage));
     expect(service.queuedEventsForTest()).toHaveLength(1);
-    expect(JSON.parse(storage.getItem("lsaa.usage-telemetry.queue.v2") ?? "{}").events).toHaveLength(1);
+    expect(
+      JSON.parse(storage.getItem("lsaa.usage-telemetry.queue.v2") ?? "{}").events,
+    ).toHaveLength(1);
   });
 
   it("enforces the serialized UTF-8 queue size as well as the event-count cap", () => {
@@ -480,11 +480,17 @@ describe("consent-first usage telemetry", () => {
     const randomSpy = vi.spyOn(Math, "random").mockImplementation(() => {
       throw new Error("random unavailable");
     });
-    vi.stubGlobal("crypto", { randomUUID: () => { throw new Error("crypto unavailable"); } });
+    vi.stubGlobal("crypto", {
+      randomUUID: () => {
+        throw new Error("crypto unavailable");
+      },
+    });
     try {
       const service = new UsageTelemetryService({
         ...fixedOptions(storage),
-        randomId: () => { throw new Error("custom provider unavailable"); },
+        randomId: () => {
+          throw new Error("custom provider unavailable");
+        },
       });
       service.setConsent("opted_in");
       expect(service.localReport().sessionId).toBe("00000000-0000-4000-8000-000000000000");
@@ -509,6 +515,21 @@ describe("consent-first usage telemetry", () => {
     expect(fetcher).toHaveBeenCalledTimes(3);
     expect(sleep).toHaveBeenNthCalledWith(1, 250);
     expect(sleep).toHaveBeenNthCalledWith(2, 1_000);
+  });
+
+  it("adds the configured collector key without placing it in the request URL", async () => {
+    const fetcher = vi.fn().mockResolvedValue({ ok: true } as Response);
+    const service = new UsageTelemetryService({
+      ...fixedOptions(storage, fetcher),
+      ingestKey: "alpha-key_1234567890",
+    });
+    service.setConsent("opted_in");
+    service.recordRoute("home");
+    await expect(service.upload()).resolves.toBe(true);
+    expect(fetcher.mock.calls[0]?.[0]).toBe("https://usage.example.test/v1/batch");
+    expect(fetcher.mock.calls[0]?.[1]?.headers).toMatchObject({
+      "X-BioFigureStat-Ingest-Key": "alpha-key_1234567890",
+    });
   });
 
   it("aborts each timed-out request and stops after the bounded retry count", async () => {

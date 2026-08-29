@@ -25,7 +25,7 @@ export const USAGE_TELEMETRY_UPLOAD_TIMEOUT_MS = 5_000;
 export const USAGE_TELEMETRY_UPLOAD_RETRY_DELAYS_MS = [250, 1_000] as const;
 const MAX_UPLOAD_ATTEMPTS = USAGE_TELEMETRY_UPLOAD_RETRY_DELAYS_MS.length + 1;
 
-export const USAGE_TELEMETRY_CONSENT_NOTICE_VERSION = "local-only-2026-08-28";
+export const USAGE_TELEMETRY_CONSENT_NOTICE_VERSION = "remote-alpha-2026-08-30";
 
 export type UsageConsent = "undecided" | "opted_in" | "opted_out";
 
@@ -198,10 +198,11 @@ export type LocalUsageTelemetryReport = Readonly<{
   events: readonly UsageAttributedEvent[];
 }>;
 
-type UsageAttributedEvent = UsageEvent & Readonly<{
-  sessionId: string;
-  application: UsageApplication;
-}>;
+type UsageAttributedEvent = UsageEvent &
+  Readonly<{
+    sessionId: string;
+    application: UsageApplication;
+  }>;
 
 type UsageQueueStorage = Readonly<{
   schemaVersion: typeof USAGE_TELEMETRY_QUEUE_SCHEMA_VERSION;
@@ -215,6 +216,7 @@ type UsageTelemetryOptions = Readonly<{
   storage: StorageLike | null;
   fetcher: FetchLike;
   endpoint?: string;
+  ingestKey?: string;
   now?: () => Date;
   randomId?: () => string;
   platform?: UsagePlatform;
@@ -410,12 +412,7 @@ function validHttpsEndpoint(value: string | undefined): string | null {
   if (!value?.trim()) return null;
   try {
     const endpoint = new URL(value.trim());
-    if (
-      endpoint.protocol !== "https:" ||
-      endpoint.username ||
-      endpoint.password ||
-      endpoint.hash
-    ) {
+    if (endpoint.protocol !== "https:" || endpoint.username || endpoint.password || endpoint.hash) {
       return null;
     }
     return endpoint.toString();
@@ -438,6 +435,11 @@ export function resolveConfiguredUsageTelemetryEndpoint(
   return validHttpsEndpoint(value);
 }
 
+export function resolveConfiguredUsageTelemetryIngestKey(value: string | undefined): string | null {
+  const normalized = value?.trim() ?? "";
+  return /^[A-Za-z0-9._~-]{16,128}$/u.test(normalized) ? normalized : null;
+}
+
 function defaultRandomId(): string {
   try {
     const generated = globalThis.crypto?.randomUUID?.();
@@ -447,7 +449,9 @@ function defaultRandomId(): string {
   }
   try {
     const time = Date.now().toString(16).padStart(12, "0");
-    const random = Array.from({ length: 20 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+    const random = Array.from({ length: 20 }, () =>
+      Math.floor(Math.random() * 16).toString(16),
+    ).join("");
     const hex = `${time}${random}`.slice(0, 32).padEnd(32, "0").split("");
     hex[12] = "4";
     hex[16] = ((Number.parseInt(hex[16] ?? "8", 16) & 0x3) | 0x8).toString(16);
@@ -503,6 +507,7 @@ export class UsageTelemetryService {
   private readonly sessionId: string;
   private readonly sleep: (milliseconds: number) => Promise<void>;
   private readonly uploadTimeoutMs: number;
+  private readonly ingestKey: string | null;
   private consent: UsageConsent;
   private queue: UsageAttributedEvent[] = [];
   private aggregates = new Map<string, InteractionAggregate>();
@@ -523,6 +528,7 @@ export class UsageTelemetryService {
     this.storage = options.storage;
     this.fetcher = options.fetcher;
     this.endpoint = validHttpsEndpoint(options.endpoint);
+    this.ingestKey = resolveConfiguredUsageTelemetryIngestKey(options.ingestKey);
     this.now = options.now ?? (() => new Date());
     this.randomId = options.randomId ?? defaultRandomId;
     this.platform = options.platform ?? currentPlatform();
@@ -532,7 +538,9 @@ export class UsageTelemetryService {
       platform: this.platform,
     };
     this.sessionId = this.createIdentifier();
-    this.sleep = options.sleep ?? ((milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)));
+    this.sleep =
+      options.sleep ??
+      ((milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)));
     this.uploadTimeoutMs =
       Number.isFinite(options.uploadTimeoutMs) && (options.uploadTimeoutMs ?? 0) > 0
         ? options.uploadTimeoutMs!
@@ -921,7 +929,10 @@ export class UsageTelemetryService {
     try {
       request = this.fetcher(this.endpoint!, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(this.ingestKey ? { "X-BioFigureStat-Ingest-Key": this.ingestKey } : {}),
+        },
         body: JSON.stringify(this.createBatch(events)),
         keepalive: true,
         ...(controller ? { signal: controller.signal } : {}),
@@ -965,12 +976,21 @@ export class UsageTelemetryService {
   }
 }
 
+const configuredUsageTelemetryEndpoint = resolveConfiguredUsageTelemetryEndpoint(
+  import.meta.env.VITE_USAGE_TELEMETRY_ENDPOINT,
+);
+const configuredUsageTelemetryIngestKey = resolveConfiguredUsageTelemetryIngestKey(
+  import.meta.env.VITE_USAGE_TELEMETRY_INGEST_KEY,
+);
+
 const usageTelemetry = new UsageTelemetryService({
   storage: safeStorage(),
   fetcher: (...args) => fetch(...args),
   endpoint:
-    resolveConfiguredUsageTelemetryEndpoint(import.meta.env.VITE_USAGE_TELEMETRY_ENDPOINT) ??
-    undefined,
+    configuredUsageTelemetryEndpoint && configuredUsageTelemetryIngestKey
+      ? configuredUsageTelemetryEndpoint
+      : undefined,
+  ingestKey: configuredUsageTelemetryIngestKey ?? undefined,
 });
 
 export function useUsageConsent(): UsageConsent {

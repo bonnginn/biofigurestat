@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "biofigurestat-telemetry",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-30",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "biofigurestat-telemetry",
+      "database_id": "REPLACE_AFTER_D1_CREATE",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "ALLOWED_ORIGINS": "tauri://localhost,http://tauri.localhost,https://tauri.localhost",
+    "RETENTION_DAYS": "90"
+  },
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  }
+}

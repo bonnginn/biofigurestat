@@ -30,6 +30,31 @@
   --layer-unsaved-guard: 1200;
 }
 
+.app-system-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid #d99a42;
+  border-radius: 10px;
+  color: #5f3c08;
+  background: #fff6df;
+}
+
+.app-system-alert button {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border: 1px solid currentColor;
+  border-radius: 7px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .analysis-route-switcher {
   display: grid;
   grid-template-columns: auto minmax(220px, 360px) minmax(0, 1fr);
@@ -482,17 +507,11 @@ button:focus-visible {
 }
 
 .brand-mark {
-  display: grid;
   width: 33px;
   height: 33px;
-  place-items: center;
-  border-radius: 10px;
-  color: #fff;
-  background: linear-gradient(145deg, #7292ef, #7655c5);
-  box-shadow: 0 7px 14px rgba(97, 91, 203, 0.22);
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  border-radius: 50%;
+  box-shadow: 0 7px 14px rgb(7 43 89 / 20%);
+  object-fit: contain;
 }
 
 .brand-title,
@@ -521,6 +540,80 @@ button:focus-visible {
   font-size: 0.9rem;
   font-weight: 620;
   letter-spacing: 0.03em;
+}
+
+.project-tabs {
+  display: flex;
+  min-height: 42px;
+  padding: 5px 24px 0;
+  border-bottom: 1px solid var(--line);
+  background: #f5f8f7;
+  gap: 8px;
+  align-items: end;
+}
+
+.project-tabs__list {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.project-tab {
+  display: flex;
+  max-width: 260px;
+  min-width: 130px;
+  border: 1px solid transparent;
+  border-radius: 8px 8px 0 0;
+  color: var(--muted);
+}
+
+.project-tab.is-active {
+  border-color: var(--line);
+  border-bottom-color: #fff;
+  background: #fff;
+  color: var(--ink);
+}
+
+.project-tab__select,
+.project-tab__close,
+.project-tabs__open {
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.project-tab__select {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px 8px 11px;
+}
+
+.project-tab__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-tab__dirty {
+  color: var(--green);
+  font-size: 0.65rem;
+}
+
+.project-tab__close {
+  padding: 7px 9px 8px 4px;
+  font-size: 1rem;
+}
+
+.project-tabs__open {
+  flex: 0 0 auto;
+  padding: 8px 10px 9px;
+  color: var(--blue);
+  font-weight: 700;
 }
 
 .status-dot {

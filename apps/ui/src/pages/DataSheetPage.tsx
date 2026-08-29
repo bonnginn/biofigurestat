@@ -53,10 +53,7 @@ import {
   metadataForPersistence,
   type ProjectMetadataDraft,
 } from "../app/projectMetadata";
-import type {
-  RegisterWorkspaceSaveHandler,
-  RequestWorkspaceExit,
-} from "../app/workspaceLifecycle";
+import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import {
   methodLabel,
   recommendationExplanation,
@@ -1124,9 +1121,7 @@ export function DataSheetPage({
             id: draftRawRevisionId,
             previousRevisionId: null,
             sourceKind: hasPastedValues ? "paste" : "manual",
-            sourceName: hasPastedValues
-              ? "ImageJ / clipboard table"
-              : "Life Science Analysis data sheet",
+            sourceName: hasPastedValues ? "ImageJ / clipboard table" : "BioFigureStat data sheet",
             createdAt: workspaceIdentity.metadata.createdAt,
             createdBy: "local-user",
             note: "Canonical observations created from a validated design-aware data sheet.",
