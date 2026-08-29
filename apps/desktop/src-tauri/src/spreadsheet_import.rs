@@ -185,4 +185,24 @@ mod tests {
         assert_eq!(imported.sheets[1].rows[2][3], "101.5");
         assert_eq!(imported.sheets[1].rows[3][3], "-0.25");
     }
+
+    #[test]
+    fn reads_a_real_legacy_biff_xls_workbook() {
+        let target = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests")
+            .join("fixtures")
+            .join("calamine-any-sheets.xls");
+        let imported = read_spreadsheet_workbook(target.to_string_lossy().into_owned())
+            .expect("the legacy XLS reference workbook should import");
+
+        assert_eq!(imported.file_name, "calamine-any-sheets.xls");
+        assert!(!imported.sheets.is_empty());
+        assert!(imported.sheets.iter().any(|sheet| {
+            sheet
+                .rows
+                .iter()
+                .flatten()
+                .any(|cell| !cell.is_empty())
+        }));
+    }
 }

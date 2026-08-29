@@ -45,7 +45,7 @@ The eight semantic UX cases and hard-failure rules in
 `docs/alpha/PRODUCTION_UX_ACCEPTANCE_GATE_2026-08-28.md` remain authoritative. Routine revalidation
 is reduced to the four composite tasks recorded there. Current automated evidence includes 1,090 UI
 tests across 121 files, the semantic-package and experiment-first suites, 63 Python-engine tests,
-23 passing Rust native tests (plus one development-environment round trip ignored in the ordinary
+24 passing Rust native tests (plus one development-environment round trip ignored in the ordinary
 run), and a real Rust→Python engine round trip. The current Windows x64 NSIS candidate includes the
 BioFigureStat identity, project tabs, native Excel import, and telemetry collector client. It was
 built on 2026-08-30 from implementation commit `4a68448` with SHA-256
@@ -86,9 +86,9 @@ never the key or contact. Collector regression coverage includes exact CORS pref
 rejection, request-size and daily-volume limits, research-data-free storage, and scheduled expiry.
 
 The native workbook regression includes a real two-sheet `.xlsx` fixture with internal blanks,
-formulas, dates, decimals, negative values and Japanese labels. Legacy `.xls` remains part of the
-packaged manual gate because no trustworthy `.xls` authoring runtime is bundled in the Windows
-development environment.
+formulas, dates, decimals, negative values and Japanese labels, plus an attributed MIT-licensed
+legacy BIFF `.xls` fixture from Calamine's official test corpus. Real researcher workbooks remain
+part of the packaged macOS/Windows manual gate.
 
 ## Known bounded gaps
 
