@@ -41,8 +41,9 @@ Rust native tests, and a real Rust→Python engine round trip. A Windows x64 NSI
 the progressive experiment-entry, canonical-value integrity, and current bounded UX changes was
 built on 2026-08-29 with SHA-256
 `A41033350B86F9E9D7E7108AC259D9BEFB5654EC456ADC25A582D2215582BD19` and build revision
-`13c68e6-alpha.20260829.6`. Node 26 test environments now bind feature flags to each isolated
-jsdom window rather than a process-level shared localStorage file. The macOS native candidate must
+`13c68e6-alpha.20260829.6`. Node 26 test environments now install an explicit in-memory Storage for
+each isolated jsdom window rather than reading Node's unavailable or process-level localStorage.
+The macOS native candidate must
 still be rebuilt from the current branch
 before the next native human gate.
 

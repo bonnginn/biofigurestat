@@ -8,7 +8,7 @@ overwrite that historical evidence.
 
 - Branch: `codex/native-hardening-2026-08-28`
 - Base HEAD before the latest UX follow-up: `26e8df8c92324ff3d5b217264d3ff40f2a61d3d8`
-- Minimum candidate commit: `13c68e6` (verified product candidate plus Node 26 test isolation, Graph-only value-paste mapping preservation, and adjacent reasons for disabled Survival Statistics actions)
+- Minimum candidate commit: `d779b6b` (verified product candidate plus explicit Node 26 test Storage isolation, Graph-only value-paste mapping preservation, and adjacent reasons for disabled Survival Statistics actions)
 - Pool D: not accessed
 - Product route: experiment-first task hub; do not enable the historical feature flag
 - Expected artifact: `apps/desktop/src-tauri/target/release/bundle/macos/Life Science Analysis.app`
@@ -26,7 +26,7 @@ analysis or omit a failing verifier.
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 13c68e6 HEAD
+git merge-base --is-ancestor d779b6b HEAD
 git status --short
 
 node --version
@@ -47,8 +47,9 @@ prerequisite failure. Do not replace the pinned pnpm version with the latest
 version.
 
 Do not add Node's `--localstorage-file` option. The UI test setup deliberately
-binds unqualified `localStorage` access to each isolated jsdom window; a shared
-Node file can leak feature flags or consent state between Vitest workers.
+installs one in-memory Storage per isolated jsdom environment without reading
+Node's ambient localStorage; a shared Node file can leak feature flags or
+consent state between Vitest workers.
 
 Do not use `VITE_EXPERIMENT_FIRST_ADAPTIVE_INPUT=1`; the intended Alpha route is
 already the production default. Do not modify fixtures or expected results to

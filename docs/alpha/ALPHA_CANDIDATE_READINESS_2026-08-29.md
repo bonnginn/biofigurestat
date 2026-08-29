@@ -75,8 +75,8 @@ still require clean-machine confirmation with this exact installer.
 The authoritative command sequence, artifact evidence template, and reduced four-task gate are in
 `MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md`. The concise commands below remain a quick reference.
 
-Use Apple Silicon macOS and build from the verified branch. `13c68e6` is the minimum commit for
-the current reduced gate; it includes the Node 26 test-isolation correction and the latest
+Use Apple Silicon macOS and build from the verified branch. `d779b6b` is the minimum commit for
+the current reduced gate; it includes explicit in-memory Node 26 test Storage isolation and the latest
 Graph-only direct-paste and Survival disabled-action explanation corrections on top of the verified
 product candidate.
 
@@ -84,7 +84,7 @@ product candidate.
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 13c68e6 HEAD
+git merge-base --is-ancestor d779b6b HEAD
 npx --yes pnpm@11.19.0 install --frozen-lockfile
 npx --yes pnpm@11.19.0 test
 npx --yes pnpm@11.19.0 typecheck
