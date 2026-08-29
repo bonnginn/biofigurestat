@@ -527,8 +527,19 @@ export function GraphStatisticsPanel({
         <ExternalLlmConsultation prompt={externalLlmPrompt} placement="statistics" />
       </div>
       <div className={`experiment-graph-recommendation is-${assessment.state}`}>
-        <strong>{assessment.title}</strong>
-        <p>{assessment.reason}</p>
+        {assessment.state === "ready" ? (
+          <>
+            <strong>推奨: {assessment.title.replace(/を推奨$/, "")}</strong>
+            <p>
+              <strong>理由:</strong> {assessment.reason}
+            </p>
+          </>
+        ) : (
+          <>
+            <strong>{assessment.title}</strong>
+            <p>{assessment.reason}</p>
+          </>
+        )}
         {assessment.missingCount > 0 ? (
           <p>
             表上の空欄または無効な値：{assessment.missingCount}件

@@ -72,6 +72,20 @@ const readyAssessment: DraftAnalysisAssessment = {
   request,
 };
 
+it("shows a concise method and design-based reason before detailed controls", () => {
+  render(
+    <GraphStatisticsPanel
+      assessment={readyAssessment}
+      design={panelDesign()}
+      analysisRunner={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByText("推奨: Welchの2標本t検定")).toBeVisible();
+  expect(screen.getByText("理由:")).toBeVisible();
+  expect(screen.getByText(/dishを独立した実験単位として比較します/)).toBeVisible();
+});
+
 const defaultConditionOptions = [
   { id: "condition.vehicle", label: "Vehicle" },
   { id: "condition.drug", label: "Drug" },
