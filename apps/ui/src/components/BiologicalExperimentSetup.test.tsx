@@ -451,14 +451,38 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     render(<BiologicalExperimentSetup enabled onReady={vi.fn()} />);
 
     expect(screen.getByLabelText("実験タイトル（任意）")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "測定した値" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "条件を受けたものと材料のつながり" })).toBeNull();
+    fireEvent.change(screen.getByRole("textbox", { name: "処理・群分け 1の名前" }), {
+      target: { value: "処理" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "行 1 列 1" }), {
+      target: { value: "Control" },
+    });
     expect(screen.getByRole("heading", { name: "測定した値" })).toBeVisible();
+    fireEvent.change(screen.getByPlaceholderText("例：細胞生存率"), {
+      target: { value: "細胞面積" },
+    });
     expect(screen.getByRole("heading", { name: "条件を受けたものと材料のつながり" })).toBeVisible();
     const rail = screen.getByRole("complementary", { name: "現在の実験と操作" });
     expect(within(rail).getByText("現在の実験")).toBeVisible();
     expect(within(rail).getByRole("button", { name: "この内容で入力表を作る" })).toBeVisible();
     expect(screen.getByLabelText("対象・試料の入力について詳しく見る")).toBeVisible();
 
+    expect(screen.queryByPlaceholderText("例：Cell、ROI、視野")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "1つの対象・試料の中で、複数のCell・ROI・視野などを個別に測った",
+      }),
+    );
+    expect(screen.getByPlaceholderText("例：Cell、ROI、視野")).toBeVisible();
+
     expect(screen.queryByLabelText("順序の値 1")).toBeNull();
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "各条件を実験するために用いた対象・試料は？" }),
+      { target: { value: "culture dish" } },
+    );
+    fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
     fireEvent.click(
       screen.getByRole("checkbox", {
         name: "同じ条件の中で、時間・距離などの順序に沿って測った",
@@ -603,6 +627,9 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "行 1 列 1" }), {
       target: { value: "0" },
     });
+    fireEvent.change(screen.getByPlaceholderText("例：細胞生存率"), {
+      target: { value: "細胞生存率" },
+    });
 
     const allCombinations = screen.getByRole("checkbox", {
       name: "作った組み合わせはすべて実施した",
@@ -729,6 +756,12 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
 
   it("moves additional-readout deletion focus to the next, previous, then add control", () => {
     render(<BiologicalExperimentSetup enabled onReady={vi.fn()} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "処理・群分け 1の名前" }), {
+      target: { value: "処理" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "行 1 列 1" }), {
+      target: { value: "Control" },
+    });
     const addReadout = screen.getByRole("button", { name: "＋ 測定項目を追加" });
     fireEvent.click(addReadout);
     fireEvent.click(addReadout);

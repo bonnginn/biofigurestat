@@ -677,9 +677,13 @@ export function BiologicalExperimentSetup({
   const [relationship, setRelationship] = useState<ReceiverRelationship>(
     initial?.relationship ?? "unknown_or_mixed",
   );
+  const [relationshipAnswered, setRelationshipAnswered] = useState(Boolean(initial?.relationship));
   const [sourceLabel, setSourceLabel] = useState(initial?.sourceLabel ?? "");
   const [sharedSourcePairedBlockId, setSharedSourcePairedBlockId] = useState(
     initial?.sharedSourcePairedBlockId ?? "",
+  );
+  const [childObservationEnabled, setChildObservationEnabled] = useState(
+    Boolean(initial?.childLabel?.trim()),
   );
   const [childLabel, setChildLabel] = useState(initial?.childLabel ?? "");
   const [orderedAxisEnabled, setOrderedAxisEnabled] = useState(Boolean(initial?.orderedAxis));
@@ -698,6 +702,17 @@ export function BiologicalExperimentSetup({
   const [editingInheritedFacts, setEditingInheritedFacts] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const combinations = useMemo(() => buildConditionCombinations(blocks), [blocks]);
+  const conditionDefinitionReady = blocks.every(
+    (block) => Boolean(block.name.trim()) && populatedCells(block).length > 0,
+  );
+  const measurementDefinitionReady = Boolean(measurementLabel.trim());
+  const showMeasurementSection = Boolean(initial) || conditionDefinitionReady;
+  const showMaterialSection =
+    Boolean(initial) ||
+    (showMeasurementSection && measurementDefinitionReady && combinations.length > 0);
+  const showOrderedAxisSection =
+    Boolean(initial) ||
+    (showMaterialSection && Boolean(receiverLabel.trim()) && relationshipAnswered);
   const { interactionCaptureProps } = useWorkspaceDirtyBaseline(
     {
       title,
@@ -710,8 +725,10 @@ export function BiologicalExperimentSetup({
       statuses,
       receiverLabel,
       relationship,
+      relationshipAnswered,
       sourceLabel,
       sharedSourcePairedBlockId,
+      childObservationEnabled,
       childLabel,
       orderedAxisEnabled,
       orderedAxisLabel,
@@ -857,6 +874,14 @@ export function BiologicalExperimentSetup({
     });
   };
   const submit = () => {
+    if (showMaterialSection && !relationshipAnswered) {
+      setMessage("異なる条件の間で、対象・試料がどのような関係かを選んでください。");
+      return;
+    }
+    if (childObservationEnabled && !childLabel.trim()) {
+      setMessage("個別に測ったものの名前を入力してください（例：Cell、ROI、視野）。");
+      return;
+    }
     const built = safelyBuildBiologicalSetup({
       title,
       experimentDescription: initial?.experimentDescription,
@@ -965,30 +990,29 @@ export function BiologicalExperimentSetup({
       ].join("。")
     : "";
   const externalLlmPrompt = createExperimentConsultationPrompt({
-        title,
-        conditionFactors: blocks.map((block) => ({
-          name: block.name,
-          levels: populatedCells(block).map(({ displayLabel }) => displayLabel),
-        })),
-        measurement: measurementLabel,
-        valueForm:
-          VALUE_FORM_OPTIONS.find(([value]) => value === valueForm)?.[1] ?? valueForm,
-        receiver: receiverLabel,
-        relationship:
-          relationship === "separate"
-            ? "条件ごとに別々のもの"
-            : relationship === "same"
-              ? "同じ対象・試料を複数条件で測定"
-              : relationship === "shared_source"
-                ? `別々のものだが共通の${sourceLabel.trim() || "由来・実験回"}に属する`
-                : relationship === "unknown_or_mixed"
-                  ? "不明または混在"
-                  : "",
-        nestedObservation: childLabel,
-        orderedAxis: orderedAxisEnabled
-          ? `${orderedAxisLabel || "順序軸"} (${orderedAxisLevels.filter(Boolean).join(" / ") || "値未入力"} ${orderedAxisUnit})`
-          : "なし",
-      });
+    title,
+    conditionFactors: blocks.map((block) => ({
+      name: block.name,
+      levels: populatedCells(block).map(({ displayLabel }) => displayLabel),
+    })),
+    measurement: measurementLabel,
+    valueForm: VALUE_FORM_OPTIONS.find(([value]) => value === valueForm)?.[1] ?? valueForm,
+    receiver: receiverLabel,
+    relationship:
+      relationship === "separate"
+        ? "条件ごとに別々のもの"
+        : relationship === "same"
+          ? "同じ対象・試料を複数条件で測定"
+          : relationship === "shared_source"
+            ? `別々のものだが共通の${sourceLabel.trim() || "由来・実験回"}に属する`
+            : relationship === "unknown_or_mixed"
+              ? "不明または混在"
+              : "",
+    nestedObservation: childLabel,
+    orderedAxis: orderedAxisEnabled
+      ? `${orderedAxisLabel || "順序軸"} (${orderedAxisLevels.filter(Boolean).join(" / ") || "値未入力"} ${orderedAxisUnit})`
+      : "なし",
+  });
 
   return (
     <section
@@ -1267,479 +1291,370 @@ export function BiologicalExperimentSetup({
                 ))}
               </section>
 
-              <section
-                className="biological-setup__section"
-                aria-labelledby="measurement-heading"
-                data-usage-area="measurement_definition"
-              >
-                <div className="biological-setup__section-heading">
-                  <div>
-                    <p>2</p>
-                    <h2 id="measurement-heading">測定した値</h2>
-                  </div>
-                </div>
-                <label className="biological-setup__field">
-                  <span>測定項目</span>
-                  <input
-                    placeholder="例：細胞生存率"
-                    value={measurementLabel}
-                    onChange={(event) => setMeasurementLabel(event.currentTarget.value)}
-                  />
-                  <small>グラフの縦軸名の候補として使います。後から変更できます。</small>
-                </label>
-                <fieldset>
-                  <legend>この測定値をどの形で記録しましたか？</legend>
-                  <div className="biological-setup__choices">
-                    {VALUE_FORM_OPTIONS.map(([value, label, example]) => (
-                      <label key={value}>
-                        <input
-                          type="radio"
-                          name="original-value-form"
-                          checked={valueForm === value}
-                          onChange={() => setValueForm(value)}
-                        />
-                        <span>
-                          <strong>{label}</strong>
-                          <small>{example}</small>
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
+              {showMeasurementSection ? (
                 <section
-                  className="biological-setup__additional-readouts"
-                  aria-labelledby="additional-readouts-heading"
+                  className="biological-setup__section"
+                  aria-labelledby="measurement-heading"
+                  data-usage-area="measurement_definition"
                 >
-                  <div className="biological-setup__subsection-heading">
+                  <div className="biological-setup__section-heading">
                     <div>
-                      <h3 id="additional-readouts-heading">同じ条件で、ほかにも測りましたか？</h3>
-                      <small>
-                        同じ対象・条件から得た別の測定値を追加できます。別の実験単位や条件をここへ追加する必要はありません。
-                      </small>
+                      <p>2</p>
+                      <h2 id="measurement-heading">測定した値</h2>
                     </div>
-                    <button
-                      ref={addReadoutControlRef}
-                      type="button"
-                      onClick={() =>
-                        setAdditionalReadouts((current) => {
-                          additionalReadoutCounterRef.current += 1;
-                          return [
-                            ...current,
-                            {
-                              id: `readout.additional.${additionalReadoutCounterRef.current}`,
-                              label: "",
-                              valueForm: "single",
-                              usesNestedObservation: null,
-                              usesOrderedAxis: null,
-                            },
-                          ];
-                        })
-                      }
-                    >
-                      ＋ 測定項目を追加
-                    </button>
                   </div>
-                  {additionalReadouts.map((readout, index) => (
-                    <fieldset className="biological-setup__additional-readout" key={readout.id}>
-                      <legend>追加の測定項目 {index + 2}</legend>
-                      <div className="biological-setup__additional-readout-heading">
-                        <label className="biological-setup__field">
-                          <span>測定項目の名前</span>
+                  <label className="biological-setup__field">
+                    <span>測定項目</span>
+                    <input
+                      placeholder="例：細胞生存率"
+                      value={measurementLabel}
+                      onChange={(event) => setMeasurementLabel(event.currentTarget.value)}
+                    />
+                    <small>グラフの縦軸名の候補として使います。後から変更できます。</small>
+                  </label>
+                  <fieldset>
+                    <legend>この測定値をどの形で記録しましたか？</legend>
+                    <div className="biological-setup__choices">
+                      {VALUE_FORM_OPTIONS.map(([value, label, example]) => (
+                        <label key={value}>
                           <input
-                            aria-label={`追加の測定項目 ${index + 2}の名前`}
-                            placeholder="例：細胞数、total protein"
-                            value={readout.label}
-                            onChange={(event) => {
-                              const label = event.currentTarget.value;
-                              updateAdditionalReadout(readout.id, (current) => ({
-                                ...current,
-                                label,
-                              }));
-                            }}
+                            type="radio"
+                            name="original-value-form"
+                            checked={valueForm === value}
+                            onChange={() => setValueForm(value)}
                           />
+                          <span>
+                            <strong>{label}</strong>
+                            <small>{example}</small>
+                          </span>
                         </label>
-                        <button
-                          ref={(control) => {
-                            if (control) readoutDeleteControlRefs.current.set(readout.id, control);
-                            else readoutDeleteControlRefs.current.delete(readout.id);
-                          }}
-                          type="button"
-                          aria-label={`追加の測定項目 ${index + 2}を削除`}
-                          onClick={() => removeAdditionalReadout(readout.id)}
-                        >
-                          削除
-                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <section
+                    className="biological-setup__additional-readouts"
+                    aria-labelledby="additional-readouts-heading"
+                  >
+                    <div className="biological-setup__subsection-heading">
+                      <div>
+                        <h3 id="additional-readouts-heading">同じ条件で、ほかにも測りましたか？</h3>
+                        <small>
+                          同じ対象・条件から得た別の測定値を追加できます。別の実験単位や条件をここへ追加する必要はありません。
+                        </small>
                       </div>
-                      <div className="biological-setup__choices">
-                        {VALUE_FORM_OPTIONS.map(([value, label, example]) => (
-                          <label key={value}>
+                      <button
+                        ref={addReadoutControlRef}
+                        type="button"
+                        onClick={() =>
+                          setAdditionalReadouts((current) => {
+                            additionalReadoutCounterRef.current += 1;
+                            return [
+                              ...current,
+                              {
+                                id: `readout.additional.${additionalReadoutCounterRef.current}`,
+                                label: "",
+                                valueForm: "single",
+                                usesNestedObservation: null,
+                                usesOrderedAxis: null,
+                              },
+                            ];
+                          })
+                        }
+                      >
+                        ＋ 測定項目を追加
+                      </button>
+                    </div>
+                    {additionalReadouts.map((readout, index) => (
+                      <fieldset className="biological-setup__additional-readout" key={readout.id}>
+                        <legend>追加の測定項目 {index + 2}</legend>
+                        <div className="biological-setup__additional-readout-heading">
+                          <label className="biological-setup__field">
+                            <span>測定項目の名前</span>
                             <input
-                              type="radio"
-                              name={`additional-readout-form-${readout.id}`}
-                              checked={readout.valueForm === value}
-                              onChange={() =>
+                              aria-label={`追加の測定項目 ${index + 2}の名前`}
+                              placeholder="例：細胞数、total protein"
+                              value={readout.label}
+                              onChange={(event) => {
+                                const label = event.currentTarget.value;
                                 updateAdditionalReadout(readout.id, (current) => ({
                                   ...current,
-                                  valueForm: value,
-                                }))
-                              }
-                            />
-                            <span>
-                              <strong>{label}</strong>
-                              <small>{example}</small>
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </fieldset>
-                  ))}
-                </section>
-              </section>
-
-              <section
-                className="biological-setup__section"
-                aria-labelledby="combination-heading"
-                data-usage-area="combination_review"
-              >
-                <div className="biological-setup__section-heading">
-                  <div>
-                    <p>3</p>
-                    <h2 id="combination-heading">実施した組み合わせ</h2>
-                  </div>
-                </div>
-                {combinations.length ? (
-                  <>
-                    <label className="biological-setup__all-combinations">
-                      <input
-                        type="checkbox"
-                        checked={!editCombinationExceptions}
-                        onChange={(event) => {
-                          const allPerformed = event.currentTarget.checked;
-                          setEditCombinationExceptions(!allPerformed);
-                          if (allPerformed) setStatuses({});
-                        }}
-                      />
-                      <span>作った組み合わせはすべて実施した</span>
-                    </label>
-                    {editCombinationExceptions ? (
-                      <div className="biological-setup__combinations">
-                        {combinations.map((combination) => (
-                          <label key={combination.id}>
-                            <span>{combination.displayLabel}</span>
-                            <select
-                              aria-label={`${combination.displayLabel}の実施状況`}
-                              value={statuses[combination.id] ?? "performed"}
-                              onChange={(event) => {
-                                const status = event.currentTarget
-                                  .value as ConditionCombinationStatus;
-                                setStatuses((current) => ({
-                                  ...current,
-                                  [combination.id]: status,
+                                  label,
                                 }));
                               }}
-                            >
-                              <option value="performed">実施した</option>
-                              <option value="not_performed">実施していない</option>
-                              <option value="unknown">未確認</option>
-                            </select>
+                            />
                           </label>
-                        ))}
-                      </div>
-                    ) : (
-                      <small>
-                        {combinations.length}
-                        通りを実施する予定として扱います。実施しない組み合わせがある場合だけ、チェックを外してください。
-                      </small>
-                    )}
-                  </>
-                ) : (
-                  <p className="biological-setup__empty">
-                    具体的な値を入力すると、組み合わせを確認できます。
-                  </p>
-                )}
-              </section>
+                          <button
+                            ref={(control) => {
+                              if (control)
+                                readoutDeleteControlRefs.current.set(readout.id, control);
+                              else readoutDeleteControlRefs.current.delete(readout.id);
+                            }}
+                            type="button"
+                            aria-label={`追加の測定項目 ${index + 2}を削除`}
+                            onClick={() => removeAdditionalReadout(readout.id)}
+                          >
+                            削除
+                          </button>
+                        </div>
+                        <div className="biological-setup__choices">
+                          {VALUE_FORM_OPTIONS.map(([value, label, example]) => (
+                            <label key={value}>
+                              <input
+                                type="radio"
+                                name={`additional-readout-form-${readout.id}`}
+                                checked={readout.valueForm === value}
+                                onChange={() =>
+                                  updateAdditionalReadout(readout.id, (current) => ({
+                                    ...current,
+                                    valueForm: value,
+                                  }))
+                                }
+                              />
+                              <span>
+                                <strong>{label}</strong>
+                                <small>{example}</small>
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                    ))}
+                  </section>
+                </section>
+              ) : null}
+
+              {showMaterialSection ? (
+                <section
+                  className="biological-setup__section"
+                  aria-labelledby="combination-heading"
+                  data-usage-area="combination_review"
+                >
+                  <div className="biological-setup__section-heading">
+                    <div>
+                      <p>3</p>
+                      <h2 id="combination-heading">実施した組み合わせ</h2>
+                    </div>
+                  </div>
+                  {combinations.length ? (
+                    <>
+                      <label className="biological-setup__all-combinations">
+                        <input
+                          type="checkbox"
+                          checked={!editCombinationExceptions}
+                          onChange={(event) => {
+                            const allPerformed = event.currentTarget.checked;
+                            setEditCombinationExceptions(!allPerformed);
+                            if (allPerformed) setStatuses({});
+                          }}
+                        />
+                        <span>作った組み合わせはすべて実施した</span>
+                      </label>
+                      {editCombinationExceptions ? (
+                        <div className="biological-setup__combinations">
+                          {combinations.map((combination) => (
+                            <label key={combination.id}>
+                              <span>{combination.displayLabel}</span>
+                              <select
+                                aria-label={`${combination.displayLabel}の実施状況`}
+                                value={statuses[combination.id] ?? "performed"}
+                                onChange={(event) => {
+                                  const status = event.currentTarget
+                                    .value as ConditionCombinationStatus;
+                                  setStatuses((current) => ({
+                                    ...current,
+                                    [combination.id]: status,
+                                  }));
+                                }}
+                              >
+                                <option value="performed">実施した</option>
+                                <option value="not_performed">実施していない</option>
+                                <option value="unknown">未確認</option>
+                              </select>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <small>
+                          {combinations.length}
+                          通りを実施する予定として扱います。実施しない組み合わせがある場合だけ、チェックを外してください。
+                        </small>
+                      )}
+                    </>
+                  ) : (
+                    <p className="biological-setup__empty">
+                      具体的な値を入力すると、組み合わせを確認できます。
+                    </p>
+                  )}
+                </section>
+              ) : null}
             </>
           ) : null}
 
-          <section
-            className="biological-setup__section"
-            aria-labelledby="material-heading"
-            data-usage-area="unit_relationship"
-          >
-            <div className="biological-setup__section-heading">
-              <div>
-                <p>{initial?.statisticsHandoff ? "1" : "4"}</p>
-                <h2 id="material-heading">条件を受けたものと材料のつながり</h2>
+          {showMaterialSection ? (
+            <section
+              className="biological-setup__section"
+              aria-labelledby="material-heading"
+              data-usage-area="unit_relationship"
+            >
+              <div className="biological-setup__section-heading">
+                <div>
+                  <p>{initial?.statisticsHandoff ? "1" : "4"}</p>
+                  <h2 id="material-heading">条件を受けたものと材料のつながり</h2>
+                </div>
               </div>
-            </div>
-            <label className="biological-setup__field">
-              <span>各条件を実験するために用いた対象・試料は？</span>
-              <input
-                placeholder="例：culture dish、mouse、donor由来試料"
-                value={receiverLabel}
-                onChange={(event) => setReceiverLabel(event.currentTarget.value)}
-              />
-            </label>
-            <details className="biological-setup__inline-help">
-              <summary aria-label="対象・試料の入力について詳しく見る">?</summary>
-              <p>
-                アプリ内の番号は自動で作ります。実験日や表の行番号ではなく、条件を実際に受けたものを入力します。
-              </p>
-            </details>
-            <fieldset>
-              <legend>異なる条件の間で、これらはどのような関係ですか？</legend>
-              <div className="biological-setup__choices biological-setup__choices--relations">
-                {(
-                  [
-                    ["separate", "条件ごとに別々のもの", "別dishを各1条件に割り当てた"],
-                    [
-                      "same",
-                      "同じ試料・細胞を、処理前後または複数条件で繰り返し測定した",
-                      "同じanimalを処理前後で測定した",
-                    ],
-                    [
-                      "shared_source",
-                      "別々のものだが、同じ由来・実験回として対応する組がある",
-                      "同じdonor由来、または同じ実験run内のControl/Drugを別dishで行った",
-                    ],
-                    [
-                      "unknown_or_mixed",
-                      "分からない、または混在している",
-                      "関係が条件ごとに異なる場合を含む",
-                    ],
-                  ] as const
-                ).map(([value, label, example]) => (
-                  <label key={value}>
-                    <input
-                      type="radio"
-                      name="receiver-relationship"
-                      checked={relationship === value}
-                      onChange={() => setRelationship(value)}
-                    />
-                    <span>
-                      <strong>{label}</strong>
-                      <small>{example}</small>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            {relationship === "shared_source" ? (
-              <>
-                <label className="biological-setup__field">
-                  <span>別々の対象を対応づける、共通の由来・実験回は？</span>
-                  <input
-                    placeholder="例：donor、実験run、細胞調製batch"
-                    value={sourceLabel}
-                    onChange={(event) => setSourceLabel(event.currentTarget.value)}
-                  />
-                </label>
-                {blocks.length > 1 ? (
-                  <label className="biological-setup__field">
-                    <span>その対応する組の中で変えた処理・群分けは？</span>
-                    <select
-                      aria-label="対応する組の中で変えた処理・群分け"
-                      value={sharedSourcePairedBlockId}
-                      onChange={(event) => setSharedSourcePairedBlockId(event.currentTarget.value)}
-                    >
-                      <option value="">選択してください</option>
-                      {blocks.map((block, index) => (
-                        <option value={block.id} key={block.id}>
-                          {block.name.trim() || `${index + 1}つ目の処理・群分け`}
-                        </option>
-                      ))}
-                      <option value="multiple_or_unknown">
-                        2つ以上、または共通材料との対応が一部だけ
-                      </option>
-                    </select>
-                    <small>
-                      例：各実験runでControl/Drugを行った場合は「Treatment」、siRNA処理後にdishへ分けてDoxを変えた場合は「Dox」です。
-                    </small>
-                  </label>
-                ) : null}
-              </>
-            ) : null}
-            <label className="biological-setup__field">
-              <span>その中でさらに個別に測ったもの（任意）</span>
-              <input
-                placeholder="例：Cell、ROI、視野"
-                value={childLabel}
-                onChange={(event) => setChildLabel(event.currentTarget.value)}
-              />
-            </label>
-            {childLabel.trim() && additionalReadouts.length > 0 ? (
+              <label className="biological-setup__field">
+                <span>各条件を実験するために用いた対象・試料は？</span>
+                <input
+                  placeholder="例：culture dish、mouse、donor由来試料"
+                  value={receiverLabel}
+                  onChange={(event) => setReceiverLabel(event.currentTarget.value)}
+                />
+              </label>
+              <details className="biological-setup__inline-help">
+                <summary aria-label="対象・試料の入力について詳しく見る">?</summary>
+                <p>
+                  アプリ内の番号は自動で作ります。実験日や表の行番号ではなく、条件を実際に受けたものを入力します。
+                </p>
+              </details>
               <fieldset>
-                <legend>{childLabel.trim()}ごとに測った項目</legend>
-                <small>dish全体の値と、個々の{childLabel.trim()}から得た値を区別します。</small>
-                <div className="biological-setup__choices">
-                  {valueForm === "single" ? (
-                    <label>
+                <legend>異なる条件の間で、これらはどのような関係ですか？</legend>
+                <div className="biological-setup__choices biological-setup__choices--relations">
+                  {(
+                    [
+                      ["separate", "条件ごとに別々のもの", "別dishを各1条件に割り当てた"],
+                      [
+                        "same",
+                        "同じ試料・細胞を、処理前後または複数条件で繰り返し測定した",
+                        "同じanimalを処理前後で測定した",
+                      ],
+                      [
+                        "shared_source",
+                        "別々のものだが、同じ由来・実験回として対応する組がある",
+                        "同じdonor由来、または同じ実験run内のControl/Drugを別dishで行った",
+                      ],
+                      [
+                        "unknown_or_mixed",
+                        "分からない、または混在している",
+                        "関係が条件ごとに異なる場合を含む",
+                      ],
+                    ] as const
+                  ).map(([value, label, example]) => (
+                    <label key={value}>
                       <input
-                        type="checkbox"
-                        checked={measurementUsesNestedObservation === true}
-                        onChange={(event) =>
-                          setNestedReadoutBinding("primary", event.currentTarget.checked)
-                        }
+                        type="radio"
+                        name="receiver-relationship"
+                        checked={relationshipAnswered && relationship === value}
+                        onChange={() => {
+                          setRelationship(value);
+                          setRelationshipAnswered(true);
+                          setMessage(null);
+                        }}
                       />
                       <span>
-                        <strong>{measurementLabel.trim() || "最初の測定項目"}</strong>
+                        <strong>{label}</strong>
+                        <small>{example}</small>
                       </span>
                     </label>
-                  ) : null}
-                  {additionalReadouts
-                    .filter(({ valueForm: form }) => form === "single")
-                    .map((readout) => (
-                      <label key={readout.id}>
-                        <input
-                          type="checkbox"
-                          checked={readout.usesNestedObservation === true}
-                          onChange={(event) =>
-                            setNestedReadoutBinding(readout.id, event.currentTarget.checked)
-                          }
-                        />
-                        <span>
-                          <strong>{readout.label.trim() || "名前未入力の測定項目"}</strong>
-                        </span>
-                      </label>
-                    ))}
+                  ))}
                 </div>
-                {[valueForm, ...additionalReadouts.map(({ valueForm: form }) => form)].some(
-                  (form) => form !== "single",
-                ) ? (
-                  <small>
-                    陽性数＋全体数など、試料全体でまとめた値は{childLabel.trim()}
-                    ごとの測定にはしません。
-                  </small>
-                ) : null}
               </fieldset>
-            ) : null}
-          </section>
-
-          <section
-            className="biological-setup__section"
-            aria-labelledby="ordered-axis-heading"
-            data-usage-area="ordered_structure"
-          >
-            <div className="biological-setup__section-heading">
-              <div>
-                <p>{initial?.statisticsHandoff ? "2" : "5"}</p>
-                <h2 id="ordered-axis-heading">時間などに沿った測定（必要な場合）</h2>
-              </div>
-            </div>
-            <label className="biological-setup__all-combinations">
-              <input
-                type="checkbox"
-                checked={orderedAxisEnabled}
-                onChange={(event) => setOrderedAxisEnabled(event.currentTarget.checked)}
-              />
-              <span>同じ条件の中で、時間・距離などの順序に沿って測った</span>
-            </label>
-            {orderedAxisEnabled ? (
-              <>
-                <div className="biological-setup__two-fields">
-                  <label>
-                    <span>何に沿って測りましたか？</span>
+              {relationship === "shared_source" ? (
+                <>
+                  <label className="biological-setup__field">
+                    <span>別々の対象を対応づける、共通の由来・実験回は？</span>
                     <input
-                      placeholder="例：時間"
-                      value={orderedAxisLabel}
-                      onChange={(event) => setOrderedAxisLabel(event.currentTarget.value)}
+                      placeholder="例：donor、実験run、細胞調製batch"
+                      value={sourceLabel}
+                      onChange={(event) => setSourceLabel(event.currentTarget.value)}
                     />
                   </label>
-                  <label>
-                    <span>単位</span>
-                    <input
-                      placeholder="例：h、min、µm"
-                      value={orderedAxisUnit}
-                      onChange={(event) => setOrderedAxisUnit(event.currentTarget.value)}
-                    />
-                  </label>
-                </div>
-                <div className="biological-setup__grid-wrap">
-                  <table aria-label="順序に沿った測定値">
-                    <thead>
-                      <tr>
-                        {orderedAxisLevels.map((_, index) => (
-                          <th scope="col" key={index}>
-                            {orderedAxisLabel.trim() || "値"} {index + 1}
-                            {orderedAxisUnit.trim() ? `（${orderedAxisUnit.trim()}）` : ""}
-                          </th>
+                  {blocks.length > 1 ? (
+                    <label className="biological-setup__field">
+                      <span>その対応する組の中で変えた処理・群分けは？</span>
+                      <select
+                        aria-label="対応する組の中で変えた処理・群分け"
+                        value={sharedSourcePairedBlockId}
+                        onChange={(event) =>
+                          setSharedSourcePairedBlockId(event.currentTarget.value)
+                        }
+                      >
+                        <option value="">選択してください</option>
+                        {blocks.map((block, index) => (
+                          <option value={block.id} key={block.id}>
+                            {block.name.trim() || `${index + 1}つ目の処理・群分け`}
+                          </option>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        {orderedAxisLevels.map((value, index) => (
-                          <td key={index}>
-                            <input
-                              aria-label={`${orderedAxisLabel.trim() || "順序"}の値 ${index + 1}${
-                                orderedAxisUnit.trim() ? `（${orderedAxisUnit.trim()}）` : ""
-                              }`}
-                              value={value}
-                              data-spreadsheet-cell="true"
-                              data-spreadsheet-row={0}
-                              data-spreadsheet-column={index}
-                              onKeyDown={moveSpreadsheetFocus}
-                              onChange={(event) => {
-                                const value = event.currentTarget.value;
-                                setOrderedAxisLevels((current) =>
-                                  current.map((cell, cellIndex) =>
-                                    cellIndex === index ? value : cell,
-                                  ),
-                                );
-                              }}
-                              onPaste={(event) => {
-                                const pasted = event.clipboardData
-                                  .getData("text")
-                                  .replace(/\r\n?/g, "\n")
-                                  .split(/[\t\n]/)
-                                  .filter(Boolean);
-                                if (pasted.length > 1) {
-                                  event.preventDefault();
-                                  setOrderedAxisLevels((current) => {
-                                    const next = [...current];
-                                    pasted.forEach((cell, offset) => {
-                                      next[index + offset] = cell;
-                                    });
-                                    return next;
-                                  });
-                                }
-                              }}
-                            />
-                          </td>
-                        ))}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setOrderedAxisLevels((current) => [...current, ""])}
-                >
-                  ＋ 値
-                </button>
-                {additionalReadouts.length > 0 ? (
-                  <fieldset>
-                    <legend>この{orderedAxisLabel.trim() || "時間・距離の系列"}で測った項目</legend>
-                    <div className="biological-setup__choices">
+                        <option value="multiple_or_unknown">
+                          2つ以上、または共通材料との対応が一部だけ
+                        </option>
+                      </select>
+                      <small>
+                        例：各実験runでControl/Drugを行った場合は「Treatment」、siRNA処理後にdishへ分けてDoxを変えた場合は「Dox」です。
+                      </small>
+                    </label>
+                  ) : null}
+                </>
+              ) : null}
+              <label className="biological-setup__all-combinations">
+                <input
+                  type="checkbox"
+                  checked={childObservationEnabled}
+                  onChange={(event) => {
+                    const enabled = event.currentTarget.checked;
+                    setChildObservationEnabled(enabled);
+                    if (!enabled) {
+                      setChildLabel("");
+                      setMeasurementUsesNestedObservation(null);
+                      setAdditionalReadouts((current) =>
+                        current.map((readout) => ({
+                          ...readout,
+                          usesNestedObservation: null,
+                        })),
+                      );
+                    }
+                    setMessage(null);
+                  }}
+                />
+                <span>1つの対象・試料の中で、複数のCell・ROI・視野などを個別に測った</span>
+              </label>
+              {childObservationEnabled ? (
+                <label className="biological-setup__field">
+                  <span>個別に測ったものは？</span>
+                  <input
+                    placeholder="例：Cell、ROI、視野"
+                    value={childLabel}
+                    onChange={(event) => setChildLabel(event.currentTarget.value)}
+                  />
+                </label>
+              ) : null}
+              {childObservationEnabled && childLabel.trim() && additionalReadouts.length > 0 ? (
+                <fieldset>
+                  <legend>{childLabel.trim()}ごとに測った項目</legend>
+                  <small>dish全体の値と、個々の{childLabel.trim()}から得た値を区別します。</small>
+                  <div className="biological-setup__choices">
+                    {valueForm === "single" ? (
                       <label>
                         <input
                           type="checkbox"
-                          checked={measurementUsesOrderedAxis === true}
+                          checked={measurementUsesNestedObservation === true}
                           onChange={(event) =>
-                            setAxisReadoutBinding("primary", event.currentTarget.checked)
+                            setNestedReadoutBinding("primary", event.currentTarget.checked)
                           }
                         />
                         <span>
                           <strong>{measurementLabel.trim() || "最初の測定項目"}</strong>
                         </span>
                       </label>
-                      {additionalReadouts.map((readout) => (
+                    ) : null}
+                    {additionalReadouts
+                      .filter(({ valueForm: form }) => form === "single")
+                      .map((readout) => (
                         <label key={readout.id}>
                           <input
                             type="checkbox"
-                            checked={readout.usesOrderedAxis === true}
+                            checked={readout.usesNestedObservation === true}
                             onChange={(event) =>
-                              setAxisReadoutBinding(readout.id, event.currentTarget.checked)
+                              setNestedReadoutBinding(readout.id, event.currentTarget.checked)
                             }
                           />
                           <span>
@@ -1747,41 +1662,191 @@ export function BiologicalExperimentSetup({
                           </span>
                         </label>
                       ))}
-                    </div>
-                  </fieldset>
-                ) : null}
-                <fieldset>
-                  <legend>各値で測った対象は同じですか？</legend>
-                  <div className="biological-setup__choices biological-setup__choices--relations">
+                  </div>
+                  {[valueForm, ...additionalReadouts.map(({ valueForm: form }) => form)].some(
+                    (form) => form !== "single",
+                  ) ? (
+                    <small>
+                      陽性数＋全体数など、試料全体でまとめた値は{childLabel.trim()}
+                      ごとの測定にはしません。
+                    </small>
+                  ) : null}
+                </fieldset>
+              ) : null}
+            </section>
+          ) : null}
+
+          {showOrderedAxisSection ? (
+            <section
+              className="biological-setup__section"
+              aria-labelledby="ordered-axis-heading"
+              data-usage-area="ordered_structure"
+            >
+              <div className="biological-setup__section-heading">
+                <div>
+                  <p>{initial?.statisticsHandoff ? "2" : "5"}</p>
+                  <h2 id="ordered-axis-heading">時間などに沿った測定（必要な場合）</h2>
+                </div>
+              </div>
+              <label className="biological-setup__all-combinations">
+                <input
+                  type="checkbox"
+                  checked={orderedAxisEnabled}
+                  onChange={(event) => setOrderedAxisEnabled(event.currentTarget.checked)}
+                />
+                <span>同じ条件の中で、時間・距離などの順序に沿って測った</span>
+              </label>
+              {orderedAxisEnabled ? (
+                <>
+                  <div className="biological-setup__two-fields">
                     <label>
+                      <span>何に沿って測りましたか？</span>
                       <input
-                        type="radio"
-                        name="axis-identity"
-                        checked={orderedAxisSameIdentity === true}
-                        onChange={() => setOrderedAxisSameIdentity(true)}
+                        placeholder="例：時間"
+                        value={orderedAxisLabel}
+                        onChange={(event) => setOrderedAxisLabel(event.currentTarget.value)}
                       />
-                      <span>
-                        <strong>同じ対象を追って測った</strong>
-                        <small>同じCellやanimalを時点ごとに測定</small>
-                      </span>
                     </label>
                     <label>
+                      <span>単位</span>
                       <input
-                        type="radio"
-                        name="axis-identity"
-                        checked={orderedAxisSameIdentity === false}
-                        onChange={() => setOrderedAxisSameIdentity(false)}
+                        placeholder="例：h、min、µm"
+                        value={orderedAxisUnit}
+                        onChange={(event) => setOrderedAxisUnit(event.currentTarget.value)}
                       />
-                      <span>
-                        <strong>各値で別の対象を測った</strong>
-                        <small>時点ごとに別dishを回収</small>
-                      </span>
                     </label>
                   </div>
-                </fieldset>
-              </>
-            ) : null}
-          </section>
+                  <div className="biological-setup__grid-wrap">
+                    <table aria-label="順序に沿った測定値">
+                      <thead>
+                        <tr>
+                          {orderedAxisLevels.map((_, index) => (
+                            <th scope="col" key={index}>
+                              {orderedAxisLabel.trim() || "値"} {index + 1}
+                              {orderedAxisUnit.trim() ? `（${orderedAxisUnit.trim()}）` : ""}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          {orderedAxisLevels.map((value, index) => (
+                            <td key={index}>
+                              <input
+                                aria-label={`${orderedAxisLabel.trim() || "順序"}の値 ${index + 1}${
+                                  orderedAxisUnit.trim() ? `（${orderedAxisUnit.trim()}）` : ""
+                                }`}
+                                value={value}
+                                data-spreadsheet-cell="true"
+                                data-spreadsheet-row={0}
+                                data-spreadsheet-column={index}
+                                onKeyDown={moveSpreadsheetFocus}
+                                onChange={(event) => {
+                                  const value = event.currentTarget.value;
+                                  setOrderedAxisLevels((current) =>
+                                    current.map((cell, cellIndex) =>
+                                      cellIndex === index ? value : cell,
+                                    ),
+                                  );
+                                }}
+                                onPaste={(event) => {
+                                  const pasted = event.clipboardData
+                                    .getData("text")
+                                    .replace(/\r\n?/g, "\n")
+                                    .split(/[\t\n]/)
+                                    .filter(Boolean);
+                                  if (pasted.length > 1) {
+                                    event.preventDefault();
+                                    setOrderedAxisLevels((current) => {
+                                      const next = [...current];
+                                      pasted.forEach((cell, offset) => {
+                                        next[index + offset] = cell;
+                                      });
+                                      return next;
+                                    });
+                                  }
+                                }}
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOrderedAxisLevels((current) => [...current, ""])}
+                  >
+                    ＋ 値
+                  </button>
+                  {additionalReadouts.length > 0 ? (
+                    <fieldset>
+                      <legend>
+                        この{orderedAxisLabel.trim() || "時間・距離の系列"}で測った項目
+                      </legend>
+                      <div className="biological-setup__choices">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={measurementUsesOrderedAxis === true}
+                            onChange={(event) =>
+                              setAxisReadoutBinding("primary", event.currentTarget.checked)
+                            }
+                          />
+                          <span>
+                            <strong>{measurementLabel.trim() || "最初の測定項目"}</strong>
+                          </span>
+                        </label>
+                        {additionalReadouts.map((readout) => (
+                          <label key={readout.id}>
+                            <input
+                              type="checkbox"
+                              checked={readout.usesOrderedAxis === true}
+                              onChange={(event) =>
+                                setAxisReadoutBinding(readout.id, event.currentTarget.checked)
+                              }
+                            />
+                            <span>
+                              <strong>{readout.label.trim() || "名前未入力の測定項目"}</strong>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  ) : null}
+                  <fieldset>
+                    <legend>各値で測った対象は同じですか？</legend>
+                    <div className="biological-setup__choices biological-setup__choices--relations">
+                      <label>
+                        <input
+                          type="radio"
+                          name="axis-identity"
+                          checked={orderedAxisSameIdentity === true}
+                          onChange={() => setOrderedAxisSameIdentity(true)}
+                        />
+                        <span>
+                          <strong>同じ対象を追って測った</strong>
+                          <small>同じCellやanimalを時点ごとに測定</small>
+                        </span>
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          name="axis-identity"
+                          checked={orderedAxisSameIdentity === false}
+                          onChange={() => setOrderedAxisSameIdentity(false)}
+                        />
+                        <span>
+                          <strong>各値で別の対象を測った</strong>
+                          <small>時点ごとに別dishを回収</small>
+                        </span>
+                      </label>
+                    </div>
+                  </fieldset>
+                </>
+              ) : null}
+            </section>
+          ) : null}
           <div className="biological-setup__completion" data-usage-area="setup_summary">
             <p>入力内容を確認できたら、共通のデータ入力表へ進みます。</p>
             <button

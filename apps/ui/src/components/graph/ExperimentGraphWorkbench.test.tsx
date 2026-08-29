@@ -560,7 +560,7 @@ describe("ExperimentGraphWorkbench", () => {
     expect(within(workbench).getByRole("combobox", { name: "測定項目" })).toBeDisabled();
     selectInspectorTarget("statistics");
     expect(within(workbench).getByRole("button", { name: "選択した解析を実行" })).toBeDisabled();
-    expect(within(workbench).getByText("Welchの2標本t検定を推奨")).toBeVisible();
+    expect(within(workbench).getByText("推奨: Welchの2標本t検定")).toBeVisible();
     expect(within(workbench).getByRole("button", { name: "グラフをコピー" })).toBeEnabled();
     expect(within(workbench).getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
     expect(within(workbench).getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();
@@ -1099,7 +1099,7 @@ describe("ExperimentGraphWorkbench", () => {
     );
 
     selectInspectorTarget("statistics");
-    expect(screen.getByText("二因子の分散分析を推奨")).toBeVisible();
+    expect(screen.getByText("推奨: 二因子の分散分析")).toBeVisible();
     fireEvent.click(screen.getByRole("radio", { name: "事前に決めた条件ペアだけを比較" }));
     fireEvent.click(
       screen.getByRole("checkbox", { name: "Wild type / Vehicle vs Wild type / Stimulus" }),
@@ -1234,7 +1234,7 @@ describe("ExperimentGraphWorkbench", () => {
     const method = screen.getByRole("combobox", { name: "相関の方法" });
     expect(method).toHaveValue("pearson");
     fireEvent.change(method, { target: { value: "spearman" } });
-    expect(screen.getByText("Pearsonの相関を推奨")).toBeVisible();
+    expect(screen.getByText("推奨: Pearsonの相関")).toBeVisible();
     fireEvent.click(screen.getByRole("checkbox", { name: /XとYが、同じ実験単位/ }));
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
 
@@ -1965,7 +1965,7 @@ describe("ExperimentGraphWorkbench", () => {
 
     fireEvent.change(selector, { target: { value: "full_time_course" } });
 
-    expect(screen.getByText("独立条件×Timeの二因子分散分析を推奨")).toBeVisible();
+    expect(screen.getByText("推奨: 独立条件×Timeの二因子分散分析")).toBeVisible();
     expect(screen.getByText(/反復測定とは扱わず/)).toBeVisible();
   });
 
@@ -1986,7 +1986,7 @@ describe("ExperimentGraphWorkbench", () => {
     ).not.toBeInTheDocument();
     expect(within(workbench).getByRole("combobox", { name: "解析windowの開始" })).toBeVisible();
     expect(within(workbench).getByRole("combobox", { name: "解析windowの終了" })).toBeVisible();
-    expect(within(workbench).getByText("対応のあるt検定を推奨")).toBeVisible();
+    expect(within(workbench).getByText("推奨: 対応のあるt検定")).toBeVisible();
     expect(workbench.querySelectorAll("[data-graph-value]")).toHaveLength(plottedBefore);
   });
 
@@ -2030,7 +2030,7 @@ describe("ExperimentGraphWorkbench", () => {
     const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="unit-trajectory"]')).toHaveLength(3);
     selectInspectorTarget("statistics");
-    expect(screen.getByText("対応のあるt検定を推奨")).toBeVisible();
+    expect(screen.getByText("推奨: 対応のあるt検定")).toBeVisible();
     fireEvent.click(screen.getByRole("checkbox", { name: /同じ実験単位の2条件/ }));
     acceptRecommendedMethod();
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
@@ -2104,7 +2104,7 @@ describe("ExperimentGraphWorkbench", () => {
     });
     expect(workbench.querySelector('[data-graph-value="20"]')).toBeInTheDocument();
     expect(workbench.querySelector('[data-graph-value="70"]')).toBeInTheDocument();
-    expect(within(workbench).getByText("Welchの2標本t検定を推奨")).toBeVisible();
+    expect(within(workbench).getByText("推奨: Welchの2標本t検定")).toBeVisible();
     fireEvent.click(within(workbench).getByRole("checkbox", { name: /各条件は別々のdish/ }));
     acceptRecommendedMethod();
     fireEvent.click(within(workbench).getByRole("button", { name: "選択した解析を実行" }));

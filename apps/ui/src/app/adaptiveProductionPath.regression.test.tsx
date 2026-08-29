@@ -470,9 +470,9 @@ describe("adaptive production path regressions", () => {
       "confirmed_column_mapping",
       "canonical_observations_edited_after_import",
     ]);
-    expect(
-      Object.values(saved.adaptiveInput?.canonicalObservations[0]?.values ?? {}),
-    ).toContain(11);
+    expect(Object.values(saved.adaptiveInput?.canonicalObservations[0]?.values ?? {})).toContain(
+      11,
+    );
   });
 
   it("imports the generated worksheet and preserves mapping, raw lineage, and source rows through save/open", async () => {
@@ -588,9 +588,7 @@ describe("adaptive production path regressions", () => {
     const firstFile = new File([firstText], "first.csv", { type: "text/csv" });
     Object.defineProperty(firstFile, "text", { value: async () => firstText });
     fireEvent.change(fileInput, { target: { files: [firstFile] } });
-    await vi.waitFor(() =>
-      expect(screen.getByText(/first\.csvを読み込みました/)).toBeVisible(),
-    );
+    await vi.waitFor(() => expect(screen.getByText(/first\.csvを読み込みました/)).toBeVisible());
     expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("4件の測定値");
 
     const secondFile = new File([secondText], "second.csv", { type: "text/csv" });
@@ -615,14 +613,10 @@ describe("adaptive production path regressions", () => {
     });
     expect(saved.adaptiveInput?.canonicalObservations).toHaveLength(4);
     expect(
-      saved.adaptiveInput?.canonicalObservations.flatMap(({ values }) =>
-        Object.values(values),
-      ),
+      saved.adaptiveInput?.canonicalObservations.flatMap(({ values }) => Object.values(values)),
     ).toEqual(expect.arrayContaining([10, 11, 20, 21]));
     expect(
-      saved.adaptiveInput?.canonicalObservations.flatMap(({ values }) =>
-        Object.values(values),
-      ),
+      saved.adaptiveInput?.canonicalObservations.flatMap(({ values }) => Object.values(values)),
     ).not.toContain(99);
   });
 
@@ -1078,9 +1072,7 @@ describe("adaptive production path regressions", () => {
     expect(date).toHaveValue("");
     fireEvent.change(date, { target: { value: "2026-08-28" } });
     expect(date).toHaveValue("2026-08-28");
-    expect(
-      screen.getByRole("columnheader", { name: /この組に共通する実験日/ }),
-    ).toHaveTextContent(
+    expect(screen.getByRole("columnheader", { name: /この組に共通する実験日/ })).toHaveTextContent(
       "任意・行内の全条件が同じ日の場合のみ。日付から対応関係は決めません",
     );
 
@@ -1151,7 +1143,9 @@ describe("adaptive production path regressions", () => {
     fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
 
     expect(onReady).not.toHaveBeenCalled();
-    expect(screen.getByText(/関係が混在または不明/)).toBeVisible();
+    expect(
+      screen.getByText(/異なる条件の間で、対象・試料がどのような関係かを選んでください/),
+    ).toBeVisible();
     expect(conditionName).toHaveValue("Treatment");
     expect(screen.getByPlaceholderText("例：細胞生存率")).toHaveValue("Signal");
     expect(screen.getByPlaceholderText("例：culture dish、mouse、donor由来試料")).toHaveValue(
