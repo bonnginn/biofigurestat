@@ -151,6 +151,16 @@
   font-size: 0.78rem;
   font-weight: 800;
 }
+.biological-setup__section-intro {
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  color: #53615e;
+}
+.biological-setup__section-intro > p {
+  margin: 0;
+  line-height: 1.45;
+}
 .biological-setup__section h2 {
   font-size: 1.08rem;
 }
@@ -243,6 +253,13 @@
   padding: 4px 6px;
   border: 0;
   border-radius: 0;
+}
+.biological-setup__grid-wrap input:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 3px solid #2979d6;
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 1px #fff;
 }
 .biological-setup__grid-actions {
   display: flex;
@@ -371,6 +388,22 @@
   border-color: #2f655e;
   color: #fff;
   background: #39746c;
+}
+.biological-setup__completion {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #9fc1ba;
+  border-radius: 12px;
+  background: #f2f8f6;
+}
+.biological-setup__completion p {
+  margin: 0;
+  color: #334f4a;
+}
+.biological-setup__completion .biological-setup__submit {
+  min-height: 48px;
+  font-size: 1rem;
 }
 @media (max-width: 900px) {
   .biological-setup__layout {

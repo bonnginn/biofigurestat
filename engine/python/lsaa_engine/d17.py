@@ -72,6 +72,9 @@ def _defaults(model_id: str, x: np.ndarray, y: np.ndarray) -> tuple[list[float],
 
 def _fit_series(request: dict[str, Any], series_id: str, points: list[dict[str, Any]]) -> dict[str, Any]:
     model_id = request["modelId"]
+    descriptive_only = (
+        request.get("fitInterpretation") == "descriptive_point_estimate_only"
+    )
     function, parameter_names = MODELS[model_id]
     x = np.asarray([point["x"] for point in points], dtype=float)
     y = np.asarray([point["y"] for point in points], dtype=float)
@@ -116,7 +119,7 @@ def _fit_series(request: dict[str, Any], series_id: str, points: list[dict[str, 
             raise ValueError(f"D17 {series_id} initial {name} must be inside its bounds")
     try:
         with warnings.catch_warnings():
-            warnings.simplefilter("error", OptimizeWarning)
+            warnings.simplefilter("ignore" if descriptive_only else "error", OptimizeWarning)
             parameters, covariance = curve_fit(
                 function,
                 x,
@@ -128,10 +131,13 @@ def _fit_series(request: dict[str, Any], series_id: str, points: list[dict[str, 
             )
     except (RuntimeError, ValueError, OptimizeWarning) as exc:
         raise ValueError(f"D17 {series_id} fit failed: {exc}") from exc
-    if not np.all(np.isfinite(parameters)) or not np.all(np.isfinite(covariance)):
-        raise ValueError(f"D17 {series_id} fit is non-identifiable; covariance is not finite")
-    if np.linalg.matrix_rank(covariance) < len(parameter_names):
-        raise ValueError(f"D17 {series_id} fit is non-identifiable; covariance is singular")
+    if not np.all(np.isfinite(parameters)):
+        raise ValueError(f"D17 {series_id} fit produced non-finite point estimates")
+    if not descriptive_only:
+        if not np.all(np.isfinite(covariance)):
+            raise ValueError(f"D17 {series_id} fit is non-identifiable; covariance is not finite")
+        if np.linalg.matrix_rank(covariance) < len(parameter_names):
+            raise ValueError(f"D17 {series_id} fit is non-identifiable; covariance is singular")
     fitted = function(x, *parameters)
     residuals = y - fitted
     rss = float(np.sum(residuals**2))
@@ -144,8 +150,8 @@ def _fit_series(request: dict[str, Any], series_id: str, points: list[dict[str, 
         raise ValueError(f"D17 {series_id} fitted plateau does not exceed baseline")
     if model_id == "michaelis_menten" and np.any(parameters <= 0):
         raise ValueError(f"D17 {series_id} Michaelis-Menten parameters must be positive")
-    standard_errors = np.sqrt(np.diag(covariance))
-    if not np.all(np.isfinite(standard_errors)):
+    standard_errors = None if descriptive_only else np.sqrt(np.diag(covariance))
+    if standard_errors is not None and not np.all(np.isfinite(standard_errors)):
         raise ValueError(f"D17 {series_id} parameter uncertainty is not identifiable")
     confidence_level = float(request["options"]["confidenceLevel"])
     critical = float(stats.t.ppf(1 - (1 - confidence_level) / 2, df))
@@ -156,13 +162,15 @@ def _fit_series(request: dict[str, Any], series_id: str, points: list[dict[str, 
     parameter_results = []
     for index, name in enumerate(parameter_names):
         value = float(parameters[index])
-        se = float(standard_errors[index])
+        se = None if standard_errors is None else float(standard_errors[index])
         parameter_results.append(
             estimate(
                 f"{series_id}.{name}",
                 value,
                 se,
-                {
+                None
+                if se is None
+                else {
                     "level": confidence_level,
                     "lower": value - critical * se,
                     "upper": value + critical * se,
@@ -237,6 +245,17 @@ def run_nonlinear_xy(request: dict[str, Any]) -> dict[str, Any]:
             "message": "Fitted curves and parameters were computed by the deterministic local SciPy engine and persisted as the authoritative analysis result.",
         }
     ]
+    if request.get("fitInterpretation") == "descriptive_point_estimate_only":
+        result["diagnostics"].append(
+            {
+                "code": "descriptive_point_estimate_only",
+                "message": (
+                    "The fitted curve and parameter point estimates are descriptive only. "
+                    "Standard errors and confidence intervals were intentionally omitted because "
+                    "the ordered points came from the same physical material."
+                ),
+            }
+        )
     if model_id == "michaelis_menten":
         for fit in fits:
             km = next(

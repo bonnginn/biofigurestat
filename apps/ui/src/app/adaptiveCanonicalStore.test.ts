@@ -108,7 +108,7 @@ describe("adaptive canonical observation store", () => {
       now,
     });
     if (!workspace.draft) throw new Error("Expected an editable adaptive workspace");
-    const donor = workspace.draft.experiments.find(({ stableUnitId }) => stableUnitId === "D1")!;
+    const donor = workspace.draft.experiments.find(({ label }) => label === "D1")!;
     const drug = workspace.draft.conditions.find(({ label }) => label === "Drug")!;
     const key = experimentCellKey({
       experimentId: donor.id,

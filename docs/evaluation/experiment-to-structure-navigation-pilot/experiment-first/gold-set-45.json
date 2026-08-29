@@ -1,0 +1,3126 @@
+{
+  "version": "1.0.0",
+  "case_count": 45,
+  "existing_reanalyzed": 15,
+  "new_cases": 30,
+  "pool_d_accessed": false,
+  "cases": [
+    {
+      "case_id": "ETS-7K2Q9M",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "animal",
+      "title": "マウスへの7日間経口投与と肝トリグリセリド",
+      "experiment_description": "10週齢の雄C57BL/6Jマウス24匹を、個体ごとにvehicle群または化合物A群へ無作為に割り付け、1日1回、7日間経口投与した。1匹が複数の投与群に入ることはなかった。最終投与の24時間後に全個体を安楽死させ、各マウスの肝臓から同じ葉の組織を1検体採取した。組織を個体別にホモジナイズし、肝組織重量当たりのトリグリセリド量を1匹につき1つ記録した。異なるマウスの組織は混合しなかった。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "CompoundA"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "none",
+      "nested_structure": [],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "hepatic triglyceride",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "CompoundA"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "none",
+        "unit_hierarchy": [],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "ETS-9W4F2L",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "animal_biochemistry",
+      "title": "同一摘出心での灌流条件切替",
+      "experiment_description": "成体ラット12匹から心臓を1個ずつ摘出し、摘出心ごとに独立したLangendorff灌流回路へ接続した。安定化後、各心臓を通常灌流液で10分間灌流し、その心臓の冠灌流量を記録した。続いて同じ回路内の同じ心臓へ阻害剤Bを含む灌流液を流し、定常状態に達した時点でもう一度冠灌流量を記録した。途中で心臓を交換せず、通常液と阻害剤Bの2つの値には摘出元ラットに対応する同じheart IDを付けた。1匹から複数の心臓を採取していない。",
+      "true_experimental_unit": "isolated heart",
+      "identities": ["HeartID", "RatID"],
+      "factors_conditions": [
+        {
+          "name": "PerfusionCondition",
+          "levels": ["Normal", "InhibitorB"],
+          "unit_role": "within_unit"
+        }
+      ],
+      "condition_relationship": "matched_complete",
+      "repeated_structure": "same heart across conditions",
+      "nested_structure": [],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "compact_unit_matrix",
+        "row_semantics": "one stable experimental unit or matched set",
+        "column_semantics": "identity columns plus a small condition/readout matrix"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "coronary flow",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "isolated heart",
+        "identity_fields": ["HeartID", "RatID"],
+        "condition_factors": [
+          {
+            "name": "PerfusionCondition",
+            "levels": ["Normal", "InhibitorB"],
+            "unit_role": "within_unit"
+          }
+        ],
+        "condition_relationship": "matched_complete",
+        "repeated_structure": "same heart across conditions",
+        "unit_hierarchy": [],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "low"
+      }
+    },
+    {
+      "case_id": "ETS-Z8P2HC",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "animal_longitudinal",
+      "title": "高脂肪食介入中の同一マウス体重追跡",
+      "experiment_description": "8週齢の雌マウス30匹を個体ごとに標準食群または高脂肪食群へ割り付け、8週間飼育した。各マウスには耳標IDを付け、食餌開始直前を0週として、同じ個体の体重を0、1、2、4、6、8週に測定した。測定のたびに耳標IDを確認し、死亡または測定不能になった個体の行を別個体の値で補わなかった。食餌群は試験期間中に変更せず、各時点で新しいマウスを追加していない。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID"],
+      "factors_conditions": [
+        {
+          "name": "Diet",
+          "levels": ["Standard", "HighFat"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "same mouse across weeks",
+      "nested_structure": [],
+      "ordered_axes": [
+        {
+          "name": "Week",
+          "unit": "week",
+          "levels": [0, 1, 2, 4, 6, 8],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "repeated_axis_matrix",
+        "row_semantics": "one stable identity followed across an ordered axis",
+        "column_semantics": "identity/factor columns plus ordered-level columns; long form accepted when irregular"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "body weight",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID"],
+        "condition_factors": [
+          {
+            "name": "Diet",
+            "levels": ["Standard", "HighFat"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "same mouse across weeks",
+        "unit_hierarchy": [],
+        "ordered_axes": [
+          {
+            "name": "Week",
+            "unit": "week",
+            "levels": [0, 1, 2, 4, 6, 8],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "not_practical"
+      }
+    },
+    {
+      "case_id": "ETS-3R8W5N",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "animal_histology",
+      "title": "創傷後時点別の終末組織採取",
+      "experiment_description": "成体マウス40匹の背部に同じ大きさの全層皮膚創を1個ずつ作製した。処置前に各マウスを創傷後1、3、7、14日のいずれか1つの採取時点へ割り付け、各時点10匹とした。指定日にそのマウスを安楽死させ、創部全体を1検体として採取した。創傷中央を含む切片から再上皮化率をマウスごとに1つ算出した。ある時点で採取したマウスから後の時点の測定は得ておらず、各時点は異なる個体で構成された。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID"],
+      "factors_conditions": [
+        {
+          "name": "HarvestDay",
+          "levels": ["1", "3", "7", "14"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "different mice at each day",
+      "nested_structure": [],
+      "ordered_axes": [
+        {
+          "name": "HarvestDay",
+          "unit": "day",
+          "levels": [1, 3, 7, 14],
+          "sampling": "cross_sectional",
+          "identity_retained": false
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "re-epithelialization",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID"],
+        "condition_factors": [
+          {
+            "name": "HarvestDay",
+            "levels": ["1", "3", "7", "14"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "different mice at each day",
+        "unit_hierarchy": [],
+        "ordered_axes": [
+          {
+            "name": "HarvestDay",
+            "unit": "day",
+            "levels": [1, 3, 7, 14],
+            "sampling": "cross_sectional",
+            "identity_retained": false
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "high"
+      }
+    },
+    {
+      "case_id": "ETS-2H7N4W",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "microscopy",
+      "title": "Sholl半径に沿った神経突起交差数",
+      "experiment_description": "新生仔マウス12匹から海馬ニューロンを個体別に調製し、1匹由来の細胞を1枚のcoverslipへ播種した。各coverslipを培地のみまたは神経栄養因子C添加へ割り付けた。48時間後、各coverslipから事前に定めた走査規則で6個の孤立ニューロンを選び、細胞全体を撮像した。各ニューロンの細胞体中心から10、20、30、40、50、60 µmの同心円を置き、それぞれの半径で同じニューロンの神経突起交差数を数えた。source animal ID、coverslip ID、neuron IDを全半径で保持し、異なる個体由来の細胞を混合しなかった。",
+      "true_experimental_unit": "source animal/coverslip culture",
+      "identities": ["SourceAnimalID", "CoverslipID", "NeuronID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Medium", "Treatment"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "same neuron across radii",
+      "nested_structure": [
+        {
+          "level": "neuron",
+          "parent": "coverslip",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [
+        {
+          "name": "Radius",
+          "unit": "um",
+          "levels": [10, 20, 30, 40, 50, 60],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "Sholl intersections",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "source animal/coverslip culture",
+        "identity_fields": ["SourceAnimalID", "CoverslipID", "NeuronID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Medium", "Treatment"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "same neuron across radii",
+        "unit_hierarchy": [
+          {
+            "level": "neuron",
+            "parent": "coverslip",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": [
+          {
+            "name": "Radius",
+            "unit": "um",
+            "levels": [10, 20, 30, 40, 50, 60],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "ETS-W4M7PH",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "microscopy",
+      "title": "ディッシュ内単一細胞の核転写因子強度",
+      "experiment_description": "18名のdonorから樹立した初代皮膚線維芽細胞cultureを個別に用い、各donor cultureを1枚の培養ディッシュへ播種した。培養開始後、各ディッシュをvehicle、低用量薬剤D、高用量薬剤Dのいずれかへ割り付け、各条件に6 donorずつ含めた。24時間処置後に全ディッシュを固定し、各ディッシュであらかじめ決めた4か所の非重複視野を撮像した。画像内の全核を同一のsegmentation手順で抽出し、核内転写因子の平均蛍光強度を細胞ごとに保存した。各細胞の値にはdonor ID、由来ディッシュID、視野位置を付け、細胞数をdonor culture数として扱わなかった。",
+      "true_experimental_unit": "donor-derived dish",
+      "identities": ["DonorID", "DishID", "FieldID", "CellID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "LowDoseD", "HighDoseD"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "field",
+          "parent": "dish",
+          "role": "sampling_location"
+        },
+        {
+          "level": "cell",
+          "parent": "field",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "nuclear intensity",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "donor-derived dish",
+        "identity_fields": ["DonorID", "DishID", "FieldID", "CellID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "LowDoseD", "HighDoseD"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "field",
+            "parent": "dish",
+            "role": "sampling_location"
+          },
+          {
+            "level": "cell",
+            "parent": "field",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "ETS-P2N6W9",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "western_blot",
+      "title": "独立培養ディッシュごとのpERK/total ERK Western blot",
+      "experiment_description": "16名のdonorから得た初代ヒト気道上皮細胞cultureを個別に用意し、1 donor cultureを1枚の培養ディッシュへ播種した。各ディッシュをvehicleまたは増殖因子Eへ割り付け、各条件に8 donorずつ含めて15分間処置した。各ディッシュを個別に溶解し、1 donor cultureのlysateを1本のlaneとして同じgel上へ載せた。各laneについてpERKバンドとtotal ERKバンドの補正済み強度をそれぞれ保存し、pERKをtotal ERKで割った値をそのdonor cultureの測定値とした。異なるdonorのlysateはpoolせず、同じlysateを複数laneへ分注したtechnical duplicateは作成しなかった。",
+      "true_experimental_unit": "donor-derived dish/lane",
+      "identities": ["DonorID", "DishID", "LaneID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "GrowthFactorE"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "target and reference from same lane",
+      "nested_structure": [],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "typed_record_table",
+        "row_semantics": "one experimental-unit record with a typed value bundle",
+        "column_semantics": "identity/factors plus type-specific fields such as numerator/denominator, target/reference, or event/censoring"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "pERK / totalERK",
+            "value_type": "western_blot_ratio"
+          }
+        ],
+        "experimental_unit_level": "donor-derived dish/lane",
+        "identity_fields": ["DonorID", "DishID", "LaneID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "GrowthFactorE"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "target and reference from same lane",
+        "unit_hierarchy": [],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "not_practical"
+      }
+    },
+    {
+      "case_id": "ETS-8R2W7M",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "animal_factorial",
+      "title": "遺伝型と食餌を交差したマウス代謝実験",
+      "experiment_description": "同じ背景系統の野生型マウスと遺伝子F欠損マウスを用意し、各遺伝型の8週齢個体を標準食または高脂肪食へ個体ごとに割り付けた。野生型・標準食、野生型・高脂肪食、欠損・標準食、欠損・高脂肪食の4組合せすべてに別々のマウスが含まれ、1匹が複数の組合せに入ることはなかった。12週間後、絶食時の血漿インスリン濃度を各マウスから1回測定した。マウスID、遺伝型、食餌の2つの属性を別々に記録した。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID"],
+      "factors_conditions": [
+        {
+          "name": "Genotype",
+          "levels": ["WT", "KO"],
+          "unit_role": "between_unit"
+        },
+        {
+          "name": "Diet",
+          "levels": ["Chow", "HighFat"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_crossed",
+      "repeated_structure": "none",
+      "nested_structure": [],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "plasma insulin",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID"],
+        "condition_factors": [
+          {
+            "name": "Genotype",
+            "levels": ["WT", "KO"],
+            "unit_role": "between_unit"
+          },
+          {
+            "name": "Diet",
+            "levels": ["Chow", "HighFat"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_crossed",
+        "repeated_structure": "none",
+        "unit_hierarchy": [],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "high"
+      }
+    },
+    {
+      "case_id": "ETS-M7X3N8",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "clinical_biomarker",
+      "title": "同一患者血漿中のサイトカインと代謝物の対応測定",
+      "experiment_description": "治療開始前の患者35名からEDTA血漿を1本ずつ採取した。各患者の血漿を混合せず、同じ採血管由来の試料からサイトカインG濃度と代謝物H濃度を測定した。患者ごとにサイトカインGの値を1つ、代謝物Hの値を1つ得て、両方に同じ匿名化patient IDを付けた。再採血は行わず、異なる患者の2つの測定値を組み合わせなかった。",
+      "true_experimental_unit": "patient",
+      "identities": ["PatientID"],
+      "factors_conditions": [],
+      "condition_relationship": "same-unit paired readouts",
+      "repeated_structure": "two measurements from same patient",
+      "nested_structure": [],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "typed_record_table",
+        "row_semantics": "one experimental-unit record with a typed value bundle",
+        "column_semantics": "identity/factors plus type-specific fields such as numerator/denominator, target/reference, or event/censoring"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "cytokine G and metabolite H",
+            "value_type": "paired_measurements"
+          }
+        ],
+        "experimental_unit_level": "patient",
+        "identity_fields": ["PatientID"],
+        "condition_factors": [],
+        "condition_relationship": "same-unit paired readouts",
+        "repeated_structure": "two measurements from same patient",
+        "unit_hierarchy": [],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "not_practical"
+      }
+    },
+    {
+      "case_id": "ETS-9N4P7W",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "cell_biochemistry",
+      "title": "独立run内に別ディッシュを置く完全なrun block",
+      "experiment_description": "8回の独立した細胞培養runを別日に実施した。各runでは新しく調製した1つの細胞懸濁液を3枚のディッシュへ等量ずつ播種し、その3枚をvehicle、薬剤I、薬剤Jへ1枚ずつ割り当てた。24時間後、各ディッシュから1つのATP発光値を得た。どのディッシュも複数条件では測定せず、同じrun内の3枚は別々のディッシュIDを持つ。run IDは、同じ細胞調製と実施日を共有する3枚を識別するために保存し、8回すべてで3条件をそろえた。",
+      "true_experimental_unit": "dish",
+      "identities": ["RunID", "DishID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "DrugI", "DrugJ"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "blocked_by_run",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "run",
+          "parent": null,
+          "role": "block"
+        },
+        {
+          "level": "dish",
+          "parent": "run",
+          "role": "experimental_unit"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "ATP luminescence",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "dish",
+        "identity_fields": ["RunID", "DishID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "DrugI", "DrugJ"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "blocked_by_run",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "run",
+            "parent": null,
+            "role": "block"
+          },
+          {
+            "level": "dish",
+            "parent": "run",
+            "role": "experimental_unit"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "ETS-R4H9NT",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "animal_histology",
+      "title": "母体曝露から糸球体までの多段階層",
+      "experiment_description": "妊娠マウス18匹を妊娠6日目にvehicleまたは化合物Kへ母体ごとに割り付け、妊娠6〜12日に投与した。出生後は各母親とその仔を1つのlitterとして追跡し、離乳時に各litterから雌雄1匹ずつを事前規則で選んだ。選んだ仔を12週齢で安楽死させ、各個体から片側腎を採取した。腎臓ごとに3枚の非連続切片を作り、各切片から10個の糸球体を選び、糸球体面積を測定した。すべての記録にdam/litter ID、offspring ID、section ID、glomerulus IDを残した。母体への投与はlitter内の仔ごとには独立に変更していない。",
+      "true_experimental_unit": "dam/litter",
+      "identities": ["DamLitterID", "OffspringID", "SectionID", "GlomerulusID"],
+      "factors_conditions": [
+        {
+          "name": "MaternalTreatment",
+          "levels": ["Vehicle", "Treatment"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_at_litter",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "offspring",
+          "parent": "litter",
+          "role": "subsample"
+        },
+        {
+          "level": "section",
+          "parent": "offspring",
+          "role": "subsample"
+        },
+        {
+          "level": "glomerulus",
+          "parent": "section",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "glomerular area",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "dam/litter",
+        "identity_fields": ["DamLitterID", "OffspringID", "SectionID", "GlomerulusID"],
+        "condition_factors": [
+          {
+            "name": "MaternalTreatment",
+            "levels": ["Vehicle", "Treatment"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_at_litter",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "offspring",
+            "parent": "litter",
+            "role": "subsample"
+          },
+          {
+            "level": "section",
+            "parent": "offspring",
+            "role": "subsample"
+          },
+          {
+            "level": "glomerulus",
+            "parent": "section",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "ETS-2X7R4V",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "aquatic_animal",
+      "title": "水槽単位の低酸素割付と魚個体測定",
+      "experiment_description": "同じ年齢のゼブラフィッシュを各10匹ずつ24個の独立した水槽へ収容した。水槽を単位として12槽を通常酸素、12槽を慢性低酸素へ無作為に割り付け、4週間維持した。同じ水槽内の魚は全期間同じ酸素条件を共有し、魚ごとに酸素条件を変えていない。終了時に各水槽から生存魚5匹を無作為に選び、魚を個別に採血してヘマトクリットを1匹につき1つ測定した。各測定値にはfish IDとtank IDを付け、複数の水槽の水や魚を混合しなかった。",
+      "true_experimental_unit": "tank",
+      "identities": ["TankID", "FishID"],
+      "factors_conditions": [
+        {
+          "name": "OxygenCondition",
+          "levels": ["Normoxia", "Hypoxia"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_at_tank",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "fish",
+          "parent": "tank",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "hematocrit",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "tank",
+        "identity_fields": ["TankID", "FishID"],
+        "condition_factors": [
+          {
+            "name": "OxygenCondition",
+            "levels": ["Normoxia", "Hypoxia"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_at_tank",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "fish",
+            "parent": "tank",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "ETS-W2V7CJ",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "animal_crossover",
+      "title": "食餌群間因子と同一個体crossover条件",
+      "experiment_description": "成体マウス20匹を標準食または高脂肪食へ個体ごとに割り付け、6週間維持した。その後、各マウスに2回の代謝challengeを1週間のwashoutを挟んで実施した。各マウスは一方の回でvehicle、もう一方の回で受容体作動薬Lを投与され、投与順序はマウスごとに無作為化した。各challengeの30分後に採血し、血漿インスリン濃度を測定した。食餌は2回のchallengeを通じて変更せず、2つのchallenge値には同じmouse IDと異なるchallenge IDを付けた。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID", "ChallengeID"],
+      "factors_conditions": [
+        {
+          "name": "Diet",
+          "levels": ["Standard", "HighFat"],
+          "unit_role": "between_unit"
+        },
+        {
+          "name": "ChallengeTreatment",
+          "levels": ["Vehicle", "AgonistL"],
+          "unit_role": "within_unit"
+        }
+      ],
+      "condition_relationship": "mixed_between_within",
+      "repeated_structure": "same mouse across challenges",
+      "nested_structure": [],
+      "ordered_axes": [
+        {
+          "name": "ChallengeOrder",
+          "unit": "order",
+          "levels": [1, 2],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "plasma insulin",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID", "ChallengeID"],
+        "condition_factors": [
+          {
+            "name": "Diet",
+            "levels": ["Standard", "HighFat"],
+            "unit_role": "between_unit"
+          },
+          {
+            "name": "ChallengeTreatment",
+            "levels": ["Vehicle", "AgonistL"],
+            "unit_role": "within_unit"
+          }
+        ],
+        "condition_relationship": "mixed_between_within",
+        "repeated_structure": "same mouse across challenges",
+        "unit_hierarchy": [],
+        "ordered_axes": [
+          {
+            "name": "ChallengeOrder",
+            "unit": "order",
+            "levels": [1, 2],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "ETS-8T2H7V",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "paired_tissue",
+      "title": "患者内対応を一部だけ持つ腫瘍・隣接正常組織",
+      "experiment_description": "腎摘除術を受けた患者24名から腫瘍組織を採取し、そのうち17名では病理医が十分に離れた隣接非腫瘍組織も採取できた。残り7名は安全に採取できる非腫瘍部がなく、腫瘍組織のみであった。各組織片からRNAを抽出し、遺伝子Mの発現量を組織片ごとに1つ測定した。同じ患者の腫瘍と非腫瘍には共通のpatient IDと異なるtissue IDを付け、非腫瘍がない患者に人工的な対応値を作らなかった。異なる患者同士を対応させていない。",
+      "true_experimental_unit": "patient",
+      "identities": ["PatientID", "TissueID"],
+      "factors_conditions": [
+        {
+          "name": "TissueType",
+          "levels": ["Tumor", "NonTumor"],
+          "unit_role": "within_unit"
+        }
+      ],
+      "condition_relationship": "matched_incomplete",
+      "repeated_structure": "tissues matched within patient when available",
+      "nested_structure": [
+        {
+          "level": "tissue",
+          "parent": "patient",
+          "role": "sample"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "Gene M expression",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "patient",
+        "identity_fields": ["PatientID", "TissueID"],
+        "condition_factors": [
+          {
+            "name": "TissueType",
+            "levels": ["Tumor", "NonTumor"],
+            "unit_role": "within_unit"
+          }
+        ],
+        "condition_relationship": "matched_incomplete",
+        "repeated_structure": "tissues matched within patient when available",
+        "unit_hierarchy": [
+          {
+            "level": "tissue",
+            "parent": "patient",
+            "role": "sample"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "ETS-3P6W8K",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "existing_15_reanalysis",
+      "domain": "microscopy_multi_axis",
+      "title": "動物年齢とSholl半径の2つのordered axis",
+      "experiment_description": "雄マウスを2、6、12か月齢の3つの採取群として用意し、各個体は指定月齢で1回だけ安楽死させた。各マウスから海馬を採取し、事前に定めた解剖学的位置から4個の錐体ニューロンを選んで全樹状突起を再構築した。各ニューロンについて細胞体中心から10、20、30、40、50、60、70、80 µmの半径ごとに樹状突起交差数を数えた。同じニューロンのneuron IDを全半径で保持し、neuron IDには由来mouse IDを紐付けた。異なる月齢の測定には別のマウスを用い、同じマウスを加齢に伴って追跡していない。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID", "NeuronID"],
+      "factors_conditions": [
+        {
+          "name": "Age",
+          "levels": ["2", "6", "18"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_between_age",
+      "repeated_structure": "same neuron across radius",
+      "nested_structure": [
+        {
+          "level": "neuron",
+          "parent": "mouse",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [
+        {
+          "name": "Age",
+          "unit": "month",
+          "levels": [2, 6, 18],
+          "sampling": "cross_sectional",
+          "identity_retained": false
+        },
+        {
+          "name": "Radius",
+          "unit": "um",
+          "levels": [10, 20, 30, 40, 50, 60, 70, 80],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "Sholl intersections",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID", "NeuronID"],
+        "condition_factors": [
+          {
+            "name": "Age",
+            "levels": ["2", "6", "18"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_between_age",
+        "repeated_structure": "same neuron across radius",
+        "unit_hierarchy": [
+          {
+            "level": "neuron",
+            "parent": "mouse",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": [
+          {
+            "name": "Age",
+            "unit": "month",
+            "levels": [2, 6, 18],
+            "sampling": "cross_sectional",
+            "identity_retained": false
+          },
+          {
+            "name": "Radius",
+            "unit": "um",
+            "levels": [10, 20, 30, 40, 50, 60, 70, 80],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-016",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "cell_culture",
+      "title": "独立培養dishへの阻害剤処置",
+      "experiment_description": "3人のドナー由来線維芽細胞を各ドナー4枚のdishへ独立に播種し、vehicleまたは阻害剤Kへdish単位で割り付けた。48時間後に各dishの培地中IL-6濃度を1回測定した。ドナーは由来を示すが、処置割付とnはdishである。",
+      "true_experimental_unit": "dish",
+      "identities": ["DonorID", "DishID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "InhibitorK"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_blocked_by_donor",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "donor",
+          "parent": null,
+          "role": "block"
+        },
+        {
+          "level": "dish",
+          "parent": "donor",
+          "role": "experimental_unit"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "IL-6 concentration",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "dish",
+        "identity_fields": ["DonorID", "DishID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "InhibitorK"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_blocked_by_donor",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "donor",
+            "parent": null,
+            "role": "block"
+          },
+          {
+            "level": "dish",
+            "parent": "donor",
+            "role": "experimental_unit"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "EFX-017",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "cell_culture",
+      "title": "同一donor細胞の処置前後測定",
+      "experiment_description": "10人のドナーごとに1つの初代細胞培養を確立し、同じ培養から処置直前と処置6時間後に培地を少量採取した。各時点の乳酸濃度を測定し、DonorIDを両時点で保持した。",
+      "true_experimental_unit": "donor-derived culture",
+      "identities": ["DonorID"],
+      "factors_conditions": [
+        {
+          "name": "Exposure",
+          "levels": ["Before", "After"],
+          "unit_role": "within_unit"
+        }
+      ],
+      "condition_relationship": "matched_complete",
+      "repeated_structure": "same culture before and after",
+      "nested_structure": [],
+      "ordered_axes": [
+        {
+          "name": "Time",
+          "unit": "hour",
+          "levels": [0, 6],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "compact_unit_matrix",
+        "row_semantics": "one stable experimental unit or matched set",
+        "column_semantics": "identity columns plus a small condition/readout matrix"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "lactate concentration",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "donor-derived culture",
+        "identity_fields": ["DonorID"],
+        "condition_factors": [
+          {
+            "name": "Exposure",
+            "levels": ["Before", "After"],
+            "unit_role": "within_unit"
+          }
+        ],
+        "condition_relationship": "matched_complete",
+        "repeated_structure": "same culture before and after",
+        "unit_hierarchy": [],
+        "ordered_axes": [
+          {
+            "name": "Time",
+            "unit": "hour",
+            "levels": [0, 6],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "low"
+      }
+    },
+    {
+      "case_id": "EFX-018",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "crispr",
+      "title": "複数guideとcloneを分離したCRISPR実験",
+      "experiment_description": "遺伝子Qに対する3本のguideとnon-targeting guideを別々に導入し、各guideから4つの独立cloneを樹立した。cloneごとに標的タンパク質量を測定した。guideは科学的に同じ標的群へまとめられるが、guide間とclone間を混ぜなかった。",
+      "true_experimental_unit": "independently derived clone",
+      "identities": ["GuideID", "CloneID"],
+      "factors_conditions": [
+        {
+          "name": "Guide",
+          "levels": ["NTC", "gQ1", "gQ2", "gQ3"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_nested_in_guide",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "clone",
+          "parent": "guide",
+          "role": "experimental_unit"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "target protein abundance",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "independently derived clone",
+        "identity_fields": ["GuideID", "CloneID"],
+        "condition_factors": [
+          {
+            "name": "Guide",
+            "levels": ["NTC", "gQ1", "gQ2", "gQ3"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_nested_in_guide",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "clone",
+            "parent": "guide",
+            "role": "experimental_unit"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "EFX-019",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "genetic_rescue",
+      "title": "knockdownとrescue constructの交差",
+      "experiment_description": "細胞をcontrol siRNAまたはgene R siRNAへ割り付け、各々にempty vectorまたはsiRNA-resistant R constructを導入した。4組合せごとに6枚の独立dishを用い、dishごとにミトコンドリア膜電位を1つ算出した。",
+      "true_experimental_unit": "dish",
+      "identities": ["DishID"],
+      "factors_conditions": [
+        {
+          "name": "siRNA",
+          "levels": ["Control", "R"],
+          "unit_role": "between_unit"
+        },
+        {
+          "name": "RescueConstruct",
+          "levels": ["Empty", "R-rescue"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_crossed_rescue",
+      "repeated_structure": "none",
+      "nested_structure": [],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "mitochondrial membrane potential",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "dish",
+        "identity_fields": ["DishID"],
+        "condition_factors": [
+          {
+            "name": "siRNA",
+            "levels": ["Control", "R"],
+            "unit_role": "between_unit"
+          },
+          {
+            "name": "RescueConstruct",
+            "levels": ["Empty", "R-rescue"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_crossed_rescue",
+        "repeated_structure": "none",
+        "unit_hierarchy": [],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "EFX-020",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "plate_reader",
+      "title": "well内technical repeatsを伴う分泌測定",
+      "experiment_description": "8枚の独立培養dishをvehicleまたは刺激Mへ割り付けた。各dishの上清を3つのplate wellへ分注して吸光度を測定した。wellはtechnical replicateであり、元のdish IDとwell IDを記録した。",
+      "true_experimental_unit": "dish",
+      "identities": ["DishID", "PlateID", "WellID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "StimulusM"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "well",
+          "parent": "dish",
+          "role": "technical_replicate"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "absorbance",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "dish",
+        "identity_fields": ["DishID", "PlateID", "WellID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "StimulusM"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "well",
+            "parent": "dish",
+            "role": "technical_replicate"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "high"
+      }
+    },
+    {
+      "case_id": "EFX-021",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "dose_response",
+      "title": "donor内wellへ展開した薬剤濃度応答",
+      "experiment_description": "4人のドナー由来細胞について、各ドナーから7濃度それぞれに別wellを3つ用意した。24時間後に生存率をwellごとに測定した。同じwellを複数濃度へ曝露していないが、濃度間の生物学的対応単位はDonorIDで、同一donor内の3 wellは独立した生物学的nとして数えなかった。",
+      "true_experimental_unit": "donor-derived culture",
+      "identities": ["DonorID", "WellID"],
+      "factors_conditions": [
+        {
+          "name": "Dose",
+          "levels": ["0", "0.1", "0.3", "1", "3", "10", "30"],
+          "unit_role": "within_unit"
+        }
+      ],
+      "condition_relationship": "matched_by_donor",
+      "repeated_structure": "same donor represented across doses",
+      "nested_structure": [
+        {
+          "level": "well",
+          "parent": "donor",
+          "role": "condition_specific_technical_replicate"
+        }
+      ],
+      "ordered_axes": [
+        {
+          "name": "Dose",
+          "unit": "uM",
+          "levels": [0, 0.1, 0.3, 1, 3, 10, 30],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "typed_record_table",
+        "row_semantics": "one experimental-unit record with a typed value bundle",
+        "column_semantics": "identity/factors plus type-specific fields such as numerator/denominator, target/reference, or event/censoring"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "viability",
+            "value_type": "dose_response"
+          }
+        ],
+        "experimental_unit_level": "donor-derived culture",
+        "identity_fields": ["DonorID", "WellID"],
+        "condition_factors": [
+          {
+            "name": "Dose",
+            "levels": ["0", "0.1", "0.3", "1", "3", "10", "30"],
+            "unit_role": "within_unit"
+          }
+        ],
+        "condition_relationship": "matched_by_donor",
+        "repeated_structure": "same donor represented across doses",
+        "unit_hierarchy": [
+          {
+            "level": "well",
+            "parent": "donor",
+            "role": "condition_specific_technical_replicate"
+          }
+        ],
+        "ordered_axes": [
+          {
+            "name": "Dose",
+            "unit": "uM",
+            "levels": [0, 0.1, 0.3, 1, 3, 10, 30],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "EFX-022",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "live_cell_imaging",
+      "title": "同一細胞の経時蛍光追跡",
+      "experiment_description": "6枚のdishで細胞を撮像し、各dishから事前に選んだ20細胞をCellIDで追跡した。刺激前、5、15、30、60分に同じ細胞の核蛍光を測定した。処置はdish単位でvehicleまたは刺激Nに割り付けた。",
+      "true_experimental_unit": "dish",
+      "identities": ["DishID", "CellID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "StimulusN"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_at_dish",
+      "repeated_structure": "same cell across time",
+      "nested_structure": [
+        {
+          "level": "cell",
+          "parent": "dish",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [
+        {
+          "name": "Time",
+          "unit": "minute",
+          "levels": [0, 5, 15, 30, 60],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "nuclear fluorescence",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "dish",
+        "identity_fields": ["DishID", "CellID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "StimulusN"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_at_dish",
+        "repeated_structure": "same cell across time",
+        "unit_hierarchy": [
+          {
+            "level": "cell",
+            "parent": "dish",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": [
+          {
+            "name": "Time",
+            "unit": "minute",
+            "levels": [0, 5, 15, 30, 60],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-023",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "organoid",
+      "title": "organoid内cell形態のnested観測",
+      "experiment_description": "12人の患者から各2個のorganoidを作製し、organoidをvehicleまたはdrug Oへ割り付けた。各organoidの5視野から細胞境界を抽出し、cell面積を記録した。患者、organoid、field、cellのIDを保持した。",
+      "true_experimental_unit": "organoid",
+      "identities": ["PatientID", "OrganoidID", "FieldID", "CellID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "DrugO"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_with_patient_block",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "patient",
+          "parent": null,
+          "role": "block"
+        },
+        {
+          "level": "field",
+          "parent": "organoid",
+          "role": "sampling_location"
+        },
+        {
+          "level": "cell",
+          "parent": "field",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "cell area",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "organoid",
+        "identity_fields": ["PatientID", "OrganoidID", "FieldID", "CellID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "DrugO"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_with_patient_block",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "patient",
+            "parent": null,
+            "role": "block"
+          },
+          {
+            "level": "field",
+            "parent": "organoid",
+            "role": "sampling_location"
+          },
+          {
+            "level": "cell",
+            "parent": "field",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-024",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "cell_migration",
+      "title": "同一cell trackの移動速度",
+      "experiment_description": "4枚のdishをcontrolまたはchemokine Pへ割り付け、各dishで50細胞を8時間追跡した。tracking softwareはframeごとの座標を出力し、TrackIDはframe間で同じ細胞を示す。dishが処置単位である。",
+      "true_experimental_unit": "dish",
+      "identities": ["DishID", "TrackID", "Frame"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Control", "ChemokineP"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_at_dish",
+      "repeated_structure": "same track across frames",
+      "nested_structure": [
+        {
+          "level": "track",
+          "parent": "dish",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [
+        {
+          "name": "FrameTime",
+          "unit": "minute",
+          "levels": [0, 10, 20, 30, 40, 50, 60],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "cell coordinates",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "dish",
+        "identity_fields": ["DishID", "TrackID", "Frame"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Control", "ChemokineP"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_at_dish",
+        "repeated_structure": "same track across frames",
+        "unit_hierarchy": [
+          {
+            "level": "track",
+            "parent": "dish",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": [
+          {
+            "name": "FrameTime",
+            "unit": "minute",
+            "levels": [0, 10, 20, 30, 40, 50, 60],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-025",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "western_blot",
+      "title": "複数targetを同一laneで測定",
+      "experiment_description": "vehicleまたは刺激Qを与えた18枚の独立dishからタンパク質を回収した。同じlaneについてpAKT、total AKT、GAPDHのdensitometryを記録し、元の3値を保持した。",
+      "true_experimental_unit": "dish/lane",
+      "identities": ["DishID", "LaneID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "StimulusQ"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "multiple readouts from same lane",
+      "nested_structure": [],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "typed_record_table",
+        "row_semantics": "one experimental-unit record with a typed value bundle",
+        "column_semantics": "identity/factors plus type-specific fields such as numerator/denominator, target/reference, or event/censoring"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "pAKT, total AKT, GAPDH",
+            "value_type": "western_blot_ratio"
+          }
+        ],
+        "experimental_unit_level": "dish/lane",
+        "identity_fields": ["DishID", "LaneID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "StimulusQ"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "multiple readouts from same lane",
+        "unit_hierarchy": [],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "not_practical"
+      }
+    },
+    {
+      "case_id": "EFX-026",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "enzyme_kinetics",
+      "title": "基質濃度ごとの独立反応well",
+      "experiment_description": "5つの独立酵素調製ロットについて、8基質濃度ごとに別々のreaction wellを3つ設け、初速度を測定した。調製ロットをblock、wellを反応単位として記録した。",
+      "true_experimental_unit": "reaction well",
+      "identities": ["PrepLotID", "WellID"],
+      "factors_conditions": [
+        {
+          "name": "SubstrateConcentration",
+          "levels": ["0.1", "0.25", "0.5", "1", "2", "5", "10", "20"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_blocked_by_prep",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "prep_lot",
+          "parent": null,
+          "role": "block"
+        },
+        {
+          "level": "well",
+          "parent": "prep_lot",
+          "role": "experimental_unit"
+        }
+      ],
+      "ordered_axes": [
+        {
+          "name": "SubstrateConcentration",
+          "unit": "mM",
+          "levels": [0.1, 0.25, 0.5, 1, 2, 5, 10, 20],
+          "sampling": "cross_sectional",
+          "identity_retained": false
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "typed_record_table",
+        "row_semantics": "one experimental-unit record with a typed value bundle",
+        "column_semantics": "identity/factors plus type-specific fields such as numerator/denominator, target/reference, or event/censoring"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "initial velocity",
+            "value_type": "dose_response"
+          }
+        ],
+        "experimental_unit_level": "reaction well",
+        "identity_fields": ["PrepLotID", "WellID"],
+        "condition_factors": [
+          {
+            "name": "SubstrateConcentration",
+            "levels": ["0.1", "0.25", "0.5", "1", "2", "5", "10", "20"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_blocked_by_prep",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "prep_lot",
+            "parent": null,
+            "role": "block"
+          },
+          {
+            "level": "well",
+            "parent": "prep_lot",
+            "role": "experimental_unit"
+          }
+        ],
+        "ordered_axes": [
+          {
+            "name": "SubstrateConcentration",
+            "unit": "mM",
+            "levels": [0.1, 0.25, 0.5, 1, 2, 5, 10, 20],
+            "sampling": "cross_sectional",
+            "identity_retained": false
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "EFX-027",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "clinical_biomarker",
+      "title": "同一血漿の2 biomarker測定",
+      "experiment_description": "42人から1回ずつ採取した血漿でcytokine Sとmetabolite Tを測定した。両測定は同じPatientIDに属し、一部の患者ではmetaboliteのみ測定不能だった。",
+      "true_experimental_unit": "patient",
+      "identities": ["PatientID"],
+      "factors_conditions": [],
+      "condition_relationship": "same-unit paired readouts with component missingness",
+      "repeated_structure": "two measurements from same patient",
+      "nested_structure": [],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "typed_record_table",
+        "row_semantics": "one experimental-unit record with a typed value bundle",
+        "column_semantics": "identity/factors plus type-specific fields such as numerator/denominator, target/reference, or event/censoring"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "cytokine S and metabolite T",
+            "value_type": "paired_measurements"
+          }
+        ],
+        "experimental_unit_level": "patient",
+        "identity_fields": ["PatientID"],
+        "condition_factors": [],
+        "condition_relationship": "same-unit paired readouts with component missingness",
+        "repeated_structure": "two measurements from same patient",
+        "unit_hierarchy": [],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "not_practical"
+      }
+    },
+    {
+      "case_id": "EFX-028",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "qpcr",
+      "title": "targetとreferenceのraw Ct保持",
+      "experiment_description": "controlまたはhypoxiaへ割り付けた20枚の独立dishからRNAを抽出した。各dishでGene Uとreference geneのCtをそれぞれduplicate wellで測定し、well-level Ct、target/reference区分、dish IDを保存した。",
+      "true_experimental_unit": "dish",
+      "identities": ["DishID", "WellID"],
+      "factors_conditions": [
+        {
+          "name": "Oxygen",
+          "levels": ["Control", "Hypoxia"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "target and reference from same dish",
+      "nested_structure": [
+        {
+          "level": "qpcr_well",
+          "parent": "dish",
+          "role": "technical_replicate"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "typed_record_table",
+        "row_semantics": "one experimental-unit record with a typed value bundle",
+        "column_semantics": "identity/factors plus type-specific fields such as numerator/denominator, target/reference, or event/censoring"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "raw Ct target and reference",
+            "value_type": "target_reference"
+          }
+        ],
+        "experimental_unit_level": "dish",
+        "identity_fields": ["DishID", "WellID"],
+        "condition_factors": [
+          {
+            "name": "Oxygen",
+            "levels": ["Control", "Hypoxia"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "target and reference from same dish",
+        "unit_hierarchy": [
+          {
+            "level": "qpcr_well",
+            "parent": "dish",
+            "role": "technical_replicate"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "high"
+      }
+    },
+    {
+      "case_id": "EFX-029",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "animal_longitudinal",
+      "title": "欠測を含む体重経時測定",
+      "experiment_description": "standard食または高脂肪食へ割り付けた36匹のマウスを12週間追跡し、週0、2、4、6、8、10、12に同じMouseIDで体重を記録した。2匹は週8以降に測定不能となり、それ以前の記録は残した。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID"],
+      "factors_conditions": [
+        {
+          "name": "Diet",
+          "levels": ["Standard", "HighFat"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "same mouse across weeks with dropout",
+      "nested_structure": [],
+      "ordered_axes": [
+        {
+          "name": "Week",
+          "unit": "week",
+          "levels": [0, 2, 4, 6, 8, 10, 12],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "repeated_axis_matrix",
+        "row_semantics": "one stable identity followed across an ordered axis",
+        "column_semantics": "identity/factor columns plus ordered-level columns; long form accepted when irregular"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "body weight",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID"],
+        "condition_factors": [
+          {
+            "name": "Diet",
+            "levels": ["Standard", "HighFat"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "same mouse across weeks with dropout",
+        "unit_hierarchy": [],
+        "ordered_axes": [
+          {
+            "name": "Week",
+            "unit": "week",
+            "levels": [0, 2, 4, 6, 8, 10, 12],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "not_practical"
+      }
+    },
+    {
+      "case_id": "EFX-030",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "animal_crossover",
+      "title": "washoutを挟む2期crossover",
+      "experiment_description": "24匹のマウスをABまたはBAのsequenceへ割り付けた。各個体は1期にvehicleまたはdrug V、washout後の2期にもう一方を受け、各期末の活動量を測定した。MouseID、Period、Treatment、Sequenceを記録した。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "DrugV"],
+          "unit_role": "within_unit"
+        },
+        {
+          "name": "Sequence",
+          "levels": ["AB", "BA"],
+          "unit_role": "between_unit"
+        },
+        {
+          "name": "Period",
+          "levels": ["1", "2"],
+          "unit_role": "within_unit"
+        }
+      ],
+      "condition_relationship": "crossover",
+      "repeated_structure": "same mouse across periods",
+      "nested_structure": [],
+      "ordered_axes": [
+        {
+          "name": "Period",
+          "unit": "period",
+          "levels": [1, 2],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "activity count",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "DrugV"],
+            "unit_role": "within_unit"
+          },
+          {
+            "name": "Sequence",
+            "levels": ["AB", "BA"],
+            "unit_role": "between_unit"
+          },
+          {
+            "name": "Period",
+            "levels": ["1", "2"],
+            "unit_role": "within_unit"
+          }
+        ],
+        "condition_relationship": "crossover",
+        "repeated_structure": "same mouse across periods",
+        "unit_hierarchy": [],
+        "ordered_axes": [
+          {
+            "name": "Period",
+            "unit": "period",
+            "levels": [1, 2],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-031",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "survival",
+      "title": "腫瘍マウスのeventと打ち切り",
+      "experiment_description": "vehicleまたはdrug Wへ割り付けた40匹の腫瘍移植マウスを、規定humane endpoint到達または観察終了日まで追跡した。MouseIDごとに追跡日数、endpoint到達の有無、終了理由を記録した。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "DrugW"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "one event/censoring record per mouse",
+      "nested_structure": [],
+      "ordered_axes": [
+        {
+          "name": "FollowUp",
+          "unit": "day",
+          "levels": [],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "typed_record_table",
+        "row_semantics": "one experimental-unit record with a typed value bundle",
+        "column_semantics": "identity/factors plus type-specific fields such as numerator/denominator, target/reference, or event/censoring"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "time to humane endpoint",
+            "value_type": "time_to_event"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "DrugW"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "one event/censoring record per mouse",
+        "unit_hierarchy": [],
+        "ordered_axes": [
+          {
+            "name": "FollowUp",
+            "unit": "day",
+            "levels": [],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "EFX-032",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "developmental_animal",
+      "title": "母体処置とlitter内offspring",
+      "experiment_description": "妊娠dam 16匹をvehicleまたはcompound Xへdam単位で割り付けた。出生後、各litterから雌雄1匹ずつを選び、8週齢の腎重量を測定した。Dam/LitterIDとOffspringID、Sexを保持した。",
+      "true_experimental_unit": "dam/litter",
+      "identities": ["DamLitterID", "OffspringID"],
+      "factors_conditions": [
+        {
+          "name": "MaternalTreatment",
+          "levels": ["Vehicle", "CompoundX"],
+          "unit_role": "between_unit"
+        },
+        {
+          "name": "Sex",
+          "levels": ["Female", "Male"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_at_litter",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "offspring",
+          "parent": "litter",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "kidney weight",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "dam/litter",
+        "identity_fields": ["DamLitterID", "OffspringID"],
+        "condition_factors": [
+          {
+            "name": "MaternalTreatment",
+            "levels": ["Vehicle", "CompoundX"],
+            "unit_role": "between_unit"
+          },
+          {
+            "name": "Sex",
+            "levels": ["Female", "Male"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_at_litter",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "offspring",
+            "parent": "litter",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-033",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "paired_organs",
+      "title": "同一個体の左右腎比較",
+      "experiment_description": "18匹のラットについて左腎へ局所処置Y、右腎へsham処置を行った。7日後に両腎を別々に採取して線維化面積を測定し、RatIDとSideを保持した。",
+      "true_experimental_unit": "rat",
+      "identities": ["RatID", "KidneyID"],
+      "factors_conditions": [
+        {
+          "name": "SideTreatment",
+          "levels": ["Sham", "TreatmentY"],
+          "unit_role": "within_unit"
+        }
+      ],
+      "condition_relationship": "matched_complete",
+      "repeated_structure": "two kidneys matched within rat",
+      "nested_structure": [
+        {
+          "level": "kidney",
+          "parent": "rat",
+          "role": "sample"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "compact_unit_matrix",
+        "row_semantics": "one stable experimental unit or matched set",
+        "column_semantics": "identity columns plus a small condition/readout matrix"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "fibrotic area",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "rat",
+        "identity_fields": ["RatID", "KidneyID"],
+        "condition_factors": [
+          {
+            "name": "SideTreatment",
+            "levels": ["Sham", "TreatmentY"],
+            "unit_role": "within_unit"
+          }
+        ],
+        "condition_relationship": "matched_complete",
+        "repeated_structure": "two kidneys matched within rat",
+        "unit_hierarchy": [
+          {
+            "level": "kidney",
+            "parent": "rat",
+            "role": "sample"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "low"
+      }
+    },
+    {
+      "case_id": "EFX-034",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "plant_biology",
+      "title": "破壊採取による発芽後time-course",
+      "experiment_description": "同じ種子lotから発芽させた苗60株を、発芽後2、4、7日のいずれかの採取日に事前割付した。各日に20株を破壊採取し、根長を株ごとに測定した。同じ株を複数日に測っていない。",
+      "true_experimental_unit": "plant",
+      "identities": ["PlantID"],
+      "factors_conditions": [
+        {
+          "name": "HarvestDay",
+          "levels": ["2", "4", "7"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "different plants at each day",
+      "nested_structure": [],
+      "ordered_axes": [
+        {
+          "name": "HarvestDay",
+          "unit": "day",
+          "levels": [2, 4, 7],
+          "sampling": "cross_sectional",
+          "identity_retained": false
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "root length",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "plant",
+        "identity_fields": ["PlantID"],
+        "condition_factors": [
+          {
+            "name": "HarvestDay",
+            "levels": ["2", "4", "7"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "different plants at each day",
+        "unit_hierarchy": [],
+        "ordered_axes": [
+          {
+            "name": "HarvestDay",
+            "unit": "day",
+            "levels": [2, 4, 7],
+            "sampling": "cross_sectional",
+            "identity_retained": false
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "EFX-035",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "animal_factorial",
+      "title": "Sex×Diet×Drugの三因子実験",
+      "experiment_description": "雌雄マウスをstandardまたはhigh-fat dietへ割り付け、さらにvehicleまたはdrug Zを個体ごとに投与した。8つの組合せに各6匹を含め、12週後に肝脂肪率を1回測定した。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID"],
+      "factors_conditions": [
+        {
+          "name": "Sex",
+          "levels": ["Female", "Male"],
+          "unit_role": "between_unit"
+        },
+        {
+          "name": "Diet",
+          "levels": ["Standard", "HighFat"],
+          "unit_role": "between_unit"
+        },
+        {
+          "name": "Drug",
+          "levels": ["Vehicle", "DrugZ"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_crossed",
+      "repeated_structure": "none",
+      "nested_structure": [],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "liver fat fraction",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID"],
+        "condition_factors": [
+          {
+            "name": "Sex",
+            "levels": ["Female", "Male"],
+            "unit_role": "between_unit"
+          },
+          {
+            "name": "Diet",
+            "levels": ["Standard", "HighFat"],
+            "unit_role": "between_unit"
+          },
+          {
+            "name": "Drug",
+            "levels": ["Vehicle", "DrugZ"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_crossed",
+        "repeated_structure": "none",
+        "unit_hierarchy": [],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "high"
+      }
+    },
+    {
+      "case_id": "EFX-036",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "genetic_rescue",
+      "title": "mutant表現型のconstruct rescue",
+      "experiment_description": "WT、mutant、mutant+empty vector、mutant+WT constructの4条件について、各条件8つの独立organoidを作製した。organoidごとに分枝数を測定し、rescue constructをgenotypeとは別factorとして記録した。",
+      "true_experimental_unit": "organoid",
+      "identities": ["OrganoidID"],
+      "factors_conditions": [
+        {
+          "name": "Genotype",
+          "levels": ["WT", "Mutant"],
+          "unit_role": "between_unit"
+        },
+        {
+          "name": "Construct",
+          "levels": ["None", "Empty", "WT-rescue"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "partially_crossed_rescue",
+      "repeated_structure": "none",
+      "nested_structure": [],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "branch count",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "organoid",
+        "identity_fields": ["OrganoidID"],
+        "condition_factors": [
+          {
+            "name": "Genotype",
+            "levels": ["WT", "Mutant"],
+            "unit_role": "between_unit"
+          },
+          {
+            "name": "Construct",
+            "levels": ["None", "Empty", "WT-rescue"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "partially_crossed_rescue",
+        "repeated_structure": "none",
+        "unit_hierarchy": [],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "ambiguity"
+      }
+    },
+    {
+      "case_id": "EFX-037",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "paired_tissue",
+      "title": "一部のみ対応する腫瘍・正常組織",
+      "experiment_description": "30人の患者から腫瘍組織を採取し、そのうち22人では隣接正常組織も採取した。各組織でprotein AA濃度を測定し、PatientIDとTissueIDを保持した。正常組織がない8人も腫瘍記録を除外しなかった。",
+      "true_experimental_unit": "patient",
+      "identities": ["PatientID", "TissueID"],
+      "factors_conditions": [
+        {
+          "name": "TissueType",
+          "levels": ["Tumor", "AdjacentNormal"],
+          "unit_role": "within_unit"
+        }
+      ],
+      "condition_relationship": "matched_incomplete",
+      "repeated_structure": "matched tissues when available",
+      "nested_structure": [
+        {
+          "level": "tissue",
+          "parent": "patient",
+          "role": "sample"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "factor_observation_table",
+        "row_semantics": "one observed experimental-unit record",
+        "column_semantics": "identity, factor, optional block/axis, and value columns"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "protein AA concentration",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "patient",
+        "identity_fields": ["PatientID", "TissueID"],
+        "condition_factors": [
+          {
+            "name": "TissueType",
+            "levels": ["Tumor", "AdjacentNormal"],
+            "unit_role": "within_unit"
+          }
+        ],
+        "condition_relationship": "matched_incomplete",
+        "repeated_structure": "matched tissues when available",
+        "unit_hierarchy": [
+          {
+            "level": "tissue",
+            "parent": "patient",
+            "role": "sample"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-038",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "neuro_histology",
+      "title": "mouse内region・section・neuron階層",
+      "experiment_description": "controlまたはstressへ割り付けた20匹のマウスから海馬を採取した。各mouseでCA1とDGから3 sectionずつ選び、sectionごとに10 neuronの核面積を測定した。MouseID、Region、SectionID、NeuronIDを保持した。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID", "SectionID", "NeuronID"],
+      "factors_conditions": [
+        {
+          "name": "Stress",
+          "levels": ["Control", "Stress"],
+          "unit_role": "between_unit"
+        },
+        {
+          "name": "Region",
+          "levels": ["CA1", "DG"],
+          "unit_role": "within_unit"
+        }
+      ],
+      "condition_relationship": "mixed_between_within",
+      "repeated_structure": "regions sampled within mouse",
+      "nested_structure": [
+        {
+          "level": "section",
+          "parent": "mouse",
+          "role": "subsample"
+        },
+        {
+          "level": "neuron",
+          "parent": "section",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "neuronal nuclear area",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID", "SectionID", "NeuronID"],
+        "condition_factors": [
+          {
+            "name": "Stress",
+            "levels": ["Control", "Stress"],
+            "unit_role": "between_unit"
+          },
+          {
+            "name": "Region",
+            "levels": ["CA1", "DG"],
+            "unit_role": "within_unit"
+          }
+        ],
+        "condition_relationship": "mixed_between_within",
+        "repeated_structure": "regions sampled within mouse",
+        "unit_hierarchy": [
+          {
+            "level": "section",
+            "parent": "mouse",
+            "role": "subsample"
+          },
+          {
+            "level": "neuron",
+            "parent": "section",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-039",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "animal_metabolism",
+      "title": "同一マウスのglucose tolerance curve",
+      "experiment_description": "standardまたはhigh-fat dietの24匹にglucoseを投与し、同じMouseIDから0、15、30、60、120分に血糖を測定した。途中の1時点だけ採血できなかった個体が3匹いた。",
+      "true_experimental_unit": "mouse",
+      "identities": ["MouseID"],
+      "factors_conditions": [
+        {
+          "name": "Diet",
+          "levels": ["Standard", "HighFat"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "same mouse across time",
+      "nested_structure": [],
+      "ordered_axes": [
+        {
+          "name": "Time",
+          "unit": "minute",
+          "levels": [0, 15, 30, 60, 120],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "repeated_axis_matrix",
+        "row_semantics": "one stable identity followed across an ordered axis",
+        "column_semantics": "identity/factor columns plus ordered-level columns; long form accepted when irregular"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "blood glucose",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "mouse",
+        "identity_fields": ["MouseID"],
+        "condition_factors": [
+          {
+            "name": "Diet",
+            "levels": ["Standard", "HighFat"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "same mouse across time",
+        "unit_hierarchy": [],
+        "ordered_axes": [
+          {
+            "name": "Time",
+            "unit": "minute",
+            "levels": [0, 15, 30, 60, 120],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "EFX-040",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "donor_paired_dose",
+      "title": "同一donorを全濃度へ展開したdose-response",
+      "experiment_description": "8人のドナーそれぞれから細胞を7つのwellへ分け、0から10 uMの7濃度へ1 wellずつ曝露した。48時間後のviabilityを測定し、DonorIDを濃度間の対応単位として保持した。",
+      "true_experimental_unit": "donor",
+      "identities": ["DonorID", "WellID"],
+      "factors_conditions": [
+        {
+          "name": "Dose",
+          "levels": ["0", "0.03", "0.1", "0.3", "1", "3", "10"],
+          "unit_role": "within_unit"
+        }
+      ],
+      "condition_relationship": "matched_by_donor",
+      "repeated_structure": "same donor represented at all doses",
+      "nested_structure": [
+        {
+          "level": "well",
+          "parent": "donor",
+          "role": "condition_specific_sample"
+        }
+      ],
+      "ordered_axes": [
+        {
+          "name": "Dose",
+          "unit": "uM",
+          "levels": [0, 0.03, 0.1, 0.3, 1, 3, 10],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "typed_record_table",
+        "row_semantics": "one experimental-unit record with a typed value bundle",
+        "column_semantics": "identity/factors plus type-specific fields such as numerator/denominator, target/reference, or event/censoring"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "viability",
+            "value_type": "dose_response"
+          }
+        ],
+        "experimental_unit_level": "donor",
+        "identity_fields": ["DonorID", "WellID"],
+        "condition_factors": [
+          {
+            "name": "Dose",
+            "levels": ["0", "0.03", "0.1", "0.3", "1", "3", "10"],
+            "unit_role": "within_unit"
+          }
+        ],
+        "condition_relationship": "matched_by_donor",
+        "repeated_structure": "same donor represented at all doses",
+        "unit_hierarchy": [
+          {
+            "level": "well",
+            "parent": "donor",
+            "role": "condition_specific_sample"
+          }
+        ],
+        "ordered_axes": [
+          {
+            "name": "Dose",
+            "unit": "uM",
+            "levels": [0, 0.03, 0.1, 0.3, 1, 3, 10],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-041",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "flow_cytometry",
+      "title": "sampleごとのpositive/total count",
+      "experiment_description": "controlまたはstimulus BBへ割り付けた16枚の独立dishから細胞を回収した。flow cytometryでlive singlet中のmarker-positive cell数とtotal live singlet数をdishごとに記録した。",
+      "true_experimental_unit": "dish",
+      "identities": ["DishID", "FCSFile"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Control", "StimulusBB"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent",
+      "repeated_structure": "none",
+      "nested_structure": [],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "typed_record_table",
+        "row_semantics": "one experimental-unit record with a typed value bundle",
+        "column_semantics": "identity/factors plus type-specific fields such as numerator/denominator, target/reference, or event/censoring"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "marker-positive proportion",
+            "value_type": "proportion_counts"
+          }
+        ],
+        "experimental_unit_level": "dish",
+        "identity_fields": ["DishID", "FCSFile"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Control", "StimulusBB"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent",
+        "repeated_structure": "none",
+        "unit_hierarchy": [],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "yes",
+        "input_load": "medium"
+      }
+    },
+    {
+      "case_id": "EFX-042",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "single_cell",
+      "title": "donor・batch・cellを保持するscRNA summary",
+      "experiment_description": "control 6人とdisease 6人からPBMCを採取し、2つのlibrary batchへ均等に分けた。各donorから数千cellを取得し、cellごとのCellTypeとGeneCC countを保持した。disease statusはdonor属性で、cellを独立nとはしない。",
+      "true_experimental_unit": "donor",
+      "identities": ["DonorID", "LibraryBatch", "CellBarcode"],
+      "factors_conditions": [
+        {
+          "name": "DiseaseStatus",
+          "levels": ["Control", "Disease"],
+          "unit_role": "between_unit"
+        },
+        {
+          "name": "CellType",
+          "levels": ["T", "B", "Mono", "NK"],
+          "unit_role": "within_unit"
+        }
+      ],
+      "condition_relationship": "independent_donor_blocked_by_batch",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "library_batch",
+          "parent": null,
+          "role": "block"
+        },
+        {
+          "level": "cell",
+          "parent": "donor",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "Gene CC count",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "donor",
+        "identity_fields": ["DonorID", "LibraryBatch", "CellBarcode"],
+        "condition_factors": [
+          {
+            "name": "DiseaseStatus",
+            "levels": ["Control", "Disease"],
+            "unit_role": "between_unit"
+          },
+          {
+            "name": "CellType",
+            "levels": ["T", "B", "Mono", "NK"],
+            "unit_role": "within_unit"
+          }
+        ],
+        "condition_relationship": "independent_donor_blocked_by_batch",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "library_batch",
+            "parent": null,
+            "role": "block"
+          },
+          {
+            "level": "cell",
+            "parent": "donor",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-043",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "microbiome",
+      "title": "cage単位介入とmouse subsampling",
+      "experiment_description": "12 cageをcontrol dietまたはfiber dietへcage単位で割り付け、各cageに4匹のマウスを収容した。4週後に各mouseの便中butyrate濃度を測定した。CageIDとMouseIDを保持し、nはcageである。",
+      "true_experimental_unit": "cage",
+      "identities": ["CageID", "MouseID"],
+      "factors_conditions": [
+        {
+          "name": "Diet",
+          "levels": ["Control", "Fiber"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_at_cage",
+      "repeated_structure": "none",
+      "nested_structure": [
+        {
+          "level": "mouse",
+          "parent": "cage",
+          "role": "subsample"
+        }
+      ],
+      "ordered_axes": [],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "fecal butyrate",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "cage",
+        "identity_fields": ["CageID", "MouseID"],
+        "condition_factors": [
+          {
+            "name": "Diet",
+            "levels": ["Control", "Fiber"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_at_cage",
+        "repeated_structure": "none",
+        "unit_hierarchy": [
+          {
+            "level": "mouse",
+            "parent": "cage",
+            "role": "subsample"
+          }
+        ],
+        "ordered_axes": []
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-044",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "live_imaging",
+      "title": "z-stackとtimeを持つ同一cell観測",
+      "experiment_description": "5枚のdishで各15細胞をCellIDにより追跡し、0、10、20分にz=0、2、4 umの3 planeを撮像した。各planeの蛍光値を保持し、dishが処置単位、cellとz-planeは下位観測である。",
+      "true_experimental_unit": "dish",
+      "identities": ["DishID", "CellID", "PlaneID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Vehicle", "StimulusDD"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_at_dish",
+      "repeated_structure": "same cell across time and z",
+      "nested_structure": [
+        {
+          "level": "cell",
+          "parent": "dish",
+          "role": "subsample"
+        },
+        {
+          "level": "plane",
+          "parent": "cell",
+          "role": "technical_observation"
+        }
+      ],
+      "ordered_axes": [
+        {
+          "name": "Time",
+          "unit": "minute",
+          "levels": [0, 10, 20],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        },
+        {
+          "name": "Z",
+          "unit": "um",
+          "levels": [0, 2, 4],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "nested_observation_table",
+        "row_semantics": "one lowest-level raw observation with parent identities",
+        "column_semantics": "named hierarchy IDs, factors/axes, observation metadata, and raw values"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "plane fluorescence",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "dish",
+        "identity_fields": ["DishID", "CellID", "PlaneID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Vehicle", "StimulusDD"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_at_dish",
+        "repeated_structure": "same cell across time and z",
+        "unit_hierarchy": [
+          {
+            "level": "cell",
+            "parent": "dish",
+            "role": "subsample"
+          },
+          {
+            "level": "plane",
+            "parent": "cell",
+            "role": "technical_observation"
+          }
+        ],
+        "ordered_axes": [
+          {
+            "name": "Time",
+            "unit": "minute",
+            "levels": [0, 10, 20],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          },
+          {
+            "name": "Z",
+            "unit": "um",
+            "levels": [0, 2, 4],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "no",
+        "input_load": "identity_loss"
+      }
+    },
+    {
+      "case_id": "EFX-045",
+      "source_pool": "author_constructed_non_pool_d",
+      "source": "authored_expansion_2026_08_26",
+      "domain": "plate_kinetics",
+      "title": "plate wellの反応kinetics",
+      "experiment_description": "2つのplateで各条件8 wellを用い、controlまたはenzyme inhibitor EEをwell単位で設定した。plate readerが0から60分まで5分ごとの吸光度を同じwellから出力した。PlateID、WellID、Timeを保持した。",
+      "true_experimental_unit": "well",
+      "identities": ["PlateID", "WellID"],
+      "factors_conditions": [
+        {
+          "name": "Treatment",
+          "levels": ["Control", "InhibitorEE"],
+          "unit_role": "between_unit"
+        }
+      ],
+      "condition_relationship": "independent_blocked_by_plate",
+      "repeated_structure": "same well across time",
+      "nested_structure": [
+        {
+          "level": "plate",
+          "parent": null,
+          "role": "block"
+        },
+        {
+          "level": "well",
+          "parent": "plate",
+          "role": "experimental_unit"
+        }
+      ],
+      "ordered_axes": [
+        {
+          "name": "Time",
+          "unit": "minute",
+          "levels": [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60],
+          "sampling": "longitudinal",
+          "identity_retained": true
+        }
+      ],
+      "natural_input_surface": {
+        "surface_id": "repeated_axis_matrix",
+        "row_semantics": "one stable identity followed across an ordered axis",
+        "column_semantics": "identity/factor columns plus ordered-level columns; long form accepted when irregular"
+      },
+      "expected_internal_design": {
+        "measurements": [
+          {
+            "name": "absorbance",
+            "value_type": "continuous"
+          }
+        ],
+        "experimental_unit_level": "well",
+        "identity_fields": ["PlateID", "WellID"],
+        "condition_factors": [
+          {
+            "name": "Treatment",
+            "levels": ["Control", "InhibitorEE"],
+            "unit_role": "between_unit"
+          }
+        ],
+        "condition_relationship": "independent_blocked_by_plate",
+        "repeated_structure": "same well across time",
+        "unit_hierarchy": [
+          {
+            "level": "plate",
+            "parent": null,
+            "role": "block"
+          },
+          {
+            "level": "well",
+            "parent": "plate",
+            "role": "experimental_unit"
+          }
+        ],
+        "ordered_axes": [
+          {
+            "name": "Time",
+            "unit": "minute",
+            "levels": [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60],
+            "sampling": "longitudinal",
+            "identity_retained": true
+          }
+        ]
+      },
+      "architecture_a_current": {
+        "correct_structure_reachable": "partial",
+        "input_load": "medium"
+      }
+    }
+  ]
+}

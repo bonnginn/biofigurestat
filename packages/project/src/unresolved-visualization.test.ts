@@ -214,13 +214,18 @@ describe("unresolved visualization project state", () => {
 
     const explicitlyNoId = parseUnresolvedVisualizationProjectState({
       ...legacyUnanswered,
-      mapping: { ...legacyUnanswered.mapping, identityDecision: "no_id" },
+      mapping: {
+        ...legacyUnanswered.mapping,
+        identityDecision: "no_id",
+        sourceRowUnitDecision: "each_row_distinct_unit",
+      },
     });
-    expect(
-      deserializeUnresolvedVisualizationProjectState(
-        serializeUnresolvedVisualizationProjectState(explicitlyNoId),
-      ).mapping?.identityDecision,
-    ).toBe("no_id");
+    const reopenedNoId = deserializeUnresolvedVisualizationProjectState(
+      serializeUnresolvedVisualizationProjectState(explicitlyNoId),
+    );
+    expect(reopenedNoId.mapping?.identityDecision).toBe("no_id");
+    expect(reopenedNoId.mapping?.sourceRowUnitDecision).toBe("each_row_distinct_unit");
+    expect(migrated.mapping?.sourceRowUnitDecision).toBeUndefined();
   });
 
   it("rejects non-rectangular tables and mapping/lineage disagreement", () => {

@@ -3,6 +3,39 @@ import type { WorkspaceGraphState } from "./experimentWorkspaceProject";
 
 export type GraphGrouping = NonNullable<WorkspaceGraphState["grouping"]>;
 
+/**
+ * Keeps visual channels disjoint after an axis/series/facet reassignment.
+ * Persisted drafts from an older UI can contain a factor in both X hierarchy
+ * and series; rendering that stale overlap duplicates the lower axis row.
+ */
+export function normalizeGraphGroupingChannels(grouping: GraphGrouping): GraphGrouping {
+  if (grouping.x.source !== "factor") return grouping;
+  const blockedFactorIds = new Set([
+    ...(grouping.series.source === "factor" && grouping.series.factorId
+      ? [grouping.series.factorId]
+      : []),
+    ...(grouping.facet?.factorId ? [grouping.facet.factorId] : []),
+  ]);
+  const requestedFactorIds = grouping.x.factorIds?.length
+    ? grouping.x.factorIds
+    : grouping.x.factorId
+      ? [grouping.x.factorId]
+      : [];
+  const factorIds = [...new Set(requestedFactorIds)].filter((id) => !blockedFactorIds.has(id));
+  if (factorIds.length === 0) return { ...grouping, x: { source: "condition" } };
+  if (
+    factorIds.length === requestedFactorIds.length &&
+    factorIds.every((id, index) => id === requestedFactorIds[index]) &&
+    grouping.x.factorId === factorIds[0]
+  ) {
+    return grouping;
+  }
+  return {
+    ...grouping,
+    x: { source: "factor", factorId: factorIds[0], factorIds },
+  };
+}
+
 function distinctLevelCount(draft: ExperimentSetDraft, factorId: string): number {
   return new Set(
     draft.conditions.flatMap((condition) => {
@@ -27,8 +60,7 @@ export function createInitialGraphGrouping(draft: ExperimentSetDraft): GraphGrou
   );
   const timeAsSeries = draft.time.proposedVisualRole === "series";
   const hasExplicitFactorRole = draft.attributes.some(
-    ({ proposedVisualRole }) =>
-      proposedVisualRole !== undefined && proposedVisualRole !== "none",
+    ({ proposedVisualRole }) => proposedVisualRole !== undefined && proposedVisualRole !== "none",
   );
 
   if (explicitXFactors.length > 0 || explicitSeriesFactor || timeAsSeries) {
@@ -95,20 +127,21 @@ export function createInitialGraphGrouping(draft: ExperimentSetDraft): GraphGrou
 }
 
 export function swapSingleXFactorAndSeries(grouping: GraphGrouping): GraphGrouping | null {
-  if (grouping.x.source !== "factor" || grouping.series.source !== "factor") return null;
-  const xFactorIds = grouping.x.factorIds?.length
-    ? grouping.x.factorIds
-    : grouping.x.factorId
-      ? [grouping.x.factorId]
+  const normalized = normalizeGraphGroupingChannels(grouping);
+  if (normalized.x.source !== "factor" || normalized.series.source !== "factor") return null;
+  const xFactorIds = normalized.x.factorIds?.length
+    ? normalized.x.factorIds
+    : normalized.x.factorId
+      ? [normalized.x.factorId]
       : [];
-  if (xFactorIds.length !== 1 || !grouping.series.factorId) return null;
+  if (xFactorIds.length !== 1 || !normalized.series.factorId) return null;
 
   return {
-    ...grouping,
+    ...normalized,
     x: {
       source: "factor",
-      factorId: grouping.series.factorId,
-      factorIds: [grouping.series.factorId],
+      factorId: normalized.series.factorId,
+      factorIds: [normalized.series.factorId],
     },
     series: { source: "factor", factorId: xFactorIds[0] },
     color: { source: "factor", factorId: xFactorIds[0] },

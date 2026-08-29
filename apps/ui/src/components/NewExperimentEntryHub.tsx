@@ -30,21 +30,24 @@ type EntryCard = Readonly<{
   id: Exclude<NewExperimentEntryId, "compatibility">;
   title: string;
   description: string;
-  accent: "blue" | "violet" | "green" | "orange";
+  actionLabel: string;
+  recommended?: boolean;
 }>;
 
 const PRIMARY_ENTRY_CARDS: readonly EntryCard[] = [
   {
     id: "general",
     title: "実験から始める",
-    description: "条件・対応・反復・階層を確認して、実験に合う入力表を作ります。",
-    accent: "blue",
+    description: "処理条件、同じ試料の繰り返し、Cell・ROIなどの階層を短い質問で確認します。",
+    actionLabel: "質問に答えて始める",
+    recommended: true,
   },
   {
     id: "graphOnly",
     title: "手元の表からGraphを作る",
-    description: "表を貼ってGraphへ。統計が必要な時だけ実験構造を確認します。",
-    accent: "violet",
+    description:
+      "既存の表を貼り付けてGraphへ進みます。Statisticsを使う時だけ実験情報を追加します。",
+    actionLabel: "表を貼り付ける",
   },
 ];
 
@@ -52,21 +55,21 @@ const DEDICATED_ENTRY_CARDS: readonly EntryCard[] = [
   {
     id: "survival",
     title: "生存時間（Kaplan–Meier）",
-    description: "各対象の観察期間とevent・打ち切りを入力します。",
-    accent: "green",
+    description: "対象ID、群、観察期間、event・打ち切りを専用の表へ入力します。",
+    actionLabel: "専用シートを開く",
   },
   {
     id: "orderedCurve",
-    title: "酵素反応・飽和カーブ",
+    title: "濃度–反応・酵素反応",
     description:
-      "基質濃度–初速度、または時間–応答を入力します。対応するmodelを選んだ後だけfitします。",
-    accent: "blue",
+      "基質濃度–計算済み反応初速度と、時間–応答・飽和カーブのX/Yデータを入力します。",
+    actionLabel: "専用シートを開く",
   },
   {
     id: "heatmap",
     title: "ヒートマップ",
     description: "数値行列の配置を保ったまま可視化します。",
-    accent: "orange",
+    actionLabel: "専用シートを開く",
   },
 ];
 
@@ -99,20 +102,31 @@ export function NewExperimentEntryHub({
     const reasonId = `new-entry-${entry.id}-reason`;
     return (
       <article
-        className={`new-entry-hub__card new-entry-hub__card--${entry.accent}${compact ? " new-entry-hub__card--compact" : ""}`}
+        className={`new-entry-hub__card${entry.recommended ? " is-recommended" : ""}${compact ? " new-entry-hub__card--compact" : ""}`}
         key={entry.id}
         data-entry-id={entry.id}
       >
-        <h3>{entry.title}</h3>
-        <p>{entry.description}</p>
         <button
+          className="new-entry-hub__card-action"
           type="button"
           disabled={!state.available}
           aria-label={`${entry.title}を開く`}
           aria-describedby={!state.available ? reasonId : undefined}
           onClick={callbacks[entry.id]}
         >
-          開く
+          <span className="new-entry-hub__title-row">
+            <span className="new-entry-hub__card-title" role="heading" aria-level={3}>
+              {entry.title}
+            </span>
+            {entry.recommended ? (
+              <span className="new-entry-hub__recommended">通常はこちら</span>
+            ) : null}
+          </span>
+          <span className="new-entry-hub__card-description">{entry.description}</span>
+          <span className="new-entry-hub__action-label" aria-hidden="true">
+            {entry.actionLabel}
+            <span>→</span>
+          </span>
         </button>
         {!state.available ? (
           <p className="new-entry-hub__unavailable" id={reasonId} role="note">
@@ -124,13 +138,14 @@ export function NewExperimentEntryHub({
   };
 
   return (
-    <section className="new-entry-hub" aria-labelledby="new-entry-hub-heading">
+    <section
+      className="new-entry-hub"
+      aria-labelledby="new-entry-hub-heading"
+      data-usage-area="entry_choice"
+    >
       <header className="new-entry-hub__heading">
-        <p className="new-entry-hub__eyebrow">新しい実験</p>
         <h1 id="new-entry-hub-heading">何から始めますか？</h1>
-        <p>
-          目的に近い入口を選んでください。データの貼り付けやファイル取込は、それぞれの入口の中で行えます。
-        </p>
+        <p>実験内容から始めるか、すでにある表・専用形式から始めるかを選びます。</p>
       </header>
 
       <section className="new-entry-hub__primary" aria-labelledby="new-entry-primary-heading">
@@ -142,8 +157,8 @@ export function NewExperimentEntryHub({
 
       <section className="new-entry-hub__dedicated" aria-labelledby="new-entry-dedicated-heading">
         <div className="new-entry-hub__section-heading">
-          <h2 id="new-entry-dedicated-heading">専用の入力形式</h2>
-          <p>記録形式が決まっているデータは、専用シートへ直接進めます。</p>
+          <h2 id="new-entry-dedicated-heading">形式が決まっているデータ</h2>
+          <p>追加のインタビューを省き、専用シートへ直接進みます。</p>
         </div>
         <div className="new-entry-hub__grid new-entry-hub__grid--dedicated">
           {DEDICATED_ENTRY_CARDS.map((entry) => renderEntryCard(entry, true))}

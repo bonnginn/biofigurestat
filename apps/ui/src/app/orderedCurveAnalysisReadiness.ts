@@ -6,17 +6,23 @@ export type MichaelisReadoutMeaning =
   "calculated_initial_velocity" | "raw_time_series_or_other" | "unknown";
 
 export type OrderedCurveAnalysisReadiness = Readonly<{
-  status: "ready" | "needs_model_selection" | "needs_targeted_confirmation" | "safe_stop";
+  status:
+    | "ready"
+    | "ready_descriptive_only"
+    | "needs_model_selection"
+    | "needs_targeted_confirmation"
+    | "safe_stop";
   reasonCode:
     | "ORDERED_CURVE_MODEL_EXPLICITLY_SELECTED"
+    | "REPEATED_TRAJECTORY_DESCRIPTIVE_FIT_ONLY"
     | "ORDERED_CURVE_MODEL_SELECTION_REQUIRED"
     | "ORDERED_CURVE_AXIS_MEANING_REQUIRED_BEFORE_MODEL"
-    | "REPEATED_TRAJECTORY_INFERENTIAL_FIT_NOT_SUPPORTED"
     | "MICHAELIS_MENTEN_REQUIRES_SUBSTRATE_CONCENTRATION_AXIS"
     | "SUBSTRATE_CONCENTRATION_REQUIRES_COMPATIBLE_MODEL"
     | "MICHAELIS_MENTEN_INITIAL_VELOCITY_CONFIRMATION_REQUIRED"
     | "MICHAELIS_MENTEN_RAW_TIME_SERIES_NOT_COMPATIBLE";
   message: Readonly<{ ja: string; en: string }>;
+  fitInterpretation: "inferential_independent_residuals" | "descriptive_point_estimate_only";
   preserveInput: true;
 }>;
 
@@ -33,10 +39,13 @@ const result = (
   reasonCode: OrderedCurveAnalysisReadiness["reasonCode"],
   ja: string,
   en: string,
+  fitInterpretation: OrderedCurveAnalysisReadiness["fitInterpretation"] =
+    "inferential_independent_residuals",
 ): OrderedCurveAnalysisReadiness => ({
   status,
   reasonCode,
   message: { ja, en },
+  fitInterpretation,
   preserveInput: true,
 });
 
@@ -53,14 +62,6 @@ export function resolveOrderedCurveAnalysisReadiness(
       "ORDERED_CURVE_AXIS_MEANING_REQUIRED_BEFORE_MODEL",
       "横方向に変えたものを確認してからmodelを選んでください。入力値は保持します。",
       "Confirm what was varied along the horizontal axis before choosing a model. Entered values are preserved.",
-    );
-  }
-  if (facts.axisMaterialRelationship === "same_physical_material_across_axis") {
-    return result(
-      "safe_stop",
-      "REPEATED_TRAJECTORY_INFERENTIAL_FIT_NOT_SUPPORTED",
-      "同じ対象を追った曲線では、現在のfit engineが点どうしの相関を考慮せずSE・信頼区間を計算します。Alphaでは観測Graphとraw dataを保持しますが、推論fitは実行しません。",
-      "For a curve following the same subject, the current fit engine calculates standard errors and confidence intervals without accounting for correlation among points. Alpha preserves the observed graph and raw data but does not run the inferential fit.",
     );
   }
   if (!facts.modelExplicitlySelected) {
@@ -96,6 +97,15 @@ export function resolveOrderedCurveAnalysisReadiness(
         "Y is not the initial velocity at each concentration. The app preserves the input and stops rather than forcing this model.",
       );
     }
+    if (facts.axisMaterialRelationship === "same_physical_material_across_axis") {
+      return result(
+        "ready_descriptive_only",
+        "REPEATED_TRAJECTORY_DESCRIPTIVE_FIT_ONLY",
+        "同じ反応試料を順に測ったデータです。曲線の形とparameterの点推定は表示できますが、点どうしは独立ではないためSE・信頼区間・群間推論は計算しません。",
+        "These values follow the same reaction material. The curve and point estimates may be shown, but standard errors, confidence intervals, and between-group inference are omitted because the points are not independent.",
+        "descriptive_point_estimate_only",
+      );
+    }
     return result(
       "ready",
       "ORDERED_CURVE_MODEL_EXPLICITLY_SELECTED",
@@ -111,10 +121,23 @@ export function resolveOrderedCurveAnalysisReadiness(
       "The selected model does not match a substrate-concentration axis. The app stops without changing models.",
     );
   }
+  if (facts.axisMaterialRelationship === "same_physical_material_across_axis") {
+    return result(
+      "ready_descriptive_only",
+      "REPEATED_TRAJECTORY_DESCRIPTIVE_FIT_ONLY",
+      "同じ対象を順に追ったデータです。曲線の形とparameterの点推定は表示できますが、点どうしは独立ではないためSE・信頼区間・群間推論は計算しません。",
+      "These values follow the same subject across the ordered axis. The curve and point estimates may be shown, but standard errors, confidence intervals, and between-group inference are omitted because the points are not independent.",
+      "descriptive_point_estimate_only",
+    );
+  }
   return result(
     "ready",
     "ORDERED_CURVE_MODEL_EXPLICITLY_SELECTED",
     "選択したmodelを現在の順序軸へ適用します。",
     "The explicitly selected model will be applied to the current ordered axis.",
   );
+}
+
+export function orderedCurveFitCanRun(readiness: OrderedCurveAnalysisReadiness): boolean {
+  return readiness.status === "ready" || readiness.status === "ready_descriptive_only";
 }

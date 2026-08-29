@@ -6,8 +6,19 @@ import {
   type UnresolvedVisualizationProjectState,
 } from "@lsaa/project";
 import { ADAPTIVE_INPUT_FEATURE_FLAG } from "../app/adaptiveInputFeature";
+import type { WorkspaceExitRequest } from "../app/workspaceLifecycle";
 import { NewExperimentPage } from "./NewExperimentPage";
 import { GraphOnlyVisualizationPage } from "./GraphOnlyVisualizationPage";
+import {
+  recordUsageGraphConfiguration,
+  recordUsageMilestone,
+} from "../app/usageTelemetry";
+
+vi.mock("../app/usageTelemetry", () => ({
+  recordUsageEntry: vi.fn(),
+  recordUsageGraphConfiguration: vi.fn(),
+  recordUsageMilestone: vi.fn(),
+}));
 
 const rawText = [
   "Condition\tValue\tBatch",
@@ -16,6 +27,12 @@ const rawText = [
   "Drug A\t19.2\tB",
   "Drug B\t20.0\tA",
 ].join("\n");
+
+function pasteGraphOnlyTable(value: string): void {
+  fireEvent.paste(screen.getByTestId("graph-only-cell-0-0"), {
+    clipboardData: { getData: () => value },
+  });
+}
 
 function stateWithMapping(): UnresolvedVisualizationProjectState {
   const state = createUnresolvedVisualizationProjectState({
@@ -67,6 +84,53 @@ function stateWithMapping(): UnresolvedVisualizationProjectState {
 describe("Graph-only visualization entry", () => {
   afterEach(() => window.localStorage.removeItem(ADAPTIVE_INPUT_FEATURE_FLAG));
 
+  it("records privacy-safe first-data, first-Graph, and statistics handoff transitions once", async () => {
+    const onStatisticsStructureRequested = vi.fn();
+    vi.mocked(recordUsageMilestone).mockClear();
+    vi.mocked(recordUsageGraphConfiguration).mockClear();
+    render(
+      <GraphOnlyVisualizationPage
+        onNavigate={vi.fn()}
+        onStatisticsStructureRequested={onStatisticsStructureRequested}
+      />,
+    );
+
+    pasteGraphOnlyTable(rawText);
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
+      target: { value: "1" },
+    });
+
+    await waitFor(() => {
+      expect(recordUsageMilestone).toHaveBeenCalledWith("home", "data_entry_started");
+      expect(recordUsageMilestone).toHaveBeenCalledWith("home", "graph_created");
+      expect(recordUsageGraphConfiguration).toHaveBeenCalledWith("home", {
+        graphFamily: "dot",
+        origin: "direct_table",
+        uncertainty: "none",
+        rawPointsVisible: true,
+        summaryVisible: false,
+      });
+    });
+    fireEvent.click(screen.getByRole("button", { name: "統計を確認" }));
+    fireEvent.click(screen.getByRole("radio", { name: /時間・濃度・距離/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /その他、または分からない/ }));
+
+    expect(recordUsageMilestone).toHaveBeenCalledWith("home", "statistics_requested");
+    expect(recordUsageMilestone).toHaveBeenCalledWith("home", "safe_stop");
+    expect(
+      vi
+        .mocked(recordUsageMilestone)
+        .mock.calls.filter(([, milestone]) =>
+          ["data_entry_started", "graph_created", "statistics_requested", "safe_stop"].includes(
+            milestone,
+          ),
+        ),
+    ).toHaveLength(4);
+  });
+
   it("keeps the explicitly labeled browser preview usable without production bridges", () => {
     window.localStorage.setItem(ADAPTIVE_INPUT_FEATURE_FLAG, "enabled");
     render(
@@ -77,7 +141,10 @@ describe("Graph-only visualization entry", () => {
     fireEvent.click(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" }));
     expect(screen.getByRole("heading", { name: "手元の表からGraphを作る" })).toBeVisible();
     expect(screen.getAllByRole("button", { name: /入口へ戻る|実験の種類を変更/ })).toHaveLength(1);
-    expect(screen.getByRole("textbox", { name: "Graph用の表" })).toBeEnabled();
+    expect(screen.getByRole("region", { name: "Graph用データシート" })).toBeVisible();
+    expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("X / condition");
+    expect(screen.getByText(/直接入力用のX列とY列だけを最初からGraphへ対応付け/)).toBeVisible();
+    expect(screen.getByText(/貼り付け・ファイル読込では列の意味を推測せず指定を解除/)).toBeVisible();
     expect(screen.queryByRole("button", { name: "保存したGraph用データを開く" })).toBeNull();
     const saveButton = screen.getByRole("button", { name: "このGraph用データを保存" });
     expect(saveButton).toBeDisabled();
@@ -88,7 +155,7 @@ describe("Graph-only visualization entry", () => {
     window.localStorage.removeItem(ADAPTIVE_INPUT_FEATURE_FLAG);
   });
 
-  it("requires explicit X/Y mapping, renders a descriptive Graph, and saves unresolved state", async () => {
+  it("resets imported X/Y mapping, renders after explicit mapping, and saves unresolved state", async () => {
     const saveProject = vi.fn(
       async (state: UnresolvedVisualizationProjectState, target?: string) => ({
         state,
@@ -97,9 +164,7 @@ describe("Graph-only visualization entry", () => {
     );
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} saveProject={saveProject} />);
 
-    fireEvent.change(screen.getByRole("textbox", { name: "Graph用の表" }), {
-      target: { value: rawText },
-    });
+    pasteGraphOnlyTable(rawText);
     expect(screen.getByText("列の指定を待っています")).toBeVisible();
 
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
@@ -115,6 +180,7 @@ describe("Graph-only visualization entry", () => {
     expect(screen.getByRole("img", { name: /ValueをConditionごと/ })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このGraph用データを保存" }));
     await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
+    expect(recordUsageMilestone).toHaveBeenCalledWith("home", "project_saved");
 
     const savedState = saveProject.mock.calls[0]![0];
     expect(savedState.projectKind).toBe("unresolved_visualization");
@@ -139,8 +205,10 @@ describe("Graph-only visualization entry", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "保存したGraph用データを開く" }));
     await waitFor(() => expect(openProject).toHaveBeenCalledOnce());
+    expect(recordUsageMilestone).toHaveBeenCalledWith("home", "project_opened");
 
-    expect(screen.getByRole("textbox", { name: "Graph用の表" })).toHaveValue(rawText);
+    expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("Condition");
+    expect(screen.getByTestId("graph-only-cell-4-2")).toHaveValue("A");
     expect(screen.getByRole("img", { name: /ValueをConditionごと/ })).toBeVisible();
     expect(screen.getByRole("combobox", { name: "Graphの横軸" })).toHaveValue("0");
     expect(screen.getByRole("combobox", { name: "Graphの測定値" })).toHaveValue("1");
@@ -221,7 +289,7 @@ describe("Graph-only visualization entry", () => {
         saveProject={saveProject}
       />,
     );
-    fireEvent.change(screen.getByTestId("graph-only-cell-1-1"), {
+    fireEvent.change(screen.getByTestId("graph-only-cell-2-1"), {
       target: { value: "88.8" },
     });
     fireEvent.click(screen.getByRole("button", { name: "このGraph用データを保存" }));
@@ -255,7 +323,7 @@ describe("Graph-only visualization entry", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "このファイルは表からGraph用のprojectではありません。",
     );
-    expect(screen.getByRole("textbox", { name: "Graph用の表" })).toHaveValue("");
+    expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("X / condition");
   });
 
   it("also refuses a wrong-intent state supplied by an internal handoff", () => {
@@ -274,11 +342,11 @@ describe("Graph-only visualization entry", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "このファイルは表からGraph用のprojectではありません。",
     );
-    expect(screen.getByRole("textbox", { name: "Graph用の表" })).toHaveValue("");
+    expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("X / condition");
     expect(screen.getByRole("button", { name: "このGraph用データを保存" })).toBeDisabled();
   });
 
-  it("loads a CSV file into the same editable table and preserves file lineage", async () => {
+  it("loads a CSV file into the same editable table and preserves file lineage after editing", async () => {
     const saveProject = vi.fn(async (state: UnresolvedVisualizationProjectState) => ({
       state,
       target: "C:/tmp/file-import.lsa",
@@ -293,10 +361,13 @@ describe("Graph-only visualization entry", () => {
     fireEvent.change(screen.getByLabelText("Graph用の表ファイル"), {
       target: { files: [file] },
     });
-    await waitFor(() =>
-      expect(screen.getByRole("textbox", { name: "Graph用の表" })).toHaveValue(csvText),
-    );
-    expect(screen.getByTestId("graph-only-cell-1-1")).toHaveValue("14");
+    await waitFor(() => expect(screen.getByTestId("graph-only-cell-2-1")).toHaveValue("14"));
+    expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("Condition");
+    expect(screen.getByRole("combobox", { name: "Graphの横軸" })).toHaveValue("");
+    expect(screen.getByRole("combobox", { name: "Graphの測定値" })).toHaveValue("");
+    fireEvent.change(screen.getByTestId("graph-only-cell-2-1"), {
+      target: { value: "15" },
+    });
 
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
       target: { value: "0" },
@@ -310,8 +381,50 @@ describe("Graph-only visualization entry", () => {
     expect(saveProject.mock.calls[0]![0].rawLineage).toMatchObject({
       sourceKind: "csv",
       sourceLabel: "plate-summary.csv",
-      rawText: csvText,
+      rawText: ["Condition,Value", "Control,10", "Drug,15"].join("\n"),
     });
+  });
+
+  it("starts as direct entry with only X/Y mapped and retains that source after cell edits", async () => {
+    const saveProject = vi.fn(async (state: UnresolvedVisualizationProjectState) => ({
+      state,
+      target: "C:/tmp/direct-entry.lsa",
+    }));
+    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} saveProject={saveProject} />);
+
+    expect(screen.getByRole("combobox", { name: "Graphの横軸" })).toHaveValue("0");
+    expect(screen.getByRole("combobox", { name: "Graphの測定値" })).toHaveValue("1");
+    expect(screen.getByRole("combobox", { name: "Graphのグループ" })).toHaveValue("");
+    fireEvent.change(screen.getByTestId("graph-only-cell-1-0"), {
+      target: { value: "Control" },
+    });
+    fireEvent.change(screen.getByTestId("graph-only-cell-1-1"), {
+      target: { value: "10" },
+    });
+    fireEvent.change(screen.getByTestId("graph-only-cell-2-0"), {
+      target: { value: "Drug" },
+    });
+    fireEvent.change(screen.getByTestId("graph-only-cell-2-1"), {
+      target: { value: "14" },
+    });
+
+    expect(screen.getByRole("img", { name: /Y \/ valueをX \/ conditionごと/ })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "このGraph用データを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
+
+    const saved = saveProject.mock.calls[0]![0];
+    expect(saved.rawLineage).toMatchObject({
+      sourceKind: "direct_entry",
+      sourceLabel: "direct-entry",
+    });
+    expect(saved.table.rows).toEqual([
+      ["Control", "10", "", ""],
+      ["Drug", "14", "", ""],
+    ]);
+    expect(saved.mapping?.columns.filter(({ role }) => role !== "metadata")).toMatchObject([
+      { index: 0, role: "x" },
+      { index: 1, role: "y" },
+    ]);
   });
 
   it("edits any parsed cell without truncating the full table and serializes it to raw text", () => {
@@ -321,48 +434,29 @@ describe("Graph-only visualization entry", () => {
     ].join("\n");
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
 
-    fireEvent.change(screen.getByRole("textbox", { name: "Graph用の表" }), {
-      target: { value: longRawText },
-    });
-    const editedCell = screen.getByTestId("graph-only-cell-13-1");
+    pasteGraphOnlyTable(longRawText);
+    const editedCell = screen.getByTestId("graph-only-cell-14-1");
     fireEvent.change(editedCell, { target: { value: "edited" } });
 
     expect(editedCell).toHaveValue("edited");
-    expect(screen.getByTestId("graph-only-cell-13-0")).toHaveValue("Drug 14");
-    expect(screen.getByTestId("graph-only-cell-13-1")).toHaveValue("edited");
-    expect(screen.getByRole("textbox", { name: "Graph用の表" })).toHaveValue(
-      longRawText.replace("Drug 14\t14", "Drug 14\tedited"),
-    );
+    expect(screen.getByTestId("graph-only-cell-14-0")).toHaveValue("Drug 14");
+    expect(screen.getByTestId("graph-only-cell-14-1")).toHaveValue("edited");
   });
 
-  it("adds a row and column as editable raw table values", () => {
+  it("keeps a wide, long pasted rectangle in the single editable sheet", () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
-    fireEvent.change(screen.getByRole("textbox", { name: "Graph用の表" }), {
-      target: { value: rawText },
-    });
+    const wideText = [
+      "Condition\tValue\tBatch\tReplicate\tNote",
+      ...Array.from({ length: 10 }, (_, index) => `Drug ${index + 1}\t${index + 1}\tA\tR1\tok`),
+    ].join("\n");
+    pasteGraphOnlyTable(wideText);
 
-    fireEvent.click(screen.getByRole("button", { name: "行を追加" }));
-    fireEvent.click(screen.getByRole("button", { name: "列を追加" }));
-
-    expect(screen.getByTestId("graph-only-header-3")).toHaveValue("");
-    expect(screen.getByTestId("graph-only-cell-4-3")).toHaveValue("");
-    fireEvent.change(screen.getByTestId("graph-only-header-3"), {
-      target: { value: "Replicate" },
-    });
-    fireEvent.change(screen.getByTestId("graph-only-cell-4-3"), {
+    expect(screen.getByTestId("graph-only-cell-0-4")).toHaveValue("Note");
+    expect(screen.getByTestId("graph-only-cell-10-0")).toHaveValue("Drug 10");
+    fireEvent.change(screen.getByTestId("graph-only-cell-10-4"), {
       target: { value: "R1" },
     });
-
-    expect(screen.getByRole("textbox", { name: "Graph用の表" })).toHaveValue(
-      [
-        "Condition\tValue\tBatch\tReplicate",
-        "Control\t12.4\tA\t",
-        "Drug A\t18.1\tA\t",
-        "Drug A\t19.2\tB\t",
-        "Drug B\t20.0\tA\t",
-        "\t\t\tR1",
-      ].join("\n"),
-    );
+    expect(screen.getByTestId("graph-only-cell-10-4")).toHaveValue("R1");
   });
 
   it("keeps edited cells in the unresolved state built for saving", async () => {
@@ -373,10 +467,8 @@ describe("Graph-only visualization entry", () => {
       }),
     );
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} saveProject={saveProject} />);
-    fireEvent.change(screen.getByRole("textbox", { name: "Graph用の表" }), {
-      target: { value: rawText },
-    });
-    fireEvent.change(screen.getByTestId("graph-only-cell-1-1"), {
+    pasteGraphOnlyTable(rawText);
+    fireEvent.change(screen.getByTestId("graph-only-cell-2-1"), {
       target: { value: "18.9" },
     });
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
@@ -407,11 +499,7 @@ describe("Graph-only visualization entry", () => {
         onStatisticsStructureRequested={onStatisticsStructureRequested}
       />,
     );
-    fireEvent.change(screen.getByRole("textbox", { name: "Graph用の表" }), {
-      target: {
-        value: "Condition\tValue\tDishID\nControl\t10\tdish-1\nDrug\t14\tdish-2",
-      },
-    });
+    pasteGraphOnlyTable("Condition\tValue\tDishID\nControl\t10\tdish-1\nDrug\t14\tdish-2");
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
       target: { value: "0" },
     });
@@ -427,7 +515,7 @@ describe("Graph-only visualization entry", () => {
     expect(onStatisticsStructureRequested).not.toHaveBeenCalled();
   });
 
-  it("promotes only after an explicit no-ID answer and persists that decision", () => {
+  it("promotes a no-ID table only after confirming that each row is a distinct unit", () => {
     const onStatisticsStructureRequested = vi.fn();
     render(
       <GraphOnlyVisualizationPage
@@ -435,9 +523,7 @@ describe("Graph-only visualization entry", () => {
         onStatisticsStructureRequested={onStatisticsStructureRequested}
       />,
     );
-    fireEvent.change(screen.getByRole("textbox", { name: "Graph用の表" }), {
-      target: { value: "Condition\tValue\nControl\t10\nDrug\t14" },
-    });
+    pasteGraphOnlyTable("Condition\tValue\nControl\t10\nDrug\t14");
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
       target: { value: "0" },
     });
@@ -449,13 +535,56 @@ describe("Graph-only visualization entry", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "統計で使う対象ID" }), {
       target: { value: "no_id" },
     });
+    expect(screen.getByRole("button", { name: "実験構造の確認へ" })).toBeDisabled();
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: /はい。各行が別々のanimal・dish・wellなどです/,
+      }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "実験構造の確認へ" }));
 
     expect(onStatisticsStructureRequested).toHaveBeenCalledOnce();
     const handedOff = onStatisticsStructureRequested.mock
       .calls[0]![0] as UnresolvedVisualizationProjectState;
     expect(handedOff.mapping?.identityDecision).toBe("no_id");
+    expect(handedOff.mapping?.sourceRowUnitDecision).toBe("each_row_distinct_unit");
     expect(handedOff.mapping?.columns.some(({ role }) => role === "id")).toBe(false);
+  });
+
+  it.each([
+    [
+      /いいえ。同じ対象内のCell・ROI・視野などを複数行に記録しています/,
+      /Cell・ROI・視野を独立したnには変換しません/,
+    ],
+    [/^分からない$/, /1行が何を表すか確認できるまで統計へ進みません/],
+  ] as const)("retains the source table and safe-stops unresolved row grain", (choice, message) => {
+    const onStatisticsStructureRequested = vi.fn();
+    render(
+      <GraphOnlyVisualizationPage
+        onNavigate={vi.fn()}
+        onStatisticsStructureRequested={onStatisticsStructureRequested}
+      />,
+    );
+    const source = "Condition\tValue\nControl\t10\nDrug\t14";
+    pasteGraphOnlyTable(source);
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "統計を確認" }));
+    fireEvent.click(screen.getByRole("radio", { name: /処理・群分け/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "統計で使う対象ID" }), {
+      target: { value: "no_id" },
+    });
+    fireEvent.click(screen.getByRole("radio", { name: choice }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(message);
+    expect(screen.getByRole("button", { name: "実験構造の確認へ" })).toBeDisabled();
+    expect(screen.getByTestId("graph-only-cell-1-0")).toHaveValue("Control");
+    expect(screen.getByTestId("graph-only-cell-2-1")).toHaveValue("14");
+    expect(onStatisticsStructureRequested).not.toHaveBeenCalled();
   });
 
   it("retains an explicit sample ID through structure handoff and unresolved save/open", async () => {
@@ -475,9 +604,7 @@ describe("Graph-only visualization entry", () => {
         onStatisticsStructureRequested={onStatisticsStructureRequested}
       />,
     );
-    fireEvent.change(screen.getByRole("textbox", { name: "Graph用の表" }), {
-      target: { value: source },
-    });
+    pasteGraphOnlyTable(source);
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
       target: { value: "0" },
     });
@@ -531,21 +658,21 @@ describe("Graph-only visualization entry", () => {
 
   it("moves focus through headers and cells while preserving horizontal caret editing", () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
-    fireEvent.change(screen.getByRole("textbox", { name: "Graph用の表" }), {
-      target: { value: rawText },
-    });
-    const header = screen.getByTestId("graph-only-header-0");
-    const firstCell = screen.getByTestId<HTMLInputElement>("graph-only-cell-0-0");
-    const nextCell = screen.getByTestId<HTMLInputElement>("graph-only-cell-0-1");
-    const nextRowCell = screen.getByTestId<HTMLInputElement>("graph-only-cell-1-0");
+    pasteGraphOnlyTable(rawText);
+    const header = screen.getByTestId("graph-only-cell-0-0");
+    const firstCell = screen.getByTestId<HTMLInputElement>("graph-only-cell-1-0");
+    const nextCell = screen.getByTestId<HTMLInputElement>("graph-only-cell-1-1");
+    const nextRowCell = screen.getByTestId<HTMLInputElement>("graph-only-cell-2-0");
 
     header.focus();
     fireEvent.keyDown(header, { key: "Tab" });
-    expect(screen.getByTestId("graph-only-header-1")).toHaveFocus();
-    fireEvent.keyDown(screen.getByTestId("graph-only-header-1"), { key: "Tab" });
-    expect(screen.getByTestId("graph-only-header-2")).toHaveFocus();
-    fireEvent.keyDown(screen.getByTestId("graph-only-header-2"), { key: "Tab" });
-    expect(firstCell).toHaveFocus();
+    expect(screen.getByTestId("graph-only-cell-0-1")).toHaveFocus();
+    fireEvent.keyDown(screen.getByTestId("graph-only-cell-0-1"), { key: "Tab" });
+    expect(screen.getByTestId("graph-only-cell-0-2")).toHaveFocus();
+    fireEvent.keyDown(screen.getByTestId("graph-only-cell-0-2"), { key: "Tab" });
+    expect(screen.getByTestId("graph-only-cell-0-3")).toHaveFocus();
+    fireEvent.keyDown(screen.getByTestId("graph-only-cell-0-3"), { key: "Tab" });
+    expect(screen.getByTestId("graph-only-cell-1-0")).toHaveFocus();
     firstCell.setSelectionRange(2, 2);
     fireEvent.keyDown(firstCell, { key: "ArrowRight" });
     expect(firstCell).toHaveFocus();
@@ -553,10 +680,37 @@ describe("Graph-only visualization entry", () => {
     fireEvent.keyDown(firstCell, { key: "ArrowRight" });
     expect(nextCell).toHaveFocus();
     fireEvent.keyDown(nextCell, { key: "Enter" });
-    expect(screen.getByTestId("graph-only-cell-1-1")).toHaveFocus();
-    const secondRowSecondCell = screen.getByTestId<HTMLInputElement>("graph-only-cell-1-1");
+    expect(screen.getByTestId("graph-only-cell-2-1")).toHaveFocus();
+    const secondRowSecondCell = screen.getByTestId<HTMLInputElement>("graph-only-cell-2-1");
     secondRowSecondCell.setSelectionRange(0, 0);
     fireEvent.keyDown(secondRowSecondCell, { key: "ArrowLeft" });
     expect(nextRowCell).toHaveFocus();
+  });
+
+  it("reports unsaved table edits and delegates Back to the shared discard lifecycle", async () => {
+    const onBack = vi.fn();
+    const onDirtyChange = vi.fn();
+    let pendingExit: WorkspaceExitRequest | null = null;
+    render(
+      <GraphOnlyVisualizationPage
+        onNavigate={vi.fn()}
+        onBack={onBack}
+        onDirtyChange={onDirtyChange}
+        onRequestExit={(request) => {
+          pendingExit = request;
+        }}
+      />,
+    );
+
+    pasteGraphOnlyTable(rawText);
+    await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(true));
+    fireEvent.click(screen.getByRole("button", { name: /入口へ戻る/ }));
+
+    expect(onBack).not.toHaveBeenCalled();
+    const capturedExit = pendingExit as WorkspaceExitRequest | null;
+    expect(capturedExit).toMatchObject({ actionLabel: "入口へ戻る" });
+    if (!capturedExit) throw new Error("Expected the shared exit request to be captured");
+    await capturedExit.proceed();
+    expect(onBack).toHaveBeenCalledOnce();
   });
 });

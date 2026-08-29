@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { AnalysisEngineResult } from "@lsaa/analysis-contracts";
+import {
+  requireAnalysisRequestRecommendation,
+  type AnalysisEngineResult,
+} from "@lsaa/analysis-contracts";
 import { buildStructureContract } from "@lsaa/adaptive-input";
 import { CanonicalAdaptiveObservationSchema } from "@lsaa/domain";
 import { ProjectStateSchema } from "@lsaa/project";
@@ -11,6 +14,7 @@ import {
   type ExperimentSetDraft,
 } from "./experimentDraft";
 import {
+  createExperimentWorkspaceDesign,
   createExperimentWorkspaceProject,
   rehydrateExperimentWorkspace,
   type WorkspaceGraphState,
@@ -672,7 +676,9 @@ describe("experiment workspace project adapter", () => {
           }),
           {
             kind: "proportion" as const,
-            positive: 30 + experimentIndex + conditionIndex,
+            // Keep paired differences non-degenerate; an identical difference
+            // correctly has no finite paired-t standard error.
+            positive: 30 + experimentIndex + conditionIndex * (experimentIndex + 1),
             eligible: 100,
           },
         ]),
@@ -1067,7 +1073,7 @@ describe("experiment workspace project adapter", () => {
       ["D1", "dish-1", "Vehicle", 1],
       ["D1", "dish-1", "Drug", 2],
       ["D2", "dish-1", "Vehicle", 3],
-      ["D2", "dish-1", "Drug", 4],
+      ["D2", "dish-1", "Drug", 5],
     ].map(([donor, dish, treatment, value], index) =>
       CanonicalAdaptiveObservationSchema.parse({
         observationId: `shared-source.${index + 1}`,
@@ -1147,6 +1153,9 @@ describe("experiment workspace project adapter", () => {
     expect(new Set(experimentalUnits.map(({ parentUnitId }) => parentUnitId))).toEqual(
       new Set(sourceUnits.map(({ id }) => id)),
     );
+    expect(new Set(experimentalUnits.map(({ metadata }) => metadata.experimentSessionId))).toEqual(
+      new Set(workspace.draft.experiments.map(({ id }) => id)),
+    );
 
     const persistedRequest = state.analysisRuns[0]?.request;
     expect(persistedRequest?.observations).toHaveLength(4);
@@ -1171,6 +1180,186 @@ describe("experiment workspace project adapter", () => {
     expect(
       new Set(reopened?.graphs[0]?.analysis?.request.observations.map(({ pairId }) => pairId)),
     ).toHaveProperty("size", 2);
+  });
+
+  it("adaptive 2x2 factorial uses the same canonical factor cells in Statistics and save", () => {
+    const now = "2026-08-29T00:00:00.000Z";
+    const contract = buildStructureContract({
+      experimentName: "Knockdown rescue",
+      experimentDescription: "Control or target siRNA with empty or rescue construct.",
+      experimentalUnitLabel: "culture dish",
+      identityLabel: "Dish ID",
+      readoutLabel: "Relative cell viability",
+      readoutRepresentation: "scalar",
+      factorName: "siRNA",
+      factorLevels: ["Control", "Target"],
+      additionalFactors: [{ name: "Construct", levels: ["Empty", "Rescue"] }],
+      sameIdentityAcrossConditions: false,
+    });
+    const identityKey = contract.identities.find(
+      ({ unitLevelKey }) => unitLevelKey === contract.experimentalUnitLevelKey,
+    )?.key;
+    const readout = contract.readouts[0];
+    if (!identityKey || !readout) throw new Error("Factorial fixture is incomplete");
+    const combinations = [
+      ["Control", "Empty"],
+      ["Control", "Rescue"],
+      ["Target", "Empty"],
+      ["Target", "Rescue"],
+    ] as const;
+    const observations = combinations.flatMap(([sirna, construct], combinationIndex) =>
+      Array.from({ length: 4 }, (_, replicateIndex) =>
+        CanonicalAdaptiveObservationSchema.parse({
+          observationId: `factorial.${combinationIndex + 1}.${replicateIndex + 1}`,
+          readoutKey: readout.key,
+          identities: { [identityKey]: `dish-${combinationIndex + 1}-${replicateIndex + 1}` },
+          factors: { sirna, construct },
+          axes: {},
+          hierarchy: {},
+          values: { [readout.key]: 1 + combinationIndex * 0.2 + replicateIndex * 0.01 },
+          missingness: {},
+          sourceRow: combinationIndex * 4 + replicateIndex + 2,
+        }),
+      ),
+    );
+    const workspace = createAdaptiveWorkspace({
+      contract,
+      observations,
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    if (!workspace.draft) throw new Error("Factorial workspace should be ready");
+    const adaptiveDraft = workspace.draft;
+    const assessment = assessDraftGraphAnalysis({
+      draft: adaptiveDraft,
+      cells: workspace.cells,
+      readoutId: adaptiveDraft.readouts[0].id,
+      conditionIds: adaptiveDraft.conditions.map(({ id }) => id),
+    });
+    if (!assessment.request) throw new Error("Factorial workspace should be analyzable");
+    const analysisRequest = assessment.request;
+    const design = createExperimentWorkspaceDesign(adaptiveDraft, now);
+    expect(() =>
+      requireAnalysisRequestRecommendation(design, analysisRequest, {
+        outcomeId: adaptiveDraft.readouts[0].id,
+      }),
+    ).not.toThrow();
+
+    const result: AnalysisEngineResult = {
+      protocolVersion: analysisRequest.protocolVersion,
+      requestId: analysisRequest.requestId,
+      status: "ok",
+      engine: { name: "fixture", version: "1", packages: {} },
+      estimates: [],
+      tests: [],
+      diagnostics: [],
+      warnings: [],
+      completedAt: now,
+    };
+    const graph: WorkspaceGraphState = {
+      id: "graph.factorial.adaptive",
+      displayName: "Knockdown rescue",
+      analysisRunId: null,
+      selectedReadoutId: adaptiveDraft.readouts[0].id,
+      selectedConditionIds: adaptiveDraft.conditions.map(({ id }) => id),
+      selectedTimePointIds: [],
+      graphType: "dot",
+      layers: {
+        raw: true,
+        distribution: false,
+        experiment: true,
+        overall: true,
+        violin: false,
+        box: false,
+        errorBar: true,
+        connectingLine: false,
+      },
+      appearance: TEST_APPEARANCE,
+      axes: testAxes("Relative cell viability", adaptiveDraft.attributes.map(({ id }) => id)),
+      analysis: { request: analysisRequest, result },
+    };
+
+    const state = createExperimentWorkspaceProject({
+      draft: adaptiveDraft,
+      cells: workspace.cells,
+      graphs: [graph],
+      now,
+    });
+    expect(state.analysisRuns[0]?.request.templateId).toBe("D05");
+    expect(state.designRevisions[0]?.design.factors.map(({ id }) => id)).toEqual([
+      "factor.sirna",
+      "factor.construct",
+    ]);
+  });
+
+  it("independent条件の同じ行番号を同一experiment sessionとして保存しない", () => {
+    const now = "2026-08-26T00:00:00.000Z";
+    const contract = buildStructureContract({
+      experimentName: "Independent dishes",
+      experimentDescription: "Separate dishes received vehicle or drug independently.",
+      experimentalUnitLabel: "Culture dish",
+      identityLabel: "Dish ID",
+      readoutLabel: "Signal",
+      readoutRepresentation: "scalar",
+      factorName: "Treatment",
+      factorLevels: ["Vehicle", "Drug"],
+      sameIdentityAcrossConditions: false,
+    });
+    const experimentalIdentityKey = contract.identities.find(
+      ({ unitLevelKey }) => unitLevelKey === contract.experimentalUnitLevelKey,
+    )?.key;
+    const factor = contract.factors[0];
+    const readout = contract.readouts[0];
+    if (!experimentalIdentityKey || !factor || !readout)
+      throw new Error("Independent contract should expose identity, factor, and readout keys");
+    const observations = [
+      ["vehicle-dish-1", "Vehicle", 1],
+      ["vehicle-dish-2", "Vehicle", 2],
+      ["drug-dish-1", "Drug", 3],
+      ["drug-dish-2", "Drug", 4],
+    ].map(([dish, treatment, value], index) =>
+      CanonicalAdaptiveObservationSchema.parse({
+        observationId: `independent.${index + 1}`,
+        readoutKey: readout.key,
+        identities: { [experimentalIdentityKey]: dish },
+        factors: { [factor.key]: treatment },
+        axes: {},
+        hierarchy: {},
+        values: { [readout.key]: value },
+        missingness: {},
+        sourceRow: index + 2,
+      }),
+    );
+    const workspace = createAdaptiveWorkspace({
+      contract,
+      observations,
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    if (!workspace.draft) throw new Error("Independent workspace should be ready");
+
+    const state = createExperimentWorkspaceProject({
+      draft: workspace.draft,
+      cells: workspace.cells,
+      graphs: [],
+      now,
+    });
+    const experimentalUnits = state.unitInstances.filter(
+      ({ levelId }) => levelId === `unit-level.${contract.experimentalUnitLevelKey}`,
+    );
+    expect(experimentalUnits).toHaveLength(4);
+    expect(
+      experimentalUnits.every(({ metadata }) => metadata.experimentSessionId === undefined),
+    ).toBe(true);
+    const reopened = rehydrateExperimentWorkspace(
+      ProjectStateSchema.parse(JSON.parse(JSON.stringify(state))),
+    );
+    expect(reopened?.draft.experiments.every(({ sessionId }) => sessionId === undefined)).toBe(
+      true,
+    );
+    expect(reopened?.draft.experiments.every(({ date }) => date === "")).toBe(true);
   });
 
   it("D09 scatter解析とX-Y対応を保存し同じworkspaceへ戻せる", () => {
@@ -1737,6 +1926,14 @@ describe("experiment workspace project adapter", () => {
       now: "2026-08-24T00:00:00.000Z",
     });
     const persistedRequest = state.analysisRuns[0]?.request;
+    const canonicalRecommendation = {
+      ...requireAnalysisRequestRecommendation(
+        createExperimentWorkspaceDesign(draft, "2026-08-24T00:00:00.000Z"),
+        assessment.request,
+        { outcomeId: draft.readouts[0].id },
+      ),
+      decision: recommendation.decision,
+    };
 
     expect(persistedRequest).toMatchObject({ protocolVersion: "0.7.0", templateId: "D07" });
     expect(
@@ -1748,9 +1945,10 @@ describe("experiment workspace project adapter", () => {
             pairId === undefined && blockId === undefined && Boolean(withinFactorLevelId),
         ),
     ).toBe(true);
-    expect(state.analysisRuns[0]?.recommendation).toEqual(recommendation);
+    expect(state.analysisRuns[0]?.recommendation).toEqual(canonicalRecommendation);
+    expect(state.analysisRuns[0]?.recommendation.explanation).not.toBe(recommendation.explanation);
     expect(rehydrateExperimentWorkspace(state)?.graphs[0]?.analysis?.recommendation).toEqual(
-      recommendation,
+      canonicalRecommendation,
     );
   });
 

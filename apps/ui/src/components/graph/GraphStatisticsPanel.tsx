@@ -4,9 +4,20 @@ import type {
   AnalysisEngineResult,
   AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
+import {
+  CORE_WORKSPACE_RECOMMENDATION_TEMPLATES,
+  recommendAnalysisRequest,
+} from "@lsaa/analysis-contracts";
+import type { ExperimentDesign } from "@lsaa/domain";
 
 import type { AnalysisRunner } from "../../app/analysisClient";
 import type { ContrastIntent, DraftAnalysisAssessment } from "../../app/experimentDraftAnalysis";
+import {
+  nestedIndependentSourceCorrection,
+  type DraftAnalysisCorrection,
+  type NestedIndependentSourceContext,
+} from "../../app/draftAnalysisDiagnostics";
+import { analysisValidationFeedback } from "../../app/analysisValidationFeedback";
 import type { WorkspaceGraphAnalysis } from "../../app/experimentWorkspaceProject";
 import { copyMethodsText } from "../../app/methodsText";
 import { canSafelyAutomaticallyRerun } from "../../app/analysisRequestFingerprint";
@@ -16,13 +27,21 @@ import { researcherError } from "../../app/errorCatalog";
 import { analysisRequestStructuralFingerprint } from "../../app/analysisRequestFingerprint";
 import { ContextualHelp } from "../ContextualHelp";
 import { PRODUCT_IDENTITY } from "../../app/productIdentity";
+import { routeFromPath } from "../../app/routes";
+import { recordUsageMilestone } from "../../app/usageTelemetry";
+import { createStatisticsConsultationPrompt } from "../../app/externalLlmConsultation";
+import { ExternalLlmConsultation } from "../ExternalLlmConsultation";
 
 type MatchedRelationship =
   | Readonly<{ kind: "same_entity"; unitLabel: string }>
   | Readonly<{ kind: "shared_source"; unitLabel: string; sourceLabel: string }>;
 
+type ConditionOption = Readonly<{ id: string; label: string }>;
+
 type GraphStatisticsPanelProps = Readonly<{
   assessment: DraftAnalysisAssessment;
+  design: ExperimentDesign | null;
+  outcomeId?: string;
   analysisRunner: AnalysisRunner;
   analysisAvailable?: boolean;
   initialAnalysis?: WorkspaceGraphAnalysis | null;
@@ -34,7 +53,7 @@ type GraphStatisticsPanelProps = Readonly<{
   onSelectedMethodChange?: (method: AnalysisRecommendation["recommendedMethod"]) => void;
   contrastIntent?: ContrastIntent;
   onContrastIntentChange?: (intent: ContrastIntent) => void;
-  conditionOptions?: readonly Readonly<{ id: string; label: string }>[];
+  conditionOptions?: readonly ConditionOption[];
   plannedContrastConditionIds?: readonly (readonly [string, string])[];
   onPlannedContrastConditionIdsChange?: (pairs: readonly (readonly [string, string])[]) => void;
   /** Changes whenever this Graph's scientific source/subset changes, even if the shaped request is temporarily identical. */
@@ -42,6 +61,8 @@ type GraphStatisticsPanelProps = Readonly<{
   matchedRelationship?: MatchedRelationship;
   /** True when the experiment-first interview already established and preserved this relationship. */
   relationshipAlreadyDeclared?: boolean;
+  onCorrectionRequested?: (correction: DraftAnalysisCorrection) => void;
+  independentNestedSourceContext?: NestedIndependentSourceContext | null;
 }>;
 
 function formatNumber(value: number | null | undefined): string {
@@ -53,21 +74,60 @@ function formatP(value: number): string {
   return value < 0.0001 ? value.toExponential(2) : formatNumber(value);
 }
 
+const MAX_VISIBLE_INCOMPLETE_MATCHED_SETS = 6;
+const MAX_VISIBLE_MISSING_CONDITIONS = 4;
+
+function missingConditionSummary(conditions: readonly Readonly<{ label: string }>[]): string {
+  const visible = conditions.slice(0, MAX_VISIBLE_MISSING_CONDITIONS).map(({ label }) => label);
+  const remaining = conditions.length - visible.length;
+  return remaining > 0 ? `${visible.join("、")}、ほか${remaining}条件` : visible.join("、");
+}
+
+const pairwiseComparisonFamilies = [
+  "games_howell",
+  "tukey_hsd",
+  "dunnett",
+  "planned_holm",
+  "dunn_holm",
+  "holm_welch",
+  "holm_paired",
+  "holm_wilcoxon",
+] as const;
+
 function isPairwiseComparisonName(name: string): boolean {
-  return /^(games_howell|tukey_hsd|dunnett|planned_holm|dunn_holm|holm_welch|holm_paired|holm_wilcoxon):/.test(
-    name,
-  );
+  return pairwiseComparisonFamilies.some((family) => name.startsWith(`${family}:`));
 }
 
 function comparisonDisplayLabel(
   name: string,
-  conditionOptions: readonly Readonly<{ id: string; label: string }>[],
-): string {
-  const [, firstId, secondId] = name.split(":");
-  if (!firstId || !secondId) return "条件間比較";
-  const label = (id: string) =>
-    conditionOptions.find((condition) => condition.id === id)?.label ?? id;
-  return `${label(firstId)} vs ${label(secondId)}`;
+  conditionOptions: readonly ConditionOption[],
+): string | null {
+  const family = pairwiseComparisonFamilies.find((candidate) => name.startsWith(`${candidate}:`));
+  if (!family) return null;
+  const matches: Array<Readonly<{ firstIndex: number; secondIndex: number }>> = [];
+  conditionOptions.forEach((first, firstIndex) => {
+    conditionOptions.forEach((second, secondIndex) => {
+      if (firstIndex === secondIndex) return;
+      if (name === `${family}:${first.id}:${second.id}`) {
+        matches.push({ firstIndex, secondIndex });
+      }
+    });
+  });
+  if (matches.length !== 1) return null;
+
+  const match = matches[0]!;
+  const displayLabel = (index: number): string | null => {
+    const condition = conditionOptions[index];
+    const label = condition?.label.trim();
+    if (!label) return null;
+    const duplicateLabelCount = conditionOptions.filter(
+      (candidate) => candidate.label.trim() === label,
+    ).length;
+    return duplicateLabelCount > 1 ? `${label}（条件 ${index + 1}）` : label;
+  };
+  const firstLabel = displayLabel(match.firstIndex);
+  const secondLabel = displayLabel(match.secondIndex);
+  return firstLabel && secondLabel ? `${firstLabel} vs ${secondLabel}` : null;
 }
 
 function diagnosticLabel(code: string, matchedRelationship?: MatchedRelationship): string {
@@ -103,6 +163,8 @@ function diagnosticLabel(code: string, matchedRelationship?: MatchedRelationship
 
 export function GraphStatisticsPanel({
   assessment,
+  design,
+  outcomeId,
   analysisRunner,
   analysisAvailable = true,
   initialAnalysis,
@@ -120,9 +182,11 @@ export function GraphStatisticsPanel({
   analysisContextKey,
   matchedRelationship,
   relationshipAlreadyDeclared = false,
+  onCorrectionRequested,
+  independentNestedSourceContext,
 }: GraphStatisticsPanelProps) {
   const [independenceConfirmed, setIndependenceConfirmed] = useState(
-    Boolean(initialAnalysis) || relationshipAlreadyDeclared,
+    (Boolean(initialAnalysis) && !independentNestedSourceContext) || relationshipAlreadyDeclared,
   );
   const [result, setResult] = useState<AnalysisEngineResult | null>(
     initialAnalysis?.result ?? null,
@@ -171,9 +235,61 @@ export function GraphStatisticsPanel({
   const executeRequest = useCallback(
     async (request: AnalysisEngineRequest, mode: "manual" | "automatic") => {
       const generation = ++executionGenerationRef.current;
+      const usageRoute = routeFromPath(window.location.pathname);
+      if (mode === "manual") recordUsageMilestone(usageRoute, "statistics_requested");
       setRunning(true);
       setError(null);
       try {
+        const coreRecommendationOwned = (
+          CORE_WORKSPACE_RECOMMENDATION_TEMPLATES as readonly string[]
+        ).includes(request.templateId);
+        if (coreRecommendationOwned && !design) {
+          if (mode === "manual") recordUsageMilestone(usageRoute, "safe_stop");
+          setError(
+            "実験構造をcanonical designとして確認できないため停止しました（ENGINE_INPUT_INVALID）。実験構造へ戻り、試料の対応関係を確認してください。",
+          );
+          onAnalysisChange?.(null);
+          return;
+        }
+        const canonicalMatch =
+          coreRecommendationOwned && design
+            ? recommendAnalysisRequest(design, request, outcomeId ? { outcomeId } : {})
+            : null;
+        if (canonicalMatch && !canonicalMatch.matched) {
+          if (mode === "manual") recordUsageMilestone(usageRoute, "safe_stop");
+          setError(
+            `実験構造と解析要求が一致しないため停止しました（ENGINE_INPUT_INVALID）。${canonicalMatch.explanation}`,
+          );
+          onAnalysisChange?.(null);
+          return;
+        }
+        const canonicalRecommendation: AnalysisRecommendation = canonicalMatch?.matched
+          ? {
+              ...canonicalMatch.recommendation,
+              ...(recommendationDecisionRef.current
+                ? { decision: recommendationDecisionRef.current }
+                : {}),
+            }
+          : {
+              templateId: request.templateId,
+              templateVersion: request.templateVersion,
+              recommendedMethod: assessment.recommendedMethod ?? request.method,
+              alternativeMethods:
+                assessment.methodChoices
+                  ?.filter(
+                    ({ method }) => method !== (assessment.recommendedMethod ?? request.method),
+                  )
+                  .map(({ method }) => method) ?? [],
+              reasonCode: `draft_${request.templateId.toLowerCase()}_design_assessment`,
+              explanation: assessment.reason,
+              statisticalNDefinition:
+                assessment.statisticalNDefinition ??
+                assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join(", "),
+              multiplicityMethod: request.options.multiplicityMethod,
+              ...(recommendationDecisionRef.current
+                ? { decision: recommendationDecisionRef.current }
+                : {}),
+            };
         const nextResult = await analysisRunner(request);
         if (executionGenerationRef.current !== generation) return;
         setResult(nextResult);
@@ -184,24 +300,6 @@ export function GraphStatisticsPanel({
             ? "値のみが変更され、実験設計・実験単位・比較・解析法が同一だったため、同じ解析を自動再実行しました。"
             : null,
         );
-        const canonicalRecommendation: AnalysisRecommendation = {
-          templateId: request.templateId,
-          templateVersion: request.templateVersion,
-          recommendedMethod: assessment.recommendedMethod ?? request.method,
-          alternativeMethods:
-            assessment.methodChoices
-              ?.filter(({ method }) => method !== (assessment.recommendedMethod ?? request.method))
-              .map(({ method }) => method) ?? [],
-          reasonCode: `draft_${request.templateId.toLowerCase()}_design_assessment`,
-          explanation: assessment.reason,
-          statisticalNDefinition:
-            assessment.statisticalNDefinition ??
-            assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join(", "),
-          multiplicityMethod: request.options.multiplicityMethod,
-          ...(recommendationDecisionRef.current
-            ? { decision: recommendationDecisionRef.current }
-            : {}),
-        };
         onAnalysisChange?.(
           nextResult.status === "ok"
             ? {
@@ -213,11 +311,20 @@ export function GraphStatisticsPanel({
             : null,
         );
         if (nextResult.status !== "ok") {
-          const researcherMessage = researcherError("ENGINE_INPUT_INVALID");
-          setError(
-            `${researcherMessage.title}（${researcherMessage.code}）。${researcherMessage.nextAction}`,
-          );
+          if (mode === "manual") recordUsageMilestone(usageRoute, "safe_stop");
+          const preciseFeedback = analysisValidationFeedback(nextResult);
+          if (preciseFeedback) {
+            setError(
+              `${preciseFeedback.title}（ENGINE_INPUT_INVALID）。${preciseFeedback.message} ${preciseFeedback.nextAction}`,
+            );
+          } else {
+            const researcherMessage = researcherError("ENGINE_INPUT_INVALID");
+            setError(
+              `${researcherMessage.title}（${researcherMessage.code}）。${researcherMessage.nextAction}`,
+            );
+          }
         } else {
+          if (mode === "manual") recordUsageMilestone(usageRoute, "statistics_completed");
           recordDiagnosticEvent("analysis_executed", {
             templateId: request.templateId,
             methodId: request.method,
@@ -275,6 +382,7 @@ export function GraphStatisticsPanel({
           "analysis_only",
         );
       } catch (reason) {
+        if (mode === "manual") recordUsageMilestone(usageRoute, "safe_stop");
         const errorCode = reason instanceof Error && "code" in reason ? String(reason.code) : null;
         const researcherMessage = researcherError(
           errorCode === "ENGINE_INPUT_INVALID" ? "ENGINE_INPUT_INVALID" : "ENGINE_EXECUTION_FAILED",
@@ -286,7 +394,7 @@ export function GraphStatisticsPanel({
         if (executionGenerationRef.current === generation) setRunning(false);
       }
     },
-    [analysisRunner, assessment, onAnalysisChange],
+    [analysisRunner, assessment, design, onAnalysisChange, outcomeId],
   );
 
   useEffect(() => {
@@ -363,9 +471,13 @@ export function GraphStatisticsPanel({
     result?.status === "ok"
       ? result.tests.filter((test) => !isPairwiseComparisonName(test.name))
       : [];
-  const comparisonTests =
+  const comparisonRows =
     result?.status === "ok"
-      ? result.tests.filter((test) => isPairwiseComparisonName(test.name))
+      ? result.tests.flatMap((test, index) => {
+          if (!isPairwiseComparisonName(test.name)) return [];
+          const label = comparisonDisplayLabel(test.name, conditionOptions);
+          return label ? [{ test, label, index }] : [];
+        })
       : [];
   const diagnosticItems =
     result?.status === "ok" ? [...result.diagnostics, ...result.warnings] : [];
@@ -376,6 +488,21 @@ export function GraphStatisticsPanel({
       : method === "spearman"
         ? "Spearman順位相関"
         : assessment.title.replace(/を推奨$/, ""));
+  const externalLlmPrompt = createStatisticsConsultationPrompt({
+    conditions: conditionOptions.map(({ label }) => label),
+    methodTitle: assessment.title,
+    methodReason: assessment.reason,
+    nByCondition: Object.fromEntries(assessment.nByCondition.map(({ label, n }) => [label, n])),
+    missingCount: assessment.missingCount,
+    notPlannedCount: assessment.notPlannedCount,
+    relationship:
+      matchedRelationship?.kind === "same_entity"
+        ? `同じ${matchedRelationship.unitLabel}を条件間で測定`
+        : matchedRelationship?.kind === "shared_source"
+          ? `条件別${matchedRelationship.unitLabel}が同じ${matchedRelationship.sourceLabel}に由来`
+          : "条件ごとに独立、または未確認",
+    selectedMethod: assessment.method,
+  });
 
   return (
     <section className="experiment-graph-statistics-section" aria-label="このグラフの統計">
@@ -397,6 +524,7 @@ export function GraphStatisticsPanel({
               : {}),
           }}
         />
+        <ExternalLlmConsultation prompt={externalLlmPrompt} placement="statistics" />
       </div>
       <div className={`experiment-graph-recommendation is-${assessment.state}`}>
         <strong>{assessment.title}</strong>
@@ -411,6 +539,59 @@ export function GraphStatisticsPanel({
           <p>測定予定なし（解析対象外）：{assessment.notPlannedCount}件</p>
         ) : null}
       </div>
+
+      {assessment.inputDiagnostics?.map((diagnostic, diagnosticIndex) => {
+        const visibleSets = diagnostic.incompleteMatchedSets.slice(
+          0,
+          MAX_VISIBLE_INCOMPLETE_MATCHED_SETS,
+        );
+        const remainingSetCount = diagnostic.incompleteMatchedSets.length - visibleSets.length;
+        return (
+          <details
+            className="experiment-graph-confirmation-details"
+            key={`${diagnostic.code}-${diagnosticIndex}`}
+          >
+            <summary>{diagnostic.title}</summary>
+            <p className="experiment-graph-help">{diagnostic.message}</p>
+            <ul aria-label="stable unit / pair IDごとの不足条件">
+              {visibleSets.map((item) => (
+                <li key={`${item.experimentId}-${item.pairId}`}>
+                  <code>{item.pairId}</code>（{item.experimentLabel}）：
+                  {missingConditionSummary(item.missingConditions)}
+                </li>
+              ))}
+            </ul>
+            {remainingSetCount > 0 ? (
+              <p className="experiment-graph-help">
+                ほか{remainingSetCount}組はデータ表で確認できます。
+              </p>
+            ) : null}
+            {diagnostic.correction && onCorrectionRequested ? (
+              <button type="button" onClick={() => onCorrectionRequested(diagnostic.correction!)}>
+                {diagnostic.correction.actionLabel}
+              </button>
+            ) : null}
+          </details>
+        );
+      })}
+
+      {assessment.correction ? (
+        <div className="experiment-graph-help" role="group" aria-label="解析入力の修正">
+          {onCorrectionRequested ? (
+            <button type="button" onClick={() => onCorrectionRequested(assessment.correction!)}>
+              {assessment.correction.actionLabel}
+            </button>
+          ) : null}
+          {assessment.correction.suggestedMethod && onSelectedMethodChange ? (
+            <button
+              type="button"
+              onClick={() => onSelectedMethodChange(assessment.correction!.suggestedMethod!)}
+            >
+              Wilcoxonの代替案を選ぶ
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {assessment.state === "ready" ? (
         <>
@@ -618,45 +799,63 @@ export function GraphStatisticsPanel({
           ) : (
             <>
               <label className="experiment-graph-confirmation">
-            <input
-              type="checkbox"
-              aria-label={
-                assessment.request?.protocolVersion === "0.9.0"
-                  ? `各値が別々の${assessment.nByCondition[0]?.label ?? "実験単位"}から得られ、1つの実験単位が複数回数えられていません。`
-                  : correlationAnalysis
-                    ? "各行のXとYが、同じ実験単位から得た1組として正しく対応づけられています。"
-                    : matchedAnalysis
-                      ? sharedSourcePairing
-                        ? `同じ${sharedSourcePairing.sourceLabel}に由来する条件別${sharedSourcePairing.unitLabel}が、共有IDで正しく対応づけられています。条件別${sharedSourcePairing.unitLabel}は別の実験単位です。`
-                        : `同じ実験単位の${conditionOptions.length || "複数"}条件が、stable unit IDで正しく対応づけられています。`
-                      : "各条件は別々のdish・試料・動物などの実験単位です。同じ個体や同じ試料を両条件で測った対応データではありません。"
-              }
-              checked={independenceConfirmed}
-              onChange={(event) => setIndependenceConfirmed(event.target.checked)}
-            />
-            <span>
-              {assessment.request?.protocolVersion === "0.9.0"
-                ? "解析単位と入力値の対応を確認しました。"
-                : correlationAnalysis
-                  ? "XとYの組を確認しました。"
-                  : matchedAnalysis
-                    ? sharedSourcePairing
-                      ? "共有する由来と、条件別の実験単位を確認しました。"
-                      : "同じ実験単位の対応を確認しました。"
-                    : "条件間で実験単位が独立していることを確認しました。"}
-            </span>
+                <input
+                  type="checkbox"
+                  aria-label={
+                    independentNestedSourceContext
+                      ? `${conditionOptions.map(({ label }) => label).join("と")}の${independentNestedSourceContext.unitLabel}は、同じrun/source preparationから分けた組ではなく、別々の独立した材料由来です。各${independentNestedSourceContext.nestedObservationLabel}は親${independentNestedSourceContext.unitLabel}へ集約します。`
+                      : assessment.request?.protocolVersion === "0.9.0"
+                        ? `各値が別々の${assessment.nByCondition[0]?.label ?? "実験単位"}から得られ、1つの実験単位が複数回数えられていません。`
+                        : correlationAnalysis
+                          ? "各行のXとYが、同じ実験単位から得た1組として正しく対応づけられています。"
+                          : matchedAnalysis
+                            ? sharedSourcePairing
+                              ? `同じ${sharedSourcePairing.sourceLabel}に由来する条件別${sharedSourcePairing.unitLabel}が、共有IDで正しく対応づけられています。条件別${sharedSourcePairing.unitLabel}は別の実験単位です。`
+                              : `同じ実験単位の${conditionOptions.length || "複数"}条件が、stable unit IDで正しく対応づけられています。`
+                            : "各条件は別々のdish・試料・動物などの実験単位です。同じ個体や同じ試料を両条件で測った対応データではありません。"
+                  }
+                  checked={independenceConfirmed}
+                  onChange={(event) => setIndependenceConfirmed(event.target.checked)}
+                />
+                <span>
+                  {independentNestedSourceContext
+                    ? "条件間のrun/sourceと実験単位の独立性を確認しました。"
+                    : assessment.request?.protocolVersion === "0.9.0"
+                      ? "解析単位と入力値の対応を確認しました。"
+                      : correlationAnalysis
+                        ? "XとYの組を確認しました。"
+                        : matchedAnalysis
+                          ? sharedSourcePairing
+                            ? "共有する由来と、条件別の実験単位を確認しました。"
+                            : "同じ実験単位の対応を確認しました。"
+                          : "条件間で実験単位が独立していることを確認しました。"}
+                </span>
               </label>
               <details className="experiment-graph-confirmation-details">
                 <summary>確認内容の詳細</summary>
                 <p className="experiment-graph-help">
-                  {correlationAnalysis
-                    ? "XとYは同じExpの安定IDで対応づけます。行順や日付の一致だけから組を作りません。"
-                    : matchedAnalysis
-                      ? sharedSourcePairing
-                        ? `日付や行順から対応を推測していません。${sharedSourcePairing.sourceLabel}の共有IDで明示された完全な組だけを解析し、条件別${sharedSourcePairing.unitLabel}のIDは別々に保持します。`
-                        : "日付の一致から対応を推測していません。実験設計で明示した対応と、完全な組だけを解析します。"
-                      : "同じ日に実施しただけでは、自動的に「対応あり」にはしません。同じ単位を両条件で測った場合は実行せず、設計を修正してください。"}
+                  {independentNestedSourceContext
+                    ? `各${independentNestedSourceContext.nestedObservationLabel}を独立nとして数えず、親${independentNestedSourceContext.unitLabel}ごとに集約します。同じrun/source preparationから条件別${independentNestedSourceContext.unitLabel}を分けた場合は、独立群として実行せず実験の組み立てで共有材料・実験回を登録してください。単に同日という理由ではpairにしません。`
+                    : correlationAnalysis
+                      ? "XとYは同じExpの安定IDで対応づけます。行順や日付の一致だけから組を作りません。"
+                      : matchedAnalysis
+                        ? sharedSourcePairing
+                          ? `日付や行順から対応を推測していません。${sharedSourcePairing.sourceLabel}の共有IDで明示された完全な組だけを解析し、条件別${sharedSourcePairing.unitLabel}のIDは別々に保持します。`
+                          : "日付の一致から対応を推測していません。実験設計で明示した対応と、完全な組だけを解析します。"
+                        : "同じ日に実施しただけでは、自動的に「対応あり」にはしません。同じ単位を両条件で測った場合は実行せず、設計を修正してください。"}
                 </p>
+                {independentNestedSourceContext && onCorrectionRequested ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onCorrectionRequested(
+                        nestedIndependentSourceCorrection(independentNestedSourceContext),
+                      )
+                    }
+                  >
+                    共通材料・実験回を確認
+                  </button>
+                ) : null}
               </details>
             </>
           )}
@@ -735,25 +934,42 @@ export function GraphStatisticsPanel({
               </div>
             ))}
           </dl>
-          {comparisonTests.length > 0 ? (
+          {comparisonRows.length > 0 ? (
             <details className="experiment-graph-analysis-comparisons" open>
-              <summary>条件間比較（{comparisonTests.length}件）</summary>
-              <dl>
-                {comparisonTests.map((test) => (
-                  <div key={test.name}>
-                    <dt>{comparisonDisplayLabel(test.name, conditionOptions)}</dt>
-                    <dd>
-                      {test.statisticName} = {formatNumber(test.statistic)}、p ={" "}
-                      {formatP(test.adjustedPValue ?? test.pValue)}
-                      {test.adjustedPValue !== null ? "（多重比較調整済み）" : ""}
-                      {test.degreesOfFreedom ? `、df = ${test.degreesOfFreedom.join(", ")}` : ""}
-                      {test.effectSizeName && test.effectSize !== null
-                        ? `、${test.effectSizeName} = ${formatNumber(test.effectSize)}`
-                        : ""}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <summary>条件間比較（{comparisonRows.length}件）</summary>
+              <div className="data-table-scroll">
+                <table className="data-table" aria-label="条件間比較の結果">
+                  <thead>
+                    <tr>
+                      <th scope="col">比較</th>
+                      <th scope="col">検定統計量・自由度</th>
+                      <th scope="col">p値</th>
+                      <th scope="col">調整済みp値</th>
+                      <th scope="col">効果量</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparisonRows.map(({ test, label, index }) => (
+                      <tr key={`${test.name}-${index}`}>
+                        <th scope="row">{label}</th>
+                        <td>
+                          {test.statisticName} = {formatNumber(test.statistic)}
+                          {test.degreesOfFreedom
+                            ? `、df = ${test.degreesOfFreedom.join(", ")}`
+                            : ""}
+                        </td>
+                        <td>{formatP(test.pValue)}</td>
+                        <td>{test.adjustedPValue === null ? "—" : formatP(test.adjustedPValue)}</td>
+                        <td>
+                          {test.effectSizeName && test.effectSize !== null
+                            ? `${test.effectSizeName} = ${formatNumber(test.effectSize)}`
+                            : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </details>
           ) : null}
           {diagnosticItems.length > 0 ? (

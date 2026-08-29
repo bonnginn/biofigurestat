@@ -86,7 +86,7 @@ export const specializedAnalysisRoutes = [
   {
     id: "nonlinear-fit",
     path: "/nonlinear-fit",
-    title: "酵素反応・飽和カーブ",
+    title: "濃度–反応・酵素反応",
     description: "基質濃度–初速度、または時間–応答を、対応するmodelの選択後にfitします。",
     japaneseDescription:
       "観測点と保存済みfit curve、parameter、診断を分離して保持します。Michaelis–Mentenには計算済み初速度を入力します。",

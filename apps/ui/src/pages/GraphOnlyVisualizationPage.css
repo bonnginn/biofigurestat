@@ -40,86 +40,11 @@
   gap: 0.5rem;
 }
 
-.graph-only__editor-heading {
-  align-items: flex-start;
-  display: flex;
-  gap: 0.75rem;
-  justify-content: space-between;
-  margin-top: 1rem;
-}
-
-.graph-only__editor-heading h3 {
-  margin: 0;
-}
-
-.graph-only__editor-heading p {
-  margin: 0.35rem 0 0;
-}
-
-.graph-only__input textarea {
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  min-height: 9rem;
-}
-
 .graph-only__file {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   margin-top: 0.7rem;
-}
-
-.graph-only__table-wrap {
-  border: 1px solid #d7e4e1;
-  border-radius: 8px;
-  margin-top: 0.9rem;
-  max-height: 28rem;
-  overflow: auto;
-}
-
-.graph-only__table-wrap table {
-  border-collapse: collapse;
-  min-width: max(100%, 38rem);
-  white-space: nowrap;
-}
-
-.graph-only__table-wrap th,
-.graph-only__table-wrap td {
-  border-bottom: 1px solid #e3ecea;
-  padding: 0.4rem 0.55rem;
-  text-align: left;
-}
-
-.graph-only__table-wrap th {
-  background: #edf5f3;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.graph-only__table-wrap input {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  box-sizing: border-box;
-  font: inherit;
-  min-width: 8rem;
-  padding: 0.3rem 0.35rem;
-  width: 100%;
-}
-
-.graph-only__table-wrap th input {
-  font-weight: 700;
-}
-
-.graph-only__table-wrap input:hover {
-  border-color: #9bbeb7;
-}
-
-.graph-only__table-wrap input:focus {
-  background: #fff;
-  border-color: #176f63;
-  box-shadow: 0 0 0 2px rgb(23 111 99 / 15%);
-  outline: none;
 }
 
 .graph-only__mapping {
@@ -230,8 +155,7 @@
   }
 
   .graph-only__section-heading,
-  .graph-only__result-heading,
-  .graph-only__editor-heading {
+  .graph-only__result-heading {
     align-items: flex-start;
     flex-direction: column;
   }

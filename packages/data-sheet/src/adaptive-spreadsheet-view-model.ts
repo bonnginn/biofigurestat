@@ -87,6 +87,15 @@ function uniqueKeysInOrder(values: readonly string[]): string[] {
   });
 }
 
+function declaredThenObservedKeys(
+  declared: readonly string[],
+  observed: readonly string[],
+): string[] {
+  const declaredInOrder = uniqueKeysInOrder(declared);
+  const declaredSet = new Set(declaredInOrder);
+  return [...declaredInOrder, ...uniqueKeys(observed).filter((key) => !declaredSet.has(key))];
+}
+
 function factorCombinations(contract: StructureContract): Array<Record<string, string>> {
   return contract.factors.reduce<Array<Record<string, string>>>(
     (rows, factor) =>
@@ -150,7 +159,9 @@ function labelFor(
     return contract.factors.find((factor) => factor.key === semanticKey)?.label ?? semanticKey;
   }
   if (role === "axis") {
-    return contract.orderedAxes.find((axis) => axis.key === semanticKey)?.label ?? semanticKey;
+    const axis = contract.orderedAxes.find((candidate) => candidate.key === semanticKey);
+    if (!axis) return semanticKey;
+    return axis.unit.trim() ? `${axis.label} (${axis.unit.trim()})` : axis.label;
   }
   if (role === "hierarchy") {
     return contract.unitLevels.find((level) => level.key === semanticKey)?.label ?? semanticKey;
@@ -173,8 +184,7 @@ function readoutValueAliases(
 ): readonly string[] {
   if (readout.representation === "scalar") return [readout.key];
   const component = readout.componentKeys.find(
-    (candidate) =>
-      candidate === semanticKey || `${readout.key}_${candidate}` === semanticKey,
+    (candidate) => candidate === semanticKey || `${readout.key}_${candidate}` === semanticKey,
   );
   return component ? [`${readout.key}_${component}`, component] : [semanticKey];
 }
@@ -225,28 +235,26 @@ function buildColumns(
   observations: readonly CanonicalAdaptiveObservation[],
 ): AdaptiveSpreadsheetColumn[] {
   const records = observations as readonly KeyedMap[];
-  const identityKeys = uniqueKeys([
-    ...contract.identities.map((identity) => identity.key),
-    ...unionKeys(records, "identities"),
-  ]);
-  const factorKeys = uniqueKeys([
-    ...contract.factors.map((factor) => factor.key),
-    ...unionKeys(records, "factors"),
-  ]);
-  const axisKeys = uniqueKeys([
-    ...contract.orderedAxes.map((axis) => axis.key),
-    ...unionKeys(records, "axes"),
-  ]);
+  const identityKeys = declaredThenObservedKeys(
+    contract.identities.map((identity) => identity.key),
+    unionKeys(records, "identities"),
+  );
+  const factorKeys = declaredThenObservedKeys(
+    contract.factors.map((factor) => factor.key),
+    unionKeys(records, "factors"),
+  );
+  const axisKeys = declaredThenObservedKeys(
+    contract.orderedAxes.map((axis) => axis.key),
+    unionKeys(records, "axes"),
+  );
   const hasHierarchy =
     contract.unitLevels.some((level) => level.parentKey !== null) ||
     observations.some((observation) => Object.keys(observation.hierarchy).length > 0);
   const hierarchyKeys = hasHierarchy
-    ? uniqueKeys([
-        ...contract.unitLevels
-          .filter((level) => level.parentKey !== null)
-          .map((level) => level.key),
-        ...unionKeys(records, "hierarchy"),
-      ])
+    ? declaredThenObservedKeys(
+        contract.unitLevels.filter((level) => level.parentKey !== null).map((level) => level.key),
+        unionKeys(records, "hierarchy"),
+      )
     : [];
   const declaredValueColumns = contract.readouts.flatMap((readout) =>
     (readout.representation === "scalar"
@@ -284,11 +292,10 @@ function buildColumns(
         ),
       ),
     ).map((key) => ({
-        key,
-        readoutKey:
-        contract.readouts.find((readout) =>
-          readoutValueAliases(readout, key).includes(key),
-        )?.key ?? null,
+      key,
+      readoutKey:
+        contract.readouts.find((readout) => readoutValueAliases(readout, key).includes(key))?.key ??
+        null,
     })),
     ...uniqueKeys(unionKeys(records, "missingness"))
       .filter((key) => !declaredMissingnessKeys.has(key))
@@ -388,8 +395,8 @@ function compactCells(
 ): Record<string, SpreadsheetCell> {
   const group = readoutGroups[0];
   const cells: Record<string, SpreadsheetCell> = {};
-  const observations = readoutGroups.flatMap(({ observations: groupObservations }) =>
-    groupObservations,
+  const observations = readoutGroups.flatMap(
+    ({ observations: groupObservations }) => groupObservations,
   );
   const readoutGroupByKey = new Map(
     readoutGroups.map((readoutGroup) => [readoutGroup.coordinates.readoutKey, readoutGroup]),
@@ -437,20 +444,16 @@ function compactCells(
       return;
     }
     if (column.role === "value") {
-      const readoutGroup = column.readoutKey
-        ? readoutGroupByKey.get(column.readoutKey)
-        : undefined;
-      cells[column.key] = (readoutGroup?.observations ?? []).map(
-        (observation) => recordValueForColumn(contract, column, observation.values),
+      const readoutGroup = column.readoutKey ? readoutGroupByKey.get(column.readoutKey) : undefined;
+      cells[column.key] = (readoutGroup?.observations ?? []).map((observation) =>
+        recordValueForColumn(contract, column, observation.values),
       );
       return;
     }
     if (column.role === "missingness") {
-      const readoutGroup = column.readoutKey
-        ? readoutGroupByKey.get(column.readoutKey)
-        : undefined;
-      cells[column.key] = (readoutGroup?.observations ?? []).map(
-        (observation) => recordValueForColumn(contract, column, observation.missingness),
+      const readoutGroup = column.readoutKey ? readoutGroupByKey.get(column.readoutKey) : undefined;
+      cells[column.key] = (readoutGroup?.observations ?? []).map((observation) =>
+        recordValueForColumn(contract, column, observation.missingness),
       );
       return;
     }
@@ -537,8 +540,8 @@ export function buildAdaptiveSpreadsheetViewModel(
   })();
   const mergedGroups = mergeCompactGroups(contract, groups);
   const compactRows = mergedGroups.map(({ rowKey, readoutGroups, group }) => {
-    const observationsForRow = readoutGroups.flatMap(({ observations: groupObservations }) =>
-      groupObservations,
+    const observationsForRow = readoutGroups.flatMap(
+      ({ observations: groupObservations }) => groupObservations,
     );
     return {
       rowKey,

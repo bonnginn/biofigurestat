@@ -10,6 +10,7 @@ import {
   saveDiagnosticReport,
 } from "../app/diagnostics";
 import { researcherError } from "../app/errorCatalog";
+import { configuredFeedbackFormUrl } from "../app/feedbackSupport";
 
 export function DiagnosticPanel({
   route,
@@ -24,6 +25,7 @@ export function DiagnosticPanel({
   const [status, setStatus] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
+  const feedbackFormUrl = configuredFeedbackFormUrl();
 
   useEffect(() => {
     if (!open) return;
@@ -50,7 +52,7 @@ export function DiagnosticPanel({
   return (
     <div className="diagnostic-menu" ref={menuRef}>
       <button type="button" onClick={() => setOpen((current) => !current)} aria-expanded={open}>
-        診断
+        問題を報告
       </button>
       {open
         ? createPortal(
@@ -77,7 +79,9 @@ export function DiagnosticPanel({
                 />
                 <span>
                   詳細な診断情報を含める
-                  <small>redact済みの直近error messageを追加します。raw dataは追加しません。</small>
+                  <small>
+                    固定error codeと一般的なerror種類を追加します。message本文やraw dataは追加しません。
+                  </small>
                 </span>
               </label>
               <label>
@@ -90,15 +94,25 @@ export function DiagnosticPanel({
                 />
               </label>
               <div className="diagnostic-actions">
+                {feedbackFormUrl ? (
+                  <a
+                    className="secondary-button"
+                    href={feedbackFormUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    報告フォームを開く
+                  </a>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => {
                     void copyDiagnosticReport(report())
-                      .then(() => setStatus("診断reportをコピーしました。自動送信はしていません。"))
+                      .then(() => setStatus("診断レポートをコピーしました。自動送信はしていません。"))
                       .catch(handleFailure);
                   }}
                 >
-                  Copy diagnostic report
+                  診断レポートをコピー
                 </button>
                 <button
                   type="button"
@@ -111,6 +125,15 @@ export function DiagnosticPanel({
                   診断情報を保存
                 </button>
               </div>
+              {!feedbackFormUrl ? (
+                <p className="diagnostic-form-note">
+                  このビルドには報告フォームがまだ設定されていません。診断情報はコピーまたは保存して保持できます。
+                </p>
+              ) : (
+                <p className="diagnostic-form-note">
+                  フォームは別画面で開きます。測定値や入力表は自動で送信されません。
+                </p>
+              )}
               {status ? <p role="status">{status}</p> : null}
             </section>,
             document.body,

@@ -8,3 +8,4 @@ export * from "./surface-import";
 export * from "./contract-builder";
 export * from "./entry-module-registry";
 export * from "./observation-validator";
+export * from "./observation-values";

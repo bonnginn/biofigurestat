@@ -118,9 +118,12 @@
 
 .nested-measurement-sheet input:focus,
 .nested-measurement-sheet textarea:focus {
+  position: relative;
+  z-index: 3;
   border-color: #177f6c;
-  outline: 2px solid rgba(23, 127, 108, 0.2);
-  outline-offset: 0;
+  outline: 3px solid #2979d6;
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 1px #fff;
 }
 
 .nested-measurement-sheet input[aria-invalid="true"],
@@ -161,6 +164,12 @@
 .nested-measurement-sheet tr.is-entry-row td,
 .nested-measurement-sheet tr.is-entry-row th {
   background: #fbfcfe;
+}
+
+.nested-measurement-sheet__paste-status {
+  margin: 0;
+  color: #40566d;
+  font-weight: 650;
 }
 
 @media (max-width: 760px) {

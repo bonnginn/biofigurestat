@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createTimeToEventEntry } from "./timeToEventEntry";
+import { createTimeToEventEntry, parseTimeToEventTable } from "./timeToEventEntry";
 
 const now = "2026-08-27T02:00:00.000Z";
 const standardTsv = [
@@ -26,6 +26,28 @@ const base = {
 };
 
 describe("standard time-to-event dedicated entry", () => {
+  it("accepts natural animal-lab headers without changing their scientific meaning", () => {
+    const parsed = parseTimeToEventTable(
+      "Mouse ID\tTreatment\tSurvival time (day)\tOutcome\nm1\tVehicle\t7\tEvent\nm2\tDrug\t10\tCensored",
+    );
+
+    expect(parsed.rows).toEqual([
+      expect.objectContaining({ unitId: "m1", conditionId: "Vehicle", followUpTime: 7 }),
+      expect.objectContaining({ unitId: "m2", conditionId: "Drug", followUpTime: 10 }),
+    ]);
+  });
+
+  it("accepts explicit Japanese event and censoring labels without treating censoring as missing", () => {
+    const parsed = parseTimeToEventTable(
+      "個体ID\t群\t生存時間\t状態\nm1\tVehicle\t7\t死亡\nm2\tDrug\t10\t観察終了",
+    );
+
+    expect(parsed.rows).toEqual([
+      expect.objectContaining({ unitId: "m1", eventObserved: true }),
+      expect.objectContaining({ unitId: "m2", eventObserved: false }),
+    ]);
+  });
+
   it("builds a versioned contract and typed adaptive snapshot with zero extra questions", () => {
     const result = createTimeToEventEntry(base);
     expect(result.status).toBe("surface_ready");

@@ -35,7 +35,10 @@ export function layoutComparisonBrackets(
     }))
     .sort(
       (first, second) =>
-        first.end - first.start - (second.end - second.start) || first.start - second.start,
+        first.end - first.start - (second.end - second.start) ||
+        first.start - second.start ||
+        first.end - second.end ||
+        first.id.localeCompare(second.id),
     )
     .map((span) => {
       let level = 0;

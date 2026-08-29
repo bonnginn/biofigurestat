@@ -32,7 +32,7 @@ describe("entry-module targeted facts", () => {
       "ordered_axis_meaning",
       "axis_material_relationship",
     ]);
-    expect(view.questions[0]?.question).toBe("横方向に順番に変えたものは何ですか？");
+    expect(view.questions[0]?.question).toBe("実験で段階的に変えたものは何ですか？");
     expect(view.orderedAxisCountControl).toMatchObject({
       label: "順番をもつ量はいくつありますか？",
       value: 1,

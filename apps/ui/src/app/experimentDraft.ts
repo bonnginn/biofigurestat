@@ -420,6 +420,31 @@ export function createExperimentSession(index: number): ExperimentSessionDraft {
 }
 
 /**
+ * Allocate the three linked draft identifiers as one collision-free set.
+ *
+ * Adaptive workspaces start with `adaptive-session.1` / `unit.1`.  Looking
+ * only at `experiment.N` therefore used to allocate `experiment.1` / `unit.1`
+ * for the first added row as well.  The graph could still draw both rows, but
+ * D01/D02 correctly rejected the duplicate biological-unit identity.
+ */
+export function nextExperimentSessionIndex(experiments: readonly ExperimentSessionDraft[]): number {
+  const usedExperimentIds = new Set(experiments.map(({ id }) => id));
+  const usedSessionIds = new Set(experiments.map(({ sessionId }) => sessionId).filter(Boolean));
+  const usedStableUnitIds = new Set(
+    experiments.map(({ stableUnitId }) => stableUnitId).filter(Boolean),
+  );
+  let candidate = Math.max(1, experiments.length + 1);
+  while (
+    usedExperimentIds.has(`experiment.${candidate}`) ||
+    usedSessionIds.has(`session.${candidate}`) ||
+    usedStableUnitIds.has(`unit.${candidate}`)
+  ) {
+    candidate += 1;
+  }
+  return candidate;
+}
+
+/**
  * Canonical data-free boundary for every reusable design path.
  *
  * Reconstruct from an allow-list instead of deleting known fields from a live

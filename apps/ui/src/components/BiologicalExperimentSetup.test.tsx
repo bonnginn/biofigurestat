@@ -46,8 +46,9 @@ describe("BiologicalExperimentSetup pure safety boundary", () => {
 
     expect(summary).toContain("処理: Control、Drug");
     expect(summary).toContain("細胞面積、細胞数");
-    expect(summary).toContain("donor cultureから分けた別々のculture dish");
-    expect(summary).toContain("材料を分けた後に変えた「刺激」");
+    expect(summary).toContain("別々のculture dishを条件に割り当て");
+    expect(summary).toContain("donor cultureが同じ組どうしの対応を保持");
+    expect(summary).toContain("「刺激」について、同じdonor cultureに属するculture dish");
     expect(summary).toContain(
       "Cellは個別の測定値として残しますが、独立した生物学的なnには数えません",
     );
@@ -73,6 +74,41 @@ describe("BiologicalExperimentSetup pure safety boundary", () => {
     expect(summary).toContain("Cellごとに測った項目は未選択です");
     expect(summary).toContain("時間（0、24）の系列で測った項目は未選択です");
     expect(summary).not.toContain("Cellは個別の測定値として残します");
+  });
+
+  it("describes one proportion readout as a parent-sample aggregate rather than Cell values", () => {
+    const summary = buildBiologicalExperimentSummary({
+      blocks: [block("treatment", "処理", ["Control", "Drug", "", "", ""])],
+      receiverLabel: "culture dish",
+      readoutLabels: ["陽性率"],
+      relationship: "separate",
+      sourceLabel: "",
+      childLabel: "Cell",
+      nestedReadoutLabels: [],
+      aggregateReadoutLabels: ["陽性率"],
+    });
+
+    expect(summary).toContain("陽性率は各culture dishについて記録した集計値として保持");
+    expect(summary).toContain("CellごとのIDや個別の測定値は作りません");
+    expect(summary).not.toContain("Cellは個別の測定値として残します");
+    expect(summary).not.toContain("Cellごとに測った項目は未選択です");
+  });
+
+  it("keeps one scalar readout at the child level when a child is named", () => {
+    const summary = buildBiologicalExperimentSummary({
+      blocks: [block("treatment", "処理", ["Control", "Drug", "", "", ""])],
+      receiverLabel: "culture dish",
+      readoutLabels: ["細胞面積"],
+      relationship: "separate",
+      sourceLabel: "",
+      childLabel: "Cell",
+      nestedReadoutLabels: ["細胞面積"],
+      aggregateReadoutLabels: [],
+    });
+
+    expect(summary).toContain("各culture dish内のCellで細胞面積を測定し");
+    expect(summary).toContain("個別の測定値として残します");
+    expect(summary).not.toContain("CellごとのIDや個別の測定値は作りません");
   });
 
   it("creates the complete Cartesian combinations without using empty cells", () => {
@@ -364,7 +400,7 @@ describe("BiologicalExperimentSetup pure safety boundary", () => {
     }
   });
 
-  it("stops safely for sparse or unknown relationships without changing the supplied blocks", () => {
+  it("retains an unperformed combination without changing the supplied blocks", () => {
     const blocks = [block("a", "薬剤", ["0", "10", "", "", ""])];
     const combinations = buildConditionCombinations(blocks);
     const before = JSON.stringify(blocks);
@@ -382,20 +418,29 @@ describe("BiologicalExperimentSetup pure safety boundary", () => {
       sourceIdLabel: "",
       childLabel: "",
     });
-    expect(sparse.status).toBe("stopped");
-    if (sparse.status === "stopped") expect(sparse.reason).toMatch(/値を残したまま/);
+    expect(sparse.status).toBe("ready");
+    if (sparse.status === "ready") {
+      expect(sparse.result.conditionCombinations[1]?.status).toBe("not_performed");
+    }
     expect(JSON.stringify(blocks)).toBe(before);
   });
 });
 
 describe("BiologicalExperimentSetup researcher-facing UI", () => {
-  it("is feature gated and starts with one five-by-five editable block", () => {
+  it("is feature gated and starts with one ungrouped horizontal condition row", () => {
     const onReady = vi.fn();
     const { rerender } = render(<BiologicalExperimentSetup enabled={false} onReady={onReady} />);
     expect(screen.queryByRole("heading", { name: "実験の条件と測定内容" })).toBeNull();
     rerender(<BiologicalExperimentSetup enabled onReady={onReady} />);
     expect(screen.getByRole("textbox", { name: "処理・群分け 1の名前" })).toBeVisible();
-    expect(screen.getAllByRole("textbox", { name: /行 \d+ 列 \d+/ })).toHaveLength(25);
+    expect(screen.getAllByRole("textbox", { name: /行 \d+ 列 \d+/ })).toHaveLength(5);
+    expect(
+      screen.getByRole("checkbox", {
+        name: "処理・群分け 1に親グループ列を追加する",
+      }),
+    ).not.toBeChecked();
+    expect(screen.getByLabelText("処理・群分けの入力方法")).toBeVisible();
+    expect(screen.getByRole("button", { name: "入力表を作る（入力内容の末尾）" })).toBeVisible();
     expect(screen.getByRole("button", { name: "＋ 処理・群分けを追加" })).toBeVisible();
     expect(
       screen.queryByText(/StructureContract|factor|level|identity|ordered axis|nested|統計/i),
@@ -422,6 +467,20 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     expect(screen.getByLabelText("順序の値 1")).toBeVisible();
   });
 
+  it("uses spreadsheet Arrow, Tab, and Enter movement in the condition grid", () => {
+    render(<BiologicalExperimentSetup enabled onReady={vi.fn()} />);
+    const first = screen.getByRole("textbox", { name: "行 1 列 1" });
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowRight" });
+    expect(screen.getByRole("textbox", { name: "行 1 列 2" })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement!, { key: "Tab" });
+    expect(screen.getByRole("textbox", { name: "行 1 列 3" })).toHaveFocus();
+
+    fireEvent.click(screen.getByRole("button", { name: "処理・群分け 1に行を追加" }));
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "行 1 列 3" }), { key: "Enter" });
+    expect(screen.getByRole("textbox", { name: "行 2 列 3" })).toHaveFocus();
+  });
+
   it("asks readout-specific child and axis questions only for multiple measurements", () => {
     render(
       <BiologicalExperimentSetup
@@ -442,7 +501,44 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     expect(screen.getAllByRole("checkbox", { name: "Cell morphology" })).toHaveLength(2);
     expect(screen.getAllByRole("checkbox", { name: "Endpoint viability" })).toHaveLength(2);
     expect(screen.getByText(/Cellごとに測った項目は未選択です/)).toBeVisible();
-    expect(screen.getByText(/時間（0、24）の系列で測った項目は未選択です/)).toBeVisible();
+    expect(screen.getByText(/時間（0 h、24 h）の系列で測った項目は未選択です/)).toBeVisible();
+  });
+
+  it("uses value shape to keep a single aggregate at dish level and a scalar at Cell level", () => {
+    const { unmount } = render(
+      <BiologicalExperimentSetup
+        enabled
+        onReady={vi.fn()}
+        initial={{
+          measurementLabel: "陽性率",
+          valueForm: "positive_total",
+          receiverLabel: "culture dish",
+          childLabel: "Cell",
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText(/陽性率は各culture dishについて記録した集計値として保持/),
+    ).toBeVisible();
+    expect(screen.getByText(/CellごとのIDや個別の測定値は作りません/)).toBeVisible();
+
+    unmount();
+    render(
+      <BiologicalExperimentSetup
+        enabled
+        onReady={vi.fn()}
+        initial={{
+          measurementLabel: "細胞面積",
+          valueForm: "single",
+          receiverLabel: "culture dish",
+          childLabel: "Cell",
+        }}
+      />,
+    );
+
+    expect(screen.getByText(/各culture dish内のCellで細胞面積を測定し/)).toBeVisible();
+    expect(screen.queryByText(/CellごとのIDや個別の測定値は作りません/)).toBeNull();
   });
 
   it("asks only missing biological facts after a Graph-only Statistics handoff", () => {
@@ -568,7 +664,7 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     expect(screen.getByRole("textbox", { name: "行 2 列 2" })).toHaveValue("100");
     fireEvent.click(screen.getByRole("button", { name: "処理・群分け 1（薬剤）に行を追加" }));
     fireEvent.click(screen.getByRole("button", { name: "処理・群分け 1（薬剤）に列を追加" }));
-    expect(screen.getByRole("textbox", { name: "行 6 列 6" })).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "行 3 列 6" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
     expect(screen.getByText(/測定項目と、各条件を実験するために用いた対象・試料/)).toBeVisible();
     expect(screen.getByRole("textbox", { name: "行 2 列 2" })).toHaveValue("100");
@@ -589,12 +685,12 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     expect(screen.getByRole("textbox", { name: "Dox：行 1 列 1" })).toBeVisible();
     expect(
       screen.getByRole("checkbox", {
-        name: "処理・群分け 1（siRNA）の値をまとまり別に表示する",
+        name: "処理・群分け 1（siRNA）に親グループ列を追加する",
       }),
     ).toBeVisible();
     expect(
       screen.getByRole("checkbox", {
-        name: "処理・群分け 2（Dox）の値をまとまり別に表示する",
+        name: "処理・群分け 2（Dox）に親グループ列を追加する",
       }),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "処理・群分け 1（siRNA）を削除" })).toBeVisible();
@@ -735,7 +831,7 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
 
     const unresolved = safelyBuildBiologicalSetup(common);
     expect(unresolved.status).toBe("stopped");
-    if (unresolved.status === "stopped") expect(unresolved.reason).toMatch(/分けた後/);
+    if (unresolved.status === "stopped") expect(unresolved.reason).toMatch(/対応する組の中/);
 
     const resolved = safelyBuildBiologicalSetup({
       ...common,

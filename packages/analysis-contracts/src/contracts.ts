@@ -462,6 +462,14 @@ export const NonlinearXyFitEngineRequestSchema = z
     method: z.literal("nonlinear_xy_fit"),
     modelId: z.enum(["one_phase_association", "zero_baseline_association", "michaelis_menten"]),
     modelSelectionRationale: z.string().min(1),
+    /**
+     * Declares how the fitted curve may be interpreted. Repeated observations from the same
+     * physical material can support a descriptive point estimate, but not the independent-error
+     * standard errors and confidence intervals used by the ordinary D17 fit.
+     */
+    fitInterpretation: z
+      .enum(["inferential_independent_residuals", "descriptive_point_estimate_only"])
+      .optional(),
     xLabel: z.string().min(1),
     yLabel: z.string().min(1),
     xUnit: z.string(),

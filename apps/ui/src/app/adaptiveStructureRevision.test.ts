@@ -17,6 +17,7 @@ import {
   createBiologicalSetupPresentation,
   createBiologicalSetupPrefill,
 } from "./adaptiveStructureRevision";
+import { createAdaptiveWorkspace } from "./adaptiveWorkspace";
 
 const block = (
   id: string,
@@ -163,6 +164,76 @@ describe("createBiologicalSetupPrefill", () => {
       ),
     });
     expect(inconsistentCanvas.status).toBe("stopped");
+  });
+
+  it("retains unperformed combinations and prevents contradictory canonical data", () => {
+    const blocks = [block("condition-block.1", "Treatment", ["Control", "Drug"] )];
+    const combinations = buildConditionCombinations(blocks);
+    const built = safelyBuildBiologicalSetup({
+      title: "Incomplete treatment experiment",
+      measurementLabel: "Signal",
+      valueForm: "single",
+      measurementUsesNestedObservation: false,
+      measurementUsesOrderedAxis: false,
+      additionalReadouts: [],
+      blocks,
+      combinations,
+      statuses: { [combinations[1]!.id]: "not_performed" },
+      receiverLabel: "Culture dish",
+      receiverIdLabel: "Dish ID",
+      relationship: "separate",
+      sourceLabel: "",
+      sourceIdLabel: "",
+      sharedSourcePairedBlockId: "",
+      childLabel: "",
+    });
+    expect(built.status).toBe("ready");
+    if (built.status !== "ready") return;
+    const retained = createBiologicalSetupPresentation(built.result);
+    expect(retained.status).toBe("ready");
+    if (retained.status !== "ready") return;
+    expect(retained.presentation.conditionCombinations[1]?.status).toBe("not_performed");
+
+    const workspace = createAdaptiveWorkspace({
+      contract: built.result.contract,
+      observations: [],
+      mapping: null,
+      lineage: null,
+      biologicalSetup: retained.presentation,
+      now: "2026-08-28T00:00:00.000Z",
+    });
+    expect(workspace.status).toBe("ready");
+    expect(
+      Object.values(workspace.cells).some(({ availability }) => availability === "not_planned"),
+    ).toBe(true);
+
+    const contract = built.result.contract;
+    const identity = contract.identities[0]!;
+    const factor = contract.factors[0]!;
+    const readout = contract.readouts[0]!;
+    const contradictory: CanonicalAdaptiveObservation = {
+      observationId: "observation.unperformed",
+      readoutKey: readout.key,
+      identities: { [identity.key]: "dish-drug-1" },
+      factors: { [factor.key]: factor.levels[1]! },
+      axes: {},
+      hierarchy: {},
+      values: { [readout.key]: 10 },
+      missingness: {},
+      sourceRow: null,
+    };
+    const stopped = createAdaptiveWorkspace({
+      contract,
+      observations: [contradictory],
+      mapping: null,
+      lineage: null,
+      biologicalSetup: retained.presentation,
+      now: "2026-08-28T00:00:00.000Z",
+    });
+    expect(stopped.status).toBe("not_representable");
+    expect(stopped.diagnostics).toContain(
+      "adaptive_observation_in_not_performed_condition:condition.2",
+    );
   });
 
   it("round-trips the full current Setup result without losing block order or semantics", () => {

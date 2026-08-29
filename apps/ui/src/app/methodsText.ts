@@ -297,8 +297,16 @@ function executedResultLines(input: MethodsTextInput): string[] {
   const { recommendation, result, design } = input;
   if (recommendation.templateId === "D17" && result.nonlinearFit) {
     const modelId = result.nonlinearFit.modelId as NonlinearModelId;
+    const descriptiveOnly =
+      input.request.protocolVersion === "0.14.0" &&
+      input.request.fitInterpretation === "descriptive_point_estimate_only";
     return [
       `結果：${result.status === "ok" ? "完了" : result.status}`,
+      ...(descriptiveOnly
+        ? [
+            "解釈範囲：同じ対象を順に測った曲線への記述的fit。parameterは点推定のみを報告し、SE・信頼区間・p値・群間推論は生成していない。",
+          ]
+        : []),
       `非線形model：${nonlinearModelLabel(modelId)}（ID ${modelId}、version ${result.nonlinearFit.modelVersion}）`,
       `式：${result.nonlinearFit.modelFormula}`,
       `model選択理由：${result.nonlinearFit.selectionRationale}`,
@@ -306,10 +314,14 @@ function executedResultLines(input: MethodsTextInput): string[] {
         `・${series.seriesId}：${series.parameters
           .map(
             (parameter) =>
-              `${nonlinearParameterLabel(modelId, parameter.name)}${nonlinearParameterLabel(modelId, parameter.name) === parameter.name ? "" : `（${parameter.name}）`}=${numberLabel(parameter.value)}（SE=${numberLabel(parameter.standardError)}、${intervalText(parameter)}）`,
+              descriptiveOnly
+                ? `${nonlinearParameterLabel(modelId, parameter.name)}${nonlinearParameterLabel(modelId, parameter.name) === parameter.name ? "" : `（${parameter.name}）`}=${numberLabel(parameter.value)}（記述的点推定）`
+                : `${nonlinearParameterLabel(modelId, parameter.name)}${nonlinearParameterLabel(modelId, parameter.name) === parameter.name ? "" : `（${parameter.name}）`}=${numberLabel(parameter.value)}（SE=${numberLabel(parameter.standardError)}、${intervalText(parameter)}）`,
           )
           .join("、")}`,
-        `- fit診断：n=${series.diagnostics.n}、distinct X=${series.diagnostics.distinctX}、residual df=${series.diagnostics.residualDegreesOfFreedom}、RSS=${numberLabel(series.diagnostics.rss)}、RMSE=${numberLabel(series.diagnostics.rmse)}、R²=${numberLabel(series.diagnostics.rSquared)}、AIC=${numberLabel(series.diagnostics.aic)}`,
+        descriptiveOnly
+          ? `- 記述的fit診断：観測点=${series.diagnostics.n}、distinct X=${series.diagnostics.distinctX}、RSS=${numberLabel(series.diagnostics.rss)}、RMSE=${numberLabel(series.diagnostics.rmse)}、R²=${numberLabel(series.diagnostics.rSquared)}`
+          : `- fit診断：n=${series.diagnostics.n}、distinct X=${series.diagnostics.distinctX}、residual df=${series.diagnostics.residualDegreesOfFreedom}、RSS=${numberLabel(series.diagnostics.rss)}、RMSE=${numberLabel(series.diagnostics.rmse)}、R²=${numberLabel(series.diagnostics.rSquared)}、AIC=${numberLabel(series.diagnostics.aic)}`,
         `- initial values：${JSON.stringify(series.initialValues)}／bounds：${JSON.stringify(series.bounds)}`,
       ]),
       "Graph：raw observationsとsaved authoritative fitted curveを分離して表示。Graph appearance変更ではfitを再計算しない。",
@@ -421,7 +433,9 @@ export function generateMethodsText(input: MethodsTextInput): string {
   const multiplicityNote = request.options.multiplicityMethod
     ? `多重性補正：${request.options.multiplicityMethod}を指定。`
     : request.protocolVersion === "0.14.0"
-      ? "多重性補正：parameter estimationをseriesごとに独立して行い、仮説検定のp値を生成していないため指定なし。"
+      ? request.fitInterpretation === "descriptive_point_estimate_only"
+        ? "多重性補正：記述的curve fitのみで、仮説検定・SE・信頼区間を生成していないため対象外。"
+        : "多重性補正：parameter estimationをseriesごとに独立して行い、仮説検定のp値を生成していないため指定なし。"
       : request.protocolVersion === "0.6.0"
         ? `多重性補正：条件×${repeatedAxisLabel(input)}、条件、${repeatedAxisLabel(input)}の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
         : request.protocolVersion === "0.7.0"

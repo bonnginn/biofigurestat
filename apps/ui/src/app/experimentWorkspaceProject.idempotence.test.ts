@@ -312,6 +312,9 @@ describe("adaptive workspace scientific revision idempotence", () => {
       graphs: [],
       now: firstSaveAt,
     });
+    expect(
+      initial.unitInstances.every(({ metadata }) => metadata.experimentSessionId === undefined),
+    ).toBe(true);
     const reopened = rehydrateExperimentWorkspace(initial)!;
     const derivedGraph = analyzedGraph(fixture);
     const withDerivedGraph = createExperimentWorkspaceProject({
@@ -325,7 +328,9 @@ describe("adaptive workspace scientific revision idempotence", () => {
     expect(withDerivedGraph.designRevisions).toEqual(initial.designRevisions);
     expect(withDerivedGraph.transformations).toHaveLength(1);
     expect(withDerivedGraph.derivedDatasetRevisions).toHaveLength(1);
+    expect(withDerivedGraph.derivedValues).toHaveLength(4);
     expect(withDerivedGraph.analysisRuns).toHaveLength(1);
+    expect(withDerivedGraph.analysisRuns[0]?.request.observations).toHaveLength(4);
     expect(withDerivedGraph.provenanceEvents.slice(initial.provenanceEvents.length)).toEqual([
       expect.objectContaining({ kind: "transformation_created" }),
       expect.objectContaining({ kind: "derived_dataset_created" }),

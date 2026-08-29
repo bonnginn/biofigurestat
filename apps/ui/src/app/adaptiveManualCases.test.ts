@@ -247,14 +247,24 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
           0,
         ),
       ).toBe(observations);
-      expect(
-        reopened.unitInstances
-          .filter(
-            ({ levelId }) =>
-              levelId === reopened.designRevisions[0]?.design.experimentalUnitLevelId,
-          )
-          .every(({ metadata }) => typeof metadata.experimentSessionId === "string"),
-      ).toBe(true);
+      const persistedExperimentalUnits = reopened.unitInstances.filter(
+        ({ levelId }) => levelId === reopened.designRevisions[0]?.design.experimentalUnitLevelId,
+      );
+      if (contract.matching.kind === "matched") {
+        expect(
+          persistedExperimentalUnits.every(
+            ({ metadata }) => typeof metadata.experimentSessionId === "string",
+          ),
+        ).toBe(true);
+      } else {
+        // Independent table rows are presentation order, not evidence that the
+        // nth row in different conditions belongs to one experimental session.
+        expect(
+          persistedExperimentalUnits.every(
+            ({ metadata }) => metadata.experimentSessionId === undefined,
+          ),
+        ).toBe(true);
+      }
       if (id === "manual-3") {
         const legacyWithoutSessionMetadata = ProjectStateSchema.parse({
           ...reopened,
@@ -327,12 +337,12 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
         saveProject,
       }),
     );
-    expect(screen.getByRole("navigation", { name: "Common project workspace" })).toBeVisible();
+    expect(screen.getByRole("navigation", { name: "プロジェクトワークスペース" })).toBeVisible();
     expect(screen.getByRole("textbox", { name: "Survival data" })).toHaveValue(
       workspace.snapshot.rawLineage?.rawText,
     );
     expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
-    expect(screen.getByRole("region", { name: "Statistics workspace" })).toBeVisible();
+    expect(screen.getByRole("region", { name: "統計ワークスペース" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
     await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const unchanged = ProjectStateSchema.parse(saveProject.mock.calls[0]![0]);
@@ -427,7 +437,7 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
         saveProject,
       }),
     );
-    expect(screen.getByRole("navigation", { name: "Common project workspace" })).toBeVisible();
+    expect(screen.getByRole("navigation", { name: "プロジェクトワークスペース" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "統計解析を設定" })).toBeNull();
     const editable = screen.getByRole("textbox", { name: "Survival data" });
     fireEvent.change(editable, {

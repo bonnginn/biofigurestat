@@ -24,15 +24,18 @@ describe("NewExperimentEntryHub", () => {
     expect(screen.getByRole("button", { name: "実験から始めるを開く" })).toBeVisible();
     expect(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" })).toBeVisible();
     expect(screen.getByRole("button", { name: "生存時間（Kaplan–Meier）を開く" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "酵素反応・飽和カーブを開く" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "濃度–反応・酵素反応を開く" })).toBeVisible();
     expect(
       screen.getByText(
-        "基質濃度–初速度、または時間–応答を入力します。対応するmodelを選んだ後だけfitします。",
+        "基質濃度–計算済み反応初速度と、時間–応答・飽和カーブのX/Yデータを入力します。",
       ),
     ).toBeVisible();
+    expect(screen.queryByText(/dose.response/i)).toBeNull();
     expect(screen.getByRole("button", { name: "ヒートマップを開く" })).toBeVisible();
     const primary = screen.getByRole("heading", { name: "主な始め方" }).closest("section");
-    const dedicated = screen.getByRole("heading", { name: "専用の入力形式" }).closest("section");
+    const dedicated = screen
+      .getByRole("heading", { name: "形式が決まっているデータ" })
+      .closest("section");
     expect(primary).not.toBeNull();
     expect(dedicated).not.toBeNull();
     expect(within(primary!).getAllByRole("button")).toHaveLength(2);
@@ -43,11 +46,27 @@ describe("NewExperimentEntryHub", () => {
     expect(screen.queryByText(/D0[1-9]|D1[0-9]/)).toBeNull();
   });
 
+  it("makes each complete card one keyboard-focusable action and emphasizes only the default route", () => {
+    render(<NewExperimentEntryHub {...callbacks()} />);
+
+    const cards = document.querySelectorAll<HTMLElement>("[data-entry-id]");
+    expect(cards).toHaveLength(5);
+    for (const card of cards) {
+      expect(within(card).getAllByRole("button")).toHaveLength(1);
+    }
+    expect(document.querySelectorAll(".new-entry-hub__card.is-recommended")).toHaveLength(1);
+    expect(
+      within(document.querySelector<HTMLElement>('[data-entry-id="general"]')!).getByText(
+        "通常はこちら",
+      ),
+    ).toBeVisible();
+  });
+
   it("calls only the callback belonging to the selected task", () => {
     const props = callbacks();
     render(<NewExperimentEntryHub {...props} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "酵素反応・飽和カーブを開く" }));
+    fireEvent.click(screen.getByRole("button", { name: "濃度–反応・酵素反応を開く" }));
 
     expect(props.onOrderedCurve).toHaveBeenCalledOnce();
     expect(props.onGeneral).not.toHaveBeenCalled();

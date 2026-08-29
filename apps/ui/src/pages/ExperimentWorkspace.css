@@ -269,10 +269,10 @@
   gap: 3px;
   align-items: center;
   padding: 15px 17px;
-  border: 2px solid #4e927a;
+  border: 1px solid #bdcadb;
   border-radius: 10px;
-  color: #24483c;
-  background: #f1faf6;
+  color: #35536f;
+  background: #fff;
   cursor: pointer;
   font: inherit;
   text-align: left;
@@ -280,7 +280,7 @@
 
 .experiment-workspace-graph-choice-recommended button.is-selected,
 .experiment-workspace-graph-type-grid button.is-selected {
-  border-color: #3c7f68;
+  border: 2px solid #3c7f68;
   outline: 3px solid rgba(62, 139, 112, 0.14);
   background: #f1faf6;
 }
@@ -573,6 +573,26 @@
   justify-content: space-between;
   gap: 16px;
   color: #3b4759;
+}
+
+.experiment-workspace-condition-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.experiment-workspace-condition-counts li {
+  display: inline-flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 5px 9px;
+  border: 1px solid var(--border-subtle, #d6e0e8);
+  border-radius: 6px;
+  background: var(--surface-raised, #fff);
+  font-size: 0.88rem;
 }
 
 .experiment-workspace-progress-topline span {

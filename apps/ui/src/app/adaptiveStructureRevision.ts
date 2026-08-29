@@ -470,9 +470,6 @@ export function createBiologicalSetupPrefill(
     }));
   }
 
-  if (resultSource?.conditionCombinations?.some(({ status }) => status !== "performed")) {
-    return stoppedPrefill("SETUP_RESULT_CONTRACT_MISMATCH");
-  }
   if (resultSource?.conditionCombinations?.length) {
     const expected = expectedConditionCombinations(conditionBlocks);
     const retained = resultSource.conditionCombinations;

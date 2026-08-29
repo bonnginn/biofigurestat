@@ -1,0 +1,40 @@
+.unsaved-changes-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-unsaved-guard, 1200);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(15 35 31 / 48%);
+}
+
+.unsaved-changes-dialog {
+  width: min(520px, 100%);
+  padding: 24px;
+  border: 1px solid var(--border, #cbd8d3);
+  border-radius: 16px;
+  background: var(--surface, #fff);
+  box-shadow: 0 24px 64px rgb(12 35 30 / 24%);
+}
+
+.unsaved-changes-dialog h2 {
+  margin: 4px 0 10px;
+}
+
+.unsaved-changes-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.unsaved-changes-error {
+  color: var(--danger, #a43b32);
+  font-weight: 650;
+}
+
+.unsaved-changes-note {
+  margin: 14px 0 0;
+  color: var(--muted, #52665f);
+  font-size: 0.9rem;
+}

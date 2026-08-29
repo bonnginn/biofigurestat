@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState, type ClipboardEvent } from "react";
 
 import {
   cellIsNotPlanned,
@@ -12,6 +12,7 @@ import {
   type TimePointDraft,
 } from "../app/experimentDraft";
 
+import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
 import "./WorkspaceNestedMeasurementSheet.css";
 
 export type WorkspaceDataViewMode = "compact" | "expanded";
@@ -91,13 +92,21 @@ function compactEditability(
 }
 
 function parseValues(text: string): readonly number[] | null {
-  const tokens = text
-    .replace(/\r\n?/g, "\n")
-    .split(/[\n\t,、]/)
-    .map((token) => token.trim())
-    .filter(Boolean);
-  if (tokens.some((token) => !Number.isFinite(Number(token)))) return null;
+  const normalized = text.replace(/\r\n?/g, "\n").replace(/\n+$/u, "");
+  if (!normalized.trim()) return [];
+  const tokens = normalized.split(/[\n\t,、]/).map((token) => token.trim());
+  if (tokens.some((token) => !token || !Number.isFinite(Number(token)))) return null;
   return tokens.map(Number);
+}
+
+function readoutTitle(readout: ReadoutDraft): string {
+  const unit = readout.unit?.trim();
+  return unit ? `${readout.label} (${unit})` : readout.label;
+}
+
+function axisTitle(draft: ExperimentSetDraft): string {
+  const unit = orderedAxisUnit(draft.time);
+  return unit ? `${orderedAxisTitle(draft.time)} (${unit})` : orderedAxisTitle(draft.time);
 }
 
 function axisLabel(draft: ExperimentSetDraft, point: TimePointDraft | null): string {
@@ -109,10 +118,16 @@ function CompactValuesCell({
   coordinate,
   rowLabel,
   onChange,
+  gridRow,
+  gridColumn,
+  onRectangularPaste,
 }: Readonly<{
   coordinate: CellCoordinate;
   rowLabel: string;
   onChange: (cell: NestedContinuousCellDraft) => void;
+  gridRow: number;
+  gridColumn: number;
+  onRectangularPaste: (coordinate: CellCoordinate, text: string) => string | null;
 }>) {
   const descriptionId = useId();
   const errorId = useId();
@@ -153,14 +168,20 @@ function CompactValuesCell({
         disabled={notPlanned || !decision.editable}
         rows={Math.min(5, Math.max(2, coordinate.cell.rawValues.length || 2))}
         value={text}
+        data-spreadsheet-cell="true"
+        data-spreadsheet-row={gridRow}
+        data-spreadsheet-column={gridColumn}
         onBlur={commit}
         onChange={(event) => {
           setText(event.currentTarget.value);
           setMessage(null);
         }}
+        onKeyDown={moveSpreadsheetFocus}
         onPaste={(event) => {
-          // Native textarea paste preserves newline-delimited values. Parsing is deferred to blur.
-          event.stopPropagation();
+          const pasted = event.clipboardData.getData("text");
+          if (!pasted.includes("\t") && !/[\r\n]/u.test(pasted)) return;
+          event.preventDefault();
+          setMessage(onRectangularPaste(coordinate, pasted));
         }}
       />
       {disabledReason ? <small id={descriptionId}>{disabledReason}</small> : null}
@@ -179,12 +200,22 @@ function ExpandedValueInput({
   disabled,
   describedBy,
   onCommit,
+  gridRow,
+  gridColumn,
+  cellKey,
+  valueIndex,
+  onPaste,
 }: Readonly<{
   value: number | null;
   label: string;
   disabled: boolean;
   describedBy?: string;
   onCommit: (value: number) => void;
+  gridRow: number;
+  gridColumn: number;
+  cellKey: string;
+  valueIndex: number;
+  onPaste: (event: ClipboardEvent<HTMLInputElement>) => void;
 }>) {
   const errorId = useId();
   const [text, setText] = useState(value === null ? "" : String(value));
@@ -201,6 +232,12 @@ function ExpandedValueInput({
         disabled={disabled}
         inputMode="decimal"
         value={text}
+        data-spreadsheet-cell="true"
+        data-spreadsheet-row={gridRow}
+        data-spreadsheet-column={gridColumn}
+        data-expanded-field="value"
+        data-cell-key={cellKey}
+        data-value-index={valueIndex}
         onBlur={() => {
           if (!text.trim() && value === null) return;
           const number = Number(text);
@@ -215,6 +252,8 @@ function ExpandedValueInput({
           setText(event.currentTarget.value);
           setInvalid(false);
         }}
+        onKeyDown={moveSpreadsheetFocus}
+        onPaste={onPaste}
       />
       {invalid ? (
         <small id={errorId} role="alert">
@@ -258,14 +297,132 @@ export function WorkspaceNestedMeasurementSheet({
 }: Props) {
   const tableId = useId();
   const rowReasonPrefix = useId();
+  const [pasteMessage, setPasteMessage] = useState<string | null>(null);
   const coordinates = useMemo(() => coordinatesFor(draft, cells), [draft, cells]);
   if (coordinates.length === 0) return null;
 
   const hasAxis = draft.time.points.length > 0;
   const conditionUnitsAreIndependent = draft.conditionAssignment.kind === "independent";
+  const observationUnitLabel =
+    draft.adaptiveInput?.biologicalSetup?.answers.nestedObservationLabel?.trim() || "Cell・ROIなど";
   const visibleAttributes = draft.attributes.filter((attribute) =>
     draft.conditions.some((condition) => condition.attributes[attribute.id]?.trim()),
   );
+  const expandedRows = coordinates.flatMap((coordinate, coordinateIndex) =>
+    Array.from({ length: coordinate.cell.rawValues.length + 1 }, (_, index) => ({
+      coordinate,
+      coordinateIndex,
+      index,
+      existing: index < coordinate.cell.rawValues.length,
+    })),
+  );
+
+  const pasteCompactMatrix = (start: CellCoordinate, text: string): string | null => {
+    const matrix = parseClipboardMatrix(text);
+    const width = Math.max(...matrix.map((row) => row.length));
+    const startIndex = coordinates.findIndex(({ key }) => key === start.key);
+    if (startIndex < 0 || startIndex + width > coordinates.length) {
+      return "貼り付け範囲が入力表を超えています。既存の値は変更していません。";
+    }
+    const updates: Array<{ coordinate: CellCoordinate; values: number[] }> = [];
+    for (let columnOffset = 0; columnOffset < width; columnOffset += 1) {
+      const coordinate = coordinates[startIndex + columnOffset]!;
+      if (cellIsNotPlanned(coordinate.cell) || !compactEditability(coordinate).editable) {
+        return `${coordinate.condition.label}は「すべての値」で編集してください。既存の値は変更していません。`;
+      }
+      const values: number[] = [];
+      for (const row of matrix) {
+        const token = (row[columnOffset] ?? "").trim();
+        const value = Number(token);
+        if (!token || !Number.isFinite(value)) {
+          return `数値として読めない${token ? `値「${token}」` : "空欄"}があります。既存の値は変更していません。`;
+        }
+        values.push(value);
+      }
+      updates.push({ coordinate, values });
+    }
+    updates.forEach(({ coordinate, values }) =>
+      onCellChange(coordinate.key, { ...coordinate.cell, rawValues: values, source: "paste" }),
+    );
+    setPasteMessage(`${matrix.length}行 × ${width}列を貼り付けました。`);
+    return null;
+  };
+
+  const pasteExpandedMatrix = (event: ClipboardEvent<HTMLInputElement>) => {
+    const text = event.clipboardData.getData("text");
+    if (!text.includes("\t") && !/[\r\n]/u.test(text)) return;
+    event.preventDefault();
+    const matrix = parseClipboardMatrix(text);
+    const start = event.currentTarget;
+    const startRow = Number(start.dataset.spreadsheetRow);
+    const startControls = [
+      ...(start
+        .closest("table")
+        ?.querySelectorAll<HTMLInputElement>(
+          `[data-spreadsheet-row="${startRow}"][data-expanded-field]`,
+        ) ?? []),
+    ].sort(
+      (left, right) =>
+        Number(left.dataset.spreadsheetColumn) - Number(right.dataset.spreadsheetColumn),
+    );
+    const startColumn = startControls.indexOf(start);
+    const proposed = new Map<string, NestedContinuousCellDraft>();
+    try {
+      matrix.forEach((tokens, rowOffset) => {
+        const controls = [
+          ...(start
+            .closest("table")
+            ?.querySelectorAll<HTMLInputElement>(
+              `[data-spreadsheet-row="${startRow + rowOffset}"][data-expanded-field]`,
+            ) ?? []),
+        ].sort(
+          (left, right) =>
+            Number(left.dataset.spreadsheetColumn) - Number(right.dataset.spreadsheetColumn),
+        );
+        tokens.forEach((token, columnOffset) => {
+          const target = controls[startColumn + columnOffset];
+          if (!target || target.disabled) {
+            throw new Error("貼り付け範囲が入力表を超えています。");
+          }
+          const cellKey = target.dataset.cellKey!;
+          const valueIndex = Number(target.dataset.valueIndex);
+          const coordinate = coordinates.find(({ key }) => key === cellKey);
+          if (!coordinate) throw new Error("貼り付け先の測定記録を確認できません。");
+          let cell = proposed.get(cellKey) ?? coordinate.cell;
+          const field = target.dataset.expandedField;
+          if (field === "value") {
+            const trimmed = token.trim();
+            const value = Number(trimmed);
+            if (!trimmed || !Number.isFinite(value)) {
+              throw new Error(
+                `数値として読めない${trimmed ? `値「${trimmed}」` : "空欄"}があります。`,
+              );
+            }
+            cell = updateValue(cell, valueIndex, value);
+          } else if (field === "identity") {
+            cell = {
+              ...cell,
+              observationUnitIds: updateOptionalString(cell.observationUnitIds, valueIndex, token),
+            };
+          } else {
+            cell = {
+              ...cell,
+              sourceLocations: updateOptionalString(cell.sourceLocations, valueIndex, token),
+            };
+          }
+          proposed.set(cellKey, cell);
+        });
+      });
+      proposed.forEach((cell, key) => onCellChange(key, cell));
+      setPasteMessage(
+        `${matrix.length}行の記録を貼り付けました。IDと出典の対応は保持されています。`,
+      );
+    } catch (cause) {
+      setPasteMessage(
+        `${cause instanceof Error ? cause.message : "貼り付けた値を適用できませんでした。"} 既存の値は変更していません。`,
+      );
+    }
+  };
 
   return (
     <section className="nested-measurement-sheet" aria-labelledby="nested-measurement-sheet-title">
@@ -298,6 +455,11 @@ export function WorkspaceNestedMeasurementSheet({
         </div>
       </div>
 
+      <p className="nested-measurement-sheet__structure-note" role="note">
+        ExcelやGoogle
+        Sheetsから矩形のまま貼り付けられます。矢印キー、Enter、Tabでセルを移動し、「すべての値」ではIDと出典も直接編集できます。
+      </p>
+
       {mode === "compact" ? (
         <>
           {conditionUnitsAreIndependent ? (
@@ -321,7 +483,7 @@ export function WorkspaceNestedMeasurementSheet({
                     .length > 1 ? (
                     <th scope="col">測定項目</th>
                   ) : null}
-                  {hasAxis ? <th scope="col">{orderedAxisTitle(draft.time)}</th> : null}
+                  {hasAxis ? <th scope="col">{axisTitle(draft)}</th> : null}
                   {draft.conditions.map((condition) => (
                     <th scope="col" key={condition.id}>
                       {condition.label}
@@ -355,7 +517,7 @@ export function WorkspaceNestedMeasurementSheet({
                             {draft.readouts.filter(
                               (candidate) => candidate.shape === "nested_continuous",
                             ).length > 1 ? (
-                              <td>{readout.label}</td>
+                              <td>{readoutTitle(readout)}</td>
                             ) : null}
                             {hasAxis ? <td>{axisLabel(draft, timePoint)}</td> : null}
                             {draft.conditions.map((condition) => {
@@ -372,6 +534,13 @@ export function WorkspaceNestedMeasurementSheet({
                                         : experiment.label
                                     }
                                     onChange={(cell) => onCellChange(coordinate.key, cell)}
+                                    gridRow={Math.floor(
+                                      coordinates.indexOf(coordinate) / draft.conditions.length,
+                                    )}
+                                    gridColumn={draft.conditions.findIndex(
+                                      ({ id }) => id === condition.id,
+                                    )}
+                                    onRectangularPaste={pasteCompactMatrix}
                                   />
                                 </td>
                               );
@@ -403,102 +572,124 @@ export function WorkspaceNestedMeasurementSheet({
                     {attribute.label}
                   </th>
                 ))}
-                {hasAxis ? <th scope="col">{orderedAxisTitle(draft.time)}</th> : null}
+                {hasAxis ? <th scope="col">{axisTitle(draft)}</th> : null}
                 <th scope="col">測定項目</th>
-                <th scope="col">Cell・ROIなどのID</th>
-                <th scope="col">測定値</th>
+                <th scope="col">{observationUnitLabel}のID</th>
+                <th scope="col">測定値（各行1つ）</th>
                 <th scope="col">出典（任意）</th>
               </tr>
             </thead>
             <tbody>
-              {coordinates.flatMap((coordinate, coordinateIndex) => {
-                const rowCount = coordinate.cell.rawValues.length + 1;
-                return Array.from({ length: rowCount }, (_, index) => {
-                  const existing = index < coordinate.cell.rawValues.length;
-                  const disabled = cellIsNotPlanned(coordinate.cell);
-                  const rowKey = `${coordinate.key}:${index}`;
-                  const unavailableReason = disabled
-                    ? "この条件は測定予定なしとして設定されています。"
-                    : !existing
-                      ? "測定値を入力するとIDと出典を入力できます。"
-                      : null;
-                  const reasonId = `${rowReasonPrefix}-${coordinateIndex}-${index}`;
-                  return (
-                    <tr key={rowKey} className={existing ? undefined : "is-entry-row"}>
-                      <th scope="row">
-                        {conditionUnitsAreIndependent
-                          ? `${coordinate.condition.label} / ${coordinate.experiment.label}`
-                          : coordinate.experiment.label}
-                        {unavailableReason ? (
-                          <span id={reasonId} className="nested-measurement-sheet__assistive-text">
-                            {unavailableReason}
-                          </span>
-                        ) : null}
-                      </th>
-                      {visibleAttributes.map((attribute) => (
-                        <td key={attribute.id}>
-                          {coordinate.condition.attributes[attribute.id] || "—"}
-                        </td>
-                      ))}
-                      {hasAxis ? <td>{axisLabel(draft, coordinate.timePoint)}</td> : null}
-                      <td>{coordinate.readout.label}</td>
-                      <td>
-                        <input
-                          aria-label={`${coordinate.condition.label}・${coordinate.experiment.label}・測定${index + 1}のID`}
-                          aria-describedby={unavailableReason ? reasonId : undefined}
-                          disabled={disabled || !existing}
-                          placeholder={existing ? "ID未入力" : "値を入力後に設定"}
-                          value={coordinate.cell.observationUnitIds?.[index] ?? ""}
-                          onChange={(event) =>
-                            onCellChange(coordinate.key, {
-                              ...coordinate.cell,
-                              observationUnitIds: updateOptionalString(
-                                coordinate.cell.observationUnitIds,
-                                index,
-                                event.currentTarget.value,
-                              ),
-                            })
-                          }
-                        />
+              {expandedRows.map(({ coordinate, coordinateIndex, index, existing }, gridRow) => {
+                const disabled = cellIsNotPlanned(coordinate.cell);
+                const rowKey = `${coordinate.key}:${index}`;
+                const unavailableReason = disabled
+                  ? "この条件は測定予定なしとして設定されています。"
+                  : !existing
+                    ? "測定値を入力するとIDと出典を入力できます。"
+                    : null;
+                const reasonId = `${rowReasonPrefix}-${coordinateIndex}-${index}`;
+                return (
+                  <tr key={rowKey} className={existing ? undefined : "is-entry-row"}>
+                    <th scope="row">
+                      {conditionUnitsAreIndependent
+                        ? `${coordinate.condition.label} / ${coordinate.experiment.label}`
+                        : coordinate.experiment.label}
+                      {unavailableReason ? (
+                        <span id={reasonId} className="nested-measurement-sheet__assistive-text">
+                          {unavailableReason}
+                        </span>
+                      ) : null}
+                    </th>
+                    {visibleAttributes.map((attribute) => (
+                      <td key={attribute.id}>
+                        {coordinate.condition.attributes[attribute.id] || "—"}
                       </td>
-                      <td>
-                        <ExpandedValueInput
-                          disabled={disabled}
-                          describedBy={unavailableReason ? reasonId : undefined}
-                          label={`${coordinate.condition.label}・${coordinate.experiment.label}・測定${index + 1}の値`}
-                          value={existing ? coordinate.cell.rawValues[index]! : null}
-                          onCommit={(value) =>
-                            onCellChange(coordinate.key, updateValue(coordinate.cell, index, value))
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          aria-label={`${coordinate.condition.label}・${coordinate.experiment.label}・測定${index + 1}の出典`}
-                          aria-describedby={unavailableReason ? reasonId : undefined}
-                          disabled={disabled || !existing}
-                          placeholder={existing ? "任意" : "値を入力後に設定"}
-                          value={coordinate.cell.sourceLocations?.[index] ?? ""}
-                          onChange={(event) =>
-                            onCellChange(coordinate.key, {
-                              ...coordinate.cell,
-                              sourceLocations: updateOptionalString(
-                                coordinate.cell.sourceLocations,
-                                index,
-                                event.currentTarget.value,
-                              ),
-                            })
-                          }
-                        />
-                      </td>
-                    </tr>
-                  );
-                });
+                    ))}
+                    {hasAxis ? <td>{axisLabel(draft, coordinate.timePoint)}</td> : null}
+                    <td>{readoutTitle(coordinate.readout)}</td>
+                    <td>
+                      <input
+                        aria-label={`${coordinate.condition.label}・${coordinate.experiment.label}・測定${index + 1}のID`}
+                        aria-describedby={unavailableReason ? reasonId : undefined}
+                        disabled={disabled || !existing}
+                        placeholder={existing ? "ID未入力" : "値を入力後に設定"}
+                        value={coordinate.cell.observationUnitIds?.[index] ?? ""}
+                        data-spreadsheet-cell="true"
+                        data-spreadsheet-row={gridRow}
+                        data-spreadsheet-column={0}
+                        data-expanded-field="identity"
+                        data-cell-key={coordinate.key}
+                        data-value-index={index}
+                        onKeyDown={moveSpreadsheetFocus}
+                        onPaste={pasteExpandedMatrix}
+                        onChange={(event) =>
+                          onCellChange(coordinate.key, {
+                            ...coordinate.cell,
+                            observationUnitIds: updateOptionalString(
+                              coordinate.cell.observationUnitIds,
+                              index,
+                              event.currentTarget.value,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <ExpandedValueInput
+                        disabled={disabled}
+                        describedBy={unavailableReason ? reasonId : undefined}
+                        label={`${coordinate.condition.label}・${coordinate.experiment.label}・測定${index + 1}の値`}
+                        value={existing ? coordinate.cell.rawValues[index]! : null}
+                        gridRow={gridRow}
+                        gridColumn={1}
+                        cellKey={coordinate.key}
+                        valueIndex={index}
+                        onPaste={pasteExpandedMatrix}
+                        onCommit={(value) =>
+                          onCellChange(coordinate.key, updateValue(coordinate.cell, index, value))
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        aria-label={`${coordinate.condition.label}・${coordinate.experiment.label}・測定${index + 1}の出典`}
+                        aria-describedby={unavailableReason ? reasonId : undefined}
+                        disabled={disabled || !existing}
+                        placeholder={existing ? "任意" : "値を入力後に設定"}
+                        value={coordinate.cell.sourceLocations?.[index] ?? ""}
+                        data-spreadsheet-cell="true"
+                        data-spreadsheet-row={gridRow}
+                        data-spreadsheet-column={2}
+                        data-expanded-field="source"
+                        data-cell-key={coordinate.key}
+                        data-value-index={index}
+                        onKeyDown={moveSpreadsheetFocus}
+                        onPaste={pasteExpandedMatrix}
+                        onChange={(event) =>
+                          onCellChange(coordinate.key, {
+                            ...coordinate.cell,
+                            sourceLocations: updateOptionalString(
+                              coordinate.cell.sourceLocations,
+                              index,
+                              event.currentTarget.value,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
+                  </tr>
+                );
               })}
             </tbody>
           </table>
         </div>
       )}
+      {pasteMessage ? (
+        <p className="nested-measurement-sheet__paste-status" role="status" aria-live="polite">
+          {pasteMessage}
+        </p>
+      ) : null}
     </section>
   );
 }

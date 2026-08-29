@@ -5,7 +5,13 @@ import { createExperimentSetDraft } from "./app/experimentDraft";
 import { createExperimentWorkspaceProject } from "./app/experimentWorkspaceProject";
 import { saveFavoriteDesign } from "./app/favoriteDesigns";
 import type { ProjectActions } from "./app/projectActions";
+import {
+  createSpecializedEntryDraftProjectState,
+  createUnresolvedVisualizationProjectState,
+  type UnresolvedVisualizationProjectState,
+} from "@lsaa/project";
 import { rememberRecentProject } from "./app/recentProjects";
+import { setUsageConsent } from "./app/usageTelemetry";
 
 const desktopTestActions = {
   openProject: async () => null,
@@ -19,6 +25,13 @@ const unresolvedBridgeCases = [
   { bridgeCase: "both", hasUnresolvedSave: true, hasUnresolvedOpen: true },
 ] as const;
 
+const specializedBridgeCases = [
+  { bridgeCase: "none", hasSpecializedSave: false, hasGenericOpen: false },
+  { bridgeCase: "save-only", hasSpecializedSave: true, hasGenericOpen: false },
+  { bridgeCase: "open-only", hasSpecializedSave: false, hasGenericOpen: true },
+  { bridgeCase: "both", hasSpecializedSave: true, hasGenericOpen: true },
+] as const;
+
 describe("project save diagnostics", () => {
   it("extracts a privacy-safe save stage without requiring technical details", () => {
     expect(
@@ -27,18 +40,23 @@ describe("project save diagnostics", () => {
       ),
     ).toBe("container_commit");
     expect(projectIoStage(new Error("unclassified"))).toBeNull();
+    expect(projectIoStage(new Error("PROJECT_IO_STAGE[Secret Study]: raw value 12.345"))).toBeNull();
   });
 });
 
 describe("workspace home", () => {
   beforeEach(() => {
     localStorage.clear();
+    // Most App tests exercise the product after the one-time privacy choice.
+    // The consent dialog itself is covered by UsageTelemetryController tests.
+    setUsageConsent("opted_out");
     window.history.replaceState({}, "", "/");
     vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it("新しいrouteとfresh-startを常に画面先頭から開く", async () => {
@@ -52,8 +70,8 @@ describe("workspace home", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
     await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
     scrollTo.mockClear();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: /新しい実験/ }));
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
   });
 
@@ -102,6 +120,41 @@ describe("workspace home", () => {
     expect(screen.queryByText(/保存・再開する接続がそろっていない/)).toBeNull();
   });
 
+  it("opens the task-oriented hub by default in a production build without an override", () => {
+    vi.stubEnv("PROD", true);
+    render(<App />);
+
+    fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+
+    expect(screen.getByRole("heading", { name: "何から始めますか？" })).toBeVisible();
+    expect(document.querySelectorAll("[data-entry-id]")).toHaveLength(5);
+    expect(screen.queryByRole("heading", { name: "何をした実験ですか？" })).toBeNull();
+  });
+
+  it.each([
+    { path: "/nonlinear-fit", heading: "濃度–反応・酵素反応" },
+    { path: "/survival", heading: "生存時間" },
+  ])(
+    "leaves an untouched $path entry without an unsaved-work prompt",
+    async ({ path, heading }) => {
+      window.history.replaceState({}, "", path);
+      render(<App />);
+
+      await screen.findByRole("heading", { name: heading });
+      fireEvent.click(screen.getByRole("button", { name: "← 戻る" }));
+
+      expect(
+        screen.queryByRole("dialog", { name: "この実験を保存しますか？" }),
+      ).toBeNull();
+      expect(window.location.pathname).toBe("/new-experiment");
+      expect(
+        screen.getByRole("heading", {
+          name: /何から始めますか？|何をした実験ですか？/,
+        }),
+      ).toBeVisible();
+    },
+  );
+
   it.each(unresolvedBridgeCases)(
     "keeps Graph-only and Heatmap fail-closed with $bridgeCase unresolved bridges",
     async ({ hasUnresolvedSave, hasUnresolvedOpen }) => {
@@ -109,7 +162,10 @@ describe("workspace home", () => {
       const standardOpen = vi.fn(async () => null);
       const standardSave = vi.fn(async () => null);
       const unresolvedOpen = vi.fn(async () => null);
-      const unresolvedSave = vi.fn(async () => null);
+      const unresolvedSave = vi.fn(async (state: UnresolvedVisualizationProjectState) => ({
+        state,
+        target: "/tmp/unresolved-visualization.lsa",
+      }));
       const projectActions: ProjectActions = {
         openProject: standardOpen,
         saveProject: standardSave,
@@ -127,8 +183,8 @@ describe("workspace home", () => {
       if (!persistenceAvailable) {
         expect(graphOnlyEntry).toBeDisabled();
         expect(heatmapEntry).toBeDisabled();
-        expect(screen.getByText(/Graph用データを保存・再開する接続がそろっていない/)).toBeVisible();
-        expect(screen.getByText(/行列とGraphを保存・再開する接続がそろっていない/)).toBeVisible();
+        expect(screen.getByText(/Graph用の表を保存して再開できない/)).toBeVisible();
+        expect(screen.getByText(/行列とGraphを保存して再開できない/)).toBeVisible();
         fireEvent.click(graphOnlyEntry);
         fireEvent.click(heatmapEntry);
         expect(window.location.pathname).toBe("/new-experiment");
@@ -141,8 +197,8 @@ describe("workspace home", () => {
 
       expect(graphOnlyEntry).toBeEnabled();
       fireEvent.click(graphOnlyEntry);
-      fireEvent.change(screen.getByRole("textbox", { name: "Graph用の表" }), {
-        target: { value: "X\tY\n0\t1\n1\t2" },
+      fireEvent.paste(screen.getByTestId("graph-only-cell-0-0"), {
+        clipboardData: { getData: () => "X\tY\n0\t1\n1\t2" },
       });
       fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
         target: { value: "0" },
@@ -160,6 +216,7 @@ describe("workspace home", () => {
       expect(graphOnlySave).toBeEnabled();
       fireEvent.click(graphOnlySave);
       await waitFor(() => expect(unresolvedSave).toHaveBeenCalledOnce());
+      await screen.findByText(/Graph用データを保存しました/);
       expect(graphOnlyOpen).toBeVisible();
       fireEvent.click(graphOnlyOpen!);
       await waitFor(() => expect(unresolvedOpen).toHaveBeenCalledOnce());
@@ -192,6 +249,96 @@ describe("workspace home", () => {
       expect(window.location.pathname).toBe("/heatmap");
       expect(standardOpen).not.toHaveBeenCalled();
       expect(standardSave).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(specializedBridgeCases)(
+    "gates Survival and ordered-curve hub entries with $bridgeCase specialized persistence",
+    ({ hasSpecializedSave, hasGenericOpen }) => {
+      window.history.replaceState({}, "", "/?adaptiveInput=1");
+      const projectActions: ProjectActions = {
+        openProject: async () => null,
+        ...(hasGenericOpen ? { openAnyProject: async () => null } : {}),
+        ...(hasSpecializedSave
+          ? {
+              saveSpecializedEntryDraftProject: async (state) => ({
+                state,
+                target: "C:/tmp/specialized-entry-draft.lsa",
+              }),
+            }
+          : {}),
+      };
+      render(<App projectActions={projectActions} />);
+
+      fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+      const survivalEntry = screen.getByRole("button", {
+        name: "生存時間（Kaplan–Meier）を開く",
+      });
+      const orderedEntry = screen.getByRole("button", {
+        name: "濃度–反応・酵素反応を開く",
+      });
+      const available = hasSpecializedSave && hasGenericOpen;
+
+      if (!available) {
+        expect(survivalEntry).toBeDisabled();
+        expect(orderedEntry).toBeDisabled();
+        expect(screen.getByText(/生存時間データを保存して再開できない/)).toBeVisible();
+        expect(screen.getByText(/濃度–反応・酵素反応データを保存して再開できない/)).toBeVisible();
+        fireEvent.click(survivalEntry);
+        fireEvent.click(orderedEntry);
+        expect(window.location.pathname).toBe("/new-experiment");
+        return;
+      }
+
+      expect(survivalEntry).toBeEnabled();
+      expect(orderedEntry).toBeEnabled();
+      fireEvent.click(survivalEntry);
+      expect(window.location.pathname).toBe("/survival");
+      expect(screen.getByRole("heading", { name: "生存時間" })).toBeVisible();
+    },
+  );
+
+  it.each(
+    specializedBridgeCases.flatMap((bridge) => [
+      { ...bridge, path: "/survival", entryLabel: "生存時間", pageHeading: "生存時間" },
+      {
+        ...bridge,
+        path: "/nonlinear-fit",
+        entryLabel: "濃度–反応・酵素反応",
+        pageHeading: "濃度–反応・酵素反応",
+      },
+    ]),
+  )(
+    "gates direct $path with $bridgeCase specialized persistence",
+    ({ hasSpecializedSave, hasGenericOpen, path, entryLabel, pageHeading }) => {
+      window.history.replaceState({}, "", `${path}?adaptiveInput=1`);
+      const projectActions: ProjectActions = {
+        openProject: async () => null,
+        ...(hasGenericOpen ? { openAnyProject: async () => null } : {}),
+        ...(hasSpecializedSave
+          ? {
+              saveSpecializedEntryDraftProject: async (state) => ({
+                state,
+                target: "C:/tmp/specialized-entry-draft.lsa",
+              }),
+            }
+          : {}),
+      };
+      render(<App projectActions={projectActions} />);
+
+      if (!hasSpecializedSave || !hasGenericOpen) {
+        expect(
+          screen.getByRole("heading", { name: `${entryLabel}を開始できません` }),
+        ).toBeVisible();
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          "入力途中の専用データを保存・再開する接続がそろっていません",
+        );
+        expect(screen.queryByRole("textbox")).toBeNull();
+        return;
+      }
+
+      expect(screen.getByRole("heading", { name: pageHeading })).toBeVisible();
+      expect(screen.queryByText(/開始できません/)).toBeNull();
     },
   );
 
@@ -232,6 +379,8 @@ describe("workspace home", () => {
       fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
       await waitFor(() => expect(unresolvedSave).toHaveBeenCalledOnce());
       fireEvent.click(screen.getByRole("button", { name: "保存済みHeatmap projectを開く" }));
+      expect(screen.getByRole("dialog", { name: "この実験を保存しますか？" })).toBeVisible();
+      fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
       await waitFor(() => expect(unresolvedOpen).toHaveBeenCalledOnce());
     },
   );
@@ -266,7 +415,7 @@ describe("workspace home", () => {
       }
 
       expect(screen.getByRole("heading", { name: "ヒートマップ" })).toBeVisible();
-      expect(screen.getByLabelText("Matrix data")).toBeVisible();
+      expect(screen.getByRole("region", { name: "ヒートマップデータ表" })).toBeVisible();
       expect(screen.getByRole("button", { name: "保存済みHeatmap projectを開く" })).toBeEnabled();
       expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
       fireEvent.change(screen.getByLabelText("Matrix data"), {
@@ -283,7 +432,7 @@ describe("workspace home", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: "ヒートマップ" })).toBeVisible();
-    expect(screen.getByLabelText("Matrix data")).toBeVisible();
+    expect(screen.getByRole("region", { name: "ヒートマップデータ表" })).toBeVisible();
     const saveButton = screen.getByRole("button", { name: "プロジェクトを保存" });
     const openButton = screen.getByRole("button", { name: "保存済みHeatmap projectを開く" });
     expect(saveButton).toBeDisabled();
@@ -296,6 +445,86 @@ describe("workspace home", () => {
     expect(openButton).toHaveAttribute("aria-describedby", unavailableNote.id);
   });
 
+  it("protects a dirty Heatmap before generic project open and restores the opened matrix", async () => {
+    window.history.replaceState({}, "", "/?adaptiveInput=1");
+    const openedState = createUnresolvedVisualizationProjectState({
+      metadata: {
+        projectId: "project.heatmap.lifecycle-open",
+        projectName: "開き直す行列",
+        experimentDate: "",
+        createdAt: "2026-08-28T00:00:00.000Z",
+        updatedAt: "2026-08-28T00:00:00.000Z",
+      },
+      entryIntent: "matrix_visualization",
+      table: {
+        id: "table.heatmap.lifecycle-open",
+        headers: ["Feature", "Sample 1", "Sample 2"],
+        rows: [["Protein A", "7", "8"]],
+        delimiter: "tab",
+        headerRow: 1,
+      },
+      rawLineage: {
+        sourceKind: "tsv",
+        sourceLabel: "lifecycle.tsv",
+        importedAt: "2026-08-28T00:00:00.000Z",
+        rawText: "Feature\tSample 1\tSample 2\nProtein A\t7\t8",
+        sha256: null,
+        transformations: ["delimiter_detection"],
+      },
+      mapping: {
+        schemaVersion: "0.1.0",
+        sourceLabel: "lifecycle.tsv",
+        delimiter: "tab",
+        headerRow: 1,
+        columns: [
+          { index: 0, header: "Feature", role: "metadata" },
+          { index: 1, header: "Sample 1", role: "metadata" },
+          { index: 2, header: "Sample 2", role: "metadata" },
+        ],
+        identityDecision: "unanswered",
+        confirmedAt: "2026-08-28T00:00:00.000Z",
+      },
+      actor: "researcher",
+    });
+    const openAnyProject = vi.fn(async () => ({
+      kind: "unresolved_visualization" as const,
+      project: { state: openedState, target: "C:/tmp/lifecycle-open.lsa" },
+    }));
+    const unresolvedOpen = vi.fn(async () => null);
+    const unresolvedSave = vi.fn(async (state: UnresolvedVisualizationProjectState) => ({
+      state,
+      target: "C:/tmp/lifecycle-save.lsa",
+    }));
+    render(
+      <App
+        projectActions={{
+          openProject: async () => null,
+          saveProject: async () => null,
+          openAnyProject,
+          openUnresolvedVisualizationProject: unresolvedOpen,
+          saveUnresolvedVisualizationProject: unresolvedSave,
+        }}
+      />,
+    );
+
+    fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+    fireEvent.click(screen.getByRole("button", { name: "ヒートマップを開く" }));
+    fireEvent.change(screen.getByLabelText("Matrix data"), {
+      target: { value: "Feature\tSample A\tSample B\nProtein A\t1\t2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "開く" }));
+
+    expect(screen.getByRole("dialog", { name: "この実験を保存しますか？" })).toBeVisible();
+    expect(openAnyProject).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
+
+    await waitFor(() => expect(openAnyProject).toHaveBeenCalledOnce());
+    expect(await screen.findByLabelText("Matrix data")).toHaveValue(
+      "Feature\tSample 1\tSample 2\nProtein A\t7\t8",
+    );
+    expect(screen.queryByRole("dialog", { name: "この実験を保存しますか？" })).toBeNull();
+  });
+
   it.each([
     {
       button: "生存時間（Kaplan–Meier）を開く",
@@ -305,9 +534,9 @@ describe("workspace home", () => {
       header: "Unit ID\tGroup\tFollow-up time\tStatus",
     },
     {
-      button: "酵素反応・飽和カーブを開く",
+      button: "濃度–反応・酵素反応を開く",
       path: "/nonlinear-fit",
-      heading: "酵素反応・飽和カーブ",
+      heading: "濃度–反応・酵素反応",
       dataLabel: "非線形XYフィッティング data",
       header: "Unit ID\tSeries\tX\tY",
     },
@@ -336,8 +565,81 @@ describe("workspace home", () => {
     expect(screen.queryByRole("combobox", { name: "専門解析を切り替える" })).toBeNull();
   });
 
-  it("専門解析を切り替えたときに別familyの入力状態を持ち越さない", () => {
+  it.each([
+    ["/survival", "生存時間"],
+    ["/nonlinear-fit", "濃度–反応・酵素反応"],
+    ["/heatmap", "ヒートマップ"],
+  ] as const)(
+    "opens a direct %s visit as the safe dedicated entry when experiment-first is enabled",
+    (path, heading) => {
+      localStorage.setItem("experiment_first_adaptive_input_alpha", "enabled");
+      window.history.replaceState({}, "", path);
+
+      render(<App />);
+
+      expect(screen.getByRole("heading", { name: heading })).toBeVisible();
+      expect(screen.queryByRole("combobox", { name: "専門解析を切り替える" })).toBeNull();
+    },
+  );
+
+  it.each([
+    ["生存時間（Kaplan–Meier）を開く", "生存時間"],
+    ["濃度–反応・酵素反応を開く", "濃度–反応・酵素反応"],
+  ] as const)(
+    "disables workspace Open in browser preview for %s instead of invoking a failing bridge",
+    (entry, heading) => {
+      localStorage.setItem("experiment_first_adaptive_input_alpha", "enabled");
+      render(<App />);
+      fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+      fireEvent.click(screen.getByRole("button", { name: entry }));
+
+      expect(screen.getByRole("heading", { name: heading })).toBeVisible();
+      const open = screen.getByRole("button", { name: "開く" });
+      expect(open).toBeDisabled();
+      expect(open).toHaveAttribute("title", "プロジェクトを開く機能はデスクトップ版で利用できます");
+    },
+  );
+
+  it("keeps the explicit adaptiveInput=0 rollback while navigating", () => {
+    window.history.replaceState({}, "", "/?adaptiveInput=0");
     render(<App />);
+
+    fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+
+    expect(window.location.search).toBe("?adaptiveInput=0");
+    expect(screen.getByText("互換モード（以前の入力方式）")).toBeVisible();
+    expect(screen.getByText(/通常の入口とは異なり、実験分野から選びます/)).toBeVisible();
+    expect(screen.getByRole("heading", { name: "何をした実験ですか？" })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "何から始めますか？" })).toBeNull();
+  });
+
+  it.each(["/contingency", "/repeated-nonparametric", "/regression", "/distribution"])(
+    "stops anonymous legacy analysis entry at %s in the normal experiment-first mode",
+    (path) => {
+      window.history.replaceState({}, "", `${path}?adaptiveInput=1`);
+      render(<App projectActions={desktopTestActions} />);
+
+      expect(
+        screen.getByRole("heading", { name: "この入口は通常モードでは利用できません" }),
+      ).toBeVisible();
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "実験構造を確認せず解析形式だけを選ぶ以前の入口",
+      );
+    },
+  );
+
+  it("labels a legacy direct analysis page when explicit compatibility mode is active", () => {
+    window.history.replaceState({}, "", "/regression");
+    render(<App projectActions={desktopTestActions} />);
+
+    expect(screen.getByRole("status", { name: "互換モード" })).toHaveTextContent(
+      "互換モード（以前の入力方式）",
+    );
+    expect(screen.getByRole("heading", { name: "Simple linear regression" })).toBeVisible();
+  });
+
+  it("専門解析を切り替えたときに別familyの入力状態を持ち越さない", () => {
+    render(<App developmentAnalysisRouteSwitcher />);
 
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
     fireEvent.click(screen.getByText("既存の解析用データを直接入力する"));
@@ -349,8 +651,12 @@ describe("workspace home", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
       target: { value: "nonlinear-fit" },
     });
+    expect(window.location.pathname).toBe("/regression");
+    expect(screen.getByRole("dialog", { name: "この実験を保存しますか？" })).toBeVisible();
+    expect(screen.getByText(/別の専門解析へ切り替える/)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
 
-    expect(screen.getByRole("heading", { name: "酵素反応・飽和カーブ" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "濃度–反応・酵素反応" })).toBeVisible();
     expect(screen.getByRole("textbox", { name: "X label" })).toHaveValue("X");
     expect(screen.queryByDisplayValue("前の解析のX")).toBeNull();
 
@@ -362,9 +668,9 @@ describe("workspace home", () => {
     expect(screen.getByRole("textbox", { name: "X label" })).toHaveValue("前の解析のX");
   });
 
-  it("専門解析を往復してもrouteごとの入力表と表示設定を失わない", () => {
+  it("専門解析を往復してもrouteごとの入力表と表示設定を失わない", async () => {
     window.history.replaceState({}, "", "/survival");
-    render(<App />);
+    render(<App developmentAnalysisRouteSwitcher />);
 
     const survivalText =
       "Unit ID\tGroup\tFollow-up time\tStatus\nmouse-audit\tControl\t12\tCensored";
@@ -374,6 +680,8 @@ describe("workspace home", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
       target: { value: "heatmap" },
     });
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     const heatmapText = "Feature\tSample audit\nProtein audit\t7";
     fireEvent.change(screen.getByRole("textbox", { name: "Matrix data" }), {
@@ -386,6 +694,11 @@ describe("workspace home", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
       target: { value: "survival" },
     });
+    const discardHeatmap = screen.queryByRole("button", {
+      name: "変更を破棄して続ける",
+    });
+    if (discardHeatmap) fireEvent.click(discardHeatmap);
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(screen.getByRole("textbox", { name: "Survival data" })).toHaveValue(survivalText);
 
     fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
@@ -396,6 +709,16 @@ describe("workspace home", () => {
     expect(screen.getByText(/入力途中の内容は解析ごとに一時保持/)).toBeVisible();
   });
 
+  it.each(["/regression", "/survival"])(
+    "通常のproduction workspaceでは%sから統計designを直接切り替えられない",
+    (path) => {
+      window.history.replaceState({}, "", path);
+      render(<App projectActions={desktopTestActions} />);
+
+      expect(screen.queryByRole("combobox", { name: "専門解析を切り替える" })).toBeNull();
+    },
+  );
+
   it("専門解析から入口へ戻って同じ解析を開き直しても入力を失わない", () => {
     window.history.replaceState({}, "", "/regression");
     render(<App />);
@@ -405,11 +728,13 @@ describe("workspace home", () => {
       target: { value: input },
     });
     fireEvent.click(screen.getByRole("button", { name: "← 戻る" }));
+    expect(screen.getByRole("dialog", { name: "この実験を保存しますか？" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
     expect(screen.getByRole("heading", { name: "何をした実験ですか？" })).toBeVisible();
 
     window.history.pushState({}, "", "/regression");
     fireEvent.popState(window);
-    expect(screen.getByRole("textbox", { name: "Simple linear regression data" })).toHaveValue(
+    expect(screen.getByRole("textbox", { name: "Simple linear regression data" })).not.toHaveValue(
       input,
     );
   });
@@ -450,6 +775,269 @@ describe("workspace home", () => {
     fireEvent.click(screen.getByRole("button", { name: /ホーム/ }));
     fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
     await waitFor(() => expect(openProject).toHaveBeenCalledTimes(2));
+  });
+
+  it("opens one common .lsa result and routes a Graph-only project to its editor", async () => {
+    const state = createUnresolvedVisualizationProjectState({
+      metadata: {
+        projectId: "project.graph-only.open-test",
+        projectName: "開き直すGraph",
+        experimentDate: "",
+        createdAt: "2026-08-28T00:00:00.000Z",
+        updatedAt: "2026-08-28T00:00:00.000Z",
+      },
+      entryIntent: "graph_only",
+      table: {
+        id: "table.graph-only.open-test",
+        headers: ["Condition", "Value"],
+        rows: [
+          ["Control", "1.2"],
+          ["Treatment", "2.4"],
+        ],
+        delimiter: "tab",
+        headerRow: 1,
+      },
+      rawLineage: {
+        sourceKind: "clipboard",
+        sourceLabel: "clipboard paste",
+        importedAt: "2026-08-28T00:00:00.000Z",
+        rawText: "Condition\tValue\r\nControl\t1.2\r\nTreatment\t2.4",
+        sha256: null,
+        transformations: ["delimiter_detection"],
+      },
+      mapping: {
+        schemaVersion: "0.1.0",
+        sourceLabel: "clipboard paste",
+        delimiter: "tab",
+        headerRow: 1,
+        columns: [
+          { index: 0, header: "Condition", role: "x" },
+          { index: 1, header: "Value", role: "y" },
+        ],
+        identityDecision: "no_id",
+        confirmedAt: "2026-08-28T00:00:00.000Z",
+      },
+      actor: "researcher",
+    });
+    const openAnyProject = vi.fn(async () => ({
+      kind: "unresolved_visualization" as const,
+      project: { state, target: "/tmp/graph-only-open-test.lsa" },
+    }));
+    render(
+      <App
+        projectActions={{
+          openProject: async () => null,
+          openAnyProject,
+          saveProject: async () => null,
+        }}
+      />,
+    );
+
+    fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
+    await waitFor(() => expect(openAnyProject).toHaveBeenCalledOnce());
+    expect(await screen.findByRole("heading", { name: "手元の表からGraphを作る" })).toBeVisible();
+    expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("Condition");
+    expect(screen.getByTestId("graph-only-cell-0-1")).toHaveValue("Value");
+    expect(screen.getByTestId("graph-only-cell-1-0")).toHaveValue("Control");
+    expect(screen.getByTestId("graph-only-cell-1-1")).toHaveValue("1.2");
+    expect(screen.getByTestId("graph-only-cell-2-0")).toHaveValue("Treatment");
+    expect(screen.getByTestId("graph-only-cell-2-1")).toHaveValue("2.4");
+    expect(screen.getByRole("combobox", { name: "Graphの横軸" })).toHaveValue("0");
+    expect(screen.getByRole("combobox", { name: "Graphの測定値" })).toHaveValue("1");
+  });
+
+  it.each([
+    {
+      route: "survival" as const,
+      moduleId: "time_to_event" as const,
+      experimentName: "Reopened survival draft",
+      rawText:
+        "Unit ID\tGroup\tFollow-up time\tStatus\nmouse-1\tControl\t4\tEvent\nmouse-2\tDrug\t\tCensored",
+      answers: {
+        kind: "survival" as const,
+        subjectUnitRelationship: "unknown" as const,
+        followUpUnit: "days",
+        numericStatusMapping: null,
+        statisticsSetupExpanded: false,
+        showLogRankAnnotation: false,
+      },
+      textboxName: "Survival data",
+    },
+    {
+      route: "nonlinear-fit" as const,
+      moduleId: "ordered_curve_kinetics" as const,
+      experimentName: "Reopened ordered draft",
+      rawText: "Unit ID\tSeries\tX\tY\nrun-1\tA\t0\t0\nrun-1\tA\t5\t1",
+      answers: {
+        kind: "ordered_curve" as const,
+        facts: { orderedAxisCount: 2 },
+        xLabel: "Time",
+        yLabel: "Response",
+        xUnit: "min",
+        yUnit: "a.u.",
+        nonlinearModel: "one_phase_association" as const,
+        nonlinearModelExplicitlySelected: true,
+        modelRationale: "Explicit model",
+        fitSettings: {},
+      },
+      textboxName: "非線形XYフィッティング data",
+    },
+  ])(
+    "routes a $route specialized safe-stop draft back to the same editable route",
+    async ({ route, moduleId, experimentName, rawText, answers, textboxName }) => {
+      const now = "2026-08-28T11:00:00.000Z";
+      const state = createSpecializedEntryDraftProjectState({
+        metadata: {
+          projectId: `project.${route}.draft-open`,
+          projectName: experimentName,
+          experimentDate: "",
+          createdAt: now,
+          updatedAt: now,
+        },
+        route,
+        entryIntent: {
+          schemaVersion: "0.1.0",
+          moduleId,
+          destination: route,
+          sourceContext: route === "survival" ? "animal" : "protein_biochemical",
+          entryRouteId: moduleId,
+          experimentName,
+          experimentDescription: "An incomplete dedicated-entry experiment.",
+          subjectUnitLabel: route === "survival" ? "Animal" : "Reaction",
+          facts:
+            route === "survival"
+              ? {
+                  timeToEventPattern: "single_terminal_event_or_censoring",
+                  subjectUnitRelationship: "unknown",
+                }
+              : { orderedAxisCount: 2 },
+        },
+        rawTable: {
+          schemaVersion: "0.1.0",
+          headers:
+            route === "survival"
+              ? ["Unit ID", "Group", "Follow-up time", "Status"]
+              : ["Unit ID", "Series", "X", "Y"],
+          rows:
+            route === "survival"
+              ? [
+                  ["mouse-1", "Control", "4", "Event"],
+                  ["mouse-2", "Drug", "", "Censored"],
+                ]
+              : [
+                  ["run-1", "A", "0", "0"],
+                  ["run-1", "A", "5", "1"],
+                ],
+          delimiter: "tab",
+          headerRow: 1,
+        },
+        rawLineage: {
+          schemaVersion: "0.1.0",
+          sourceKind: "clipboard",
+          sourceLabel: `${route}-paste`,
+          capturedAt: now,
+          rawText,
+        },
+        answers,
+        safeStop: {
+          status: route === "survival" ? "input_invalid" : "safe_unsupported",
+          reasonCodes: [route === "survival" ? "FOLLOW_UP_REQUIRED" : "MULTIPLE_AXES"],
+        },
+        provenanceEvents: [
+          {
+            id: "specialized-draft.create.1",
+            kind: "specialized_entry_draft_created",
+            occurredAt: now,
+            actor: "researcher",
+          },
+        ],
+      });
+      const openAnyProject = vi.fn(async () => ({
+        kind: "specialized_entry_draft" as const,
+        project: { state, target: `/tmp/${route}-draft.lsa` },
+      }));
+      render(
+        <App
+          projectActions={{
+            openProject: async () => null,
+            openAnyProject,
+            saveProject: async () => null,
+            saveSpecializedEntryDraftProject: async (request, target) => ({
+              state: request,
+              target: target ?? `/tmp/${route}-draft.lsa`,
+            }),
+          }}
+        />,
+      );
+
+      fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
+      await waitFor(() => expect(openAnyProject).toHaveBeenCalledOnce());
+      expect(await screen.findByRole("heading", { name: experimentName })).toBeVisible();
+      expect(screen.getByRole("textbox", { name: textboxName })).toHaveValue(rawText);
+      expect(window.location.pathname).toBe(`/${route}`);
+    },
+  );
+
+  it("routes a common matrix visualization .lsa result to Heatmap without coercion", async () => {
+    const state = createUnresolvedVisualizationProjectState({
+      metadata: {
+        projectId: "project.heatmap.open-test",
+        projectName: "開き直す行列",
+        experimentDate: "",
+        createdAt: "2026-08-28T00:00:00.000Z",
+        updatedAt: "2026-08-28T00:00:00.000Z",
+      },
+      entryIntent: "matrix_visualization",
+      table: {
+        id: "table.heatmap.open-test",
+        headers: ["Feature", "Sample 1", "Sample 2"],
+        rows: [["Protein A", "1", "2"]],
+        delimiter: "tab",
+        headerRow: 1,
+      },
+      rawLineage: {
+        sourceKind: "tsv",
+        sourceLabel: "matrix.tsv",
+        importedAt: "2026-08-28T00:00:00.000Z",
+        rawText: "Feature\tSample 1\tSample 2\r\nProtein A\t1\t2",
+        sha256: null,
+        transformations: ["delimiter_detection"],
+      },
+      mapping: {
+        schemaVersion: "0.1.0",
+        sourceLabel: "matrix.tsv",
+        delimiter: "tab",
+        headerRow: 1,
+        columns: [
+          { index: 0, header: "Feature", role: "metadata" },
+          { index: 1, header: "Sample 1", role: "metadata" },
+          { index: 2, header: "Sample 2", role: "metadata" },
+        ],
+        identityDecision: "unanswered",
+        confirmedAt: "2026-08-28T00:00:00.000Z",
+      },
+      actor: "researcher",
+    });
+    const openAnyProject = vi.fn(async () => ({
+      kind: "unresolved_visualization" as const,
+      project: { state, target: "/tmp/heatmap-open-test.lsa" },
+    }));
+    render(
+      <App
+        projectActions={{
+          openProject: async () => null,
+          openAnyProject,
+          saveProject: async () => null,
+        }}
+      />,
+    );
+
+    fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
+    await waitFor(() => expect(openAnyProject).toHaveBeenCalledOnce());
+    expect(await screen.findByRole("heading", { name: "ヒートマップ" })).toBeVisible();
+    expect(screen.getByLabelText("Matrix data")).toHaveValue(
+      "Feature\tSample 1\tSample 2\nProtein A\t1\t2",
+    );
   });
 
   it("最近のプロジェクトから保存済みlsaを直接開く", async () => {
@@ -622,7 +1210,6 @@ describe("workspace home", () => {
   });
 
   it("opens deterministic synthetic data without presenting it as research data", () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<App />);
     expect(screen.getByText("ブラウザUXプレビュー")).toBeVisible();
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
@@ -639,36 +1226,86 @@ describe("workspace home", () => {
     expect(screen.getByText(/測定予定なし：1セル/)).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "← 戻る" }));
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
     expect(screen.getByRole("heading", { name: "合成デモデータですぐ試す" })).toBeVisible();
   });
 
   it("未保存workspaceからのtop navigationは破棄確認なしに状態を失わない", async () => {
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     render(<App />);
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
     fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
     await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
 
     fireEvent.click(screen.getByRole("button", { name: /ホーム/ }));
-    expect(confirm).toHaveBeenCalledWith(
-      "未保存の変更があります。現在の実験を閉じて破棄しますか？",
-    );
+    expect(screen.getByRole("dialog", { name: "この実験を保存しますか？" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "保存して続ける" })).toBeDisabled();
     expect(screen.getByRole("heading", { name: "合成デモ：Simple 3群（連続値）" })).toBeVisible();
 
-    confirm.mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+    expect(screen.queryByRole("dialog", { name: "この実験を保存しますか？" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "合成デモ：Simple 3群（連続値）" })).toBeVisible();
+
     fireEvent.click(screen.getByRole("button", { name: /ホーム/ }));
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
     expect(await screen.findByRole("heading", { name: /どの実験を整理しますか？/ })).toBeVisible();
   });
 
   it("確認済みの新しい実験操作は同じroute上のworkspaceもfresh startへ戻す", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<App />);
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
     fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
     await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
 
     fireEvent.click(screen.getByRole("button", { name: /新しい実験/ }));
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
     expect(await screen.findByRole("heading", { name: "何をした実験ですか？" })).toBeVisible();
+  });
+
+  it("未保存workspaceを保存してから目的の画面へ進める", async () => {
+    const saveProject = vi.fn(async (state) => ({ state, target: "/tmp/saved-before-exit.lsa" }));
+    render(
+      <App
+        projectActions={{
+          openProject: async () => null,
+          saveProject,
+        }}
+      />,
+    );
+    fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+    fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
+    await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
+
+    fireEvent.click(screen.getByRole("button", { name: /ホーム/ }));
+    expect(screen.getByRole("button", { name: "保存して続ける" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "保存して続ける" }));
+
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole("heading", { name: /どの実験を整理しますか？/ })).toBeVisible();
+  });
+
+  it("破棄を承認してOpen pickerをキャンセルしても現在のworkspaceを未保存のまま保持する", async () => {
+    const openProject = vi.fn(async () => null);
+    render(
+      <App
+        projectActions={{
+          openProject,
+          saveProject: async () => null,
+        }}
+      />,
+    );
+    fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
+    fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
+    await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
+
+    fireEvent.click(screen.getByText("ファイル"));
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを開く" }));
+    expect(screen.getByRole("dialog", { name: "この実験を保存しますか？" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
+    await waitFor(() => expect(openProject).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole("heading", { name: "合成デモ：Simple 3群（連続値）" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: /ホーム/ }));
+    expect(screen.getByRole("dialog", { name: "この実験を保存しますか？" })).toBeVisible();
   });
 
   it("returns to Home with the visible back action", () => {

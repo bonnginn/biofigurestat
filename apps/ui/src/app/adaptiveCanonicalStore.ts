@@ -227,18 +227,19 @@ function identitiesForNewRow(input: {
   const experiment = draft.experiments[coordinate.experimentIndex]!;
   const condition = draft.conditions[coordinate.conditionIndex]!;
   const stableSessionIdentity = experiment.stableUnitId ?? experiment.id;
+  const semanticSessionIdentity = experiment.label.trim() || stableSessionIdentity;
   const sharedSource = hasSharedSourceConditionUnits(draft);
   const experimentalIdentity =
     draft.conditionAssignment.kind === "matched" && !sharedSource
-      ? stableSessionIdentity
-      : `${stableSessionIdentity}.${condition.id}`;
+      ? semanticSessionIdentity
+      : `${semanticSessionIdentity} · ${condition.label}`;
   const matchingIdentityKey =
     draft.conditionAssignment.kind === "matched" ? contract.matching.identityKey : null;
   const observationIdentity =
     cell.kind === "nested_continuous" ? cell.observationUnitIds?.[observationIndex] : undefined;
   const identities = Object.fromEntries(
     contract.identities.map((identity) => {
-      if (identity.key === matchingIdentityKey) return [identity.key, stableSessionIdentity];
+      if (identity.key === matchingIdentityKey) return [identity.key, semanticSessionIdentity];
       if (identity.unitLevelKey === contract.experimentalUnitLevelKey)
         return [identity.key, experimentalIdentity];
       if (identity.unitLevelKey === coordinate.readout.observationLevelKey && observationIdentity)

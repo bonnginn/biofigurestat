@@ -65,7 +65,7 @@ describe("ordered-curve analysis readiness", () => {
     });
   });
 
-  it("keeps a repeated trajectory descriptive because D17 ignores within-unit correlation", () => {
+  it("allows only a descriptive point-estimate fit for a repeated trajectory", () => {
     expect(
       resolveOrderedCurveAnalysisReadiness({
         orderedAxisMeaning: "elapsed_time",
@@ -74,8 +74,9 @@ describe("ordered-curve analysis readiness", () => {
         modelExplicitlySelected: true,
       }),
     ).toMatchObject({
-      status: "safe_stop",
-      reasonCode: "REPEATED_TRAJECTORY_INFERENTIAL_FIT_NOT_SUPPORTED",
+      status: "ready_descriptive_only",
+      reasonCode: "REPEATED_TRAJECTORY_DESCRIPTIVE_FIT_ONLY",
+      fitInterpretation: "descriptive_point_estimate_only",
       preserveInput: true,
     });
   });

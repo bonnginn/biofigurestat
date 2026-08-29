@@ -4,6 +4,7 @@ import type { CoreGraphModel } from "@lsaa/graph-spec";
 
 import {
   copyGraphToClipboard,
+  exportGraphPng,
   serializeAnalyzedDataCsv,
   serializeGraphSvg,
   svgToPngBlob,
@@ -70,6 +71,29 @@ describe("publication graph exports", () => {
     vi.restoreAllMocks();
   });
 
+  it("rasterizes and downloads the exact currently rendered SVG", async () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("width", "640");
+    svg.setAttribute("height", "480");
+    svg.setAttribute("viewBox", "0 0 640 480");
+    svg.setAttribute("data-graph-shape", "proportion");
+    const currentLayer = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    currentLayer.setAttribute("data-graph-layer", "proportion-experiment");
+    currentLayer.setAttribute("cx", "120");
+    currentLayer.setAttribute("cy", "160");
+    svg.appendChild(currentLayer);
+    const expectedSvg = serializeGraphSvg(svg);
+    const png = new Blob(["png"], { type: "image/png" });
+    const rasterize = vi.fn(async () => png);
+    const download = vi.fn(() => true);
+
+    const capture = await exportGraphPng(svg, "current-graph.png", { rasterize, download });
+
+    expect(capture).toEqual({ svgText: expectedSvg, width: 640, height: 480 });
+    expect(rasterize).toHaveBeenCalledWith(expectedSvg, 640, 480);
+    expect(download).toHaveBeenCalledWith(png, "current-graph.png");
+  });
+
   it("copies SVG vector content when the browser clipboard supports it", async () => {
     class TestClipboardItem {
       constructor(readonly data: Record<string, Blob>) {}
@@ -106,6 +130,9 @@ describe("publication graph exports", () => {
     expect(serialized).toContain('<?xml version="1.0" encoding="UTF-8"?>');
     expect(serialized).toContain('xmlns="http://www.w3.org/2000/svg"');
     expect(serialized).toContain(".graph-axis-line");
+    expect(serialized).toContain(".experiment-graph-category-tick");
+    expect(serialized).toContain(".experiment-graph-hierarchy-line");
+    expect(serialized).toContain(".experiment-graph-hierarchy-heading");
     expect(serialized).toContain('r="8"');
     expect(serialized).toContain('fill="#0072b2"');
     expect(serialized).toContain('data-graph-point="observation.1"');

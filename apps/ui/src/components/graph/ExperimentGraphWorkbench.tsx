@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, MouseEvent as ReactMouseEvent, RefObject } from "react";
-import type {
-  AnalysisEngineRequest,
-  AnalysisEngineResult,
-  AnalysisRecommendation,
+import {
+  requireAnalysisRequestRecommendation,
+  type AnalysisEngineRequest,
+  type AnalysisEngineResult,
+  type AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
 import { layoutComparisonBrackets } from "@lsaa/graph-spec";
@@ -34,20 +35,27 @@ import {
   isDerivedTimeMetric,
   type ContrastIntent,
 } from "../../app/experimentDraftAnalysis";
+import {
+  nestedIndependentSourceContext,
+  type DraftAnalysisCorrection,
+} from "../../app/draftAnalysisDiagnostics";
 import { defaultGraphYTitle, defaultLayersForGraphType } from "../../app/graphDefaults";
 import {
   createInitialGraphGrouping,
+  normalizeGraphGroupingChannels,
   swapSingleXFactorAndSeries,
 } from "../../app/graphGrouping";
 import {
   createExperimentWorkspaceDesign,
-  createWorkspaceRecommendation,
   type WorkspaceGraphAnalysis,
   type WorkspaceGraphState,
 } from "../../app/experimentWorkspaceProject";
 import {
   copyGraphToClipboard,
   downloadTextFile,
+  ExportCancelledError,
+  exportGraphPng,
+  saveExportText,
   serializeGraphSvg,
   svgToPngBlob,
 } from "../../app/graphExport";
@@ -73,12 +81,15 @@ import {
 } from "../../app/diagnostics";
 import { PRODUCT_IDENTITY } from "../../app/productIdentity";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
+import { routeFromPath } from "../../app/routes";
+import { recordUsageGraphEdit } from "../../app/usageTelemetry";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { createCategoryLayout, createNiceTicks } from "./graphLayout";
 import {
   buildHierarchyGroups,
   computeBoxWhiskerSummary,
   createMinorTicks,
+  hierarchyLineAddsInformation,
   omitGenericCategoricalAxisTitle,
   resolveSeriesLinePresentation,
 } from "./graphSemantics";
@@ -219,7 +230,15 @@ export function analysisTestAnnotationLabel(
   if (
     firstId &&
     secondId &&
-    ["games_howell", "tukey_hsd", "planned_holm", "dunn_holm", "holm_welch"].includes(family)
+    [
+      "games_howell",
+      "tukey_hsd",
+      "planned_holm",
+      "dunn_holm",
+      "holm_welch",
+      "holm_paired",
+      "holm_wilcoxon",
+    ].includes(family)
   ) {
     const method =
       family === "games_howell"
@@ -230,11 +249,26 @@ export function analysisTestAnnotationLabel(
             ? "Dunn–Holm"
             : family === "holm_welch"
               ? "Welch pair · Holm"
-              : "planned comparison · Holm";
+              : family === "holm_paired"
+                ? "paired t · Holm"
+                : family === "holm_wilcoxon"
+                  ? "Wilcoxon · Holm"
+                  : "planned comparison · Holm";
     return `${conditionLabel(firstId)} vs ${conditionLabel(secondId)} · ${method}`;
   }
   if (family === "dunnett" && firstId && secondId) {
     return `${conditionLabel(secondId)} vs ${conditionLabel(firstId)} · Dunnett`;
+  }
+  const twoGroupMethods: Readonly<Record<string, string>> = {
+    welch_two_sample_t_test: "Welch t",
+    student_two_sample_t_test: "Student t",
+    mann_whitney_u_test: "Mann–Whitney",
+    paired_t_test: "paired t",
+    wilcoxon_signed_rank_test: "Wilcoxon signed-rank",
+  };
+  const twoGroupMethod = twoGroupMethods[test.name];
+  if (twoGroupMethod && draft.conditions.length === 2) {
+    return `${draft.conditions[0]!.label} vs ${draft.conditions[1]!.label} · ${twoGroupMethod}`;
   }
   return fallback;
 }
@@ -243,6 +277,47 @@ function isPairwiseComparisonTest(testName: string): boolean {
   return /^(games_howell|tukey_hsd|dunnett|planned_holm|dunn_holm|holm_welch|holm_paired|holm_wilcoxon):/.test(
     testName,
   );
+}
+
+function createAdjustedComparisonAnnotation(
+  input: Readonly<{
+    test: AnalysisEngineResult["tests"][number];
+    testIndex: number;
+    requestId: string;
+    sourceMode: "raw_readout" | "derived_metric";
+    timeAnalysis: TimeAnalysisPlan;
+    analysisTimePointId: string | null;
+  }>,
+): StatisticsAnnotationEntry | null {
+  if (input.test.adjustedPValue === null || !isPairwiseComparisonTest(input.test.name)) return null;
+  const [, firstConditionId, secondConditionId] = input.test.name.split(":");
+  if (!firstConditionId || !secondConditionId) return null;
+  return {
+    id: `annotation.${input.testIndex}`,
+    analysisId: input.requestId,
+    comparisonId: input.test.name,
+    testIndex: input.testIndex,
+    mode: "exact_p",
+    showNonSignificant: true,
+    presentation: "bracket",
+    endpoints: [{ conditionId: firstConditionId }, { conditionId: secondConditionId }],
+    pValueStatus: "adjusted",
+    lineage: {
+      ...(input.sourceMode === "derived_metric" ? { derivedMetric: input.timeAnalysis.kind } : {}),
+      ...(input.analysisTimePointId ? { timePointId: input.analysisTimePointId } : {}),
+      ...(input.timeAnalysis.kind !== "selected_timepoint"
+        ? {
+            endpoint: input.timeAnalysis.kind,
+            ...(input.timeAnalysis.windowStart === undefined
+              ? {}
+              : { windowStart: input.timeAnalysis.windowStart }),
+            ...(input.timeAnalysis.windowEnd === undefined
+              ? {}
+              : { windowEnd: input.timeAnalysis.windowEnd }),
+          }
+        : {}),
+    },
+  };
 }
 
 type ProportionPoint = Readonly<{
@@ -302,6 +377,7 @@ export type ExperimentGraphWorkbenchProps = Readonly<{
   analysisAvailable?: boolean;
   initialState?: Omit<WorkspaceGraphState, "id" | "displayName">;
   onStateChange?: (state: Omit<WorkspaceGraphState, "id" | "displayName">) => void;
+  onAnalysisCorrection?: (correction: DraftAnalysisCorrection) => void;
 }>;
 
 const PALETTES: Record<PaletteMode, readonly string[]> = {
@@ -563,12 +639,13 @@ function buildConditionAxisLabels(
     }),
     ...draft.attributes.filter(({ id }) => !hierarchyOrder.includes(id)),
   ].filter(({ id }) => id !== seriesFactorId);
+  const normalizedGrouping = normalizeGraphGroupingChannels(grouping);
   const xFactorIds =
-    grouping.x.source === "factor"
-      ? grouping.x.factorIds?.length
-        ? grouping.x.factorIds
-        : grouping.x.factorId
-          ? [grouping.x.factorId]
+    normalizedGrouping.x.source === "factor"
+      ? normalizedGrouping.x.factorIds?.length
+        ? normalizedGrouping.x.factorIds
+        : normalizedGrouping.x.factorId
+          ? [normalizedGrouping.x.factorId]
           : []
       : [];
   return series.map((item) => {
@@ -581,7 +658,7 @@ function buildConditionAxisLabels(
     return {
       conditionId: item.conditionId,
       levels:
-        grouping.x.source === "factor"
+        normalizedGrouping.x.source === "factor" && xFactorIds.length > 0
           ? xFactorIds.map((factorId) => {
               const attribute = draft.attributes.find(({ id }) => id === factorId);
               return {
@@ -630,7 +707,12 @@ function violinPath(
   if (values.length < 2) return null;
   const minimum = Math.min(...values);
   const maximum = Math.max(...values);
-  const range = Math.max(maximum - minimum, Math.abs(maximum) * 0.08, 1);
+  // Density support must follow the observed scale.  A hard minimum range of
+  // 1 made bounded measurements such as circularity extend far beyond their
+  // actual values (and sometimes beyond the scientifically possible range).
+  const observedRange = maximum - minimum;
+  const scale = Math.max(Math.abs(minimum), Math.abs(maximum), Number.EPSILON);
+  const range = Math.max(observedRange, scale * 0.08, Number.EPSILON);
   const bandwidth = Math.max(range / 7, 0.001);
   const samples = Array.from({ length: 24 }, (_, index) => minimum + (range * index) / 23);
   const densities = samples.map((sample) =>
@@ -750,6 +832,68 @@ function ExperimentGraphSvg({
     appearance.legendPosition !== "hidden" &&
     legendConditions.length > 1 &&
     legendConditions.some(({ visualSeriesLabel }) => visualSeriesLabel);
+  const conditionIds = [...new Set(series.map((item) => item.conditionId))];
+  const activeStatisticsAnnotations: readonly StatisticsAnnotationEntry[] =
+    statisticsAnnotations.length > 0
+      ? statisticsAnnotations
+      : statisticsAnnotation.mode === "hidden"
+        ? []
+        : [
+            {
+              id: "annotation.legacy",
+              testIndex: statisticsAnnotation.testIndex,
+              mode: statisticsAnnotation.mode,
+              showNonSignificant: true,
+            },
+          ];
+  const resolvedAnnotations = activeStatisticsAnnotations.flatMap((annotation, stackIndex) => {
+    if (analysisResult?.status !== "ok") return [];
+    const test = analysisResult.tests[annotation.testIndex];
+    if (!test) return [];
+    const pValue = test.adjustedPValue ?? test.pValue;
+    if (!annotation.showNonSignificant && pValue >= 0.05) return [];
+    const [, firstConditionId, secondConditionId] = test.name.split(":");
+    const candidates = series
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) =>
+        annotation.lineage?.timePointId
+          ? item.timePointId === annotation.lineage.timePointId
+          : true,
+      );
+    const defaultTwoGroupPair =
+      axes.xSemantic === "categorical" && conditionIds.length === 2
+        ? conditionIds
+        : ([] as string[]);
+    const requestedFirstConditionId =
+      annotation.endpoints?.[0].conditionId ?? firstConditionId ?? defaultTwoGroupPair[0];
+    const requestedSecondConditionId =
+      annotation.endpoints?.[1].conditionId ?? secondConditionId ?? defaultTwoGroupPair[1];
+    const firstIndex = requestedFirstConditionId
+      ? candidates.find(({ item }) => item.conditionId === requestedFirstConditionId)?.index
+      : undefined;
+    const secondIndex = requestedSecondConditionId
+      ? candidates.find(({ item }) => item.conditionId === requestedSecondConditionId)?.index
+      : undefined;
+    const pairwise =
+      firstIndex !== undefined && secondIndex !== undefined
+        ? ([Math.min(firstIndex, secondIndex), Math.max(firstIndex, secondIndex)] as const)
+        : null;
+    return [{ annotation, test, pValue, pairwise, symbolTargetIndex: firstIndex, stackIndex }];
+  });
+  const bracketLayout = layoutComparisonBrackets(
+    resolvedAnnotations.flatMap(({ annotation, pairwise }) =>
+      pairwise ? [{ id: annotation.id, start: pairwise[0], end: pairwise[1] }] : [],
+    ),
+  );
+  const bracketLevelById = new Map(bracketLayout.map(({ id, level }) => [id, level]));
+  const bracketRows = Math.max(0, ...bracketLayout.map(({ level }) => level + 1));
+  const nonPairwiseRows = Math.max(
+    0,
+    ...resolvedAnnotations.flatMap(({ annotation, pairwise, stackIndex }) =>
+      !pairwise && annotation.presentation !== "symbol_only" ? [stackIndex + 1] : [],
+    ),
+  );
+  const annotationTopRows = Math.max(bracketRows, nonPairwiseRows);
   const topLegendRows =
     showLegend && appearance.legendPosition === "top" ? Math.ceil(legendConditions.length / 3) : 0;
   const topLegendHeight = topLegendRows * Math.max(34, appearance.legendFontSize * 2);
@@ -760,23 +904,43 @@ function ExperimentGraphSvg({
   const renderedXAxisTitle = xAxisTitle
     ? `${xAxisTitle}${axes.xUnit.trim() ? ` (${axes.xUnit.trim()})` : ""}`
     : "";
+  const hierarchyDepth =
+    axes.showCategoryLabels && !continuousLine ? Math.max(0, axisLabels[0]?.levels.length ?? 0) : 0;
+  const hierarchyHeadingWidth = Math.max(
+    0,
+    ...(axisLabels[0]?.levels ?? []).flatMap(({ label }, levelIndex) =>
+      label && !(levelIndex === 0 && label === "条件")
+        ? [estimatedRenderedTextWidth(label, appearance.hierarchyFontSize)]
+        : [],
+    ),
+  );
+  const rightLegendWidth =
+    showLegend && appearance.legendPosition === "right"
+      ? Math.max(
+          190,
+          ...legendConditions.map((item) => {
+            const label =
+              appearance.seriesStyles[item.visualSeriesKey]?.legendLabel ?? item.visualSeriesLabel;
+            return (
+              Math.max(
+                ...splitParentLabel(`${label}${item.auxiliaryReference ? " (reference)" : ""}`).map(
+                  (line) => estimatedRenderedTextWidth(line, appearance.legendFontSize),
+                ),
+              ) + 54
+            );
+          }),
+        )
+      : 0;
+  const annotationTopHeight = annotationTopRows * 24;
   const margin = {
     ...CHART_MARGIN,
-    top:
-      CHART_MARGIN.top +
-      topLegendHeight +
-      Math.min(
-        5,
-        statisticsAnnotations.filter(({ presentation }) => presentation !== "symbol_only").length ||
-          (statisticsAnnotation.mode === "hidden" ? 0 : 1),
-      ) *
-        24,
-    right: CHART_MARGIN.right + (showLegend && appearance.legendPosition === "right" ? 190 : 0),
+    top: CHART_MARGIN.top + topLegendHeight + annotationTopHeight,
+    right: CHART_MARGIN.right + rightLegendWidth,
+    left: Math.max(CHART_MARGIN.left, Math.ceil(hierarchyHeadingWidth + 26)),
   };
   const graphInnerWidth = continuousLine ? 720 : categoryLayout.innerWidth;
   const width = margin.left + margin.right + graphInnerWidth;
-  const hierarchyDepth =
-    axes.showCategoryLabels && !continuousLine ? Math.max(0, axisLabels[0]?.levels.length ?? 0) : 0;
+  const yAxisTitleX = Math.max(20, margin.left - 48);
   const extraLabelHeight = Math.max(0, hierarchyDepth - 1) * 27;
   const xAxisTitleHeight = renderedXAxisTitle ? 34 : 0;
   const statisticsLegendLabels = [
@@ -791,11 +955,15 @@ function ExperimentGraphSvg({
     : 0;
   const baseBottomMargin = continuousLine ? 58 : CHART_MARGIN.bottom;
   const height =
-    CHART_HEIGHT + extraLabelHeight + topLegendHeight + xAxisTitleHeight + statisticsLegendHeight;
+    CHART_HEIGHT +
+    extraLabelHeight +
+    topLegendHeight +
+    annotationTopHeight +
+    xAxisTitleHeight +
+    statisticsLegendHeight;
   margin.bottom = baseBottomMargin + extraLabelHeight + xAxisTitleHeight + statisticsLegendHeight;
   const plotHeight = height - margin.top - margin.bottom;
   const baseColors = PALETTES[appearance.palette];
-  const conditionIds = [...new Set(series.map((item) => item.conditionId))];
   const visualSeriesKeys = [...new Set(series.map((item) => item.visualSeriesKey))];
   const colors = visualSeriesKeys.map(
     (seriesKey, index) =>
@@ -1017,55 +1185,6 @@ function ExperimentGraphSvg({
               : [];
           })
         : [];
-  const activeStatisticsAnnotations: readonly StatisticsAnnotationEntry[] =
-    statisticsAnnotations.length > 0
-      ? statisticsAnnotations
-      : statisticsAnnotation.mode === "hidden"
-        ? []
-        : [
-            {
-              id: "annotation.legacy",
-              testIndex: statisticsAnnotation.testIndex,
-              mode: statisticsAnnotation.mode,
-              showNonSignificant: true,
-            },
-          ];
-  const resolvedAnnotations = activeStatisticsAnnotations.flatMap((annotation, stackIndex) => {
-    if (analysisResult?.status !== "ok") return [];
-    const test = analysisResult.tests[annotation.testIndex];
-    if (!test) return [];
-    const pValue = test.adjustedPValue ?? test.pValue;
-    if (!annotation.showNonSignificant && pValue >= 0.05) return [];
-    const [, firstConditionId, secondConditionId] = test.name.split(":");
-    const candidates = series
-      .map((item, index) => ({ item, index }))
-      .filter(({ item }) =>
-        annotation.lineage?.timePointId
-          ? item.timePointId === annotation.lineage.timePointId
-          : true,
-      );
-    const requestedFirstConditionId = annotation.endpoints?.[0].conditionId ?? firstConditionId;
-    const requestedSecondConditionId = annotation.endpoints?.[1].conditionId ?? secondConditionId;
-    const firstIndex = requestedFirstConditionId
-      ? candidates.find(({ item }) => item.conditionId === requestedFirstConditionId)?.index
-      : undefined;
-    const secondIndex = requestedSecondConditionId
-      ? candidates.find(({ item }) => item.conditionId === requestedSecondConditionId)?.index
-      : undefined;
-    const pairwise =
-      firstIndex !== undefined && secondIndex !== undefined
-        ? ([Math.min(firstIndex, secondIndex), Math.max(firstIndex, secondIndex)] as const)
-        : null;
-    return [{ annotation, test, pValue, pairwise, symbolTargetIndex: firstIndex, stackIndex }];
-  });
-  const bracketLevelById = new Map(
-    layoutComparisonBrackets(
-      resolvedAnnotations.flatMap(({ annotation, pairwise }) =>
-        pairwise ? [{ id: annotation.id, start: pairwise[0], end: pairwise[1] }] : [],
-      ),
-    ).map(({ id, level }) => [id, level]),
-  );
-
   return (
     <svg
       ref={svgRef}
@@ -1077,6 +1196,8 @@ function ExperimentGraphSvg({
       data-graph-shape={shape}
       data-category-slot-width={continuousLine ? 0 : categoryLayout.baseSlot}
       data-side-padding={categoryLayout.sidePadding}
+      data-left-margin={margin.left}
+      data-statistics-bracket-levels={bracketRows}
       style={{
         fontFamily:
           appearance.fontFamily === "arial"
@@ -1324,9 +1445,9 @@ function ExperimentGraphSvg({
           })
         : null}
       <text
-        x={17}
+        x={yAxisTitleX}
         y={margin.top + plotHeight / 2}
-        transform={`rotate(-90 17 ${margin.top + plotHeight / 2})`}
+        transform={`rotate(-90 ${yAxisTitleX} ${margin.top + plotHeight / 2})`}
         textAnchor="middle"
         className="experiment-graph-axis-title"
         style={{ fontSize: appearance.axisTitleFontSize, fill: "#000" }}
@@ -1615,7 +1736,7 @@ function ExperimentGraphSvg({
                       onInspect("x-axis");
                     }}
                   >
-                    {group.end > group.start ? (
+                    {hierarchyLineAddsInformation(groups, group) ? (
                       <line
                         x1={xFor(group.start) - 8}
                         x2={xFor(group.end) + 8}
@@ -2605,7 +2726,17 @@ export function ExperimentGraphWorkbench({
   analysisAvailable = true,
   initialState,
   onStateChange,
+  onAnalysisCorrection,
 }: ExperimentGraphWorkbenchProps) {
+  const recommendationDesign = useMemo(() => {
+    try {
+      return createExperimentWorkspaceDesign(draft, "1970-01-01T00:00:00.000Z");
+    } catch {
+      // Legacy shared-source drafts can still be inspected and corrected, but
+      // may not execute statistics until their adaptive contract is available.
+      return null;
+    }
+  }, [draft]);
   const sharedSourceTopology =
     hasSharedSourceConditionUnits(draft) &&
     draft.conditionAssignment.matchedTopology?.kind === "distinct_condition_units_shared_source"
@@ -2614,6 +2745,10 @@ export function ExperimentGraphWorkbench({
   const [selectedReadoutId, setSelectedReadoutId] = useState(
     initialState?.selectedReadoutId ?? draft.readouts[0]?.id ?? "",
   );
+  const independentNestedSource = nestedIndependentSourceContext({
+    draft,
+    readoutId: selectedReadoutId,
+  });
   const [selectedConditionIds, setSelectedConditionIds] = useState<string[]>(() =>
     initialState
       ? [
@@ -2675,13 +2810,14 @@ export function ExperimentGraphWorkbench({
   });
   const [layers, setLayers] = useState<LayerState>(initialState?.layers ?? DEFAULT_LAYERS);
   const proposedInitialGrouping = useMemo(
-    () => initialState?.grouping ?? createInitialGraphGrouping(draft),
+    () =>
+      normalizeGraphGroupingChannels(initialState?.grouping ?? createInitialGraphGrouping(draft)),
     [draft, initialState?.grouping],
   );
   const [appearance, setAppearance] = useState<GraphAppearance>({
     ...DEFAULT_APPEARANCE,
     ...(proposedInitialGrouping.series.source !== "none"
-      ? { legendPosition: "top" as const, palette: "condition" as const }
+      ? { legendPosition: "right" as const, palette: "condition" as const }
       : {}),
     ...initialState?.appearance,
   });
@@ -2721,20 +2857,49 @@ export function ExperimentGraphWorkbench({
   );
   const [fitOverview, setFitOverview] = useState(false);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [pngExportFeedback, setPngExportFeedback] = useState<
+    Readonly<{ kind: "success" | "error"; text: string }> | null
+  >(null);
   const [benchmarkCaptureStatus, setBenchmarkCaptureStatus] = useState<string | null>(null);
   const benchmarkRun = useBenchmarkRun();
   const analysisResult = analysis?.result ?? null;
+  const autoAnnotatedAnalysisRef = useRef(initialState?.analysis?.result.requestId ?? null);
+  const adjustedComparisonAnnotations = useMemo(
+    () =>
+      analysisResult?.status === "ok"
+        ? analysisResult.tests.flatMap((test, testIndex) => {
+            const annotation = createAdjustedComparisonAnnotation({
+              test,
+              testIndex,
+              requestId: analysisResult.requestId,
+              sourceMode,
+              timeAnalysis,
+              analysisTimePointId,
+            });
+            return annotation ? [annotation] : [];
+          })
+        : [],
+    [analysisResult, analysisTimePointId, sourceMode, timeAnalysis],
+  );
+  useEffect(() => {
+    if (!analysisResult || analysisResult.status !== "ok") return;
+    if (autoAnnotatedAnalysisRef.current === analysisResult.requestId) return;
+    autoAnnotatedAnalysisRef.current = analysisResult.requestId;
+    setStatisticsAnnotations(adjustedComparisonAnnotations);
+  }, [adjustedComparisonAnnotations, analysisResult]);
   const methodsText = useMemo(() => {
     if (!analysis || analysis.result.status !== "ok") return null;
     const design = createExperimentWorkspaceDesign(draft, analysis.result.completedAt);
-    const recommendation =
-      analysis.recommendation ?? createWorkspaceRecommendation(analysis.request, design);
+    const canonicalRecommendation = requireAnalysisRequestRecommendation(design, analysis.request, {
+      outcomeId: selectedReadoutId,
+    });
+    const recommendation = {
+      ...canonicalRecommendation,
+      ...(analysis.recommendation?.decision ? { decision: analysis.recommendation.decision } : {}),
+    };
     const base = generateMethodsText({
       design,
-      recommendation: {
-        ...recommendation,
-        ...(analysis.recommendedMethod ? { recommendedMethod: analysis.recommendedMethod } : {}),
-      },
+      recommendation,
       request: analysis.request,
       result: analysis.result,
       graphSpec: null,
@@ -2916,6 +3081,36 @@ export function ExperimentGraphWorkbench({
     recordDiagnosticEvent("graph_state_changed", { graphType, graphFingerprint: fingerprint });
   }, [benchmarkRenderedState, graphType]);
 
+  const usageGraphState = {
+    graphType,
+    series: JSON.stringify({
+      selectedReadoutId,
+      sourceMode,
+      selectedConditionIds,
+      selectedTimePointIds,
+      grouping,
+    }),
+    axes: JSON.stringify(axes),
+    layers: JSON.stringify(layers),
+    appearance: JSON.stringify(appearance),
+    annotation: JSON.stringify({ statisticsAnnotation, statisticsAnnotations }),
+  };
+  const usageGraphStateRef = useRef<typeof usageGraphState | null>(null);
+  useEffect(() => {
+    const previous = usageGraphStateRef.current;
+    usageGraphStateRef.current = usageGraphState;
+    if (!previous) return;
+    const route = routeFromPath(window.location.pathname);
+    if (previous.graphType !== usageGraphState.graphType) recordUsageGraphEdit(route, "graph_type");
+    if (previous.series !== usageGraphState.series) recordUsageGraphEdit(route, "series_selection");
+    if (previous.axes !== usageGraphState.axes) recordUsageGraphEdit(route, "axes");
+    if (previous.layers !== usageGraphState.layers) recordUsageGraphEdit(route, "layers");
+    if (previous.appearance !== usageGraphState.appearance)
+      recordUsageGraphEdit(route, "appearance_layout");
+    if (previous.annotation !== usageGraphState.annotation)
+      recordUsageGraphEdit(route, "statistics_annotation");
+  }, [usageGraphState]);
+
   const benchmarkStateLogRef = useRef<{
     identity: string;
     rendered: string;
@@ -3034,12 +3229,13 @@ export function ExperimentGraphWorkbench({
         : [undefined];
     const built = activeConditions.flatMap((condition) =>
       timePoints.map((timePoint) => {
+        const normalizedGrouping = normalizeGraphGroupingChannels(grouping);
         const xFactorIds =
-          grouping.x.source === "factor"
-            ? grouping.x.factorIds?.length
-              ? grouping.x.factorIds
-              : grouping.x.factorId
-                ? [grouping.x.factorId]
+          normalizedGrouping.x.source === "factor"
+            ? normalizedGrouping.x.factorIds?.length
+              ? normalizedGrouping.x.factorIds
+              : normalizedGrouping.x.factorId
+                ? [normalizedGrouping.x.factorId]
                 : []
             : [];
         const xLevels = xFactorIds.map((factorId) => condition.attributes[factorId] ?? "unknown");
@@ -3301,6 +3497,10 @@ export function ExperimentGraphWorkbench({
       ),
     [series],
   );
+  const defaultPresentationAppearance: GraphAppearance = {
+    ...DEFAULT_APPEARANCE,
+    ...(visualSeriesOptions.length > 1 ? { legendPosition: "right", palette: "condition" } : {}),
+  };
   const baseAnnotationContext = analysis
     ? graphAnnotationContext({
         request: analysis.request,
@@ -3500,26 +3700,30 @@ export function ExperimentGraphWorkbench({
         experiment: true,
         overall: true,
       });
-      setAppearance(DEFAULT_APPEARANCE);
+      setAppearance(defaultPresentationAppearance);
       return;
     }
     if (preset === "publication") {
       setLayers(restrainedLayers);
-      setAppearance({ ...DEFAULT_APPEARANCE, pointSize: 6, axisLineWidth: 1.4 });
+      setAppearance({
+        ...defaultPresentationAppearance,
+        pointSize: 6,
+        axisLineWidth: 1.4,
+      });
       return;
     }
     if (preset === "presentation") {
       setLayers(restrainedLayers);
       setAppearance({
-        ...DEFAULT_APPEARANCE,
-        palette: "condition",
+        ...defaultPresentationAppearance,
+        palette: visualSeriesOptions.length > 1 ? "condition" : "publication",
         pointSize: 8,
         axisLineWidth: 2,
       });
       return;
     }
     setLayers(restrainedLayers);
-    setAppearance(DEFAULT_APPEARANCE);
+    setAppearance(defaultPresentationAppearance);
   };
   const graphTypeLabel: Record<GraphType, string> = {
     dot: "Dot",
@@ -3541,29 +3745,72 @@ export function ExperimentGraphWorkbench({
     timeSampling: draft.time.sampling,
     matched: draft.conditionAssignment.kind === "matched",
   });
-  const exportSvg = () => {
+  const exportSvg = async () => {
     if (!svgRef.current || !readout) return;
-    downloadTextFile(
-      serializeGraphSvg(svgRef.current),
-      `${safeFileStem(readout.label)}.svg`,
-      "image/svg+xml;charset=utf-8",
-    );
+    setPngExportFeedback(null);
+    try {
+      const result = await saveExportText(
+        serializeGraphSvg(svgRef.current),
+        `${safeFileStem(readout.label)}.svg`,
+        "image/svg+xml;charset=utf-8",
+      );
+      if (result === "saved") {
+        setPngExportFeedback({ kind: "success", text: "SVGを保存しました。" });
+      }
+    } catch (error) {
+      if (error instanceof ExportCancelledError) return;
+      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
+      setPngExportFeedback({
+        kind: "error",
+        text: "SVGを保存できませんでした。グラフは保持されています。",
+      });
+    }
   };
-  const exportCsv = () => {
+  const exportPng = async () => {
+    if (!svgRef.current || !readout) return;
+    setPngExportFeedback(null);
+    try {
+      await exportGraphPng(svgRef.current, `${safeFileStem(readout.label)}.png`);
+      setPngExportFeedback({
+        kind: "success",
+        text: "現在のグラフを白背景のPNGで書き出しました。",
+      });
+    } catch (error) {
+      if (error instanceof ExportCancelledError) return;
+      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
+      setPngExportFeedback({
+        kind: "error",
+        text: "PNGを書き出せませんでした。グラフは保持されています。SVG書き出しを利用してください。",
+      });
+    }
+  };
+  const exportCsv = async () => {
     if (!readout) return;
-    downloadTextFile(
-      readout.shape === "categorical_counts"
-        ? serializeCompositionData(
-            draft,
-            cells,
-            readout,
-            selectedConditionIds,
-            selectedTimePointIds,
-          )
-        : serializeVisibleGraphData(series, readout.shape),
-      `${safeFileStem(readout.label)}-graph-data.csv`,
-      "text/csv;charset=utf-8",
-    );
+    setPngExportFeedback(null);
+    try {
+      const result = await saveExportText(
+        readout.shape === "categorical_counts"
+          ? serializeCompositionData(
+              draft,
+              cells,
+              readout,
+              selectedConditionIds,
+              selectedTimePointIds,
+            )
+          : serializeVisibleGraphData(series, readout.shape),
+        `${safeFileStem(readout.label)}-graph-data.csv`,
+        "text/csv;charset=utf-8",
+      );
+      if (result === "saved") {
+        setPngExportFeedback({ kind: "success", text: "表示中のデータをCSVで保存しました。" });
+      }
+    } catch (error) {
+      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
+      setPngExportFeedback({
+        kind: "error",
+        text: "CSVを保存できませんでした。グラフとデータは保持されています。",
+      });
+    }
   };
   const descriptiveBenchmarkRun = draft.analysisIntent.kind === "single_cohort";
   const descriptiveMethodsText = [
@@ -3622,21 +3869,28 @@ export function ExperimentGraphWorkbench({
             selectedConditionIds: analysisConditionIds,
             displayedConditionIds: selectedConditionIds,
             statisticalUnit: draft.conditionAssignment.unitLabel,
-            recommendation:
-              analysis.recommendation ??
-              createWorkspaceRecommendation(
-                analysis.request,
+            recommendation: {
+              ...requireAnalysisRequestRecommendation(
                 createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
+                analysis.request,
+                { outcomeId: selectedReadoutId },
               ),
-            recommendedMethod:
-              analysis.recommendation?.recommendedMethod ??
-              analysis.recommendedMethod ??
-              analysisAssessment.recommendedMethod,
+              ...(analysis.recommendation?.decision
+                ? { decision: analysis.recommendation.decision }
+                : {}),
+            },
+            recommendedMethod: requireAnalysisRequestRecommendation(
+              createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
+              analysis.request,
+              { outcomeId: selectedReadoutId },
+            ).recommendedMethod,
             selectedMethod: analysis.request.method,
             recommendationDiffers:
-              (analysis.recommendation?.recommendedMethod ??
-                analysis.recommendedMethod ??
-                analysisAssessment.recommendedMethod) !== analysis.request.method,
+              requireAnalysisRequestRecommendation(
+                createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
+                analysis.request,
+                { outcomeId: selectedReadoutId },
+              ).recommendedMethod !== analysis.request.method,
             contrast:
               analysis.request.protocolVersion === "0.1.0"
                 ? analysis.request.contrastConditionIds
@@ -3843,15 +4097,23 @@ export function ExperimentGraphWorkbench({
                   type="button"
                   aria-label="SVGを書き出す"
                   disabled={!hasData}
-                  onClick={exportSvg}
+                  onClick={() => void exportSvg()}
                 >
                   SVG
                 </button>
                 <button
                   type="button"
+                  aria-label="PNGを書き出す"
+                  disabled={!hasData}
+                  onClick={() => void exportPng()}
+                >
+                  PNG
+                </button>
+                <button
+                  type="button"
                   aria-label="表示データCSV"
                   disabled={!hasData}
-                  onClick={exportCsv}
+                  onClick={() => void exportCsv()}
                 >
                   CSV
                 </button>
@@ -3876,6 +4138,14 @@ export function ExperimentGraphWorkbench({
             {copyStatus ? (
               <p className="experiment-graph-copy-status" role="status">
                 {copyStatus}
+              </p>
+            ) : null}
+            {pngExportFeedback ? (
+              <p
+                className={`experiment-graph-copy-status${pngExportFeedback.kind === "error" ? " experiment-graph-copy-status--error" : ""}`}
+                role={pngExportFeedback.kind === "error" ? "alert" : "status"}
+              >
+                {pngExportFeedback.text}
               </p>
             ) : null}
             {benchmarkCaptureStatus ? <p role="status">{benchmarkCaptureStatus}</p> : null}
@@ -4212,17 +4482,19 @@ export function ExperimentGraphWorkbench({
                         }));
                       }}
                     >
-                      <option value="time">
-                        {axes.xSemantic === "numeric_covariate" ? axes.xTitle || "数値X" : "時間"}
-                      </option>
+                      {axes.xSemantic !== "categorical" || draft.time.points.length > 0 ? (
+                        <option value="time">
+                          {axes.xSemantic === "numeric_covariate" ? axes.xTitle || "数値X" : "時間"}
+                        </option>
+                      ) : null}
                       <option value="condition">条件の組み合わせ</option>
                       {draft.attributes
                         .filter(
                           ({ id }) =>
                             id !==
-                            (grouping.series.source === "factor"
-                              ? grouping.series.factorId
-                              : undefined) && id !== grouping.facet?.factorId,
+                              (grouping.series.source === "factor"
+                                ? grouping.series.factorId
+                                : undefined) && id !== grouping.facet?.factorId,
                         )
                         .map((factor) => (
                           <option key={factor.id} value={`factor:${factor.id}`}>
@@ -4262,9 +4534,9 @@ export function ExperimentGraphWorkbench({
                           .filter(
                             ({ id }) =>
                               id !==
-                              (grouping.series.source === "factor"
-                                ? grouping.series.factorId
-                                : undefined) && id !== grouping.facet?.factorId,
+                                (grouping.series.source === "factor"
+                                  ? grouping.series.factorId
+                                  : undefined) && id !== grouping.facet?.factorId,
                           )
                           .map((factor) => (
                             <option key={factor.id} value={factor.id}>
@@ -4294,7 +4566,7 @@ export function ExperimentGraphWorkbench({
                             : value === "time"
                               ? ({ source: "time" } as const)
                               : ({ source: "none" } as const);
-                          return {
+                          return normalizeGraphGroupingChannels({
                             ...current,
                             series: nextSeries,
                             color: nextSeries,
@@ -4304,13 +4576,15 @@ export function ExperimentGraphWorkbench({
                               current.facet?.factorId === nextSeries.factorId
                                 ? null
                                 : current.facet,
-                          };
+                          });
                         });
                         if (value !== "none") {
                           setAppearance((current) => ({
                             ...current,
                             legendPosition:
-                              current.legendPosition === "hidden" ? "top" : current.legendPosition,
+                              current.legendPosition === "hidden"
+                                ? "right"
+                                : current.legendPosition,
                             palette: current.palette === "single" ? "condition" : current.palette,
                           }));
                         }
@@ -4342,8 +4616,7 @@ export function ExperimentGraphWorkbench({
                         ))}
                     </select>
                   </label>
-                  {axes.xSemantic === "categorical" &&
-                  swapSingleXFactorAndSeries(grouping) ? (
+                  {axes.xSemantic === "categorical" && swapSingleXFactorAndSeries(grouping) ? (
                     <button
                       type="button"
                       className="experiment-graph-series-style-shortcut"
@@ -4571,7 +4844,7 @@ export function ExperimentGraphWorkbench({
                         ...current,
                         palette: current.palette === "single" ? "colorblind" : current.palette,
                         legendPosition:
-                          current.legendPosition === "hidden" ? "top" : current.legendPosition,
+                          current.legendPosition === "hidden" ? "right" : current.legendPosition,
                       }));
                     }
                   }}
@@ -5446,11 +5719,59 @@ export function ExperimentGraphWorkbench({
               <p className="experiment-graph-help">
                 Statisticsで保存した解析結果から表示します。まず全比較を一括表示し、不要な比較だけを下の一覧から外せます。ここでは再計算しません。
               </p>
+              {adjustedComparisonAnnotations.length > 0 ? (
+                <fieldset
+                  className="experiment-graph-condition-fieldset experiment-graph-comparison-visibility"
+                  aria-label="調整済み比較の表示"
+                >
+                  <legend>調整済み比較（最初はすべて表示）</legend>
+                  {adjustedComparisonAnnotations.map((candidate) => {
+                    const test = analysisResult.tests[candidate.testIndex]!;
+                    const checked = statisticsAnnotations.some(
+                      ({ testIndex }) => testIndex === candidate.testIndex,
+                    );
+                    return (
+                      <label className="experiment-graph-checkbox" key={candidate.id}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(event) =>
+                            setStatisticsAnnotations((current) =>
+                              event.target.checked
+                                ? [
+                                    ...current.filter(
+                                      ({ testIndex }) => testIndex !== candidate.testIndex,
+                                    ),
+                                    candidate,
+                                  ]
+                                : current.filter(
+                                    ({ testIndex }) => testIndex !== candidate.testIndex,
+                                  ),
+                            )
+                          }
+                        />
+                        <span>
+                          {analysisTestAnnotationLabel(test, draft, baseAnnotationContext)}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </fieldset>
+              ) : null}
               {analysisResult.tests.length > 1 ? (
                 <label className="experiment-graph-field">
                   <span>比較結果</span>
                   <select
                     aria-label="統計注釈の比較"
+                    title={
+                      analysisResult.tests[statisticsAnnotation.testIndex]
+                        ? analysisTestAnnotationLabel(
+                            analysisResult.tests[statisticsAnnotation.testIndex]!,
+                            draft,
+                            baseAnnotationContext,
+                          )
+                        : undefined
+                    }
                     value={statisticsAnnotation.testIndex}
                     onChange={(event) =>
                       setStatisticsAnnotation((current) => ({
@@ -5484,6 +5805,25 @@ export function ExperimentGraphWorkbench({
                   <option value="symbol">有意差記号</option>
                 </select>
               </label>
+              {adjustedComparisonAnnotations.length > 0 ? (
+                <button
+                  type="button"
+                  aria-label="すべての比較をまとめて注釈へ追加"
+                  className="experiment-graph-primary-action"
+                  onClick={() => {
+                    const mode: StatisticsAnnotationEntry["mode"] =
+                      statisticsAnnotation.mode === "symbol" ? "symbol" : "exact_p";
+                    setStatisticsAnnotations(
+                      adjustedComparisonAnnotations.map((annotation) => ({
+                        ...annotation,
+                        mode,
+                      })),
+                    );
+                  }}
+                >
+                  調整済みの全比較をグラフにまとめて表示
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => {
@@ -5533,59 +5873,6 @@ export function ExperimentGraphWorkbench({
                 }}
               >
                 この比較を注釈へ追加
-              </button>
-              <button
-                type="button"
-                aria-label="すべての比較をまとめて注釈へ追加"
-                onClick={() => {
-                  const mode =
-                    statisticsAnnotation.mode === "hidden" ? "symbol" : statisticsAnnotation.mode;
-                  const next = analysisResult.tests.flatMap<StatisticsAnnotationEntry>(
-                    (test, testIndex) => {
-                      const [, firstConditionId, secondConditionId] = test.name.split(":");
-                      if (!firstConditionId || !secondConditionId) return [];
-                      return [
-                        {
-                          id: `annotation.${testIndex}`,
-                          analysisId: analysisResult.requestId,
-                          comparisonId: test.name,
-                          testIndex,
-                          mode,
-                          showNonSignificant: true,
-                          presentation: "bracket" as const,
-                          endpoints: [
-                            { conditionId: firstConditionId },
-                            { conditionId: secondConditionId },
-                          ],
-                          pValueStatus:
-                            test.adjustedPValue === null
-                              ? ("unadjusted" as const)
-                              : ("adjusted" as const),
-                          lineage: {
-                            ...(sourceMode === "derived_metric"
-                              ? { derivedMetric: timeAnalysis.kind }
-                              : {}),
-                            ...(analysisTimePointId ? { timePointId: analysisTimePointId } : {}),
-                            ...(timeAnalysis.kind !== "selected_timepoint"
-                              ? {
-                                  endpoint: timeAnalysis.kind,
-                                  ...(timeAnalysis.windowStart === undefined
-                                    ? {}
-                                    : { windowStart: timeAnalysis.windowStart }),
-                                  ...(timeAnalysis.windowEnd === undefined
-                                    ? {}
-                                    : { windowEnd: timeAnalysis.windowEnd }),
-                                }
-                              : {}),
-                          },
-                        },
-                      ];
-                    },
-                  );
-                  setStatisticsAnnotations(next);
-                }}
-              >
-                調整済みの全比較をグラフにまとめて表示
               </button>
               {statisticsAnnotations.length > 0 ? (
                 <ul className="experiment-graph-annotation-list">
@@ -6452,7 +6739,13 @@ export function ExperimentGraphWorkbench({
                   ) : null}
                   <GraphStatisticsPanel
                     assessment={analysisAssessment}
-                    relationshipAlreadyDeclared={Boolean(draft.adaptiveInput)}
+                    design={recommendationDesign}
+                    outcomeId={selectedReadoutId}
+                    relationshipAlreadyDeclared={
+                      Boolean(draft.adaptiveInput) && !independentNestedSource
+                    }
+                    independentNestedSourceContext={independentNestedSource}
+                    onCorrectionRequested={onAnalysisCorrection}
                     matchedRelationship={
                       draft.conditionAssignment.kind === "matched"
                         ? sharedSourceTopology
@@ -6546,6 +6839,15 @@ export function ExperimentGraphWorkbench({
                       <span>比較結果</span>
                       <select
                         aria-label="統計注釈の比較"
+                        title={
+                          analysisResult.tests[statisticsAnnotation.testIndex]
+                            ? analysisTestAnnotationLabel(
+                                analysisResult.tests[statisticsAnnotation.testIndex]!,
+                                draft,
+                                baseAnnotationContext,
+                              )
+                            : undefined
+                        }
                         value={statisticsAnnotation.testIndex}
                         onChange={(event) =>
                           setStatisticsAnnotation((current) => ({

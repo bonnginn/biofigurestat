@@ -9,12 +9,7 @@ import {
   useState,
 } from "react";
 import type { KeyboardEvent, Ref } from "react";
-import { isTauri } from "@tauri-apps/api/core";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import {
-  assessCompactEditability,
-  type CompactScalarObservationIdFactoryContext,
-} from "@lsaa/data-sheet";
+import type { CompactScalarObservationIdFactoryContext } from "@lsaa/data-sheet";
 import type { CanonicalAdaptiveObservation } from "@lsaa/domain";
 
 import {
@@ -25,6 +20,7 @@ import {
   createExperimentSession,
   experimentCellKey,
   normalizeWithinExperiment,
+  nextExperimentSessionIndex,
   orderedAxisSemantic,
   orderedAxisTitle,
   orderedAxisUnit,
@@ -46,11 +42,16 @@ import {
   type TimePointDraft,
 } from "../app/experimentDraft";
 import { ExperimentGraphWorkbench } from "../components/graph/ExperimentGraphWorkbench";
+import type { DraftAnalysisCorrection } from "../app/draftAnalysisDiagnostics";
 import {
   WorkspaceNestedMeasurementSheet,
   type WorkspaceDataViewMode,
 } from "../components/WorkspaceNestedMeasurementSheet";
 import { AdaptiveCanonicalSpreadsheet } from "../components/AdaptiveCanonicalSpreadsheet";
+import {
+  canEditCanonicalMatrix,
+  type CanonicalWorksheetFileCommit,
+} from "../components/CanonicalMatrixWorksheet";
 import {
   BiologicalExperimentSetup,
   type BiologicalExperimentSetupResult,
@@ -62,6 +63,7 @@ import {
 } from "../components/graph/GraphCreationPreview";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
 import { defaultGraphYTitle, defaultLayersForGraphType } from "../app/graphDefaults";
+import { createInitialGraphGrouping } from "../app/graphGrouping";
 import {
   createExperimentWorkspaceProject,
   type WorkspaceGraphState,
@@ -82,6 +84,13 @@ import {
   createBiologicalSetupPrefill,
   type BiologicalSetupPrefill,
 } from "../app/adaptiveStructureRevision";
+import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
+import { routeFromPath } from "../app/routes";
+import {
+  recordUsageGraphConfiguration,
+  recordUsageMilestone,
+} from "../app/usageTelemetry";
+import { recordDiagnosticError, recordDiagnosticEvent } from "../app/diagnostics";
 
 const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
   ? lazy(() =>
@@ -105,6 +114,9 @@ export type ExperimentWorkspaceProps = {
   onSaveFavorite?: (draft: ExperimentSetDraft, graphs: readonly WorkspaceGraphState[]) => void;
   favoriteGraphDefaults?: readonly FavoriteGraphDefault[];
   onDirtyChange?: (dirty: boolean) => void;
+  onOpenProject?: () => void;
+  onRequestExit?: RequestWorkspaceExit;
+  onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
   rootRef?: Ref<HTMLDivElement>;
 };
 
@@ -145,6 +157,30 @@ const stableCoordinate = (value: unknown): string => {
         : candidate;
   return JSON.stringify(normalize(value));
 };
+
+function isSameCanonicalWorksheetIngress(
+  existing: Readonly<{
+    mapping: CanonicalWorksheetFileCommit["mapping"] | null;
+    rawLineage: CanonicalWorksheetFileCommit["rawLineage"];
+  }>,
+  incoming: Pick<CanonicalWorksheetFileCommit, "mapping" | "rawLineage">,
+): boolean {
+  if (!existing.mapping) return false;
+  const mappingSignature = (mapping: CanonicalWorksheetFileCommit["mapping"]) =>
+    stableCoordinate({
+      schemaVersion: mapping.schemaVersion,
+      sourceLabel: mapping.sourceLabel,
+      delimiter: mapping.delimiter,
+      headerRow: mapping.headerRow,
+      columns: mapping.columns,
+    });
+  return (
+    existing.rawLineage.sourceKind === incoming.rawLineage.sourceKind &&
+    existing.rawLineage.sourceLabel === incoming.rawLineage.sourceLabel &&
+    existing.rawLineage.rawText === incoming.rawLineage.rawText &&
+    mappingSignature(existing.mapping) === mappingSignature(incoming.mapping)
+  );
+}
 
 function graphReferencesRemainStable(
   before: ExperimentSetDraft,
@@ -415,6 +451,31 @@ function cellIsComplete(cell: ExperimentCellDraft | undefined): boolean {
   if (cell.kind === "categorical_counts") return categoricalTotal(cell) !== null;
   if (cell.kind === "wb_ratio") return wbRatio(cell) !== null;
   return cell.rawValues.length > 0;
+}
+
+function cellHasEnteredValue(cell: ExperimentCellDraft | undefined): boolean {
+  if (cellIsNotPlanned(cell) || !cell) return false;
+  if (cell.kind === "proportion") {
+    return cell.positive !== null || cell.eligible !== null;
+  }
+  if (cell.kind === "categorical_counts") {
+    return Object.values(cell.counts).some((value) => value !== null);
+  }
+  if (cell.kind === "wb_ratio") {
+    return (
+      cell.target !== null ||
+      cell.reference !== null ||
+      Object.values(cell.targetSource ?? {}).some((value) => value !== null) ||
+      Object.values(cell.referenceSource ?? {}).some((value) => value !== null)
+    );
+  }
+  return cell.rawValues.length > 0;
+}
+
+function canonicalObservationHasEnteredValue(observation: CanonicalAdaptiveObservation): boolean {
+  return Object.values(observation.values).some((value) =>
+    typeof value === "string" ? value.trim().length > 0 : value !== null,
+  );
 }
 
 function proportionValidationMessage(cell: ProportionCellDraft): string | null {
@@ -783,7 +844,19 @@ function OverviewPanel({
   canonicalSpreadsheet?: Readonly<{
     observations: readonly CanonicalAdaptiveObservation[];
     readOnly: boolean;
+    showExperimentDate: boolean;
+    worksheetRows: readonly Readonly<{ key: string; label: string; date: string }>[];
+    conditionCombinations?: readonly Readonly<{
+      labels: readonly string[];
+      displayLabel: string;
+      status: "performed" | "not_performed" | "unknown";
+    }>[];
+    onWorksheetRowChange: (
+      rowIndex: number,
+      patch: Partial<Readonly<{ key: string; label: string; date: string }>>,
+    ) => void;
     onObservationsChange: (observations: readonly CanonicalAdaptiveObservation[]) => void;
+    onFileImport: (result: CanonicalWorksheetFileCommit) => void;
     nextObservationId: (context: CompactScalarObservationIdFactoryContext) => string;
     nextExperimentalUnitIdentity: (
       context: CompactScalarObservationIdFactoryContext & { observationId: string },
@@ -808,6 +881,32 @@ function OverviewPanel({
       ? onlyReadout
       : null;
   const sharedSource = sharedSourceTopology(draft);
+  const canonicalConditionSummaries = (() => {
+    const contract = draft.adaptiveInput?.contract;
+    if (!contract || !canonicalSpreadsheet) return [];
+    const unitIdentityKey = contract.identities.find(
+      ({ unitLevelKey }) => unitLevelKey === contract.experimentalUnitLevelKey,
+    )?.key;
+    const groups = new Map<string, { label: string; units: Set<string>; observations: number }>();
+    canonicalSpreadsheet.observations.forEach((observation) => {
+      const factorValues = contract.factors.map(
+        ({ key, label }) => observation.factors[key]?.trim() || `${label}: 未設定`,
+      );
+      const groupKey = JSON.stringify(factorValues);
+      const group = groups.get(groupKey) ?? {
+        label: factorValues.join(" × ") || "測定",
+        units: new Set<string>(),
+        observations: 0,
+      };
+      group.units.add(
+        (unitIdentityKey && observation.identities[unitIdentityKey]?.trim()) ||
+          observation.observationId,
+      );
+      group.observations += 1;
+      groups.set(groupKey, group);
+    });
+    return [...groups.values()];
+  })();
 
   return (
     <section
@@ -842,6 +941,11 @@ function OverviewPanel({
           nextObservationId={canonicalSpreadsheet.nextObservationId}
           nextExperimentalUnitIdentity={canonicalSpreadsheet.nextExperimentalUnitIdentity}
           readOnly={canonicalSpreadsheet.readOnly}
+          worksheetRows={canonicalSpreadsheet.worksheetRows}
+          conditionCombinations={canonicalSpreadsheet.conditionCombinations}
+          showExperimentDate={canonicalSpreadsheet.showExperimentDate}
+          onWorksheetRowChange={canonicalSpreadsheet.onWorksheetRowChange}
+          onFileImport={canonicalSpreadsheet.onFileImport}
         />
       ) : quickEntryReadout?.shape === "proportion" ? (
         <OverviewProportionMatrix
@@ -886,6 +990,19 @@ function OverviewPanel({
               ? "元の表との対応を保ったまま、条件ごとの件数と個々の測定値を確認できます。"
               : "条件ごとの件数が異なっていても、そのまま保持します。"}
           </p>
+          {canonicalConditionSummaries.length ? (
+            <ul className="experiment-workspace-condition-counts" aria-label="条件ごとの入力件数">
+              {canonicalConditionSummaries.map(({ label, units, observations }) => (
+                <li key={label}>
+                  <strong>{label}</strong>
+                  <span>
+                    実験単位 n={units.size}
+                    {observations !== units.size ? ` · 測定値 ${observations}件` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       ) : (
         <div
@@ -1217,6 +1334,7 @@ function ExperimentMeta({
               : "生物学的単位ID"}
         </span>
         <input
+          data-analysis-unit-identity={experiment.id}
           aria-label={`${experiment.label}の${
             sharedSource
               ? sharedSource.sourceIdentityLabel
@@ -1232,7 +1350,7 @@ function ExperimentMeta({
         <small>
           {sharedSource
             ? draft.adaptiveInput
-              ? `条件別${draft.conditionAssignment.unitLabel}を対応づける共有IDです。取込時のlineageと一致させるため、この画面では変更できません。`
+              ? `条件別${draft.conditionAssignment.unitLabel}を対応づける共有IDです。取り込んだ元データとの対応履歴を保つため、この画面では変更できません。`
               : `条件別${draft.conditionAssignment.unitLabel}を同じ${sharedSource.sourceUnitLabel}由来として対応づけるID`
             : draft.conditionAssignment.kind === "matched"
               ? `同じ${draft.conditionAssignment.unitLabel}を条件間で対応づけるID`
@@ -2355,7 +2473,11 @@ function ExperimentPanel({
 }) {
   const sharedSource = sharedSourceTopology(draft);
   return (
-    <section className="experiment-workspace-panel" aria-labelledby={`${experiment.id}-heading`}>
+    <section
+      className="experiment-workspace-panel"
+      aria-labelledby={`${experiment.id}-heading`}
+      data-analysis-experiment={experiment.id}
+    >
       <div className="experiment-workspace-panel-heading">
         <h2 id={`${experiment.id}-heading`}>データ入力</h2>
         <div className="experiment-workspace-session-actions">
@@ -2485,6 +2607,9 @@ export function ExperimentWorkspace({
   onSaveFavorite,
   favoriteGraphDefaults = [],
   onDirtyChange,
+  onOpenProject,
+  onRequestExit,
+  onRegisterSaveHandler,
   rootRef,
 }: ExperimentWorkspaceProps) {
   const [draft, setDraft] = useState<ExperimentSetDraft>(initialDraft);
@@ -2493,10 +2618,23 @@ export function ExperimentWorkspace({
     ...createCellsForDraft(initialDraft),
     ...initialCells,
   }));
+  const dataEntryRecordedRef = useRef(
+    Object.values({ ...createCellsForDraft(initialDraft), ...initialCells }).some(
+      cellHasEnteredValue,
+    ) ||
+      (initialDraft.adaptiveInput?.canonicalObservations.some(
+        canonicalObservationHasEnteredValue,
+      ) ??
+        false),
+  );
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("overview");
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null);
   const [sourceNotes, setSourceNotes] = useState<Record<string, string>>({});
   const [showGraph, setShowGraph] = useState(false);
+  const [analysisCorrectionFocus, setAnalysisCorrectionFocus] = useState<Readonly<{
+    experimentId: string;
+    target: DraftAnalysisCorrection["target"];
+  }> | null>(null);
   const [dataViewMode, setDataViewMode] = useState<WorkspaceDataViewMode>(initialDataViewMode);
   const canonicalSpreadsheetPresentation = useMemo(() => {
     const snapshot = draft.adaptiveInput;
@@ -2506,15 +2644,17 @@ export function ExperimentWorkspace({
       snapshot.rawLineage ||
       snapshot.canonicalObservations.some(({ sourceRow }) => sourceRow !== null),
     );
-    const compactEditable =
-      assessCompactEditability(snapshot.contract, snapshot.canonicalObservations).status ===
-      "editable";
+    const compactEditable = canEditCanonicalMatrix(
+      snapshot.contract,
+      snapshot.canonicalObservations,
+    );
     return {
-      // Imported and graph-only-promoted data must remain visible even though
-      // source lineage makes direct canonical editing unsafe.  Other complex
-      // adaptive structures continue to use their structure-specific sheet.
+      // Imported and graph-only-promoted data remain linked to an immutable raw
+      // lineage record, while the canonical working table stays editable. A
+      // later edit is recorded as a transformation; it never rewrites rawText
+      // or silently changes the source mapping.
       enabled: hasSourceLineage || compactEditable,
-      readOnly: hasSourceLineage,
+      readOnly: false,
     } as const;
   }, [draft.adaptiveInput]);
   const adaptiveObservationCounterRef = useRef(0);
@@ -2544,14 +2684,43 @@ export function ExperimentWorkspace({
     [draft.adaptiveInput?.contract],
   );
   const replaceAdaptiveObservations = useCallback(
-    (observations: readonly CanonicalAdaptiveObservation[]) => {
+    (
+      observations: readonly CanonicalAdaptiveObservation[],
+      importedProvenance?: Pick<CanonicalWorksheetFileCommit, "mapping" | "rawLineage">,
+    ) => {
       const snapshot = draft.adaptiveInput;
       if (!snapshot) throw new Error("ADAPTIVE_CONTRACT_MISSING");
+      if (importedProvenance && snapshot.rawLineage) {
+        const sameIngress = isSameCanonicalWorksheetIngress(
+          { mapping: snapshot.mapping, rawLineage: snapshot.rawLineage },
+          importedProvenance,
+        );
+        const unchangedObservations =
+          stableCoordinate(snapshot.canonicalObservations) === stableCoordinate(observations);
+        if (sameIngress && unchangedObservations) return;
+        throw new Error(
+          "この入力表にはすでにファイル由来のデータがあります。複数のファイルを同じ入力表へ統合する機能はまだ利用できません。既存の値と元ファイル情報は変更していません。",
+        );
+      }
+      const sourceLineage = importedProvenance?.rawLineage ?? snapshot.rawLineage;
+      const lineage =
+        sourceLineage && !importedProvenance
+          ? {
+              ...sourceLineage,
+              transformations: [
+                ...new Set([
+                  ...sourceLineage.transformations,
+                  "canonical_observations_edited_after_import",
+                ]),
+              ],
+            }
+          : sourceLineage;
       const rebuilt = createAdaptiveWorkspace({
         contract: snapshot.contract,
         observations,
-        mapping: snapshot.mapping,
-        lineage: snapshot.rawLineage,
+        mapping: importedProvenance?.mapping ?? snapshot.mapping,
+        lineage,
+        biologicalSetup: snapshot.biologicalSetup,
         confirmedTargetedConfirmations: snapshot.targetedConfirmations,
       });
       if (rebuilt.status !== "ready" || !rebuilt.draft) {
@@ -2559,11 +2728,89 @@ export function ExperimentWorkspace({
           rebuilt.diagnostics.join(" / ") || "入力した値を実験ワークスペースへ反映できません。",
         );
       }
-      setDraft({ ...rebuilt.draft, entrySourceHistory: draft.entrySourceHistory });
+      const previousSessions = draft.experiments;
+      const previousSessionsByIdentity = new Map(
+        previousSessions.map((experiment) => [experiment.label, experiment] as const),
+      );
+      const previousObservationsById = new Map(
+        snapshot.canonicalObservations.map((observation) => [
+          observation.observationId,
+          observation,
+        ]),
+      );
+      const matchingIdentityKey = snapshot.contract.matching.identityKey;
+      const priorIdentityByNextIdentity = new Map<string, string>();
+      if (snapshot.contract.matching.kind === "matched" && matchingIdentityKey) {
+        observations.forEach((observation) => {
+          const previous = previousObservationsById.get(observation.observationId);
+          const nextIdentity = observation.identities[matchingIdentityKey]?.trim();
+          const previousIdentity = previous?.identities[matchingIdentityKey]?.trim();
+          if (nextIdentity && previousIdentity) {
+            priorIdentityByNextIdentity.set(nextIdentity, previousIdentity);
+          }
+        });
+      }
+      const rebuiltExperiments = rebuilt.draft.experiments.map((experiment) => ({
+        experiment,
+        previous:
+          snapshot.contract.matching.kind === "matched"
+            ? previousSessionsByIdentity.get(
+                priorIdentityByNextIdentity.get(experiment.label) ?? experiment.label,
+              )
+            : undefined,
+      }));
+      const reservedStableUnitIds = new Set(
+        rebuiltExperiments.flatMap(({ experiment, previous }) =>
+          previous ? [previous.stableUnitId ?? experiment.stableUnitId] : [],
+        ),
+      );
+      let nextStableUnitOrdinal = 1;
+      const nextAvailableStableUnitId = (preferred?: string) => {
+        if (preferred && !reservedStableUnitIds.has(preferred)) {
+          reservedStableUnitIds.add(preferred);
+          return preferred;
+        }
+        let candidate = `adaptive-unit.${nextStableUnitOrdinal}`;
+        while (reservedStableUnitIds.has(candidate)) {
+          nextStableUnitOrdinal += 1;
+          candidate = `adaptive-unit.${nextStableUnitOrdinal}`;
+        }
+        reservedStableUnitIds.add(candidate);
+        nextStableUnitOrdinal += 1;
+        return candidate;
+      };
+      setDraft({
+        ...rebuilt.draft,
+        experiments: rebuiltExperiments.map(({ experiment, previous }) => {
+          return previous
+            ? {
+                ...experiment,
+                // Researcher-facing matching identities live in canonical observations
+                // and labels. The internal stable ID remains opaque and unchanged when
+                // the researcher corrects that label.
+                label: experiment.label,
+                stableUnitId: previous.stableUnitId ?? experiment.stableUnitId,
+                sessionId: previous.sessionId,
+                date: previous.date,
+                note: previous.note,
+              }
+            : {
+                ...experiment,
+                stableUnitId: nextAvailableStableUnitId(experiment.stableUnitId),
+              };
+        }),
+        entrySourceHistory: draft.entrySourceHistory,
+      });
       setCells(rebuilt.cells);
       setActiveTab("overview");
     },
-    [draft.adaptiveInput, draft.entrySourceHistory],
+    [draft.adaptiveInput, draft.entrySourceHistory, draft.experiments],
+  );
+  const replaceAdaptiveFileImport = useCallback(
+    ({ observations, mapping, rawLineage }: CanonicalWorksheetFileCommit) => {
+      replaceAdaptiveObservations(observations, { mapping, rawLineage });
+    },
+    [replaceAdaptiveObservations],
   );
   const [graphWorkspaceMode, setGraphWorkspaceMode] = useState<"graph" | "statistics">("graph");
 
@@ -2625,6 +2872,17 @@ export function ExperimentWorkspace({
   }, [isDirty, onDirtyChange]);
 
   useEffect(() => {
+    if (dataEntryRecordedRef.current) return;
+    const hasEnteredData =
+      Object.values(cells).some(cellHasEnteredValue) ||
+      (draft.adaptiveInput?.canonicalObservations.some(canonicalObservationHasEnteredValue) ??
+        false);
+    if (!hasEnteredData) return;
+    dataEntryRecordedRef.current = true;
+    recordUsageMilestone(routeFromPath(window.location.pathname), "data_entry_started");
+  }, [cells, draft.adaptiveInput]);
+
+  useEffect(() => {
     if (!isDirty) return;
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
@@ -2634,11 +2892,22 @@ export function ExperimentWorkspace({
     return () => window.removeEventListener("beforeunload", warnBeforeUnload);
   }, [isDirty]);
 
-  const requestBack = () => {
-    if (isDirty && !window.confirm("未保存の変更があります。この実験を閉じて破棄しますか？"))
-      return;
-    onBack();
-  };
+  const requestExit = useCallback(
+    (actionLabel: string, proceed: () => void) => {
+      if (!isDirty) {
+        proceed();
+        return;
+      }
+      if (onRequestExit) {
+        onRequestExit({ actionLabel, proceed });
+        return;
+      }
+      if (window.confirm("未保存の変更があります。この実験を閉じて破棄しますか？")) proceed();
+    },
+    [isDirty, onRequestExit],
+  );
+
+  const requestBack = () => requestExit("前の画面に戻る", onBack);
 
   useEffect(() => {
     if (!showGraphTypeChoice) {
@@ -2709,6 +2978,20 @@ export function ExperimentWorkspace({
     const timer = window.setTimeout(() => setAnalysisInvalidationMessage(null), 6000);
     return () => window.clearTimeout(timer);
   }, [analysisInvalidationMessage]);
+
+  useEffect(() => {
+    if (!analysisCorrectionFocus || showGraph) return;
+    const timer = window.setTimeout(() => {
+      const selector =
+        analysisCorrectionFocus.target === "data_identity"
+          ? `[data-analysis-unit-identity="${analysisCorrectionFocus.experimentId}"]`
+          : `[data-analysis-experiment="${analysisCorrectionFocus.experimentId}"] input[type="number"], [data-analysis-experiment="${analysisCorrectionFocus.experimentId}"] textarea`;
+      const target = document.querySelector<HTMLElement>(selector);
+      target?.focus();
+      setAnalysisCorrectionFocus(null);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, analysisCorrectionFocus, showGraph]);
 
   const selectedDescriptor = useMemo(
     () => (selectedCellKey ? findCellDescriptor(draft, selectedCellKey) : null),
@@ -3142,11 +3425,7 @@ export function ExperimentWorkspace({
   };
 
   const addExperiment = () => {
-    const nextIndex =
-      draft.experiments.reduce((maximum, experiment) => {
-        const match = experiment.id.match(/^experiment\.(\d+)$/);
-        return Math.max(maximum, match ? Number(match[1]) : 0);
-      }, 0) + 1;
+    const nextIndex = nextExperimentSessionIndex(draft.experiments);
     const created = createExperimentSession(nextIndex);
     const nextExperiment =
       draft.conditionAssignment.kind === "matched"
@@ -3298,6 +3577,10 @@ export function ExperimentWorkspace({
     ),
   ) => {
     const nextIndex = graphs.length + 1;
+    const initialGrouping = createInitialGraphGrouping(draft);
+    const hasMultipleVisualSeries =
+      initialGrouping.series.source !== "none" ||
+      (graphType === "line" && draft.time.points.length > 1 && draft.conditions.length > 1);
     const favoriteDefault = favoriteGraphDefaults.find(
       (candidate) => candidate.graphType === graphType,
     );
@@ -3315,13 +3598,15 @@ export function ExperimentWorkspace({
           ? selectedCreateMetric
           : { kind: "selected_timepoint" },
       graphType,
+      grouping: initialGrouping,
       layers: initialLayers,
       appearance: favoriteDefault?.appearance ?? {
         errorBar: "sd",
-        palette:
-          graphType === "line" && draft.time.points.length > 1 && draft.conditions.length > 1
+        palette: hasMultipleVisualSeries
+          ? graphType === "line"
             ? "colorblind"
-            : "single",
+            : "condition"
+          : "single",
         pointSize: 6,
         pointOpacity: 0.9,
         axisLineWidth: 1.4,
@@ -3333,10 +3618,7 @@ export function ExperimentWorkspace({
         tickFontSize: 17,
         hierarchyFontSize: 17,
         legendFontSize: 16,
-        legendPosition:
-          graphType === "line" && draft.time.points.length > 1 && draft.conditions.length > 1
-            ? "top"
-            : "hidden",
+        legendPosition: hasMultipleVisualSeries ? "right" : "hidden",
         seriesColors: {},
         seriesStyles: {},
         distributionFill: "white",
@@ -3394,6 +3676,19 @@ export function ExperimentWorkspace({
       sourceMode: selectedCreateSourceMode,
     });
     setGraphs((current) => [...current, graph]);
+    const usageRoute = routeFromPath(window.location.pathname);
+    recordUsageMilestone(usageRoute, "graph_created");
+    recordUsageGraphConfiguration(usageRoute, {
+      graphFamily: graphType,
+      origin: favoriteDefault
+        ? "saved_default"
+        : graphType === recommendedGraphType
+          ? "recommended"
+          : "user_selected",
+      uncertainty: initialLayers.errorBar ? graph.appearance.errorBar : "none",
+      rawPointsVisible: initialLayers.raw,
+      summaryVisible: initialLayers.overall,
+    });
     setActiveGraphId(graph.id);
     setGraphCreateMessage(`${graph.displayName}を作成しました。`);
     focusCreatedGraphRef.current = true;
@@ -3543,6 +3838,28 @@ export function ExperimentWorkspace({
     }
   };
 
+  const handleAnalysisCorrection = (correction: DraftAnalysisCorrection) => {
+    setShowGraph(false);
+    setAnalysisInvalidationMessage(`${correction.title}。${correction.message}`);
+    if (correction.target === "experiment_structure") {
+      if (draft.adaptiveInput) beginAdaptiveStructureRevision();
+      else setActiveTab("overview");
+      return;
+    }
+    setDataViewMode("expanded");
+    if (draft.adaptiveInput) {
+      setActiveTab("overview");
+      return;
+    }
+    const experimentId = correction.focusExperimentId;
+    if (!experimentId || !draft.experiments.some(({ id }) => id === experimentId)) {
+      setActiveTab("overview");
+      return;
+    }
+    setActiveTab(`experiment:${experimentId}`);
+    setAnalysisCorrectionFocus({ experimentId, target: correction.target });
+  };
+
   const applyAdaptiveStructureRevision = (result: BiologicalExperimentSetupResult): boolean => {
     const session = structureRevisionSession;
     const sourceSnapshot = session?.sourceDraft.adaptiveInput;
@@ -3628,7 +3945,7 @@ export function ExperimentWorkspace({
 
   const handleSave = useCallback(
     async (saveAs = false) => {
-      if (!saveProject) return;
+      if (!saveProject) return false;
       setSaveStatus("saving");
       setSaveMessage(null);
       try {
@@ -3642,49 +3959,32 @@ export function ExperimentWorkspace({
         const saved = await saveProject(state, saveAs ? undefined : savedProject?.target);
         if (!saved) {
           setSaveStatus("idle");
-          return;
+          return false;
         }
         setSavedProject(saved);
         savedSnapshotRef.current = currentSnapshot;
         setSaveStatus("saved");
         setSaveMessage("プロジェクトを保存しました。次回もこの入力画面で再編集できます。");
+        return true;
       } catch (error) {
+        // Project construction can fail before the native save bridge is
+        // called (for example a semantic dual-write mismatch).  Record the
+        // same privacy-reduced fixed code as native I/O failures so Alpha
+        // diagnostics do not misleadingly report `lastErrorCode: null`.
+        recordDiagnosticError("PROJECT_SAVE_FAILED", error);
+        recordDiagnosticEvent("project_save_failed", { stage: "unknown" });
         setSaveStatus("error");
         setSaveMessage(actionErrorMessage(error, "プロジェクトを保存できませんでした。"));
+        return false;
       }
     },
     [cells, currentSnapshot, dataViewMode, draft, graphs, saveProject, savedProject],
   );
-  const handleSaveRef = useRef(handleSave);
-  useLayoutEffect(() => {
-    handleSaveRef.current = handleSave;
-  }, [handleSave]);
-
   useEffect(() => {
-    const handleShortcut = (event: globalThis.KeyboardEvent) => {
-      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "s") return;
-      event.preventDefault();
-      void handleSaveRef.current(event.shiftKey);
-    };
-    window.addEventListener("keydown", handleShortcut);
-    return () => window.removeEventListener("keydown", handleShortcut);
-  }, []);
-
-  useEffect(() => {
-    if (!isTauri()) return;
-    let disposed = false;
-    let unlisten: UnlistenFn | undefined;
-    void listen<boolean>("project-save-request", (event) => {
-      void handleSave(event.payload);
-    }).then((nextUnlisten) => {
-      if (disposed) nextUnlisten();
-      else unlisten = nextUnlisten;
-    });
-    return () => {
-      disposed = true;
-      unlisten?.();
-    };
-  }, [handleSave]);
+    if (!onRegisterSaveHandler) return;
+    onRegisterSaveHandler((saveAs) => handleSave(Boolean(saveAs)));
+    return () => onRegisterSaveHandler(null);
+  }, [handleSave, onRegisterSaveHandler]);
 
   if (structureRevisionSession) {
     return (
@@ -3788,6 +4088,11 @@ export function ExperimentWorkspace({
         <details className="experiment-workspace-file-menu">
           <summary>ファイル</summary>
           <div>
+            {onOpenProject ? (
+              <button type="button" onClick={onOpenProject}>
+                プロジェクトを開く
+              </button>
+            ) : null}
             <button
               type="button"
               disabled={!saveProject || saveStatus === "saving"}
@@ -3803,7 +4108,12 @@ export function ExperimentWorkspace({
               名前を付けて保存 <kbd>Shift+Ctrl/⌘S</kbd>
             </button>
             {onReuseDesign ? (
-              <button type="button" onClick={() => onReuseDesign(draft)}>
+              <button
+                type="button"
+                onClick={() =>
+                  requestExit("設計を使って新しい実験を始める", () => onReuseDesign(draft))
+                }
+              >
                 設計だけを新しいprojectに再利用
               </button>
             ) : null}
@@ -4030,7 +4340,7 @@ export function ExperimentWorkspace({
               </fieldset>
             ) : null}
             <div className="experiment-workspace-graph-choice-recommended">
-              <span>よい開始点</span>
+              <span>推奨グラフ</span>
               {recommendedGraphTypes.map((graphType) => (
                 <button
                   className={
@@ -4373,6 +4683,7 @@ export function ExperimentWorkspace({
                   )
                 }
                 onClose={() => setShowGraph(false)}
+                onAnalysisCorrection={handleAnalysisCorrection}
               />
             </div>
           ))}
@@ -4399,9 +4710,28 @@ export function ExperimentWorkspace({
                     ? {
                         observations: draft.adaptiveInput.canonicalObservations,
                         readOnly: canonicalSpreadsheetPresentation.readOnly,
+                        showExperimentDate: draft.adaptiveInput.contract.unitLevels.some(
+                          ({ role }) => role === "block",
+                        ),
                         onObservationsChange: replaceAdaptiveObservations,
+                        onFileImport: replaceAdaptiveFileImport,
                         nextObservationId: nextAdaptiveObservationId,
                         nextExperimentalUnitIdentity: nextAdaptiveExperimentalUnitIdentity,
+                        worksheetRows: draft.experiments.map((experiment) => ({
+                          key: experiment.id,
+                          label: experiment.label,
+                          date: experiment.date,
+                        })),
+                        conditionCombinations:
+                          draft.adaptiveInput.biologicalSetup?.conditionCombinations,
+                        onWorksheetRowChange: (rowIndex, patch) => {
+                          const experiment = draft.experiments[rowIndex];
+                          if (!experiment) return;
+                          updateExperiment(experiment.id, {
+                            ...(patch.label !== undefined ? { label: patch.label } : {}),
+                            ...(patch.date !== undefined ? { date: patch.date } : {}),
+                          });
+                        },
                       }
                     : undefined
                 }

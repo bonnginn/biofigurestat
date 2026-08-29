@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lsa.local/schemas/experiment-first-structure-contract-0.1.0-prototype.json",
+  "title": "Experiment-first Structure Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "caseId", "experimentDescription", "unitLevels", "experimentalUnitLevelKey", "identities", "factors", "matching", "orderedAxes", "readouts", "allowedMissingness", "rawObservationGrain"],
+  "properties": {
+    "schemaVersion": { "const": "0.1.0-prototype" },
+    "caseId": { "type": "string", "minLength": 1 },
+    "experimentDescription": { "type": "string", "minLength": 1 },
+    "unitLevels": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["key", "label", "role", "parentKey"],
+        "properties": {
+          "key": { "$ref": "#/$defs/key" }, "label": { "type": "string", "minLength": 1 },
+          "role": { "enum": ["experimental_unit", "block", "sample", "subsample", "technical_replicate", "sampling_location", "condition_specific_sample"] },
+          "parentKey": { "anyOf": [{ "$ref": "#/$defs/key" }, { "type": "null" }] }
+        }
+      }
+    },
+    "experimentalUnitLevelKey": { "$ref": "#/$defs/key" },
+    "identities": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["key", "label", "unitLevelKey", "required"],
+        "properties": { "key": { "$ref": "#/$defs/key" }, "label": { "type": "string" }, "unitLevelKey": { "$ref": "#/$defs/key" }, "required": { "type": "boolean" } }
+      }
+    },
+    "factors": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["key", "label", "levels", "unitRole", "relationship", "ordered", "referenceLevel"],
+        "properties": {
+          "key": { "$ref": "#/$defs/key" }, "label": { "type": "string" }, "levels": { "type": "array", "items": { "type": "string" } },
+          "unitRole": { "enum": ["between_unit", "within_unit"] }, "relationship": { "enum": ["independent", "paired", "repeated", "blocked"] },
+          "ordered": { "type": "boolean" }, "referenceLevel": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "matching": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "identityKey", "completeSetsRequired"],
+      "properties": {
+        "kind": { "enum": ["independent", "matched", "blocked", "mixed", "crossover", "none"] },
+        "identityKey": { "type": ["string", "null"] }, "completeSetsRequired": { "type": ["boolean", "null"] }
+      }
+    },
+    "orderedAxes": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["key", "label", "unit", "levels", "sampling", "identityRetained"],
+        "properties": {
+          "key": { "$ref": "#/$defs/key" }, "label": { "type": "string" }, "unit": { "type": "string" },
+          "levels": { "type": "array", "items": { "type": ["string", "number"] } },
+          "sampling": { "enum": ["cross_sectional", "repeated_same_identity", "event_follow_up"] }, "identityRetained": { "type": "boolean" }
+        }
+      }
+    },
+    "readouts": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["key", "label", "valueType", "representation", "componentKeys", "referenceRole", "observationLevelKey", "axisKeys"],
+        "properties": {
+          "key": { "$ref": "#/$defs/key" }, "label": { "type": "string" }, "valueType": { "type": "string" },
+          "representation": { "enum": ["scalar", "proportion_counts", "category_counts", "target_reference", "paired_readouts", "event_censoring", "dose_response", "other_typed_bundle"] },
+          "componentKeys": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/key" } },
+          "referenceRole": { "enum": ["none", "loading_control", "baseline", "control_condition"] },
+          "observationLevelKey": { "$ref": "#/$defs/key" }, "axisKeys": { "type": "array", "items": { "$ref": "#/$defs/key" } }
+        }
+      }
+    },
+    "allowedMissingness": { "type": "array", "items": { "enum": ["not_applicable", "not_collected", "assay_failed", "dropout", "censored", "unknown"] }, "uniqueItems": true },
+    "rawObservationGrain": { "type": "string", "minLength": 1 }
+  },
+  "$defs": { "key": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_]*$" } }
+}

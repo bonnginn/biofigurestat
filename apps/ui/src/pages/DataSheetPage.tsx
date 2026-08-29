@@ -53,6 +53,10 @@ import {
   metadataForPersistence,
   type ProjectMetadataDraft,
 } from "../app/projectMetadata";
+import type {
+  RegisterWorkspaceSaveHandler,
+  RequestWorkspaceExit,
+} from "../app/workspaceLifecycle";
 import {
   methodLabel,
   recommendationExplanation,
@@ -74,6 +78,9 @@ type DataSheetPageProps = {
   saveProject?: SaveProjectAction;
   initialProject?: OpenedProject;
   metadataDraft?: ProjectMetadataDraft;
+  onDirtyChange?: (dirty: boolean) => void;
+  onRequestExit?: RequestWorkspaceExit;
+  onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
   /** Optional persistence hook for D10 raw rows and transformation lineage. */
   onNestedPasteApply?: (payload: NestedImageJPastePayload) => void;
 };
@@ -743,6 +750,9 @@ export function DataSheetPage({
   initialProject,
   metadataDraft: initialMetadataDraft,
   onNestedPasteApply,
+  onDirtyChange,
+  onRequestExit,
+  onRegisterSaveHandler,
 }: DataSheetPageProps) {
   const initialDerivedRevision = initialProject?.state.derivedDatasetRevisions.find(
     (revision) =>
@@ -937,6 +947,21 @@ export function DataSheetPage({
   }
   const workspaceIdentity = workspaceIdentityRef.current as WorkspaceIdentity;
   const [draftRawRevisionId, setDraftRawRevisionId] = useState(workspaceIdentity.rawRevisionId);
+  const lifecycleSnapshot = JSON.stringify({
+    sheet,
+    nestedPayloads,
+    validated,
+    canonicalData,
+    analysisRun,
+    metadataDraft,
+    draftRawRevisionId,
+  });
+  const savedLifecycleSnapshotRef = useRef(initialProject ? lifecycleSnapshot : "");
+  const isDirty = lifecycleSnapshot !== savedLifecycleSnapshotRef.current;
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+    return () => onDirtyChange?.(false);
+  }, [isDirty, onDirtyChange]);
   const relationship = relationshipMessage(sheet);
   useEffect(() => {
     setActiveUnitIndex((current) => Math.min(current, Math.max(0, unitCount - 1)));
@@ -1073,7 +1098,7 @@ export function DataSheetPage({
 
   const saveCurrentProject = async () => {
     if (!saveProject || !canonicalData || !validated || !metadataDraftIsComplete(metadataDraft))
-      return;
+      return false;
     setSaveStatus("saving");
     setSaveError(null);
     try {
@@ -1179,12 +1204,15 @@ export function DataSheetPage({
       const savedProject = await saveProject(ProjectStateSchema.parse(state), saveTarget);
       if (savedProject === null) {
         setSaveStatus("idle");
-        return;
+        return false;
       }
+      savedLifecycleSnapshotRef.current = lifecycleSnapshot;
       setLastSavedState(savedProject.state);
       setSaveTarget(savedProject.target);
       setDraftRawRevisionId(savedProject.state.activeRawRevisionId);
       setSaveStatus("success");
+      onDirtyChange?.(false);
+      return true;
     } catch (error) {
       setSaveStatus("error");
       setSaveError(
@@ -1193,7 +1221,25 @@ export function DataSheetPage({
           "プロジェクトを保存できませんでした。入力したデータは保持されています。",
         ),
       );
+      return false;
     }
+  };
+  const saveCurrentProjectRef = useRef(saveCurrentProject);
+  useEffect(() => {
+    saveCurrentProjectRef.current = saveCurrentProject;
+  }, [saveCurrentProject]);
+  useEffect(() => {
+    if (!onRegisterSaveHandler) return;
+    onRegisterSaveHandler(() => saveCurrentProjectRef.current());
+    return () => onRegisterSaveHandler(null);
+  }, [onRegisterSaveHandler]);
+
+  const requestBack = () => {
+    if (onRequestExit) {
+      onRequestExit({ actionLabel: "前の画面に戻る", proceed: onBack });
+      return;
+    }
+    onBack();
   };
 
   const validateSheet = () => {
@@ -1510,7 +1556,7 @@ export function DataSheetPage({
 
   return (
     <div className="page-stack narrow-page">
-      <button className="back-link" type="button" onClick={onBack}>
+      <button className="back-link" type="button" onClick={requestBack}>
         <span aria-hidden="true">←</span> デザイン確認に戻る
       </button>
 

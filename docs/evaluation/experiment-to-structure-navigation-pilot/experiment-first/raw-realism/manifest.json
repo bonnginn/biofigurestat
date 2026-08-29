@@ -1,0 +1,169 @@
+{
+  "version": "1.0.0",
+  "example_count": 12,
+  "examples": [
+    {
+      "file": "RAW-01-imagej-results.csv",
+      "case_ids": ["ETS-W4M7PH", "EFX-023"],
+      "messiness": [
+        "filename-encoded parent/factor metadata",
+        "unordered rows",
+        "extra geometry columns"
+      ],
+      "required_interpretation": [
+        "Image -> field identity",
+        "Label -> cell identity",
+        "dish/treatment parsed from Image"
+      ],
+      "byte_count": 343,
+      "sha256": "469E0CE9718F93A43BC60FD44527644FD8E07D5BB72AC0C108F2FC6D292A17DE"
+    },
+    {
+      "file": "RAW-02-plate-reader-export.csv",
+      "case_ids": ["EFX-020"],
+      "messiness": ["preamble metadata rows", "non-numeric OVER token", "missing/reordered wells"],
+      "required_interpretation": [
+        "Sample prefix -> DishID",
+        "rep suffix -> technical replicate",
+        "OD450 -> value"
+      ],
+      "byte_count": 216,
+      "sha256": "2C906BC1F6EA52582DFF93CE281E61D13AD87EF98405FCBB21948EAE84D2498E"
+    },
+    {
+      "file": "RAW-03-wb-densitometry.tsv",
+      "case_ids": ["ETS-P2N6W9", "EFX-025"],
+      "messiness": ["long band rows", "out-of-order lanes", "background and comments"],
+      "required_interpretation": [
+        "Lane/SampleName -> unit",
+        "Band -> typed readout role",
+        "preserve raw target/reference values"
+      ],
+      "byte_count": 319,
+      "sha256": "FFCC2952353D895EDF677E6BE8CEE9C2BFB3DDE7F1AB1737A84BF8434A11A256"
+    },
+    {
+      "file": "RAW-04-animal-longitudinal.csv",
+      "case_ids": ["ETS-Z8P2HC", "EFX-029"],
+      "messiness": [
+        "wide week columns",
+        "dropout blanks",
+        "free-text notes",
+        "unordered identities"
+      ],
+      "required_interpretation": [
+        "Mouse -> stable identity",
+        "week header -> ordered axis",
+        "blank after dropout -> missing observation"
+      ],
+      "byte_count": 251,
+      "sha256": "F0234869B46604310D9E8FF3481945530F531CF1D82FECE5395900E2E568324A"
+    },
+    {
+      "file": "RAW-05-filename-metadata.csv",
+      "case_ids": ["EFX-022", "EFX-044"],
+      "messiness": ["metadata encoded in filenames", "QC-failed row", "unordered time/field/cell"],
+      "required_interpretation": [
+        "filename tokens -> dish/treatment/time/field/cell",
+        "QC is metadata not factor"
+      ],
+      "byte_count": 274,
+      "sha256": "1A107F8819C165807F8272F2A30A137F9DBA3D96EDE2CA27C9D3321AE024E691"
+    },
+    {
+      "file": "RAW-06-qpcr-ct.csv",
+      "case_ids": ["EFX-028"],
+      "messiness": ["target/reference in long rows", "technical duplicates", "Undetermined token"],
+      "required_interpretation": [
+        "Sample -> dish and condition",
+        "Target -> component role",
+        "Well -> technical replicate"
+      ],
+      "byte_count": 324,
+      "sha256": "2C19027715F854A738037C725F8AD827AE2BD537B99F7051FC07140B9957E630"
+    },
+    {
+      "file": "RAW-07-survival-log.csv",
+      "case_ids": ["EFX-031"],
+      "messiness": [
+        "dates rather than duration",
+        "empty endpoint for censored animal",
+        "multiple end reasons"
+      ],
+      "required_interpretation": [
+        "derive follow-up duration",
+        "Status -> event indicator",
+        "Reason remains metadata"
+      ],
+      "byte_count": 303,
+      "sha256": "487FD1E4F9112768176E4CE1468E83B2BB0E6F096896C83432CE8C724656D2CF"
+    },
+    {
+      "file": "RAW-08-dose-response.csv",
+      "case_ids": ["EFX-021", "EFX-040"],
+      "messiness": ["unordered dose rows", "vehicle naming at dose zero", "QC missing value"],
+      "required_interpretation": [
+        "Donor identity role differs by experiment",
+        "Dose -> ordered numeric axis",
+        "QC missing is not zero"
+      ],
+      "byte_count": 259,
+      "sha256": "00BF9D9BD33CEC6BFB88B8A11F9B187A016503AEC4E3D27032082A74260DECE5"
+    },
+    {
+      "file": "RAW-09-organoid-hierarchy.csv",
+      "case_ids": ["EFX-023"],
+      "messiness": ["Image used as field ID", "ROI IDs repeat across images", "extra focus score"],
+      "required_interpretation": [
+        "Patient > Organoid > Image > ROI hierarchy",
+        "organoid is experimental unit"
+      ],
+      "byte_count": 238,
+      "sha256": "704F0206474954D9CD7C1BB90C83F5E713D08AD11F8C4ED8E53A940BF169E4B6"
+    },
+    {
+      "file": "RAW-10-partial-pairs.csv",
+      "case_ids": ["ETS-8T2H7V", "EFX-037"],
+      "messiness": [
+        "incomplete matched sets",
+        "assay failure differs from not collected",
+        "unordered tissues"
+      ],
+      "required_interpretation": [
+        "Patient -> match set",
+        "SpecimenBarcode -> tissue identity",
+        "structural missing vs assay missing"
+      ],
+      "byte_count": 256,
+      "sha256": "64D7883E2A3C164B57CEAFAF253B48DC6CCF5B6287FC94D5A54F6B8BBCAE13CE"
+    },
+    {
+      "file": "RAW-11-flow-counts.csv",
+      "case_ids": ["EFX-041"],
+      "messiness": [
+        "gate rows in long form",
+        "parent count duplicated/implicit",
+        "extra acquired event count"
+      ],
+      "required_interpretation": [
+        "Marker+ numerator",
+        "LiveSinglet denominator",
+        "dish remains experimental unit"
+      ],
+      "byte_count": 276,
+      "sha256": "B5C7A32EC16E0423F5526541A70ADE01689AC4B44C2694FDAFD518ADDE549859"
+    },
+    {
+      "file": "RAW-12-kinetic-plate.csv",
+      "case_ids": ["EFX-045"],
+      "messiness": ["wide time headers with units", "single interior missing time", "plate block"],
+      "required_interpretation": [
+        "Well -> stable identity",
+        "PlateID -> block",
+        "time headers -> ordered axis"
+      ],
+      "byte_count": 394,
+      "sha256": "93DDB4E36969C4D4360C97FE7EC23F279EF379B329C7B99EC388B6E207ED8DD9"
+    }
+  ]
+}

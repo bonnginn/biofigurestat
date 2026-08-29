@@ -10,6 +10,7 @@ import {
 import {
   assertDualWriteEquivalence,
   projectContractToExperimentDesign,
+  resolveCanonicalReadoutValue,
   selectAdaptiveSurface,
   validateCanonicalObservationsForContract,
 } from "@lsaa/adaptive-input";
@@ -225,9 +226,7 @@ export function createAdaptiveWorkspace(input: {
       contract.factors.map((factor) => [`factor.${factor.key}`, combination[factor.key]!]),
     ),
     ...(hasSingleUnambiguousReferenceCell &&
-    contract.factors.every(
-      (factor) => combination[factor.key] === factor.referenceLevel,
-    )
+    contract.factors.every((factor) => combination[factor.key] === factor.referenceLevel)
       ? { role: "primary" as const }
       : {}),
   }));
@@ -247,6 +246,14 @@ export function createAdaptiveWorkspace(input: {
         (factor) => row.factors[factor.key] === condition.attributes[`factor.${factor.key}`],
       ),
     ),
+  );
+  const conditionStatuses = conditions.map(
+    (_, index) => input.biologicalSetup?.conditionCombinations[index]?.status ?? "performed",
+  );
+  const conditionStatusDiagnostics = observationsByCondition.flatMap((rows, index) =>
+    rows.length > 0 && conditionStatuses[index] !== "performed"
+      ? [`adaptive_observation_in_${conditionStatuses[index]}_condition:${conditionId(index)}`]
+      : [],
   );
   // Establish the unit order once per condition, before selecting a readout.
   // Readouts may be collected for unequal subsets of units.  Deriving this
@@ -277,15 +284,24 @@ export function createAdaptiveWorkspace(input: {
         ? (matchedIdentities[index] ?? `Unit ${index + 1}`)
         : `入力行 ${index + 1}`,
     stableUnitId:
-      contract.matching.kind === "matched"
-        ? (matchedIdentities[index] ?? `unit.${index + 1}`)
-        : `unit.${index + 1}`,
-    sessionId: `session.${index + 1}`,
-    date: now.slice(0, 10),
+      contract.matching.kind === "matched" ? `adaptive-unit.${index + 1}` : `unit.${index + 1}`,
+    // The worksheet row is presentation state. A run/day/batch identity must
+    // come from an explicit researcher fact, never from this ordinal.
+    // Opening or editing a project is not evidence of when the experiment was run.
+    date: "",
     note: "Adaptive input",
   }));
   const orderedAxis = contract.orderedAxes.length === 1 ? contract.orderedAxes[0] : null;
   const orderedAxisIsTime = orderedAxis ? isTemporalOrderedAxis(orderedAxis) : false;
+  const legacyOrderedAxisDiagnostics = contract.orderedAxes.flatMap((axis) =>
+    axis.levels.flatMap((level, index) =>
+      typeof level === "number" && Number.isFinite(level)
+        ? []
+        : [
+            `legacy_workspace_cannot_losslessly_project_ordered_axis_level:${axis.key}:${index + 1}:${JSON.stringify(level)}`,
+          ],
+    ),
+  );
   const topology = matchedTopology(contract);
   const draftBase: ExperimentSetDraft = {
     version: "0.1.0",
@@ -345,12 +361,10 @@ export function createAdaptiveWorkspace(input: {
       ? { biologicalSetup: input.biologicalSetup }
       : {}),
   });
-  const nestedAxisTrackingUnsafe = requiresExplicitNestedAxisTracking(
-    contract,
-    input.observations,
-  );
+  const nestedAxisTrackingUnsafe = requiresExplicitNestedAxisTracking(contract, input.observations);
   if (
     observationDiagnostics.length ||
+    conditionStatusDiagnostics.length ||
     nestedAxisTrackingUnsafe ||
     biologicalSetupDiagnostics.length
   )
@@ -358,6 +372,7 @@ export function createAdaptiveWorkspace(input: {
       status: "not_representable",
       diagnostics: [
         ...observationDiagnostics,
+        ...conditionStatusDiagnostics,
         ...biologicalSetupDiagnostics,
         ...(nestedAxisTrackingUnsafe
           ? ["legacy_workspace_requires_explicit_nested_axis_tracking_identity"]
@@ -393,6 +408,14 @@ export function createAdaptiveWorkspace(input: {
       cells: {},
       snapshot,
     };
+  if (legacyOrderedAxisDiagnostics.length)
+    return {
+      status: "not_representable",
+      diagnostics: legacyOrderedAxisDiagnostics,
+      draft: null,
+      cells: {},
+      snapshot,
+    };
   if (compatibility === "blocked" || equivalence.status !== "equivalent")
     return {
       status: "not_representable",
@@ -408,12 +431,16 @@ export function createAdaptiveWorkspace(input: {
   const cells: Record<string, ExperimentCellDraft> = {};
   experiments.forEach((experiment, sessionIndex) => {
     conditions.forEach((condition, conditionIndex) => {
+      const availability =
+        conditionStatuses[conditionIndex] === "not_performed"
+          ? { availability: "not_planned" as const }
+          : {};
       contract.readouts.forEach((readout) => {
         const rows = observationsByCondition[conditionIndex]!.filter(
           (row) =>
             row.readoutKey === readout.key &&
             (draftBase.conditionAssignment.kind !== "matched" ||
-              row.identities[identityKey] === experiment.stableUnitId),
+              row.identities[identityKey] === experiment.label),
         );
         const identityValues = conditionIdentityValues[conditionIndex]!;
         const selectedRows =
@@ -437,40 +464,77 @@ export function createAdaptiveWorkspace(input: {
             readoutId: `outcome.${readout.key}`,
             ...(point.id ? { timePointId: point.id } : {}),
           });
-          if (readout.representation === "proportion_counts")
+          if (readout.representation === "proportion_counts") {
+            const numerator = resolveCanonicalReadoutValue(
+              readout,
+              pointRows[0] ?? { values: {} },
+              readout.componentKeys[0],
+            );
+            const denominator = resolveCanonicalReadoutValue(
+              readout,
+              pointRows[0] ?? { values: {} },
+              readout.componentKeys[1],
+            );
             cells[key] = {
               kind: "proportion",
-              positive: numeric(pointRows[0]?.values[`${readout.key}_numerator`]),
-              eligible: numeric(pointRows[0]?.values[`${readout.key}_denominator`]),
+              positive: numeric(numerator.value),
+              eligible: numeric(denominator.value),
+              ...availability,
             };
-          else if (readout.representation === "category_counts")
+          } else if (readout.representation === "category_counts")
             cells[key] = {
               kind: "categorical_counts",
               counts: Object.fromEntries(
                 readout.componentKeys.map((component) => [
                   component,
-                  numeric(pointRows[0]?.values[`${readout.key}_${component}`]),
+                  numeric(
+                    resolveCanonicalReadoutValue(readout, pointRows[0] ?? { values: {} }, component)
+                      .value,
+                  ),
                 ]),
               ),
+              ...availability,
             };
-          else if (readout.representation === "target_reference")
+          else if (readout.representation === "target_reference") {
+            const targetComponent =
+              readout.componentKeys.find((component) => component === "target") ??
+              readout.componentKeys[0];
+            const referenceComponent =
+              readout.componentKeys.find((component) => component === "reference") ??
+              readout.componentKeys[1];
             cells[key] = {
               kind: "wb_ratio",
-              target: numeric(pointRows[0]?.values[`${readout.key}_target`]),
-              reference: numeric(pointRows[0]?.values[`${readout.key}_reference`]),
+              target: numeric(
+                resolveCanonicalReadoutValue(
+                  readout,
+                  pointRows[0] ?? { values: {} },
+                  targetComponent,
+                ).value,
+              ),
+              reference: numeric(
+                resolveCanonicalReadoutValue(
+                  readout,
+                  pointRows[0] ?? { values: {} },
+                  referenceComponent,
+                ).value,
+              ),
               inputMode: "corrected_value",
+              ...availability,
             };
-          else {
+          } else {
             const observationIdentityKey = contract.identities.find(
               (identity) => identity.unitLevelKey === readout.observationLevelKey,
             )?.key;
             const observedRows = pointRows
-              .map((row) => ({
-                value: numeric(row.values[readout.key]),
-                identity: observationIdentityKey
-                  ? (row.identities[observationIdentityKey] ?? "")
-                  : "",
-              }))
+              .map((row) => {
+                const resolved = resolveCanonicalReadoutValue(readout, row);
+                return {
+                  value: numeric(resolved.value),
+                  identity: observationIdentityKey
+                    ? (row.identities[observationIdentityKey] ?? "")
+                    : "",
+                };
+              })
               .filter(
                 (candidate): candidate is { value: number; identity: string } =>
                   candidate.value !== null,
@@ -480,6 +544,7 @@ export function createAdaptiveWorkspace(input: {
               kind: "nested_continuous",
               source: "paste",
               rawValues: observedRows.map(({ value }) => value),
+              ...availability,
               // Values and child identities must be filtered as one record.  Filtering
               // them independently shifts IDs after an interior missing observation.
               ...(observedIdentities.every(Boolean)

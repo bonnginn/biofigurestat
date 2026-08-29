@@ -163,3 +163,44 @@ export function createDedicatedEntryIntent(
     facts,
   };
 }
+
+/**
+ * Gives a direct/bookmarked specialist route the same empty, conservative
+ * experiment-first entry as the New Experiment hub. No biological structure
+ * is inferred here; the dedicated page still asks every structure-changing
+ * fact before it enables analysis or canonical persistence.
+ */
+export function defaultDedicatedEntryIntentForRoute(route: AppRoute): DedicatedEntryIntent | null {
+  if (route === "survival") {
+    return createDedicatedEntryIntent({
+      moduleId: "time_to_event",
+      destination: "survival",
+      sourceContext: "general_assay",
+      entryRouteId: "direct_time_to_event",
+      experimentName: "生存時間",
+      experimentDescription: "各対象のeventまたは観察終了までの期間を記録する実験",
+    });
+  }
+  if (route === "nonlinear-fit") {
+    return createDedicatedEntryIntent({
+      moduleId: "ordered_curve_kinetics",
+      destination: "nonlinear-fit",
+      sourceContext: "general_assay",
+      entryRouteId: "direct_ordered_curve",
+      experimentName: "濃度–反応・酵素反応",
+      experimentDescription:
+        "基質濃度–初速度、または時間–応答を記録し、対応するmodelを選んだ後だけfitする実験",
+    });
+  }
+  if (route === "heatmap") {
+    return createDedicatedEntryIntent({
+      moduleId: "matrix_visualization",
+      destination: "heatmap",
+      sourceContext: "general_assay",
+      entryRouteId: "direct_heatmap",
+      experimentName: "ヒートマップ",
+      experimentDescription: "既存の数値行列を、その配置を保ったまま可視化する",
+    });
+  }
+  return null;
+}

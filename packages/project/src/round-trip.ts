@@ -22,6 +22,12 @@ import {
   serializeProgressiveExperimentProjectState,
   type ProgressiveExperimentProjectState,
 } from "./progressive-experiment";
+import {
+  deserializeSpecializedEntryDraftProjectState,
+  serializeSpecializedEntryDraftProjectState,
+  SpecializedEntryDraftProjectStateSchema,
+  type SpecializedEntryDraftProjectState,
+} from "./specialized-entry-draft";
 
 export interface ProjectDatabaseCodec {
   encode(state: ProjectState): Promise<Uint8Array>;
@@ -342,6 +348,115 @@ export async function openProgressiveExperimentProjectPackage(input: {
     recoveryExport.some((byte, index) => byte !== expectedRecovery[index])
   ) {
     throw new Error("Progressive experiment recovery export does not match retained state");
+  }
+  return state;
+}
+
+const SPECIALIZED_ENTRY_DRAFT_DATABASE_PATH = "specialized-entry-draft.json";
+const SPECIALIZED_ENTRY_DRAFT_RECOVERY_PATH = "raw/exports/specialized-entry-draft.txt";
+
+export async function saveSpecializedEntryDraftProjectPackage(input: {
+  storage: ProjectPackageStorage;
+  target: string;
+  state: SpecializedEntryDraftProjectState;
+  sha256: Sha256Function;
+  appVersion: string;
+  savedAt: string;
+}): Promise<SpecializedEntryDraftProjectState> {
+  const state = SpecializedEntryDraftProjectStateSchema.parse({
+    ...input.state,
+    metadata: { ...input.state.metadata, updatedAt: input.savedAt },
+    provenanceEvents: [
+      ...input.state.provenanceEvents,
+      {
+        id: `specialized-draft.save.${input.state.provenanceEvents.length + 1}`,
+        kind: "specialized_entry_draft_saved",
+        occurredAt: input.savedAt,
+        actor: "researcher",
+      },
+    ],
+  });
+  const database = serializeSpecializedEntryDraftProjectState(state);
+  const recovery = new TextEncoder().encode(state.rawLineage.rawText);
+  const manifest = ProjectManifestSchema.parse({
+    format: "life-science-analysis-project",
+    formatVersion: "0.2.0",
+    projectKind: "specialized_entry_draft",
+    projectId: state.metadata.projectId,
+    metadata: state.metadata,
+    appVersion: input.appVersion,
+    schemaVersions: {
+      design: "specialized-entry-unresolved",
+      data: state.schemaVersion,
+      analysis: "unresolved",
+      graph: "unresolved",
+    },
+    createdAt: state.metadata.createdAt,
+    savedAt: input.savedAt,
+    files: [
+      {
+        path: SPECIALIZED_ENTRY_DRAFT_DATABASE_PATH,
+        role: "database",
+        sha256: await input.sha256(database),
+        sizeBytes: database.byteLength,
+      },
+      {
+        path: SPECIALIZED_ENTRY_DRAFT_RECOVERY_PATH,
+        role: "raw_export",
+        sha256: await input.sha256(recovery),
+        sizeBytes: recovery.byteLength,
+      },
+    ],
+    recovery: {
+      canonicalRawExportPath: SPECIALIZED_ENTRY_DRAFT_RECOVERY_PATH,
+      databasePath: SPECIALIZED_ENTRY_DRAFT_DATABASE_PATH,
+    },
+  });
+  await saveProjectPackage(
+    input.storage,
+    input.target,
+    manifest,
+    {
+      [SPECIALIZED_ENTRY_DRAFT_DATABASE_PATH]: database,
+      [SPECIALIZED_ENTRY_DRAFT_RECOVERY_PATH]: recovery,
+    },
+    input.sha256,
+  );
+  return state;
+}
+
+export async function openSpecializedEntryDraftProjectPackage(input: {
+  storage: ProjectPackageStorage;
+  target: string;
+  sha256: Sha256Function;
+}): Promise<SpecializedEntryDraftProjectState> {
+  const opened = await openProjectPackage(input.storage, input.target, input.sha256);
+  if (opened.manifest.projectKind !== "specialized_entry_draft") {
+    throw new Error("PROJECT_KIND_IS_NOT_SPECIALIZED_ENTRY_DRAFT");
+  }
+  const database = opened.files[opened.manifest.recovery.databasePath];
+  if (!database) throw new Error("The specialized entry draft database is missing");
+  const state = deserializeSpecializedEntryDraftProjectState(database);
+  if (JSON.stringify(state.metadata) !== JSON.stringify(opened.manifest.metadata)) {
+    throw new Error("Project manifest and specialized entry draft state do not match");
+  }
+  if (
+    opened.manifest.createdAt !== state.metadata.createdAt ||
+    opened.manifest.savedAt !== state.metadata.updatedAt
+  ) {
+    throw new Error("Specialized entry draft manifest timestamps do not match the saved state");
+  }
+  if (
+    opened.manifest.schemaVersions.design !== "specialized-entry-unresolved" ||
+    opened.manifest.schemaVersions.data !== state.schemaVersion ||
+    opened.manifest.schemaVersions.analysis !== "unresolved" ||
+    opened.manifest.schemaVersions.graph !== "unresolved"
+  ) {
+    throw new Error("Specialized entry draft manifest declares incompatible schema semantics");
+  }
+  const recovery = opened.files[opened.manifest.recovery.canonicalRawExportPath];
+  if (!recovery || !retainedTextMatches(recovery, state.rawLineage.rawText)) {
+    throw new Error("Specialized entry draft recovery text does not match retained lineage");
   }
   return state;
 }

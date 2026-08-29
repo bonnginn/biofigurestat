@@ -9,6 +9,7 @@ import {
   expectedAnalysisLabel,
   experimentCellKey,
   normalizeWithinExperiment,
+  nextExperimentSessionIndex,
   parseNumericPaste,
   percentage,
   plannedExperimentalUnitCount,
@@ -53,6 +54,41 @@ describe("experiment-first UX draft", () => {
       "condition.1",
       "condition.2",
     ]);
+  });
+
+  it("allocates an added adaptive row after every existing stable identifier", () => {
+    expect(
+      nextExperimentSessionIndex([
+        {
+          id: "adaptive-session.1",
+          label: "Unit 1",
+          sessionId: "session.1",
+          stableUnitId: "unit.1",
+          date: "2026-08-28",
+          note: "",
+        },
+      ]),
+    ).toBe(2);
+    expect(
+      nextExperimentSessionIndex([
+        {
+          id: "adaptive-session.1",
+          label: "Unit 1",
+          sessionId: "session.1",
+          stableUnitId: "unit.1",
+          date: "2026-08-28",
+          note: "",
+        },
+        {
+          id: "experiment.2",
+          label: "Unit 2",
+          sessionId: "session.2",
+          stableUnitId: "unit.4",
+          date: "2026-08-28",
+          note: "",
+        },
+      ]),
+    ).toBe(3);
   });
 
   it("counts matched-source condition children separately from literal same-entity measurements", () => {

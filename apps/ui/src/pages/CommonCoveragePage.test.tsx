@@ -59,28 +59,44 @@ const nonlinearRunner: AnalysisRunner = vi.fn(async (request) => {
             {
               name: "vmax",
               value: 12 - index,
-              standardError: 0.6,
-              confidenceInterval: { level: 0.95, lower: 10.5, upper: 13.5 },
+              standardError:
+                request.fitInterpretation === "descriptive_point_estimate_only" ? null : 0.6,
+              confidenceInterval:
+                request.fitInterpretation === "descriptive_point_estimate_only"
+                  ? null
+                  : { level: 0.95, lower: 10.5, upper: 13.5 },
             },
             {
               name: "km",
               value: 18 + index,
-              standardError: 1.2,
-              confidenceInterval: { level: 0.95, lower: 15, upper: 21 },
+              standardError:
+                request.fitInterpretation === "descriptive_point_estimate_only" ? null : 1.2,
+              confidenceInterval:
+                request.fitInterpretation === "descriptive_point_estimate_only"
+                  ? null
+                  : { level: 0.95, lower: 15, upper: 21 },
             },
           ]
         : [
             {
               name: "plateau",
               value: 1.6 - index * 0.2,
-              standardError: 0.08,
-              confidenceInterval: { level: 0.95, lower: 1.3, upper: 1.8 },
+              standardError:
+                request.fitInterpretation === "descriptive_point_estimate_only" ? null : 0.08,
+              confidenceInterval:
+                request.fitInterpretation === "descriptive_point_estimate_only"
+                  ? null
+                  : { level: 0.95, lower: 1.3, upper: 1.8 },
             },
             {
               name: "rate",
               value: 0.03 - index * 0.004,
-              standardError: 0.003,
-              confidenceInterval: { level: 0.95, lower: 0.02, upper: 0.04 },
+              standardError:
+                request.fitInterpretation === "descriptive_point_estimate_only" ? null : 0.003,
+              confidenceInterval:
+                request.fitInterpretation === "descriptive_point_estimate_only"
+                  ? null
+                  : { level: 0.95, lower: 0.02, upper: 0.04 },
             },
           ],
     diagnostics: {
@@ -123,7 +139,7 @@ const nonlinearRunner: AnalysisRunner = vi.fn(async (request) => {
   };
 });
 
-const orderedAxisQuestion = "横方向に順番に変えたものは何ですか？";
+const orderedAxisQuestion = "実験で段階的に変えたものは何ですか？";
 const materialRelationshipQuestion =
   "各点は同じ反応・同じ対象を続けて測りましたか、それとも点ごとに別の反応・試料を用意しましたか？";
 const pointParentRelationshipQuestion =
@@ -155,7 +171,7 @@ function answerOrderedCurveFacts(
     distance: "Distance",
     other_ordered_quantity: "Ordered quantity",
   };
-  const axisLabel = screen.queryByRole("textbox", { name: "横方向に変えたものの名前" });
+  const axisLabel = screen.queryByRole("textbox", { name: "横軸に表示する量の名前" });
   const readoutLabel = screen.queryByRole("textbox", { name: "測った値の名前" });
   if (axisLabel) fireEvent.change(axisLabel, { target: { value: axisNames[axisMeaning] } });
   if (readoutLabel) fireEvent.change(readoutLabel, { target: { value: "Measured response" } });
@@ -392,8 +408,8 @@ describe("final common coverage workflows", () => {
       expect(screen.getByText(expectedSummary)).toBeVisible();
       expect(data).toHaveValue(retainedInput);
       if (materialRelationship === "same_physical_material_across_axis") {
-        expect(setupButton).toBeDisabled();
-        expect(screen.getByText(/現在のfit engineが点どうしの相関を考慮せず/)).toBeVisible();
+        expect(setupButton).toBeEnabled();
+        expect(screen.getByText(/modelを明示的に選んで/)).toBeVisible();
       } else {
         expect(setupButton).toBeEnabled();
       }
@@ -414,6 +430,41 @@ describe("final common coverage workflows", () => {
       );
     },
   );
+
+  it("runs a repeated trajectory as a descriptive fit without inferential uncertainty", async () => {
+    vi.mocked(nonlinearRunner).mockClear();
+    render(
+      <CommonCoveragePage
+        mode="nonlinear-fit"
+        onBack={vi.fn()}
+        analysisRunner={nonlinearRunner}
+        entryIntent={adaptiveOrderedCurveIntent}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("非線形XYフィッティング data"), {
+      target: {
+        value:
+          "Unit ID\tSeries\tX\tY\nreaction-1\tControl\t0\t0\nreaction-1\tControl\t1\t0.4\nreaction-1\tControl\t2\t0.7\nreaction-1\tControl\t3\t0.9",
+      },
+    });
+    answerOrderedCurveFacts("elapsed_time", "same_physical_material_across_axis");
+    fireEvent.click(screen.getByRole("button", { name: "統計解析を設定" }));
+    fireEvent.click(screen.getByRole("radio", { name: /Zero-baseline association/ }));
+
+    fireEvent.click(screen.getByRole("button", { name: "選択したmodelで記述的fitを実行" }));
+
+    await waitFor(() => expect(nonlinearRunner).toHaveBeenCalledOnce());
+    expect(nonlinearRunner).toHaveBeenCalledWith(
+      expect.objectContaining({
+        protocolVersion: "0.14.0",
+        fitInterpretation: "descriptive_point_estimate_only",
+      }),
+    );
+    expect(screen.getByText(/Parameterは点推定として表示/)).toBeVisible();
+    expect(screen.queryByRole("columnheader", { name: "SE" })).toBeNull();
+    expect(screen.queryByRole("columnheader", { name: "95% CI" })).toBeNull();
+    expect(screen.queryByText("AIC")).toBeNull();
+  });
 
   it.each([
     {
@@ -528,6 +579,48 @@ describe("final common coverage workflows", () => {
     );
   });
 
+  it("hides an open model panel while the ordered-curve surface is structurally unavailable and restores it losslessly", () => {
+    render(
+      <CommonCoveragePage
+        mode="nonlinear-fit"
+        onBack={vi.fn()}
+        analysisRunner={nonlinearRunner}
+        entryIntent={adaptiveOrderedCurveIntent}
+      />,
+    );
+    const retainedInput =
+      "Unit ID\tSeries\tX\tY\naxis-1\tA\t0\t0\naxis-1\tA\t1\t0.4\naxis-1\tA\t2\t0.8\naxis-1\tA\t3\t1";
+    const data = screen.getByLabelText("非線形XYフィッティング data");
+    fireEvent.change(data, { target: { value: retainedInput } });
+    answerOrderedCurveFacts("elapsed_time", "same_physical_material_across_axis");
+    fireEvent.click(
+      screen.getByRole("button", { name: /^(統計解析|曲線モデル)を設定$/ }),
+    );
+    const retainedModel = screen.getByRole("radio", { name: /One-phase association/ });
+    fireEvent.click(retainedModel);
+    expect(retainedModel).toBeChecked();
+
+    const multipleAxes = screen.getByRole("checkbox", {
+      name: "時間と濃度など、順序のある量を2つ以上同時に変えた",
+    });
+    fireEvent.click(multipleAxes);
+
+    expect(screen.getByText(/2つの順序をもつ量があります。1つの軸へまとめず/)).toBeVisible();
+    expect(screen.queryByRole("radio", { name: /One-phase association/ })).toBeNull();
+    expect(
+      screen.getByRole("button", { name: /^(統計解析|曲線モデル)を設定$/ }),
+    ).toBeDisabled();
+    expect(data).toHaveValue(retainedInput);
+    expect(screen.getByRole("combobox", { name: orderedAxisQuestion })).toHaveValue(
+      "elapsed_time",
+    );
+
+    fireEvent.click(multipleAxes);
+
+    expect(screen.getByRole("radio", { name: /One-phase association/ })).toBeChecked();
+    expect(data).toHaveValue(retainedInput);
+  });
+
   it("preserves exact clipboard text and reopens ordered-curve input before fit without inventing an analysis", async () => {
     let savedState: Parameters<SaveProjectAction>[0] | null = null;
     const saveProject = vi.fn<SaveProjectAction>(async (state) => {
@@ -593,8 +686,8 @@ describe("final common coverage workflows", () => {
     expect(
       observedGraph.compareDocumentPosition(setupAnalysis) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(setupAnalysis).toBeDisabled();
-    expect(screen.getByText(/現在のfit engineが点どうしの相関を考慮せず/)).toBeVisible();
+    expect(setupAnalysis).toBeEnabled();
+    expect(screen.getByText(/modelを明示的に選んで/)).toBeVisible();
     expect(screen.queryByRole("button", { name: "選択したmodelでfitを実行" })).toBeNull();
     expect(nonlinearRunner).not.toHaveBeenCalled();
     expect(
@@ -700,8 +793,10 @@ describe("final common coverage workflows", () => {
     expect(saveProject).not.toHaveBeenCalled();
   });
 
-  it("runs, saves, and reopens Michaelis-Menten kinetics without replacing existing models", async () => {
+  it("takes the dedicated enzyme sheet through deliberate Michaelis-Menten fit and lossless reopen", async () => {
     vi.mocked(nonlinearRunner).mockClear();
+    const exactRawText =
+      "Unit ID\tSeries\tX\tY\nrxn-0\tEnzyme A\t0\t0\nrxn-5\tEnzyme A\t5\t2.4\nrxn-10\tEnzyme A\t10\t4.1\nrxn-20\tEnzyme A\t20\t6.3\nrxn-50\tEnzyme A\t50\t8.8";
     let savedState: Parameters<SaveProjectAction>[0] | null = null;
     const saveProject = vi.fn<SaveProjectAction>(async (state) => {
       savedState = state;
@@ -721,12 +816,18 @@ describe("final common coverage workflows", () => {
       />,
     );
 
-    fireEvent.change(screen.getByLabelText("非線形XYフィッティング data"), {
-      target: {
-        value:
-          "Unit ID\tSeries\tX\tY\nrxn-0\tEnzyme A\t0\t0\nrxn-5\tEnzyme A\t5\t2.4\nrxn-10\tEnzyme A\t10\t4.1\nrxn-20\tEnzyme A\t20\t6.3\nrxn-50\tEnzyme A\t50\t8.8",
+    expect(screen.getByRole("navigation", { name: "プロジェクトワークスペース" })).toBeVisible();
+    expect(screen.getByRole("region", { name: "曲線データ表" })).toBeVisible();
+    expect(screen.getByRole("combobox", { name: orderedAxisQuestion })).toHaveValue("");
+    fireEvent.paste(screen.getByLabelText("曲線データ表 行2 列1"), {
+      clipboardData: {
+        getData: () => exactRawText.split("\n").slice(1).join("\n"),
       },
     });
+    expect(screen.getByLabelText("曲線データ表 行2 列1")).toHaveValue("rxn-0");
+    expect(screen.getByLabelText("曲線データ表 行2 列2")).toHaveValue("Enzyme A");
+    expect(screen.getByLabelText("曲線データ表 行6 列4")).toHaveValue("8.8");
+    expect(screen.getByLabelText("非線形XYフィッティング data")).toHaveValue(exactRawText);
     answerOrderedCurveFacts("substrate_concentration", "separate_material_per_axis_value");
     expect(screen.getByRole("img", { name: "観測X/Y Graph" })).toBeVisible();
     expect(screen.queryByRole("radio", { name: /Michaelis–Menten enzyme kinetics/ })).toBeNull();
@@ -736,7 +837,7 @@ describe("final common coverage workflows", () => {
     expect(screen.getByRole("textbox", { name: "Model selectionの理由" })).toHaveValue("");
     fireEvent.click(screen.getByRole("radio", { name: /Michaelis–Menten enzyme kinetics/ }));
     expect(screen.getByText(/時系列をそのまま入力する欄ではありません/)).toBeVisible();
-    fireEvent.change(screen.getByRole("textbox", { name: "横方向に変えたものの名前" }), {
+    fireEvent.change(screen.getByRole("textbox", { name: "横軸に表示する量の名前" }), {
       target: { value: "Substrate concentration" },
     });
     fireEvent.change(screen.getByRole("textbox", { name: "測った値の名前" }), {
@@ -789,7 +890,7 @@ describe("final common coverage workflows", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "fit結果をプロジェクトへ保存" }));
     await waitFor(() =>
-      expect(screen.getByText(/saved fit curveをプロジェクトへ保存しました/)).toBeVisible(),
+      expect(screen.getByText(/保存済みの適合曲線をプロジェクトへ保存しました/)).toBeVisible(),
     );
     await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
     const saved = ProjectStateSchema.parse(savedState);
@@ -803,7 +904,30 @@ describe("final common coverage workflows", () => {
       matching: { kind: "none" },
       orderedAxes: [{ sampling: "cross_sectional", identityRetained: false }],
     });
-    expect(saved.adaptiveInput?.rawLineage?.rawText).toContain("rxn-50\tEnzyme A\t50\t8.8");
+    expect(saved.adaptiveInput?.rawLineage).toMatchObject({
+      sourceKind: "clipboard",
+      sourceLabel: "spreadsheet edit",
+      rawText: exactRawText,
+    });
+    expect(saved.adaptiveInput?.mapping).toMatchObject({
+      delimiter: "tab",
+      columns: {
+        "Unit ID": { role: "identity" },
+        Series: { role: "factor" },
+        X: { role: "axis" },
+        Y: { role: "value" },
+      },
+    });
+    expect(saved.graphs[0]?.spec).toMatchObject({
+      type: "nonlinear_xy",
+      axes: {
+        xLabel: "Substrate concentration",
+        yLabel: "Initial velocity",
+        xScale: "linear",
+        yScale: "linear",
+      },
+      appearance: { showRawPoints: true },
+    });
     expect(saved.adaptiveInput?.targetedConfirmations).toContainEqual(
       expect.objectContaining({
         key: "michaelis_readout_meaning",
@@ -849,15 +973,23 @@ describe("final common coverage workflows", () => {
     expect(screen.getByLabelText("非線形XYフィッティング data")).toHaveValue(
       saved.adaptiveInput?.rawLineage?.rawText,
     );
+    expect(screen.getByLabelText("曲線データ表 行2 列1")).toHaveValue("rxn-0");
+    expect(screen.getByLabelText("曲線データ表 行6 列4")).toHaveValue("8.8");
+    expect(screen.getByRole("img", { name: "非線形フィットGraph" })).toHaveAttribute(
+      "data-fit-model",
+      "michaelis_menten",
+    );
     expect(screen.queryByRole("radio", { name: /Michaelis–Menten enzyme kinetics/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "統計解析を設定" }));
     expect(screen.getByRole("radio", { name: /Michaelis–Menten enzyme kinetics/ })).toBeChecked();
-    expect(screen.getByRole("textbox", { name: "横方向に変えたものの名前" })).toHaveValue(
+    expect(screen.getByRole("textbox", { name: "横軸に表示する量の名前" })).toHaveValue(
       "Substrate concentration",
     );
     expect(screen.getByLabelText("Michaelis–MentenのY値")).toHaveValue(
       "calculated_initial_velocity",
     );
+    expect(screen.getByLabelText("横方向の単位")).toHaveValue("µM");
+    expect(screen.getByLabelText("測った値の単位")).toHaveValue("µmol/min");
   });
 
   it("retains a direct/raw response distinction and safe-stops it after reopen", async () => {
@@ -948,6 +1080,7 @@ describe("final common coverage workflows", () => {
       "observed_only",
     );
     expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();
     answerOrderedCurveFacts("elapsed_time", "separate_material_per_axis_value");
     fireEvent.click(screen.getByRole("button", { name: "統計解析を設定" }));
     fireEvent.click(screen.getByRole("radio", { name: /Zero-baseline association/ }));
@@ -957,6 +1090,7 @@ describe("final common coverage workflows", () => {
     );
     expect(screen.getByText("Parameter estimates & fit diagnostics")).toBeVisible();
     expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();
     expect(screen.getAllByText(/R²/).length).toBeGreaterThan(0);
     expect(nonlinearRunner).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -968,7 +1102,7 @@ describe("final common coverage workflows", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "fit結果をプロジェクトへ保存" }));
     await waitFor(() =>
-      expect(screen.getByText(/saved fit curveをプロジェクトへ保存/)).toBeVisible(),
+      expect(screen.getByText(/保存済みの適合曲線をプロジェクトへ保存/)).toBeVisible(),
     );
     await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
     const saved = savedState as ProjectState | null;
@@ -1126,7 +1260,7 @@ describe("final common coverage workflows", () => {
     ).toBeDisabled();
     expect(screen.getByRole("button", { name: "統計解析を設定" })).toBeDisabled();
 
-    fireEvent.change(screen.getByRole("textbox", { name: "横方向に変えたものの名前" }), {
+    fireEvent.change(screen.getByRole("textbox", { name: "横軸に表示する量の名前" }), {
       target: { value: "Position from wound edge" },
     });
     fireEvent.change(screen.getByRole("textbox", { name: "測った値の名前" }), {
@@ -1152,7 +1286,7 @@ describe("final common coverage workflows", () => {
       },
     });
     answerOrderedCurveFacts("distance", "separate_material_per_axis_value");
-    fireEvent.change(screen.getByRole("textbox", { name: "横方向に変えたものの名前" }), {
+    fireEvent.change(screen.getByRole("textbox", { name: "横軸に表示する量の名前" }), {
       target: { value: "Position from wound edge" },
     });
     fireEvent.change(screen.getByRole("textbox", { name: "測った値の名前" }), {
@@ -1217,9 +1351,7 @@ describe("final common coverage workflows", () => {
       />,
     );
     expect(screen.getByLabelText("非線形XYフィッティング data")).toHaveValue(rawText);
-    expect(screen.getByRole("textbox", { name: "横方向に変えたものの名前" })).toHaveValue(
-      "Distance",
-    );
+    expect(screen.getByRole("textbox", { name: "横軸に表示する量の名前" })).toHaveValue("Distance");
     expect(screen.getByRole("img", { name: "観測X/Y Graph" })).toBeVisible();
     expect(screen.queryByLabelText("専門解析を切り替える")).toBeNull();
     expect(screen.queryByRole("radio", { name: /Zero-baseline association/ })).toBeNull();
@@ -1312,6 +1444,7 @@ describe("final common coverage workflows", () => {
       });
     }
     expect(screen.getByText(example.expected)).toBeVisible();
+    expect(screen.getByRole("radio", { name: example.model })).toBeChecked();
     expect(screen.getByRole("button", { name: "選択したmodelでfitを実行" })).toBeDisabled();
     expect(nonlinearRunner).not.toHaveBeenCalled();
   });

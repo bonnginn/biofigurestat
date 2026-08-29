@@ -4,7 +4,7 @@
 
 .diagnostic-panel {
   position: fixed;
-  z-index: 10000;
+  z-index: var(--layer-global-panel, 900);
   top: 78px;
   right: 16px;
   display: grid;
@@ -56,4 +56,15 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.diagnostic-actions a.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.diagnostic-form-note {
+  color: var(--muted, #626d7c);
+  font-size: 0.82rem;
 }

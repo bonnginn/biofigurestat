@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Experiment Canvas prototype</title>
+    <link rel="stylesheet" href="./prototype.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">ISOLATED PROTOTYPE · データは保存されません</p>
+        <h1>新しい実験</h1>
+      </div>
+      <div class="header-actions">
+        <nav class="workspace-switch" aria-label="作業画面">
+          <button type="button" class="workspace-tab active" data-workspace-view="design" aria-pressed="true">実験を組み立てる</button>
+          <button type="button" class="workspace-tab" data-workspace-view="data" id="data-workspace-tab" aria-pressed="false" disabled>データを入力</button>
+        </nav>
+        <button class="quiet-button" type="button" id="reset-button">最初から</button>
+      </div>
+    </header>
+
+    <main class="workspace" data-workspace-view="design">
+      <section class="builder" aria-labelledby="builder-title">
+        <div class="builder-topline" data-workspace-section="design">
+          <h2 id="builder-title" tabindex="-1">実験を組み立てる</h2>
+          <p class="builder-path">条件を入力すると、実験に合うデータ表を作ります。</p>
+        </div>
+
+        <nav class="design-stage-switch" data-workspace-section="design" aria-label="実験設定の段階">
+          <button type="button" class="design-stage active" data-design-stage="conditions" data-stage-status="current" aria-pressed="true" aria-current="step">
+            <span class="design-stage-index" aria-hidden="true">1</span><span class="design-stage-label">条件と測定</span><span class="design-stage-state">現在</span>
+          </button>
+          <button type="button" class="design-stage" data-design-stage="canvas" data-stage-status="next" aria-pressed="false" aria-describedby="canvas-step-summary-copy" disabled>
+            <span class="design-stage-index" aria-hidden="true">2</span><span class="design-stage-label">組み合わせ</span><span class="design-stage-state">次</span>
+          </button>
+          <button type="button" class="design-stage" data-design-stage="flow" data-stage-status="pending" aria-pressed="false" aria-describedby="flow-step-summary-copy" disabled>
+            <span class="design-stage-index" aria-hidden="true">3</span><span class="design-stage-label">試料と測定値</span><span class="design-stage-state">未開始</span>
+          </button>
+        </nav>
+
+        <article class="setup-card progress-card" data-workspace-section="design" data-progress-step="conditions" data-progress-state="active" aria-labelledby="setup-title">
+          <div class="card-heading">
+            <div>
+              <p class="step-label">1 · 条件と測定</p>
+              <h2 id="setup-title" tabindex="-1">何を変えて、何を測ったか</h2>
+            </div>
+            <div class="entry-mode-switch" role="group" aria-label="条件表の作り方">
+              <button type="button" class="entry-mode active" data-entry-mode="guided">質問から</button>
+              <button type="button" class="entry-mode" data-entry-mode="direct">Excelから貼る／直接編集</button>
+              <button type="button" class="entry-mode" data-entry-mode="examples">完成例</button>
+            </div>
+          </div>
+          <button type="button" class="step-summary-row" id="conditions-step-summary" aria-expanded="false" aria-controls="conditions-step-content">
+            <span class="step-summary-index" aria-hidden="true">1</span>
+            <span class="step-summary-copy"><strong>条件と測定</strong><span id="conditions-step-summary-copy">まだ入力していません</span></span>
+            <span class="step-summary-state" id="conditions-step-summary-state">入力</span>
+            <span class="step-summary-edit">修正</span>
+          </button>
+
+          <div class="step-active-content" id="conditions-step-content">
+
+          <div id="direct-entry-panel" class="hidden">
+            <p class="supporting-copy">空の表へ直接入力するか、Excelの範囲を左上のセルへそのまま貼り付けられます。ここでは値ではなく「どの条件を行ったか」だけを並べます。</p>
+            <div class="guide-fields">
+              <label class="guide-field" for="direct-experiment-name">
+                <span>実験タイトル（任意）</span>
+                <input id="direct-experiment-name" aria-label="実験タイトル（任意）" placeholder="例：siRNAとDox" autocomplete="off">
+                <small>空欄なら、条件と測定名から自動で付けます。解析結果には影響しません。</small>
+              </label>
+              <label class="guide-field" for="direct-row-label">
+                <span>行方向で変えたものは？</span>
+                <input id="direct-row-label" aria-label="行方向で変えたもの" placeholder="例：siRNA" autocomplete="off">
+              </label>
+              <label class="guide-field" for="direct-column-label">
+                <span>列方向で変えたものは？</span>
+                <input id="direct-column-label" aria-label="列方向で変えたもの" placeholder="例：Dox" autocomplete="off">
+              </label>
+              <label class="guide-field" for="direct-measurement-name">
+                <span>何を測りましたか？</span>
+                <input id="direct-measurement-name" aria-label="測定したもの" placeholder="例：ciliated cells" autocomplete="off">
+              </label>
+              <label class="guide-field" for="direct-measurement-form">
+                <span>元の測定値はどの形ですか？</span>
+                <select id="direct-measurement-form" aria-label="元の測定値の形">
+                  <option value="unknown" selected>選択してください</option>
+                  <option value="scalar">1つの数値</option>
+                  <option value="positive_total">陽性数と総数</option>
+                  <option value="multiple_related">同じ試料から複数の関連する値（例：targetとreference）</option>
+                  <option value="other">このどれでもない／分からない</option>
+                </select>
+              </label>
+              <label class="guide-field hidden" id="direct-related-values-panel" for="direct-related-values">
+                <span>同じ行に残す元の値</span>
+                <textarea id="direct-related-values" rows="4" placeholder="pERK&#10;total ERK&#10;total protein"></textarea>
+                <small>1行に1つ。比や正規化値へまとめず、元の列を残します。</small>
+              </label>
+              <div class="guide-field wide direct-sheet-field">
+                <span id="direct-condition-grid-label">条件の組み合わせ</span>
+                <small>1行目に列条件、1列目に行条件を入力します。セルを選んでExcelから貼り付けると、必要な行・列まで表が広がります。</small>
+                <div class="sheet-toolbar" role="toolbar" aria-label="条件表の行と列">
+                  <button type="button" class="quiet-button" id="direct-grid-add-row">＋ 行</button>
+                  <button type="button" class="quiet-button" id="direct-grid-add-column">＋ 列</button>
+                  <button type="button" class="quiet-button" id="direct-grid-mark-performed">組み合わせをすべて「実施」</button>
+                  <button type="button" class="quiet-button" id="direct-grid-clear-statuses">状態だけ空欄に戻す</button>
+                </div>
+                <div class="table-scroll spreadsheet-shell">
+                  <table id="direct-condition-grid" class="spreadsheet-table direct-condition-grid" aria-labelledby="direct-condition-grid-label"></table>
+                </div>
+                <small>各組み合わせは「実施」「最初からなし」「不明」。空欄も不明として保持し、0にはしません。セル内で改行せず、Tab・Enter・矢印キーで移動できます。</small>
+                <p id="direct-grid-status" class="sheet-status" role="status" aria-live="polite"></p>
+              </div>
+            </div>
+            <div class="guide-actions">
+              <button type="button" class="primary-button" id="build-pasted-matrix">この条件表を読み取る</button>
+              <span id="direct-build-status" role="status" aria-live="polite"></span>
+            </div>
+          </div>
+          <div id="guided-entry-panel">
+            <div class="research-context-bar">
+              <label for="research-context">
+                <span>実験分野（任意）</span>
+                <select id="research-context" aria-describedby="research-context-note">
+                  <option value="">未指定</option>
+                  <option value="cell_culture">細胞・培養</option>
+                  <option value="microscopy">顕微鏡・画像解析</option>
+                  <option value="protein_biochemistry">タンパク質・生化学</option>
+                  <option value="animal">動物</option>
+                  <option value="general">その他の定量測定</option>
+                </select>
+              </label>
+              <small id="research-context-note">必要な場合だけ選んでください。入力例の言葉が変わるだけで、実験構造の判定には使いません。</small>
+            </div>
+            <div class="guide-example-bar" aria-label="入力例">
+              <span>例から入力（任意）</span>
+              <button type="button" class="example-chip" data-guide-example="simple">薬剤2条件</button>
+              <button type="button" class="example-chip" data-guide-example="sirna">siRNA × Dox</button>
+              <button type="button" class="example-chip" data-guide-example="time">live-cell time course</button>
+            </div>
+
+            <div class="guide-fields">
+              <label class="guide-field optional-title" for="guide-experiment-name">
+                <span>実験タイトル（任意）</span>
+                <input id="guide-experiment-name" aria-label="実験タイトル（任意）" placeholder="例：薬剤処理によるシグナル変化" autocomplete="off">
+                <small>空欄なら条件と測定名から自動で付けます。</small>
+              </label>
+
+              <label class="guide-field condition-count-field" for="guide-dimension-count">
+                <span>処理や群分けとして、いくつの種類を変えましたか？</span>
+                <select id="guide-dimension-count" aria-label="変えた処理・群分けの種類数" aria-describedby="guide-dimension-count-help">
+                  <option value="unknown" selected>選択してください</option>
+                  <option value="0">変えていない／1条件だけ</option>
+                  <option value="1">1種類（例：薬剤）</option>
+                  <option value="2">2種類（例：siRNAとDox）</option>
+                  <option value="3plus">3種類以上（このprototypeでは安全に停止）</option>
+                </select>
+                <small id="guide-dimension-count-help">Control / Drug A / Drug B / Drug Cでも「薬剤」の1種類です。時間・視野・Cellはここには含めません。</small>
+              </label>
+
+              <div class="guide-factor" data-guide-dimension="1">
+                <label class="guide-field" for="guide-dimension-1-label">
+                  <span>1つ目の処理・群分けは？</span>
+                   <input id="guide-dimension-1-label" aria-label="1つ目の処理・群分けの名前" placeholder="例：処理" autocomplete="off">
+                </label>
+                <div class="guide-field wide level-sheet-field">
+                  <span id="guide-dimension-1-grid-label">具体的に何を試しましたか？</span>
+                  <small data-guide-level-help="1">1行に1条件。Enterで次の行へ進み、末尾まで入力すると行が増えます。Excelからも貼り付けられます。</small>
+                  <div class="sheet-toolbar">
+                    <button type="button" class="quiet-button" data-guide-add-level-row="1">＋ 条件</button>
+                    <button type="button" class="quiet-button" data-guide-toggle-level-groups="1" aria-pressed="false">枝分かれを追加</button>
+                    <button type="button" class="quiet-button hidden" data-guide-add-level-column="1">＋ 枝の列</button>
+                  </div>
+                  <div class="table-scroll spreadsheet-shell compact-sheet"><table id="guide-dimension-1-grid" class="spreadsheet-table level-grid" aria-labelledby="guide-dimension-1-grid-label"></table></div>
+                  <textarea id="guide-dimension-1-values" class="legacy-values-text" tabindex="-1" aria-hidden="true"></textarea>
+                </div>
+                <div class="ordered-row">
+                  <label class="inline-choice"><input type="checkbox" id="guide-dimension-1-ordered"> この処理条件は濃度などの数値系列（例：0, 0.1, 1 µM）</label>
+                  <label class="guide-field compact hidden" data-guide-unit="1" for="guide-dimension-1-unit"><span>単位</span><input id="guide-dimension-1-unit" placeholder="例：µM" autocomplete="off"></label>
+                </div>
+              </div>
+
+              <div class="guide-factor hidden" data-guide-dimension="2">
+                <label class="guide-field" for="guide-dimension-2-label">
+                  <span>2つ目の処理・群分けは？</span>
+                   <input id="guide-dimension-2-label" aria-label="2つ目の処理・群分けの名前" placeholder="例：Dox" autocomplete="off">
+                </label>
+                <div class="guide-field wide level-sheet-field">
+                  <span id="guide-dimension-2-grid-label">具体的に何を試しましたか？</span>
+                  <small data-guide-level-help="2">1行に1条件。Enterで次の行へ進み、末尾まで入力すると行が増えます。Excelからも貼り付けられます。</small>
+                  <div class="sheet-toolbar">
+                    <button type="button" class="quiet-button" data-guide-add-level-row="2">＋ 条件</button>
+                    <button type="button" class="quiet-button" data-guide-toggle-level-groups="2" aria-pressed="false">枝分かれを追加</button>
+                    <button type="button" class="quiet-button hidden" data-guide-add-level-column="2">＋ 枝の列</button>
+                  </div>
+                  <div class="table-scroll spreadsheet-shell compact-sheet"><table id="guide-dimension-2-grid" class="spreadsheet-table level-grid" aria-labelledby="guide-dimension-2-grid-label"></table></div>
+                  <textarea id="guide-dimension-2-values" class="legacy-values-text" tabindex="-1" aria-hidden="true"></textarea>
+                </div>
+                <div class="ordered-row">
+                  <label class="inline-choice"><input type="checkbox" id="guide-dimension-2-ordered"> この処理条件は濃度などの数値系列（例：0, 0.1, 1 ng/mL）</label>
+                  <label class="guide-field compact hidden" data-guide-unit="2" for="guide-dimension-2-unit"><span>単位</span><input id="guide-dimension-2-unit" placeholder="例：ng/mL" autocomplete="off"></label>
+                </div>
+              </div>
+
+              <div class="guide-field wide hidden" data-guide-after-conditions>
+                <label class="inline-choice" for="guide-combinations">
+                  <input type="checkbox" id="guide-combinations">
+                  一部、最初から行わなかった組み合わせがある
+                </label>
+                <small>通常はチェック不要です。作ったが測定できなかった場合は「実施した」ままにし、測定値を空欄にします。</small>
+              </div>
+
+              <label class="guide-field measurement-name-field" for="guide-measurement-name">
+                <span>何を測りましたか？</span>
+                <input id="guide-measurement-name" aria-label="測定したもの" placeholder="例：シグナル強度" autocomplete="off">
+                <small>解析方法ではなく、実際に記録した測定名を入力します。</small>
+              </label>
+
+              <label class="guide-field measurement-form-field" for="guide-measurement-form">
+                <span>元の測定値はどの形ですか？</span>
+                <select id="guide-measurement-form" aria-label="元の測定値の形" aria-describedby="guide-measurement-form-help">
+                  <option value="unknown" selected>選択してください</option>
+                  <option value="scalar">1つの数値</option>
+                  <option value="positive_total">陽性数と総数</option>
+                  <option value="multiple_related">同じ試料から複数の関連する値（例：targetとreference）</option>
+                  <option value="other">このどれでもない／分からない</option>
+                </select>
+                <small id="guide-measurement-form-help">割合は、陽性数と総数を残したままアプリ内で計算します。</small>
+              </label>
+              <div class="guide-field wide related-values-sheet hidden" id="guide-related-values-panel">
+                <span id="guide-related-grid-label">同じ試料から記録した元の値</span>
+                <small>正規化や比を先に決めず、pERK・total ERK・total proteinのような元値を列ごとに残します。</small>
+                <div class="sheet-toolbar"><button type="button" class="quiet-button" id="guide-related-add-row">＋ 関連する値</button></div>
+                <div class="table-scroll spreadsheet-shell compact-sheet"><table id="guide-related-grid" class="spreadsheet-table related-grid" aria-labelledby="guide-related-grid-label"></table></div>
+              </div>
+            </div>
+            <div class="guide-actions">
+              <button type="button" class="primary-button" id="build-condition-matrix">この内容で条件表を作る</button>
+              <span id="guide-build-status" role="status" aria-live="polite"></span>
+            </div>
+          </div>
+
+          <div id="example-entry-panel" class="hidden">
+            <p class="supporting-copy">入力済みの完成例を別の下書きとして開くデモです。自分の実験へ戻って編集できます。上の小さな入力例ボタンは、質問欄を埋めるだけで確定しません。</p>
+            <div class="template-picker" role="group" aria-label="prototype実験例">
+              <button type="button" class="template" data-template="sirna">siRNA × Dox</button>
+              <button type="button" class="template" data-template="independent">薬剤4条件</button>
+              <button type="button" class="template" data-template="time">同じ対象の経時測定</button>
+              <button type="button" class="template" data-template="microscopy">dish内のCell測定</button>
+            </div>
+          </div>
+          <div id="retained-drafts" class="retained-drafts hidden" aria-live="polite"></div>
+          </div>
+        </article>
+
+        <article class="canvas-card progress-card" data-workspace-section="design" data-progress-step="canvas" data-progress-state="upcoming" aria-labelledby="canvas-title">
+          <div class="card-heading">
+            <div>
+              <p class="step-label">2 · 条件表</p>
+              <h2 id="canvas-title" tabindex="-1">実際に行った組み合わせ</h2>
+            </div>
+            <span class="save-state" id="save-state">このprototype画面内で保持</span>
+          </div>
+          <button type="button" class="step-summary-row" id="canvas-step-summary" aria-expanded="false" aria-controls="canvas-step-content" disabled>
+            <span class="step-summary-index" aria-hidden="true">2</span>
+            <span class="step-summary-copy"><strong>条件表</strong><span id="canvas-step-summary-copy">条件を入力すると表示します</span></span>
+            <span class="step-summary-state" id="canvas-step-summary-state">次</span>
+            <span class="step-summary-edit">修正</span>
+          </button>
+          <div class="step-active-content" id="canvas-step-content">
+          <p class="supporting-copy" id="canvas-help"></p>
+          <div class="canvas-bulk-actions" id="canvas-bulk-actions">
+            <span>多くの組合せが同じなら：</span>
+            <button type="button" class="quiet-button" id="mark-all-performed">すべて「実施した」にする</button>
+            <button type="button" class="quiet-button" id="mark-all-unknown">すべて「まだ不明」に戻す</button>
+          </div>
+          <div class="table-scroll">
+            <table class="condition-table" id="condition-table"></table>
+          </div>
+          <div class="legend" aria-label="条件セルの意味">
+            <span><i class="legend-dot performed"></i>実施した</span>
+            <span><i class="legend-dot absent"></i>最初から作らなかった</span>
+            <span><i class="legend-dot unknown"></i>まだ不明</span>
+          </div>
+          <div class="step-next-actions">
+            <button type="button" class="primary-button" id="continue-to-observation">試料と測定値へ進む</button>
+            <span id="condition-review-status" role="status" aria-live="polite"></span>
+          </div>
+          </div>
+        </article>
+
+        <article class="observation-card progress-card" data-workspace-section="design" data-progress-step="flow" data-progress-state="upcoming" aria-labelledby="observation-title">
+          <div class="card-heading">
+            <div>
+              <p class="step-label">3 · 試料と測定値</p>
+              <h2 id="observation-title" tabindex="-1">測定値がどこから来たか</h2>
+            </div>
+            <span class="pattern-badge" id="pattern-badge"></span>
+          </div>
+          <button type="button" class="step-summary-row" id="flow-step-summary" aria-expanded="false" aria-controls="flow-step-content" disabled>
+            <span class="step-summary-index" aria-hidden="true">3</span>
+            <span class="step-summary-copy"><strong>試料と測定値</strong><span id="flow-step-summary-copy">条件表の確認後に回答します</span></span>
+            <span class="step-summary-state" id="flow-step-summary-state">次</span>
+            <span class="step-summary-edit">修正</span>
+          </button>
+          <div class="step-active-content" id="flow-step-content">
+          <p class="supporting-copy compact-copy">個数は決めません。実際の視野数・Cell数は、入力表の行からそのまま保持します。</p>
+          <div class="observation-guide">
+            <input id="observation-shape" type="hidden" value="unknown">
+            <input id="condition-identity-kind" type="hidden" value="unknown">
+            <div class="flow-step" data-flow-question="source">
+              <span class="flow-number" aria-hidden="true">1</span>
+              <div class="flow-fields">
+                <label class="guide-field" for="nested-parent-label">
+                  <span>同じ条件を複数回行ったとき、別々の1例として区別したものは何ですか？</span>
+                  <input id="nested-parent-label" aria-label="別々の1例として区別した試料・対象" aria-describedby="nested-parent-help" placeholder="例：culture dish、mouse、独立に調製したsample" autocomplete="off">
+                  <small id="nested-parent-help">実験日や表の行番号ではなく、別々に処置を受けた対象・試料を入力します。6枚のdishへ個別に処置したなら「culture dish」です。複数のdishが同じDonorや同じ調製元に由来する場合、そのつながりは次の質問で別に記録します。</small>
+                </label>
+                <input id="outer-unit-count" type="hidden" value="">
+              </div>
+            </div>
+            <div class="flow-step" data-flow-question="relation">
+              <span class="flow-number" aria-hidden="true">2</span>
+              <label class="guide-field wide" for="source-relation">
+                <span>この試料・対象を、各実験条件へどう使いましたか？</span>
+                <select id="source-relation" aria-label="試料・対象を各実験条件へ使った方法" aria-describedby="source-relation-help">
+                  <option value="unknown">選択してください</option>
+                  <option value="separate">それぞれ1条件だけに使った</option>
+                  <option value="shared_source_separate_samples">同じ元材料から、条件ごとの別々のdish・well・試料へ分けた</option>
+                  <option value="literal_same_entity">同じ試料・対象そのものを、条件を変えながら測った</option>
+                  <option value="mixed">この実験の中に複数の使い方が混ざる／分からない</option>
+                </select>
+                <small id="source-relation-help">同じcell line名でも別々に準備したものは同一とはみなしません。Donor-1からVehicle用dishとDrug用dishを作った場合は「同じ元材料から分けた」です。</small>
+              </label>
+            </div>
+            <div class="flow-step" data-flow-question="linkage">
+              <span class="flow-number" aria-hidden="true">3</span>
+              <label class="guide-field wide" for="source-linkage">
+                <span>条件間で同じ対象・元材料を、どのように対応づけられますか？</span>
+                <select id="source-linkage" aria-label="条件間で同じ対象や元材料を対応づける方法" aria-describedby="source-linkage-help">
+                  <option value="unknown">選択してください</option>
+                  <option value="existing_id">Donor名・試料名・Cell IDなど、対応が分かるIDがある</option>
+                  <option value="enter_together">これから同じ行へ入力し、対応関係を保てる</option>
+                  <option value="irrecoverable">どれとどれが同じ由来か復元できない／分からない</option>
+                </select>
+                <small id="source-linkage-help">対応できない値を、行番号だけで同じ対象として結びません。元データは消さず、対応関係が必要な表の生成だけ停止します。</small>
+              </label>
+            </div>
+            <div class="flow-step" data-flow-question="layout">
+              <span class="flow-number" aria-hidden="true">3</span>
+              <label class="guide-field wide" for="observation-layout">
+                <span><span id="observation-layout-source">1つの試料・対象</span>・1条件について、測定値をどのように残しましたか？</span>
+                <select id="observation-layout" aria-label="1つの試料・対象から得た測定値の残し方" aria-describedby="observation-layout-help">
+                  <option value="unknown">選択してください</option>
+                  <option value="one_each">最終的な値を1つだけ残した</option>
+                  <option value="multiple_inside">複数のCell・視野・ROIなどを、それぞれ残した</option>
+                  <option value="sequence">時間・位置などに沿って複数回測った</option>
+                  <option value="combined">Cell・視野などを区別し、さらに時間・位置に沿って測った</option>
+                </select>
+                <small id="observation-layout-help">同じ条件にdishが7枚ある場合の「7」はここでは数えません。1枚のdishの内側に複数のCell・視野・時点があるかを答えます。</small>
+              </label>
+            </div>
+            <div class="flow-step" data-flow-question="hierarchy">
+              <span class="flow-number" aria-hidden="true">4</span>
+              <div class="flow-fields">
+                <button type="button" class="quiet-button hierarchy-add-button" id="show-hierarchy-guide" aria-expanded="false" aria-controls="hierarchy-guide">＋ 視野・Cellなどを区別して残す</button>
+                <div class="guide-field wide hierarchy-sheet-field hidden" id="hierarchy-guide">
+                  <span><span id="hierarchy-source-label">最初の試料・対象</span>から測定値までに、何を区別して残しましたか？</span>
+                  <small>例：dish → 視野 → Cell。左から測定値へ向かう順に入力します。実際にIDを区別していない段階や、1対1で同じものを指す段階は省略できます。</small>
+                  <div class="sheet-toolbar"><button type="button" class="quiet-button" id="hierarchy-add-level">＋ 段階</button><button type="button" class="quiet-button" id="hide-hierarchy-guide">閉じる</button></div>
+                  <div class="table-scroll spreadsheet-shell compact-sheet"><table id="hierarchy-level-grid" class="spreadsheet-table hierarchy-grid" aria-label="試料から測定値までのつながり"></table></div>
+                  <input id="nested-child-labels" type="hidden" value="">
+                </div>
+              </div>
+            </div>
+            <div class="flow-step" data-flow-question="axis">
+              <span class="flow-number" aria-hidden="true">5</span>
+              <div class="flow-fields axis-choice-row">
+                <input type="checkbox" class="visually-hidden" id="has-sequence-axis" tabindex="-1" aria-hidden="true">
+                <button type="button" class="quiet-button sequence-add-button" id="add-sequence-axis" aria-expanded="false" aria-controls="sequence-guide">＋ 時間・位置などに沿った測定を追加</button>
+                <div id="sequence-guide" class="guide-followup hidden">
+                  <div class="sequence-guide-heading"><strong>時間・位置などに沿った測定</strong><button type="button" class="quiet-button" id="remove-sequence-axis">この並びを使わない</button></div>
+                  <label class="guide-field" for="sequence-axis-label"><span>何に沿って測りましたか？</span><input id="sequence-axis-label" aria-label="測定した順序の名前" placeholder="例：時間" autocomplete="off"></label>
+                  <label class="guide-field" for="sequence-values"><span>値</span><input id="sequence-values" aria-label="時点・位置などの値" placeholder="例：0, 5, 15, 30, 60" autocomplete="off"></label>
+                  <label class="guide-field compact" for="sequence-axis-unit"><span>単位</span><input id="sequence-axis-unit" aria-label="時点・位置などの単位" placeholder="例：min" autocomplete="off"></label>
+                  <label class="guide-field wide" for="sequence-identity">
+                    <span>各時点・位置で、同じ対象を続けて測りましたか？</span>
+                    <select id="sequence-identity" aria-label="各時点・位置で同じ対象を続けて測ったか" aria-describedby="sequence-identity-help">
+                      <option value="unknown">選択してください</option>
+                      <option value="same">同じCell・dish・動物などを続けて測った</option>
+                      <option value="different">時点ごとに別のdish・試料などを回収した</option>
+                    </select>
+                    <small id="sequence-identity-help">途中で見えなくなった対象は、以後を空欄のまま残せます。別の対象へつなぎません。</small>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div id="condition-identity-guide" class="hidden" aria-hidden="true"></div>
+            <div id="nested-guide" class="hidden" aria-hidden="true"></div>
+            <p class="guide-result" id="observation-guide-result" role="status" aria-live="polite">回答すると、実験に合う入力表を自動生成します。</p>
+            <button type="button" class="primary-button open-data-workspace" id="open-data-workspace-inline" disabled>入力表を開く</button>
+          </div>
+          <details class="advanced-pattern-check">
+            <summary>生成された入力表の判定を確認・修正</summary>
+            <div class="pattern-picker" id="pattern-picker" role="radiogroup" aria-label="各条件内の測定構造"></div>
+            <div class="pattern-summary" id="pattern-summary"></div>
+          </details>
+          </div>
+        </article>
+
+        <article class="measurement-card" data-workspace-section="data" aria-labelledby="measurement-title">
+          <div class="card-heading">
+            <div>
+              <p class="step-label">DATA · 測定したもの</p>
+              <h2 id="measurement-title" tabindex="-1">測定値を入力または貼り付け</h2>
+            </div>
+            <div class="measurement-heading-actions">
+              <div class="measurement-view-switch" role="group" aria-label="測定値の表示方法">
+                <button type="button" class="measurement-view-button" data-measurement-view="compact" aria-pressed="true">まとめて表示</button>
+                <button type="button" class="measurement-view-button" data-measurement-view="detail" aria-pressed="false">すべての値を表示</button>
+              </div>
+              <div class="example-data-actions">
+                <button type="button" class="quiet-button" id="paste-demo">サンプル値で一時プレビュー</button>
+                <button type="button" class="quiet-button hidden" id="remove-demo">サンプル値を除く</button>
+              </div>
+            </div>
+          </div>
+          <p class="supporting-copy" id="measurement-help"></p>
+          <p class="sheet-instruction" id="measurement-sheet-instruction">直接入力するか、左上セルを選んでExcelから貼り付けます。空欄は空欄のまま残します。</p>
+          <div class="data-status" id="data-status" role="status" aria-live="polite"></div>
+          <div class="table-scroll">
+            <table class="data-table" id="data-table"></table>
+          </div>
+          <div class="table-actions">
+            <button type="button" class="add-row" id="add-row">＋ 観測を追加</button>
+            <button type="button" class="quiet-button" id="paste-table">表を貼り付け</button>
+          </div>
+          <div class="paste-panel hidden" id="paste-panel">
+            <label for="paste-area">Excel / CSV / TSVから、見出しを含めて貼り付け</label>
+            <textarea id="paste-area" rows="6" spellcheck="false"></textarea>
+            <div class="paste-actions">
+              <button type="button" class="primary-button" id="apply-paste">読み取る</button>
+              <button type="button" class="quiet-button" id="cancel-paste">閉じる</button>
+            </div>
+            <p id="paste-message" role="status" aria-live="polite"></p>
+          </div>
+        </article>
+
+        <article class="question-card hidden" data-workspace-section="data" id="statistics-questions" aria-labelledby="statistics-title">
+          <div class="card-heading">
+            <div>
+              <p class="step-label">STATISTICSに必要な追加情報</p>
+              <h2 id="statistics-title">データの数え方を確認します</h2>
+            </div>
+            <span class="question-count" id="question-count">4項目</span>
+          </div>
+          <p class="supporting-copy">実験条件と入力済みデータはそのままです。統計に必要なことだけ確認します。</p>
+          <div id="comparison-scope-list" class="comparison-scope-list"></div>
+          <div id="question-list"></div>
+        </article>
+      </section>
+
+      <aside class="summary-panel" aria-labelledby="summary-title">
+        <div class="sticky-summary">
+          <p class="step-label">LIVE SUMMARY</p>
+          <h2 id="summary-title">この実験のまとめ</h2>
+          <div class="summary-copy" id="summary-copy"></div>
+
+          <div class="readiness" aria-label="現在できること">
+            <div class="readiness-row" id="data-retention-readiness"><span>入力済みデータ</span><strong>0件</strong></div>
+            <div class="readiness-row" id="graph-readiness"><span>Graph</span><strong>入力待ち</strong></div>
+            <div class="readiness-row" id="statistics-readiness"><span>Statistics</span><strong>未確認</strong></div>
+          </div>
+
+          <div class="graph-preview" aria-labelledby="graph-preview-title">
+            <div class="preview-heading">
+              <h3 id="graph-preview-title">Graph preview</h3>
+              <label class="graph-field-choice hidden" id="graph-field-choice" for="graph-field-select"><span>表示する元の値</span><select id="graph-field-select"></select></label>
+              <span id="graph-note">値を入力すると表示します</span>
+            </div>
+            <svg id="mini-graph" viewBox="0 0 420 230" role="img" aria-label="入力値の簡易グラフ"></svg>
+          </div>
+
+          <div class="summary-actions">
+            <button type="button" class="primary-button" id="graph-button">Graphを確認</button>
+            <button type="button" class="secondary-button" id="statistics-button">Statisticsへ進む</button>
+          </div>
+          <p class="safety-note" id="safety-note">Statisticsへ進むまで、独立した実験回数などは尋ねません。</p>
+        </div>
+      </aside>
+    </main>
+
+    <script type="module" src="./prototype.js"></script>
+  </body>
+</html>

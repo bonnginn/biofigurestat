@@ -1,4 +1,4 @@
-import { useRef, useState, type InputHTMLAttributes, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes, type KeyboardEvent } from "react";
 
 import {
   AnalysisEngineResultSchema,
@@ -56,6 +56,10 @@ import {
   metadataForPersistence,
   type ProjectMetadataDraft,
 } from "../app/projectMetadata";
+import type {
+  RegisterWorkspaceSaveHandler,
+  RequestWorkspaceExit,
+} from "../app/workspaceLifecycle";
 import {
   methodLabel,
   recommendationExplanation,
@@ -77,6 +81,9 @@ type Props = {
   saveProject?: SaveProjectAction;
   initialProject?: OpenedProject;
   metadataDraft?: ProjectMetadataDraft;
+  onDirtyChange?: (dirty: boolean) => void;
+  onRequestExit?: RequestWorkspaceExit;
+  onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
 };
 
 type WorkflowTabId = "input" | "analysis" | "graph" | "save";
@@ -318,6 +325,9 @@ export function MultiConditionDataSheetPage({
   saveProject,
   initialProject,
   metadataDraft: initialMetadataDraft,
+  onDirtyChange,
+  onRequestExit,
+  onRegisterSaveHandler,
 }: Props) {
   const isRepeated = recommendation.templateId === "D04";
   const initialDerivedRevision = initialProject?.state.derivedDatasetRevisions.find(
@@ -462,6 +472,21 @@ export function MultiConditionDataSheetPage({
     metadata: initialProject?.state.metadata ?? null,
   });
   const [draftRawRevisionId, setDraftRawRevisionId] = useState(workspaceRef.current.rawRevisionId);
+  const lifecycleSnapshot = JSON.stringify({
+    sheet,
+    nestedPayloads,
+    validated,
+    canonicalData,
+    analysisRun,
+    metadataDraft,
+    draftRawRevisionId,
+  });
+  const savedLifecycleSnapshotRef = useRef(initialProject ? lifecycleSnapshot : "");
+  const isDirty = lifecycleSnapshot !== savedLifecycleSnapshotRef.current;
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+    return () => onDirtyChange?.(false);
+  }, [isDirty, onDirtyChange]);
   const isProportion = design.outcomes[0]?.type === "proportion_counts";
   const replicateCount = sheet.columns[0]?.entries.length ?? 0;
   const selectedReplicateIndex = Math.min(activeReplicateIndex, Math.max(0, replicateCount - 1));
@@ -869,7 +894,7 @@ export function MultiConditionDataSheetPage({
 
   const saveCurrentProject = async () => {
     if (!saveProject || !canonicalData || !validated || !metadataDraftIsComplete(metadataDraft))
-      return;
+      return false;
     setSaveStatus("saving");
     setSaveError(null);
     try {
@@ -968,18 +993,39 @@ export function MultiConditionDataSheetPage({
       const saved = await saveProject(ProjectStateSchema.parse(state), saveTarget);
       if (!saved) {
         setSaveStatus("idle");
-        return;
+        return false;
       }
+      savedLifecycleSnapshotRef.current = lifecycleSnapshot;
       setLastSavedState(saved.state);
       setSaveTarget(saved.target);
       setDraftRawRevisionId(saved.state.activeRawRevisionId);
       setSaveStatus("success");
+      onDirtyChange?.(false);
+      return true;
     } catch (error) {
       setSaveStatus("error");
       setSaveError(
         actionErrorMessage(error, "プロジェクトを保存できませんでした。入力は保持されています。"),
       );
+      return false;
     }
+  };
+  const saveCurrentProjectRef = useRef(saveCurrentProject);
+  useEffect(() => {
+    saveCurrentProjectRef.current = saveCurrentProject;
+  }, [saveCurrentProject]);
+  useEffect(() => {
+    if (!onRegisterSaveHandler) return;
+    onRegisterSaveHandler(() => saveCurrentProjectRef.current());
+    return () => onRegisterSaveHandler(null);
+  }, [onRegisterSaveHandler]);
+
+  const requestBack = () => {
+    if (onRequestExit) {
+      onRequestExit({ actionLabel: "前の画面に戻る", proceed: onBack });
+      return;
+    }
+    onBack();
   };
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -1022,7 +1068,7 @@ export function MultiConditionDataSheetPage({
 
   return (
     <div className="page-stack narrow-page">
-      <button className="back-link" type="button" onClick={onBack}>
+      <button className="back-link" type="button" onClick={requestBack}>
         ← デザイン確認に戻る
       </button>
       <section className="sheet-intro" aria-labelledby="multi-sheet-heading">

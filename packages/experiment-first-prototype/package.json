@@ -1,0 +1,13 @@
+{
+  "name": "@lsaa/experiment-first-prototype",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test src/prototype.test.ts src/staged-readiness.test.ts src/experiment-canvas-builder.test.ts src/observation-pattern.test.ts src/observation-pattern.boundary.test.ts src/observation-interview.test.ts src/staged-entry-stress.test.ts src/progressive-snapshot.test.ts src/analysis-scope.test.ts src/forward-mapper.test.ts ui-prototype/semantic-model.test.mjs ui-prototype/guided-entry-model.test.mjs ui-prototype/research-context-model.test.mjs ui-prototype/design-progress-model.test.mjs ui-prototype/spreadsheet-grid-model.test.mjs ui-prototype/measurement-sheet-model.test.mjs ui-prototype/manual-case-regressions.test.mjs",
+    "test:staged-entry": "node --experimental-strip-types --test src/staged-readiness.test.ts src/experiment-canvas-builder.test.ts src/observation-pattern.test.ts src/observation-pattern.boundary.test.ts src/observation-interview.test.ts src/staged-entry-stress.test.ts src/progressive-snapshot.test.ts src/analysis-scope.test.ts src/forward-mapper.test.ts ui-prototype/semantic-model.test.mjs ui-prototype/guided-entry-model.test.mjs ui-prototype/research-context-model.test.mjs ui-prototype/design-progress-model.test.mjs ui-prototype/spreadsheet-grid-model.test.mjs ui-prototype/measurement-sheet-model.test.mjs ui-prototype/manual-case-regressions.test.mjs",
+    "evaluate": "node --experimental-strip-types --test src/evaluation-artifact.test.ts"
+  }
+}

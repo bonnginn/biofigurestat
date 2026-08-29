@@ -54,6 +54,28 @@ describe("NonlinearFitGraph", () => {
           Number(tick.getAttribute("y2")) > Number(tick.getAttribute("y1")),
       ),
     ).toBe(true);
+    const xMinorTicks = [
+      ...document.querySelectorAll<SVGLineElement>('[data-axis-tick="x-minor"]'),
+    ];
+    const yMinorTicks = [
+      ...document.querySelectorAll<SVGLineElement>('[data-axis-tick="y-minor"]'),
+    ];
+    expect(xMinorTicks.length).toBeGreaterThan(0);
+    expect(yMinorTicks.length).toBeGreaterThan(0);
+    expect(
+      xMinorTicks.every(
+        (tick) =>
+          tick.dataset.tickDirection === "outside" &&
+          Number(tick.getAttribute("y2")) > Number(tick.getAttribute("y1")),
+      ),
+    ).toBe(true);
+    expect(
+      yMinorTicks.every(
+        (tick) =>
+          tick.dataset.tickDirection === "outside" &&
+          Number(tick.getAttribute("x2")) < Number(tick.getAttribute("x1")),
+      ),
+    ).toBe(true);
     expect(
       yTicks.every(
         (tick) =>
@@ -106,5 +128,75 @@ describe("NonlinearFitGraph", () => {
     const exported = serializeGraphSvg(svg as unknown as SVGSVGElement);
     expect(exported).toContain('data-fit-model="zero_baseline_association"');
     expect(exported).toContain("saved zero_baseline_association fit");
+  });
+
+  it("preserves outside axis ticks and all experimental-condition series in the export source", () => {
+    const series = [
+      { id: "condition.hip", label: "HIP", scale: 1 },
+      { id: "condition.ffcc", label: "FFCC", scale: 0.7 },
+    ];
+    render(
+      <NonlinearFitGraph
+        model={{
+          modelId: "michaelis_menten",
+          series: series.map(({ id, scale }) => ({
+            seriesId: id,
+            points: [0, 5, 10].map((x, index) => ({
+              observationId: `${id}.${index}`,
+              experimentalUnitId: `${id}.unit.${index}`,
+              seriesId: id,
+              x,
+              y: scale * index,
+            })),
+            fittedCurve: [
+              { x: 0, y: 0 },
+              { x: 5, y: scale },
+              { x: 10, y: scale * 2 },
+            ],
+          })),
+        }}
+        xLabel="Substrate concentration"
+        yLabel="Initial velocity"
+        seriesLabels={Object.fromEntries(series.map(({ id, label }) => [id, label]))}
+      />,
+    );
+
+    const svg = screen.getByRole("img", {
+      name: "非線形フィットGraph",
+    }) as unknown as SVGSVGElement;
+    expect(svg.querySelectorAll("[data-fit-series]")).toHaveLength(2);
+    expect(svg.querySelectorAll('[data-graph-layer="raw-observation"]')).toHaveLength(6);
+    expect(svg.querySelectorAll('[data-graph-layer="authoritative-fitted-curve"]')).toHaveLength(2);
+    expect(svg.querySelectorAll('[data-graph-layer="series-legend"]')).toHaveLength(2);
+    expect(svg.querySelectorAll('[data-legend-mark="observed-points"]')).toHaveLength(2);
+    expect(svg.querySelectorAll('[data-legend-mark="fitted-curve"]')).toHaveLength(2);
+    expect(svg).toHaveTextContent("HIP");
+    expect(svg).toHaveTextContent("FFCC");
+    expect(
+      [...svg.querySelectorAll<SVGLineElement>('[data-axis-tick="x"]')].every(
+        (tick) =>
+          tick.dataset.tickDirection === "outside" &&
+          Number(tick.getAttribute("y2")) > Number(tick.getAttribute("y1")),
+      ),
+    ).toBe(true);
+
+    const exported = serializeGraphSvg(svg);
+    const exportedSvg = new DOMParser().parseFromString(exported, "image/svg+xml");
+    expect(exportedSvg.querySelector("parsererror")).toBeNull();
+    expect(exportedSvg.querySelectorAll("[data-fit-series]")).toHaveLength(2);
+    expect(
+      exportedSvg.querySelectorAll('[data-axis-tick="x"][data-tick-direction="outside"]'),
+    ).not.toHaveLength(0);
+    expect(
+      exportedSvg.querySelectorAll('[data-axis-tick="x-minor"][data-tick-direction="outside"]'),
+    ).toHaveLength(svg.querySelectorAll('[data-axis-tick="x-minor"]').length);
+    expect(
+      exportedSvg.querySelectorAll('[data-axis-tick="y-minor"][data-tick-direction="outside"]'),
+    ).toHaveLength(svg.querySelectorAll('[data-axis-tick="y-minor"]').length);
+    expect(exportedSvg.querySelectorAll('[data-graph-layer="series-legend"]')).toHaveLength(2);
+    expect(exportedSvg.querySelectorAll('[data-legend-mark="observed-points"]')).toHaveLength(2);
+    expect(exportedSvg.querySelectorAll('[data-legend-mark="fitted-curve"]')).toHaveLength(2);
+    expect(exportedSvg.documentElement.textContent).toContain("HIP");
+    expect(exportedSvg.documentElement.textContent).toContain("FFCC");
   });
 });

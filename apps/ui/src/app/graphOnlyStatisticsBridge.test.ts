@@ -28,6 +28,7 @@ function mapping(id = false, series = false): UnresolvedVisualizationColumnMappi
       ...(series ? [{ index: id ? 3 : 2, header: "Batch", role: "series" as const }] : []),
     ],
     identityDecision: id ? "selected_column" : "no_id",
+    sourceRowUnitDecision: id ? "unanswered" : "each_row_distinct_unit",
     confirmedAt: now,
   };
 }
@@ -101,28 +102,50 @@ function contract(matched = false) {
 }
 
 describe("bridgeGraphOnlyTableToStatistics", () => {
-  it("promotes a confirmed one-factor independent table without inventing matching", () => {
+  it("generates stable local unit IDs only after an independent row relationship is confirmed", () => {
     const result = bridgeGraphOnlyTableToStatistics(state(), contract(), now);
 
     expect(result.status).toBe("ready");
     if (result.status !== "ready") return;
-    expect(result.observations).toHaveLength(2);
-    expect(result.observations.map(({ identities }) => identities)).toEqual([
-      { dishid: "source-row-2" },
-      { dishid: "source-row-3" },
+    expect(result.observations.map(({ identities }) => identities.dishid)).toEqual([
+      "unit-001",
+      "unit-002",
     ]);
-    expect(result.observations.map(({ factors }) => factors)).toEqual([
-      { condition: "Control" },
-      { condition: "Drug" },
-    ]);
-    expect(result.mapping.columns.Condition).toMatchObject({
-      role: "factor",
-      semanticKey: "condition",
+    expect(result.lineage.transformations).toContain(
+      "generated_independent_unit_ids_from_confirmed_source_rows",
+    );
+    expect(Object.values(result.mapping.columns)).not.toContainEqual({
+      role: "identity",
+      semanticKey: "dishid",
     });
-    expect(result.lineage.rawText).toContain("Control\t10");
+
+    const workspace = createAdaptiveWorkspace({
+      contract: contract(),
+      observations: result.observations,
+      mapping: result.mapping,
+      lineage: result.lineage,
+      now,
+    });
+    expect(workspace.status).toBe("ready");
+    const reopened = rehydrateExperimentWorkspace(
+      createExperimentWorkspaceProject({
+        draft: workspace.draft!,
+        cells: workspace.cells,
+        graphs: [],
+        now,
+      }),
+    );
+    expect(
+      reopened?.draft.adaptiveInput?.canonicalObservations.map(
+        ({ identities }) => identities.dishid,
+      ),
+    ).toEqual(["unit-001", "unit-002"]);
+    expect(reopened?.draft.adaptiveInput?.rawLineage?.rawText).toBe(
+      state().rawLineage.rawText,
+    );
   });
 
-  it("requires an explicit no-ID decision before using source rows as instance identities", () => {
+  it("requires an explicit ID decision before attempting the bridge", () => {
     const unanswered = state();
     const result = bridgeGraphOnlyTableToStatistics(
       {
@@ -137,6 +160,37 @@ describe("bridgeGraphOnlyTableToStatistics", () => {
       status: "stopped",
       code: "IDENTITY_DECISION_REQUIRED",
     });
+  });
+
+  it.each([
+    ["unanswered", "ROW_UNIT_DECISION_REQUIRED"],
+    ["unknown", "ROW_UNIT_DECISION_REQUIRED"],
+    ["multiple_rows_per_unit", "PARENT_IDENTITY_COLUMN_REQUIRED"],
+  ] as const)("safe-stops a no-ID table when source-row grain is %s", (decision, code) => {
+    const unresolved = state();
+    const result = bridgeGraphOnlyTableToStatistics(
+      {
+        ...unresolved,
+        mapping: { ...unresolved.mapping!, sourceRowUnitDecision: decision },
+      },
+      contract(),
+      now,
+    );
+
+    expect(result).toMatchObject({ status: "stopped", code });
+  });
+
+  it("treats a legacy no-ID mapping without a row-grain fact as unanswered", () => {
+    const legacy = state();
+    const { sourceRowUnitDecision: _sourceRowUnitDecision, ...mappingWithoutRowGrain } =
+      legacy.mapping!;
+    expect(
+      bridgeGraphOnlyTableToStatistics(
+        { ...legacy, mapping: mappingWithoutRowGrain },
+        contract(),
+        now,
+      ),
+    ).toMatchObject({ status: "stopped", code: "ROW_UNIT_DECISION_REQUIRED" });
   });
 
   it("requires an explicit ID column for matched observations", () => {
@@ -223,6 +277,19 @@ describe("bridgeGraphOnlyTableToStatistics", () => {
       semanticKey: "dishid",
     });
     expect(reopened?.draft.adaptiveInput?.rawLineage?.rawText).toContain("Control\t10\tdish-1");
+  });
+
+  it.each([
+    ["independent", false],
+    ["matched", true],
+  ] as const)("stops NFKC-equivalent source ID variants in a %s design", (_label, matched) => {
+    expect(
+      bridgeGraphOnlyTableToStatistics(
+        state({ ids: ["dish-1", "ｄｉｓｈ－１"] }),
+        contract(matched),
+        now,
+      ),
+    ).toMatchObject({ status: "stopped", code: "IDENTITY_SET_INVALID" });
   });
 
   it.each([
@@ -349,7 +416,11 @@ describe("bridgeGraphOnlyTableToStatistics", () => {
 
   it("does not silently reinterpret or ignore a Graph series column", () => {
     expect(
-      bridgeGraphOnlyTableToStatistics(state({ series: true }), contract(), now),
+      bridgeGraphOnlyTableToStatistics(
+        state({ ids: ["dish-1", "dish-2"], series: true }),
+        contract(),
+        now,
+      ),
     ).toMatchObject({
       status: "stopped",
       code: "SERIES_MEANING_REQUIRED",
@@ -494,7 +565,9 @@ describe("bridgeGraphOnlyTableToStatistics", () => {
         conditionEntityRelationship: { kind: "independent_condition_units" as const },
       },
     });
-    expect(bridgeGraphOnlyTableToStatistics(state(), mismatched, now)).toMatchObject({
+    expect(
+      bridgeGraphOnlyTableToStatistics(state({ ids: ["dish-1", "dish-2"] }), mismatched, now),
+    ).toMatchObject({
       status: "stopped",
       code: "FACTOR_LEVEL_MISMATCH",
     });

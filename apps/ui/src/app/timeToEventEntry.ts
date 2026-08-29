@@ -78,10 +78,21 @@ export type TimeToEventEntryResult =
       }>);
 
 const requiredAliases = {
-  identity: new Set(["unit id", "unit", "subject id", "sample id"]),
-  group: new Set(["group", "condition", "condition id"]),
-  followUp: new Set(["follow-up time", "follow up time", "time-to-event", "time"]),
-  status: new Set(["event/censor status", "event status", "status", "event"]),
+  identity: new Set([
+    "unit id", "unit", "subject id", "subject", "sample id", "animal id", "animal",
+    "mouse id", "mouse", "個体id", "動物id", "マウスid",
+  ]),
+  group: new Set([
+    "group", "condition", "condition id", "treatment", "cohort", "arm", "群", "条件", "処置",
+  ]),
+  followUp: new Set([
+    "follow-up time", "follow up time", "follow-up", "time-to-event", "survival time",
+    "duration", "time", "追跡時間", "生存時間",
+  ]),
+  status: new Set([
+    "event/censor status", "event status", "censoring status", "status", "event", "outcome",
+    "状態", "イベント",
+  ]),
 } as const;
 
 const normalizedHeader = (value: string): string =>
@@ -89,18 +100,25 @@ const normalizedHeader = (value: string): string =>
     .normalize("NFKC")
     .replace(/^\uFEFF/u, "")
     .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/\s*[（(][^）)]*[）)]\s*$/u, "");
 
 function parseTimeToEventStatus(value: string, options: SurvivalPasteOptions): boolean {
   const normalized = value.normalize("NFKC").trim().toLowerCase();
-  if (["event", "observed", "event observed"].includes(normalized)) return true;
-  if (["censored", "censor"].includes(normalized)) return false;
+  if (
+    ["event", "observed", "event observed", "死亡", "イベント", "イベント発生"].includes(
+      normalized,
+    )
+  )
+    return true;
+  if (["censored", "censor", "打ち切り", "観察終了", "生存"].includes(normalized))
+    return false;
   const mapping = options.numericStatusMapping;
   if (mapping && mapping.event !== mapping.censored && normalized === mapping.event) return true;
   if (mapping && mapping.event !== mapping.censored && normalized === mapping.censored)
     return false;
   throw new Error(
-    `Invalid survival status '${value}'. Use Event/Censored or select an explicit numeric mapping.`,
+    `Invalid survival status '${value}'. Use Event/Censored（死亡・イベント発生／打ち切り・観察終了）or select an explicit numeric mapping.`,
   );
 }
 
@@ -126,7 +144,18 @@ export function parseTimeToEventTable(
     status: column(requiredAliases.status),
   };
   if (Object.values(indexes).some((index) => index < 0)) {
-    throw new Error("Survival header must include unit ID, group, follow-up time, and status");
+    const missing = Object.entries(indexes)
+      .filter(([, index]) => index < 0)
+      .map(([key]) =>
+        key === "identity"
+          ? "個体ID"
+          : key === "group"
+            ? "群・処置"
+            : key === "followUp"
+              ? "追跡時間"
+              : "Event/Censored状態",
+      );
+    throw new Error(`Survival表に必要な列がありません: ${missing.join("、")}`);
   }
   const requiredColumns = new Set(Object.values(indexes));
   const seen = new Set<string>();

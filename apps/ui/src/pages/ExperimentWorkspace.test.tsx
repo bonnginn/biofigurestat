@@ -19,6 +19,15 @@ import {
 } from "../app/syntheticFixtures";
 import { ExperimentWorkspace } from "./ExperimentWorkspace";
 
+const recordUsageMilestone = vi.hoisted(() => vi.fn());
+const recordUsageGraphEdit = vi.hoisted(() => vi.fn());
+const recordUsageGraphConfiguration = vi.hoisted(() => vi.fn());
+vi.mock("../app/usageTelemetry", () => ({
+  recordUsageMilestone,
+  recordUsageGraphEdit,
+  recordUsageGraphConfiguration,
+}));
+
 function chooseAndCreateGraph(name: RegExp) {
   fireEvent.click(screen.getByRole("button", { name }));
   expect(screen.getByRole("img", { name: /現在のデータを表示したpreview/ })).toBeVisible();
@@ -26,6 +35,68 @@ function chooseAndCreateGraph(name: RegExp) {
 }
 
 describe("ExperimentWorkspace", () => {
+  it("records Graph creation as one typed workflow milestone", () => {
+    recordUsageMilestone.mockClear();
+    recordUsageGraphConfiguration.mockClear();
+    render(
+      <ExperimentWorkspace initialDraft={draftWithTwoConditions("proportion")} onBack={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
+    fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
+
+    expect(recordUsageMilestone).toHaveBeenCalledWith("home", "graph_created");
+    expect(recordUsageMilestone).toHaveBeenCalledTimes(1);
+    expect(recordUsageGraphConfiguration).toHaveBeenCalledWith("home", {
+      graphFamily: "dot",
+      origin: "recommended",
+      uncertainty: "sd",
+      rawPointsVisible: false,
+      summaryVisible: true,
+    });
+  });
+
+  it("records data entry after the first real value, but not for prepopulated data", () => {
+    recordUsageMilestone.mockClear();
+    const draft = draftWithTwoConditions("nested_continuous");
+    const firstRender = render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+
+    expect(recordUsageMilestone).not.toHaveBeenCalledWith("home", "data_entry_started");
+    const table = screen.getByRole("table", { name: "細胞強度をまとめて入力" });
+    const first = within(table).getByRole("textbox", {
+      name: "Exp 1・Controlの細胞強度",
+    });
+    fireEvent.change(first, { target: { value: "10" } });
+    expect(recordUsageMilestone).toHaveBeenCalledWith("home", "data_entry_started");
+    expect(
+      vi
+        .mocked(recordUsageMilestone)
+        .mock.calls.filter(([, milestone]) => milestone === "data_entry_started"),
+    ).toHaveLength(1);
+    fireEvent.change(first, { target: { value: "11" } });
+    expect(
+      vi
+        .mocked(recordUsageMilestone)
+        .mock.calls.filter(([, milestone]) => milestone === "data_entry_started"),
+    ).toHaveLength(1);
+    firstRender.unmount();
+
+    recordUsageMilestone.mockClear();
+    const key = experimentCellKey({
+      experimentId: draft.experiments[0].id,
+      conditionId: draft.conditions[0].id,
+      readoutId: draft.readouts[0].id,
+    });
+    render(
+      <ExperimentWorkspace
+        initialDraft={draft}
+        initialCells={{ [key]: { kind: "nested_continuous", rawValues: [10], source: "manual" } }}
+        onBack={vi.fn()}
+      />,
+    );
+    expect(recordUsageMilestone).not.toHaveBeenCalledWith("home", "data_entry_started");
+  });
+
   function draftWithTwoConditions(shape: ReadoutShape): ExperimentSetDraft {
     const base = createExperimentSetDraft("cell_culture", shape);
     return {
@@ -468,7 +539,12 @@ describe("ExperimentWorkspace", () => {
     const draft = draftWithTwoConditions("proportion");
     const onReuseDesign = vi.fn();
     render(
-      <ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} onReuseDesign={onReuseDesign} />,
+      <ExperimentWorkspace
+        initialDraft={draft}
+        onBack={vi.fn()}
+        onReuseDesign={onReuseDesign}
+        onRequestExit={({ proceed }) => proceed()}
+      />,
     );
     fireEvent.click(screen.getByText("ファイル"));
     fireEvent.click(screen.getByRole("button", { name: "設計だけを新しいprojectに再利用" }));
@@ -484,6 +560,18 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByText("ファイル"));
     fireEvent.click(screen.getByRole("button", { name: "この設計をお気に入りに保存" }));
     expect(onSaveFavorite).toHaveBeenCalledWith(draft, []);
+  });
+
+  it("Fileメニューから現在のデータを保持したままOpen project lifecycleへ委譲する", () => {
+    const draft = draftWithTwoConditions("proportion");
+    const onOpenProject = vi.fn();
+    render(
+      <ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} onOpenProject={onOpenProject} />,
+    );
+
+    fireEvent.click(screen.getByText("ファイル"));
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを開く" }));
+    expect(onOpenProject).toHaveBeenCalledTimes(1);
   });
 
   it("enters an X-Y pair directly and creates a scatter graph from stable sample IDs", () => {
@@ -1052,7 +1140,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "編集対象" }), {
       target: { value: "legend" },
     });
-    expect(screen.getByRole("combobox", { name: "凡例の位置" })).toHaveValue("top");
+    expect(screen.getByRole("combobox", { name: "凡例の位置" })).toHaveValue("right");
   });
 
   it("縦断データのAUCを元トレースと分けたGraph sourceとして作成する", () => {
@@ -1300,7 +1388,17 @@ describe("ExperimentWorkspace", () => {
       state,
       target: target ?? "/tmp/workspace.lsa",
     }));
-    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} saveProject={saveProject} />);
+    let registeredSave: ((saveAs?: boolean) => Promise<boolean>) | null = null;
+    render(
+      <ExperimentWorkspace
+        initialDraft={draft}
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        onRegisterSaveHandler={(handler) => {
+          registeredSave = handler;
+        }}
+      />,
+    );
 
     fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
     fireEvent.change(screen.getByRole("spinbutton", { name: "Controlの陽性数" }), {
@@ -1318,7 +1416,9 @@ describe("ExperimentWorkspace", () => {
       numerator: 5,
       denominator: 10,
     });
-    fireEvent.keyDown(window, { key: "s", metaKey: true });
+    await act(async () => {
+      await registeredSave?.();
+    });
     await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(2));
     expect(saveProject.mock.calls[1]?.[1]).toBe("/tmp/workspace.lsa");
     expect(saveProject.mock.calls[1]?.[0].rawRevisions).toHaveLength(2);

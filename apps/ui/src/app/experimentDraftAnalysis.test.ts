@@ -27,7 +27,9 @@ function fixture(conditionLabels: readonly string[]) {
         })
       ] = {
         kind: "proportion",
-        positive: 20 + experimentIndex * 4 + conditionIndex * 8,
+        // Keep paired differences non-degenerate so a request advertised as
+        // executable is also accepted by the authoritative engine.
+        positive: 20 + experimentIndex * 4 + conditionIndex * (8 + experimentIndex),
         eligible: 100,
       };
     });
@@ -107,6 +109,53 @@ describe("temporary experiment-first analysis adapter", () => {
       options: { multiplicityMethod: "holm_paired_all_pairs" },
     });
     expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId)).size).toBe(3);
+  });
+
+  it("reports every missing condition for an incomplete repeated-measures stable unit", () => {
+    const { draft: independent, cells: completeCells } = fixture(["Baseline", "6 h", "24 h"]);
+    const draft = {
+      ...independent,
+      conditionAssignment: { kind: "matched" as const, unitLabel: "Cell" },
+    };
+    const cells = { ...completeCells };
+    [draft.conditions[1], draft.conditions[2]].forEach((condition) => {
+      delete cells[
+        experimentCellKey({
+          experimentId: draft.experiments[0].id,
+          conditionId: condition.id,
+          readoutId: draft.readouts[0].id,
+        })
+      ];
+    });
+    const cellsBeforeAssessment = structuredClone(cells);
+
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0].id,
+      conditionIds: draft.conditions.map(({ id }) => id),
+    });
+
+    expect(assessment).toMatchObject({ state: "ready", method: "repeated_measures_anova" });
+    expect(assessment.inputDiagnostics).toEqual([
+      expect.objectContaining({
+        code: "INCOMPLETE_MATCHED_SET",
+        incompleteMatchedSets: [
+          expect.objectContaining({
+            pairId: draft.experiments[0].stableUnitId,
+            experimentId: draft.experiments[0].id,
+            missingConditions: [
+              { conditionId: draft.conditions[1].id, label: "6 h" },
+              { conditionId: draft.conditions[2].id, label: "24 h" },
+            ],
+          }),
+        ],
+      }),
+    ]);
+    expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId))).toEqual(
+      new Set(draft.experiments.slice(1).map(({ stableUnitId }) => stableUnitId)),
+    );
+    expect(cells).toEqual(cellsBeforeAssessment);
   });
 
   it("uses explicit within-Exp WB control=1 values without overwriting bands", () => {
@@ -559,6 +608,41 @@ describe("temporary experiment-first analysis adapter", () => {
     expect(d07?.observations.every(({ pairId, blockId }) => !pairId && !blockId)).toBe(true);
   });
 
+  it("D06/D07は研究者の空白・日本語・slug衝突IDをengine EntityIdへ漏らさない", () => {
+    const fixture = createLongitudinalFixture();
+    const researcherIds = ["Run Alpha", "実験回 2", "A B", "A-B"];
+    const baseDraft = {
+      ...fixture.draft,
+      conditionAssignment: { kind: "independent" as const, unitLabel: "sample" },
+      experiments: fixture.draft.experiments.map((experiment, index) => ({
+        ...experiment,
+        label: researcherIds[index]!,
+        stableUnitId: researcherIds[index]!,
+      })),
+    };
+    const assess = (sampling: "longitudinal" | "cross_sectional") =>
+      assessDraftGraphAnalysis({
+        draft: { ...baseDraft, time: { ...baseDraft.time, sampling } },
+        cells: fixture.cells,
+        readoutId: baseDraft.readouts[0].id,
+        conditionIds: baseDraft.conditions.map(({ id }) => id),
+        timeAnalysis: { kind: "full_time_course" },
+        withinFactor: { role: "time", title: "Time", unit: "h" },
+      });
+
+    const longitudinal = assess("longitudinal");
+    const crossSectional = assess("cross_sectional");
+    expect(longitudinal).toMatchObject({ state: "ready", method: "mixed_anova" });
+    expect(crossSectional).toMatchObject({ state: "ready", method: "two_way_anova" });
+    for (const assessment of [longitudinal, crossSectional]) {
+      const unitIds = assessment.request?.observations.map(
+        ({ experimentalUnitId }) => experimentalUnitId,
+      );
+      expect(unitIds?.every((id) => /^[A-Za-z0-9][A-Za-z0-9._:-]*$/u.test(id))).toBe(true);
+      expect(unitIds?.some((id) => researcherIds.includes(id))).toBe(false);
+    }
+  });
+
   it("縦断endpointのpair matchingはexperiment row順に依存しない", () => {
     const fixture = createLongitudinalFixture();
     const assess = (draft: typeof fixture.draft) =>
@@ -601,6 +685,67 @@ describe("temporary experiment-first analysis adapter", () => {
     expect(assessment).toMatchObject({ state: "ready", method: "paired_t" });
     expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId)).size).toBe(3);
     expect(assessment.request?.observations).toHaveLength(6);
+  });
+
+  it("複数の不完全pairでstable unit IDごとの不足条件を示し、対応設計を保つ", () => {
+    const fixture = createLongitudinalFixture();
+    const endpointId = fixture.draft.time.points.at(-1)?.id;
+    const cells = { ...fixture.cells };
+    const missingEntries = [
+      { experimentIndex: 0, conditionIndex: 1 },
+      { experimentIndex: 1, conditionIndex: 0 },
+    ] as const;
+    missingEntries.forEach(({ experimentIndex, conditionIndex }) => {
+      const key = experimentCellKey({
+        experimentId: fixture.draft.experiments[experimentIndex].id,
+        conditionId: fixture.draft.conditions[conditionIndex].id,
+        readoutId: fixture.draft.readouts[0].id,
+        timePointId: endpointId,
+      });
+      cells[key] = {
+        ...(cells[key] as Extract<ExperimentCellMap[string], { kind: "nested_continuous" }>),
+        rawValues: [],
+      };
+    });
+    const cellsBeforeAssessment = structuredClone(cells);
+
+    const assessment = assessDraftGraphAnalysis({
+      draft: fixture.draft,
+      cells,
+      readoutId: fixture.draft.readouts[0].id,
+      conditionIds: fixture.draft.conditions.map(({ id }) => id),
+      timeAnalysis: { kind: "endpoint" },
+    });
+
+    expect(assessment).toMatchObject({ state: "ready", method: "paired_t", missingCount: 2 });
+    expect(assessment.inputDiagnostics?.[0]).toMatchObject({
+      code: "INCOMPLETE_MATCHED_SET",
+      incompleteMatchedSets: [
+        {
+          pairId: "unit.cell.1",
+          experimentId: "experiment.cell.1",
+          experimentLabel: "Cell 1",
+          missingConditions: [{ conditionId: "condition.longitudinal.2", label: "Stimulated" }],
+        },
+        {
+          pairId: "unit.cell.2",
+          experimentId: "experiment.cell.2",
+          experimentLabel: "Cell 2",
+          missingConditions: [{ conditionId: "condition.longitudinal.1", label: "Control" }],
+        },
+      ],
+      correction: {
+        code: "INCOMPLETE_MATCHED_SET",
+        target: "data_values",
+        experimentIds: ["experiment.cell.1", "experiment.cell.2"],
+        focusExperimentId: "experiment.cell.1",
+      },
+    });
+    expect(new Set(assessment.request?.observations.map(({ pairId }) => pairId))).toEqual(
+      new Set(["unit.cell.3", "unit.cell.4"]),
+    );
+    expect(cells).toEqual(cellsBeforeAssessment);
+    expect(fixture.draft.conditionAssignment.kind).toBe("matched");
   });
 
   it("時点ごとに別サンプルの設計でAUCを推測しない", () => {

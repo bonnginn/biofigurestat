@@ -188,7 +188,7 @@ export type EntryModuleResolution = Readonly<{
 const axisMeaningFact: TargetedFactDeclaration = {
   key: "ordered_axis_meaning",
   question: {
-    ja: "横方向に順番に変えたものは何ですか？",
+    ja: "実験で段階的に変えたものは何ですか？",
     en: "What did you vary in order along the horizontal direction?",
   },
   choices: [

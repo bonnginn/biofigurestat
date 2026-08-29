@@ -10,6 +10,7 @@ import {
 } from "@lsaa/domain";
 import {
   resolveUnresolvedVisualizationIdentityDecision,
+  resolveUnresolvedVisualizationSourceRowUnitDecision,
   type UnresolvedVisualizationProjectState,
 } from "@lsaa/project";
 
@@ -20,6 +21,8 @@ export type GraphOnlyStatisticsBridgeStopCode =
   | "SERIES_MEANING_REQUIRED"
   | "IDENTITY_COLUMN_REQUIRED"
   | "IDENTITY_DECISION_REQUIRED"
+  | "ROW_UNIT_DECISION_REQUIRED"
+  | "PARENT_IDENTITY_COLUMN_REQUIRED"
   | "IDENTITY_SET_INVALID"
   | "UNSUPPORTED_MATCHING_STRUCTURE"
   | "FACTOR_LEVEL_MISMATCH"
@@ -155,6 +158,28 @@ export function bridgeGraphOnlyTableToStatistics(
       "対象・試料IDについての回答と、選択された列が一致しません。元の表は保持されています。",
     );
   }
+  const sourceRowUnitDecision = resolveUnresolvedVisualizationSourceRowUnitDecision(mapping);
+  if (
+    identityDecision === "no_id" &&
+    (sourceRowUnitDecision === "unanswered" || sourceRowUnitDecision === "unknown")
+  ) {
+    return stop(
+      "ROW_UNIT_DECISION_REQUIRED",
+      "表の各行が別々に処置した対象・試料か確認できません。行を独立したnへ変換せず、元の表を保持して停止します。",
+    );
+  }
+  if (identityDecision === "no_id" && sourceRowUnitDecision === "multiple_rows_per_unit") {
+    return stop(
+      "PARENT_IDENTITY_COLUMN_REQUIRED",
+      "同じ対象内のCell・ROI・視野などを複数行に記録しています。dish・animalなど共通の由来を示すID列を対応付けるまで、子の観測を独立したnへ変換せず停止します。",
+    );
+  }
+  if (identityDecision === "no_id" && contract.matching.kind === "matched") {
+    return stop(
+      "IDENTITY_COLUMN_REQUIRED",
+      "同じ対象を条件間で対応させる実験には、元の表で同じ対象を示すID列が必要です。行順では対応させず、元の表を保持して停止します。",
+    );
+  }
   if (unresolvedGroupingColumns.length > 0) {
     return stop(
       "SERIES_MEANING_REQUIRED",
@@ -221,6 +246,7 @@ export function bridgeGraphOnlyTableToStatistics(
 
   if (idColumn) {
     const identityOccurrences = new Map<string, Map<string, number>>();
+    const sourceIdentityByComparisonKey = new Map<string, string>();
     for (const [rowIndex, row] of state.table.rows.entries()) {
       const sourceIdentity = row[idColumn.index]?.trim() ?? "";
       if (!sourceIdentity) {
@@ -229,6 +255,19 @@ export function bridgeGraphOnlyTableToStatistics(
           `${(state.table.headerRow ?? 1) + rowIndex + 1}行目に対象IDがありません。行順では対応させません。`,
         );
       }
+      // Preserve the researcher's exact source text in canonical lineage, but
+      // do not let visually equivalent Unicode variants become separate n or
+      // split one matched unit. Direct-entry identity editors use the same
+      // NFKC comparison boundary.
+      const comparisonKey = sourceIdentity.normalize("NFKC");
+      const priorSourceIdentity = sourceIdentityByComparisonKey.get(comparisonKey);
+      if (priorSourceIdentity !== undefined && priorSourceIdentity !== sourceIdentity) {
+        return stop(
+          "IDENTITY_SET_INVALID",
+          `対象ID「${priorSourceIdentity}」と「${sourceIdentity}」は同じ文字の別表記に見えます。別々の対象か表記ゆれかを確認してください。元の表は保持されています。`,
+        );
+      }
+      sourceIdentityByComparisonKey.set(comparisonKey, sourceIdentity);
       const level = row[xColumn.index]!.trim();
       const byLevel = identityOccurrences.get(sourceIdentity) ?? new Map<string, number>();
       byLevel.set(level, (byLevel.get(level) ?? 0) + 1);
@@ -269,7 +308,12 @@ export function bridgeGraphOnlyTableToStatistics(
         `${state.table.headerRow + rowIndex + 1}行目の測定値を数値として読めません。元の値は保持されています。`,
       );
     }
-    const sourceIdentity = idColumn ? (row[idColumn.index]?.trim() ?? "") : "";
+    // A stable local address is generated only after two distinct facts were
+    // confirmed: conditions use independent units, and one source row is one
+    // separately treated unit. It never creates a cross-condition match.
+    const sourceIdentity = idColumn
+      ? (row[idColumn.index]?.trim() ?? "")
+      : `unit-${String(rowIndex + 1).padStart(3, "0")}`;
     if (contract.matching.kind === "matched" && !sourceIdentity) {
       return stop(
         "IDENTITY_COLUMN_REQUIRED",
@@ -281,7 +325,7 @@ export function bridgeGraphOnlyTableToStatistics(
         observationId: `adaptive.${contract.contractId}.graph_only.${rowIndex + 1}`,
         readoutKey: readout.key,
         identities: {
-          [identity.key]: sourceIdentity || `source-row-${state.table.headerRow + rowIndex + 1}`,
+          [identity.key]: sourceIdentity,
         },
         factors: { [factor.key]: row[xColumn.index]!.trim() },
         axes: {},
@@ -324,6 +368,7 @@ export function bridgeGraphOnlyTableToStatistics(
     transformations: [
       ...state.rawLineage.transformations,
       "researcher_confirmed_graph_only_statistics_bridge",
+      ...(idColumn ? [] : ["generated_independent_unit_ids_from_confirmed_source_rows"]),
     ],
   });
   return { status: "ready", observations, mapping: adaptiveMapping, lineage };

@@ -116,6 +116,22 @@ export type HierarchicalAxisLabel = Readonly<{
   levels: readonly Readonly<{ value: string }>[];
 }>;
 
+export type HierarchyGroup = Readonly<{
+  key: string;
+  label: string;
+  start: number;
+  end: number;
+}>;
+
+/** A helper bar is useful only when it identifies one of several visible groups. */
+export function hierarchyLineAddsInformation(
+  groups: readonly HierarchyGroup[],
+  group: HierarchyGroup,
+): boolean {
+  const label = group.label.trim();
+  return group.end > group.start && groups.length > 1 && label !== "" && label !== "—";
+}
+
 export function buildHierarchyGroups(labels: readonly HierarchicalAxisLabel[]) {
   const depth = Math.max(0, ...labels.map(({ levels }) => levels.length));
   return Array.from({ length: depth }, (_, levelIndex) =>

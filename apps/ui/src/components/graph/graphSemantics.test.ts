@@ -4,6 +4,7 @@ import {
   computeBoxWhiskerSummary,
   createMinorTicks,
   graphDisplayLabel,
+  hierarchyLineAddsInformation,
   omitGenericCategoricalAxisTitle,
   resolveSeriesLinePresentation,
 } from "./graphSemantics";
@@ -71,6 +72,19 @@ describe("generic graph semantics", () => {
       },
     ]);
     expect(groups[1]).toHaveLength(4);
+  });
+
+  it("draws hierarchy helpers only for informative visible parent groups", () => {
+    const onlyGroup = { key: "all", label: "All", start: 0, end: 3 };
+    expect(hierarchyLineAddsInformation([onlyGroup], onlyGroup)).toBe(false);
+    const groups = [
+      { key: "a", label: "Control", start: 0, end: 1 },
+      { key: "b", label: "Treatment", start: 2, end: 3 },
+    ];
+    expect(hierarchyLineAddsInformation(groups, groups[0]!)).toBe(true);
+    expect(
+      hierarchyLineAddsInformation(groups, { key: "missing", label: "—", start: 0, end: 1 }),
+    ).toBe(false);
   });
 
   it("keeps per-series width and dash semantics synchronized", () => {

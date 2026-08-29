@@ -24,6 +24,12 @@ export const UnresolvedVisualizationIdentityDecisionSchema = z.enum([
   "no_id",
   "selected_column",
 ]);
+export const UnresolvedVisualizationSourceRowUnitDecisionSchema = z.enum([
+  "unanswered",
+  "each_row_distinct_unit",
+  "multiple_rows_per_unit",
+  "unknown",
+]);
 const VisualizationColumnRoleSchema = z.enum([
   "x",
   "y",
@@ -46,7 +52,7 @@ export const UnresolvedVisualizationTableSchema = z.object({
 
 export const UnresolvedVisualizationRawLineageSchema = z.object({
   schemaVersion: z.literal(UNRESOLVED_VISUALIZATION_DATA_SCHEMA_VERSION),
-  sourceKind: z.enum(["clipboard", "csv", "tsv", "generic_file"]),
+  sourceKind: z.enum(["direct_entry", "clipboard", "csv", "tsv", "generic_file"]),
   sourceLabel: z.string().min(1),
   importedAt: IsoDateTimeSchema,
   rawText: z.string(),
@@ -72,6 +78,12 @@ export const UnresolvedVisualizationColumnMappingSchema = z.object({
    * before this additive field existed; absence is resolved fail-closed.
    */
   identityDecision: UnresolvedVisualizationIdentityDecisionSchema.optional(),
+  /**
+   * When no source ID column exists, this records whether one source row is
+   * one independently treated experimental unit. Absence is fail-closed for
+   * graph-only files written before this additive field existed.
+   */
+  sourceRowUnitDecision: UnresolvedVisualizationSourceRowUnitDecisionSchema.optional(),
   confirmedAt: IsoDateTimeSchema,
 });
 
@@ -401,6 +413,9 @@ export type UnresolvedVisualizationDataRevision = z.infer<
 export type UnresolvedVisualizationIdentityDecision = z.infer<
   typeof UnresolvedVisualizationIdentityDecisionSchema
 >;
+export type UnresolvedVisualizationSourceRowUnitDecision = z.infer<
+  typeof UnresolvedVisualizationSourceRowUnitDecisionSchema
+>;
 export type UnresolvedVisualizationProjectState = z.infer<
   typeof UnresolvedVisualizationProjectStateSchema
 >;
@@ -413,6 +428,12 @@ export function resolveUnresolvedVisualizationIdentityDecision(
 ): UnresolvedVisualizationIdentityDecision {
   if (mapping.identityDecision) return mapping.identityDecision;
   return mapping.columns.some(({ role }) => role === "id") ? "selected_column" : "unanswered";
+}
+
+export function resolveUnresolvedVisualizationSourceRowUnitDecision(
+  mapping: UnresolvedVisualizationColumnMapping,
+): UnresolvedVisualizationSourceRowUnitDecision {
+  return mapping.sourceRowUnitDecision ?? "unanswered";
 }
 
 function migrateVisualizationIdentityDecision(mapping: unknown): unknown {

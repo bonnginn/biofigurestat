@@ -133,6 +133,45 @@ function Harness({
   );
 }
 
+function ContinuousHarness({
+  initialObservations = [
+    makeObservation("obs.c1", 1, "control", { identities: { unit_id: "dish-c1" } }),
+    makeObservation("obs.c2", 2, "control", { identities: { unit_id: "dish-c2" } }),
+    makeObservation("obs.d1", 3, "drug", { identities: { unit_id: "dish-d1" } }),
+  ],
+  contract = makeContract(),
+  conditionCombinations,
+  readOnly = false,
+}: Readonly<{
+  initialObservations?: readonly CanonicalAdaptiveObservation[];
+  contract?: StructureContract;
+  conditionCombinations?: React.ComponentProps<
+    typeof AdaptiveCanonicalSpreadsheet
+  >["conditionCombinations"];
+  readOnly?: boolean;
+}>) {
+  const [observations, setObservations] = useState(initialObservations);
+  const [mode, setMode] = useState<"compact" | "expanded">("compact");
+  return (
+    <AdaptiveCanonicalSpreadsheet
+      contract={contract}
+      observations={observations}
+      mode={mode}
+      onModeChange={setMode}
+      onObservationsChange={setObservations}
+      nextObservationId={({ targetCoordinates, ordinal }) =>
+        `generated.${targetCoordinates.factors.condition}.${ordinal}`
+      }
+      nextExperimentalUnitIdentity={({ targetCoordinates, ordinal }) =>
+        `${targetCoordinates.factors.condition} ${ordinal}`
+      }
+      worksheetRows={[{ key: "run-1", label: "Run 1", date: "" }]}
+      conditionCombinations={conditionCombinations}
+      readOnly={readOnly}
+    />
+  );
+}
+
 describe("AdaptiveCanonicalSpreadsheet", () => {
   it("shows every independent condition before values exist and creates stable unit identities", () => {
     render(<Harness initialObservations={[]} />);
@@ -152,8 +191,10 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
     fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
 
     const expanded = screen.getByRole("table", { name: "すべての値を表示" });
-    expect(within(expanded).getAllByText("generated.control.1")).toHaveLength(2);
-    expect(within(expanded).getAllByText("generated.control.2")).toHaveLength(2);
+    expect(within(expanded).getByText("generated.control.1")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("generated.control.1")).toBeVisible();
+    expect(within(expanded).getByText("generated.control.2")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("generated.control.2")).toBeVisible();
   });
 
   it("shows one compact row per condition with declared readouts as columns", () => {
@@ -257,7 +298,12 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
     fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
     const expanded = screen.getByRole("table", { name: "すべての値を表示" });
     expect(within(expanded).getByRole("columnheader", { name: "測定項目" })).toBeVisible();
-    expect(within(expanded).getAllByRole("row")).toHaveLength(8);
+    expect(
+      expanded.querySelectorAll("tbody tr:not(.adaptive-canonical-spreadsheet__entry-row)"),
+    ).toHaveLength(7);
+    expect(
+      expanded.querySelectorAll("tbody tr.adaptive-canonical-spreadsheet__entry-row"),
+    ).toHaveLength(6);
     expect(
       within(expanded).getByRole("textbox", { name: "obs.drug.count.2のCell count" }),
     ).toHaveValue("21");
@@ -285,15 +331,130 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
     expect(within(expanded).getByRole("columnheader", { name: "元データ行" })).toBeVisible();
     expect(within(expanded).getByText("obs.c1")).toBeVisible();
     expect(within(expanded).getByText("obs.c2")).toBeVisible();
-    expect(within(expanded).getAllByText("generated.control.3")).toHaveLength(2);
+    expect(within(expanded).getByText("generated.control.3")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("generated.control.3")).toBeVisible();
     expect(within(expanded).getByText("obs.d1")).toBeVisible();
-    expect(within(expanded).getAllByText("drug")).toHaveLength(1);
+    expect(
+      [
+        ...expanded.querySelectorAll("tbody tr:not(.adaptive-canonical-spreadsheet__entry-row)"),
+      ].some((row) => row.textContent?.includes("drug")),
+    ).toBe(true);
     expect(within(expanded).getByRole("textbox", { name: "obs.d1のResponse" })).toHaveValue("3");
     expect(within(expanded).getByRole("textbox", { name: "obs.c1のResponse" })).toHaveValue("10");
     expect(within(expanded).getByRole("textbox", { name: "obs.c2のResponse" })).toHaveValue("20");
     expect(
       within(expanded).getByRole("textbox", { name: "generated.control.3のResponse" }),
     ).toHaveValue("30");
+  });
+
+  it("distributes a rectangular paste across adjacent condition rows without regenerating IDs", () => {
+    render(<Harness />);
+    const control = screen.getByRole("textbox", {
+      name: "Response・Condition=controlの測定値",
+    });
+
+    fireEvent.paste(control, {
+      clipboardData: { getData: () => "10\t30\n20\t40" },
+    });
+
+    expect(control).toHaveValue("10\n20");
+    expect(screen.getByRole("textbox", { name: "Response・Condition=drugの測定値" })).toHaveValue(
+      "30\n40",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
+    expect(screen.getByRole("textbox", { name: "obs.c1のResponse" })).toHaveValue("10");
+    expect(screen.getByRole("textbox", { name: "obs.c2のResponse" })).toHaveValue("20");
+    expect(screen.getByRole("textbox", { name: "obs.d1のResponse" })).toHaveValue("30");
+    expect(screen.getByRole("textbox", { name: "generated.drug.2のResponse" })).toHaveValue("40");
+  });
+
+  it("moves between canonical cells with spreadsheet keys", () => {
+    render(<Harness />);
+    const control = screen.getByRole("textbox", {
+      name: "Response・Condition=controlの測定値",
+    });
+    control.focus();
+    fireEvent.keyDown(control, { key: "Enter" });
+    expect(screen.getByRole("textbox", { name: "Response・Condition=drugの測定値" })).toHaveFocus();
+  });
+
+  it("creates the first canonical record directly from the all-values spreadsheet", () => {
+    render(<Harness initialObservations={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
+    const entry = screen.getByRole("textbox", {
+      name: "Condition=controlの新しい測定値",
+    });
+    fireEvent.change(entry, { target: { value: "42" } });
+    fireEvent.blur(entry);
+
+    expect(screen.getByRole("textbox", { name: "generated.control.1のResponse" })).toHaveValue(
+      "42",
+    );
+    expect(screen.getByDisplayValue("generated.control.1")).toBeVisible();
+  });
+
+  it("offers a contract-driven row form for an empty ordered-axis surface", () => {
+    const orderedContract = makeContract({
+      identities: [{ key: "unit_id", label: "Dish ID", unitLevelKey: "unit", required: true }],
+      orderedAxes: [
+        {
+          key: "time",
+          label: "Time",
+          unit: "hour",
+          levels: [0, 24],
+          sampling: "repeated_same_identity",
+          identityRetained: true,
+        },
+      ],
+      readouts: [
+        {
+          key: "signal",
+          label: "Signal",
+          valueType: "scalar",
+          representation: "scalar",
+          componentKeys: ["value"],
+          referenceRole: "none",
+          observationLevelKey: "unit",
+          axisKeys: ["time"],
+        },
+      ],
+    });
+    render(<Harness contract={orderedContract} initialObservations={[]} />);
+
+    expect(screen.getByRole("form", { name: "新しい測定記録を追加" })).toBeVisible();
+    fireEvent.change(screen.getByRole("textbox", { name: "Dish ID" }), {
+      target: { value: "dish-ordered-01" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Condition" }), {
+      target: { value: "control" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Time" }), {
+      target: { value: "24" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Signal・value" }), {
+      target: { value: "5.5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "測定行を追加" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
+    const expanded = screen.getByRole("table", { name: "すべての値を表示" });
+    expect(within(expanded).getByDisplayValue("dish-ordered-01")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("5.5")).toBeVisible();
+    expect(within(expanded).getByText("24")).toBeVisible();
+  });
+
+  it("pastes identity and measurement rectangles in the all-values spreadsheet", () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
+    const firstIdentity = screen.getByRole("textbox", { name: "obs.c1のDish ID" });
+    fireEvent.paste(firstIdentity, {
+      clipboardData: { getData: () => "dish-A\t101\ndish-B\t102" },
+    });
+
+    expect(screen.getByDisplayValue("dish-A")).toBeVisible();
+    expect(screen.getByDisplayValue("dish-B")).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "obs.c1のResponse" })).toHaveValue("101");
+    expect(screen.getByRole("textbox", { name: "obs.c2のResponse" })).toHaveValue("102");
   });
 
   it("keeps the same canonical IDs when switching between compact and expanded views", () => {
@@ -386,9 +547,10 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
     const expanded = screen.getByRole("table", { name: "すべての値を表示" });
-    expect(within(expanded).getAllByText("dish-1")).toHaveLength(2);
+    expect(within(expanded).getAllByDisplayValue("dish-1")).toHaveLength(2);
     expect(within(expanded).getByText("obs.pair.control")).toBeVisible();
     expect(within(expanded).getByText("obs.pair.drug")).toBeVisible();
+    expect(within(expanded).queryByPlaceholderText("新しい値")).toBeNull();
   });
 
   it("shows identity, factor, axis, hierarchy, typed values, missingness, source row, and ID", () => {
@@ -651,7 +813,7 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
     const expanded = screen.getByRole("table", { name: "すべての値を表示" });
     expect(expanded.id).toBe(compact.id);
     expect(expanded.querySelector("caption")).toHaveTextContent("すべての値を表示");
-    expect(within(expanded).getAllByRole("rowheader")).toHaveLength(3);
+    expect(within(expanded).getAllByRole("rowheader")).toHaveLength(5);
   });
 
   it("associates a compact validation error with the editor without moving focus", () => {
@@ -670,5 +832,94 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
     control.focus();
     expect(control).toHaveFocus();
     expect(control).toHaveValue("not-a-number");
+  });
+
+  it("offers a safe third presentation for continuous scalar data and keeps IDs across views", () => {
+    render(<ContinuousHarness />);
+
+    expect(screen.getByRole("table", { name: "条件別連続入力表" })).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "横一行は条件ごとの値を見やすく並べる表示位置",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "同じ実験日・実験回・pairを意味しません",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "この表示では条件ごとの実験日は入力できません",
+    );
+    expect(screen.queryByRole("columnheader", { name: /実験日/ })).toBeNull();
+    const compactButton = screen.getByRole("button", { name: "まとめて入力" });
+    expect(compactButton).toBeVisible();
+    expect(screen.getByRole("button", { name: "1測定1行" })).toBeVisible();
+
+    fireEvent.click(compactButton);
+    const compact = screen.getByRole("table", { name: "条件ごとにまとめて入力" });
+    expect(screen.getByRole("status")).toHaveTextContent("これは平均や統合を行う機能ではなく");
+    const control = within(compact).getByRole("textbox", {
+      name: "Response・Condition=controlの測定値",
+    });
+    expect(control).toHaveValue("1\n2");
+    fireEvent.change(control, { target: { value: "10\n20\n30" } });
+    fireEvent.blur(control);
+
+    fireEvent.click(screen.getByRole("button", { name: "条件別シート" }));
+    expect(screen.getByRole("table", { name: "条件別連続入力表" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "1測定1行" }));
+    const expanded = screen.getByRole("table", { name: "すべての値を表示" });
+    expect(within(expanded).getByText("obs.c1")).toBeVisible();
+    expect(within(expanded).getByText("obs.c2")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("10")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("20")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("30")).toBeVisible();
+  });
+
+  it("does not expose compact entry for typed proportion or non-performed conditions", () => {
+    const proportionContract = makeContract({
+      readouts: [
+        {
+          key: "rate",
+          label: "Positive rate",
+          valueType: "proportion_counts",
+          representation: "proportion_counts",
+          componentKeys: ["positive", "total"],
+          referenceRole: "none",
+          observationLevelKey: "unit",
+          axisKeys: [],
+        },
+      ],
+    });
+    render(
+      <ContinuousHarness
+        contract={proportionContract}
+        initialObservations={[
+          makeObservation("obs.p1", 1, "control", {
+            readoutKey: "rate",
+            identities: { unit_id: "dish-p1" },
+            values: { rate_positive: 1, rate_total: 2 },
+          }),
+          makeObservation("obs.p2", 2, "drug", {
+            readoutKey: "rate",
+            identities: { unit_id: "dish-p2" },
+            values: { rate_positive: 2, rate_total: 3 },
+          }),
+        ]}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "まとめて入力" })).toBeNull();
+    expect(screen.getByRole("table", { name: "条件別連続入力表" })).toBeVisible();
+
+    expect(() => {
+      // The compact editor is intentionally also hidden when the condition
+      // list says that at least one combination was not performed.
+      render(
+        <ContinuousHarness
+          conditionCombinations={[
+            { labels: ["control"], displayLabel: "control", status: "performed" },
+            { labels: ["drug"], displayLabel: "drug", status: "not_performed" },
+          ]}
+        />,
+      );
+    }).not.toThrow();
+    expect(screen.queryAllByRole("button", { name: "まとめて入力" })).toHaveLength(0);
   });
 });

@@ -171,7 +171,7 @@ describe("WorkspaceNestedMeasurementSheet", () => {
     expect(within(expanded).getAllByRole("rowheader").length).toBeGreaterThan(0);
   });
 
-  it("preserves native multi-line paste and associates validation with the compact editor", () => {
+  it("applies multi-line paste and associates validation with the compact editor", () => {
     const data = fixture();
     render(<Harness initialCells={data.cells} />);
     const drug = screen.getByRole("textbox", { name: "入力行 1・Drugの蛍光強度" });
@@ -181,9 +181,7 @@ describe("WorkspaceNestedMeasurementSheet", () => {
       fireEvent.paste(drug, {
         clipboardData: { getData: () => "20\n22\n24" },
       }),
-    ).toBe(true);
-    fireEvent.change(drug, { target: { value: "20\n22\n24" } });
-    fireEvent.blur(drug);
+    ).toBe(false);
     expect(drug).toHaveValue("20\n22\n24");
 
     fireEvent.change(drug, { target: { value: "20\ninvalid" } });
@@ -192,6 +190,56 @@ describe("WorkspaceNestedMeasurementSheet", () => {
     expect(drug).toHaveAttribute("aria-invalid", "true");
     expect(drug.getAttribute("aria-describedby")?.split(" ")).toContain(alert.id);
     expect(drug).toHaveValue("20\ninvalid");
+  });
+
+  it("distributes rectangular paste across conditions and supports spreadsheet navigation", () => {
+    const data = fixture();
+    render(<Harness initialCells={data.cells} />);
+    const control = screen.getByRole("textbox", { name: "入力行 1・Controlの蛍光強度" });
+    const drug = screen.getByRole("textbox", { name: "入力行 1・Drugの蛍光強度" });
+
+    fireEvent.paste(control, {
+      clipboardData: { getData: () => "1\t3\n2\t4" },
+    });
+    expect(control).toHaveValue("1\n2");
+    expect(drug).toHaveValue("3\n4");
+
+    control.focus();
+    fireEvent.keyDown(control, { key: "ArrowRight" });
+    expect(drug).toHaveFocus();
+  });
+
+  it("pastes measurement and source columns together in the all-values sheet", () => {
+    const data = fixture();
+    render(<Harness initialCells={data.cells} />);
+    fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
+    const firstValue = screen.getByRole("textbox", { name: "Control・Exp 1・測定1の値" });
+
+    fireEvent.paste(firstValue, {
+      clipboardData: { getData: () => "100\timage-a.tif\n101\timage-b.tif" },
+    });
+
+    expect(screen.getByRole("textbox", { name: "Control・Exp 1・測定1の値" })).toHaveValue("100");
+    expect(screen.getByRole("textbox", { name: "Control・Exp 1・測定2の値" })).toHaveValue("101");
+    expect(screen.getByDisplayValue("image-a.tif")).toBeVisible();
+    expect(screen.getByDisplayValue("image-b.tif")).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("IDと出典の対応は保持");
+  });
+
+  it("extends a value column through the trailing all-values row", () => {
+    const data = fixture();
+    render(<Harness initialCells={data.cells} />);
+    fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
+
+    fireEvent.paste(screen.getByRole("textbox", { name: "Control・Exp 1・測定1の値" }), {
+      clipboardData: { getData: () => "100\n101\n102\n103" },
+    });
+
+    expect(screen.getByRole("textbox", { name: "Control・Exp 1・測定4の値" })).toHaveValue("103");
+    fireEvent.click(screen.getByRole("button", { name: "まとめて入力" }));
+    expect(screen.getByRole("textbox", { name: "入力行 1・Controlの蛍光強度" })).toHaveValue(
+      "100\n101\n102\n103",
+    );
   });
 
   it("exposes why compact and trailing-row fields are disabled", () => {

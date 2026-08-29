@@ -38,12 +38,29 @@ export function parseSurvivalPaste(
     .filter(Boolean);
   if (lines.length < 2) throw new Error("Survival paste requires a header and at least one row");
   const delimiter = lines[0]!.includes("\t") ? "\t" : ",";
-  const header = lines[0]!.split(delimiter).map((cell) => cell.trim().toLowerCase());
+  const header = lines[0]!.split(delimiter).map((cell) =>
+    cell
+      .normalize("NFKC")
+      .trim()
+      .toLowerCase()
+      .replace(/\s*\([^)]*\)\s*$/u, ""),
+  );
   const aliases: Record<string, string[]> = {
-    unit: ["unit id", "unit", "subject id", "sample id"],
-    group: ["group", "condition", "condition id"],
-    time: ["follow-up time", "follow up time", "time-to-event", "time"],
-    status: ["event/censor status", "event status", "status", "event"],
+    unit: [
+      "unit id", "unit", "subject id", "subject", "sample id", "animal id", "animal",
+      "mouse id", "mouse", "個体id", "動物id", "マウスid",
+    ],
+    group: [
+      "group", "condition", "condition id", "treatment", "cohort", "arm", "群", "条件", "処置",
+    ],
+    time: [
+      "follow-up time", "follow up time", "follow-up", "time-to-event", "survival time",
+      "duration", "time", "追跡時間", "生存時間",
+    ],
+    status: [
+      "event/censor status", "event status", "censoring status", "status", "event", "outcome",
+      "状態", "イベント",
+    ],
   };
   const column = (key: keyof typeof aliases) =>
     header.findIndex((label) => aliases[key].includes(label));
@@ -54,7 +71,16 @@ export function parseSurvivalPaste(
     status: column("status"),
   };
   if (Object.values(indexes).some((index) => index < 0)) {
-    throw new Error("Survival header must include unit ID, group, follow-up time, and status");
+    const labels = {
+      unit: "個体ID",
+      group: "群・処置",
+      time: "追跡時間",
+      status: "Event/Censored状態",
+    };
+    const missing = (Object.keys(indexes) as (keyof typeof indexes)[])
+      .filter((key) => indexes[key] < 0)
+      .map((key) => labels[key]);
+    throw new Error(`Survival表に必要な列がありません: ${missing.join("、")}`);
   }
   const seen = new Set<string>();
   return lines.slice(1).map((line, rowIndex) => {

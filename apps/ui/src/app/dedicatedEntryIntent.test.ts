@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   createDedicatedEntryIntent,
+  defaultDedicatedEntryIntentForRoute,
   dedicatedEntryHistoryState,
   dedicatedEntryIntentForRoute,
   dedicatedEntryIntentFromHistoryState,
@@ -113,5 +114,23 @@ describe("dedicated experiment entry intents", () => {
     expect(
       dedicatedEntryIntentFromHistoryState({ lsaaDedicatedEntryIntent: "invalid" }, "survival"),
     ).toBeNull();
+  });
+
+  it.each([
+    ["survival", "time_to_event", "unknown"],
+    ["nonlinear-fit", "ordered_curve_kinetics", undefined],
+    ["heatmap", "matrix_visualization", undefined],
+  ] as const)(
+    "creates a conservative experiment-first intent for direct %s visits",
+    (route, moduleId, subjectRelationship) => {
+      const intent = defaultDedicatedEntryIntentForRoute(route);
+      expect(intent).toMatchObject({ destination: route, moduleId });
+      expect(intent?.facts.subjectUnitRelationship).toBe(subjectRelationship);
+    },
+  );
+
+  it("does not reinterpret a non-dedicated analysis route", () => {
+    expect(defaultDedicatedEntryIntentForRoute("regression")).toBeNull();
+    expect(defaultDedicatedEntryIntentForRoute("new-experiment")).toBeNull();
   });
 });

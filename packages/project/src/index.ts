@@ -5,4 +5,5 @@ export * from "./assembly";
 export * from "./round-trip";
 export * from "./unresolved-visualization";
 export * from "./progressive-experiment";
+export * from "./specialized-entry-draft";
 export * from "./entry-source-history";

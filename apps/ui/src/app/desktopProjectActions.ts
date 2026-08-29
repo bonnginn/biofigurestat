@@ -3,15 +3,19 @@ import type {
   OpenUnresolvedVisualizationProjectAction,
   ProjectActions,
   SaveProjectAction,
+  SaveSpecializedEntryDraftProjectAction,
   SaveUnresolvedVisualizationProjectAction,
 } from "./projectActions";
 import {
   openLocalProjectPackage,
   openLocalProjectPackageAt,
+  openLocalAnyProjectPackage,
+  openLocalAnyProjectPackageAt,
   openLegacyLocalProjectPackage,
   saveLocalProjectPackage,
   openLocalUnresolvedVisualizationProjectPackage,
   saveLocalUnresolvedVisualizationProjectPackage,
+  saveLocalSpecializedEntryDraftProjectPackage,
 } from "./desktopProjectPackage";
 
 export const openLocalProject: OpenProjectAction = openLocalProjectPackage;
@@ -20,6 +24,8 @@ export const openLocalUnresolvedVisualizationProject: OpenUnresolvedVisualizatio
   openLocalUnresolvedVisualizationProjectPackage;
 export const saveLocalUnresolvedVisualizationProject: SaveUnresolvedVisualizationProjectAction =
   saveLocalUnresolvedVisualizationProjectPackage;
+export const saveLocalSpecializedEntryDraftProject: SaveSpecializedEntryDraftProjectAction =
+  saveLocalSpecializedEntryDraftProjectPackage;
 
 export const defaultProjectActions: ProjectActions = {
   openProject: openLocalProject,
@@ -28,4 +34,7 @@ export const defaultProjectActions: ProjectActions = {
   saveProject: saveLocalProject,
   openUnresolvedVisualizationProject: openLocalUnresolvedVisualizationProject,
   saveUnresolvedVisualizationProject: saveLocalUnresolvedVisualizationProject,
+  saveSpecializedEntryDraftProject: saveLocalSpecializedEntryDraftProject,
+  openAnyProject: openLocalAnyProjectPackage,
+  openAnyProjectTarget: openLocalAnyProjectPackageAt,
 };

@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import { createExperimentSetDraft, type ExperimentSetDraft } from "./experimentDraft";
-import { createInitialGraphGrouping, swapSingleXFactorAndSeries } from "./graphGrouping";
+import {
+  createInitialGraphGrouping,
+  normalizeGraphGroupingChannels,
+  swapSingleXFactorAndSeries,
+} from "./graphGrouping";
 
-function twoFactorDraft(input: Readonly<{
-  firstLevels: readonly string[];
-  secondLevels: readonly string[];
-}>): ExperimentSetDraft {
+function twoFactorDraft(
+  input: Readonly<{
+    firstLevels: readonly string[];
+    secondLevels: readonly string[];
+  }>,
+): ExperimentSetDraft {
   const base = createExperimentSetDraft("cell_culture", "nested_continuous");
   const conditions = input.firstLevels.flatMap((first) =>
     input.secondLevels.map((second, index) => ({
@@ -95,6 +101,31 @@ describe("initial graph grouping", () => {
     expect(swapSingleXFactorAndSeries(initial)).toMatchObject({
       x: { source: "factor", factorId: "factor.second", factorIds: ["factor.second"] },
       series: { source: "factor", factorId: "factor.first" },
+    });
+  });
+
+  it("removes stale series and facet factors from the complete X hierarchy", () => {
+    const normalized = normalizeGraphGroupingChannels({
+      x: {
+        source: "factor",
+        factorId: "factor.first",
+        factorIds: ["factor.first", "factor.second", "factor.facet", "factor.first"],
+      },
+      series: { source: "factor", factorId: "factor.second" },
+      color: { source: "factor", factorId: "factor.second" },
+      shape: { source: "factor", factorId: "factor.second" },
+      facet: {
+        source: "factor",
+        factorId: "factor.facet",
+        levelOrder: [],
+        axisPolicy: "shared",
+      },
+    });
+
+    expect(normalized.x).toEqual({
+      source: "factor",
+      factorId: "factor.first",
+      factorIds: ["factor.first"],
     });
   });
 });

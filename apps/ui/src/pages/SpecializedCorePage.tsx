@@ -26,6 +26,7 @@ import {
   createUnresolvedVisualizationProjectState,
   ProjectStateSchema,
   type UnresolvedVisualizationProjectState,
+  type SpecializedEntryDraftProjectState,
 } from "@lsaa/project";
 import type { SubjectUnitRelationship } from "@lsaa/adaptive-input";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
@@ -43,7 +44,8 @@ import {
   writeBenchmarkArtifacts,
 } from "../app/benchmarkEvaluation";
 import { evaluationMode } from "../app/evaluationMode";
-import { downloadTextFile, serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
+import { serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
+import { exportRenderedGraphPng, exportRenderedGraphSvg } from "../app/specializedGraphExport";
 import type { LiteratureExperimenterCase } from "../app/literatureBenchmark";
 import { generateMethodsText } from "../app/methodsText";
 import { PRODUCT_IDENTITY } from "../app/productIdentity";
@@ -52,8 +54,10 @@ import type {
   OpenedUnresolvedVisualizationProject,
   OpenUnresolvedVisualizationProjectAction,
   SaveProjectAction,
+  SaveSpecializedEntryDraftProjectAction,
   SaveUnresolvedVisualizationProjectAction,
 } from "../app/projectActions";
+import { createSpecializedEntryDraft, specializedSafeStop } from "../app/specializedEntryDraftPersistence";
 import {
   adaptiveSurvivalObservationId,
   adaptiveSurvivalUnitId,
@@ -63,7 +67,12 @@ import {
   synchronizeAdaptiveSurvivalProject,
   updateAdaptiveSurvivalSnapshot,
 } from "../app/adaptiveSurvivalProject";
-import type { AppRoute } from "../app/routes";
+import { routeFromPath, type AppRoute } from "../app/routes";
+import {
+  recordUsageGraphConfiguration,
+  recordUsageGraphEdit,
+  recordUsageMilestone,
+} from "../app/usageTelemetry";
 import type { SpecializedCoreDraft } from "../app/specializedAnalysisDrafts";
 import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
 import { createTimeToEventEntry, parseTimeToEventTable } from "../app/timeToEventEntry";
@@ -75,25 +84,44 @@ import {
 import { AnalysisRouteSwitcher } from "../components/AnalysisRouteSwitcher";
 import { HeatmapGraph } from "../components/graph/HeatmapGraph";
 import { SurvivalGraph } from "../components/graph/SurvivalGraph";
+import { DelimitedTextSpreadsheet } from "../components/DelimitedTextSpreadsheet";
+import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
+import type { AnalysisRouteSwitcherAccess } from "../app/analysisRouteSwitcherAccess";
+import { useWorkspaceDirtyBaseline } from "../app/useWorkspaceDirtyBaseline";
 
 type Props = Readonly<{
   mode: "survival" | "heatmap";
   onBack: () => void;
   saveProject?: SaveProjectAction;
+  saveSpecializedEntryDraftProject?: SaveSpecializedEntryDraftProjectAction;
+  initialSpecializedEntryDraft?: Readonly<{
+    state: SpecializedEntryDraftProjectState;
+    target: string;
+  }>;
   openUnresolvedVisualizationProject?: OpenUnresolvedVisualizationProjectAction;
   saveUnresolvedVisualizationProject?: SaveUnresolvedVisualizationProjectAction;
+  initialVisualizationProject?: OpenedUnresolvedVisualizationProject;
   analysisRunner?: AnalysisRunner;
   analysisAvailable?: boolean;
   onNavigate?: (route: AppRoute) => void;
+  analysisRouteSwitcherAccess?: AnalysisRouteSwitcherAccess;
+  onOpenProject?: () => void;
   initialText?: string;
   adaptiveInput?: AdaptiveInputSnapshot;
   initialProject?: OpenedProject;
   initialDraft?: SpecializedCoreDraft;
   onDraftChange?: (draft: SpecializedCoreDraft) => void;
   entryIntent?: DedicatedEntryIntent;
+  onDirtyChange?: (dirty: boolean) => void;
+  onRequestExit?: RequestWorkspaceExit;
+  onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
 }>;
 type TimeToEventInputSource = Readonly<{
   kind: "clipboard" | "csv" | "tsv" | "generic_file";
+  label: string;
+}>;
+type VisualizationInputSource = Readonly<{
+  kind: "direct_entry" | "clipboard" | "csv" | "tsv" | "generic_file";
   label: string;
 }>;
 type NumericStatusMappingChoice = "event_is_1" | "event_is_0" | null;
@@ -111,8 +139,8 @@ function heatmapVisualizationId(prefix: string): string {
 }
 
 function heatmapSourceKindFor(
-  source: TimeToEventInputSource,
-): "clipboard" | "csv" | "tsv" | "generic_file" {
+  source: VisualizationInputSource,
+): VisualizationInputSource["kind"] {
   return source.kind;
 }
 
@@ -170,15 +198,6 @@ function numericStatusMappingFor(choice: NumericStatusMappingChoice) {
   return undefined;
 }
 
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
-}
-
 function formatResearcherNumber(value: number | null | undefined): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return "—";
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 3 }).format(value);
@@ -190,20 +209,39 @@ function formatResearcherPValue(value: number | null | undefined): string {
   return formatResearcherNumber(value);
 }
 
-function formattedLogRankResult(result: AnalysisEngineResult | null): string | null {
+function formattedLogRankResult(
+  result: AnalysisEngineResult | null,
+  groupLabels: readonly string[],
+): string | null {
   const test = result?.tests[0];
   if (!test) return null;
   const degrees = test.degreesOfFreedom?.join(", ") ?? "—";
   const statistic = test.statisticName.toLowerCase().includes("chi")
     ? `χ²(${degrees})`
     : `${test.statisticName}(${degrees})`;
-  return `log-rank: ${statistic} = ${formatResearcherNumber(test.statistic)}, p = ${formatResearcherPValue(test.pValue)}`;
+  const comparedGroups =
+    groupLabels.length === 2
+      ? `${groupLabels[0]} vs ${groupLabels[1]}`
+      : groupLabels.length > 2
+        ? `${groupLabels.join(" / ")}（全群）`
+        : "入力した生存群";
+  return `${comparedGroups} · log-rank: ${statistic} = ${formatResearcherNumber(test.statistic)}, p = ${formatResearcherPValue(test.pValue)}`;
 }
 
 function explicitLiteratureSurvivalStatus(value: unknown): "Event" | "Censored" | null {
   const normalized = String(value).normalize("NFKC").trim().toLowerCase();
-  if (["1", "event", "observed", "true"].includes(normalized)) return "Event";
-  if (["0", "censored", "censor", "false"].includes(normalized)) return "Censored";
+  if (
+    ["1", "event", "observed", "true", "死亡", "イベント", "イベント発生"].includes(
+      normalized,
+    )
+  )
+    return "Event";
+  if (
+    ["0", "censored", "censor", "false", "打ち切り", "観察終了", "生存"].includes(
+      normalized,
+    )
+  )
+    return "Censored";
   return null;
 }
 
@@ -251,19 +289,31 @@ export function SpecializedCorePage({
   mode,
   onBack,
   saveProject,
+  saveSpecializedEntryDraftProject,
+  initialSpecializedEntryDraft,
   openUnresolvedVisualizationProject,
   saveUnresolvedVisualizationProject,
+  initialVisualizationProject,
   analysisRunner = defaultAnalysisRunner,
   analysisAvailable = true,
   onNavigate,
+  analysisRouteSwitcherAccess,
+  onOpenProject,
   initialText,
   adaptiveInput,
   initialProject,
   initialDraft,
   onDraftChange,
   entryIntent,
+  onDirtyChange,
+  onRequestExit,
+  onRegisterSaveHandler,
 }: Props) {
-  const effectiveEntryIntent = entryIntent ?? initialDraft?.entryIntent;
+  const effectiveEntryIntent =
+    entryIntent ?? initialDraft?.entryIntent ?? initialSpecializedEntryDraft?.state.entryIntent;
+  const [currentSpecializedEntryDraft, setCurrentSpecializedEntryDraft] = useState(
+    initialSpecializedEntryDraft,
+  );
   const [currentProject, setCurrentProject] = useState<OpenedProject | undefined>(initialProject);
   const persistedAdaptiveInput =
     currentProject?.state.adaptiveInput ??
@@ -272,28 +322,68 @@ export function SpecializedCorePage({
     undefined;
   const experimentFirstEntry = Boolean(effectiveEntryIntent || persistedAdaptiveInput);
   const initialEditorText =
-    initialText ?? initialDraft?.text ?? (mode === "survival" ? SURVIVAL_TABLE_HEADER : "");
+    initialText ??
+    initialDraft?.text ??
+    initialSpecializedEntryDraft?.state.rawLineage.rawText ??
+    initialVisualizationProject?.state.rawLineage.rawText ??
+    (mode === "survival" ? SURVIVAL_TABLE_HEADER : "");
   const [text, setText] = useState(initialEditorText);
   const [timeToEventInputSource, setTimeToEventInputSource] = useState<TimeToEventInputSource>(
     () => {
       const lineage = persistedAdaptiveInput?.rawLineage;
+      const specializedLineage = initialSpecializedEntryDraft?.state.rawLineage;
       return lineage
         ? { kind: lineage.sourceKind, label: lineage.sourceLabel }
-        : { kind: "clipboard", label: "time-to-event-entry-paste" };
+        : specializedLineage
+          ? {
+              kind:
+                specializedLineage.sourceKind === "direct_entry"
+                  ? "clipboard"
+                  : specializedLineage.sourceKind,
+              label: specializedLineage.sourceLabel,
+            }
+          : { kind: "clipboard", label: "time-to-event-entry-paste" };
     },
   );
   const [transform, setTransform] = useState<HeatmapTransform>(initialDraft?.transform ?? "none");
   const [currentVisualizationProject, setCurrentVisualizationProject] = useState<
     OpenedUnresolvedVisualizationProject | undefined
-  >();
-  const [heatmapInputSource, setHeatmapInputSource] = useState<TimeToEventInputSource>({
-    kind: "clipboard",
-    label: "heatmap-entry-paste",
-  });
-  const [rangeMin, setRangeMin] = useState(initialDraft?.rangeMin ?? "");
-  const [rangeMax, setRangeMax] = useState(initialDraft?.rangeMax ?? "");
-  const [missingColor, setMissingColor] = useState(initialDraft?.missingColor ?? "#d1d5db");
-  const [showCellValues, setShowCellValues] = useState(initialDraft?.showCellValues ?? false);
+  >(initialVisualizationProject);
+  const initialVisualizationGraph =
+    initialVisualizationProject?.state.graphSpecs.find(
+      (candidate) => candidate.id === initialVisualizationProject.state.activeGraphId,
+    ) ?? initialVisualizationProject?.state.graphSpecs.at(-1);
+  const initialVisualizationHeatmap =
+    initialVisualizationGraph?.type === "heatmap" ? initialVisualizationGraph.heatmap : undefined;
+  const [heatmapInputSource, setHeatmapInputSource] = useState<VisualizationInputSource>(() =>
+    initialVisualizationProject
+      ? {
+          kind: initialVisualizationProject.state.rawLineage.sourceKind,
+          label: initialVisualizationProject.state.rawLineage.sourceLabel,
+        }
+      : {
+          kind: "clipboard",
+          label: "heatmap-entry-paste",
+        },
+  );
+  const [rangeMin, setRangeMin] = useState(
+    initialDraft?.rangeMin ??
+      (initialVisualizationHeatmap?.min === null || initialVisualizationHeatmap?.min === undefined
+        ? ""
+        : String(initialVisualizationHeatmap.min)),
+  );
+  const [rangeMax, setRangeMax] = useState(
+    initialDraft?.rangeMax ??
+      (initialVisualizationHeatmap?.max === null || initialVisualizationHeatmap?.max === undefined
+        ? ""
+        : String(initialVisualizationHeatmap.max)),
+  );
+  const [missingColor, setMissingColor] = useState(
+    initialDraft?.missingColor ?? initialVisualizationHeatmap?.missingColor ?? "#d1d5db",
+  );
+  const [showCellValues, setShowCellValues] = useState(
+    initialDraft?.showCellValues ?? initialVisualizationHeatmap?.showCellValues ?? false,
+  );
   const initialCurrentAnalysis = initialProject?.state.analysisRuns
     .filter(
       ({ state, inputDesignRevisionId, inputRawRevisionId }) =>
@@ -308,26 +398,45 @@ export function SpecializedCorePage({
   const [statisticsSetupExpanded, setStatisticsSetupExpanded] = useState(
     !experimentFirstEntry ||
       initialDraft?.statisticsSetupExpanded === true ||
+      (initialSpecializedEntryDraft?.state.answers.kind === "survival" &&
+        initialSpecializedEntryDraft.state.answers.statisticsSetupExpanded === true) ||
       Boolean(initialCurrentAnalysis),
   );
   const [message, setMessage] = useState<string | null>(null);
+  const lastSaveSucceededRef = useRef(false);
+  const [exportFeedback, setExportFeedback] = useState<Readonly<{
+    kind: "success" | "error";
+    text: string;
+  }> | null>(null);
   const [showLogRankAnnotation, setShowLogRankAnnotation] = useState(
-    initialDraft?.showLogRankAnnotation ?? false,
+    initialDraft?.showLogRankAnnotation ??
+      (initialSpecializedEntryDraft?.state.answers.kind === "survival"
+        ? initialSpecializedEntryDraft.state.answers.showLogRankAnnotation
+        : false),
   );
   const [subjectUnitRelationship, setSubjectUnitRelationship] = useState<SubjectUnitRelationship>(
     initialDraft?.subjectUnitRelationship ??
+      (initialSpecializedEntryDraft?.state.answers.kind === "survival"
+        ? initialSpecializedEntryDraft.state.answers.subjectUnitRelationship
+        : undefined) ??
       effectiveEntryIntent?.facts.subjectUnitRelationship ??
       "unknown",
   );
   const [followUpUnit, setFollowUpUnit] = useState(
     initialDraft?.followUpUnit ??
+      (initialSpecializedEntryDraft?.state.answers.kind === "survival"
+        ? initialSpecializedEntryDraft.state.answers.followUpUnit
+        : undefined) ??
       persistedAdaptiveInput?.contract.orderedAxes.find(
         ({ sampling }) => sampling === "event_follow_up",
       )?.unit ??
       "",
   );
   const [numericStatusMapping, setNumericStatusMapping] = useState<NumericStatusMappingChoice>(
-    initialDraft?.numericStatusMapping ?? null,
+    initialDraft?.numericStatusMapping ??
+      (initialSpecializedEntryDraft?.state.answers.kind === "survival"
+        ? initialSpecializedEntryDraft.state.answers.numericStatusMapping
+        : null),
   );
   const subjectUnitRelationshipWasInferred =
     effectiveEntryIntent?.facts.subjectUnitRelationship !== undefined &&
@@ -448,6 +557,22 @@ export function SpecializedCorePage({
   useEffect(() => {
     onDraftChangeRef.current?.(draft);
   }, [draft]);
+  const dirtyLifecycleSnapshot = useMemo(
+    () => ({
+      // Opening or closing the optional statistics panel is disclosure state, not
+      // scientific work. Keep it in route-local recovery, but do not require a save
+      // when this is the only thing the researcher changed.
+      draft: { ...draft, statisticsSetupExpanded: undefined },
+      heatmapInputSource,
+      result,
+      timeToEventInputSource,
+    }),
+    [draft, heatmapInputSource, result, timeToEventInputSource],
+  );
+  const { adoptCurrentAsBaseline, interactionCaptureProps } = useWorkspaceDirtyBaseline(
+    dirtyLifecycleSnapshot,
+    onDirtyChange,
+  );
 
   useEffect(() => {
     const identity = benchmarkRun.identity;
@@ -572,6 +697,33 @@ export function SpecializedCorePage({
       return { error: error instanceof Error ? error.message : "入力を確認してください" } as const;
     }
   }, [mode, text, transform]);
+  const initialUsageDataPresentRef = useRef(
+    initialEditorText.split(/\r?\n/u).some((line, index) => index > 0 && line.trim()),
+  );
+  const dataMilestoneRecordedRef = useRef(initialUsageDataPresentRef.current);
+  const graphMilestoneRecordedRef = useRef(initialUsageDataPresentRef.current);
+  const validDedicatedGraph =
+    mode === "survival"
+      ? survivalTableHasRows && Boolean(survival && !("error" in survival))
+      : heatmapTableHasRows && Boolean(heatmap && !("error" in heatmap));
+  useEffect(() => {
+    if (dataMilestoneRecordedRef.current || !validDedicatedGraph) return;
+    dataMilestoneRecordedRef.current = true;
+    recordUsageMilestone(routeFromPath(window.location.pathname), "data_entry_started");
+  }, [validDedicatedGraph]);
+  useEffect(() => {
+    if (graphMilestoneRecordedRef.current || !validDedicatedGraph) return;
+    graphMilestoneRecordedRef.current = true;
+    const usageRoute = routeFromPath(window.location.pathname);
+    recordUsageMilestone(usageRoute, "graph_created");
+    recordUsageGraphConfiguration(usageRoute, {
+      graphFamily: mode === "survival" ? "kaplan_meier" : "heatmap",
+      origin: "dedicated_entry",
+      uncertainty: "none",
+      rawPointsVisible: false,
+      summaryVisible: mode === "survival",
+    });
+  }, [mode, validDedicatedGraph]);
 
   const openHeatmapProject = async () => {
     if (!openUnresolvedVisualizationProject) {
@@ -598,6 +750,7 @@ export function SpecializedCorePage({
               .find((candidate) => candidate.type === "heatmap" && candidate.heatmap);
       setCurrentVisualizationProject(opened);
       setText(opened.state.rawLineage.rawText);
+      adoptCurrentAsBaseline();
       setHeatmapInputSource({
         kind: opened.state.rawLineage.sourceKind,
         label: opened.state.rawLineage.sourceLabel,
@@ -610,9 +763,20 @@ export function SpecializedCorePage({
         setShowCellValues(graph.heatmap.showCellValues);
       }
       setMessage("保存済みHeatmap projectを開きました。行列とGraph設定を復元しました。");
+      recordUsageMilestone(routeFromPath(window.location.pathname), "project_opened");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Heatmap projectを開けませんでした。");
     }
+  };
+  const requestOpenHeatmapProject = () => {
+    if (!onRequestExit) {
+      void openHeatmapProject();
+      return;
+    }
+    onRequestExit({
+      actionLabel: "別のHeatmap projectを開く",
+      proceed: openHeatmapProject,
+    });
   };
 
   const createSurvivalState = () => {
@@ -773,25 +937,31 @@ export function SpecializedCorePage({
   };
 
   const runSurvival = async () => {
+    const usageRoute = routeFromPath(window.location.pathname);
+    recordUsageMilestone(usageRoute, "statistics_requested");
     try {
       if (statisticsReadiness.status !== "ready") {
         setMessage(statisticsReadiness.researcherMessage);
+        recordUsageMilestone(usageRoute, "safe_stop");
         return;
       }
       setMessage("解析中…");
       const prepared = createSurvivalState();
       if (!prepared.request) {
         setMessage("このデータでは現在のSurvival Statisticsを実行できません。");
+        recordUsageMilestone(usageRoute, "safe_stop");
         return;
       }
       const inputFingerprint = currentSurvivalInputFingerprint;
       const next = await analysisRunner(prepared.request);
       if (currentSurvivalInputFingerprintRef.current !== inputFingerprint) {
         setMessage("解析中に入力が変わりました。結果は採用せず、現在の表で再実行してください。");
+        recordUsageMilestone(usageRoute, "safe_stop");
         return;
       }
       setResult(next);
       setResultInputFingerprint(inputFingerprint);
+      recordUsageMilestone(usageRoute, next.status === "ok" ? "statistics_completed" : "safe_stop");
       recordBenchmarkEvent("statistics_executed", {
         method: prepared.request.method,
         recommendedMethod: "log_rank",
@@ -810,16 +980,67 @@ export function SpecializedCorePage({
       });
       setMessage("Kaplan–Meier推定とlog-rank検定が完了しました。");
     } catch (error) {
+      recordUsageMilestone(usageRoute, "safe_stop");
       setMessage(error instanceof Error ? error.message : "解析できませんでした");
     }
   };
-  const save = async () => {
-    if (mode === "survival" && !saveProject) {
+  const save = async (saveAs = false) => {
+    lastSaveSucceededRef.current = false;
+    if (mode === "survival" && !saveProject && !saveSpecializedEntryDraftProject) {
       setMessage("デスクトップ版で保存できます。");
       return;
     }
     try {
       if (mode === "survival") {
+        if (
+          experimentFirstEntry &&
+          !activeAdaptiveInput &&
+          effectiveEntryIntent &&
+          directTimeToEventEntry?.status !== "surface_ready"
+        ) {
+          if (!saveSpecializedEntryDraftProject) return;
+          const draftState = createSpecializedEntryDraft({
+            route: "survival",
+            entryIntent: effectiveEntryIntent,
+            rawText: text,
+            sourceKind:
+              currentSpecializedEntryDraft?.state.rawLineage.rawText === text
+                ? currentSpecializedEntryDraft.state.rawLineage.sourceKind
+                : timeToEventInputSource.kind,
+            sourceLabel:
+              currentSpecializedEntryDraft?.state.rawLineage.rawText === text
+                ? currentSpecializedEntryDraft.state.rawLineage.sourceLabel
+                : timeToEventInputSource.label,
+            answers: {
+              kind: "survival",
+              subjectUnitRelationship,
+              followUpUnit,
+              numericStatusMapping,
+              statisticsSetupExpanded,
+              showLogRankAnnotation,
+            },
+            safeStop: specializedSafeStop(
+              directTimeToEventEntry?.status ?? "input_invalid",
+              directTimeToEventEntry?.dualWrite.diagnostics ?? ["TIME_TO_EVENT_INPUT_UNRESOLVED"],
+            ),
+            current: currentSpecializedEntryDraft?.state,
+          });
+          const saved = await saveSpecializedEntryDraftProject(
+            draftState,
+            saveAs ? undefined : currentSpecializedEntryDraft?.target,
+          );
+          if (!saved) {
+            setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
+            return;
+          }
+          setCurrentSpecializedEntryDraft(saved);
+          lastSaveSucceededRef.current = true;
+          adoptCurrentAsBaseline();
+          setMessage(
+            "入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。",
+          );
+          return;
+        }
         if (!saveProject) return;
         const prepared = createSurvivalState();
         const recommendation: AnalysisRecommendation = {
@@ -879,12 +1100,17 @@ export function SpecializedCorePage({
                 ? { recommendation, request: preparedRequest, result: freshResult, graphSpec: spec }
                 : undefined,
           });
-          const saved = await saveProject(survivalState, currentProject?.target);
+          const saved = await saveProject(
+            survivalState,
+            saveAs ? undefined : currentProject?.target,
+          );
           if (!saved) {
             setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
             return;
           }
           setCurrentProject(saved);
+          lastSaveSucceededRef.current = true;
+          adoptCurrentAsBaseline();
           setMessage("Survival projectを保存しました。");
           return;
         }
@@ -984,12 +1210,17 @@ export function SpecializedCorePage({
               ...survivalState,
               adaptiveInput: updatedAdaptiveInput,
             });
-        const saved = await saveProject(stateToSave, currentProject?.target);
+        const saved = await saveProject(
+          stateToSave,
+          saveAs ? undefined : currentProject?.target,
+        );
         if (!saved) {
           setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
           return;
         }
         setCurrentProject(saved);
+        lastSaveSucceededRef.current = true;
+        adoptCurrentAsBaseline();
         setMessage(
           freshResult
             ? "入力・実験構造・解析結果をプロジェクトへ保存しました。"
@@ -1146,30 +1377,80 @@ export function SpecializedCorePage({
           });
         const saved = await saveUnresolvedVisualizationProject(
           stateToSave,
-          currentVisualizationProject?.target,
+          saveAs ? undefined : currentVisualizationProject?.target,
         );
         if (!saved) {
           setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
           return;
         }
         setCurrentVisualizationProject(saved);
+        lastSaveSucceededRef.current = true;
+        adoptCurrentAsBaseline();
         setMessage("Heatmap projectを保存しました。行列とGraph設定を保持しています。");
+        recordUsageMilestone(routeFromPath(window.location.pathname), "project_saved");
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存できませんでした");
     }
   };
+  const saveRef = useRef(save);
+  useLayoutEffect(() => {
+    saveRef.current = save;
+  }, [save]);
+  useEffect(() => {
+    if (!onRegisterSaveHandler) return;
+    onRegisterSaveHandler(async (saveAs) => {
+      await saveRef.current(Boolean(saveAs));
+      return lastSaveSucceededRef.current;
+    });
+    return () => onRegisterSaveHandler(null);
+  }, [onRegisterSaveHandler]);
+  const requestBack = () => {
+    if (onRequestExit) {
+      onRequestExit({ actionLabel: "前の画面に戻る", proceed: onBack });
+      return;
+    }
+    onBack();
+  };
+  const requestAnalysisRouteChange = (nextRoute: AppRoute) => {
+    if (analysisRouteSwitcherAccess !== "development_audit" || !onNavigate) return;
+    const proceed = () => {
+      adoptCurrentAsBaseline();
+      onNavigate(nextRoute);
+    };
+    if (onRequestExit) {
+      onRequestExit({ actionLabel: "別の専門解析へ切り替える", proceed });
+      return;
+    }
+    proceed();
+  };
   const exportSvg = () => {
-    if (svgRef.current)
-      downloadTextFile(serializeGraphSvg(svgRef.current), `${mode}.svg`, "image/svg+xml");
+    if (!svgRef.current) return;
+    setExportFeedback(null);
+    const downloaded = exportRenderedGraphSvg(svgRef.current, `${mode}.svg`);
+    setExportFeedback(
+      downloaded
+        ? { kind: "success", text: "表示中のGraphをSVGで書き出しました。" }
+        : { kind: "error", text: "SVGを書き出せませんでした。Graphは画面に保持されています。" },
+    );
   };
   const exportPng = async () => {
     if (!svgRef.current) return;
-    const box = svgRef.current.viewBox.baseVal;
-    downloadBlob(
-      await svgToPngBlob(serializeGraphSvg(svgRef.current), box.width, box.height),
-      `${mode}.png`,
-    );
+    setExportFeedback(null);
+    try {
+      await exportRenderedGraphPng(svgRef.current, `${mode}.png`);
+      setExportFeedback({
+        kind: "success",
+        text: "表示中のGraphと同じ内容をPNGで書き出しました。",
+      });
+    } catch (error) {
+      setExportFeedback({
+        kind: "error",
+        text: `PNGを書き出せませんでした。GraphとSVG書き出しは利用できます。${
+          error instanceof Error && error.message ? `（${error.message}）` : ""
+        }`,
+      });
+    }
   };
 
   const persistedAnalysisForResult = result
@@ -1215,7 +1496,10 @@ export function SpecializedCorePage({
           });
         })()
       : null;
-  const logRankDisplay = formattedLogRankResult(result);
+  const logRankDisplay = formattedLogRankResult(
+    result,
+    survival && !("error" in survival) ? survival.conditions.map(({ label }) => label) : [],
+  );
   const configuredMin =
     rangeMin.trim() && Number.isFinite(Number(rangeMin)) ? Number(rangeMin) : undefined;
   const configuredMax =
@@ -1502,22 +1786,47 @@ export function SpecializedCorePage({
       </section>
     ) : null;
   return (
-    <div className="page-stack specialized-analysis-page">
-      <button className="back-link" type="button" onClick={onBack}>
+    <div className="page-stack specialized-analysis-page" {...interactionCaptureProps}>
+      <button className="back-link" type="button" onClick={requestBack}>
         ← 戻る
       </button>
       {experimentFirstEntry ? null : (
-        <AnalysisRouteSwitcher current={mode} onNavigate={onNavigate} />
+        <AnalysisRouteSwitcher
+          access={analysisRouteSwitcherAccess}
+          current={mode}
+          onNavigate={requestAnalysisRouteChange}
+        />
       )}
       {mode === "survival" ? (
-        <nav aria-label="Common project workspace" className="workspace-mode-tabs">
+        <nav aria-label="プロジェクトワークスペース" className="workspace-mode-tabs">
+          <button
+            type="button"
+            disabled={!onOpenProject}
+            title={
+              !onOpenProject ? "プロジェクトを開く機能はデスクトップ版で利用できます" : undefined
+            }
+            onClick={onOpenProject}
+          >
+            開く
+          </button>
           <a href="#survival-data">データ</a>
           <a href="#survival-graph">グラフ</a>
           <a href="#survival-statistics">統計</a>
           <button
             type="button"
             disabled={
-              !saveProject || (mode === "survival" && experimentFirstEntry && !activeAdaptiveInput)
+              experimentFirstEntry && !activeAdaptiveInput
+                ? !saveSpecializedEntryDraftProject
+                : !saveProject
+            }
+            title={
+              experimentFirstEntry && !activeAdaptiveInput && !saveSpecializedEntryDraftProject
+                ? "入力途中のプロジェクト保存はデスクトップ版で利用できます"
+                : !saveProject
+                ? "プロジェクトの保存はデスクトップ版で利用できます"
+                : experimentFirstEntry && !activeAdaptiveInput
+                  ? "未確定の回答と入力表を、入力途中のプロジェクトとして保存します"
+                  : undefined
             }
             onClick={() => void save()}
           >
@@ -1525,7 +1834,57 @@ export function SpecializedCorePage({
           </button>
         </nav>
       ) : null}
-      <section className="workspace-panel specialized-workspace-panel">
+      {mode === "heatmap" ? (
+        <nav aria-label="プロジェクトワークスペース" className="workspace-mode-tabs">
+          <button
+            type="button"
+            disabled={!onOpenProject && !openUnresolvedVisualizationProject}
+            title={
+              !onOpenProject && !openUnresolvedVisualizationProject
+                ? "プロジェクトを開く機能はデスクトップ版で利用できます"
+                : undefined
+            }
+            onClick={() => {
+              if (onOpenProject) onOpenProject();
+              else requestOpenHeatmapProject();
+            }}
+          >
+            開く
+          </button>
+          <a href="#heatmap-data">データ</a>
+          <a href="#heatmap-graph">グラフ</a>
+          <button
+            type="button"
+            disabled
+            title="この行列だけから生物学的な独立例を推測しないため、統計は未確定です"
+          >
+            統計
+          </button>
+          <button
+            type="button"
+            disabled={
+              !saveUnresolvedVisualizationProject ||
+              !heatmapTableHasRows ||
+              !heatmap ||
+              "error" in heatmap
+            }
+            title={
+              !saveUnresolvedVisualizationProject
+                ? "プロジェクトの保存はデスクトップ版で利用できます"
+                : !heatmapTableHasRows || !heatmap || "error" in heatmap
+                  ? "数値行列を入力すると保存できます"
+                  : undefined
+            }
+            onClick={() => void save()}
+          >
+            保存
+          </button>
+        </nav>
+      ) : null}
+      <section
+        id={mode === "heatmap" ? "heatmap-data" : undefined}
+        className="workspace-panel specialized-workspace-panel"
+      >
         <p className="overline">
           {effectiveEntryIntent?.moduleId === "matrix_visualization"
             ? "行列からGraph"
@@ -1537,12 +1896,12 @@ export function SpecializedCorePage({
           {mode === "survival"
             ? effectiveEntryIntent?.experimentName ||
               persistedAdaptiveInput?.contract.experimentName ||
-              "Survival / time-to-event"
+              "生存時間"
             : "ヒートマップ"}
         </h1>
         <p>
           {mode === "survival"
-            ? "Unit ID・Group・Follow-up time・Event/Censored を貼り付けます。censoringは欠損に変換しません。"
+            ? "対象ごとの生存時間（time-to-event）を、対象ID・群・観察期間・状態（event／打ち切り）として入力します。打ち切りは欠測に変換しません。"
             : "1列目をfeature名、1行目をsample名として表を貼り付けます。空欄とNAは欠損のまま保持します。"}
         </p>
         {mode === "survival" && directTimeToEventEntry?.status === "safe_unsupported" ? (
@@ -1567,39 +1926,82 @@ export function SpecializedCorePage({
             </button>
           </section>
         ) : null}
-        <label id={mode === "survival" ? "survival-data" : undefined}>
-          表
-          <textarea
-            aria-label={mode === "survival" ? "Survival data" : "Matrix data"}
-            rows={9}
+        <section id={mode === "survival" ? "survival-data" : undefined}>
+          <h2>データ</h2>
+          <DelimitedTextSpreadsheet
+            ariaLabel={mode === "survival" ? "生存時間データ表" : "ヒートマップデータ表"}
+            caption={mode === "survival" ? "対象ごとの生存時間データ" : "ヒートマップ行列"}
+            minimumColumns={mode === "survival" ? 4 : 3}
             value={text}
-            onPaste={(event) => {
-              if (mode !== "survival") return;
-              const pastedText = event.clipboardData.getData("text/plain");
-              if (!pastedText) return;
-              event.preventDefault();
-              const selectionStart = event.currentTarget.selectionStart ?? text.length;
-              const selectionEnd = event.currentTarget.selectionEnd ?? selectionStart;
-              setText(replaceRawTextareaSelection(text, pastedText, selectionStart, selectionEnd));
-              setTimeToEventInputSource({
-                kind: "clipboard",
-                label: "time-to-event-entry-paste",
-              });
-              setNumericStatusMapping(null);
-              setResult(null);
-              setResultInputFingerprint(null);
-            }}
-            onChange={(event) => {
-              setText(event.target.value);
-              if (mode === "heatmap") {
-                setHeatmapInputSource({ kind: "clipboard", label: "heatmap-entry-paste" });
+            onChange={(nextText, source) => {
+              setText(nextText);
+              if (mode === "survival") {
+                setTimeToEventInputSource({
+                  kind: "clipboard",
+                  label:
+                    source === "clipboard"
+                      ? "time-to-event-spreadsheet-paste"
+                      : "time-to-event-spreadsheet-edit",
+                });
+                setNumericStatusMapping(null);
+              } else {
+                setHeatmapInputSource({
+                  kind: "clipboard",
+                  label:
+                    source === "clipboard"
+                      ? "heatmap-spreadsheet-paste"
+                      : "heatmap-spreadsheet-edit",
+                });
               }
               setResult(null);
               setResultInputFingerprint(null);
             }}
-            style={{ width: "100%", fontFamily: "monospace" }}
           />
-        </label>
+          {mode === "survival" ? (
+            <p className="specialized-data-entry-hint">
+              Statusは <strong>Event / Censored</strong> で入力します。日本語の
+              「死亡・イベント発生」「打ち切り・観察終了」も使えます。0/1の場合は、下でどちらがEventか確認します。
+            </p>
+          ) : null}
+          <details>
+            <summary>区切りテキストを直接編集（詳細）</summary>
+            <label>
+              区切りテキスト
+              <textarea
+                aria-label={mode === "survival" ? "Survival data" : "Matrix data"}
+                rows={7}
+                value={text}
+                onPaste={(event) => {
+                  if (mode !== "survival") return;
+                  const pastedText = event.clipboardData.getData("text/plain");
+                  if (!pastedText) return;
+                  event.preventDefault();
+                  const selectionStart = event.currentTarget.selectionStart ?? text.length;
+                  const selectionEnd = event.currentTarget.selectionEnd ?? selectionStart;
+                  setText(
+                    replaceRawTextareaSelection(text, pastedText, selectionStart, selectionEnd),
+                  );
+                  setTimeToEventInputSource({
+                    kind: "clipboard",
+                    label: "time-to-event-entry-paste",
+                  });
+                  setNumericStatusMapping(null);
+                  setResult(null);
+                  setResultInputFingerprint(null);
+                }}
+                onChange={(event) => {
+                  setText(event.target.value);
+                  if (mode === "heatmap") {
+                    setHeatmapInputSource({ kind: "clipboard", label: "heatmap-entry-paste" });
+                  }
+                  setResult(null);
+                  setResultInputFingerprint(null);
+                }}
+                style={{ width: "100%", fontFamily: "monospace" }}
+              />
+            </label>
+          </details>
+        </section>
         {mode === "survival" && experimentFirstEntry && !persistedAdaptiveInput ? (
           <label>
             時間の単位
@@ -1613,7 +2015,7 @@ export function SpecializedCorePage({
                 setResultInputFingerprint(null);
               }}
             />
-            <small>Graphと保存データの時間軸に使用します。数値だけから単位を推測しません。</small>
+            <small>グラフと保存データの時間軸に使用します。数値だけから単位を推測しません。</small>
           </label>
         ) : null}
         {mode === "survival" && !persistedAdaptiveInput && text.trim() === SURVIVAL_TABLE_HEADER ? (
@@ -1730,7 +2132,10 @@ export function SpecializedCorePage({
               <select
                 aria-label="Heatmap transform"
                 value={transform}
-                onChange={(event) => setTransform(event.target.value as HeatmapTransform)}
+                onChange={(event) => {
+                  setTransform(event.target.value as HeatmapTransform);
+                  recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+                }}
               >
                 <option value="none">変換しない</option>
                 <option value="row_z_score">行ごとにz-score</option>
@@ -1744,7 +2149,10 @@ export function SpecializedCorePage({
                 aria-label="Heatmap color minimum"
                 type="number"
                 value={rangeMin}
-                onChange={(event) => setRangeMin(event.target.value)}
+                onChange={(event) => {
+                  setRangeMin(event.target.value);
+                  recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
+                }}
               />
             </label>
             <label>
@@ -1753,7 +2161,10 @@ export function SpecializedCorePage({
                 aria-label="Heatmap color maximum"
                 type="number"
                 value={rangeMax}
-                onChange={(event) => setRangeMax(event.target.value)}
+                onChange={(event) => {
+                  setRangeMax(event.target.value);
+                  recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
+                }}
               />
             </label>
             <label>
@@ -1762,14 +2173,23 @@ export function SpecializedCorePage({
                 aria-label="Heatmap missing color"
                 type="color"
                 value={missingColor}
-                onChange={(event) => setMissingColor(event.target.value)}
+                onChange={(event) => {
+                  setMissingColor(event.target.value);
+                  recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+                }}
               />
             </label>
             <label>
               <input
-                type="checkbox"
-                checked={showCellValues}
-                onChange={(event) => setShowCellValues(event.target.checked)}
+                  type="checkbox"
+                  checked={showCellValues}
+                  onChange={(event) => {
+                    setShowCellValues(event.target.checked);
+                    recordUsageGraphEdit(
+                      routeFromPath(window.location.pathname),
+                      "appearance_layout",
+                    );
+                  }}
               />{" "}
               各セルの値を表示
             </label>
@@ -1805,7 +2225,7 @@ export function SpecializedCorePage({
                   ? "heatmap-persistence-unavailable-note"
                   : undefined
               }
-              onClick={() => void openHeatmapProject()}
+              onClick={requestOpenHeatmapProject}
             >
               保存済みHeatmap projectを開く
             </button>
@@ -1832,8 +2252,7 @@ export function SpecializedCorePage({
           {mode === "heatmap" ? (
             <>
               <p className="specialized-engine-note" role="note">
-                行列の列を生物学的な独立例とみなさず、raw
-                matrixとGraph設定を保存します。Statisticsは未確定のままです。
+                行列の列を生物学的な独立例とみなさず、入力した行列とGraph設定を保存します。統計の構造は未確定のままです。
               </p>
               {!openUnresolvedVisualizationProject || !saveUnresolvedVisualizationProject ? (
                 <p
@@ -1854,12 +2273,15 @@ export function SpecializedCorePage({
           ) : null}
         </div>
         {message ? <p role="status">{message}</p> : null}
+        {exportFeedback ? (
+          <p role={exportFeedback.kind === "error" ? "alert" : "status"}>{exportFeedback.text}</p>
+        ) : null}
       </section>
       <section
-        id={mode === "survival" ? "survival-graph" : undefined}
+        id={mode === "survival" ? "survival-graph" : "heatmap-graph"}
         className="workspace-panel specialized-workspace-panel"
       >
-        {mode === "survival" ? <h2>Graph</h2> : null}
+        <h2>グラフ</h2>
         {mode === "survival" && !survivalTableHasRows ? (
           <p>表に実測値を入力すると、event/censoringを保持したGraphをここに表示します。</p>
         ) : numericStatusMappingRequired && numericStatusMapping === null ? (
@@ -1904,10 +2326,10 @@ export function SpecializedCorePage({
         <section
           id="survival-statistics"
           className="workspace-panel specialized-workspace-panel"
-          aria-label="Statistics workspace"
+          aria-label="統計ワークスペース"
         >
-          <h2>Statistics</h2>
-          <p>Graphを確認したあと、必要な場合だけ推論解析を実行します。</p>
+          <h2>統計</h2>
+          <p>グラフを確認したあと、必要な場合だけ推論解析を実行します。</p>
           {survival && !("error" in survival) && statisticsReadiness.status !== "ready" ? (
             <p className="specialized-engine-note" role="status">
               {statisticsReadiness.researcherMessage}
@@ -1948,7 +2370,13 @@ export function SpecializedCorePage({
                     <input
                       type="checkbox"
                       checked={showLogRankAnnotation}
-                      onChange={(event) => setShowLogRankAnnotation(event.target.checked)}
+                      onChange={(event) => {
+                        setShowLogRankAnnotation(event.target.checked);
+                        recordUsageGraphEdit(
+                          routeFromPath(window.location.pathname),
+                          "statistics_annotation",
+                        );
+                      }}
                     />
                     <span>この保存済みlog-rank結果をグラフに表示</span>
                   </label>

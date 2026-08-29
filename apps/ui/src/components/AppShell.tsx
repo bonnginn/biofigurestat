@@ -7,6 +7,8 @@ import { PRODUCT_IDENTITY } from "../app/productIdentity";
 import { DiagnosticPanel } from "./DiagnosticPanel";
 import { ContextualHelp } from "./ContextualHelp";
 import { AboutPanel } from "./AboutPanel";
+import { UsageTelemetryController } from "./UsageTelemetryController";
+import { useUsageConsent } from "../app/usageTelemetry";
 import "./DiagnosticPanel.css";
 import "./AboutPanel.css";
 
@@ -37,6 +39,7 @@ export function AppShell({
   activeProject = null,
 }: AppShellProps) {
   const mainContentRef = useRef<HTMLElement>(null);
+  const usageConsent = useUsageConsent();
 
   useLayoutEffect(() => {
     const heading = mainContentRef.current?.querySelector<HTMLElement>("h1");
@@ -82,7 +85,9 @@ export function AppShell({
               ? "合成データ評価環境"
               : browserPreview
                 ? "合成デモ・一時プレビュー"
-                : "ローカルのみ"}
+                : usageConsent === "opted_in"
+                  ? "研究データはローカル・利用情報収集ON"
+                  : "ローカルのみ"}
           </span>
         </div>
         <ContextualHelp
@@ -123,6 +128,7 @@ export function AppShell({
           {children}
         </main>
       </div>
+      <UsageTelemetryController route={route} />
     </div>
   );
 }

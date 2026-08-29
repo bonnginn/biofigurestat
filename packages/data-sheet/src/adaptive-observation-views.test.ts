@@ -690,6 +690,116 @@ describe("adaptive observation views", () => {
     expect(model.expanded.rows[0]?.cells["value.value"]).toBe(1);
   });
 
+  it("preserves declared coordinate order and appends observed extras deterministically", () => {
+    const orderedContract = contract({
+      unitLevels: [
+        { key: "unit", label: "Dish", role: "experimental_unit", parentKey: null },
+        { key: "field", label: "Field", role: "sampling_location", parentKey: "unit" },
+        { key: "cell", label: "Cell", role: "subsample", parentKey: "field" },
+      ],
+      identities: [
+        { key: "unit_id", label: "Dish ID", unitLevelKey: "unit", required: true },
+        { key: "batch_id", label: "Batch ID", unitLevelKey: "unit", required: false },
+      ],
+      factors: [
+        {
+          key: "sirna",
+          label: "siRNA",
+          levels: ["control", "gene_a"],
+          unitRole: "between_unit",
+          relationship: "independent",
+          ordered: false,
+          referenceLevel: "control",
+        },
+        {
+          key: "dox",
+          label: "Dox",
+          levels: ["minus", "plus"],
+          unitRole: "between_unit",
+          relationship: "independent",
+          ordered: false,
+          referenceLevel: "minus",
+        },
+      ],
+      orderedAxes: [
+        {
+          key: "time",
+          label: "Time",
+          unit: "hour",
+          levels: [0, 24],
+          sampling: "repeated_same_identity",
+          identityRetained: true,
+        },
+        {
+          key: "dose",
+          label: "Dose",
+          unit: "nM",
+          levels: [1, 10],
+          sampling: "cross_sectional",
+          identityRetained: false,
+        },
+      ],
+      readouts: [
+        {
+          key: "value",
+          label: "Value",
+          valueType: "scalar",
+          representation: "scalar",
+          componentKeys: ["value"],
+          referenceRole: "none",
+          observationLevelKey: "cell",
+          axisKeys: ["time", "dose"],
+        },
+      ],
+    });
+    const observations = [
+      observation(
+        "obs.ordered",
+        { value: 1 },
+        {
+          identities: {
+            unit_id: "dish-1",
+            batch_id: "batch-1",
+            z_extra_identity: "z",
+            a_extra_identity: "a",
+          },
+          factors: {
+            sirna: "gene_a",
+            dox: "plus",
+            z_extra_factor: "z",
+            a_extra_factor: "a",
+          },
+          axes: { time: 24, dose: 10, z_extra_axis: 2, a_extra_axis: 1 },
+          hierarchy: {
+            field: "field-1",
+            cell: "cell-1",
+            z_extra_hierarchy: "z",
+            a_extra_hierarchy: "a",
+          },
+        },
+      ),
+    ];
+
+    const model = buildAdaptiveSpreadsheetViewModel(orderedContract, observations);
+    const semanticKeysFor = (role: "identity" | "factor" | "axis" | "hierarchy") =>
+      model.columns.filter((column) => column.role === role).map((column) => column.semanticKey);
+
+    expect(semanticKeysFor("identity")).toEqual([
+      "unit_id",
+      "batch_id",
+      "a_extra_identity",
+      "z_extra_identity",
+    ]);
+    expect(semanticKeysFor("factor")).toEqual(["sirna", "dox", "a_extra_factor", "z_extra_factor"]);
+    expect(semanticKeysFor("axis")).toEqual(["time", "dose", "a_extra_axis", "z_extra_axis"]);
+    expect(semanticKeysFor("hierarchy")).toEqual([
+      "field",
+      "cell",
+      "a_extra_hierarchy",
+      "z_extra_hierarchy",
+    ]);
+  });
+
   it("renders one compact row per condition while keeping multiple scalar readouts separate", () => {
     const multiReadoutContract = contract({
       factors: [
@@ -727,46 +837,78 @@ describe("adaptive observation views", () => {
       ],
     });
     const observations = [
-      observation("obs.control.response.1", { response: 1 }, {
-        readoutKey: "response",
-        identities: { unit_id: "control-1" },
-        factors: { condition: "control" },
-      }),
-      observation("obs.control.response.2", { response: 2 }, {
-        readoutKey: "response",
-        identities: { unit_id: "control-2" },
-        factors: { condition: "control" },
-      }),
-      observation("obs.control.count.1", { count: 10 }, {
-        readoutKey: "count",
-        identities: { unit_id: "control-1" },
-        factors: { condition: "control" },
-      }),
-      observation("obs.drug.response.1", { response: 3 }, {
-        readoutKey: "response",
-        identities: { unit_id: "drug-1" },
-        factors: { condition: "drug" },
-      }),
-      observation("obs.drug.count.1", { count: 20 }, {
-        readoutKey: "count",
-        identities: { unit_id: "drug-1" },
-        factors: { condition: "drug" },
-      }),
-      observation("obs.drug.count.2", { count: 21 }, {
-        readoutKey: "count",
-        identities: { unit_id: "drug-2" },
-        factors: { condition: "drug" },
-      }),
-      observation("obs.rescue.response.1", { response: 4 }, {
-        readoutKey: "response",
-        identities: { unit_id: "rescue-1" },
-        factors: { condition: "rescue" },
-      }),
-      observation("obs.rescue.count.1", { count: 30 }, {
-        readoutKey: "count",
-        identities: { unit_id: "rescue-1" },
-        factors: { condition: "rescue" },
-      }),
+      observation(
+        "obs.control.response.1",
+        { response: 1 },
+        {
+          readoutKey: "response",
+          identities: { unit_id: "control-1" },
+          factors: { condition: "control" },
+        },
+      ),
+      observation(
+        "obs.control.response.2",
+        { response: 2 },
+        {
+          readoutKey: "response",
+          identities: { unit_id: "control-2" },
+          factors: { condition: "control" },
+        },
+      ),
+      observation(
+        "obs.control.count.1",
+        { count: 10 },
+        {
+          readoutKey: "count",
+          identities: { unit_id: "control-1" },
+          factors: { condition: "control" },
+        },
+      ),
+      observation(
+        "obs.drug.response.1",
+        { response: 3 },
+        {
+          readoutKey: "response",
+          identities: { unit_id: "drug-1" },
+          factors: { condition: "drug" },
+        },
+      ),
+      observation(
+        "obs.drug.count.1",
+        { count: 20 },
+        {
+          readoutKey: "count",
+          identities: { unit_id: "drug-1" },
+          factors: { condition: "drug" },
+        },
+      ),
+      observation(
+        "obs.drug.count.2",
+        { count: 21 },
+        {
+          readoutKey: "count",
+          identities: { unit_id: "drug-2" },
+          factors: { condition: "drug" },
+        },
+      ),
+      observation(
+        "obs.rescue.response.1",
+        { response: 4 },
+        {
+          readoutKey: "response",
+          identities: { unit_id: "rescue-1" },
+          factors: { condition: "rescue" },
+        },
+      ),
+      observation(
+        "obs.rescue.count.1",
+        { count: 30 },
+        {
+          readoutKey: "count",
+          identities: { unit_id: "rescue-1" },
+          factors: { condition: "rescue" },
+        },
+      ),
     ];
     const model = buildAdaptiveSpreadsheetViewModel(multiReadoutContract, observations);
 
@@ -791,10 +933,9 @@ describe("adaptive observation views", () => {
     expect(new Set(model.compact.rows.flatMap((row) => row.observationIds))).toEqual(
       new Set(observations.map(({ observationId }) => observationId)),
     );
-    expect(model.compact.columns.filter(({ role }) => role === "value").map(({ label }) => label)).toEqual([
-      "Response",
-      "Cell count",
-    ]);
+    expect(
+      model.compact.columns.filter(({ role }) => role === "value").map(({ label }) => label),
+    ).toEqual(["Response", "Cell count"]);
     expect(model.expanded.rows).toHaveLength(8);
     expect(model.expanded.columns.some(({ role }) => role === "readout")).toBe(true);
     expect(model.expanded.rows.map((row) => row.cells.readout)).toEqual([
@@ -847,24 +988,30 @@ describe("adaptive observation views", () => {
     });
     const observations = [
       ...["control", "drug", "rescue"].flatMap((condition, index) => [
-        observation(`obs.${condition}.response`, { response: index + 1 }, {
-          readoutKey: "response",
-          factors: { condition },
-        }),
-        observation(`obs.${condition}.rate`, { positive: index + 2, total: 10 }, {
-          readoutKey: "rate",
-          factors: { condition },
-        }),
+        observation(
+          `obs.${condition}.response`,
+          { response: index + 1 },
+          {
+            readoutKey: "response",
+            factors: { condition },
+          },
+        ),
+        observation(
+          `obs.${condition}.rate`,
+          { positive: index + 2, total: 10 },
+          {
+            readoutKey: "rate",
+            factors: { condition },
+          },
+        ),
       ]),
     ];
     const model = buildAdaptiveSpreadsheetViewModel(mixedContract, observations);
 
     expect(model.compact.rows).toHaveLength(3);
-    expect(model.compact.columns.filter(({ role }) => role === "value").map(({ label }) => label)).toEqual([
-      "Response",
-      "Ciliated fraction · positive",
-      "Ciliated fraction · total",
-    ]);
+    expect(
+      model.compact.columns.filter(({ role }) => role === "value").map(({ label }) => label),
+    ).toEqual(["Response", "Ciliated fraction · positive", "Ciliated fraction · total"]);
     expect(model.compact.rows.map((row) => row.cells["value.response"])).toEqual([[1], [2], [3]]);
     expect(model.compact.rows.map((row) => row.cells["value.rate_positive"])).toEqual([
       [2],
@@ -1006,6 +1153,13 @@ describe("adaptive observation views", () => {
         ),
       ],
     };
+
+    expect(
+      buildAdaptiveSpreadsheetViewModel(
+        repeatedAxis.contract,
+        repeatedAxis.observations,
+      ).columns.find(({ role }) => role === "axis")?.label,
+    ).toBe("Time (hour)");
 
     [scalar, proportion, repeatedAxis, nested, typed].forEach(
       ({ contract: itemContract, observations }) => {

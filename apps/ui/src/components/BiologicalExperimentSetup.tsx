@@ -2,6 +2,10 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { buildStructureContract, type MinimalBiologicalAnswers } from "@lsaa/adaptive-input";
 import type { StructureContract } from "@lsaa/domain";
 
+import { useWorkspaceDirtyBaseline } from "../app/useWorkspaceDirtyBaseline";
+import { createExperimentConsultationPrompt } from "../app/externalLlmConsultation";
+import { ExternalLlmConsultation } from "./ExternalLlmConsultation";
+import { moveSpreadsheetFocus } from "./spreadsheetGrid";
 import "./BiologicalExperimentSetup.css";
 
 export type ConditionCombinationStatus = "performed" | "not_performed" | "unknown";
@@ -43,6 +47,7 @@ export type BiologicalExperimentSetupProps = Readonly<{
   enabled: boolean;
   onReady: (result: BiologicalExperimentSetupResult) => boolean | void;
   onCancel?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
   externalError?: string | null;
   initial?: Readonly<{
     title?: string;
@@ -93,7 +98,9 @@ export type BiologicalExperimentSetupProps = Readonly<{
   }>;
 }>;
 
-const VISIBLE_ROWS = 5;
+// Condition levels are normally entered left-to-right. Additional rows are
+// created only when the researcher asks for a real parent/subgroup dimension.
+const VISIBLE_ROWS = 1;
 const VISIBLE_VALUE_COLUMNS = 5;
 
 type PendingDeletionFocus = Readonly<{
@@ -352,15 +359,11 @@ export function safelyBuildBiologicalSetup(input: SafeBuildInput): SafeBuildResu
         "受け手どうしの関係が混在または不明なため、安全な入力表をまだ作れません。入力内容は保持されています。",
     };
   }
-  if (input.combinations.some(({ id }) => (input.statuses[id] ?? "performed") !== "performed")) {
+  if (input.relationship === "shared_source" && !input.sourceLabel.trim()) {
     return {
       status: "stopped",
-      reason:
-        "実施しない、または未確認の組み合わせがあります。この版では値を残したままここで停止します。",
+      reason: "別々の対象を対応づける、共通の由来・実験回を入力してください。",
     };
-  }
-  if (input.relationship === "shared_source" && !input.sourceLabel.trim()) {
-    return { status: "stopped", reason: "分ける前の共通材料を入力してください。" };
   }
   const sharedSourcePairedBlock =
     input.relationship === "shared_source"
@@ -372,7 +375,7 @@ export function safelyBuildBiologicalSetup(input: SafeBuildInput): SafeBuildResu
     return {
       status: "stopped",
       reason:
-        "共通材料を分けた後に変えた処理・群分けを1つ選んでください。2つ以上の処理で対応が異なる場合は、現在の版では推測せず入力内容を保持して停止します。",
+        "対応する組の中で変えた処理・群分けを1つ選んでください。2つ以上の処理で対応が異なる場合は、現在の版では推測せず入力内容を保持して停止します。",
     };
   }
   if (input.orderedAxis?.sameIdentity === null) {
@@ -511,8 +514,10 @@ export type BiologicalExperimentSummaryInput = Readonly<{
   sharedSourcePairedBlockId?: string;
   childLabel: string;
   nestedReadoutLabels?: readonly string[];
+  aggregateReadoutLabels?: readonly string[];
   orderedAxis?: Readonly<{
     label: string;
+    unit?: string;
     levels: readonly (string | number)[];
     sameIdentity: boolean | null;
     readoutLabels?: readonly string[];
@@ -535,10 +540,8 @@ export function buildBiologicalExperimentSummary(input: BiologicalExperimentSumm
       return `${name}: ${levels || "未入力"}`;
     })
     .join("、");
-  const readouts = input.readoutLabels
-    .map((label) => label.trim())
-    .filter(Boolean)
-    .join("、");
+  const readoutLabels = input.readoutLabels.map((label) => label.trim()).filter(Boolean);
+  const readouts = readoutLabels.join("、");
   const parts = [
     `${factors || "処理・群分け: 未入力"}。`,
     `${receiver}ごとに${readouts || "測定値"}を記録します。`,
@@ -547,20 +550,20 @@ export function buildBiologicalExperimentSummary(input: BiologicalExperimentSumm
     parts.push(`同じ${receiver}を条件間で繰り返し測定します。`);
   } else if (input.relationship === "shared_source") {
     parts.push(
-      `${input.sourceLabel.trim() || "共通材料"}から分けた別々の${receiver}を条件に割り当て、元のつながりを保持します。`,
+      `別々の${receiver}を条件に割り当て、${input.sourceLabel.trim() || "共通の由来・実験回"}が同じ組どうしの対応を保持します。`,
     );
     if (input.blocks.length > 1) {
       const pairedBlock = input.blocks.find(({ id }) => id === input.sharedSourcePairedBlockId);
       if (pairedBlock) {
         parts.push(
-          `材料を分けた後に変えた「${pairedBlock.name.trim() || "処理・群分け"}」について、同じ元材料に由来する${receiver}を対応づけます。`,
+          `「${pairedBlock.name.trim() || "処理・群分け"}」について、同じ${input.sourceLabel.trim() || "由来・実験回"}に属する${receiver}を対応づけます。`,
         );
       } else if (input.sharedSourcePairedBlockId === "multiple_or_unknown") {
         parts.push(
-          "材料を分けた後の処理との対応が複数または一部だけのため、現在の入力内容のままでは統計構造を確定できません。",
+          "由来・実験回と処理の対応が複数または一部だけのため、現在の入力内容のままでは統計構造を確定できません。",
         );
       } else {
-        parts.push("材料を分けた後に変えた処理・群分けは未確認です。");
+        parts.push("対応する組の中で変えた処理・群分けは未確認です。");
       }
     }
   } else if (input.relationship === "separate") {
@@ -569,21 +572,41 @@ export function buildBiologicalExperimentSummary(input: BiologicalExperimentSumm
     parts.push(`条件間で${receiver}が同じかどうかは未確認です。`);
   }
   if (input.childLabel.trim()) {
+    const child = input.childLabel.trim();
     const nestedReadouts = (input.nestedReadoutLabels ?? [])
       .map((label) => label.trim())
       .filter(Boolean)
       .join("、");
-    if (input.nestedReadoutLabels !== undefined && !nestedReadouts) {
-      parts.push(`${input.childLabel.trim()}ごとに測った項目は未選択です。`);
-    } else {
+    const aggregateReadouts = (input.aggregateReadoutLabels ?? [])
+      .map((label) => label.trim())
+      .filter(Boolean)
+      .join("、");
+    if (input.nestedReadoutLabels === undefined) {
       parts.push(
-        `各${receiver}内の${input.childLabel.trim()}${nestedReadouts ? `で${nestedReadouts}を測定し、` : "は"}個別の測定値として残しますが、独立した生物学的なnには数えません。`,
+        `各${receiver}内の${child}は個別の測定値として残しますが、独立した生物学的なnには数えません。`,
       );
+    } else {
+      if (nestedReadouts) {
+        parts.push(
+          `各${receiver}内の${child}で${nestedReadouts}を測定し、個別の測定値として残しますが、独立した生物学的なnには数えません。`,
+        );
+      }
+      if (aggregateReadouts) {
+        parts.push(
+          `${aggregateReadouts}は各${receiver}について記録した集計値として保持し、${child}ごとのIDや個別の測定値は作りません。`,
+        );
+      }
+      if (!nestedReadouts && !aggregateReadouts) {
+        parts.push(`${child}ごとに測った項目は未選択です。`);
+      }
     }
   }
   if (input.orderedAxis) {
     const axis = input.orderedAxis;
-    const levels = axis.levels.map(String).join("、") || "値未入力";
+    const axisUnit = axis.unit?.trim();
+    const levels =
+      axis.levels.map((level) => `${String(level)}${axisUnit ? ` ${axisUnit}` : ""}`).join("、") ||
+      "値未入力";
     const axisReadouts = (axis.readoutLabels ?? [])
       .map((label) => label.trim())
       .filter(Boolean)
@@ -612,6 +635,7 @@ export function BiologicalExperimentSetup({
   enabled,
   onReady,
   onCancel,
+  onDirtyChange,
   externalError,
   initial,
 }: BiologicalExperimentSetupProps) {
@@ -674,6 +698,29 @@ export function BiologicalExperimentSetup({
   const [editingInheritedFacts, setEditingInheritedFacts] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const combinations = useMemo(() => buildConditionCombinations(blocks), [blocks]);
+  const { interactionCaptureProps } = useWorkspaceDirtyBaseline(
+    {
+      title,
+      measurementLabel,
+      valueForm,
+      measurementUsesNestedObservation,
+      measurementUsesOrderedAxis,
+      additionalReadouts,
+      blocks,
+      statuses,
+      receiverLabel,
+      relationship,
+      sourceLabel,
+      sharedSourcePairedBlockId,
+      childLabel,
+      orderedAxisEnabled,
+      orderedAxisLabel,
+      orderedAxisUnit,
+      orderedAxisLevels,
+      orderedAxisSameIdentity,
+    },
+    onDirtyChange,
+  );
 
   useLayoutEffect(() => {
     if (!initial?.revisionMode) return;
@@ -865,12 +912,24 @@ export function BiologicalExperimentSetup({
     sourceLabel,
     sharedSourcePairedBlockId,
     childLabel,
-    ...(additionalReadouts.length > 0
+    ...(childLabel.trim()
       ? {
           nestedReadoutLabels: [
-            ...(measurementUsesNestedObservation ? [measurementLabel] : []),
+            ...(valueForm === "single" &&
+            (additionalReadouts.length === 0 || measurementUsesNestedObservation === true)
+              ? [measurementLabel]
+              : []),
             ...additionalReadouts
-              .filter(({ usesNestedObservation }) => usesNestedObservation)
+              .filter(
+                ({ valueForm: readoutValueForm, usesNestedObservation }) =>
+                  readoutValueForm === "single" && usesNestedObservation === true,
+              )
+              .map(({ label }) => label),
+          ],
+          aggregateReadoutLabels: [
+            ...(valueForm !== "single" ? [measurementLabel] : []),
+            ...additionalReadouts
+              .filter(({ valueForm: readoutValueForm }) => readoutValueForm !== "single")
               .map(({ label }) => label),
           ],
         }
@@ -879,6 +938,7 @@ export function BiologicalExperimentSetup({
       ? {
           orderedAxis: {
             label: orderedAxisLabel,
+            unit: orderedAxisUnit,
             levels: orderedAxisLevels.filter((level) => level.trim()),
             sameIdentity: orderedAxisSameIdentity,
             ...(additionalReadouts.length > 0
@@ -904,15 +964,44 @@ export function BiologicalExperimentSetup({
         `測定: ${measurementLabel.trim() || "未入力"}`,
       ].join("。")
     : "";
+  const externalLlmPrompt = createExperimentConsultationPrompt({
+        title,
+        conditionFactors: blocks.map((block) => ({
+          name: block.name,
+          levels: populatedCells(block).map(({ displayLabel }) => displayLabel),
+        })),
+        measurement: measurementLabel,
+        valueForm:
+          VALUE_FORM_OPTIONS.find(([value]) => value === valueForm)?.[1] ?? valueForm,
+        receiver: receiverLabel,
+        relationship:
+          relationship === "separate"
+            ? "条件ごとに別々のもの"
+            : relationship === "same"
+              ? "同じ対象・試料を複数条件で測定"
+              : relationship === "shared_source"
+                ? `別々のものだが共通の${sourceLabel.trim() || "由来・実験回"}に属する`
+                : relationship === "unknown_or_mixed"
+                  ? "不明または混在"
+                  : "",
+        nestedObservation: childLabel,
+        orderedAxis: orderedAxisEnabled
+          ? `${orderedAxisLabel || "順序軸"} (${orderedAxisLevels.filter(Boolean).join(" / ") || "値未入力"} ${orderedAxisUnit})`
+          : "なし",
+      });
 
   return (
-    <section className="biological-setup" aria-labelledby="biological-setup-heading">
+    <section
+      className="biological-setup"
+      aria-labelledby="biological-setup-heading"
+      {...interactionCaptureProps}
+    >
       <header>
         <p className="biological-setup__eyebrow">
           {initial?.revisionMode
             ? "入力済みデータを保持して修正"
             : initial?.statisticsHandoff
-              ? "Statisticsのための確認"
+              ? "統計のための確認"
               : "実験から始める"}
         </p>
         <h1 id="biological-setup-heading">
@@ -935,6 +1024,7 @@ export function BiologicalExperimentSetup({
             小さな実験は少ない入力で完了します。必要な場合だけ処理や材料の情報を追加します。分からない関係を推測して解析へ進めることはありません。
           </p>
         </details>
+        <ExternalLlmConsultation prompt={externalLlmPrompt} placement="experiment_setup" />
       </header>
 
       {initial?.notice ? (
@@ -979,6 +1069,7 @@ export function BiologicalExperimentSetup({
               <section
                 className="biological-setup__section"
                 aria-labelledby="condition-plan-heading"
+                data-usage-area="condition_definition"
               >
                 <div className="biological-setup__section-heading">
                   <div>
@@ -1002,6 +1093,18 @@ export function BiologicalExperimentSetup({
                     ＋ 処理・群分けを追加
                   </button>
                 </div>
+                <div className="biological-setup__section-intro">
+                  <p>
+                    条件として変えた項目を「名前」に、実際に比較する条件名を下の表へ横方向に入力します。
+                  </p>
+                  <details className="biological-setup__inline-help">
+                    <summary aria-label="処理・群分けの入力方法">?</summary>
+                    <p>
+                      通常は1行のまま使います。たとえばVehicle、Drug A、Drug
+                      Bは同じ行へ入力します。Drugという親分類も図に残したい場合だけ「親グループも記録する」を使い、親分類と実際の条件を分けて入力します。
+                    </p>
+                  </details>
+                </div>
                 {blocks.map((block, blockIndex) => (
                   <article className="biological-setup__condition" key={block.id}>
                     <div className="biological-setup__condition-heading">
@@ -1023,7 +1126,7 @@ export function BiologicalExperimentSetup({
                       <label className="biological-setup__check">
                         <input
                           type="checkbox"
-                          aria-label={`${conditionBlockActionLabel(block, blockIndex)}の値をまとまり別に表示する`}
+                          aria-label={`${conditionBlockActionLabel(block, blockIndex)}に親グループ列を追加する`}
                           checked={block.showGroups}
                           onChange={(event) => {
                             const showGroups = event.currentTarget.checked;
@@ -1033,7 +1136,7 @@ export function BiologicalExperimentSetup({
                             }));
                           }}
                         />
-                        <span>値をまとまり別に表示する</span>
+                        <span>親グループも記録する（必要な場合）</span>
                       </label>
                       {blocks.length > 1 ? (
                         <button
@@ -1055,7 +1158,7 @@ export function BiologicalExperimentSetup({
                       >
                         <thead>
                           <tr>
-                            {block.showGroups ? <th scope="col">まとまり</th> : null}
+                            {block.showGroups ? <th scope="col">親グループ</th> : null}
                             {block.values[0]?.map((_, column) => (
                               <th scope="col" key={column}>
                                 値 {column + 1}
@@ -1075,6 +1178,10 @@ export function BiologicalExperimentSetup({
                                         : ""
                                     }行 ${rowIndex + 1}のまとまり`}
                                     value={block.groupLabels[rowIndex] ?? ""}
+                                    data-spreadsheet-cell="true"
+                                    data-spreadsheet-row={rowIndex}
+                                    data-spreadsheet-column={0}
+                                    onKeyDown={moveSpreadsheetFocus}
                                     onChange={(event) => {
                                       const label = event.currentTarget.value;
                                       updateBlock(block.id, (current) => ({
@@ -1097,6 +1204,12 @@ export function BiologicalExperimentSetup({
                                         : ""
                                     }行 ${rowIndex + 1} 列 ${columnIndex + 1}`}
                                     value={value}
+                                    data-spreadsheet-cell="true"
+                                    data-spreadsheet-row={rowIndex}
+                                    data-spreadsheet-column={
+                                      columnIndex + (block.showGroups ? 1 : 0)
+                                    }
+                                    onKeyDown={moveSpreadsheetFocus}
                                     onChange={(event) =>
                                       updateCell(
                                         block,
@@ -1154,7 +1267,11 @@ export function BiologicalExperimentSetup({
                 ))}
               </section>
 
-              <section className="biological-setup__section" aria-labelledby="measurement-heading">
+              <section
+                className="biological-setup__section"
+                aria-labelledby="measurement-heading"
+                data-usage-area="measurement_definition"
+              >
                 <div className="biological-setup__section-heading">
                   <div>
                     <p>2</p>
@@ -1168,7 +1285,7 @@ export function BiologicalExperimentSetup({
                     value={measurementLabel}
                     onChange={(event) => setMeasurementLabel(event.currentTarget.value)}
                   />
-                  <small>Graphの縦軸名の候補として使います。後から変更できます。</small>
+                  <small>グラフの縦軸名の候補として使います。後から変更できます。</small>
                 </label>
                 <fieldset>
                   <legend>この測定値をどの形で記録しましたか？</legend>
@@ -1279,7 +1396,11 @@ export function BiologicalExperimentSetup({
                 </section>
               </section>
 
-              <section className="biological-setup__section" aria-labelledby="combination-heading">
+              <section
+                className="biological-setup__section"
+                aria-labelledby="combination-heading"
+                data-usage-area="combination_review"
+              >
                 <div className="biological-setup__section-heading">
                   <div>
                     <p>3</p>
@@ -1340,7 +1461,11 @@ export function BiologicalExperimentSetup({
             </>
           ) : null}
 
-          <section className="biological-setup__section" aria-labelledby="material-heading">
+          <section
+            className="biological-setup__section"
+            aria-labelledby="material-heading"
+            data-usage-area="unit_relationship"
+          >
             <div className="biological-setup__section-heading">
               <div>
                 <p>{initial?.statisticsHandoff ? "1" : "4"}</p>
@@ -1367,11 +1492,15 @@ export function BiologicalExperimentSetup({
                 {(
                   [
                     ["separate", "条件ごとに別々のもの", "別dishを各1条件に割り当てた"],
-                    ["same", "まったく同じものを複数条件で測定", "同じanimalを前後で測定した"],
+                    [
+                      "same",
+                      "同じ試料・細胞を、処理前後または複数条件で繰り返し測定した",
+                      "同じanimalを処理前後で測定した",
+                    ],
                     [
                       "shared_source",
-                      "同じ材料から分けた別々のもの",
-                      "同じdonor由来の細胞を別dishへ分けた",
+                      "別々のものだが、同じ由来・実験回として対応する組がある",
+                      "同じdonor由来、または同じ実験run内のControl/Drugを別dishで行った",
                     ],
                     [
                       "unknown_or_mixed",
@@ -1398,18 +1527,18 @@ export function BiologicalExperimentSetup({
             {relationship === "shared_source" ? (
               <>
                 <label className="biological-setup__field">
-                  <span>分ける前の共通材料は？</span>
+                  <span>別々の対象を対応づける、共通の由来・実験回は？</span>
                   <input
-                    placeholder="例：donor、元の細胞懸濁液"
+                    placeholder="例：donor、実験run、細胞調製batch"
                     value={sourceLabel}
                     onChange={(event) => setSourceLabel(event.currentTarget.value)}
                   />
                 </label>
                 {blocks.length > 1 ? (
                   <label className="biological-setup__field">
-                    <span>共通材料を分けた後に変えた処理・群分けは？</span>
+                    <span>その対応する組の中で変えた処理・群分けは？</span>
                     <select
-                      aria-label="共通材料を分けた後に変えた処理・群分け"
+                      aria-label="対応する組の中で変えた処理・群分け"
                       value={sharedSourcePairedBlockId}
                       onChange={(event) => setSharedSourcePairedBlockId(event.currentTarget.value)}
                     >
@@ -1423,7 +1552,9 @@ export function BiologicalExperimentSetup({
                         2つ以上、または共通材料との対応が一部だけ
                       </option>
                     </select>
-                    <small>例：siRNA処理後にdishへ分けてDoxを変えた場合は「Dox」です。</small>
+                    <small>
+                      例：各実験runでControl/Drugを行った場合は「Treatment」、siRNA処理後にdishへ分けてDoxを変えた場合は「Dox」です。
+                    </small>
                   </label>
                 ) : null}
               </>
@@ -1484,7 +1615,11 @@ export function BiologicalExperimentSetup({
             ) : null}
           </section>
 
-          <section className="biological-setup__section" aria-labelledby="ordered-axis-heading">
+          <section
+            className="biological-setup__section"
+            aria-labelledby="ordered-axis-heading"
+            data-usage-area="ordered_structure"
+          >
             <div className="biological-setup__section-heading">
               <div>
                 <p>{initial?.statisticsHandoff ? "2" : "5"}</p>
@@ -1525,7 +1660,8 @@ export function BiologicalExperimentSetup({
                       <tr>
                         {orderedAxisLevels.map((_, index) => (
                           <th scope="col" key={index}>
-                            値 {index + 1}
+                            {orderedAxisLabel.trim() || "値"} {index + 1}
+                            {orderedAxisUnit.trim() ? `（${orderedAxisUnit.trim()}）` : ""}
                           </th>
                         ))}
                       </tr>
@@ -1535,8 +1671,14 @@ export function BiologicalExperimentSetup({
                         {orderedAxisLevels.map((value, index) => (
                           <td key={index}>
                             <input
-                              aria-label={`順序の値 ${index + 1}`}
+                              aria-label={`${orderedAxisLabel.trim() || "順序"}の値 ${index + 1}${
+                                orderedAxisUnit.trim() ? `（${orderedAxisUnit.trim()}）` : ""
+                              }`}
                               value={value}
+                              data-spreadsheet-cell="true"
+                              data-spreadsheet-row={0}
+                              data-spreadsheet-column={index}
+                              onKeyDown={moveSpreadsheetFocus}
                               onChange={(event) => {
                                 const value = event.currentTarget.value;
                                 setOrderedAxisLevels((current) =>
@@ -1640,9 +1782,28 @@ export function BiologicalExperimentSetup({
               </>
             ) : null}
           </section>
+          <div className="biological-setup__completion" data-usage-area="setup_summary">
+            <p>入力内容を確認できたら、共通のデータ入力表へ進みます。</p>
+            <button
+              type="button"
+              className="biological-setup__submit"
+              aria-label={
+                initial?.revisionMode
+                  ? "変更を適用（入力内容の末尾）"
+                  : "入力表を作る（入力内容の末尾）"
+              }
+              onClick={submit}
+            >
+              {initial?.revisionMode ? "変更を適用" : "この内容で入力表を作る"}
+            </button>
+          </div>
         </div>
 
-        <aside className="biological-setup__rail" aria-label="現在の実験と操作">
+        <aside
+          className="biological-setup__rail"
+          aria-label="現在の実験と操作"
+          data-usage-area="setup_summary"
+        >
           <div className="biological-setup__summary" aria-live="polite">
             <strong>現在の実験</strong>
             <p>{experimentSummary}</p>

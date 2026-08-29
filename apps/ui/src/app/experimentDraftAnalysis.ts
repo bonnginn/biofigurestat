@@ -3,6 +3,8 @@ import {
   type AnalysisRecommendation,
   type AnalysisEngineRequest,
 } from "@lsaa/analysis-contracts";
+import { EntityIdSchema } from "@lsaa/domain";
+import { resolveCanonicalReadoutValue } from "@lsaa/adaptive-input";
 
 import {
   continuousSummary,
@@ -16,6 +18,13 @@ import {
   type TimeAnalysisPlan,
 } from "./experimentDraft";
 import { repeatedFactorAssessmentText } from "./repeatedFactorTerminology";
+import {
+  draftUnitIdentityCorrection,
+  incompleteMatchedSetDiagnostic,
+  pairedDifferenceCorrection,
+  type DraftAnalysisCorrection,
+  type DraftAnalysisInputDiagnostic,
+} from "./draftAnalysisDiagnostics";
 
 type StatisticalMethod = AnalysisRecommendation["recommendedMethod"];
 export type ContrastIntent =
@@ -45,12 +54,60 @@ export type DraftAnalysisAssessment = Readonly<{
   missingCount: number;
   notPlannedCount: number;
   request: AnalysisEngineRequest | null;
+  correction?: DraftAnalysisCorrection;
+  inputDiagnostics?: readonly DraftAnalysisInputDiagnostic[];
 }>;
 
 export function isDerivedTimeMetric(plan: TimeAnalysisPlan | undefined): boolean {
   return (
     plan !== undefined && plan.kind !== "selected_timepoint" && plan.kind !== "full_time_course"
   );
+}
+
+function declaredUnitIdentity(experiment: ExperimentSetDraft["experiments"][number]): string {
+  // Older projects predate stableUnitId. Their durable experiment id remains
+  // the declared identity; an explicitly cleared stableUnitId is not replaced.
+  return experiment.stableUnitId === undefined
+    ? experiment.id.trim()
+    : experiment.stableUnitId.trim();
+}
+
+function engineUnitIds(
+  experiments: ExperimentSetDraft["experiments"],
+): ReadonlyMap<string, string> {
+  const entries = experiments.map((experiment) => ({
+    experimentId: experiment.id,
+    identity: declaredUnitIdentity(experiment),
+  }));
+  const reserved = new Set(
+    entries
+      .filter(({ identity }) => EntityIdSchema.safeParse(identity).success)
+      .map(({ identity }) => identity),
+  );
+  const result = new Map<string, string>();
+  entries
+    .filter(({ identity }) => EntityIdSchema.safeParse(identity).success)
+    .forEach(({ experimentId, identity }) => result.set(experimentId, identity));
+
+  let nextIndex = 1;
+  [...entries]
+    .filter(({ identity }) => !EntityIdSchema.safeParse(identity).success)
+    .sort(
+      (first, second) =>
+        first.identity.localeCompare(second.identity) ||
+        first.experimentId.localeCompare(second.experimentId),
+    )
+    .forEach(({ experimentId }) => {
+      let candidate = `unit.draft.${nextIndex}`;
+      while (reserved.has(candidate)) {
+        nextIndex += 1;
+        candidate = `unit.draft.${nextIndex}`;
+      }
+      result.set(experimentId, candidate);
+      reserved.add(candidate);
+      nextIndex += 1;
+    });
+  return result;
 }
 
 function analysisValue(cell: ExperimentCellMap[string]): number | null {
@@ -94,10 +151,10 @@ function adaptiveIndependentExpectedUnitCount(input: {
   const selectedPoint = input.timePointId
     ? input.draft.time.points.find(({ id }) => id === input.timePointId)
     : null;
-  const relevantValueKeys =
+  const relevantComponents =
     contractReadout.representation === "scalar"
-      ? [contractReadout.key]
-      : contractReadout.componentKeys.map((component) => `${contractReadout.key}_${component}`);
+      ? contractReadout.componentKeys.slice(0, 1)
+      : contractReadout.componentKeys;
   const plannedUnits = new Map<string, boolean>();
 
   snapshot.canonicalObservations.forEach((row) => {
@@ -119,8 +176,11 @@ function adaptiveIndependentExpectedUnitCount(input: {
     if (!identity) return;
     const unitKey = `${condition.id}\u0000${identity}`;
     const rowIsNotPlanned =
-      relevantValueKeys.length > 0 &&
-      relevantValueKeys.every((key) => row.missingness[key] === "not_applicable");
+      relevantComponents.length > 0 &&
+      relevantComponents.every((component) => {
+        const resolved = resolveCanonicalReadoutValue(contractReadout, row, component);
+        return resolved.status === "resolved" && row.missingness[resolved.key] === "not_applicable";
+      });
     plannedUnits.set(unitKey, (plannedUnits.get(unitKey) ?? false) || !rowIsNotPlanned);
   });
 
@@ -360,6 +420,7 @@ export function assessDraftGraphAnalysis(input: {
       title: input.withinFactor?.title.trim() || "Time",
       unit: input.withinFactor?.unit.trim() || input.draft.time.unit,
     };
+    const engineUnitIdByExperiment = engineUnitIds(input.draft.experiments);
     if (input.draft.time.sampling === "cross_sectional") {
       const observations: Array<{
         observationId: string;
@@ -391,7 +452,8 @@ export function assessDraftGraphAnalysis(input: {
               missingCount += 1;
               return;
             }
-            const baseUnitId = experiment.stableUnitId ?? `unit.draft.${experimentIndex + 1}`;
+            const baseUnitId =
+              engineUnitIdByExperiment.get(experiment.id) ?? `unit.draft.${experimentIndex + 1}`;
             observations.push({
               observationId: `observation.draft.${conditionIndex + 1}.${timeIndex + 1}.${experimentIndex + 1}`,
               conditionId: condition.id,
@@ -514,7 +576,9 @@ export function assessDraftGraphAnalysis(input: {
           return;
         }
         completeUnits += 1;
-        const pairId = `${experiment.stableUnitId ?? `unit.draft.${experimentIndex + 1}`}.${condition.id}`;
+        const baseUnitId =
+          engineUnitIdByExperiment.get(experiment.id) ?? `unit.draft.${experimentIndex + 1}`;
+        const pairId = `${baseUnitId}.${condition.id}`;
         timePoints.forEach((timePoint, timeIndex) => {
           observations.push({
             observationId: `observation.draft.${experimentIndex + 1}.${conditionIndex + 1}.${timeIndex + 1}`,
@@ -581,7 +645,9 @@ export function assessDraftGraphAnalysis(input: {
     value: number;
     experimentalUnitId: string;
     pairId?: string;
+    sourceExperimentId: string;
   }> = [];
+  const engineUnitIdByExperiment = engineUnitIds(input.draft.experiments);
   const nByCondition = conditions.map((condition, conditionIndex) => {
     let n = 0;
     input.draft.experiments.forEach((experiment, experimentIndex) => {
@@ -616,17 +682,19 @@ export function assessDraftGraphAnalysis(input: {
         : null;
       if (value === null || !Number.isFinite(value)) return;
       n += 1;
+      const engineUnitId =
+        engineUnitIdByExperiment.get(experiment.id) ?? `unit.draft.${experimentIndex + 1}`;
+      const enginePairId = engineUnitId;
       observations.push({
         observationId: `observation.draft.${experimentIndex + 1}.${conditionIndex + 1}`,
         conditionId: condition.id,
         value,
+        sourceExperimentId: experiment.id,
         experimentalUnitId:
           input.draft.conditionAssignment.kind === "matched" && !sharedSource
-            ? (experiment.stableUnitId ?? `unit.draft.${experimentIndex + 1}`)
-            : `${experiment.stableUnitId ?? `unit.draft.${experimentIndex + 1}`}.${condition.id}`,
-        ...(input.draft.conditionAssignment.kind === "matched"
-          ? { pairId: experiment.stableUnitId ?? `unit.draft.${experimentIndex + 1}` }
-          : {}),
+            ? engineUnitId
+            : `${engineUnitId}.${condition.id}`,
+        ...(input.draft.conditionAssignment.kind === "matched" ? { pairId: enginePairId } : {}),
       });
     });
     return { conditionId: condition.id, label: condition.label, n };
@@ -657,6 +725,34 @@ export function assessDraftGraphAnalysis(input: {
   const expectedCount =
     adaptiveExpectedCount ?? conditions.length * input.draft.experiments.length - notPlannedCount;
   const missingCount = Math.max(0, expectedCount - observations.length);
+  const identityCorrection = draftUnitIdentityCorrection({
+    draft: input.draft,
+    contributingExperimentIds: new Set(
+      observations.map(({ sourceExperimentId }) => sourceExperimentId),
+    ),
+  });
+  if (identityCorrection) {
+    return {
+      state: "unsupported",
+      title: identityCorrection.title,
+      reason: identityCorrection.message,
+      method: null,
+      commonAlternative: null,
+      nByCondition,
+      missingCount,
+      notPlannedCount,
+      request: null,
+      correction: identityCorrection,
+    };
+  }
+  const incompleteMatchedDiagnostic = incompleteMatchedSetDiagnostic({
+    draft: input.draft,
+    conditions,
+    observations,
+  });
+  const inputDiagnosticProperties = incompleteMatchedDiagnostic
+    ? { inputDiagnostics: [incompleteMatchedDiagnostic] as const }
+    : {};
   const completePairIds =
     input.draft.conditionAssignment.kind === "matched"
       ? new Set(
@@ -689,6 +785,7 @@ export function assessDraftGraphAnalysis(input: {
         missingCount,
         notPlannedCount,
         request: null,
+        ...inputDiagnosticProperties,
       };
     }
     if (n < 2) {
@@ -702,6 +799,7 @@ export function assessDraftGraphAnalysis(input: {
         missingCount,
         notPlannedCount,
         request: null,
+        ...inputDiagnosticProperties,
       };
     }
     const referenceValue = input.draft.analysisIntent.referenceValue;
@@ -716,6 +814,7 @@ export function assessDraftGraphAnalysis(input: {
         missingCount,
         notPlannedCount,
         request: null,
+        ...inputDiagnosticProperties,
       };
     }
     const request = AnalysisEngineRequestSchema.parse({
@@ -751,6 +850,7 @@ export function assessDraftGraphAnalysis(input: {
       missingCount,
       notPlannedCount,
       request,
+      ...inputDiagnosticProperties,
     };
   }
 
@@ -767,6 +867,7 @@ export function assessDraftGraphAnalysis(input: {
         missingCount,
         notPlannedCount,
         request: null,
+        ...inputDiagnosticProperties,
       };
     }
     const recommendedMethod =
@@ -826,6 +927,7 @@ export function assessDraftGraphAnalysis(input: {
       missingCount,
       notPlannedCount,
       request,
+      ...inputDiagnosticProperties,
     };
   }
 
@@ -840,6 +942,7 @@ export function assessDraftGraphAnalysis(input: {
       missingCount,
       notPlannedCount,
       request: null,
+      ...inputDiagnosticProperties,
     };
   }
 
@@ -856,6 +959,7 @@ export function assessDraftGraphAnalysis(input: {
         missingCount,
         notPlannedCount,
         request: null,
+        ...inputDiagnosticProperties,
       };
     }
     const request = AnalysisEngineRequestSchema.parse({
@@ -895,6 +999,7 @@ export function assessDraftGraphAnalysis(input: {
       missingCount,
       notPlannedCount,
       request,
+      ...inputDiagnosticProperties,
     };
   }
 
@@ -911,6 +1016,7 @@ export function assessDraftGraphAnalysis(input: {
         missingCount,
         notPlannedCount,
         request: null,
+        ...inputDiagnosticProperties,
       };
     }
     const factorLevels = varyingAttributes.map((attribute) => [
@@ -920,14 +1026,36 @@ export function assessDraftGraphAnalysis(input: {
           .filter((value): value is string => Boolean(value)),
       ),
     ]);
+    const adaptiveFactorKeys = new Set(
+      input.draft.adaptiveInput?.contract.factors.map(({ key }) => key) ?? [],
+    );
+    const canonicalFactorId = (attributeId: string): string => {
+      const adaptiveKey = attributeId.startsWith("factor.")
+        ? attributeId.slice("factor.".length)
+        : "";
+      return adaptiveKey && adaptiveFactorKeys.has(adaptiveKey)
+        ? attributeId
+        : `factor.${attributeId}`;
+    };
+    const canonicalLevelId = (
+      attributeId: string,
+      levelIndex: number,
+    ): string => {
+      const adaptiveKey = attributeId.startsWith("factor.")
+        ? attributeId.slice("factor.".length)
+        : "";
+      return adaptiveKey && adaptiveFactorKeys.has(adaptiveKey)
+        ? `level.${adaptiveKey}.${levelIndex + 1}`
+        : `level.${attributeId}.${levelIndex + 1}`;
+    };
     const factorialConditions = conditions.map((condition) => {
       const levelIndexes = varyingAttributes.map((attribute, factorIndex) =>
         factorLevels[factorIndex].indexOf(condition.attributes[attribute.id]?.trim() ?? ""),
       );
       return {
         conditionId: condition.id,
-        factorALevelId: `level.${varyingAttributes[0].id}.${levelIndexes[0] + 1}`,
-        factorBLevelId: `level.${varyingAttributes[1].id}.${levelIndexes[1] + 1}`,
+        factorALevelId: canonicalLevelId(varyingAttributes[0].id, levelIndexes[0]),
+        factorBLevelId: canonicalLevelId(varyingAttributes[1].id, levelIndexes[1]),
       };
     });
     const combinations = new Set(
@@ -952,6 +1080,7 @@ export function assessDraftGraphAnalysis(input: {
         missingCount,
         notPlannedCount,
         request: null,
+        ...inputDiagnosticProperties,
       };
     }
     const request = AnalysisEngineRequestSchema.parse({
@@ -963,9 +1092,9 @@ export function assessDraftGraphAnalysis(input: {
       templateVersion: "0.1.0",
       method: "two_way_anova",
       factors: varyingAttributes.map((attribute, factorIndex) => ({
-        factorId: `factor.${attribute.id}`,
+        factorId: canonicalFactorId(attribute.id),
         levelIds: factorLevels[factorIndex].map(
-          (_level, levelIndex) => `level.${attribute.id}.${levelIndex + 1}`,
+          (_level, levelIndex) => canonicalLevelId(attribute.id, levelIndex),
         ),
       })),
       conditions: factorialConditions,
@@ -987,6 +1116,7 @@ export function assessDraftGraphAnalysis(input: {
       missingCount,
       notPlannedCount,
       request,
+      ...inputDiagnosticProperties,
     };
   }
 
@@ -1000,6 +1130,56 @@ export function assessDraftGraphAnalysis(input: {
       input.selectedMethod && supportedMethods.includes(input.selectedMethod)
         ? input.selectedMethod
         : recommendedMethod;
+    const pairedCorrection =
+      method === "paired_t"
+        ? pairedDifferenceCorrection({
+            draft: input.draft,
+            conditionIds: [conditions[0].id, conditions[1].id],
+            observations: requestObservations,
+          })
+        : null;
+    if (pairedCorrection) {
+      return {
+        state: "unsupported",
+        title: pairedCorrection.title,
+        reason: pairedCorrection.message,
+        method,
+        recommendedMethod,
+        methodChoices: [
+          {
+            method: "paired_t",
+            level: "recommended",
+            label: "対応のあるt検定",
+            explanation: "同じ実験単位内の差の平均を評価します。",
+            enabled: false,
+            unavailableReason: "すべての対応差が同じで、差の標準誤差が0です。",
+          },
+          {
+            method: "wilcoxon_signed_rank",
+            level: "alternative",
+            label: "Wilcoxonの符号付順位検定",
+            explanation:
+              "対応する差の符号と順位を使う方法です。選ぶ前に、同じ差が並んだ入力が正しいか確認してください。",
+            enabled: pairedCorrection.suggestedMethod === "wilcoxon_signed_rank",
+            ...(pairedCorrection.suggestedMethod
+              ? {}
+              : {
+                  unavailableReason:
+                    "すべての対応差が0のため、Wilcoxonの符号付順位検定も定義できません。",
+                }),
+          },
+        ],
+        commonAlternative: pairedCorrection.suggestedMethod
+          ? "入力値が正しい場合は、明示的な代替としてWilcoxonの符号付順位検定を確認できます。"
+          : null,
+        nByCondition: effectiveNByCondition,
+        missingCount,
+        notPlannedCount,
+        request: null,
+        correction: pairedCorrection,
+        ...inputDiagnosticProperties,
+      };
+    }
     const request = AnalysisEngineRequestSchema.parse({
       protocolVersion: "0.1.0",
       requestId: "request.draft.graph",
@@ -1069,6 +1249,7 @@ export function assessDraftGraphAnalysis(input: {
       missingCount,
       notPlannedCount,
       request,
+      ...inputDiagnosticProperties,
     };
   }
 
@@ -1221,5 +1402,6 @@ export function assessDraftGraphAnalysis(input: {
     missingCount,
     notPlannedCount,
     request,
+    ...inputDiagnosticProperties,
   };
 }

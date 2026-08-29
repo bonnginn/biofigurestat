@@ -20,7 +20,9 @@ import {
 
 import {
   actionErrorMessage,
+  type OpenedAnyProject,
   type OpenedProject,
+  type OpenAnyProjectAction,
   type OpenProjectAction,
   type SaveProjectAction,
 } from "../app/projectActions";
@@ -54,18 +56,25 @@ import type {
   OrderedCurveSeriesMeaning,
   OrderedCurveSeriesParentRelationship,
 } from "@lsaa/adaptive-input";
+import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 
 type OpenProjectPageProps = {
   onNavigate: (route: AppRoute) => void;
   openProject: OpenProjectAction;
+  openAnyProject?: OpenAnyProjectAction;
   openLegacyProject?: OpenProjectAction;
   persistedProject?: OpenedProject | null;
   onProjectOpened?: (project: OpenedProject) => void;
+  onAnyProjectOpened?: (project: OpenedAnyProject) => void;
   saveProject?: SaveProjectAction;
   onReuseDesign?: (draft: ExperimentSetDraft) => void;
   onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
   autoOpen?: boolean;
   initialError?: string | null;
+  onDirtyChange?: (dirty: boolean) => void;
+  onOpenProject?: () => void;
+  onRequestExit?: RequestWorkspaceExit;
+  onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
 };
 
 function orderedCurveReopenState(
@@ -184,12 +193,20 @@ function PersistedProjectView({
   onBack,
   onReuseDesign,
   onSaveFavorite,
+  onDirtyChange,
+  onOpenProject,
+  onRequestExit,
+  onRegisterSaveHandler,
 }: {
   project: OpenedProject;
   saveProject?: SaveProjectAction;
   onBack: () => void;
   onReuseDesign?: (draft: ExperimentSetDraft) => void;
   onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
+  onDirtyChange?: (dirty: boolean) => void;
+  onOpenProject?: () => void;
+  onRequestExit?: RequestWorkspaceExit;
+  onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
 }) {
   const { state } = project;
   const [editingOrderedCurve, setEditingOrderedCurve] = useState(false);
@@ -206,6 +223,10 @@ function PersistedProjectView({
         onBack={onBack}
         onReuseDesign={onReuseDesign}
         onSaveFavorite={onSaveFavorite}
+        onDirtyChange={onDirtyChange}
+        onOpenProject={onOpenProject}
+        onRequestExit={onRequestExit}
+        onRegisterSaveHandler={onRegisterSaveHandler}
       />
     );
   }
@@ -258,6 +279,10 @@ function PersistedProjectView({
         initialDraft={orderedCurveReopen.draft}
         entryIntent={orderedCurveReopen.entryIntent}
         initialProject={project}
+        onDirtyChange={onDirtyChange}
+        onOpenProject={onOpenProject}
+        onRequestExit={onRequestExit}
+        onRegisterSaveHandler={onRegisterSaveHandler}
       />
     );
   }
@@ -404,6 +429,10 @@ function PersistedProjectView({
           state.adaptiveInput.rawLineage?.rawText ?? adaptiveSurvivalPaste(state.adaptiveInput)
         }
         adaptiveInput={state.adaptiveInput}
+        onDirtyChange={onDirtyChange}
+        onOpenProject={onOpenProject}
+        onRequestExit={onRequestExit}
+        onRegisterSaveHandler={onRegisterSaveHandler}
       />
     );
   }
@@ -476,6 +505,9 @@ function PersistedProjectView({
           saveProject={saveProject}
           initialProject={project}
           onBack={onBack}
+          onDirtyChange={onDirtyChange}
+          onRequestExit={onRequestExit}
+          onRegisterSaveHandler={onRegisterSaveHandler}
         />
       );
     }
@@ -503,6 +535,9 @@ function PersistedProjectView({
         saveProject={saveProject}
         initialProject={project}
         onBack={onBack}
+        onDirtyChange={onDirtyChange}
+        onRequestExit={onRequestExit}
+        onRegisterSaveHandler={onRegisterSaveHandler}
       />
     );
   } catch (error) {
@@ -518,14 +553,20 @@ function PersistedProjectView({
 export function OpenProjectPage({
   onNavigate,
   openProject,
+  openAnyProject,
   openLegacyProject,
   persistedProject,
   onProjectOpened,
+  onAnyProjectOpened,
   saveProject,
   onReuseDesign,
   onSaveFavorite,
   autoOpen = false,
   initialError = null,
+  onDirtyChange,
+  onOpenProject,
+  onRequestExit,
+  onRegisterSaveHandler,
 }: OpenProjectPageProps) {
   const [status, setStatus] = useState<"idle" | "opening" | "success" | "error">(
     initialError ? "error" : "idle",
@@ -538,15 +579,34 @@ export function OpenProjectPage({
     setStatus("opening");
     setMessage(null);
     try {
-      const project = await openProject();
-      if (project === null) {
+      let opened: OpenedAnyProject | null;
+      if (openAnyProject) {
+        opened = await openAnyProject();
+      } else {
+        const project = await openProject();
+        opened = project ? { kind: "experiment", project } : null;
+      }
+      if (opened === null) {
         setStatus("idle");
         return;
       }
-      setOpenedProject(project);
-      onProjectOpened?.(project);
+      if (opened.kind !== "experiment") {
+        if (!onAnyProjectOpened) {
+          throw new Error("この環境では、この入力途中projectの表示先がありません。");
+        }
+        onAnyProjectOpened(opened);
+        setStatus("success");
+        setMessage(
+          opened.kind === "unresolved_visualization"
+            ? `${opened.project.state.metadata.projectName} を開き、入力表とGraph設定を復元しました。`
+            : `${opened.project.state.metadata.projectName} を開き、入力途中の表と回答を復元しました。`,
+        );
+        return;
+      }
+      setOpenedProject(opened.project);
+      onProjectOpened?.(opened.project);
       setStatus("success");
-      setMessage(`${project.state.metadata.projectName} を開き、整合性を確認しました。`);
+      setMessage(`${opened.project.state.metadata.projectName} を開き、整合性を確認しました。`);
     } catch (error) {
       setStatus("error");
       setMessage(
@@ -556,7 +616,7 @@ export function OpenProjectPage({
         ),
       );
     }
-  }, [onProjectOpened, openProject]);
+  }, [onAnyProjectOpened, onProjectOpened, openAnyProject, openProject]);
 
   const handleLegacyOpen = useCallback(async () => {
     if (!openLegacyProject) return;
@@ -595,6 +655,10 @@ export function OpenProjectPage({
         onBack={() => onNavigate("home")}
         onReuseDesign={onReuseDesign}
         onSaveFavorite={onSaveFavorite}
+        onDirtyChange={onDirtyChange}
+        onOpenProject={onOpenProject}
+        onRequestExit={onRequestExit}
+        onRegisterSaveHandler={onRegisterSaveHandler}
       />
     );
   }

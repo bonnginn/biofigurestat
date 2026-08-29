@@ -441,7 +441,11 @@ describe("ExperimentWorkspace non-destructive structure revision", () => {
     );
 
     editStructure();
-    expect(screen.getAllByRole("checkbox", { name: /値をまとまり別に表示する/ })[0]).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", {
+        name: "処理・群分け 1（siRNA）に親グループ列を追加する",
+      }),
+    ).toBeChecked();
     expect(screen.getByRole("textbox", { name: "siRNA：行 1のまとまり" })).toHaveValue("Control");
     expect(screen.getByRole("textbox", { name: "siRNA：行 2のまとまり" })).toHaveValue("Gene A");
     expect(screen.getByRole("textbox", { name: "siRNA：行 2 列 1" })).toHaveValue("#1");
@@ -496,10 +500,10 @@ describe("ExperimentWorkspace non-destructive structure revision", () => {
         onBack={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
+    fireEvent.click(screen.getByRole("button", { name: "1測定1行" }));
     const expanded = screen.getByRole("table", { name: "すべての値を表示" });
-    expect(within(expanded).getByText("Dish-1")).toBeVisible();
-    expect(within(expanded).getByText("Dish-2")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("Dish-1")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("Dish-2")).toBeVisible();
     expect(
       [...expanded.querySelectorAll('[data-column-role="source_row"]')].map(
         (cell) => cell.textContent,
@@ -531,7 +535,7 @@ describe("ExperimentWorkspace non-destructive structure revision", () => {
     ).toContainElement(document.activeElement as HTMLElement);
     fireEvent.click(screen.getByRole("button", { name: "変更せず戻る" }));
     expect(screen.getByRole("button", { name: "実験の組み立てを修正" })).toHaveFocus();
-    fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
+    fireEvent.click(screen.getByRole("button", { name: "1測定1行" }));
     expect(screen.getByRole("table", { name: "すべての値を表示" })).toHaveTextContent("Control");
   });
 

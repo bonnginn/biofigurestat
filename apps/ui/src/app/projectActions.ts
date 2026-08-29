@@ -1,4 +1,8 @@
-import type { ProjectState, UnresolvedVisualizationProjectState } from "@lsaa/project";
+import type {
+  ProjectState,
+  SpecializedEntryDraftProjectState,
+  UnresolvedVisualizationProjectState,
+} from "@lsaa/project";
 
 /**
  * The only state a desktop save adapter may receive is a fully validated
@@ -36,6 +40,40 @@ export type SaveUnresolvedVisualizationProjectAction = (
   existingTarget?: string,
 ) => Promise<OpenedUnresolvedVisualizationProject | null>;
 
+/** An editable safe-stop from a dedicated Survival or ordered-curve entry. */
+export type OpenedSpecializedEntryDraftProject = Readonly<{
+  state: SpecializedEntryDraftProjectState;
+  target: string;
+}>;
+
+export type SaveSpecializedEntryDraftProjectAction = (
+  request: SpecializedEntryDraftProjectState,
+  existingTarget?: string,
+) => Promise<OpenedSpecializedEntryDraftProject | null>;
+
+/**
+ * A single .lsa open operation may yield an authoritative experiment, a
+ * deliberately unresolved visualization/table, or an editable safe-stop from
+ * a dedicated entry. The validated manifest discriminator is authoritative;
+ * callers must not infer a design from retained table contents.
+ */
+export type OpenedAnyProject =
+  | Readonly<{
+      kind: "experiment";
+      project: OpenedProject;
+    }>
+  | Readonly<{
+      kind: "unresolved_visualization";
+      project: OpenedUnresolvedVisualizationProject;
+    }>
+  | Readonly<{
+      kind: "specialized_entry_draft";
+      project: OpenedSpecializedEntryDraftProject;
+    }>;
+
+export type OpenAnyProjectAction = () => Promise<OpenedAnyProject | null>;
+export type OpenAnyProjectTargetAction = (target: string) => Promise<OpenedAnyProject>;
+
 export type ProjectActions = Readonly<{
   openProject: OpenProjectAction;
   openLegacyProject?: OpenProjectAction;
@@ -43,6 +81,11 @@ export type ProjectActions = Readonly<{
   saveProject?: SaveProjectAction;
   openUnresolvedVisualizationProject?: OpenUnresolvedVisualizationProjectAction;
   saveUnresolvedVisualizationProject?: SaveUnresolvedVisualizationProjectAction;
+  saveSpecializedEntryDraftProject?: SaveSpecializedEntryDraftProjectAction;
+  /** Opens one .lsa picker and dispatches the validated manifest kind. */
+  openAnyProject?: OpenAnyProjectAction;
+  /** Opens a known target using the same kind-dispatching reader. */
+  openAnyProjectTarget?: OpenAnyProjectTargetAction;
 }>;
 
 /**

@@ -22,6 +22,12 @@
   --violet: #8066dc;
   --green: #42a585;
   --orange: #dd8a50;
+  /* Global stacking contract. Feature workspaces stay below these layers. */
+  --layer-workspace-toolbar: 20;
+  --layer-global-header: 100;
+  --layer-global-panel: 900;
+  --layer-global-modal: 1000;
+  --layer-unsaved-guard: 1200;
 }
 
 .analysis-route-switcher {
@@ -33,6 +39,65 @@
   border: 1px solid #d7e1ea;
   border-radius: 12px;
   background: #f8fafc;
+}
+
+.workspace-mode-tabs {
+  position: relative;
+  z-index: var(--layer-workspace-toolbar);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 5px;
+  overflow-x: auto;
+  border: 1px solid #d3dde8;
+  border-radius: 10px;
+  background: #f7f9fc;
+  box-shadow: 0 2px 8px rgb(35 50 75 / 6%);
+  scrollbar-width: thin;
+}
+
+.workspace-mode-tabs > button,
+.workspace-mode-tabs > a {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #43566d;
+  background: transparent;
+  font: inherit;
+  font-weight: 720;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.workspace-mode-tabs > button:not(:disabled),
+.workspace-mode-tabs > a {
+  cursor: pointer;
+}
+
+.workspace-mode-tabs > button:not(:disabled):hover,
+.workspace-mode-tabs > a:hover {
+  border-color: #c8d6e5;
+  color: #244d72;
+  background: #fff;
+}
+
+.workspace-mode-tabs > button:focus-visible,
+.workspace-mode-tabs > a:focus-visible {
+  outline: 3px solid rgb(71 121 232 / 42%);
+  outline-offset: 1px;
+}
+
+.workspace-mode-tabs > button:disabled {
+  color: #8994a2;
+  background: #eef1f4;
+  cursor: not-allowed;
 }
 
 .analysis-route-switcher > span {
@@ -344,6 +409,8 @@ button:focus-visible {
 }
 
 .topbar {
+  position: relative;
+  z-index: var(--layer-global-header);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -473,6 +540,13 @@ button:focus-visible {
   width: 100%;
   max-width: none;
   padding: 24px clamp(18px, 2.5vw, 38px) 52px;
+}
+
+/* Route headings receive programmatic focus so screen readers announce the
+ * new page. They are not interactive controls, so suppress the browser's
+ * default black focus rectangle while retaining the focus itself. */
+.main-content h1[tabindex="-1"]:focus {
+  outline: none;
 }
 
 .persisted-project-view {
@@ -1495,6 +1569,21 @@ h3 {
   background: #eaf0ff;
   font-family: Georgia, serif;
   font-size: 1rem;
+}
+
+/* A normal split-screen or laptop-sized native window cannot fit the full
+ * product subtitle, environment status, two route labels, and utility menus
+ * on one line. Keep the actions intact and remove only redundant header copy
+ * before the controls start wrapping. */
+@media (max-width: 1120px) {
+  .topbar {
+    padding-inline: 24px;
+  }
+
+  .brand-subtitle,
+  .topbar-status {
+    display: none;
+  }
 }
 
 @media (max-width: 930px) {

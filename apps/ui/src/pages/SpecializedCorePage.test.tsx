@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { createUnresolvedVisualizationProjectState, ProjectStateSchema } from "@lsaa/project";
 import type * as BenchmarkEvaluation from "../app/benchmarkEvaluation";
+import type * as SpecializedGraphExport from "../app/specializedGraphExport";
 import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
 import type {
   OpenedUnresolvedVisualizationProject,
@@ -10,12 +11,26 @@ import type {
 } from "../app/projectActions";
 import type { SpecializedCoreDraft } from "../app/specializedAnalysisDrafts";
 import { createTimeToEventContractProjection } from "../app/timeToEventProjection";
+import type { RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import { SpecializedCorePage } from "./SpecializedCorePage";
 
 const recordBenchmarkEvent = vi.hoisted(() => vi.fn());
+const recordUsageMilestone = vi.hoisted(() => vi.fn());
+const recordUsageGraphEdit = vi.hoisted(() => vi.fn());
+const recordUsageGraphConfiguration = vi.hoisted(() => vi.fn());
+const exportRenderedGraphPng = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock("../app/benchmarkEvaluation", async (importOriginal) => ({
   ...(await importOriginal<typeof BenchmarkEvaluation>()),
   recordBenchmarkEvent,
+}));
+vi.mock("../app/specializedGraphExport", async (importOriginal) => ({
+  ...(await importOriginal<typeof SpecializedGraphExport>()),
+  exportRenderedGraphPng,
+}));
+vi.mock("../app/usageTelemetry", () => ({
+  recordUsageGraphConfiguration,
+  recordUsageGraphEdit,
+  recordUsageMilestone,
 }));
 
 const survivalExample = [
@@ -57,14 +72,69 @@ const expandAdaptiveStatistics = () =>
   fireEvent.click(screen.getByRole("button", { name: "統計解析を設定" }));
 
 describe("specialized Core entry pages", () => {
+  it("development audit switcher routes through the workspace exit guard", () => {
+    const onNavigate = vi.fn();
+    const onDirtyChange = vi.fn();
+    const requests: Parameters<RequestWorkspaceExit>[0][] = [];
+    const onRequestExit: RequestWorkspaceExit = (request) => {
+      requests.push(request);
+    };
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        onNavigate={onNavigate}
+        analysisRouteSwitcherAccess="development_audit"
+        onDirtyChange={onDirtyChange}
+        onRequestExit={onRequestExit}
+      />,
+    );
+
+    fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
+      target: { value: "heatmap" },
+    });
+
+    expect(onNavigate).not.toHaveBeenCalled();
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.actionLabel).toBe("別の専門解析へ切り替える");
+    requests[0]?.proceed();
+    expect(onDirtyChange).toHaveBeenCalledWith(false);
+    expect(onNavigate).toHaveBeenCalledWith("heatmap");
+  });
+
   it("browser previewでは利用できないproject保存をdisabledで示す", () => {
     render(<SpecializedCorePage mode="survival" onBack={vi.fn()} />);
     expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
   });
 
+  it("does not treat opening the optional statistics disclosure as unsaved scientific work", async () => {
+    const onDirtyChange = vi.fn();
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        entryIntent={cellTimeToEventIntent}
+        initialText={survivalExample}
+        onDirtyChange={onDirtyChange}
+      />,
+    );
+
+    await waitFor(() => expect(onDirtyChange).toHaveBeenCalledWith(false));
+    fireEvent.click(screen.getByRole("button", { name: "統計解析を設定" }));
+
+    expect(onDirtyChange).not.toHaveBeenCalledWith(true);
+
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(true));
+  });
+
   it("keeps the direct survival route empty until the researcher explicitly loads an example", () => {
     render(<SpecializedCorePage mode="survival" onBack={vi.fn()} analysisRunner={vi.fn()} />);
     expect(screen.getByText("専門解析")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "生存時間" })).toBeVisible();
+    expect(screen.getByText(/生存時間（time-to-event）/)).toBeVisible();
     expect(screen.queryByLabelText("time-to-eventの1行と独立した実験例の関係")).toBeNull();
     expect(screen.getByLabelText("Survival data")).toHaveValue(
       "Unit ID\tGroup\tFollow-up time\tStatus",
@@ -78,6 +148,21 @@ describe("specialized Core entry pages", () => {
     expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
     expect(screen.queryByText(/Records at risk/iu)).toBeNull();
     expect(screen.getByText("Number at risk")).toBeVisible();
+  });
+
+  it("Case 5 PNG export reports rasterization failure without replacing the rendered Graph", async () => {
+    exportRenderedGraphPng.mockRejectedValueOnce(new Error("rasterization failed"));
+    render(<SpecializedCorePage mode="survival" onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "入力形式の例を読み込む（合成値）" }));
+    const graph = await screen.findByRole("img", { name: "Kaplan–Meier survival graph" });
+
+    fireEvent.click(screen.getByRole("button", { name: "PNGを書き出す" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "PNGを書き出せませんでした。GraphとSVG書き出しは利用できます。",
+    );
+    expect(graph).toBeVisible();
+    expect(exportRenderedGraphPng).toHaveBeenCalledWith(graph, "survival.png");
   });
 
   it("shows the Graph before statistics while an unresolved or nested row grain stays out of n", () => {
@@ -639,7 +724,10 @@ describe("specialized Core entry pages", () => {
   });
 
   it("shows a matrix paste as a heatmap and keeps an explicit transform control", async () => {
-    const saveUnresolvedVisualizationProject = vi.fn<SaveUnresolvedVisualizationProjectAction>();
+    recordUsageGraphConfiguration.mockClear();
+    const saveUnresolvedVisualizationProject = vi.fn<SaveUnresolvedVisualizationProjectAction>(
+      async (state, target) => ({ state, target: target ?? "C:/tmp/heatmap.lsa" }),
+    );
     render(
       <SpecializedCorePage
         mode="heatmap"
@@ -648,6 +736,12 @@ describe("specialized Core entry pages", () => {
       />,
     );
     expect(screen.getByRole("heading", { level: 1, name: "ヒートマップ" })).toBeVisible();
+    expect(screen.getByRole("navigation", { name: "プロジェクトワークスペース" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "データ" })).toHaveAttribute("href", "#heatmap-data");
+    expect(screen.getByRole("link", { name: "グラフ" })).toHaveAttribute("href", "#heatmap-graph");
+    expect(screen.getByRole("button", { name: "統計" })).toBeDisabled();
+    expect(screen.getByRole("heading", { level: 2, name: "データ" })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 2, name: "グラフ" })).toBeVisible();
     expect(screen.getByText("値の変換")).toBeVisible();
     expect(screen.getByRole("option", { name: "変換しない" })).toBeVisible();
     expect(screen.getByLabelText("Matrix data")).toHaveValue("");
@@ -658,6 +752,15 @@ describe("specialized Core entry pages", () => {
     fireEvent.change(screen.getByLabelText("Matrix data"), { target: { value: matrix } });
 
     expect(screen.getByRole("img", { name: "Heatmap" })).toBeVisible();
+    await waitFor(() =>
+      expect(recordUsageGraphConfiguration).toHaveBeenCalledWith("home", {
+        graphFamily: "heatmap",
+        origin: "dedicated_entry",
+        uncertainty: "none",
+        rawPointsVisible: false,
+        summaryVisible: false,
+      }),
+    );
     expect(screen.getByLabelText("Heatmap transform")).toHaveValue("none");
     expect(document.querySelector('[data-missing="true"]')).not.toBeNull();
     fireEvent.change(screen.getByLabelText("Heatmap transform"), {
@@ -668,6 +771,7 @@ describe("specialized Core entry pages", () => {
     expect(screen.getByText(/行列の列を生物学的な独立例とみなさず/)).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
     await waitFor(() => expect(saveUnresolvedVisualizationProject).toHaveBeenCalledOnce());
+    expect(recordUsageMilestone).toHaveBeenCalledWith("home", "project_saved");
     const savedState = saveUnresolvedVisualizationProject.mock.calls[0]![0];
     expect(savedState.projectKind).toBe("unresolved_visualization");
     expect(savedState.entryIntent).toBe("matrix_visualization");
@@ -765,6 +869,7 @@ describe("specialized Core entry pages", () => {
   it("saves and reopens an unresolved heatmap matrix with its graph settings", async () => {
     const matrix = "Feature\tSample A\tSample B\nProtein A\t1\t2\nProtein B\t3\t5";
     let persisted: OpenedUnresolvedVisualizationProject | null = null;
+    const onDirtyChange = vi.fn();
     const saveUnresolvedVisualizationProject = vi.fn<SaveUnresolvedVisualizationProjectAction>(
       async (state, target) => {
         persisted = { state, target: target ?? "C:/tmp/heatmap.lsa" };
@@ -778,6 +883,7 @@ describe("specialized Core entry pages", () => {
         onBack={vi.fn()}
         saveUnresolvedVisualizationProject={saveUnresolvedVisualizationProject}
         openUnresolvedVisualizationProject={openUnresolvedVisualizationProject}
+        onDirtyChange={onDirtyChange}
       />,
     );
     fireEvent.change(screen.getByLabelText("Matrix data"), { target: { value: matrix } });
@@ -799,6 +905,8 @@ describe("specialized Core entry pages", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "保存済みHeatmap projectを開く" }));
     await waitFor(() => expect(openUnresolvedVisualizationProject).toHaveBeenCalledOnce());
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+    expect(recordUsageMilestone).toHaveBeenCalledWith("home", "project_opened");
     expect(screen.getByLabelText("Matrix data")).toHaveValue(matrix);
     expect(screen.getByLabelText("Heatmap transform")).toHaveValue("column_z_score");
     expect(screen.getByLabelText("Heatmap color minimum")).toHaveValue(0);
@@ -829,7 +937,35 @@ describe("specialized Core entry pages", () => {
     expect(revised.rawLineage).toEqual(firstSaved.rawLineage);
   });
 
+  it("routes the secondary Heatmap open action through unsaved-exit protection", async () => {
+    const openUnresolvedVisualizationProject = vi.fn(async () => null);
+    const onRequestExit = vi.fn<RequestWorkspaceExit>();
+    render(
+      <SpecializedCorePage
+        mode="heatmap"
+        onBack={vi.fn()}
+        initialText="Feature\tSample A\tSample B\nProtein A\t1\t2"
+        openUnresolvedVisualizationProject={openUnresolvedVisualizationProject}
+        onRequestExit={onRequestExit}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "保存済みHeatmap projectを開く" }));
+
+    expect(onRequestExit).toHaveBeenCalledOnce();
+    expect(openUnresolvedVisualizationProject).not.toHaveBeenCalled();
+    const requestedExit = onRequestExit.mock.calls[0]?.[0];
+    expect(requestedExit).toBeDefined();
+    if (!requestedExit) throw new Error("Heatmap open did not request an exit");
+    expect(requestedExit.actionLabel).toBe("別のHeatmap projectを開く");
+    await act(async () => {
+      await requestedExit.proceed();
+    });
+    expect(openUnresolvedVisualizationProject).toHaveBeenCalledOnce();
+  });
+
   it("runs a D11 request from explicit Event/Censored paste", async () => {
+    recordUsageMilestone.mockClear();
     const analysisRunner = vi.fn(async (request) => ({
       protocolVersion: "0.8.0" as const,
       requestId: request.requestId,
@@ -879,11 +1015,13 @@ describe("specialized Core entry pages", () => {
       ),
     );
     expect(await screen.findByText(/log-rank検定が完了/u)).toBeVisible();
-    expect(screen.getByText("log-rank: χ²(1) = 1.2, p = 0.27")).toBeVisible();
+    expect(
+      screen.getByText("Control vs Treatment · log-rank: χ²(1) = 1.2, p = 0.27"),
+    ).toBeVisible();
     fireEvent.click(screen.getByRole("checkbox", { name: /保存済みlog-rank結果/ }));
     expect(
       screen
-        .getAllByText("log-rank: χ²(1) = 1.2, p = 0.27")
+        .getAllByText("Control vs Treatment · log-rank: χ²(1) = 1.2, p = 0.27")
         .find((element) => element.getAttribute("data-graph-layer") === "statistics-annotation"),
     ).toBeVisible();
     expect(screen.getByText(/event=1、censored=1/u)).toBeInTheDocument();
@@ -895,5 +1033,86 @@ describe("specialized Core entry pages", () => {
         protocolVersion: "0.8.0",
       }),
     );
+    expect(recordUsageMilestone).toHaveBeenCalledWith("home", "statistics_requested");
+    expect(recordUsageMilestone).toHaveBeenCalledWith("home", "statistics_completed");
+    expect(recordUsageMilestone).not.toHaveBeenCalledWith("home", "safe_stop");
+  });
+
+  it("rounds log-rank values only for researcher display and saves full engine precision", async () => {
+    const exactStatistic = 1.23456789;
+    const exactPValue = 0.2718281828;
+    const analysisRunner = vi.fn(async (request) => ({
+      protocolVersion: "0.8.0" as const,
+      requestId: request.requestId,
+      status: "ok" as const,
+      engine: { name: "fixture", version: "0.10.0", packages: {} },
+      estimates: [],
+      tests: [
+        {
+          name: "log_rank",
+          statisticName: "chi-square",
+          statistic: exactStatistic,
+          degreesOfFreedom: [1],
+          pValue: exactPValue,
+          adjustedPValue: null,
+          effectSizeName: null,
+          effectSize: null,
+        },
+      ],
+      survival: {
+        groups: [
+          {
+            conditionId: "condition.1",
+            n: 2,
+            events: 1,
+            censored: 1,
+            curve: [],
+            censorTimes: [7],
+          },
+          {
+            conditionId: "condition.2",
+            n: 2,
+            events: 1,
+            censored: 1,
+            curve: [],
+            censorTimes: [9],
+          },
+        ],
+      },
+      diagnostics: [],
+      warnings: [],
+      completedAt: "2026-08-28T00:00:00.000Z",
+    }));
+    let savedState: Parameters<SaveProjectAction>[0] | null = null;
+    const saveProject = vi.fn<SaveProjectAction>(async (state) => {
+      savedState = state;
+      return { state, target: "C:/tmp/log-rank-precision.lsa" };
+    });
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        analysisRunner={analysisRunner}
+        saveProject={saveProject}
+        entryIntent={cellTimeToEventIntent}
+        initialText={survivalExample}
+      />,
+    );
+    expandAdaptiveStatistics();
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" }));
+
+    expect(
+      await screen.findByText("Control vs Treatment · log-rank: χ²(1) = 1.235, p = 0.272"),
+    ).toBeVisible();
+    expect(screen.queryByText(String(exactPValue))).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
+    const saved = ProjectStateSchema.parse(savedState);
+    expect(saved.analysisRuns.at(-1)?.result.tests[0]?.statistic).toBe(exactStatistic);
+    expect(saved.analysisRuns.at(-1)?.result.tests[0]?.pValue).toBe(exactPValue);
   });
 });

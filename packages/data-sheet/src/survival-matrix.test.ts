@@ -4,6 +4,17 @@ import { parseMatrixPaste } from "./matrix";
 import { parseSurvivalPaste } from "./survival";
 
 describe("survival spreadsheet paste", () => {
+  it("accepts natural animal experiment headers and a unit suffix", () => {
+    expect(
+      parseSurvivalPaste(
+        "Animal ID,Treatment,Follow-up time (day),Outcome\na1,Vehicle,4,Event\na2,Drug,9,Censored",
+      ),
+    ).toEqual([
+      expect.objectContaining({ unitId: "a1", conditionId: "Vehicle", followUpTime: 4 }),
+      expect.objectContaining({ unitId: "a2", conditionId: "Drug", followUpTime: 9 }),
+    ]);
+  });
+
   it("parses Event/Censored labels and retains optional metadata", () => {
     const rows = parseSurvivalPaste(
       "Unit ID\tGroup\tFollow-up time\tStatus\tSex\nmouse-1\tControl\t4\tEvent\tF\nmouse-2\tControl\t7\tCensored\tM",

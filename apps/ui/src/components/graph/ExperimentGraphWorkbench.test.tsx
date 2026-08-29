@@ -24,6 +24,15 @@ import {
   repeatedAxisAnnotationLabel,
 } from "./ExperimentGraphWorkbench";
 
+function readBlobText(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(reader.error ?? new Error("Blob could not be read"));
+    reader.readAsText(blob);
+  });
+}
+
 describe("repeated-axis scientific wording", () => {
   it("uses the explicit numeric axis title instead of time", () => {
     expect(repeatedAxisAnnotationLabel({ xSemantic: "numeric_covariate", xTitle: "Radius" })).toBe(
@@ -80,6 +89,26 @@ describe("repeated-axis scientific wording", () => {
         "condition × Radius interaction · mixed ANOVA",
       ),
     ).toBe("Radius main effect · mixed ANOVA");
+  });
+
+  it("names an ordinary two-group result by its groups rather than its engine test ID", () => {
+    const draft = withTwoConditions(createExperimentSetDraft("cell_culture", "proportion"));
+    expect(
+      analysisTestAnnotationLabel(
+        {
+          name: "wilcoxon_signed_rank_test",
+          statisticName: "W",
+          statistic: 4,
+          degreesOfFreedom: [],
+          pValue: 0.031,
+          adjustedPValue: null,
+          effectSizeName: null,
+          effectSize: null,
+        },
+        draft,
+        "wilcoxon_signed_rank_test",
+      ),
+    ).toBe("Control vs Treatment · Wilcoxon signed-rank");
   });
 });
 
@@ -379,6 +408,41 @@ describe("ExperimentGraphWorkbench", () => {
     ).toBe(true);
   });
 
+  it("Treatment階層見出しの先頭をSVG内とexport viewBox内に確保する", () => {
+    const fixture = simpleThreeGroupFixture();
+    const draft: ExperimentSetDraft = {
+      ...fixture.draft,
+      attributes: [{ ...fixture.draft.attributes[0]!, label: "Treatment" }],
+    };
+    render(<ExperimentGraphWorkbench draft={draft} cells={fixture.cells} onClose={vi.fn()} />);
+
+    const svg = screen.getByRole("img", {
+      name: /実験単位ごとのグラフ/,
+    }) as unknown as SVGSVGElement;
+    const heading = [
+      ...svg.querySelectorAll<SVGTextElement>(".experiment-graph-hierarchy-heading"),
+    ].find((node) => node.textContent === "Treatment");
+    expect(heading).toBeDefined();
+    const estimatedTreatmentWidth = "Treatment".length * 17 * 0.58;
+    expect(Number(heading?.getAttribute("x")) - estimatedTreatmentWidth).toBeGreaterThan(8);
+    expect(Number(svg.dataset.leftMargin)).toBeGreaterThan(88);
+    const yAxisTitle = svg.querySelector<SVGTextElement>(".experiment-graph-axis-title");
+    expect(Number(yAxisTitle?.getAttribute("x"))).toBe(Number(svg.dataset.leftMargin) - 48);
+
+    const exported = serializeGraphSvg(svg);
+    const exportedSvg = new DOMParser().parseFromString(exported, "image/svg+xml");
+    expect(exportedSvg.querySelector("parsererror")).toBeNull();
+    const exportedHeading = [
+      ...exportedSvg.querySelectorAll<SVGTextElement>(".experiment-graph-hierarchy-heading"),
+    ].find((node) => node.textContent === "Treatment");
+    expect(exportedHeading).not.toBeUndefined();
+    expect(Number(exportedHeading?.getAttribute("x"))).toBe(Number(heading?.getAttribute("x")));
+    expect(exportedSvg.documentElement.getAttribute("data-left-margin")).toBe(
+      svg.dataset.leftMargin,
+    );
+    expect(exportedSvg.documentElement.getAttribute("viewBox")).toBe(svg.getAttribute("viewBox"));
+  });
+
   it("4群の長い条件名を階層文字15px/18pxで重ねず、必要以上に引き延ばさない", () => {
     const { draft, cells } = longLabelFourGroupFixture();
     render(<ExperimentGraphWorkbench draft={draft} cells={cells} onClose={vi.fn()} />);
@@ -443,11 +507,19 @@ describe("ExperimentGraphWorkbench", () => {
     selectInspectorTarget("statistics");
     expect(within(workbench).getByRole("button", { name: "選択した解析を実行" })).toBeDisabled();
     expect(within(workbench).getByText("Welchの2標本t検定を推奨")).toBeVisible();
+    expect(within(workbench).getByRole("button", { name: "グラフをコピー" })).toBeEnabled();
     expect(within(workbench).getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
+    expect(within(workbench).getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();
+    expect(within(workbench).getByRole("button", { name: "表示データCSV" })).toBeEnabled();
     expect(workbench).not.toHaveTextContent(/D0\d|D10/);
 
     const exportActions = within(workbench).getByLabelText("グラフの書き出し");
-    expect(getComputedStyle(exportActions).width).toBe("198px");
+    expect(getComputedStyle(exportActions).width).toBe("262px");
+    expect(
+      within(exportActions)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
+    ).toEqual(["コピー", "SVG", "PNG", "CSV"]);
     within(exportActions)
       .getAllByRole("button")
       .forEach((button) => expect(getComputedStyle(button).whiteSpace).toBe("nowrap"));
@@ -468,6 +540,108 @@ describe("ExperimentGraphWorkbench", () => {
 
     fireEvent.click(within(workbench).getByRole("button", { name: "閉じる" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("現在表示中のSVGを白背景PNGへ書き出す", async () => {
+    const { draft, cells } = proportionFixture();
+    const objectUrls: Blob[] = [];
+    const createObjectUrl = vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+      objectUrls.push(blob as Blob);
+      return `blob:graph-${objectUrls.length}`;
+    });
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const fillRect = vi.fn();
+    const drawImage = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+      save: vi.fn(),
+      fillStyle: "",
+      fillRect,
+      restore: vi.fn(),
+      drawImage,
+    } as never);
+    vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback) => {
+      callback(new Blob(["png"], { type: "image/png" }));
+    });
+    let downloadedFilename = "";
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      downloadedFilename = this.download;
+    });
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        set src(_value: string) {
+          this.onload?.();
+        }
+      },
+    );
+
+    try {
+      render(<ExperimentGraphWorkbench draft={draft} cells={cells} onClose={vi.fn()} />);
+      const graph = screen.getByRole("img", {
+        name: /実験単位ごとのグラフ/,
+      }) as unknown as SVGSVGElement;
+      const expectedSvg = serializeGraphSvg(graph);
+
+      fireEvent.click(screen.getByRole("button", { name: "PNGを書き出す" }));
+
+      const feedback = await screen.findByText("現在のグラフを白背景のPNGで書き出しました。");
+      expect(feedback).toHaveAttribute("role", "status");
+      expect(createObjectUrl).toHaveBeenCalledTimes(2);
+      expect(await readBlobText(objectUrls[0]!)).toBe(expectedSvg);
+      expect(objectUrls[1]).toHaveProperty("type", "image/png");
+      expect(fillRect).toHaveBeenCalledWith(0, 0, expect.any(Number), expect.any(Number));
+      expect(drawImage).toHaveBeenCalledTimes(1);
+      expect(downloadedFilename).toMatch(/\.png$/);
+      expect(graph).toBeVisible();
+    } finally {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    }
+  });
+
+  it("PNG rasterization failure keeps the Graph and offers the SVG fallback", async () => {
+    const { draft, cells } = proportionFixture();
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:broken-graph");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const downloadClick = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    vi.stubGlobal(
+      "Image",
+      class {
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        set src(_value: string) {
+          this.onerror?.();
+        }
+      },
+    );
+
+    try {
+      render(<ExperimentGraphWorkbench draft={draft} cells={cells} onClose={vi.fn()} />);
+      const graph = screen.getByRole("img", {
+        name: /実験単位ごとのグラフ/,
+      }) as unknown as SVGSVGElement;
+      const renderedBeforeExport = serializeGraphSvg(graph);
+
+      fireEvent.click(screen.getByRole("button", { name: "PNGを書き出す" }));
+
+      const feedback = await screen.findByRole("alert");
+      expect(feedback).toHaveTextContent(
+        "PNGを書き出せませんでした。グラフは保持されています。SVG書き出しを利用してください。",
+      );
+      expect(screen.getByRole("img", { name: /実験単位ごとのグラフ/ })).toBe(graph);
+      expect(serializeGraphSvg(graph)).toBe(renderedBeforeExport);
+      expect(downloadClick).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
+    } finally {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    }
   });
 
   it("requires an independent-unit confirmation and runs the validated local recommendation", async () => {
@@ -504,6 +678,9 @@ describe("ExperimentGraphWorkbench", () => {
     expect(graph.querySelector('[data-graph-layer="statistics-annotation"]')).toHaveTextContent(
       "p = 0.042",
     );
+    expect(graph.querySelectorAll(".experiment-graph-stat-line")).toHaveLength(3);
+    expect(graph).not.toHaveTextContent("welch_two_sample_t_test");
+    expect(screen.getByText(/表示内容：Control vs Treatment · Welch t/)).toBeVisible();
   });
 
   it("edits a saved statistical annotation from Graph without rerunning analysis", async () => {
@@ -752,6 +929,17 @@ describe("ExperimentGraphWorkbench", () => {
         "Control vs Treatment B",
       ),
     ).toBeVisible();
+    selectInspectorTarget("annotation");
+    expect(
+      await screen.findByRole("checkbox", {
+        name: /Control vs Treatment B · planned comparison · Holm/,
+      }),
+    ).toBeChecked();
+    expect(
+      screen
+        .getByRole("img", { name: /実験単位ごとのグラフ/ })
+        .querySelector('[data-graph-layer="statistics-annotation"]'),
+    ).toHaveTextContent("p = 0.016");
 
     const annotationComparison = screen.getByRole("combobox", {
       name: "統計注釈の比較",
@@ -770,7 +958,6 @@ describe("ExperimentGraphWorkbench", () => {
     expect(plannedAnnotation).toHaveTextContent("p = 0.016");
     expect(plannedAnnotation).not.toHaveTextContent("全体 p");
 
-    selectInspectorTarget("annotation");
     fireEvent.click(screen.getByRole("button", { name: "すべての比較をまとめて注釈へ追加" }));
     expect(screen.getByRole("combobox", { name: `${plannedTestName}の配置形式` })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "この比較を注釈へ追加" }));
@@ -789,6 +976,56 @@ describe("ExperimentGraphWorkbench", () => {
         .querySelector('[data-statistics-presentation="symbol-only"]'),
     ).not.toBeNull();
     expect(screen.getByText("Adjusted p-value vs Control (Holm)")).toBeVisible();
+  });
+
+  it("shows the complete adjusted family first and keeps hidden comparisons available", async () => {
+    const { draft, cells } = simpleThreeGroupFixture();
+    const pairs = [
+      [0, 1, 0.012],
+      [1, 2, 0.034],
+      [0, 2, 0.004],
+    ] as const;
+    const runner = vi.fn<AnalysisRunner>(async (request) => ({
+      ...analysisResult,
+      protocolVersion: request.protocolVersion,
+      requestId: request.requestId,
+      tests: [
+        analysisResult.tests[0],
+        ...pairs.map(([first, second, adjustedPValue]) => ({
+          ...analysisResult.tests[0],
+          name: `games_howell:${draft.conditions[first]!.id}:${draft.conditions[second]!.id}`,
+          pValue: adjustedPValue / 2,
+          adjustedPValue,
+        })),
+      ],
+    }));
+    render(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={cells}
+        analysisRunner={runner}
+        onClose={vi.fn()}
+      />,
+    );
+
+    selectInspectorTarget("statistics");
+    fireEvent.click(screen.getByRole("checkbox", { name: /各条件は別々のdish/ }));
+    acceptRecommendedMethod();
+    fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+    await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
+    selectInspectorTarget("annotation");
+
+    const family = await screen.findByRole("group", { name: "調整済み比較の表示" });
+    const toggles = within(family).getAllByRole("checkbox");
+    expect(toggles).toHaveLength(3);
+    toggles.forEach((toggle) => expect(toggle).toBeChecked());
+    const svg = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
+    expect(svg.querySelectorAll('[data-graph-layer="statistics-annotation"]')).toHaveLength(3);
+    expect(svg).toHaveAttribute("data-statistics-bracket-levels", "3");
+
+    fireEvent.click(toggles[1]!);
+    expect(within(family).getAllByRole("checkbox")[1]).not.toBeChecked();
+    expect(svg.querySelectorAll('[data-graph-layer="statistics-annotation"]')).toHaveLength(2);
   });
 
   it("lets a factorial design switch from all cell pairs to selected planned pairs", async () => {
@@ -1126,6 +1363,7 @@ describe("ExperimentGraphWorkbench", () => {
       Number(group.querySelector(".experiment-graph-point")?.getAttribute("cx")),
     );
     expect(Math.abs(xPositions[1] - xPositions[0])).toBeLessThan(150);
+    expect(svg.querySelectorAll(".experiment-graph-hierarchy-line")).toHaveLength(0);
   });
 
   it("8条件×3時点は省略せず24群を階層表示する", () => {
@@ -1261,19 +1499,50 @@ describe("ExperimentGraphWorkbench", () => {
     expect(screen.getByRole("combobox", { name: "系列に使う要因" })).toHaveValue(
       "factor:attribute.treatment",
     );
+    expect(
+      within(screen.getByRole("combobox", { name: "X軸に使う要因" })).queryByRole("option", {
+        name: "時間",
+      }),
+    ).toBeNull();
     const svg = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     const plottedConditionCount = svg.querySelectorAll("[data-condition-index]").length;
     expect(plottedConditionCount).toBe(4);
     expect(svg.querySelector(".experiment-graph-svg-legend")).not.toBeNull();
+    selectInspectorTarget("legend");
+    expect(screen.getByRole("combobox", { name: "凡例の位置" })).toHaveValue("right");
+    selectInspectorTarget("data");
     expect(svg.textContent).toContain("Vehicle");
     expect(svg.textContent).toContain("Stimulus");
+    expect(
+      [...svg.querySelectorAll("[data-condition-level-label]")].map((node) => node.textContent),
+    ).toEqual(["Wild type", "Gene-perturbed"]);
+    expect(
+      [...svg.querySelectorAll(".experiment-graph-svg-legend-label")].map(
+        (node) => node.textContent,
+      ),
+    ).toEqual(["Vehicle", "Stimulus"]);
+    const exportedInitialSvg = new DOMParser().parseFromString(
+      serializeGraphSvg(svg as unknown as SVGSVGElement),
+      "image/svg+xml",
+    );
+    expect(
+      [...exportedInitialSvg.querySelectorAll("[data-condition-level-label]")].map(
+        (node) => node.textContent,
+      ),
+    ).toEqual(["Wild type", "Gene-perturbed"]);
+    expect(
+      [...exportedInitialSvg.querySelectorAll(".experiment-graph-svg-legend-label")].map(
+        (node) => node.textContent,
+      ),
+    ).toEqual(["Vehicle", "Stimulus"]);
 
     selectInspectorTarget("x-axis");
     fireEvent.click(screen.getByRole("checkbox", { name: "X軸のグループ境界を表示" }));
     expect(svg.querySelectorAll('[data-graph-layer="category-group-separator"]')).toHaveLength(1);
-    expect(
-      svg.querySelector('[data-graph-layer="category-group-separator"]'),
-    ).toHaveAttribute("data-tick-direction", "outside");
+    expect(svg.querySelector('[data-graph-layer="category-group-separator"]')).toHaveAttribute(
+      "data-tick-direction",
+      "outside",
+    );
     selectInspectorTarget("data");
 
     fireEvent.click(screen.getByRole("button", { name: "X軸と系列を入れ替える" }));
@@ -1284,6 +1553,14 @@ describe("ExperimentGraphWorkbench", () => {
     expect(screen.getByRole("combobox", { name: "系列に使う要因" })).toHaveValue(
       "factor:attribute.genotype",
     );
+    expect(
+      [...svg.querySelectorAll("[data-condition-level-label]")].map((node) => node.textContent),
+    ).toEqual(["Vehicle", "Stimulus"]);
+    const hierarchyLines = [
+      ...svg.querySelectorAll<SVGLineElement>(".experiment-graph-hierarchy-line"),
+    ];
+    expect(hierarchyLines).toHaveLength(2);
+    expect(hierarchyLines.every((line) => getComputedStyle(line).stroke === "#000")).toBe(true);
     expect(svg.querySelectorAll("[data-condition-index]")).toHaveLength(plottedConditionCount);
     const latest = onStateChange.mock.calls.at(-1)?.[0];
     expect(latest.selectedConditionIds).toEqual(draft.conditions.map(({ id }) => id));

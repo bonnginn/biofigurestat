@@ -7,6 +7,7 @@ export type D06LongitudinalDesign = Readonly<{
   timePointCount: number;
   sampling: "none" | "cross_sectional" | "longitudinal";
   completeStableUnitsPerCondition: readonly number[];
+  axisTitle?: string;
 }>;
 
 export type D06MatchResult =
@@ -40,6 +41,7 @@ export function recommendD06(design: D06LongitudinalDesign): D06MatchResult {
         "The initial D06 contract accepts complete balanced stable units only; missing or unequal groups require a validated mixed-effects extension.",
     };
   }
+  const axisTitle = design.axisTitle?.trim() || "repeated axis";
   return {
     matched: true,
     recommendation: {
@@ -48,8 +50,7 @@ export function recommendD06(design: D06LongitudinalDesign): D06MatchResult {
       recommendedMethod: "mixed_anova",
       alternativeMethods: ["mixed_model"],
       reasonCode: "balanced_condition_by_time_repeated_design",
-      explanation:
-        "Condition is evaluated between biological units, while the repeated axis and condition-by-axis interaction preserve measurements within each stable unit.",
+      explanation: `Condition is evaluated between biological units, while repeated observations across ${axisTitle} preserve each stable unit; the condition-by-${axisTitle} interaction is evaluated first.`,
       statisticalNDefinition: "Complete stable biological units within each condition",
       multiplicityMethod: null,
     },

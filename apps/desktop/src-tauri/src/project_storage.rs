@@ -1,5 +1,7 @@
 use rusqlite::{params, Connection, OpenFlags};
-use std::collections::HashMap;
+use serde_json::Value;
+use sha2::{Digest, Sha256};
+use std::collections::{HashMap, HashSet};
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Component, Path, PathBuf};
@@ -9,8 +11,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::State;
 
 const MANIFEST_PATH: &str = "manifest.json";
-// Keep this aligned with the canonical package manifest assembled by
-// packages/project. The SQLite database is a package-root entry.
+// Keep the legacy SQLite locations aligned with packages/project. New
+// containers resolve their authoritative database payload from manifest.json.
 const DATABASE_PATH: &str = "project.sqlite";
 const LEGACY_DATABASE_PATH: &str = "data/project.sqlite";
 const CONTAINER_FORMAT: &str = "lsaa-sqlite-container-v1";
@@ -181,9 +183,214 @@ fn collect_staged_files(
 fn sqlite_user_version(database: &Path) -> Result<i64, String> {
     let connection = Connection::open_with_flags(database, OpenFlags::SQLITE_OPEN_READ_ONLY)
         .map_err(|error| format!("Could not validate the staged project database: {error}"))?;
+    let integrity: String = connection
+        .query_row("PRAGMA quick_check", [], |row| row.get(0))
+        .map_err(|error| format!("Could not validate the staged project database: {error}"))?;
+    if integrity != "ok" {
+        return Err(format!(
+            "Staged project database integrity check failed: {integrity}"
+        ));
+    }
     connection
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .map_err(|error| format!("Could not read the staged project database version: {error}"))
+}
+
+fn normalized_staged_relative_path(root: &Path, path: &Path) -> Result<String, String> {
+    let relative = path
+        .strip_prefix(root)
+        .map_err(|_| "Staged project entry escaped its package root".to_string())?
+        .to_str()
+        .ok_or_else(|| "Project entry path must be valid UTF-8".to_string())?
+        .replace(std::path::MAIN_SEPARATOR, "/");
+    validated_relative_path(&relative)?;
+    Ok(relative)
+}
+
+fn sha256_file(path: &Path) -> Result<String, String> {
+    let mut file = File::open(path)
+        .map_err(|error| format!("Could not open a staged project entry: {error}"))?;
+    let mut digest = Sha256::new();
+    let mut buffer = [0_u8; 64 * 1024];
+    loop {
+        let read = file
+            .read(&mut buffer)
+            .map_err(|error| format!("Could not read a staged project entry: {error}"))?;
+        if read == 0 {
+            break;
+        }
+        digest.update(&buffer[..read]);
+    }
+    Ok(format!("{:x}", digest.finalize()))
+}
+
+fn required_string<'a>(value: &'a Value, field: &str, context: &str) -> Result<&'a str, String> {
+    value
+        .get(field)
+        .and_then(Value::as_str)
+        .filter(|text| !text.is_empty())
+        .ok_or_else(|| format!("Project manifest {context}.{field} must be a non-empty string"))
+}
+
+fn validate_staged_manifest(
+    staging: &Path,
+    staged_files: &[PathBuf],
+) -> Result<Option<i64>, String> {
+    let manifest_bytes = fs::read(staging.join(MANIFEST_PATH))
+        .map_err(|error| format!("Could not read staged manifest.json: {error}"))?;
+    let manifest: Value = serde_json::from_slice(&manifest_bytes)
+        .map_err(|error| format!("Could not decode staged manifest.json: {error}"))?;
+    if required_string(&manifest, "format", "root")? != "life-science-analysis-project" {
+        return Err("Unsupported staged project manifest format".to_string());
+    }
+    if required_string(&manifest, "formatVersion", "root")? != "0.2.0" {
+        return Err("Unsupported staged project manifest version".to_string());
+    }
+    let project_kind = required_string(&manifest, "projectKind", "root")?;
+    if !matches!(
+        project_kind,
+        "experiment"
+            | "unresolved_visualization"
+            | "progressive_experiment"
+            | "specialized_entry_draft"
+    ) {
+        return Err("Unsupported staged project kind".to_string());
+    }
+
+    let declarations = manifest
+        .get("files")
+        .and_then(Value::as_array)
+        .ok_or_else(|| "Project manifest files must be an array".to_string())?;
+    let mut declared_by_path = HashMap::<String, (&str, u64, &str)>::new();
+    let mut portable_paths = HashSet::<String>::new();
+    for (index, declaration) in declarations.iter().enumerate() {
+        let path = required_string(declaration, "path", &format!("files[{index}]"))?;
+        validated_relative_path(path)?;
+        let portable_path = path.to_ascii_lowercase();
+        if portable_path == MANIFEST_PATH || !portable_paths.insert(portable_path) {
+            return Err(
+                "Project manifest file paths must be unique and cannot reserve manifest.json"
+                    .to_string(),
+            );
+        }
+        let role = required_string(declaration, "role", &format!("files[{index}]"))?;
+        if !matches!(
+            role,
+            "database" | "raw_source" | "raw_export" | "asset" | "other"
+        ) {
+            return Err(format!(
+                "Project manifest declares an unsupported file role: {role}"
+            ));
+        }
+        let size = declaration
+            .get("sizeBytes")
+            .and_then(Value::as_u64)
+            .ok_or_else(|| {
+                format!("Project manifest files[{index}].sizeBytes must be non-negative")
+            })?;
+        if size > MAX_ENTRY_BYTES {
+            return Err("A project entry exceeds the supported safety limit".to_string());
+        }
+        let sha256 = required_string(declaration, "sha256", &format!("files[{index}]"))?;
+        if sha256.len() != 64 || !sha256.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return Err(format!(
+                "Project manifest files[{index}].sha256 is not a SHA-256 digest"
+            ));
+        }
+        declared_by_path.insert(path.to_string(), (role, size, sha256));
+    }
+
+    let recovery = manifest
+        .get("recovery")
+        .ok_or_else(|| "Project manifest recovery metadata is missing".to_string())?;
+    let database_path = required_string(recovery, "databasePath", "recovery")?;
+    validated_relative_path(database_path)?;
+    if !matches!(declared_by_path.get(database_path), Some(("database", _, _))) {
+        return Err(
+            "Recovery databasePath must reference a declared database file".to_string(),
+        );
+    }
+    let raw_export_path = required_string(recovery, "canonicalRawExportPath", "recovery")?;
+    validated_relative_path(raw_export_path)?;
+    if !matches!(declared_by_path.get(raw_export_path), Some(("raw_export", _, _))) {
+        return Err(
+            "Recovery canonicalRawExportPath must reference a declared raw export file"
+                .to_string(),
+        );
+    }
+    if let Some(transformation_path) = recovery
+        .get("transformationExportPath")
+        .and_then(Value::as_str)
+    {
+        validated_relative_path(transformation_path)?;
+        if !matches!(declared_by_path.get(transformation_path), Some(("other", _, _))) {
+            return Err(
+                "Recovery transformationExportPath must reference a declared auxiliary file"
+                    .to_string(),
+            );
+        }
+    }
+
+    let mut staged_payload_paths = HashSet::<String>::new();
+    for path in staged_files {
+        let relative = normalized_staged_relative_path(staging, path)?;
+        if relative == MANIFEST_PATH {
+            continue;
+        }
+        let declaration = declared_by_path.get(&relative).ok_or_else(|| {
+            format!("Project staging contains an undeclared file: {relative}")
+        })?;
+        if !staged_payload_paths.insert(relative.clone()) {
+            return Err(format!(
+                "Project staging contains a duplicate file: {relative}"
+            ));
+        }
+        let actual_size = fs::metadata(path)
+            .map_err(|error| format!("Could not inspect a staged project entry: {error}"))?
+            .len();
+        if actual_size != declaration.1 {
+            return Err(format!(
+                "Project file size does not match the manifest: {relative}"
+            ));
+        }
+        if !sha256_file(path)?.eq_ignore_ascii_case(declaration.2) {
+            return Err(format!(
+                "Project file checksum does not match the manifest: {relative}"
+            ));
+        }
+    }
+    for declared_path in declared_by_path.keys() {
+        if !staged_payload_paths.contains(declared_path) {
+            return Err(format!(
+                "Project save is missing a file declared by the manifest: {declared_path}"
+            ));
+        }
+    }
+
+    let database = staging.join(database_path);
+    let database_extension = database
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .unwrap_or_default();
+    if database_extension.eq_ignore_ascii_case("sqlite") {
+        if project_kind != "experiment" {
+            return Err(
+                "Only an experiment project may declare a SQLite database payload".to_string(),
+            );
+        }
+        return Ok(Some(sqlite_user_version(&database)?));
+    }
+    if database_extension.eq_ignore_ascii_case("json") {
+        if project_kind == "experiment" {
+            return Err("An experiment project must declare a SQLite database payload".to_string());
+        }
+        let bytes = fs::read(&database)
+            .map_err(|error| format!("Could not read staged JSON database: {error}"))?;
+        serde_json::from_slice::<Value>(&bytes)
+            .map_err(|error| format!("Could not decode staged JSON database: {error}"))?;
+        return Ok(None);
+    }
+    Err("Project database payload must be SQLite or JSON".to_string())
 }
 
 fn create_single_file_container(staging: &Path, destination: &Path) -> Result<(), String> {
@@ -195,11 +402,6 @@ fn create_single_file_container(staging: &Path, destination: &Path) -> Result<()
     {
         return Err("Project staging package has no manifest.json".to_string());
     }
-    let database_path = staging.join(DATABASE_PATH);
-    if !database_path.is_file() {
-        return Err("Project staging package has no project database".to_string());
-    }
-
     let total_size = files.iter().try_fold(0_u64, |total, path| {
         let size = fs::metadata(path)
             .map_err(|error| format!("Could not inspect a staged project entry: {error}"))?
@@ -212,6 +414,7 @@ fn create_single_file_container(staging: &Path, destination: &Path) -> Result<()
             .filter(|sum| *sum <= MAX_CONTAINER_BYTES)
             .ok_or_else(|| "The project exceeds the supported safety limit".to_string())
     })?;
+    let database_version = validate_staged_manifest(staging, &files)?;
 
     let mut connection = Connection::open(destination)
         .map_err(|error| format!("Could not create the staged project file: {error}"))?;
@@ -230,7 +433,6 @@ fn create_single_file_container(staging: &Path, destination: &Path) -> Result<()
              );",
         )
         .map_err(|error| format!("Could not initialize the project container: {error}"))?;
-    let database_version = sqlite_user_version(&database_path)?;
     let transaction = connection
         .transaction()
         .map_err(|error| format!("Could not start the project container transaction: {error}"))?;
@@ -240,15 +442,17 @@ fn create_single_file_container(staging: &Path, destination: &Path) -> Result<()
             params!["format", CONTAINER_FORMAT],
         )
         .map_err(|error| format!("Could not record the project container format: {error}"))?;
-    transaction
-        .execute(
-            "INSERT INTO container_metadata(key, value) VALUES (?1, ?2)",
-            params![
-                "project_database_user_version",
-                database_version.to_string()
-            ],
-        )
-        .map_err(|error| format!("Could not record the project database version: {error}"))?;
+    if let Some(database_version) = database_version {
+        transaction
+            .execute(
+                "INSERT INTO container_metadata(key, value) VALUES (?1, ?2)",
+                params![
+                    "project_database_user_version",
+                    database_version.to_string()
+                ],
+            )
+            .map_err(|error| format!("Could not record the project database version: {error}"))?;
+    }
     transaction
         .execute(
             "INSERT INTO container_metadata(key, value) VALUES (?1, ?2)",
@@ -526,6 +730,8 @@ mod tests {
         validated_relative_path, write_transaction_file,
     };
     use rusqlite::Connection;
+    use serde_json::json;
+    use sha2::{Digest, Sha256};
     use std::fs;
     use std::path::PathBuf;
 
@@ -539,13 +745,94 @@ mod tests {
         path
     }
 
-    fn stage_project_database(transaction: &super::ProjectWriteTransaction, version: i64) {
+    fn sha256_bytes(data: &[u8]) -> String {
+        format!("{:x}", Sha256::digest(data))
+    }
+
+    fn manifest_bytes(
+        project_kind: &str,
+        database_path: &str,
+        database: &[u8],
+        database_role: &str,
+        raw_path: &str,
+        raw: &[u8],
+    ) -> Vec<u8> {
+        serde_json::to_vec(&json!({
+            "format": "life-science-analysis-project",
+            "formatVersion": "0.2.0",
+            "projectKind": project_kind,
+            "files": [
+                {
+                    "path": database_path,
+                    "role": database_role,
+                    "sha256": sha256_bytes(database),
+                    "sizeBytes": database.len(),
+                },
+                {
+                    "path": raw_path,
+                    "role": "raw_export",
+                    "sha256": sha256_bytes(raw),
+                    "sizeBytes": raw.len(),
+                }
+            ],
+            "recovery": {
+                "databasePath": database_path,
+                "canonicalRawExportPath": raw_path,
+            }
+        }))
+        .expect("encode manifest")
+    }
+
+    fn stage_project_database(
+        transaction: &super::ProjectWriteTransaction,
+        version: i64,
+        raw: &[u8],
+    ) -> Vec<u8> {
         let path = transaction.staging.join(super::DATABASE_PATH);
         fs::create_dir_all(path.parent().expect("database parent")).expect("create data folder");
         let database = Connection::open(path).expect("create project database");
         database
             .execute_batch(&format!("PRAGMA user_version = {version};"))
             .expect("set project database version");
+        drop(database);
+        let database = fs::read(transaction.staging.join(super::DATABASE_PATH))
+            .expect("read staged database");
+        write_transaction_file(transaction, "raw/exports/canonical.csv", raw)
+            .expect("write raw export");
+        let manifest = manifest_bytes(
+            "experiment",
+            super::DATABASE_PATH,
+            &database,
+            "database",
+            "raw/exports/canonical.csv",
+            raw,
+        );
+        write_transaction_file(transaction, super::MANIFEST_PATH, &manifest)
+            .expect("write manifest");
+        manifest
+    }
+
+    fn stage_json_project(
+        transaction: &super::ProjectWriteTransaction,
+        project_kind: &str,
+        database_path: &str,
+        database: &[u8],
+        raw: &[u8],
+    ) -> Vec<u8> {
+        let raw_path = "raw/exports/recovery.txt";
+        write_transaction_file(transaction, database_path, database).expect("write JSON database");
+        write_transaction_file(transaction, raw_path, raw).expect("write raw recovery");
+        let manifest = manifest_bytes(
+            project_kind,
+            database_path,
+            database,
+            "database",
+            raw_path,
+            raw,
+        );
+        write_transaction_file(transaction, super::MANIFEST_PATH, &manifest)
+            .expect("write manifest");
+        manifest
     }
 
     #[test]
@@ -578,10 +865,8 @@ mod tests {
         fs::write(target.join("manifest.json"), b"old").expect("write prior project");
 
         let (token, transaction) = begin_transaction(target.clone()).expect("begin transaction");
-        write_transaction_file(&transaction, "data/raw.csv", b"condition,value\nA,1\n")
-            .expect("write payload");
-        write_transaction_file(&transaction, "manifest.json", b"new").expect("write manifest");
-        stage_project_database(&transaction, 1);
+        let manifest =
+            stage_project_database(&transaction, 1, b"condition,value\nA,1\n");
         commit_transaction(&transaction, &token).expect("commit transaction");
 
         assert!(target.is_file());
@@ -591,12 +876,12 @@ mod tests {
                 "manifest.json".to_string()
             )
             .unwrap(),
-            b"new"
+            manifest
         );
         assert_eq!(
             read_project_file(
                 target.to_string_lossy().into_owned(),
-                "data/raw.csv".to_string()
+                "raw/exports/canonical.csv".to_string()
             )
             .unwrap(),
             b"condition,value\nA,1\n"
@@ -609,15 +894,8 @@ mod tests {
         let parent = test_directory("canonical-database-path");
         let target = parent.join("experiment.lsa");
         let (token, transaction) = begin_transaction(target.clone()).expect("begin transaction");
-        write_transaction_file(&transaction, "manifest.json", b"manifest")
-            .expect("write manifest");
-
+        stage_project_database(&transaction, 1, b"condition,value\nA,1\n");
         let database_path = transaction.staging.join("project.sqlite");
-        let database = Connection::open(&database_path).expect("create canonical database");
-        database
-            .execute_batch("PRAGMA user_version = 1;")
-            .expect("set project database version");
-        drop(database);
         let expected_database = fs::read(&database_path).expect("read staged database");
 
         commit_transaction(&transaction, &token).expect("commit canonical package");
@@ -653,8 +931,7 @@ mod tests {
         let target = parent.join("experiment.lsa");
 
         let (first_token, first) = begin_transaction(target.clone()).expect("first transaction");
-        write_transaction_file(&first, "manifest.json", b"first").expect("first manifest");
-        stage_project_database(&first, 1);
+        let first_manifest = stage_project_database(&first, 1, b"first raw");
         commit_transaction(&first, &first_token).expect("first commit");
 
         let (invalid_token, invalid) = begin_transaction(target.clone()).expect("bad transaction");
@@ -666,13 +943,12 @@ mod tests {
                 "manifest.json".to_string()
             )
             .unwrap(),
-            b"first"
+            first_manifest
         );
         rollback_transaction(invalid).expect("clean bad staging");
 
         let (second_token, second) = begin_transaction(target.clone()).expect("second transaction");
-        write_transaction_file(&second, "manifest.json", b"second").expect("second manifest");
-        stage_project_database(&second, 1);
+        let second_manifest = stage_project_database(&second, 1, b"second raw");
         commit_transaction(&second, &second_token).expect("second commit");
 
         assert!(target.is_file());
@@ -682,7 +958,7 @@ mod tests {
                 "manifest.json".to_string()
             )
             .unwrap(),
-            b"second"
+            second_manifest
         );
         fs::remove_dir_all(parent).expect("remove test directory");
     }
@@ -700,15 +976,7 @@ mod tests {
         drop(old_database);
 
         let (token, transaction) = begin_transaction(target.clone()).expect("begin transaction");
-        write_transaction_file(&transaction, "manifest.json", b"new").expect("write manifest");
-        let staged_database = transaction.staging.join(super::DATABASE_PATH);
-        fs::create_dir_all(staged_database.parent().expect("database parent"))
-            .expect("create staged data");
-        let new_database = Connection::open(&staged_database).expect("new db");
-        new_database
-            .execute_batch("PRAGMA user_version = 2;")
-            .expect("new version");
-        drop(new_database);
+        let new_manifest = stage_project_database(&transaction, 2, b"new raw");
 
         commit_transaction(&transaction, &token).expect("commit migration");
 
@@ -730,8 +998,168 @@ mod tests {
                 "manifest.json".to_string()
             )
             .unwrap(),
-            b"new"
+            new_manifest
         );
+        fs::remove_dir_all(parent).expect("remove test directory");
+    }
+
+    #[test]
+    fn json_backed_project_kinds_commit_and_reopen_from_the_declared_database() {
+        for (project_kind, database_path) in [
+            ("unresolved_visualization", "project.json"),
+            ("progressive_experiment", "progressive-project.json"),
+            (
+                "specialized_entry_draft",
+                "specialized-entry-draft.json",
+            ),
+        ] {
+            let parent = test_directory(project_kind);
+            let target = parent.join(format!("{project_kind}.lsa"));
+            let (token, transaction) =
+                begin_transaction(target.clone()).expect("begin JSON transaction");
+            let database = format!(r#"{{"projectKind":"{project_kind}"}}"#).into_bytes();
+            let raw = format!("raw recovery for {project_kind}").into_bytes();
+            let manifest = stage_json_project(
+                &transaction,
+                project_kind,
+                database_path,
+                &database,
+                &raw,
+            );
+
+            commit_transaction(&transaction, &token).expect("commit JSON-backed project");
+
+            assert_eq!(
+                read_project_file(
+                    target.to_string_lossy().into_owned(),
+                    database_path.to_string(),
+                )
+                .expect("read declared JSON database"),
+                database
+            );
+            assert_eq!(
+                read_project_file(
+                    target.to_string_lossy().into_owned(),
+                    "raw/exports/recovery.txt".to_string(),
+                )
+                .expect("read declared raw recovery"),
+                raw
+            );
+            assert_eq!(
+                read_project_file(
+                    target.to_string_lossy().into_owned(),
+                    super::MANIFEST_PATH.to_string(),
+                )
+                .expect("read manifest"),
+                manifest
+            );
+            fs::remove_dir_all(parent).expect("remove test directory");
+        }
+    }
+
+    #[test]
+    fn commit_rejects_missing_or_undeclared_payloads_without_replacing_the_target() {
+        let parent = test_directory("manifest-payload-boundary");
+        let target = parent.join("graph-only.lsa");
+        let database = br#"{"projectKind":"unresolved_visualization"}"#;
+        let raw = b"retained raw table";
+
+        let (missing_token, missing) =
+            begin_transaction(target.clone()).expect("begin missing transaction");
+        write_transaction_file(&missing, "project.json", database).expect("write database");
+        let missing_manifest = manifest_bytes(
+            "unresolved_visualization",
+            "project.json",
+            database,
+            "database",
+            "raw/exports/recovery.txt",
+            raw,
+        );
+        write_transaction_file(&missing, super::MANIFEST_PATH, &missing_manifest)
+            .expect("write missing-payload manifest");
+        let missing_error = commit_transaction(&missing, &missing_token)
+            .expect_err("missing declared raw recovery must fail");
+        assert!(missing_error.contains("missing a file declared by the manifest"));
+        assert!(!target.exists());
+        rollback_transaction(missing).expect("clean missing staging");
+
+        let (extra_token, extra) =
+            begin_transaction(target.clone()).expect("begin extra transaction");
+        stage_json_project(
+            &extra,
+            "unresolved_visualization",
+            "project.json",
+            database,
+            raw,
+        );
+        write_transaction_file(&extra, "undeclared.txt", b"must not enter the container")
+            .expect("write undeclared payload");
+        let extra_error = commit_transaction(&extra, &extra_token)
+            .expect_err("undeclared payload must fail");
+        assert!(extra_error.contains("undeclared file"));
+        assert!(!target.exists());
+        rollback_transaction(extra).expect("clean extra staging");
+
+        fs::remove_dir_all(parent).expect("remove test directory");
+    }
+
+    #[test]
+    fn commit_rejects_wrong_database_role_and_payload_integrity_mismatch() {
+        let parent = test_directory("manifest-integrity-boundary");
+        let target = parent.join("draft.lsa");
+        let database = br#"{"projectKind":"specialized_entry_draft"}"#;
+        let raw = b"draft raw input";
+
+        let (role_token, role_transaction) =
+            begin_transaction(target.clone()).expect("begin role transaction");
+        write_transaction_file(&role_transaction, "specialized-entry-draft.json", database)
+            .expect("write database");
+        write_transaction_file(&role_transaction, "raw/exports/recovery.txt", raw)
+            .expect("write raw");
+        let wrong_role_manifest = manifest_bytes(
+            "specialized_entry_draft",
+            "specialized-entry-draft.json",
+            database,
+            "other",
+            "raw/exports/recovery.txt",
+            raw,
+        );
+        write_transaction_file(
+            &role_transaction,
+            super::MANIFEST_PATH,
+            &wrong_role_manifest,
+        )
+        .expect("write wrong-role manifest");
+        let role_error = commit_transaction(&role_transaction, &role_token)
+            .expect_err("wrong database role must fail");
+        assert!(role_error.contains("databasePath"));
+        assert!(!target.exists());
+        rollback_transaction(role_transaction).expect("clean role staging");
+
+        let (checksum_token, checksum_transaction) =
+            begin_transaction(target.clone()).expect("begin checksum transaction");
+        stage_json_project(
+            &checksum_transaction,
+            "specialized_entry_draft",
+            "specialized-entry-draft.json",
+            database,
+            raw,
+        );
+        write_transaction_file(
+            &checksum_transaction,
+            "specialized-entry-draft.json",
+            br#"{"projectKind":"specialized_entry_draft","changed":true}"#,
+        )
+        .expect("mutate staged payload after manifest creation");
+        let integrity_error = commit_transaction(&checksum_transaction, &checksum_token)
+            .expect_err("manifest integrity mismatch must fail");
+        assert!(
+            integrity_error.contains("size does not match")
+                || integrity_error.contains("checksum does not match")
+        );
+        assert!(!target.exists());
+        rollback_transaction(checksum_transaction).expect("clean checksum staging");
+
         fs::remove_dir_all(parent).expect("remove test directory");
     }
 }

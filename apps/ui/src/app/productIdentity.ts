@@ -3,8 +3,8 @@ export const PRODUCT_IDENTITY = {
   displayNameJa: "ライフサイエンス解析",
   shortMark: "LS",
   version: "0.1.0",
-  expectedEngineVersion: "0.13.0",
+  expectedEngineVersion: "0.14.0",
   licenseStatus: "Alpha testing license not yet selected",
-  repositoryUrl: null as string | null,
+  repositoryUrl: "https://github.com/bonnginn/life-science-analysis-app" as string | null,
   buildRevision: import.meta.env.VITE_LSAA_BUILD_REVISION?.trim() || "unavailable",
 } as const;

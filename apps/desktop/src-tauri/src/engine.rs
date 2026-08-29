@@ -4,6 +4,12 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use tauri::{AppHandle, Manager};
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
 enum EngineLaunch {
     PythonModule { python: PathBuf },
     PackagedBinary { executable: PathBuf },
@@ -58,6 +64,11 @@ fn execute_engine_process(launch: EngineLaunch, request: Value) -> Result<Value,
         }
         EngineLaunch::PackagedBinary { executable } => Command::new(executable),
     };
+    // The engine is a pipe-driven helper, not a user-facing console program. On Windows a
+    // console-subsystem PyInstaller executable otherwise flashes or leaves a command window open
+    // each time Statistics runs. CREATE_NO_WINDOW keeps stdin/stdout/stderr redirection intact.
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
     let mut child = command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -113,6 +124,17 @@ mod tests {
             .nth(3)
             .expect("repository root")
             .to_path_buf();
+        let engine_version_source = std::fs::read_to_string(
+            repository_root.join("engine/python/lsaa_engine/__init__.py"),
+        )
+        .expect("read authoritative engine version");
+        let expected_engine_version = engine_version_source
+            .lines()
+            .find_map(|line| {
+                line.strip_prefix("ENGINE_VERSION = \"")
+                    .and_then(|value| value.strip_suffix('"'))
+            })
+            .expect("authoritative engine version");
         let python = if cfg!(target_os = "windows") {
             repository_root.join("engine/python/.venv/Scripts/python.exe")
         } else {
@@ -141,7 +163,7 @@ mod tests {
         assert_eq!(result["protocolVersion"], "0.1.0");
         assert_eq!(result["requestId"], "request.rust-round-trip");
         assert_eq!(result["status"], "ok");
-        assert_eq!(result["engine"]["version"], "0.7.0");
+        assert_eq!(result["engine"]["version"], expected_engine_version);
         assert_eq!(result["engine"]["packages"]["scipy"], "1.18.0");
 
         let d03_request = json!({

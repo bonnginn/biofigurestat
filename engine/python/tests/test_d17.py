@@ -90,6 +90,25 @@ def puromycin_points():
 
 
 class D17Tests(unittest.TestCase):
+    def test_repeated_trajectory_descriptive_fit_omits_uncertainty(self):
+        descriptive_request = request(series(), model="zero_baseline_association")
+        descriptive_request["fitInterpretation"] = "descriptive_point_estimate_only"
+
+        result = run_request(descriptive_request)
+
+        self.assertEqual(result["status"], "ok")
+        self.assertTrue(
+            all(
+                parameter["standardError"] is None
+                and parameter["confidenceInterval"] is None
+                for parameter in result["nonlinearFit"]["series"][0]["parameters"]
+            )
+        )
+        self.assertIn(
+            "descriptive_point_estimate_only",
+            {diagnostic["code"] for diagnostic in result["diagnostics"]},
+        )
+
     def test_clean_and_noisy_saturating_association(self):
         for points in (series(), series(noisy=True)):
             result = run_request(request(points))

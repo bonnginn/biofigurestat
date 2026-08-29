@@ -1,9 +1,16 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ADAPTIVE_INPUT_FEATURE_FLAG } from "../app/adaptiveInputFeature";
 import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
+import type { ProjectState } from "@lsaa/project";
 import { NewExperimentPage } from "./NewExperimentPage";
+
+function pasteGraphOnlyTable(value: string): void {
+  fireEvent.paste(screen.getByTestId("graph-only-cell-0-0"), {
+    clipboardData: { getData: () => value },
+  });
+}
 
 function chooseDedicatedEntry(
   context: "cell_culture" | "protein_biochemical" | "animal" | "general_assay",
@@ -21,6 +28,7 @@ function chooseDedicatedEntry(
     <NewExperimentPage
       onNavigate={onNavigate}
       onDedicatedEntryReady={onDedicatedEntryReady}
+      specializedEntryAvailable
       showCompatibilityEntry={adaptiveEnabled}
     />,
   );
@@ -54,6 +62,7 @@ describe("New Experiment dedicated entry handoff", () => {
       <NewExperimentPage
         onNavigate={onNavigate}
         onDedicatedEntryReady={onDedicatedEntryReady}
+        specializedEntryAvailable
         saveUnresolvedVisualizationProject={vi.fn(async () => null)}
         openUnresolvedVisualizationProject={vi.fn(async () => null)}
       />,
@@ -78,7 +87,7 @@ describe("New Experiment dedicated entry handoff", () => {
 
   it.each([
     {
-      button: "酵素反応・飽和カーブを開く",
+      button: "濃度–反応・酵素反応を開く",
       moduleId: "ordered_curve_kinetics",
       destination: "nonlinear-fit",
       entryRouteId: "direct_ordered_curve",
@@ -99,6 +108,7 @@ describe("New Experiment dedicated entry handoff", () => {
       <NewExperimentPage
         onNavigate={onNavigate}
         onDedicatedEntryReady={onDedicatedEntryReady}
+        specializedEntryAvailable
         saveUnresolvedVisualizationProject={vi.fn(async () => null)}
         openUnresolvedVisualizationProject={vi.fn(async () => null)}
       />,
@@ -129,7 +139,9 @@ describe("New Experiment dedicated entry handoff", () => {
     expect(graphOnly).toBeEnabled();
     fireEvent.click(graphOnly);
     expect(screen.getByRole("heading", { name: "手元の表からGraphを作る" })).toHaveFocus();
-    expect(screen.getByRole("textbox", { name: "Graph用の表" })).toBeEnabled();
+    expect(screen.getByRole("region", { name: "Graph用データシート" })).toBeVisible();
+    expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("X / condition");
+    expect(screen.getByTestId("graph-only-cell-1-0")).toBeEnabled();
     expect(screen.queryByRole("button", { name: "保存したGraph用データを開く" })).toBeNull();
     const saveButton = screen.getByRole("button", { name: "このGraph用データを保存" });
     expect(saveButton).toBeDisabled();
@@ -149,9 +161,7 @@ describe("New Experiment dedicated entry handoff", () => {
       <NewExperimentPage browserPreview onNavigate={vi.fn()} onDedicatedEntryReady={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Graph用の表" }), {
-      target: { value: "Condition\tValue\nControl\t10\nDrug\t14" },
-    });
+    pasteGraphOnlyTable("Condition\tValue\nControl\t10\nDrug\t14");
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
       target: { value: "0" },
     });
@@ -166,6 +176,11 @@ describe("New Experiment dedicated entry handoff", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "統計で使う対象ID" }), {
       target: { value: "no_id" },
     });
+    fireEvent.click(
+      screen.getByRole("radio", {
+        name: /はい。各行が別々のanimal・dish・wellなどです/,
+      }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "実験構造の確認へ" }));
 
     expect(screen.getByRole("heading", { name: "統計に必要な実験情報" })).toBeVisible();
@@ -185,10 +200,120 @@ describe("New Experiment dedicated entry handoff", () => {
     fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
 
     expect(screen.getByText("実験ワークスペース")).toBeVisible();
+    expect(screen.getByRole("button", { name: "グラフ (1)" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "対象・試料IDを表示／編集" }));
+    expect(screen.getByDisplayValue("unit-001")).toBeVisible();
+    expect(screen.getByDisplayValue("unit-002")).toBeVisible();
+  });
+
+  it("keeps explicit X/Y/ID mapping and raw rows when Statistics setup is canceled", () => {
+    window.localStorage.setItem(ADAPTIVE_INPUT_FEATURE_FLAG, "enabled");
+    const source = [
+      "Condition\tValue\tDishID",
+      "Control\t10\tdish-c1",
+      "Drug\t14\tdish-d1",
+    ].join("\n");
+    render(
+      <NewExperimentPage browserPreview onNavigate={vi.fn()} onDedicatedEntryReady={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" }));
+    pasteGraphOnlyTable(source);
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "統計を確認" }));
+    fireEvent.click(
+      screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "統計で使う対象ID" }), {
+      target: { value: "2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "実験構造の確認へ" }));
+    expect(screen.getByRole("heading", { name: "統計に必要な実験情報" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "戻る" }));
+
+    expect(screen.getByRole("heading", { name: "手元の表からGraphを作る" })).toBeVisible();
+    expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("Condition");
+    expect(screen.getByTestId("graph-only-cell-0-1")).toHaveValue("Value");
+    expect(screen.getByTestId("graph-only-cell-0-2")).toHaveValue("DishID");
+    expect(screen.getByTestId("graph-only-cell-1-0")).toHaveValue("Control");
+    expect(screen.getByTestId("graph-only-cell-1-1")).toHaveValue("10");
+    expect(screen.getByTestId("graph-only-cell-1-2")).toHaveValue("dish-c1");
+    expect(screen.getByTestId("graph-only-cell-2-0")).toHaveValue("Drug");
+    expect(screen.getByTestId("graph-only-cell-2-1")).toHaveValue("14");
+    expect(screen.getByTestId("graph-only-cell-2-2")).toHaveValue("dish-d1");
+    expect(screen.getByRole("combobox", { name: "Graphの横軸" })).toHaveValue("0");
+    expect(screen.getByRole("combobox", { name: "Graphの測定値" })).toHaveValue("1");
+
+    fireEvent.click(screen.getByRole("button", { name: "統計を確認" }));
+    fireEvent.click(
+      screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
+    );
+    expect(screen.getByRole("combobox", { name: "統計で使う対象ID" })).toHaveValue("2");
+  });
+
+  it("promotes an explicit-ID Graph table to the generated worksheet without changing values", async () => {
+    window.localStorage.setItem(ADAPTIVE_INPUT_FEATURE_FLAG, "enabled");
+    const source = "Condition\tValue\tDishID\nControl\t10\tdish-c1\nDrug\t14\tdish-d1";
+    const saveProject = vi.fn(async (state: ProjectState, target?: string) => ({
+      state,
+      target: target ?? "C:/tmp/graph-promoted.lsa",
+    }));
+    render(
+      <NewExperimentPage
+        browserPreview
+        onNavigate={vi.fn()}
+        onDedicatedEntryReady={vi.fn()}
+        saveProject={saveProject}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" }));
+    pasteGraphOnlyTable(source);
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "統計を確認" }));
+    fireEvent.click(
+      screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "統計で使う対象ID" }), {
+      target: { value: "2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "実験構造の確認へ" }));
+    fireEvent.change(screen.getByPlaceholderText("例：culture dish、mouse、donor由来試料"), {
+      target: { value: "culture dish" },
+    });
+    fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
+    fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
+
+    expect(screen.getByText("実験ワークスペース")).toBeVisible();
     expect(screen.getByRole("button", { name: "グラフ (1)" })).toBeEnabled();
-    const importedValues = screen.getByRole("table", { name: "条件ごとにまとめて表示" });
-    expect(within(importedValues).getByText("10")).toBeVisible();
-    expect(within(importedValues).getByText("14")).toBeVisible();
+    expect(screen.getByText("2件の測定値")).toBeVisible();
+    expect(screen.getByDisplayValue("10")).toBeVisible();
+    expect(screen.getByDisplayValue("14")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
+    const saved = saveProject.mock.calls[0]![0];
+    expect(saved.adaptiveInput?.rawLineage?.rawText).toBe(source);
+    expect(saved.adaptiveInput?.mapping?.columns.DishID).toMatchObject({
+      role: "identity",
+    });
+    const identityKey = saved.adaptiveInput?.contract.identities.find(
+      ({ unitLevelKey }) => unitLevelKey === saved.adaptiveInput?.contract.experimentalUnitLevelKey,
+    )?.key;
+    expect(
+      saved.adaptiveInput?.canonicalObservations.map(({ identities }) =>
+        identityKey ? identities[identityKey] : undefined,
+      ),
+    ).toEqual(["dish-c1", "dish-d1"]);
   });
 
   it("guards Heatmap when its dedicated-entry handoff is unavailable", () => {
@@ -197,9 +322,33 @@ describe("New Experiment dedicated entry handoff", () => {
 
     expect(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "生存時間（Kaplan–Meier）を開く" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "酵素反応・飽和カーブを開く" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "濃度–反応・酵素反応を開く" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "ヒートマップを開く" })).toBeDisabled();
-    expect(screen.getByText("行列を保った専用入力への接続を利用できません。")).toBeVisible();
+    expect(
+      screen.getByText(
+        "この版では行列を保つ専用シートを安全に開けません。別の実験形式へは自動変換しません。",
+      ),
+    ).toBeVisible();
+  });
+
+  it("keeps native Survival and ordered-curve entries closed until draft save and reopen are paired", () => {
+    window.localStorage.setItem(ADAPTIVE_INPUT_FEATURE_FLAG, "enabled");
+    const onDedicatedEntryReady = vi.fn();
+    render(
+      <NewExperimentPage onNavigate={vi.fn()} onDedicatedEntryReady={onDedicatedEntryReady} />,
+    );
+
+    const survival = screen.getByRole("button", {
+      name: "生存時間（Kaplan–Meier）を開く",
+    });
+    const ordered = screen.getByRole("button", { name: "濃度–反応・酵素反応を開く" });
+    expect(survival).toBeDisabled();
+    expect(ordered).toBeDisabled();
+    expect(screen.getByText(/生存時間データを保存して再開できない/)).toBeVisible();
+    expect(screen.getByText(/濃度–反応・酵素反応データを保存して再開できない/)).toBeVisible();
+    fireEvent.click(survival);
+    fireEvent.click(ordered);
+    expect(onDedicatedEntryReady).not.toHaveBeenCalled();
   });
 
   it("opens the biological general setup from the feature-flagged hub without internal labels", () => {

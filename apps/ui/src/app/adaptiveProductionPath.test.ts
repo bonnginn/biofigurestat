@@ -113,7 +113,7 @@ describe("production UI adapter over the 65-case Gold set", () => {
       ).toEqual(input.contract);
     }
     expect(Object.values(counts).reduce((sum, value) => sum + value, 0)).toBe(65);
-    expect(counts).toEqual({ ready: 40, dedicated_route_required: 2, not_representable: 23 });
+    expect(counts).toEqual({ ready: 31, dedicated_route_required: 2, not_representable: 32 });
   });
 
   it("safe-stops blocked matching without relabelling it as independent", () => {
@@ -131,7 +131,7 @@ describe("production UI adapter over the 65-case Gold set", () => {
     expect(workspace.diagnostics).toContain("legacy_workspace_does_not_support_blocked_matching");
   });
 
-  it("does not relabel a non-temporal ordered axis as time in the workspace draft", () => {
+  it("retains finite numeric axes and safe-stops a string axis that the legacy model would lose", () => {
     const trace = traces.traces.find(({ caseId }) => caseId === "ETS-Z8P2HC")!;
     const temporal = inputFor(trace);
     const temporalWorkspace = createAdaptiveWorkspace({
@@ -173,6 +173,33 @@ describe("production UI adapter over the 65-case Gold set", () => {
     expect(distanceWorkspace.draft?.time.axisSemantic).toBe("numeric_covariate");
     expect(distanceWorkspace.draft?.time.axisTitle).toBe("Radius");
     expect(distanceWorkspace.draft?.time.axisUnit).toBe("um");
+
+    const stringAxisContract = StructureContractSchema.parse({
+      ...distanceContract,
+      contractId: "ordered-string-axis",
+      orderedAxes: distanceContract.orderedAxes.map((axis) => ({
+        ...axis,
+        levels: axis.levels.map(String),
+      })),
+    });
+    const stringAxisObservations = distanceObservations.map((observation) => ({
+      ...observation,
+      axes: { radius: String(observation.axes.radius) },
+    }));
+    const stringAxisWorkspace = createAdaptiveWorkspace({
+      contract: stringAxisContract,
+      observations: stringAxisObservations,
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    expect(stringAxisWorkspace.status).toBe("not_representable");
+    expect(stringAxisWorkspace.draft).toBeNull();
+    expect(stringAxisWorkspace.cells).toEqual({});
+    expect(stringAxisWorkspace.snapshot.canonicalObservations).toEqual(stringAxisObservations);
+    expect(stringAxisWorkspace.diagnostics).toContain(
+      'legacy_workspace_cannot_losslessly_project_ordered_axis_level:radius:1:"0"',
+    );
   });
 
   it("does not invent one global control cell when a factorial reference is incomplete", () => {
@@ -204,10 +231,210 @@ describe("production UI adapter over the 65-case Gold set", () => {
     expect(workspace.draft?.conditions.some(({ role }) => role === "primary")).toBe(false);
   });
 
+  it("does not infer a run, day, or batch identity from adaptive worksheet row order", () => {
+    const independentContract = buildStructureContract({
+      experimentName: "Independent dishes",
+      experimentDescription: "Separate dishes received vehicle or drug independently.",
+      experimentalUnitLabel: "Culture dish",
+      identityLabel: "Dish ID",
+      readoutLabel: "Signal",
+      readoutRepresentation: "scalar",
+      factorName: "Treatment",
+      factorLevels: ["Vehicle", "Drug"],
+      sameIdentityAcrossConditions: false,
+    });
+    const independentObservations = [
+      ["vehicle-1", "Vehicle", 1],
+      ["vehicle-2", "Vehicle", 2],
+      ["drug-1", "Drug", 3],
+      ["drug-2", "Drug", 4],
+    ].map(([identity, treatment, value], index) =>
+      CanonicalAdaptiveObservationSchema.parse({
+        observationId: `independent-session.${index + 1}`,
+        readoutKey: "signal",
+        identities: { dishid: identity },
+        factors: { treatment },
+        axes: {},
+        hierarchy: {},
+        values: { signal: value },
+        missingness: {},
+        sourceRow: index + 2,
+      }),
+    );
+    const independent = createAdaptiveWorkspace({
+      contract: independentContract,
+      observations: independentObservations,
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    expect(independent.status).toBe("ready");
+    expect(independent.draft?.experiments).toHaveLength(2);
+    expect(independent.draft?.experiments.every(({ sessionId }) => sessionId === undefined)).toBe(
+      true,
+    );
+    expect(independent.draft?.experiments.every(({ date }) => date === "")).toBe(true);
+
+    const matchedContract = buildStructureContract({
+      experimentName: "Repeated cells",
+      experimentDescription: "The same cells were measured before and after treatment.",
+      experimentalUnitLabel: "Cell",
+      identityLabel: "Cell ID",
+      readoutLabel: "Signal",
+      readoutRepresentation: "scalar",
+      factorName: "Condition",
+      factorLevels: ["Before", "After"],
+      sameIdentityAcrossConditions: true,
+    });
+    const researcherIdentities = ["Run Alpha", "実験回 2", "A B", "A-B"];
+    const matchedObservations = researcherIdentities.flatMap((identity, identityIndex) =>
+      ["Before", "After"].map((condition, conditionIndex) =>
+        CanonicalAdaptiveObservationSchema.parse({
+          observationId: `matched-session.${identityIndex * 2 + conditionIndex + 1}`,
+          readoutKey: "signal",
+          identities: { cellid: identity },
+          factors: { condition },
+          axes: {},
+          hierarchy: {},
+          values: { signal: 5 + identityIndex * 2 + conditionIndex },
+          missingness: {},
+          sourceRow: identityIndex * 2 + conditionIndex + 2,
+        }),
+      ),
+    );
+    const matched = createAdaptiveWorkspace({
+      contract: matchedContract,
+      observations: matchedObservations,
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    expect(matched.status).toBe("ready");
+    expect(matched.draft?.experiments.map(({ stableUnitId }) => stableUnitId)).toEqual([
+      "adaptive-unit.1",
+      "adaptive-unit.2",
+      "adaptive-unit.3",
+      "adaptive-unit.4",
+    ]);
+    expect(matched.draft?.experiments.map(({ label }) => label)).toEqual(researcherIdentities);
+    expect(matched.draft?.experiments.every(({ sessionId }) => sessionId === undefined)).toBe(true);
+
+    const saved = createExperimentWorkspaceProject({
+      draft: matched.draft!,
+      cells: matched.cells,
+      graphs: [],
+      now,
+    });
+    const reopened = rehydrateExperimentWorkspace(
+      ProjectStateSchema.parse(JSON.parse(JSON.stringify(saved))),
+    );
+    expect(reopened?.draft.experiments.map(({ stableUnitId }) => stableUnitId)).toEqual([
+      "adaptive-unit.1",
+      "adaptive-unit.2",
+      "adaptive-unit.3",
+      "adaptive-unit.4",
+    ]);
+    expect(reopened?.draft.experiments.map(({ label }) => label)).toEqual(researcherIdentities);
+    expect(
+      reopened?.draft.adaptiveInput?.canonicalObservations.map(
+        ({ observationId }) => observationId,
+      ),
+    ).toEqual(matchedObservations.map(({ observationId }) => observationId));
+    expect(
+      reopened?.draft.adaptiveInput?.canonicalObservations.map(
+        ({ identities }) => identities.cellid,
+      ),
+    ).toEqual(matchedObservations.map(({ identities }) => identities.cellid));
+  });
+
+  it("safe-stops when an explicitly declared run/source level has no identity", () => {
+    const base = buildStructureContract({
+      experimentName: "Run-aware dishes",
+      experimentDescription: "Dishes were prepared in explicitly recorded independent runs.",
+      experimentalUnitLabel: "Culture dish",
+      identityLabel: "Dish ID",
+      readoutLabel: "Signal",
+      readoutRepresentation: "scalar",
+      factorName: "Treatment",
+      factorLevels: ["Vehicle", "Drug"],
+      sameIdentityAcrossConditions: false,
+    });
+    const contract = StructureContractSchema.parse({
+      ...base,
+      contractId: "contract.run-aware-dishes",
+      unitLevels: [
+        { key: "run", label: "Experimental run", role: "block", parentKey: null },
+        {
+          ...base.unitLevels[0],
+          parentKey: "run",
+        },
+      ],
+      identities: [
+        { key: "run_id", label: "Run ID", unitLevelKey: "run", required: true },
+        ...base.identities,
+      ],
+    });
+    const observation = CanonicalAdaptiveObservationSchema.parse({
+      observationId: "run-aware.1",
+      readoutKey: "signal",
+      identities: { dishid: "dish-1" },
+      factors: { treatment: "Vehicle" },
+      axes: {},
+      hierarchy: {},
+      values: { signal: 1 },
+      missingness: {},
+      sourceRow: 2,
+    });
+
+    const workspace = createAdaptiveWorkspace({
+      contract,
+      observations: [observation],
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    expect(workspace.status).toBe("not_representable");
+    expect(workspace.draft).toBeNull();
+    expect(workspace.snapshot.canonicalObservations).toEqual([observation]);
+    expect(workspace.diagnostics).toContain(
+      "adaptive_observation:run-aware.1:missing_required_identity:run_id",
+    );
+
+    const explicitObservation = CanonicalAdaptiveObservationSchema.parse({
+      ...observation,
+      observationId: "run-aware.explicit.1",
+      identities: { run_id: "run-a", dishid: "dish-1" },
+    });
+    const explicitWorkspace = createAdaptiveWorkspace({
+      contract,
+      observations: [explicitObservation],
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    expect(explicitWorkspace.status).toBe("ready");
+    if (!explicitWorkspace.draft) throw new Error("Explicit run workspace should be ready");
+    const state = createExperimentWorkspaceProject({
+      draft: explicitWorkspace.draft,
+      cells: explicitWorkspace.cells,
+      graphs: [],
+      now,
+    });
+    const runUnit = state.unitInstances.find(({ levelId }) => levelId === "unit-level.run");
+    const dishUnit = state.unitInstances.find(
+      ({ levelId }) => levelId === "unit-level.culturedish",
+    );
+    expect(runUnit?.label).toBe("run-a");
+    expect(dishUnit?.parentUnitId).toBe(runUnit?.id);
+    expect(dishUnit?.metadata.experimentSessionId).toBeUndefined();
+    expect(state.designRevisions.at(-1)?.design.pairing).toEqual({ kind: "independent" });
+  });
+
   it("keeps a missing secondary readout aligned to the stable unit order", () => {
     const contract = buildStructureContract({
       experimentName: "Unequal readouts",
-      experimentDescription: "Three dishes were measured for a primary readout; two also had a secondary readout.",
+      experimentDescription:
+        "Three dishes were measured for a primary readout; two also had a secondary readout.",
       experimentalUnitLabel: "culture dish",
       identityLabel: "Dish ID",
       readoutLabel: "Primary",
@@ -435,9 +662,7 @@ describe("production UI adapter over the 65-case Gold set", () => {
     });
     expect(withoutEvidence.snapshot.targetedConfirmations).toEqual([]);
 
-    const evidence = [
-      { key: "missingness", answer: "confirmed", confirmedAt: now },
-    ];
+    const evidence = [{ key: "missingness", answer: "confirmed", confirmedAt: now }];
     const withEvidence = createAdaptiveWorkspace({
       contract,
       observations: [],

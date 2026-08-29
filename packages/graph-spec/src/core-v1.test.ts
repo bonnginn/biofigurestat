@@ -40,6 +40,18 @@ describe("Graph Core v1 structural stress contracts", () => {
     }
   });
 
+  it("assigns the same bracket levels regardless of incoming comparison order", () => {
+    const comparisons = [
+      { id: "a", start: 0, end: 1 },
+      { id: "b", start: 0, end: 2 },
+      { id: "c", start: 1, end: 2 },
+      { id: "d", start: 0, end: 3 },
+    ];
+    const levels = (input: typeof comparisons) =>
+      Object.fromEntries(layoutComparisonBrackets(input).map(({ id, level }) => [id, level]));
+    expect(levels(comparisons)).toEqual(levels([...comparisons].reverse()));
+  });
+
   it("keeps legend metadata synchronized with order, visibility, line and point semantics", () => {
     const visible = resolveVisibleSeries([
       {

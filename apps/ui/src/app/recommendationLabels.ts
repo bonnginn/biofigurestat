@@ -36,6 +36,7 @@ export function templateLabel(templateId: AnalysisRecommendation["templateId"]) 
   if (templateId === "D04") return "D04 · 3条件以上の繰り返し測定";
   if (templateId === "D05") return "D05 · 2因子の要因配置";
   if (templateId === "D06") return "D06 · 条件×反復軸の反復測定";
+  if (templateId === "D07") return "D07 · 条件×順序軸の独立測定";
   if (templateId === "D09") return "D09 · 2つの測定値の相関";
   if (templateId === "D11") return "D11 · 生存・time-to-event";
   if (templateId === "D12") return "D12 · 単一コホートと基準値";
@@ -60,6 +61,15 @@ export function recommendationExplanation(recommendation: AnalysisRecommendation
   if (recommendation.reasonCode === "three_or_more_independent_groups_one_factor") {
     return "3つ以上の条件を、1つの因子の独立した実験単位へ割り当てています。全群比較後に多重性を調整したペア比較を行います。";
   }
+  if (recommendation.reasonCode === "control_vs_many_independent_groups_one_factor") {
+    return "3つ以上の独立群について、明示した対照群と各群の比較を1つの比較族として評価します。";
+  }
+  if (recommendation.reasonCode === "planned_comparisons_independent_groups_one_factor") {
+    return "3つ以上の独立群のうち、事前に指定した条件ペアだけを1つの比較族として評価します。";
+  }
+  if (recommendation.reasonCode === "omnibus_only_independent_groups_one_factor") {
+    return "3つ以上の独立群に全体差があるかを評価し、指定されていない条件間比較は追加しません。";
+  }
   if (recommendation.reasonCode === "three_or_more_complete_matched_groups") {
     return "同じ対応単位からすべての条件に1つずつ値が得られます。全体比較後に対応のあるペア比較の多重性を調整します。";
   }
@@ -68,6 +78,12 @@ export function recommendationExplanation(recommendation: AnalysisRecommendation
   }
   if (recommendation.reasonCode === "balanced_condition_by_time_repeated_design") {
     return "条件間では独立した実験単位を用い、各単位を指定された反復軸内で追跡します。条件×反復軸の交互作用を最初に評価します。";
+  }
+  if (recommendation.reasonCode === "balanced_independent_condition_by_axis_design") {
+    return "順序軸の各水準で別々の実験単位を用い、条件、順序軸、両者の交互作用を評価します。反復測定としては扱いません。";
+  }
+  if (recommendation.reasonCode === "planned_comparisons_across_independent_condition_cells") {
+    return "独立した条件セルのうち、事前に指定した比較だけを評価します。因子の主効果や交互作用へ読み替えません。";
   }
   if (recommendation.reasonCode === "two_complete_continuous_variables_linear_question") {
     return "同じ実験単位からXとYを1つずつ測定し、直線的な関係を評価します。各単位を対応付けた散布図として扱います。";
@@ -88,11 +104,24 @@ export function statisticalNLabel(recommendation: AnalysisRecommendation) {
   if (recommendation.reasonCode === "three_or_more_independent_groups_one_factor") {
     return "各条件の独立した実験単位の数";
   }
+  if (
+    recommendation.reasonCode === "control_vs_many_independent_groups_one_factor" ||
+    recommendation.reasonCode === "planned_comparisons_independent_groups_one_factor" ||
+    recommendation.reasonCode === "omnibus_only_independent_groups_one_factor"
+  ) {
+    return "各条件の独立した実験単位の数";
+  }
   if (recommendation.reasonCode === "three_or_more_complete_matched_groups") {
     return "すべての条件が揃った対応単位の数";
   }
   if (recommendation.reasonCode === "complete_two_factor_independent_design") {
     return "各組み合わせ条件の独立した実験単位の数";
+  }
+  if (recommendation.reasonCode === "balanced_independent_condition_by_axis_design") {
+    return "各条件×順序軸セルの独立した実験単位の数";
+  }
+  if (recommendation.reasonCode === "planned_comparisons_across_independent_condition_cells") {
+    return "各条件セルの独立した実験単位の数";
   }
   if (
     recommendation.reasonCode === "two_complete_continuous_variables_linear_question" ||

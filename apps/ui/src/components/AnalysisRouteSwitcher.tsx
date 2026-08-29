@@ -1,10 +1,16 @@
 import { specializedAnalysisRoutes, type AppRoute } from "../app/routes";
+import type { AnalysisRouteSwitcherAccess } from "../app/analysisRouteSwitcherAccess";
 
 export function AnalysisRouteSwitcher({
+  access,
   current,
   onNavigate,
-}: Readonly<{ current: AppRoute; onNavigate?: (route: AppRoute) => void }>) {
-  if (!onNavigate) return null;
+}: Readonly<{
+  access?: AnalysisRouteSwitcherAccess;
+  current: AppRoute;
+  onNavigate?: (route: AppRoute) => void;
+}>) {
+  if (access !== "development_audit" || !onNavigate) return null;
   return (
     <nav className="analysis-route-switcher" aria-label="専門解析の切り替え">
       <span>専門解析</span>

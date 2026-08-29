@@ -61,12 +61,16 @@ import {
   type DedicatedEntryIntent,
   type DedicatedEntryModuleId,
 } from "../app/dedicatedEntryIntent";
+import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
+import { recordUsageEntry, recordUsageMilestone } from "../app/usageTelemetry";
 
 type NewExperimentPageProps = {
   onNavigate: (route: AppRoute) => void;
   saveProject?: SaveProjectAction;
   saveUnresolvedVisualizationProject?: SaveUnresolvedVisualizationProjectAction;
   openUnresolvedVisualizationProject?: OpenUnresolvedVisualizationProjectAction;
+  initialGraphOnlyState?: UnresolvedVisualizationProjectState | null;
+  initialGraphOnlyTarget?: string;
   analysisRunner?: AnalysisRunner;
   browserPreview?: boolean;
   analysisAvailable?: boolean;
@@ -74,8 +78,13 @@ type NewExperimentPageProps = {
   favoriteGraphDefaults?: readonly FavoriteGraphDefault[];
   onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
   onDirtyChange?: (dirty: boolean) => void;
+  onOpenProject?: () => void;
+  onRequestExit?: RequestWorkspaceExit;
+  onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
   onAdaptiveSurvivalReady?: (text: string, snapshot: AdaptiveInputSnapshot) => void;
   onDedicatedEntryReady?: (intent: DedicatedEntryIntent) => void;
+  /** Native paired save/reopen capability for editable specialized-entry drafts. */
+  specializedEntryAvailable?: boolean;
   /** Test/debug access only. Production rollback is controlled by the feature flag. */
   showCompatibilityEntry?: boolean;
 };
@@ -2344,6 +2353,8 @@ export function NewExperimentPage({
   saveProject,
   saveUnresolvedVisualizationProject,
   openUnresolvedVisualizationProject,
+  initialGraphOnlyState = null,
+  initialGraphOnlyTarget,
   analysisRunner = defaultAnalysisRunner,
   browserPreview = false,
   analysisAvailable = true,
@@ -2351,13 +2362,19 @@ export function NewExperimentPage({
   favoriteGraphDefaults,
   onSaveFavorite,
   onDirtyChange,
+  onOpenProject,
+  onRequestExit,
+  onRegisterSaveHandler,
   onAdaptiveSurvivalReady,
   onDedicatedEntryReady,
+  specializedEntryAvailable = false,
   showCompatibilityEntry = false,
 }: NewExperimentPageProps) {
   const evaluationPreview =
     import.meta.env.DEV && browserPreview && evaluationModeIsConfigured(evaluationMode);
-  const [stage, setStage] = useState<FlowStage>(initialDraft ? "confirmation" : "context");
+  const [stage, setStage] = useState<FlowStage>(
+    initialGraphOnlyState ? "graph-only" : initialDraft ? "confirmation" : "context",
+  );
   const [designStep, setDesignStep] = useState<DesignStep>(0);
   const [furthestStep, setFurthestStep] = useState<FlowStep>(initialDraft ? 4 : 0);
   const [draft, setDraft] = useState<ExperimentSetDraft | null>(initialDraft);
@@ -2371,8 +2388,9 @@ export function NewExperimentPage({
   > | null>(null);
   const [compatibilityEntryVisible, setCompatibilityEntryVisible] = useState(false);
   const [pendingGraphOnlyState, setPendingGraphOnlyState] =
-    useState<UnresolvedVisualizationProjectState | null>(null);
+    useState<UnresolvedVisualizationProjectState | null>(initialGraphOnlyState);
   const [biologicalHandoffError, setBiologicalHandoffError] = useState<string | null>(null);
+  const entryDirtySourcesRef = useRef({ graphOnly: false, biological: false });
   const pageRootRef = useRef<HTMLDivElement>(null);
   const returnFocusEntryRef = useRef<NewExperimentEntryId | null>(null);
   const flowSteps = draft ? flowStepsFor(draft) : ([0, 1, 2, 3, 4] as const);
@@ -2382,6 +2400,35 @@ export function NewExperimentPage({
   );
   const unresolvedVisualizationEntryAvailable =
     browserPreview || unresolvedVisualizationPersistenceAvailable;
+  const dedicatedEntryAvailable = browserPreview || specializedEntryAvailable;
+
+  const updateEntryDirtySource = (
+    source: "graphOnly" | "biological",
+    dirty: boolean,
+  ) => {
+    entryDirtySourcesRef.current = { ...entryDirtySourcesRef.current, [source]: dirty };
+    onDirtyChange?.(
+      entryDirtySourcesRef.current.graphOnly || entryDirtySourcesRef.current.biological,
+    );
+  };
+
+  const clearEntryDirtyLifecycle = () => {
+    entryDirtySourcesRef.current = { graphOnly: false, biological: false };
+    onDirtyChange?.(false);
+    onRegisterSaveHandler?.(null);
+  };
+
+  const requestEntryExit = (actionLabel: string, proceed: () => void) => {
+    const confirmedProceed = () => {
+      clearEntryDirtyLifecycle();
+      proceed();
+    };
+    if (onRequestExit) {
+      onRequestExit({ actionLabel, proceed: confirmedProceed });
+      return;
+    }
+    confirmedProceed();
+  };
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -2406,6 +2453,10 @@ export function NewExperimentPage({
 
   const enterStageFromHub = (entryId: NewExperimentEntryId, nextStage: FlowStage) => {
     returnFocusEntryRef.current = entryId;
+    recordUsageEntry(
+      "new-experiment",
+      entryId === "graphOnly" ? "graph_only" : "experiment_interview",
+    );
     setStage(nextStage);
   };
 
@@ -2487,6 +2538,14 @@ export function NewExperimentPage({
     experimentDescription: string,
   ) => {
     if (!onDedicatedEntryReady) return;
+    recordUsageEntry(
+      "new-experiment",
+      moduleId === "time_to_event"
+        ? "survival"
+        : moduleId === "ordered_curve_kinetics"
+          ? "ordered_curve"
+          : "heatmap",
+    );
     onDedicatedEntryReady(
       createDedicatedEntryIntent({
         moduleId,
@@ -2601,6 +2660,9 @@ export function NewExperimentPage({
       readout: workspaceDraft.readouts.map(({ shape }) => shape).join(","),
       conditionCount: workspaceDraft.conditions.length,
     });
+    // Only typed workflow milestones leave this boundary. The draft, source label,
+    // condition labels, and measurements are intentionally never sent to usage telemetry.
+    recordUsageMilestone("new-experiment", "structure_ready");
   };
 
   if (stage === "workspace" && draft) {
@@ -2616,6 +2678,9 @@ export function NewExperimentPage({
         favoriteGraphDefaults={favoriteGraphDefaults}
         onSaveFavorite={onSaveFavorite}
         onDirtyChange={onDirtyChange}
+        onOpenProject={onOpenProject}
+        onRequestExit={onRequestExit}
+        onRegisterSaveHandler={onRegisterSaveHandler}
         onBack={() => (fixtureCells ? goBackToContext() : setStage("confirmation"))}
       />
     );
@@ -2630,7 +2695,7 @@ export function NewExperimentPage({
           onClick={(event) => {
             if (!acceptSingleClick(event.detail)) return;
             if (stage === "context") onNavigate("home");
-            else goBackToContext();
+            else requestEntryExit("実験の種類を変更する", goBackToContext);
           }}
         >
           <span aria-hidden="true">←</span>{" "}
@@ -2666,7 +2731,7 @@ export function NewExperimentPage({
                   "ordered_curve_kinetics",
                   "nonlinear-fit",
                   "direct_ordered_curve",
-                  "酵素反応・飽和カーブ",
+                  "濃度–反応・酵素反応",
                   "基質濃度–初速度、または時間–応答を記録し、対応するmodelを選んだ後だけfitする実験",
                 )
               }
@@ -2686,34 +2751,43 @@ export function NewExperimentPage({
                 graphOnly: {
                   available: unresolvedVisualizationEntryAvailable,
                   reason:
-                    "Graph用データを保存・再開する接続がそろっていないため、この環境では開始できません。",
+                    "この版ではGraph用の表を保存して再開できないため、データ入力前に停止しています。",
                 },
                 survival: {
-                  available: Boolean(onDedicatedEntryReady),
-                  reason: "実験情報を保った専用入力への接続を利用できません。",
+                  available: Boolean(onDedicatedEntryReady) && dedicatedEntryAvailable,
+                  reason:
+                    onDedicatedEntryReady
+                      ? "この版では入力途中の生存時間データを保存して再開できないため、データ入力前に停止しています。"
+                      : "この版では生存時間の専用シートを安全に開けません。別の実験形式へは自動変換しません。",
                 },
                 orderedCurve: {
-                  available: Boolean(onDedicatedEntryReady),
-                  reason: "実験情報を保った専用入力への接続を利用できません。",
+                  available: Boolean(onDedicatedEntryReady) && dedicatedEntryAvailable,
+                  reason:
+                    onDedicatedEntryReady
+                      ? "この版では入力途中の濃度–反応・酵素反応データを保存して再開できないため、データ入力前に停止しています。"
+                      : "この版では反応曲線の専用シートを安全に開けません。別の実験形式へは自動変換しません。",
                 },
                 heatmap: {
                   available:
                     Boolean(onDedicatedEntryReady) && unresolvedVisualizationEntryAvailable,
                   reason: onDedicatedEntryReady
-                    ? "行列とGraphを保存・再開する接続がそろっていないため、この環境では開始できません。"
-                    : "行列を保った専用入力への接続を利用できません。",
+                    ? "この版では行列とGraphを保存して再開できないため、データ入力前に停止しています。"
+                    : "この版では行列を保つ専用シートを安全に開けません。別の実験形式へは自動変換しません。",
                 },
               }}
             />
           ) : (
             <>
               <section className="experiment-start__intro" aria-labelledby="new-experiment-heading">
-                <p className="experiment-start__eyebrow">
-                  {taskEntryHubEnabled ? "以前の入口" : "新しい実験"}
+                <p className="experiment-start__eyebrow" role="status">
+                  互換モード（以前の入力方式）
                 </p>
                 <h1 id="new-experiment-heading">何をした実験ですか？</h1>
                 <p>
                   実験の背景を選び、短い質問に答えていくと、あなたの実験に合った入力シートにつながります。
+                </p>
+                <p className="experiment-start__subtle">
+                  現在は以前の入力方式を表示しています。通常の入口とは異なり、実験分野から選びます。
                 </p>
                 <p className="experiment-start__subtle">
                   統計用語や解析名を先に選ぶ必要はありません。
@@ -2775,14 +2849,20 @@ export function NewExperimentPage({
             initial={
               pendingGraphOnlyState ? graphOnlyBiologicalInitial(pendingGraphOnlyState) : undefined
             }
+            onDirtyChange={(dirty) => updateEntryDirtySource("biological", dirty)}
             onCancel={() => {
               setBiologicalHandoffError(null);
-              setStage(pendingGraphOnlyState ? "graph-only" : "context");
+              if (pendingGraphOnlyState) {
+                updateEntryDirtySource("biological", false);
+                setStage("graph-only");
+              }
+              else requestEntryExit("実験の種類を変更する", goBackToContext);
             }}
             onReady={(result) => {
               try {
                 const presentation = createBiologicalSetupPresentation(result);
                 if (presentation.status === "stopped") {
+                  recordUsageMilestone("new-experiment", "safe_stop");
                   setBiologicalHandoffError(
                     "条件表と実験構造の対応を安全に確認できませんでした。入力内容は保持されています。",
                   );
@@ -2793,6 +2873,7 @@ export function NewExperimentPage({
                   ? bridgeGraphOnlyTableToStatistics(pendingGraphOnlyState, contract)
                   : null;
                 if (promoted?.status === "stopped") {
+                  recordUsageMilestone("new-experiment", "safe_stop");
                   setBiologicalHandoffError(promoted.reason);
                   return false;
                 }
@@ -2804,6 +2885,7 @@ export function NewExperimentPage({
                   biologicalSetup: presentation.presentation,
                 });
                 if (workspace.status !== "ready" || !workspace.draft) {
+                  recordUsageMilestone("new-experiment", "safe_stop");
                   setBiologicalHandoffError(biologicalWorkspaceStopMessage(workspace.diagnostics));
                   return false;
                 }
@@ -2815,6 +2897,7 @@ export function NewExperimentPage({
                     })
                   : ({ status: "ready", graphs: [] } as const);
                 if (reboundGraphs.status === "stopped") {
+                  recordUsageMilestone("new-experiment", "safe_stop");
                   setBiologicalHandoffError(reboundGraphs.reason);
                   return false;
                 }
@@ -2837,10 +2920,12 @@ export function NewExperimentPage({
                   promotedDraft,
                   promoted ? "graph_only_statistics_bridge" : "biological_experiment_setup_alpha",
                 );
+                clearEntryDirtyLifecycle();
                 returnFocusEntryRef.current = null;
                 setStage("workspace");
                 return true;
               } catch {
+                recordUsageMilestone("new-experiment", "safe_stop");
                 setBiologicalHandoffError(
                   "入力画面の準備中に実験内容を確認できませんでした。入力内容は保持されています。",
                 );
@@ -2888,10 +2973,18 @@ export function NewExperimentPage({
       {stage === "graph-only" ? (
         <GraphOnlyVisualizationPage
           onNavigate={onNavigate}
-          onBack={() => setStage("context")}
+          onBack={() => {
+            clearEntryDirtyLifecycle();
+            setStage("context");
+          }}
           saveProject={saveUnresolvedVisualizationProject}
           openProject={openUnresolvedVisualizationProject}
           initialState={pendingGraphOnlyState}
+          initialTarget={initialGraphOnlyTarget}
+          initialDirty={entryDirtySourcesRef.current.graphOnly}
+          onDirtyChange={(dirty) => updateEntryDirtySource("graphOnly", dirty)}
+          onRequestExit={onRequestExit}
+          onRegisterSaveHandler={onRegisterSaveHandler}
           onStatisticsStructureRequested={(state) => {
             setPendingGraphOnlyState(state);
             setBiologicalHandoffError(null);

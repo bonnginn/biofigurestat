@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { parseAdaptiveDelimited, type ParsedAdaptiveInput } from "@lsaa/adaptive-input";
 import {
@@ -6,9 +6,11 @@ import {
   appendUnresolvedVisualizationGraph,
   createUnresolvedVisualizationProjectState,
   resolveUnresolvedVisualizationIdentityDecision,
+  resolveUnresolvedVisualizationSourceRowUnitDecision,
   type UnresolvedVisualizationProjectState,
   type UnresolvedVisualizationColumnMapping,
   type UnresolvedVisualizationIdentityDecision,
+  type UnresolvedVisualizationSourceRowUnitDecision,
 } from "@lsaa/project";
 import type { GraphSpec } from "@lsaa/graph-spec";
 
@@ -17,6 +19,13 @@ import type {
   SaveUnresolvedVisualizationProjectAction,
 } from "../app/projectActions";
 import type { AppRoute } from "../app/routes";
+import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
+import { routeFromPath } from "../app/routes";
+import { DelimitedTextSpreadsheet } from "../components/DelimitedTextSpreadsheet";
+import {
+  recordUsageGraphConfiguration,
+  recordUsageMilestone,
+} from "../app/usageTelemetry";
 import "./GraphOnlyVisualizationPage.css";
 
 type ColumnIndex = number | "";
@@ -26,18 +35,19 @@ type ParsedVisualizationInput = Readonly<{
   error: string | null;
 }>;
 
-type EditableVisualizationTable = Readonly<{
-  headers: string[];
-  rows: string[][];
-}>;
-
 type GraphOnlyVisualizationPageProps = Readonly<{
   onNavigate: (route: AppRoute) => void;
   onBack?: () => void;
   saveProject?: SaveUnresolvedVisualizationProjectAction;
   openProject?: OpenUnresolvedVisualizationProjectAction;
   initialState?: UnresolvedVisualizationProjectState | null;
+  initialTarget?: string;
   onStatisticsStructureRequested?: (state: UnresolvedVisualizationProjectState) => void;
+  /** Keep an unsaved entry session dirty when this surface is remounted after a handoff. */
+  initialDirty?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+  onRequestExit?: RequestWorkspaceExit;
+  onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
 }>;
 
 let visualizationIdSequence = 0;
@@ -74,132 +84,6 @@ function parseVisualizationInput(text: string): ParsedVisualizationInput {
   }
 }
 
-function delimiterCharacter(delimiter: ParsedAdaptiveInput["delimiter"]): string {
-  if (delimiter === "comma") return ",";
-  if (delimiter === "semicolon") return ";";
-  return "\t";
-}
-
-function serializeDelimitedCell(value: string, delimiter: string): string {
-  // Keep the serialized table parseable when a user enters a delimiter or a
-  // quote. Empty rows are handled by serializeDelimitedTable because an empty
-  // cell inside a multi-column row is already kept by its delimiters.
-  if (
-    value.includes(delimiter) ||
-    value.includes('"') ||
-    value.includes("\r") ||
-    value.includes("\n")
-  ) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
-}
-
-function serializeDelimitedTable(
-  headers: readonly string[],
-  rows: readonly (readonly string[])[],
-  delimiter: ParsedAdaptiveInput["delimiter"],
-): string {
-  const character = delimiterCharacter(delimiter);
-  const serializeLine = (values: readonly string[]): string => {
-    const serialized = values
-      .map((value) => serializeDelimitedCell(value, character))
-      .join(character);
-    // parseAdaptiveDelimited ignores lines whose trimmed contents are empty.
-    // Quote the first cell of an all-empty line so an explicitly added blank
-    // row (or a table whose headers are being repaired) remains editable.
-    if (values.length > 0 && !serialized.trim()) {
-      return [`""`, ...values.slice(1).map(() => "")].join(character);
-    }
-    return serialized;
-  };
-  const serializedHeaders = serializeLine(headers);
-  return [
-    serializedHeaders || '""',
-    ...rows.map(
-      (row) => serializeLine(headers.map((_, columnIndex) => row[columnIndex] ?? "")) || '""',
-    ),
-  ].join("\n");
-}
-
-function editableTableFor(parsed: ParsedAdaptiveInput): EditableVisualizationTable {
-  // A malformed pasted row can contain more cells than the header. Keep every
-  // parsed cell visible while the user repairs the rectangle instead of
-  // truncating it in the editing surface.
-  const columnCount = Math.max(parsed.headers.length, ...parsed.rows.map((row) => row.length));
-  const headers = [...parsed.headers];
-  while (headers.length < columnCount) headers.push("");
-  const rows = parsed.rows.map((row) =>
-    Array.from({ length: columnCount }, (_, columnIndex) => row[columnIndex] ?? ""),
-  );
-  return { headers, rows };
-}
-
-function focusAdjacentGraphOnlyInput(event: KeyboardEvent<HTMLInputElement>): void {
-  if (
-    !(["Tab", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"] as string[]).includes(
-      event.key,
-    )
-  ) {
-    return;
-  }
-  const grid = event.currentTarget.closest<HTMLElement>("[data-graph-only-grid]");
-  if (!grid) return;
-
-  const inputs = Array.from(
-    grid.querySelectorAll<HTMLInputElement>('[data-graph-only-input="true"]'),
-  );
-  const currentIndex = inputs.indexOf(event.currentTarget);
-  if (currentIndex < 0) return;
-
-  if (event.key === "Tab") {
-    const nextIndex = currentIndex + (event.shiftKey ? -1 : 1);
-    const next = inputs[nextIndex];
-    if (!next) return;
-    event.preventDefault();
-    next.focus();
-    next.select();
-    return;
-  }
-
-  if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-    const { selectionStart, selectionEnd, value } = event.currentTarget;
-    // Keep ordinary text editing intact. Horizontal arrows leave the current
-    // cell only after the caret reaches the corresponding boundary; Shift+an
-    // arrow continues to select text within the input.
-    if (
-      event.shiftKey ||
-      selectionStart === null ||
-      selectionEnd === null ||
-      selectionStart !== selectionEnd ||
-      (event.key === "ArrowLeft" && selectionStart > 0) ||
-      (event.key === "ArrowRight" && selectionEnd < value.length)
-    ) {
-      return;
-    }
-  }
-
-  const currentRow = Number(event.currentTarget.dataset.gridRow);
-  const currentColumn = Number(event.currentTarget.dataset.gridColumn);
-  if (!Number.isInteger(currentRow) || !Number.isInteger(currentColumn)) return;
-
-  let nextRow = currentRow;
-  let nextColumn = currentColumn;
-  if (event.key === "Enter") nextRow += event.shiftKey ? -1 : 1;
-  if (event.key === "ArrowLeft") nextColumn -= 1;
-  if (event.key === "ArrowRight") nextColumn += 1;
-  if (event.key === "ArrowUp") nextRow -= 1;
-  if (event.key === "ArrowDown") nextRow += 1;
-
-  const next = grid.querySelector<HTMLInputElement>(
-    `[data-graph-only-input="true"][data-grid-row="${nextRow}"][data-grid-column="${nextColumn}"]`,
-  );
-  if (!next) return;
-  event.preventDefault();
-  next.focus();
-  next.select();
-}
-
 function numericValue(raw: string | undefined): number | null {
   const value = raw?.trim() ?? "";
   if (!value || ["NA", "N/A", "—"].includes(value)) return null;
@@ -210,7 +94,8 @@ function numericValue(raw: string | undefined): number | null {
 function sourceKindFor(
   sourceLabel: string,
   delimiter: ParsedAdaptiveInput["delimiter"],
-): "clipboard" | "csv" | "tsv" | "generic_file" {
+): "direct_entry" | "clipboard" | "csv" | "tsv" | "generic_file" {
+  if (sourceLabel === "direct-entry") return "direct_entry";
   if (sourceLabel === "clipboard") return "clipboard";
   if (/\.tsv$/i.test(sourceLabel) || delimiter === "tab") return "tsv";
   if (/\.csv$/i.test(sourceLabel) || delimiter === "comma") return "csv";
@@ -224,6 +109,7 @@ function mappingFor(
   seriesColumn: ColumnIndex,
   idColumn: ColumnIndex,
   identityDecision: UnresolvedVisualizationIdentityDecision,
+  sourceRowUnitDecision: UnresolvedVisualizationSourceRowUnitDecision,
   sourceLabel: string,
   confirmedAt: string,
 ): UnresolvedVisualizationColumnMapping | null {
@@ -245,6 +131,7 @@ function mappingFor(
       role: roles.get(index) ?? "metadata",
     })),
     identityDecision,
+    sourceRowUnitDecision,
     confirmedAt,
   };
 }
@@ -339,6 +226,29 @@ function initialIdentityDecision(
     : "unanswered";
 }
 
+function initialSourceRowUnitDecision(
+  state: UnresolvedVisualizationProjectState | null | undefined,
+): UnresolvedVisualizationSourceRowUnitDecision {
+  return state?.mapping
+    ? resolveUnresolvedVisualizationSourceRowUnitDecision(state.mapping)
+    : "unanswered";
+}
+
+function graphOnlyLifecycleSnapshot(
+  values: Readonly<{
+    text: string;
+    sourceLabel: string;
+    xColumn: ColumnIndex;
+    yColumn: ColumnIndex;
+    seriesColumn: ColumnIndex;
+    idColumn: ColumnIndex;
+    identityDecision: UnresolvedVisualizationIdentityDecision;
+    sourceRowUnitDecision: UnresolvedVisualizationSourceRowUnitDecision;
+  }>,
+): string {
+  return JSON.stringify(values);
+}
+
 function sameStringRows(
   left: readonly (readonly string[])[],
   right: readonly (readonly string[])[],
@@ -364,6 +274,8 @@ function sameMappingDefinition(
     left.headerRow === right.headerRow &&
     resolveUnresolvedVisualizationIdentityDecision(left) ===
       resolveUnresolvedVisualizationIdentityDecision(right) &&
+    resolveUnresolvedVisualizationSourceRowUnitDecision(left) ===
+      resolveUnresolvedVisualizationSourceRowUnitDecision(right) &&
     left.columns.length === right.columns.length &&
     left.columns.every((column, index) => {
       const candidate = right.columns[index];
@@ -377,9 +289,7 @@ function sameMappingDefinition(
   );
 }
 
-function sampleText(): string {
-  return ["Condition\tValue", "Control\t12.4", "Drug A\t18.1", "Drug B\t20.0"].join("\n");
-}
+const DIRECT_ENTRY_TEMPLATE = "X / condition\tY / value\tGroup (optional)\tID (optional)";
 
 function GraphOnlyPlot({
   parsed,
@@ -500,23 +410,34 @@ export function GraphOnlyVisualizationPage({
   saveProject,
   openProject,
   initialState = null,
+  initialTarget,
   onStatisticsStructureRequested,
+  initialDirty = false,
+  onDirtyChange,
+  onRequestExit,
+  onRegisterSaveHandler,
 }: GraphOnlyVisualizationPageProps) {
   const compatibleInitialState = initialState?.entryIntent === "graph_only" ? initialState : null;
   const initialIntentError =
     initialState && initialState.entryIntent !== "graph_only"
       ? "このファイルは表からGraph用のprojectではありません。"
       : null;
-  const [text, setText] = useState(compatibleInitialState?.rawLineage.rawText ?? "");
+  const [text, setText] = useState(
+    compatibleInitialState?.rawLineage.rawText ?? DIRECT_ENTRY_TEMPLATE,
+  );
   const [sourceLabel, setSourceLabel] = useState(
-    compatibleInitialState?.rawLineage.sourceLabel ?? "clipboard",
+    compatibleInitialState?.rawLineage.sourceLabel ?? "direct-entry",
   );
   const [loadedState, setLoadedState] = useState<UnresolvedVisualizationProjectState | null>(
     compatibleInitialState,
   );
-  const [savedTarget, setSavedTarget] = useState<string | undefined>();
-  const [xColumn, setXColumn] = useState<ColumnIndex>(initialColumn(compatibleInitialState, "x"));
-  const [yColumn, setYColumn] = useState<ColumnIndex>(initialColumn(compatibleInitialState, "y"));
+  const [savedTarget, setSavedTarget] = useState<string | undefined>(initialTarget);
+  const [xColumn, setXColumn] = useState<ColumnIndex>(
+    compatibleInitialState ? initialColumn(compatibleInitialState, "x") : 0,
+  );
+  const [yColumn, setYColumn] = useState<ColumnIndex>(
+    compatibleInitialState ? initialColumn(compatibleInitialState, "y") : 1,
+  );
   const [seriesColumn, setSeriesColumn] = useState<ColumnIndex>(
     initialColumn(compatibleInitialState, "series"),
   );
@@ -526,6 +447,10 @@ export function GraphOnlyVisualizationPage({
   const [identityDecision, setIdentityDecision] = useState<UnresolvedVisualizationIdentityDecision>(
     initialIdentityDecision(compatibleInitialState),
   );
+  const [sourceRowUnitDecision, setSourceRowUnitDecision] =
+    useState<UnresolvedVisualizationSourceRowUnitDecision>(
+      initialSourceRowUnitDecision(compatibleInitialState),
+    );
   const [error, setError] = useState<string | null>(initialIntentError);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [statisticsMessage, setStatisticsMessage] = useState<string | null>(null);
@@ -533,44 +458,43 @@ export function GraphOnlyVisualizationPage({
   const [statisticsXMeaning, setStatisticsXMeaning] = useState<
     "" | "condition" | "ordered" | "unknown"
   >("");
+  const lifecycleSnapshot = graphOnlyLifecycleSnapshot({
+    text,
+    sourceLabel,
+    xColumn,
+    yColumn,
+    seriesColumn,
+    idColumn,
+    identityDecision,
+    sourceRowUnitDecision,
+  });
+  const savedLifecycleSnapshotRef = useRef<string | null>(
+    initialDirty ? null : lifecycleSnapshot,
+  );
+  const isDirty =
+    savedLifecycleSnapshotRef.current === null ||
+    lifecycleSnapshot !== savedLifecycleSnapshotRef.current;
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
   const parsedResult = useMemo(() => parseVisualizationInput(text), [text]);
   const parsed = parsedResult.parsed;
-  const editableTable = useMemo(() => editableTableFor(parsed), [parsed]);
 
-  const updateEditableTable = (
-    headers: readonly string[],
-    rows: readonly (readonly string[])[],
-  ) => {
-    setText(serializeDelimitedTable(headers, rows, parsed.delimiter));
+  const resetImportedMapping = () => {
+    setXColumn("");
+    setYColumn("");
+    setSeriesColumn("");
+    setIdColumn("");
+    setIdentityDecision("unanswered");
+    setSourceRowUnitDecision("unanswered");
+  };
+
+  const applyImportedText = (contents: string, nextSourceLabel: string) => {
+    setText(contents);
+    setSourceLabel(nextSourceLabel);
     setSaveMessage(null);
     setError(null);
-  };
-
-  const updateEditableCell = (rowIndex: number | null, columnIndex: number, value: string) => {
-    const nextHeaders = [...editableTable.headers];
-    const nextRows = editableTable.rows.map((row) => [...row]);
-    if (rowIndex === null) {
-      nextHeaders[columnIndex] = value;
-    } else {
-      const row = nextRows[rowIndex];
-      if (!row) return;
-      row[columnIndex] = value;
-    }
-    updateEditableTable(nextHeaders, nextRows);
-  };
-
-  const addEditableRow = () => {
-    if (!editableTable.headers.length) return;
-    updateEditableTable(editableTable.headers, [
-      ...editableTable.rows,
-      editableTable.headers.map(() => ""),
-    ]);
-  };
-
-  const addEditableColumn = () => {
-    const nextHeaders = [...editableTable.headers, ""];
-    const nextRows = editableTable.rows.map((row) => [...row, ""]);
-    updateEditableTable(nextHeaders, nextRows);
+    resetImportedMapping();
   };
 
   const finiteYCount =
@@ -595,6 +519,33 @@ export function GraphOnlyVisualizationPage({
     yColumn !== "" &&
     !duplicateMapping &&
     finiteYCount > 0;
+  const dataEntryRecordedRef = useRef(Boolean(compatibleInitialState));
+  const graphCreatedRecordedRef = useRef(Boolean(compatibleInitialState?.activeGraphId));
+  const statisticsRequestedRecordedRef = useRef(false);
+  const statisticsSafeStopRecordedRef = useRef(false);
+  const recordStatisticsSafeStop = () => {
+    if (statisticsSafeStopRecordedRef.current) return;
+    statisticsSafeStopRecordedRef.current = true;
+    recordUsageMilestone(routeFromPath(window.location.pathname), "safe_stop");
+  };
+  useEffect(() => {
+    if (dataEntryRecordedRef.current || !text.trim() || parsed.rows.length === 0) return;
+    dataEntryRecordedRef.current = true;
+    recordUsageMilestone(routeFromPath(window.location.pathname), "data_entry_started");
+  }, [parsed.rows.length, text]);
+  useEffect(() => {
+    if (graphCreatedRecordedRef.current || !canGraph) return;
+    graphCreatedRecordedRef.current = true;
+    const usageRoute = routeFromPath(window.location.pathname);
+    recordUsageMilestone(usageRoute, "graph_created");
+    recordUsageGraphConfiguration(usageRoute, {
+      graphFamily: "dot",
+      origin: "direct_table",
+      uncertainty: "none",
+      rawPointsVisible: true,
+      summaryVisible: false,
+    });
+  }, [canGraph]);
 
   const columns = parsed.headers.map((header, index) => (
     <option key={`${index}.${header}`} value={index}>
@@ -617,6 +568,7 @@ export function GraphOnlyVisualizationPage({
       seriesColumn,
       idColumn,
       identityDecision,
+      sourceRowUnitDecision,
       sourceLabel,
       timestamp,
     );
@@ -715,16 +667,77 @@ export function GraphOnlyVisualizationPage({
     setSeriesColumn(initialColumn(state, "series"));
     setIdColumn(initialColumn(state, "id"));
     setIdentityDecision(initialIdentityDecision(state));
+    setSourceRowUnitDecision(initialSourceRowUnitDecision(state));
     setError(null);
     setSaveMessage(target ? "保存したGraph用データを開きました。" : null);
     setStatisticsMessage(null);
     setStatisticsHandoffVisible(false);
     setStatisticsXMeaning("");
+    dataEntryRecordedRef.current = true;
+    graphCreatedRecordedRef.current = true;
+    statisticsRequestedRecordedRef.current = false;
+    statisticsSafeStopRecordedRef.current = false;
+    savedLifecycleSnapshotRef.current = graphOnlyLifecycleSnapshot({
+      text: state.rawLineage.rawText,
+      sourceLabel: state.rawLineage.sourceLabel,
+      xColumn: initialColumn(state, "x"),
+      yColumn: initialColumn(state, "y"),
+      seriesColumn: initialColumn(state, "series"),
+      idColumn: initialColumn(state, "id"),
+      identityDecision: initialIdentityDecision(state),
+      sourceRowUnitDecision: initialSourceRowUnitDecision(state),
+    });
+    onDirtyChange?.(false);
+    recordUsageMilestone(routeFromPath(window.location.pathname), "project_opened");
+  };
+
+  const saveCurrentProject = async (saveAs = false): Promise<boolean> => {
+    const state = buildState();
+    if (!state || !saveProject) return false;
+    try {
+      const saved = await saveProject(state, saveAs ? undefined : savedTarget);
+      if (!saved) return false;
+      savedLifecycleSnapshotRef.current = lifecycleSnapshot;
+      setLoadedState(saved.state);
+      setSavedTarget(saved.target);
+      setSaveMessage("Graph用データを保存しました。元の表と列の指定を保持しています。");
+      onDirtyChange?.(false);
+      recordUsageMilestone(routeFromPath(window.location.pathname), "project_saved");
+      return true;
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Graph用データを保存できませんでした。");
+      return false;
+    }
+  };
+  const saveCurrentProjectRef = useRef(saveCurrentProject);
+  useEffect(() => {
+    saveCurrentProjectRef.current = saveCurrentProject;
+  }, [saveCurrentProject]);
+  useEffect(() => {
+    if (!onRegisterSaveHandler) return;
+    onRegisterSaveHandler((saveAs) => saveCurrentProjectRef.current(Boolean(saveAs)));
+    return () => onRegisterSaveHandler(null);
+  }, [onRegisterSaveHandler]);
+
+  const requestExit = (actionLabel: string, proceed: () => void | Promise<void>) => {
+    if (!isDirty) {
+      void proceed();
+      return;
+    }
+    if (onRequestExit) {
+      onRequestExit({ actionLabel, proceed });
+      return;
+    }
+    void proceed();
   };
 
   return (
     <div className="page-stack narrow-page graph-only">
-      <button className="back-link" type="button" onClick={onBack ?? (() => onNavigate("home"))}>
+      <button
+        className="back-link"
+        type="button"
+        onClick={() => requestExit("入口へ戻る", onBack ?? (() => onNavigate("home")))}
+      >
         <span aria-hidden="true">←</span> 入口へ戻る
       </button>
       <header className="graph-only__header">
@@ -737,7 +750,7 @@ export function GraphOnlyVisualizationPage({
 
       <section className="graph-only__input" aria-labelledby="graph-only-input-heading">
         <div className="graph-only__section-heading">
-          <h2 id="graph-only-input-heading">1. 表を貼り付ける</h2>
+          <h2 id="graph-only-input-heading">1. 表に入力・貼り付ける</h2>
           <div className="graph-only__actions">
             <button
               className="secondary-button"
@@ -746,7 +759,7 @@ export function GraphOnlyVisualizationPage({
                 const clipboard = navigator.clipboard;
                 if (!clipboard) {
                   setError(
-                    "クリップボードを読み取れませんでした。下の欄へ直接貼り付けてください。",
+                    "クリップボードを読み取れませんでした。下のシートへ直接貼り付けてください。",
                   );
                   return;
                 }
@@ -754,18 +767,12 @@ export function GraphOnlyVisualizationPage({
                   .readText()
                   .then((clipboardText) => {
                     if (clipboardText) {
-                      setText(clipboardText);
-                      setSourceLabel("clipboard");
-                      setXColumn("");
-                      setYColumn("");
-                      setSeriesColumn("");
-                      setIdColumn("");
-                      setIdentityDecision("unanswered");
+                      applyImportedText(clipboardText, "clipboard");
                     }
                   })
                   .catch(() =>
                     setError(
-                      "クリップボードを読み取れませんでした。下の欄へ直接貼り付けてください。",
+                      "クリップボードを読み取れませんでした。下のシートへ直接貼り付けてください。",
                     ),
                   );
               }}
@@ -777,17 +784,19 @@ export function GraphOnlyVisualizationPage({
                 className="secondary-button"
                 type="button"
                 onClick={() => {
-                  void openProject()
-                    .then((opened) => {
-                      if (opened) applyLoadedState(opened.state, opened.target);
-                    })
-                    .catch((reason: unknown) =>
-                      setError(
-                        reason instanceof Error
-                          ? reason.message
-                          : "保存したGraph用データを開けませんでした。",
-                      ),
-                    );
+                  requestExit("保存したGraph用データを開く", async () => {
+                    await openProject()
+                      .then((opened) => {
+                        if (opened) applyLoadedState(opened.state, opened.target);
+                      })
+                      .catch((reason: unknown) =>
+                        setError(
+                          reason instanceof Error
+                            ? reason.message
+                            : "保存したGraph用データを開けませんでした。",
+                        ),
+                      );
+                  });
                 }}
               >
                 保存したGraph用データを開く
@@ -795,29 +804,29 @@ export function GraphOnlyVisualizationPage({
             ) : null}
           </div>
         </div>
-        <label className="experiment-start__field" htmlFor="graph-only-table-text">
-          <span>CSV / TSVの表</span>
-          <textarea
-            id="graph-only-table-text"
-            aria-label="Graph用の表"
-            rows={8}
-            value={text}
-            placeholder={sampleText()}
-            onChange={(event) => {
-              setText(event.currentTarget.value);
+        <p className="graph-only__subtle">
+          見出しの下へ直接入力するか、Excelから長方形の範囲を左上セルへ貼り付けてください。直接入力用のX列とY列だけを最初からGraphへ対応付けています。GroupとIDは必要なときだけ使います。
+        </p>
+        <DelimitedTextSpreadsheet
+          value={text}
+          onChange={(nextText, source) => {
+            setText(nextText);
+            setSaveMessage(null);
+            setError(null);
+            if (source === "clipboard") {
               setSourceLabel("clipboard");
-              setSaveMessage(null);
-              setError(null);
-              setXColumn("");
-              setYColumn("");
-              setSeriesColumn("");
-              setIdColumn("");
-              setIdentityDecision("unanswered");
-            }}
-          />
-        </label>
+              resetImportedMapping();
+            }
+          }}
+          ariaLabel="Graph用データシート"
+          caption="Graph用データ"
+          minimumRows={9}
+          minimumColumns={4}
+          testIdPrefix="graph-only"
+          replaceOnPasteAtOrigin
+        />
         <label className="graph-only__file">
-          <span>またはCSV / TSV / TXTファイル</span>
+          <span>CSV / TSV / TXTファイルを同じシートへ読み込む</span>
           <input
             aria-label="Graph用の表ファイル"
             accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
@@ -828,99 +837,26 @@ export function GraphOnlyVisualizationPage({
               void file
                 .text()
                 .then((contents) => {
-                  setText(contents);
-                  setSourceLabel(file.name);
-                  setSaveMessage(null);
-                  setError(null);
-                  setXColumn("");
-                  setYColumn("");
-                  setSeriesColumn("");
-                  setIdColumn("");
-                  setIdentityDecision("unanswered");
+                  applyImportedText(contents, file.name);
                 })
                 .catch(() => setError("表ファイルを読み込めませんでした。"));
             }}
           />
+          <small>
+            現在は文字形式のCSV / TSV / TXTに対応しています。XLS / XLSXの直接読込と、任意の行だけを解析対象から外す操作はまだ対応していません。
+          </small>
         </label>
         {parsedResult.error ? (
           <p className="graph-only__error" role="alert">
             {parsedResult.error}
           </p>
         ) : null}
-        {editableTable.headers.length > 0 ? (
-          <section className="graph-only__table-editor" aria-labelledby="graph-only-editor-heading">
-            <div className="graph-only__editor-heading">
-              <div>
-                <h3 id="graph-only-editor-heading">表を直接編集</h3>
-                <p className="graph-only__subtle">
-                  列名とセルを編集できます。Tab・Enter・矢印キーでセル間を移動できます。
-                </p>
-              </div>
-              <div className="graph-only__actions">
-                <button className="secondary-button" type="button" onClick={addEditableRow}>
-                  行を追加
-                </button>
-                <button className="secondary-button" type="button" onClick={addEditableColumn}>
-                  列を追加
-                </button>
-              </div>
-            </div>
-            <div className="graph-only__table-wrap" data-graph-only-grid>
-              <table aria-label="Graph用の表を直接編集">
-                <thead>
-                  <tr>
-                    {editableTable.headers.map((header, columnIndex) => (
-                      <th key={columnIndex} scope="col">
-                        <input
-                          aria-label={`列名 ${columnIndex + 1}`}
-                          data-graph-only-input="true"
-                          data-grid-row={0}
-                          data-grid-column={columnIndex}
-                          data-testid={`graph-only-header-${columnIndex}`}
-                          type="text"
-                          value={header}
-                          onChange={(event) =>
-                            updateEditableCell(null, columnIndex, event.currentTarget.value)
-                          }
-                          onKeyDown={focusAdjacentGraphOnlyInput}
-                        />
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {editableTable.rows.map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {editableTable.headers.map((header, columnIndex) => (
-                        <td key={columnIndex}>
-                          <input
-                            aria-label={`表セル ${rowIndex + 1}行目 ${columnIndex + 1}列目${header ? `（${header}）` : ""}`}
-                            data-graph-only-input="true"
-                            data-grid-row={rowIndex + 1}
-                            data-grid-column={columnIndex}
-                            data-testid={`graph-only-cell-${rowIndex}-${columnIndex}`}
-                            type="text"
-                            value={row[columnIndex] ?? ""}
-                            onChange={(event) =>
-                              updateEditableCell(rowIndex, columnIndex, event.currentTarget.value)
-                            }
-                            onKeyDown={focusAdjacentGraphOnlyInput}
-                          />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        ) : null}
       </section>
 
       <section className="graph-only__mapping" aria-labelledby="graph-only-mapping-heading">
         <h2 id="graph-only-mapping-heading">2. Graphに使う列を指定する</h2>
         <p className="graph-only__subtle">
-          列の意味は自動で決めません。表を見て、横軸・測定値・（必要なら）グループ列を選びます。
+          空の直接入力シートでは最初の2列だけをXとYへ対応付けています。貼り付け・ファイル読込では列の意味を推測せず指定を解除するため、表を見て横軸・測定値・（必要なら）グループ列を選んでください。
         </p>
         <div className="graph-only__mapping-grid">
           <label className="experiment-start__field">
@@ -1005,24 +941,7 @@ export function GraphOnlyVisualizationPage({
             type="button"
             disabled={!canGraph || !saveProject}
             aria-describedby={!saveProject ? "graph-only-save-unavailable" : undefined}
-            onClick={() => {
-              const state = buildState();
-              if (!state || !saveProject) return;
-              void saveProject(state, savedTarget)
-                .then((saved) => {
-                  if (!saved) return;
-                  setLoadedState(saved.state);
-                  setSavedTarget(saved.target);
-                  setSaveMessage("Graph用データを保存しました。元の表と列の指定を保持しています。");
-                })
-                .catch((reason: unknown) =>
-                  setError(
-                    reason instanceof Error
-                      ? reason.message
-                      : "Graph用データを保存できませんでした。",
-                  ),
-                );
-            }}
+            onClick={() => void saveCurrentProject()}
           >
             このGraph用データを保存
           </button>
@@ -1031,6 +950,13 @@ export function GraphOnlyVisualizationPage({
             type="button"
             onClick={() => {
               if (onStatisticsStructureRequested && canGraph) {
+                if (!statisticsRequestedRecordedRef.current) {
+                  statisticsRequestedRecordedRef.current = true;
+                  recordUsageMilestone(
+                    routeFromPath(window.location.pathname),
+                    "statistics_requested",
+                  );
+                }
                 setStatisticsHandoffVisible(true);
                 setStatisticsMessage(null);
                 return;
@@ -1038,6 +964,7 @@ export function GraphOnlyVisualizationPage({
               setStatisticsMessage(
                 "実験構造が未確定のため、統計解析は開始できません。実験から始める入口で、独立した対象・条件・対応関係を確認してください。",
               );
+              recordStatisticsSafeStop();
             }}
           >
             統計を確認
@@ -1066,7 +993,10 @@ export function GraphOnlyVisualizationPage({
                   type="radio"
                   name="graph-only-x-meaning"
                   checked={statisticsXMeaning === "condition"}
-                  onChange={() => setStatisticsXMeaning("condition")}
+                  onChange={() => {
+                    setStatisticsXMeaning("condition");
+                    statisticsSafeStopRecordedRef.current = false;
+                  }}
                 />
                 処理・群分け（Control、Drug A、genotypeなど）
               </label>
@@ -1075,7 +1005,10 @@ export function GraphOnlyVisualizationPage({
                   type="radio"
                   name="graph-only-x-meaning"
                   checked={statisticsXMeaning === "ordered"}
-                  onChange={() => setStatisticsXMeaning("ordered")}
+                  onChange={() => {
+                    setStatisticsXMeaning("ordered");
+                    recordStatisticsSafeStop();
+                  }}
                 />
                 時間・濃度・距離など順序のある値
               </label>
@@ -1084,7 +1017,10 @@ export function GraphOnlyVisualizationPage({
                   type="radio"
                   name="graph-only-x-meaning"
                   checked={statisticsXMeaning === "unknown"}
-                  onChange={() => setStatisticsXMeaning("unknown")}
+                  onChange={() => {
+                    setStatisticsXMeaning("unknown");
+                    recordStatisticsSafeStop();
+                  }}
                 />
                 その他、または分からない
               </label>
@@ -1105,12 +1041,15 @@ export function GraphOnlyVisualizationPage({
                     if (event.target.value === "") {
                       setIdentityDecision("unanswered");
                       setIdColumn("");
+                      setSourceRowUnitDecision("unanswered");
                     } else if (event.target.value === "no_id") {
                       setIdentityDecision("no_id");
                       setIdColumn("");
+                      setSourceRowUnitDecision("unanswered");
                     } else {
                       setIdentityDecision("selected_column");
                       setIdColumn(Number(event.target.value));
+                      setSourceRowUnitDecision("unanswered");
                     }
                   }}
                 >
@@ -1120,12 +1059,75 @@ export function GraphOnlyVisualizationPage({
                 </select>
                 <small>
                   DishID・AnimalIDなど、元の表にあるIDは独立した実験でも保持します。ID列を選んだだけでは対応ありと判断せず、次の質問で条件間の関係を確認します。行の順番から対応付けることはありません。
+                  ID列がない場合は、各行が別々の対象だと確認できたときだけアプリ内IDを作ります。同じ対象を繰り返し測った実験には、元のID列が必要です。
                 </small>
               </label>
+            ) : null}
+            {statisticsXMeaning === "condition" && identityDecision === "no_id" ? (
+              <fieldset>
+                <legend>表の各行は、別々に処置した実験対象・試料ですか？</legend>
+                <label>
+                  <input
+                    type="radio"
+                    name="graph-only-source-row-unit"
+                    checked={sourceRowUnitDecision === "each_row_distinct_unit"}
+                    onChange={() => {
+                      setSourceRowUnitDecision("each_row_distinct_unit");
+                      statisticsSafeStopRecordedRef.current = false;
+                    }}
+                  />
+                  はい。各行が別々のanimal・dish・wellなどです
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="graph-only-source-row-unit"
+                    checked={sourceRowUnitDecision === "multiple_rows_per_unit"}
+                    onChange={() => {
+                      setSourceRowUnitDecision("multiple_rows_per_unit");
+                      recordStatisticsSafeStop();
+                    }}
+                  />
+                  いいえ。同じ対象内のCell・ROI・視野などを複数行に記録しています
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="graph-only-source-row-unit"
+                    checked={sourceRowUnitDecision === "unknown"}
+                    onChange={() => {
+                      setSourceRowUnitDecision("unknown");
+                      recordStatisticsSafeStop();
+                    }}
+                  />
+                  分からない
+                </label>
+              </fieldset>
             ) : null}
             {statisticsXMeaning === "condition" && identityDecision === "unanswered" ? (
               <p className="graph-only__error" role="status">
                 対象・試料IDの列があるか回答してください。未回答のまま行番号をIDとして使うことはありません。
+              </p>
+            ) : null}
+            {statisticsXMeaning === "condition" &&
+            identityDecision === "no_id" &&
+            sourceRowUnitDecision === "unanswered" ? (
+              <p className="graph-only__error" role="status">
+                各行が別々に処置した対象・試料か回答してください。回答前に行を独立したnとして扱うことはありません。
+              </p>
+            ) : null}
+            {statisticsXMeaning === "condition" &&
+            identityDecision === "no_id" &&
+            sourceRowUnitDecision === "multiple_rows_per_unit" ? (
+              <p className="graph-only__error" role="alert">
+                Cell・ROI・視野を独立したnには変換しません。元の表へdish・animalなど共通の由来を示すID列を追加して選ぶまで、元データを保持して停止します。
+              </p>
+            ) : null}
+            {statisticsXMeaning === "condition" &&
+            identityDecision === "no_id" &&
+            sourceRowUnitDecision === "unknown" ? (
+              <p className="graph-only__error" role="alert">
+                1行が何を表すか確認できるまで統計へ進みません。元の表とGraphは保持されています。
               </p>
             ) : null}
             {seriesColumn !== "" ? (
@@ -1149,11 +1151,14 @@ export function GraphOnlyVisualizationPage({
               disabled={
                 statisticsXMeaning !== "condition" ||
                 identityDecision === "unanswered" ||
+                (identityDecision === "no_id" &&
+                  sourceRowUnitDecision !== "each_row_distinct_unit") ||
                 seriesColumn !== ""
               }
               onClick={() => {
                 const state = buildState();
                 if (state) onStatisticsStructureRequested?.(state);
+                else recordStatisticsSafeStop();
               }}
             >
               実験構造の確認へ

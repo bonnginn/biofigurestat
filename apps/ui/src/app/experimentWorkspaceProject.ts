@@ -23,6 +23,7 @@ import {
 import {
   AnalysisEngineRequestSchema,
   AnalysisEngineResultSchema,
+  requireAnalysisRequestRecommendation,
   type AnalysisEngineRequest,
   type AnalysisEngineResult,
   type AnalysisRecommendation,
@@ -47,7 +48,6 @@ import {
   type ExperimentCellMap,
   type ExperimentSetDraft,
 } from "./experimentDraft";
-import { repeatedFactorCanonicalExplanation } from "./repeatedFactorTerminology";
 import { synchronizeAdaptiveDraft } from "./adaptiveCanonicalStore";
 import {
   assertDualWriteEquivalence,
@@ -220,37 +220,17 @@ function createAdaptiveCanonicalRecords(
   const experimentalIdentityKey =
     identityForLevel.get(contract.experimentalUnitLevelKey) ?? contract.identities[0]!.key;
   const sharedSourceConditionUnits = hasSharedSourceConditionUnits(draft);
-  const sessionIdentityKey =
-    draft.conditionAssignment.kind === "matched"
-      ? (contract.matching.identityKey ?? experimentalIdentityKey)
-      : experimentalIdentityKey;
-  const experimentSessionFor = (
-    row: (typeof snapshot.canonicalObservations)[number],
-    conditionIndex: number,
-  ) => {
+  const sessionIdentityKey = contract.matching.identityKey ?? experimentalIdentityKey;
+  const experimentSessionFor = (row: (typeof snapshot.canonicalObservations)[number]) => {
+    // A row's ordinal position within an independent condition is presentation state,
+    // not evidence that it belongs to the same experimental session as the nth row
+    // in another condition. Only an explicit matched identity may create this link.
+    if (draft.conditionAssignment.kind !== "matched") return undefined;
     const semanticIdentity = row.identities[sessionIdentityKey];
     if (!semanticIdentity) return undefined;
-    if (draft.conditionAssignment.kind === "matched") {
-      return draft.experiments.find(
-        ({ stableUnitId, label }) =>
-          stableUnitId === semanticIdentity || label === semanticIdentity,
-      )?.id;
-    }
-    const combination = combinations[conditionIndex]!;
-    const identities = [
-      ...new Set(
-        snapshot.canonicalObservations
-          .filter((candidate) =>
-            contract.factors.every(
-              (factor) => candidate.factors[factor.key] === combination[factor.key],
-            ),
-          )
-          .map((candidate) => candidate.identities[experimentalIdentityKey])
-          .filter((candidate): candidate is string => Boolean(candidate)),
-      ),
-    ];
-    const sessionIndex = identities.indexOf(semanticIdentity);
-    return sessionIndex >= 0 ? draft.experiments[sessionIndex]?.id : undefined;
+    return draft.experiments.find(
+      ({ stableUnitId, label }) => stableUnitId === semanticIdentity || label === semanticIdentity,
+    )?.id;
   };
   const rowUnit = (
     row: (typeof snapshot.canonicalObservations)[number],
@@ -280,9 +260,7 @@ function createAdaptiveCanonicalRecords(
     const id = `unit.adaptive.${adaptiveUnitToken(levelKey)}.${unitIds.size + 1}.r${revisionIndex}`;
     unitIds.set(composite, id);
     const experimentSessionId =
-      levelKey === contract.experimentalUnitLevelKey
-        ? experimentSessionFor(row, conditionIndex)
-        : undefined;
+      levelKey === contract.experimentalUnitLevelKey ? experimentSessionFor(row) : undefined;
     unitInstances.push({
       id,
       levelId: `unit-level.${levelKey}`,
@@ -382,14 +360,18 @@ export function createExperimentWorkspaceDesign(
   draft: ExperimentSetDraft,
   createdAt: string,
 ): ExperimentDesign {
+  // The StructureContract is the semantic authority for every adaptive
+  // workspace, not only shared-source designs.  Using the legacy projection
+  // while Statistics is open and the contract projection while saving made a
+  // valid D05 request appear to change factor identities at persistence time.
+  if (draft.adaptiveInput) {
+    return projectContractToExperimentDesign(
+      draft.adaptiveInput.contract,
+      plannedExperimentalUnitCount(draft),
+      createdAt,
+    );
+  }
   if (hasSharedSourceConditionUnits(draft)) {
-    if (draft.adaptiveInput) {
-      return projectContractToExperimentDesign(
-        draft.adaptiveInput.contract,
-        plannedExperimentalUnitCount(draft),
-        createdAt,
-      );
-    }
     throw new Error("SHARED_SOURCE_REQUIRES_ADAPTIVE_CONTRACT_PROJECTION");
   }
   const factors = draft.attributes.flatMap((attribute) => {
@@ -854,122 +836,6 @@ function createCanonicalRecords(
   return { rawRevision, unitInstances, observations };
 }
 
-export function createWorkspaceRecommendation(
-  request: AnalysisEngineRequest,
-  design: ExperimentDesign,
-): AnalysisRecommendation {
-  const statisticalNDefinition = `Independent units at level ${design.experimentalUnitLevelId}`;
-  if (request.templateId === "D01") {
-    return {
-      templateId: "D01",
-      templateVersion: request.templateVersion,
-      recommendedMethod: "welch_t",
-      alternativeMethods: ["mann_whitney", "student_t"],
-      reasonCode: "two_independent_condition_groups",
-      explanation:
-        "Two selected conditions were compared using separate experimental units without an explicit matched correspondence.",
-      statisticalNDefinition,
-    };
-  }
-  if (request.templateId === "D02") {
-    return {
-      templateId: "D02",
-      templateVersion: request.templateVersion,
-      recommendedMethod: "paired_t",
-      alternativeMethods: ["wilcoxon_signed_rank"],
-      reasonCode: "same_or_matched_unit_in_both_conditions",
-      explanation:
-        "Each explicitly matched experimental unit contributes one value to both selected conditions.",
-      statisticalNDefinition: `Complete matched units at level ${design.experimentalUnitLevelId}`,
-    };
-  }
-  if (request.templateId === "D03") {
-    return {
-      templateId: "D03",
-      templateVersion: request.templateVersion,
-      recommendedMethod: "welch_anova",
-      alternativeMethods: ["one_way_anova", "kruskal_wallis"],
-      reasonCode: "three_or_more_independent_groups_one_factor",
-      explanation:
-        "Three or more selected groups were compared with a variance-robust omnibus test and multiplicity-adjusted pairwise comparisons.",
-      statisticalNDefinition,
-      multiplicityMethod: "games_howell_all_pairs",
-    };
-  }
-  if (request.templateId === "D04") {
-    return {
-      templateId: "D04",
-      templateVersion: request.templateVersion,
-      recommendedMethod: "repeated_measures_anova",
-      alternativeMethods: ["friedman"],
-      reasonCode: "three_or_more_complete_matched_groups",
-      explanation:
-        "Every explicitly matched experimental unit contributes one value to every selected condition; pairwise comparisons use Holm adjustment.",
-      statisticalNDefinition: `Complete matched units at level ${design.experimentalUnitLevelId}`,
-      multiplicityMethod: "holm_paired_all_pairs",
-    };
-  }
-  if (request.templateId === "D05") {
-    return {
-      templateId: "D05",
-      templateVersion: request.templateVersion,
-      recommendedMethod: "two_way_anova",
-      alternativeMethods: [],
-      reasonCode: "complete_two_factor_independent_design",
-      explanation:
-        "All combinations of two factors use independent experimental units; interaction and main effects are evaluated before adjusted cell comparisons.",
-      statisticalNDefinition: `${statisticalNDefinition} within each factorial cell`,
-      multiplicityMethod: "holm_all_cell_pairs",
-    };
-  }
-  if (request.templateId === "D06") {
-    return {
-      templateId: "D06",
-      templateVersion: request.templateVersion,
-      recommendedMethod: "mixed_anova",
-      alternativeMethods: ["mixed_model"],
-      reasonCode: "balanced_condition_by_time_repeated_design",
-      explanation: repeatedFactorCanonicalExplanation(
-        request.protocolVersion === "0.6.0" ? request.withinFactor : undefined,
-      ),
-      statisticalNDefinition: `Complete stable units at level ${design.experimentalUnitLevelId} within each condition`,
-      multiplicityMethod: null,
-    };
-  }
-  if (request.templateId === "D07") {
-    return {
-      templateId: "D07",
-      templateVersion: request.templateVersion,
-      recommendedMethod: "two_way_anova",
-      alternativeMethods: [],
-      reasonCode: "balanced_independent_condition_by_within_factor",
-      explanation:
-        "Every condition-by-factor cell uses separate biological units; interaction and main effects are evaluated with an independent factorial error model.",
-      statisticalNDefinition: `${statisticalNDefinition} within each condition-by-factor cell`,
-      multiplicityMethod: null,
-    };
-  }
-  if (request.templateId === "D09") {
-    return {
-      templateId: "D09",
-      templateVersion: request.templateVersion,
-      recommendedMethod: request.method,
-      alternativeMethods: [request.method === "pearson" ? "spearman" : "pearson"],
-      reasonCode:
-        request.method === "pearson"
-          ? "two_complete_continuous_variables_linear_question"
-          : "two_complete_variables_monotonic_or_ranked_question",
-      explanation:
-        request.method === "pearson"
-          ? "The same experimental units provide complete X-Y pairs for a linear association question."
-          : "The same experimental units provide complete X-Y pairs for a monotonic or rank-based association question.",
-      statisticalNDefinition: `Complete X-Y pairs at level ${design.experimentalUnitLevelId}`,
-      multiplicityMethod: null,
-    };
-  }
-  throw new Error(`Workspace analysis ${request.templateId} is not supported for persistence`);
-}
-
 function prepareWorkspaceAnalyses(input: {
   draft: ExperimentSetDraft;
   graphs: readonly WorkspaceGraphState[];
@@ -1076,17 +942,30 @@ function prepareWorkspaceAnalyses(input: {
     };
     const selectedExperimentIds = new Set(input.draft.experiments.map(({ id }) => id));
     const selectedTimes = new Set(analysisTimePoints.map(({ value }) => value));
-    const selectedRaw = input.records.observations.filter(
-      (observation) =>
-        observation.outcomeId === graph.selectedReadoutId &&
-        observation.sourceLocation !== undefined &&
-        (sourceKeys.has(observation.sourceLocation.replace(/^workspace:/, "")) ||
-          (observation.sourceLocation.startsWith("adaptive:") &&
-            graph.selectedConditionIds.includes(observation.conditionId) &&
-            selectedExperimentIds.has(sourceExperimentId(observation.unitInstanceId) ?? "") &&
-            (analysisTimePoints.length === 0 ||
-              (observation.time !== undefined && selectedTimes.has(observation.time))))),
-    );
+    const selectedRaw = input.records.observations.filter((observation) => {
+      if (
+        observation.outcomeId !== graph.selectedReadoutId ||
+        observation.sourceLocation === undefined
+      )
+        return false;
+      if (sourceKeys.has(observation.sourceLocation.replace(/^workspace:/, ""))) return true;
+      if (!observation.sourceLocation.startsWith("adaptive:")) return false;
+
+      // Independent adaptive rows intentionally have no experimentSessionId:
+      // their display ordinal must never manufacture run/pair linkage. The
+      // active raw revision already scopes them to this workspace, so factor
+      // and time selection are sufficient. Matched designs retain their
+      // explicit session identity and continue to validate it here.
+      const belongsToSelectedExperiment =
+        input.draft.conditionAssignment.kind === "independent" ||
+        selectedExperimentIds.has(sourceExperimentId(observation.unitInstanceId) ?? "");
+      return (
+        graph.selectedConditionIds.includes(observation.conditionId) &&
+        belongsToSelectedExperiment &&
+        (analysisTimePoints.length === 0 ||
+          (observation.time !== undefined && selectedTimes.has(observation.time)))
+      );
+    });
     if (selectedRaw.length === 0) return;
 
     const readout = input.draft.readouts.find(({ id }) => id === graph.selectedReadoutId);
@@ -1526,14 +1405,17 @@ function prepareWorkspaceAnalyses(input: {
           }
         : {}),
     });
+    const canonicalRecommendation = requireAnalysisRequestRecommendation(input.design, request, {
+      outcomeId: graph.selectedReadoutId,
+    });
     analyses.push({
       graphId: graph.id,
       request,
       result,
-      recommendation: graph.analysis?.recommendation ?? {
-        ...createWorkspaceRecommendation(request, input.design),
-        ...(graph.analysis?.recommendedMethod
-          ? { recommendedMethod: graph.analysis.recommendedMethod }
+      recommendation: {
+        ...canonicalRecommendation,
+        ...(graph.analysis?.recommendation?.decision
+          ? { decision: graph.analysis.recommendation.decision }
           : {}),
       },
       graphSpec,

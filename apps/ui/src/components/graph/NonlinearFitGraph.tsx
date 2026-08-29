@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import type { NonlinearFitGraphModel } from "@lsaa/graph-spec";
+import { createMinorTicks } from "./graphSemantics";
 
 const WIDTH = 820;
 const HEIGHT = 500;
@@ -45,6 +46,10 @@ export const NonlinearFitGraph = forwardRef<
   const xMax = Math.max(...allX);
   const yMin = Math.min(0, ...allY);
   const yMax = Math.max(...allY);
+  const xMajorTicks = ticks(xMin, xMax);
+  const yMajorTicks = ticks(yMin, yMax);
+  const xMinorTicks = createMinorTicks(xMajorTicks, xMin, xMax, 5);
+  const yMinorTicks = createMinorTicks(yMajorTicks, yMin, yMax, 5);
   const x = (value: number) => linearScale(value, xMin, xMax, MARGIN.left, WIDTH - MARGIN.right);
   const y = (value: number) => linearScale(value, yMin, yMax, HEIGHT - MARGIN.bottom, MARGIN.top);
 
@@ -59,7 +64,33 @@ export const NonlinearFitGraph = forwardRef<
       data-fit-model={displayMode === "fitted" ? model.modelId : undefined}
       data-graph-mode={displayMode}
     >
-      {ticks(yMin, yMax).map((value) => (
+      {yMinorTicks.map((value) => (
+        <line
+          key={`y.minor.${value}`}
+          x1={MARGIN.left}
+          y1={y(value)}
+          x2={MARGIN.left - 3.5}
+          y2={y(value)}
+          stroke="#111"
+          className="nonlinear-fit-axis-minor-tick"
+          data-axis-tick="y-minor"
+          data-tick-direction="outside"
+        />
+      ))}
+      {xMinorTicks.map((value) => (
+        <line
+          key={`x.minor.${value}`}
+          x1={x(value)}
+          y1={HEIGHT - MARGIN.bottom}
+          x2={x(value)}
+          y2={HEIGHT - MARGIN.bottom + 3.5}
+          stroke="#111"
+          className="nonlinear-fit-axis-minor-tick"
+          data-axis-tick="x-minor"
+          data-tick-direction="outside"
+        />
+      ))}
+      {yMajorTicks.map((value) => (
         <g key={`y.${value}`}>
           <line
             x1={MARGIN.left}
@@ -83,7 +114,7 @@ export const NonlinearFitGraph = forwardRef<
           </text>
         </g>
       ))}
-      {ticks(xMin, xMax).map((value) => (
+      {xMajorTicks.map((value) => (
         <g key={`x.${value}`}>
           <line
             x1={x(value)}
@@ -148,27 +179,39 @@ export const NonlinearFitGraph = forwardRef<
                 </title>
               </circle>
             ))}
-            {displayMode === "fitted" ? (
-              <line
-                x1={WIDTH - MARGIN.right - 150}
-                y1={MARGIN.top + 12 + index * 24}
-                x2={WIDTH - MARGIN.right - 124}
-                y2={MARGIN.top + 12 + index * 24}
+            <g
+              data-graph-layer="series-legend"
+              data-series-id={series.seriesId}
+              aria-label={`${seriesLabels[series.seriesId] ?? series.seriesId} series`}
+            >
+              {displayMode === "fitted" ? (
+                <line
+                  x1={WIDTH - MARGIN.right - 150}
+                  y1={MARGIN.top + 12 + index * 24}
+                  x2={WIDTH - MARGIN.right - 124}
+                  y2={MARGIN.top + 12 + index * 24}
+                  stroke={color}
+                  strokeWidth="3"
+                  data-legend-mark="fitted-curve"
+                />
+              ) : null}
+              <circle
+                cx={WIDTH - MARGIN.right - 137}
+                cy={MARGIN.top + 12 + index * 24}
+                r="4"
+                fill="#fff"
                 stroke={color}
-                strokeWidth="3"
+                strokeWidth="2"
+                data-legend-mark="observed-points"
               />
-            ) : null}
-            <circle
-              cx={WIDTH - MARGIN.right - 137}
-              cy={MARGIN.top + 12 + index * 24}
-              r="4"
-              fill="#fff"
-              stroke={color}
-              strokeWidth="2"
-            />
-            <text x={WIDTH - MARGIN.right - 116} y={MARGIN.top + 17 + index * 24} fontSize="13">
-              {seriesLabels[series.seriesId] ?? series.seriesId}
-            </text>
+              <text
+                x={WIDTH - MARGIN.right - 116}
+                y={MARGIN.top + 17 + index * 24}
+                fontSize="13"
+              >
+                {seriesLabels[series.seriesId] ?? series.seriesId}
+              </text>
+            </g>
           </g>
         );
       })}

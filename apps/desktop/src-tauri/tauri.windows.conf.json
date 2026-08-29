@@ -1,6 +1,6 @@
 {
   "build": {
-    "beforeBuildCommand": "pnpm --dir ../.. engine:build:win && pnpm --filter @lsaa/ui build"
+    "beforeBuildCommand": "pnpm run engine:build:win && pnpm --filter @lsaa/ui run build"
   },
   "bundle": {
     "active": true,

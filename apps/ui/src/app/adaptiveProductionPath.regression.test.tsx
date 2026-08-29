@@ -14,6 +14,7 @@ import {
   safelyBuildBiologicalSetup,
   type ConditionEntryBlock,
 } from "../components/BiologicalExperimentSetup";
+import { canonicalWorksheetFileLayout } from "../components/CanonicalMatrixWorksheet";
 import { createAdaptiveWorkspace } from "./adaptiveWorkspace";
 import { assessDraftGraphAnalysis } from "./experimentDraftAnalysis";
 import {
@@ -159,21 +160,17 @@ describe("adaptive production path regressions", () => {
         analysisAvailable
       />,
     );
-    const control = screen.getByRole("textbox", {
-      name: "Fluorescence intensity・Treatment=Controlの測定値",
+    const firstCell = screen.getByRole("textbox", {
+      name: "入力行 1・Control・Fluorescence intensity",
     });
-    fireEvent.change(control, { target: { value: "12.5\n13.5" } });
-    fireEvent.blur(control);
-    const drug = screen.getByRole("textbox", {
-      name: "Fluorescence intensity・Treatment=Drugの測定値",
+    fireEvent.paste(firstCell, {
+      clipboardData: { getData: () => "12.5\t15\n13.5\t16\n\t17" },
     });
-    fireEvent.change(drug, { target: { value: "15\n16\n17" } });
-    fireEvent.blur(drug);
     expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("5件の測定値");
     expect(screen.queryByRole("navigation", { name: "実験の表示切り替え" })).toBeNull();
     expect(screen.queryByRole("button", { name: /＋ 入力行/ })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
+    fireEvent.click(screen.getByRole("button", { name: "1測定1行" }));
     const expanded = screen.getByRole("table", { name: "すべての値を表示" });
     expect(
       within(expanded).getByRole("textbox", {
@@ -438,36 +435,198 @@ describe("adaptive production path regressions", () => {
       />,
     );
 
-    const compact = screen.getByRole("table", { name: "条件ごとにまとめて表示" });
-    expect(within(compact).queryByRole("textbox")).toBeNull();
-    expect(within(compact).getByText("10")).toBeVisible();
-    expect(within(compact).getByText("14")).toBeVisible();
-    expect(screen.getByLabelText("保持している測定値の件数")).toHaveTextContent("2件の測定値");
+    const compact = screen.getByRole("table", { name: "条件別連続入力表" });
+    const controlValue = within(compact).getByRole("textbox", {
+      name: "入力行 1・Control・Cell area",
+    });
+    expect(controlValue).toBeEnabled();
+    expect(
+      within(compact).getByRole("textbox", { name: "入力行 1・Drug・Cell area" }),
+    ).toBeEnabled();
+    fireEvent.change(controlValue, { target: { value: "11" } });
+    fireEvent.blur(controlValue);
+    expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("2件の測定値");
     expect(screen.queryByRole("navigation", { name: "実験の表示切り替え" })).toBeNull();
     expect(screen.queryByRole("button", { name: /＋ 入力行/ })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
+    fireEvent.click(screen.getByRole("button", { name: "1測定1行" }));
     const expanded = screen.getByRole("table", { name: "すべての値を表示" });
     expect(within(expanded).getByRole("columnheader", { name: "元データ行" })).toBeVisible();
-    expect(within(expanded).getAllByText("Dish-C1").length).toBeGreaterThan(0);
-    expect(within(expanded).getAllByText("Dish-D1").length).toBeGreaterThan(0);
+    expect(within(expanded).getByDisplayValue("Dish-C1")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("Dish-D1")).toBeVisible();
     expect(
       [...expanded.querySelectorAll('[data-column-role="source_row"]')].map(
         (cell) => cell.textContent,
       ),
     ).toEqual(["2", "3"]);
-    expect(within(expanded).queryByRole("textbox")).toBeNull();
-    expect(within(expanded).queryByRole("button", { name: /削除/ })).toBeNull();
+    expect(within(expanded).getAllByRole("textbox").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
     await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const saved = saveProject.mock.calls[0]![0];
     expect(saved.adaptiveInput?.mapping).toEqual(mapping);
-    expect(saved.adaptiveInput?.rawLineage).toEqual(lineage);
-    expect(saved.adaptiveInput?.canonicalObservations).toEqual(observations);
+    expect(saved.adaptiveInput?.rawLineage?.rawText).toBe(lineage.rawText);
+    expect(saved.adaptiveInput?.rawLineage?.transformations).toEqual([
+      "confirmed_column_mapping",
+      "canonical_observations_edited_after_import",
+    ]);
+    expect(
+      Object.values(saved.adaptiveInput?.canonicalObservations[0]?.values ?? {}),
+    ).toContain(11);
   });
 
-  it("treats a canonical source-row marker as read-only lineage even without snapshot metadata", () => {
+  it("imports the generated worksheet and preserves mapping, raw lineage, and source rows through save/open", async () => {
+    const contract = biologicalContract({
+      title: "Generated worksheet import",
+      measurement: "Fluorescence intensity",
+      form: "single",
+      blocks: [block("treatment", "Treatment", ["Control", "Drug"])],
+      receiver: "culture dish",
+    });
+    const workspace = createAdaptiveWorkspace({
+      contract,
+      observations: [],
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    expect(workspace.status).toBe("ready");
+    const worksheetHeaders = canonicalWorksheetFileLayout(contract, [], false).columns.map(
+      ({ header }) => header,
+    );
+    const fileText =
+      `${worksheetHeaders.join(",")}\n` + "1,control-1,10,drug-1,20\n" + "2,control-2,11,drug-2,21";
+    const saveProject = vi.fn(async (state: ProjectState, target?: string) => ({
+      state,
+      target: target ?? "/tmp/generated-worksheet-import.lsa",
+    }));
+
+    render(
+      <ExperimentWorkspace
+        initialDraft={workspace.draft!}
+        initialCells={workspace.cells}
+        onBack={vi.fn()}
+        saveProject={saveProject}
+      />,
+    );
+
+    const file = new File([fileText], "generated.csv", { type: "text/csv" });
+    Object.defineProperty(file, "text", { value: async () => fileText });
+    fireEvent.change(screen.getByLabelText("CSV / TSV / TXTファイルを読み込む"), {
+      target: { files: [file] },
+    });
+    await vi.waitFor(() =>
+      expect(screen.getByText(/generated\.csvを読み込みました/)).toBeVisible(),
+    );
+    expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("4件の測定値");
+
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const saved = saveProject.mock.calls[0]![0];
+    expect(saved.adaptiveInput?.mapping).toMatchObject({
+      sourceLabel: "generated.csv",
+      delimiter: "comma",
+      headerRow: 1,
+    });
+    expect(saved.adaptiveInput?.rawLineage).toMatchObject({
+      sourceKind: "csv",
+      sourceLabel: "generated.csv",
+      rawText: fileText,
+    });
+    expect(saved.adaptiveInput?.canonicalObservations).toHaveLength(4);
+    expect(saved.adaptiveInput?.canonicalObservations.map(({ sourceRow }) => sourceRow)).toEqual([
+      2, 2, 3, 3,
+    ]);
+
+    const reopened = rehydrateExperimentWorkspace(
+      ProjectStateSchema.parse(JSON.parse(JSON.stringify(saved))),
+    );
+    expect(reopened?.draft.adaptiveInput?.mapping).toEqual(saved.adaptiveInput?.mapping);
+    expect(reopened?.draft.adaptiveInput?.rawLineage).toEqual(saved.adaptiveInput?.rawLineage);
+    expect(reopened?.draft.adaptiveInput?.canonicalObservations).toEqual(
+      saved.adaptiveInput?.canonicalObservations,
+    );
+  });
+
+  it("safe-stops a second distinct file before merging or replacing the first import lineage", async () => {
+    const contract = biologicalContract({
+      title: "Single-source worksheet import",
+      measurement: "Fluorescence intensity",
+      form: "single",
+      blocks: [block("treatment", "Treatment", ["Control", "Drug"])],
+      receiver: "culture dish",
+    });
+    const workspace = createAdaptiveWorkspace({
+      contract,
+      observations: [],
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    expect(workspace.status).toBe("ready");
+    const headers = canonicalWorksheetFileLayout(contract, [], false).columns.map(
+      ({ header }) => header,
+    );
+    const firstText =
+      `${headers.join(",")}\n` + "1,control-1,10,drug-1,20\n" + "2,control-2,11,drug-2,21";
+    const secondText = `${headers.join(",")}\n` + "3,control-3,99,,";
+    const saveProject = vi.fn(async (state: ProjectState, target?: string) => ({
+      state,
+      target: target ?? "/tmp/single-source-import.lsa",
+    }));
+
+    render(
+      <ExperimentWorkspace
+        initialDraft={workspace.draft!}
+        initialCells={workspace.cells}
+        onBack={vi.fn()}
+        saveProject={saveProject}
+      />,
+    );
+
+    const fileInput = screen.getByLabelText("CSV / TSV / TXTファイルを読み込む");
+    const firstFile = new File([firstText], "first.csv", { type: "text/csv" });
+    Object.defineProperty(firstFile, "text", { value: async () => firstText });
+    fireEvent.change(fileInput, { target: { files: [firstFile] } });
+    await vi.waitFor(() =>
+      expect(screen.getByText(/first\.csvを読み込みました/)).toBeVisible(),
+    );
+    expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("4件の測定値");
+
+    const secondFile = new File([secondText], "second.csv", { type: "text/csv" });
+    Object.defineProperty(secondFile, "text", { value: async () => secondText });
+    fireEvent.change(fileInput, { target: { files: [secondFile] } });
+    await vi.waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "複数のファイルを同じ入力表へ統合する機能はまだ利用できません",
+      ),
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "既存の値と元ファイル情報は変更していません",
+    );
+    expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("4件の測定値");
+
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const saved = saveProject.mock.calls[0]![0];
+    expect(saved.adaptiveInput?.rawLineage).toMatchObject({
+      sourceLabel: "first.csv",
+      rawText: firstText,
+    });
+    expect(saved.adaptiveInput?.canonicalObservations).toHaveLength(4);
+    expect(
+      saved.adaptiveInput?.canonicalObservations.flatMap(({ values }) =>
+        Object.values(values),
+      ),
+    ).toEqual(expect.arrayContaining([10, 11, 20, 21]));
+    expect(
+      saved.adaptiveInput?.canonicalObservations.flatMap(({ values }) =>
+        Object.values(values),
+      ),
+    ).not.toContain(99);
+  });
+
+  it("keeps a canonical source-row marker visible while allowing canonical edits", () => {
     const contract = biologicalContract({
       title: "Source-row-only import",
       measurement: "Signal",
@@ -504,8 +663,8 @@ describe("adaptive production path regressions", () => {
       />,
     );
 
-    expect(screen.getByRole("table", { name: "条件ごとにまとめて表示" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "まとめて表示" })).toBeVisible();
+    expect(screen.getByRole("table", { name: "条件別連続入力表" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "条件別シート" })).toBeVisible();
     expect(screen.queryByRole("navigation", { name: "実験の表示切り替え" })).toBeNull();
     expect(screen.queryByRole("button", { name: /＋ 入力行/ })).toBeNull();
   });
@@ -611,12 +770,11 @@ describe("adaptive production path regressions", () => {
         saveProject={saveProject}
       />,
     );
-    expect(screen.getByRole("table", { name: "条件ごとにまとめて表示" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
+    expect(screen.getByRole("button", { name: "条件別シート" })).toBeDisabled();
     const expanded = screen.getByRole("table", { name: "すべての値を表示" });
-    expect(within(expanded).getByText("Cell-1")).toBeVisible();
-    expect(within(expanded).getByText("Cell-2")).toBeVisible();
-    expect(within(expanded).getByText("Cell-3")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("Cell-1")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("Cell-2")).toBeVisible();
+    expect(within(expanded).getByDisplayValue("Cell-3")).toBeVisible();
     expect(
       [...expanded.querySelectorAll('[data-column-role="source_row"]')].map(
         (cell) => cell.textContent,
@@ -681,16 +839,20 @@ describe("adaptive production path regressions", () => {
         onBack={vi.fn()}
       />,
     );
-    const table = screen.getByRole("table", { name: "Marker positive fractionをまとめて入力" });
+    const table = screen.getByRole("table", { name: "条件別連続入力表" });
     expect(
-      within(table).getByRole("spinbutton", { name: "入力行 1・Controlの陽性数" }),
-    ).toHaveValue(2);
+      within(table).getByRole("textbox", {
+        name: "入力行 1・Control・Marker positive fraction・該当数",
+      }),
+    ).toHaveValue("2");
     expect(
-      within(table).getByRole("spinbutton", { name: "入力行 1・Controlの対象数" }),
-    ).toHaveValue(10);
-    expect(within(table).getByLabelText("入力行 1・Controlの計算された割合")).toHaveTextContent(
-      "20%",
-    );
+      within(table).getByRole("textbox", {
+        name: "入力行 1・Control・Marker positive fraction・総数",
+      }),
+    ).toHaveValue("10");
+    expect(
+      within(table).getByLabelText("入力行 1・Control・Marker positive fraction・計算値 (%)"),
+    ).toHaveTextContent("20.0%");
   });
 
   it("keeps unequal nested child values in compact and expanded views without padding", () => {
@@ -830,7 +992,7 @@ describe("adaptive production path regressions", () => {
     });
     expect(stopped.status).toBe("stopped");
     if (stopped.status === "stopped") {
-      expect(stopped.reason).toMatch(/分けた後に変えた処理・群分けを1つ選んでください/);
+      expect(stopped.reason).toMatch(/対応する組の中で変えた処理・群分けを1つ選んでください/);
     }
 
     const selected = safelyBuildBiologicalSetup({
@@ -857,6 +1019,119 @@ describe("adaptive production path regressions", () => {
       ]);
       expect(selected.result.contract.matching.kind).toBe("matched");
     }
+  });
+
+  it("persists an edited shared experimental-run ID and its optional date through save/open", () => {
+    const contract = biologicalContract({
+      title: "Independent dishes within experimental runs",
+      measurement: "Signal",
+      form: "single",
+      blocks: [block("treatment", "Treatment", ["Control", "Drug"])],
+      receiver: "culture dish",
+      relationship: "shared_source",
+      source: "実験run",
+    });
+    const sourceLevel = contract.unitLevels.find(({ role }) => role === "block");
+    const sourceIdentity = contract.identities.find(
+      ({ unitLevelKey }) => unitLevelKey === sourceLevel?.key,
+    );
+    const unitIdentity = contract.identities.find(
+      ({ unitLevelKey }) => unitLevelKey === contract.experimentalUnitLevelKey,
+    );
+    const factor = contract.factors[0]!;
+    const readout = contract.readouts[0]!;
+    expect(sourceIdentity).toBeDefined();
+    expect(unitIdentity).toBeDefined();
+
+    const observations = ["Control", "Drug"].map((treatment, index) =>
+      observation(contract, index + 1, {
+        identities: {
+          [sourceIdentity!.key]: "Run 1",
+          [unitIdentity!.key]: `Dish ${index + 1}`,
+        },
+        factors: { [factor.key]: treatment },
+        values: { [readout.key]: index + 1 },
+      }),
+    );
+    const workspace = createAdaptiveWorkspace({
+      contract,
+      observations,
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    expect(workspace.status).toBe("ready");
+    render(
+      <ExperimentWorkspace
+        initialDraft={workspace.draft!}
+        initialCells={workspace.cells}
+        onBack={vi.fn()}
+      />,
+    );
+
+    const runIdentity = screen.getByRole("textbox", { name: `${sourceIdentity!.label} 1` });
+    expect(runIdentity).toHaveValue("Run 1");
+    fireEvent.change(runIdentity, { target: { value: "Run Alpha" } });
+    fireEvent.blur(runIdentity);
+
+    const date = screen.getByLabelText("Run Alphaのこの組に共通する実験日");
+    expect(date).toHaveValue("");
+    fireEvent.change(date, { target: { value: "2026-08-28" } });
+    expect(date).toHaveValue("2026-08-28");
+    expect(
+      screen.getByRole("columnheader", { name: /この組に共通する実験日/ }),
+    ).toHaveTextContent(
+      "任意・行内の全条件が同じ日の場合のみ。日付から対応関係は決めません",
+    );
+
+    const renamedObservations = observations.map((row) =>
+      CanonicalAdaptiveObservationSchema.parse({
+        ...row,
+        identities: { ...row.identities, [sourceIdentity!.key]: "Run Alpha" },
+      }),
+    );
+    const persistedWorkspace = createAdaptiveWorkspace({
+      contract,
+      observations: renamedObservations,
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    expect(persistedWorkspace.status).toBe("ready");
+    const persistedDraft = {
+      ...persistedWorkspace.draft!,
+      experiments: persistedWorkspace.draft!.experiments.map((experiment, index) =>
+        index === 0 ? { ...experiment, date: "2026-08-28" } : experiment,
+      ),
+    };
+    const saved = createExperimentWorkspaceProject({
+      draft: persistedDraft,
+      cells: persistedWorkspace.cells,
+      graphs: [],
+      now,
+    });
+    expect(
+      saved.adaptiveInput?.canonicalObservations.map(
+        ({ identities }) => identities[sourceIdentity!.key],
+      ),
+    ).toEqual(["Run Alpha", "Run Alpha"]);
+    expect(saved.experimentWorkspace?.experimentSessions[0]).toMatchObject({
+      stableUnitId: "adaptive-unit.1",
+      label: "Run Alpha",
+      date: "2026-08-28",
+    });
+
+    const reopened = rehydrateExperimentWorkspace(
+      ProjectStateSchema.parse(JSON.parse(JSON.stringify(saved))),
+    );
+    expect(reopened?.draft.adaptiveInput?.canonicalObservations).toEqual(
+      saved.adaptiveInput?.canonicalObservations,
+    );
+    expect(reopened?.draft.experiments[0]).toMatchObject({
+      stableUnitId: "adaptive-unit.1",
+      label: "Run Alpha",
+      date: "2026-08-28",
+    });
   });
 
   it("retains an unknown relation in the researcher-facing setup instead of navigating", () => {
