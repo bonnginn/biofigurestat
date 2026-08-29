@@ -38,6 +38,23 @@
   line-height: 1.5;
 }
 
+.usage-consent-copy details {
+  padding-top: 2px;
+}
+
+.usage-consent-copy summary {
+  width: fit-content;
+  color: var(--accent-strong, #116b5b);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.usage-consent-details {
+  display: grid;
+  gap: 9px;
+  margin-top: 9px;
+}
+
 .usage-consent-dnt {
   padding: 10px 12px;
   border-left: 4px solid #dd8a50;

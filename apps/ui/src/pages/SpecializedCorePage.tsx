@@ -45,7 +45,6 @@ import {
 } from "../app/benchmarkEvaluation";
 import { evaluationMode } from "../app/evaluationMode";
 import { serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
-import { exportRenderedGraphPng, exportRenderedGraphSvg } from "../app/specializedGraphExport";
 import type { LiteratureExperimenterCase } from "../app/literatureBenchmark";
 import { generateMethodsText } from "../app/methodsText";
 import { PRODUCT_IDENTITY } from "../app/productIdentity";
@@ -57,7 +56,10 @@ import type {
   SaveSpecializedEntryDraftProjectAction,
   SaveUnresolvedVisualizationProjectAction,
 } from "../app/projectActions";
-import { createSpecializedEntryDraft, specializedSafeStop } from "../app/specializedEntryDraftPersistence";
+import {
+  createSpecializedEntryDraft,
+  specializedSafeStop,
+} from "../app/specializedEntryDraftPersistence";
 import {
   adaptiveSurvivalObservationId,
   adaptiveSurvivalUnitId,
@@ -83,7 +85,9 @@ import {
 } from "../app/survivalStatisticsReadiness";
 import { AnalysisRouteSwitcher } from "../components/AnalysisRouteSwitcher";
 import { HeatmapGraph } from "../components/graph/HeatmapGraph";
-import { SurvivalGraph } from "../components/graph/SurvivalGraph";
+import { DEFAULT_SURVIVAL_COLORS, SurvivalGraph } from "../components/graph/SurvivalGraph";
+import { GraphExportActions } from "../components/graph/GraphExportActions";
+import { GraphWorkspaceFrame } from "../components/graph/GraphWorkspaceFrame";
 import { DelimitedTextSpreadsheet } from "../components/DelimitedTextSpreadsheet";
 import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import type { AnalysisRouteSwitcherAccess } from "../app/analysisRouteSwitcherAccess";
@@ -138,9 +142,11 @@ function heatmapVisualizationId(prefix: string): string {
   return `visualization.heatmap.${prefix}.${Date.now().toString(36)}.${heatmapVisualizationIdSequence}`;
 }
 
-function heatmapSourceKindFor(
-  source: VisualizationInputSource,
-): VisualizationInputSource["kind"] {
+function survivalTimeAxisLabel(unit: string): string {
+  return unit.trim() ? `Follow-up time (${unit.trim()})` : "Follow-up time";
+}
+
+function heatmapSourceKindFor(source: VisualizationInputSource): VisualizationInputSource["kind"] {
   return source.kind;
 }
 
@@ -188,7 +194,11 @@ function sameHeatmapConfiguration(
     existing.heatmap.min === candidate.heatmap.min &&
     existing.heatmap.max === candidate.heatmap.max &&
     existing.heatmap.missingColor === candidate.heatmap.missingColor &&
-    existing.heatmap.showCellValues === candidate.heatmap.showCellValues
+    existing.heatmap.showCellValues === candidate.heatmap.showCellValues &&
+    existing.appearance.palette.length === candidate.appearance.palette.length &&
+    existing.appearance.palette.every(
+      (color, index) => color === candidate.appearance.palette[index],
+    )
   );
 }
 
@@ -230,17 +240,9 @@ function formattedLogRankResult(
 
 function explicitLiteratureSurvivalStatus(value: unknown): "Event" | "Censored" | null {
   const normalized = String(value).normalize("NFKC").trim().toLowerCase();
-  if (
-    ["1", "event", "observed", "true", "死亡", "イベント", "イベント発生"].includes(
-      normalized,
-    )
-  )
+  if (["1", "event", "observed", "true", "死亡", "イベント", "イベント発生"].includes(normalized))
     return "Event";
-  if (
-    ["0", "censored", "censor", "false", "打ち切り", "観察終了", "生存"].includes(
-      normalized,
-    )
-  )
+  if (["0", "censored", "censor", "false", "打ち切り", "観察終了", "生存"].includes(normalized))
     return "Censored";
   return null;
 }
@@ -326,6 +328,7 @@ export function SpecializedCorePage({
     initialDraft?.text ??
     initialSpecializedEntryDraft?.state.rawLineage.rawText ??
     initialVisualizationProject?.state.rawLineage.rawText ??
+    persistedAdaptiveInput?.rawLineage?.rawText ??
     (mode === "survival" ? SURVIVAL_TABLE_HEADER : "");
   const [text, setText] = useState(initialEditorText);
   const [timeToEventInputSource, setTimeToEventInputSource] = useState<TimeToEventInputSource>(
@@ -384,6 +387,11 @@ export function SpecializedCorePage({
   const [showCellValues, setShowCellValues] = useState(
     initialDraft?.showCellValues ?? initialVisualizationHeatmap?.showCellValues ?? false,
   );
+  const [heatmapPalette, setHeatmapPalette] = useState<readonly string[]>(
+    initialVisualizationGraph?.type === "heatmap"
+      ? initialVisualizationGraph.appearance.palette
+      : ["#3b4cc0", "#f7f7f7", "#b40426"],
+  );
   const initialCurrentAnalysis = initialProject?.state.analysisRuns
     .filter(
       ({ state, inputDesignRevisionId, inputRawRevisionId }) =>
@@ -392,6 +400,14 @@ export function SpecializedCorePage({
         inputRawRevisionId === initialProject.state.activeRawRevisionId,
     )
     .at(-1);
+  const initialSurvivalGraphSpec = initialCurrentAnalysis
+    ? initialProject?.state.graphs.find(
+        ({ sourceAnalysisRunId, state, spec }) =>
+          sourceAnalysisRunId === initialCurrentAnalysis.id &&
+          state === "current" &&
+          spec.type === "survival_curve",
+      )?.spec
+    : undefined;
   const [result, setResult] = useState<AnalysisEngineResult | null>(
     initialCurrentAnalysis?.result ?? null,
   );
@@ -431,6 +447,36 @@ export function SpecializedCorePage({
         ({ sampling }) => sampling === "event_follow_up",
       )?.unit ??
       "",
+  );
+  const [graphTitle, setGraphTitle] = useState(
+    initialDraft?.graphTitle ??
+      initialProject?.state.metadata.projectName ??
+      effectiveEntryIntent?.experimentName ??
+      "Kaplan–Meier survival",
+  );
+  const [survivalXAxisLabel, setSurvivalXAxisLabel] = useState(
+    initialDraft?.survivalXAxisLabel ??
+      initialSurvivalGraphSpec?.axes.xLabel ??
+      survivalTimeAxisLabel(
+        initialDraft?.followUpUnit ??
+          persistedAdaptiveInput?.contract.orderedAxes.find(
+            ({ sampling }) => sampling === "event_follow_up",
+          )?.unit ??
+          "",
+      ),
+  );
+  const [survivalYAxisLabel, setSurvivalYAxisLabel] = useState(
+    initialDraft?.survivalYAxisLabel ??
+      initialSurvivalGraphSpec?.axes.yLabel ??
+      "Survival probability",
+  );
+  const [survivalPalette, setSurvivalPalette] = useState<readonly string[]>(
+    initialDraft?.survivalPalette ??
+      initialSurvivalGraphSpec?.appearance.palette ??
+      DEFAULT_SURVIVAL_COLORS,
+  );
+  const [survivalInspectorTab, setSurvivalInspectorTab] = useState<"graph" | "statistics">(
+    experimentFirstEntry ? "graph" : "statistics",
   );
   const [numericStatusMapping, setNumericStatusMapping] = useState<NumericStatusMappingChoice>(
     initialDraft?.numericStatusMapping ??
@@ -533,6 +579,10 @@ export function SpecializedCorePage({
       subjectUnitRelationship,
       followUpUnit,
       numericStatusMapping,
+      graphTitle,
+      survivalXAxisLabel,
+      survivalYAxisLabel,
+      survivalPalette,
       entryIntent: effectiveEntryIntent,
     }),
     [
@@ -545,6 +595,10 @@ export function SpecializedCorePage({
       subjectUnitRelationship,
       followUpUnit,
       numericStatusMapping,
+      graphTitle,
+      survivalXAxisLabel,
+      survivalYAxisLabel,
+      survivalPalette,
       text,
       transform,
       effectiveEntryIntent,
@@ -759,6 +813,7 @@ export function SpecializedCorePage({
         setTransform(graph.heatmap.transform);
         setRangeMin(graph.heatmap.min === null ? "" : String(graph.heatmap.min));
         setRangeMax(graph.heatmap.max === null ? "" : String(graph.heatmap.max));
+        setHeatmapPalette(graph.appearance.palette);
         setMissingColor(graph.heatmap.missingColor);
         setShowCellValues(graph.heatmap.showCellValues);
       }
@@ -1036,9 +1091,7 @@ export function SpecializedCorePage({
           setCurrentSpecializedEntryDraft(saved);
           lastSaveSucceededRef.current = true;
           adoptCurrentAsBaseline();
-          setMessage(
-            "入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。",
-          );
+          setMessage("入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。");
           return;
         }
         if (!saveProject) return;
@@ -1073,13 +1126,15 @@ export function SpecializedCorePage({
                     revision: freshResult.requestId,
                   },
                   analysisResultId: freshResult.requestId,
-                  timeLabel: "Follow-up time",
+                  timeLabel: survivalXAxisLabel,
+                  probabilityLabel: survivalYAxisLabel,
+                  palette: survivalPalette,
                 })
               : null;
           const survivalState = createInitialProjectState({
             metadata: {
               projectId: currentProject?.state.metadata.projectId ?? "project.survival",
-              projectName: currentProject?.state.metadata.projectName ?? "Survival analysis",
+              projectName: graphTitle.trim() || "Survival analysis",
               experimentDate: currentProject?.state.metadata.experimentDate || day(),
               createdAt: currentProject?.state.metadata.createdAt ?? prepared.createdAt,
               updatedAt: prepared.createdAt,
@@ -1131,7 +1186,9 @@ export function SpecializedCorePage({
                   revision: freshResult.requestId,
                 },
                 analysisResultId: freshResult.requestId,
-                timeLabel: "Follow-up time",
+                timeLabel: survivalXAxisLabel,
+                probabilityLabel: survivalYAxisLabel,
+                palette: survivalPalette,
               })
             : null;
         const updatedAdaptiveInput = activeAdaptiveInput
@@ -1177,7 +1234,7 @@ export function SpecializedCorePage({
           survivalState = createInitialProjectState({
             metadata: {
               projectId: "project.survival",
-              projectName: effectiveEntryIntent?.experimentName ?? "Survival analysis",
+              projectName: graphTitle.trim() || "Survival analysis",
               experimentDate: day(),
               createdAt: prepared.createdAt,
               updatedAt: prepared.createdAt,
@@ -1205,15 +1262,22 @@ export function SpecializedCorePage({
           });
         }
         const stateToSave = currentProject
-          ? ProjectStateSchema.parse(survivalState)
+          ? ProjectStateSchema.parse({
+              ...survivalState,
+              metadata: {
+                ...survivalState.metadata,
+                projectName: graphTitle.trim() || survivalState.metadata.projectName,
+              },
+            })
           : ProjectStateSchema.parse({
               ...survivalState,
+              metadata: {
+                ...survivalState.metadata,
+                projectName: graphTitle.trim() || survivalState.metadata.projectName,
+              },
               adaptiveInput: updatedAdaptiveInput,
             });
-        const saved = await saveProject(
-          stateToSave,
-          saveAs ? undefined : currentProject?.target,
-        );
+        const saved = await saveProject(stateToSave, saveAs ? undefined : currentProject?.target);
         if (!saved) {
           setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
           return;
@@ -1294,6 +1358,7 @@ export function SpecializedCorePage({
           },
           transform,
           range: configuredRange,
+          palette: heatmapPalette,
           missingColor,
           showCellValues,
         });
@@ -1365,6 +1430,7 @@ export function SpecializedCorePage({
           },
           transform,
           range: configuredRange,
+          palette: heatmapPalette,
           missingColor,
           showCellValues,
         });
@@ -1424,35 +1490,6 @@ export function SpecializedCorePage({
     }
     proceed();
   };
-  const exportSvg = () => {
-    if (!svgRef.current) return;
-    setExportFeedback(null);
-    const downloaded = exportRenderedGraphSvg(svgRef.current, `${mode}.svg`);
-    setExportFeedback(
-      downloaded
-        ? { kind: "success", text: "表示中のGraphをSVGで書き出しました。" }
-        : { kind: "error", text: "SVGを書き出せませんでした。Graphは画面に保持されています。" },
-    );
-  };
-  const exportPng = async () => {
-    if (!svgRef.current) return;
-    setExportFeedback(null);
-    try {
-      await exportRenderedGraphPng(svgRef.current, `${mode}.png`);
-      setExportFeedback({
-        kind: "success",
-        text: "表示中のGraphと同じ内容をPNGで書き出しました。",
-      });
-    } catch (error) {
-      setExportFeedback({
-        kind: "error",
-        text: `PNGを書き出せませんでした。GraphとSVG書き出しは利用できます。${
-          error instanceof Error && error.message ? `（${error.message}）` : ""
-        }`,
-      });
-    }
-  };
-
   const persistedAnalysisForResult = result
     ? [...(currentProject?.state.analysisRuns ?? [])]
         .reverse()
@@ -1785,6 +1822,222 @@ export function SpecializedCorePage({
         )}
       </section>
     ) : null;
+  const survivalStatisticsContent = (
+    <div id="survival-statistics" className="graph-workspace-frame__settings">
+      <h3>統計</h3>
+      <p>Graphを確認したあと、必要な場合だけ推論解析を実行します。</p>
+      {survival && !("error" in survival) && statisticsReadiness.status !== "ready" ? (
+        <p className="specialized-engine-note" role="status">
+          {statisticsReadiness.researcherMessage}
+        </p>
+      ) : null}
+      {experimentFirstEntry && !statisticsSetupExpanded ? (
+        <button
+          type="button"
+          disabled={!survival || "error" in survival}
+          onClick={() => setStatisticsSetupExpanded(true)}
+        >
+          統計解析を設定
+        </button>
+      ) : (
+        <>
+          {timeToEventUnitPanel}
+          <button
+            className="analysis-run-button"
+            type="button"
+            disabled={
+              !analysisAvailable ||
+              statisticsReadiness.status !== "ready" ||
+              (experimentFirstEntry && !activeAdaptiveInput)
+            }
+            onClick={() => void runSurvival()}
+          >
+            Kaplan–Meier + log-rankを実行
+          </button>
+          {!analysisAvailable ? (
+            <p className="specialized-engine-note" role="note">
+              このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
+            </p>
+          ) : null}
+          {logRankDisplay ? (
+            <>
+              <p>{logRankDisplay}</p>
+              <label className="specialized-statistics-annotation-toggle">
+                <input
+                  type="checkbox"
+                  checked={showLogRankAnnotation}
+                  onChange={(event) => {
+                    setShowLogRankAnnotation(event.target.checked);
+                    recordUsageGraphEdit(
+                      routeFromPath(window.location.pathname),
+                      "statistics_annotation",
+                    );
+                  }}
+                />
+                <span>この保存済みlog-rank結果をGraphに表示</span>
+              </label>
+              <p className="specialized-engine-note">
+                表示だけを切り替えます。解析結果は再計算しません。
+              </p>
+            </>
+          ) : (
+            <p>解析を実行すると、event/censoringを保持した結果をここに表示します。</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+  const survivalGraphSettings = (
+    <div className="graph-workspace-frame__settings">
+      <h3>Graph設定</h3>
+      <label>
+        <span>Graphタイトル</span>
+        <input
+          aria-label="Survival Graph title"
+          value={graphTitle}
+          onChange={(event) => setGraphTitle(event.target.value)}
+        />
+      </label>
+      <label>
+        <span>X軸タイトル</span>
+        <input
+          aria-label="Survival X axis title"
+          value={survivalXAxisLabel}
+          onChange={(event) => {
+            setSurvivalXAxisLabel(event.target.value);
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
+          }}
+        />
+      </label>
+      <label>
+        <span>Y軸タイトル</span>
+        <input
+          aria-label="Survival Y axis title"
+          value={survivalYAxisLabel}
+          onChange={(event) => {
+            setSurvivalYAxisLabel(event.target.value);
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
+          }}
+        />
+      </label>
+      {survival && !("error" in survival) ? (
+        <fieldset>
+          <legend>凡例と曲線の色</legend>
+          {survival.conditions.map((condition, index) => (
+            <label key={condition.id}>
+              <span>{condition.label}</span>
+              <input
+                type="color"
+                aria-label={`${condition.label}のSurvival曲線色`}
+                value={
+                  survivalPalette[index] ??
+                  DEFAULT_SURVIVAL_COLORS[index % DEFAULT_SURVIVAL_COLORS.length]
+                }
+                onChange={(event) => {
+                  setSurvivalPalette((current) => {
+                    const next = [...current];
+                    next[index] = event.target.value;
+                    return next;
+                  });
+                  recordUsageGraphEdit(
+                    routeFromPath(window.location.pathname),
+                    "appearance_layout",
+                  );
+                }}
+              />
+            </label>
+          ))}
+          <small>凡例はGroup名、色、各群のnを曲線と同期して表示します。</small>
+        </fieldset>
+      ) : null}
+      <p className="specialized-engine-note">
+        Graphの見た目を変更しても、Kaplan–Meier推定やlog-rank検定は再計算しません。
+      </p>
+      {experimentFirstEntry && !statisticsSetupExpanded ? (
+        <button
+          type="button"
+          disabled={!survival || "error" in survival}
+          onClick={() => {
+            setStatisticsSetupExpanded(true);
+            setSurvivalInspectorTab("statistics");
+          }}
+        >
+          統計解析を設定
+        </button>
+      ) : null}
+    </div>
+  );
+  const heatmapGraphSettings = (
+    <div className="graph-workspace-frame__settings">
+      <h3>Graph設定</h3>
+      <label>
+        値の変換
+        <select
+          aria-label="Heatmap transform"
+          value={transform}
+          onChange={(event) => {
+            setTransform(event.target.value as HeatmapTransform);
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+          }}
+        >
+          <option value="none">変換しない</option>
+          <option value="row_z_score">行ごとにz-score</option>
+          <option value="column_z_score">列ごとにz-score</option>
+          <option value="log10">Log10</option>
+        </select>
+      </label>
+      <label>
+        色の下限
+        <input
+          aria-label="Heatmap color minimum"
+          type="number"
+          value={rangeMin}
+          onChange={(event) => {
+            setRangeMin(event.target.value);
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
+          }}
+        />
+      </label>
+      <label>
+        色の上限
+        <input
+          aria-label="Heatmap color maximum"
+          type="number"
+          value={rangeMax}
+          onChange={(event) => {
+            setRangeMax(event.target.value);
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
+          }}
+        />
+      </label>
+      <label>
+        欠損値の色
+        <input
+          aria-label="Heatmap missing color"
+          type="color"
+          value={missingColor}
+          onChange={(event) => {
+            setMissingColor(event.target.value);
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+          }}
+        />
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={showCellValues}
+          onChange={(event) => {
+            setShowCellValues(event.target.checked);
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+          }}
+        />{" "}
+        各セルの値を表示
+      </label>
+      <p className="specialized-engine-note">
+        Heatmapは入力行列を可視化します。列を自動的に生物学的な独立例とはみなしません。
+      </p>
+    </div>
+  );
   return (
     <div className="page-stack specialized-analysis-page" {...interactionCaptureProps}>
       <button className="back-link" type="button" onClick={requestBack}>
@@ -1810,8 +2063,24 @@ export function SpecializedCorePage({
             開く
           </button>
           <a href="#survival-data">データ</a>
-          <a href="#survival-graph">グラフ</a>
-          <a href="#survival-statistics">統計</a>
+          <button
+            type="button"
+            onClick={() => {
+              setSurvivalInspectorTab("graph");
+              document.getElementById("survival-graph")?.scrollIntoView();
+            }}
+          >
+            グラフ
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSurvivalInspectorTab("statistics");
+              document.getElementById("survival-graph")?.scrollIntoView();
+            }}
+          >
+            統計
+          </button>
           <button
             type="button"
             disabled={
@@ -1823,10 +2092,10 @@ export function SpecializedCorePage({
               experimentFirstEntry && !activeAdaptiveInput && !saveSpecializedEntryDraftProject
                 ? "入力途中のプロジェクト保存はデスクトップ版で利用できます"
                 : !saveProject
-                ? "プロジェクトの保存はデスクトップ版で利用できます"
-                : experimentFirstEntry && !activeAdaptiveInput
-                  ? "未確定の回答と入力表を、入力途中のプロジェクトとして保存します"
-                  : undefined
+                  ? "プロジェクトの保存はデスクトップ版で利用できます"
+                  : experimentFirstEntry && !activeAdaptiveInput
+                    ? "未確定の回答と入力表を、入力途中のプロジェクトとして保存します"
+                    : undefined
             }
             onClick={() => void save()}
           >
@@ -2010,7 +2279,12 @@ export function SpecializedCorePage({
               value={followUpUnit}
               placeholder="例: day, hour, week"
               onChange={(event) => {
-                setFollowUpUnit(event.target.value);
+                const previousDefault = survivalTimeAxisLabel(followUpUnit);
+                const nextUnit = event.target.value;
+                setFollowUpUnit(nextUnit);
+                setSurvivalXAxisLabel((current) =>
+                  current === previousDefault ? survivalTimeAxisLabel(nextUnit) : current,
+                );
                 setResult(null);
                 setResultInputFingerprint(null);
               }}
@@ -2125,97 +2399,7 @@ export function SpecializedCorePage({
             </select>
           </section>
         ) : null}
-        {mode === "heatmap" ? (
-          <div className="specialized-settings-grid">
-            <label>
-              値の変換{" "}
-              <select
-                aria-label="Heatmap transform"
-                value={transform}
-                onChange={(event) => {
-                  setTransform(event.target.value as HeatmapTransform);
-                  recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
-                }}
-              >
-                <option value="none">変換しない</option>
-                <option value="row_z_score">行ごとにz-score</option>
-                <option value="column_z_score">列ごとにz-score</option>
-                <option value="log10">Log10</option>
-              </select>
-            </label>
-            <label>
-              色の下限{" "}
-              <input
-                aria-label="Heatmap color minimum"
-                type="number"
-                value={rangeMin}
-                onChange={(event) => {
-                  setRangeMin(event.target.value);
-                  recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
-                }}
-              />
-            </label>
-            <label>
-              色の上限{" "}
-              <input
-                aria-label="Heatmap color maximum"
-                type="number"
-                value={rangeMax}
-                onChange={(event) => {
-                  setRangeMax(event.target.value);
-                  recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
-                }}
-              />
-            </label>
-            <label>
-              欠損値の色{" "}
-              <input
-                aria-label="Heatmap missing color"
-                type="color"
-                value={missingColor}
-                onChange={(event) => {
-                  setMissingColor(event.target.value);
-                  recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
-                }}
-              />
-            </label>
-            <label>
-              <input
-                  type="checkbox"
-                  checked={showCellValues}
-                  onChange={(event) => {
-                    setShowCellValues(event.target.checked);
-                    recordUsageGraphEdit(
-                      routeFromPath(window.location.pathname),
-                      "appearance_layout",
-                    );
-                  }}
-              />{" "}
-              各セルの値を表示
-            </label>
-          </div>
-        ) : null}
         <div className="specialized-action-bar">
-          <button
-            type="button"
-            disabled={
-              (mode === "survival" && (!survival || "error" in survival)) ||
-              (mode === "heatmap" && (!heatmapTableHasRows || !heatmap || "error" in heatmap))
-            }
-            onClick={exportSvg}
-          >
-            SVGを書き出す
-          </button>
-          <button
-            type="button"
-            disabled={
-              (mode === "survival" && (!survival || "error" in survival)) ||
-              (mode === "heatmap" && (!heatmapTableHasRows || !heatmap || "error" in heatmap))
-            }
-            onClick={() => void exportPng()}
-          >
-            PNGを書き出す
-          </button>
           {mode === "heatmap" ? (
             <button
               type="button"
@@ -2273,124 +2457,129 @@ export function SpecializedCorePage({
           ) : null}
         </div>
         {message ? <p role="status">{message}</p> : null}
-        {exportFeedback ? (
+        {mode === "heatmap" && exportFeedback ? (
           <p role={exportFeedback.kind === "error" ? "alert" : "status"}>{exportFeedback.text}</p>
         ) : null}
       </section>
-      <section
-        id={mode === "survival" ? "survival-graph" : "heatmap-graph"}
-        className="workspace-panel specialized-workspace-panel"
-      >
-        <h2>グラフ</h2>
-        {mode === "survival" && !survivalTableHasRows ? (
-          <p>表に実測値を入力すると、event/censoringを保持したGraphをここに表示します。</p>
-        ) : numericStatusMappingRequired && numericStatusMapping === null ? (
-          <p>Status列の0/1の意味を確認するとGraphを表示できます。</p>
-        ) : survival && "error" in survival ? (
-          <p role="alert">{survival.error}</p>
-        ) : null}
-        {mode === "heatmap" && !heatmapTableHasRows ? (
-          <p>数値行列を貼り付けると、欠損を保持したヒートマップをここに表示します。</p>
-        ) : heatmap && "error" in heatmap ? (
-          <p role="alert">{heatmap.error}</p>
-        ) : null}
-        {mode === "survival" && survival && !("error" in survival) ? (
-          <SurvivalGraph
-            ref={svgRef}
-            model={survival.model}
-            timeLabel={
-              !experimentFirstEntry
-                ? "Follow-up time"
-                : followUpUnit.trim()
-                  ? `Follow-up time (${followUpUnit.trim()})`
-                  : "Follow-up time (unit not specified)"
-            }
-            annotation={showLogRankAnnotation ? (logRankDisplay ?? undefined) : undefined}
-            countSemantics={
-              !experimentFirstEntry || activeAdaptiveInput ? "biological_n" : "records"
-            }
-          />
-        ) : null}
-        {mode === "heatmap" && heatmapTableHasRows && heatmap && !("error" in heatmap) ? (
-          <HeatmapGraph
-            ref={svgRef}
-            model={heatmap.model}
-            min={configuredMin}
-            max={configuredMax}
-            missingColor={missingColor}
-            showCellValues={showCellValues}
-          />
-        ) : null}
-      </section>
       {mode === "survival" ? (
-        <section
-          id="survival-statistics"
-          className="workspace-panel specialized-workspace-panel"
-          aria-label="統計ワークスペース"
-        >
-          <h2>統計</h2>
-          <p>グラフを確認したあと、必要な場合だけ推論解析を実行します。</p>
-          {survival && !("error" in survival) && statisticsReadiness.status !== "ready" ? (
-            <p className="specialized-engine-note" role="status">
-              {statisticsReadiness.researcherMessage}
-            </p>
-          ) : null}
-          {experimentFirstEntry && !statisticsSetupExpanded ? (
-            <button
-              type="button"
-              disabled={!survival || "error" in survival}
-              onClick={() => setStatisticsSetupExpanded(true)}
-            >
-              統計解析を設定
-            </button>
-          ) : (
-            <>
-              {timeToEventUnitPanel}
-              <button
-                className="analysis-run-button"
-                type="button"
-                disabled={
-                  !analysisAvailable ||
-                  statisticsReadiness.status !== "ready" ||
-                  (experimentFirstEntry && !activeAdaptiveInput)
-                }
-                onClick={() => void runSurvival()}
-              >
-                Kaplan–Meier + log-rankを実行
-              </button>
-              {!analysisAvailable ? (
-                <p className="specialized-engine-note" role="note">
-                  このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
+        <section id="survival-graph" className="workspace-panel specialized-workspace-panel">
+          <GraphWorkspaceFrame
+            title={graphTitle.trim() || "Kaplan–Meier survival"}
+            actions={
+              <GraphExportActions
+                svgRef={svgRef}
+                fileStem={graphTitle}
+                disabled={!survival || "error" in survival}
+                onFeedback={setExportFeedback}
+              />
+            }
+            feedback={
+              exportFeedback ? (
+                <p role={exportFeedback.kind === "error" ? "alert" : "status"}>
+                  {exportFeedback.text}
                 </p>
-              ) : null}
-              {logRankDisplay ? (
-                <>
-                  <p>{logRankDisplay}</p>
-                  <label className="specialized-statistics-annotation-toggle">
-                    <input
-                      type="checkbox"
-                      checked={showLogRankAnnotation}
-                      onChange={(event) => {
-                        setShowLogRankAnnotation(event.target.checked);
-                        recordUsageGraphEdit(
-                          routeFromPath(window.location.pathname),
-                          "statistics_annotation",
-                        );
-                      }}
-                    />
-                    <span>この保存済みlog-rank結果をグラフに表示</span>
-                  </label>
-                  <p className="specialized-engine-note">
-                    表示だけを切り替えます。解析結果は再計算しません。
-                  </p>
-                </>
-              ) : (
-                <p>解析を実行すると、event/censoringを保持した結果をここに表示します。</p>
-              )}
-            </>
-          )}
+              ) : null
+            }
+            canvas={
+              !survivalTableHasRows ? (
+                <p>表に実測値を入力すると、event/censoringを保持したGraphをここに表示します。</p>
+              ) : numericStatusMappingRequired && numericStatusMapping === null ? (
+                <p>Status列の0/1の意味を確認するとGraphを表示できます。</p>
+              ) : survival && "error" in survival ? (
+                <p role="alert">{survival.error}</p>
+              ) : survival && !("error" in survival) ? (
+                <SurvivalGraph
+                  ref={svgRef}
+                  model={survival.model}
+                  timeLabel={survivalXAxisLabel}
+                  probabilityLabel={survivalYAxisLabel}
+                  palette={survivalPalette}
+                  annotation={showLogRankAnnotation ? (logRankDisplay ?? undefined) : undefined}
+                  countSemantics={
+                    !experimentFirstEntry || activeAdaptiveInput ? "biological_n" : "records"
+                  }
+                />
+              ) : null
+            }
+            inspector={
+              <>
+                <div
+                  className="graph-workspace-frame__inspector-tabs"
+                  role="tablist"
+                  aria-label="Graphと統計"
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={survivalInspectorTab === "graph"}
+                    onClick={() => setSurvivalInspectorTab("graph")}
+                  >
+                    Graph
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={survivalInspectorTab === "statistics"}
+                    onClick={() => setSurvivalInspectorTab("statistics")}
+                  >
+                    Statistics
+                  </button>
+                </div>
+                {survivalInspectorTab === "graph"
+                  ? survivalGraphSettings
+                  : survivalStatisticsContent}
+              </>
+            }
+          />
         </section>
-      ) : null}
+      ) : (
+        <section id="heatmap-graph" className="workspace-panel specialized-workspace-panel">
+          <GraphWorkspaceFrame
+            title={
+              effectiveEntryIntent?.experimentName ??
+              currentVisualizationProject?.state.metadata.projectName ??
+              "Heatmap"
+            }
+            actions={
+              <GraphExportActions
+                svgRef={svgRef}
+                fileStem={
+                  effectiveEntryIntent?.experimentName ??
+                  currentVisualizationProject?.state.metadata.projectName ??
+                  "Heatmap"
+                }
+                disabled={!heatmapTableHasRows || !heatmap || "error" in heatmap}
+                onFeedback={setExportFeedback}
+              />
+            }
+            feedback={
+              exportFeedback ? (
+                <p role={exportFeedback.kind === "error" ? "alert" : "status"}>
+                  {exportFeedback.text}
+                </p>
+              ) : null
+            }
+            canvas={
+              !heatmapTableHasRows ? (
+                <p>数値行列を貼り付けると、欠損を保持したヒートマップをここに表示します。</p>
+              ) : heatmap && "error" in heatmap ? (
+                <p role="alert">{heatmap.error}</p>
+              ) : heatmap && !("error" in heatmap) ? (
+                <HeatmapGraph
+                  ref={svgRef}
+                  model={heatmap.model}
+                  min={configuredMin}
+                  max={configuredMax}
+                  palette={heatmapPalette}
+                  missingColor={missingColor}
+                  showCellValues={showCellValues}
+                />
+              ) : null
+            }
+            inspector={heatmapGraphSettings}
+          />
+        </section>
+      )}
       {methods ? (
         <details>
           <summary>Methods</summary>

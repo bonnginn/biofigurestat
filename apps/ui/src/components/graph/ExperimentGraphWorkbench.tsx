@@ -52,7 +52,6 @@ import {
 } from "../../app/experimentWorkspaceProject";
 import {
   copyGraphToClipboard,
-  downloadTextFile,
   ExportCancelledError,
   exportGraphPng,
   saveExportText,
@@ -93,6 +92,7 @@ import {
   omitGenericCategoricalAxisTitle,
   resolveSeriesLinePresentation,
 } from "./graphSemantics";
+import { violinDensityPath } from "./graphGeometry";
 
 import "./graph-workbench.css";
 
@@ -698,40 +698,6 @@ function splitParentLabel(label: string): readonly string[] {
   return [label.slice(0, 16), label.slice(16, 32)];
 }
 
-function violinPath(
-  values: readonly number[],
-  x: number,
-  yFor: (value: number) => number,
-  halfWidth: number,
-): string | null {
-  if (values.length < 2) return null;
-  const minimum = Math.min(...values);
-  const maximum = Math.max(...values);
-  // Density support must follow the observed scale.  A hard minimum range of
-  // 1 made bounded measurements such as circularity extend far beyond their
-  // actual values (and sometimes beyond the scientifically possible range).
-  const observedRange = maximum - minimum;
-  const scale = Math.max(Math.abs(minimum), Math.abs(maximum), Number.EPSILON);
-  const range = Math.max(observedRange, scale * 0.08, Number.EPSILON);
-  const bandwidth = Math.max(range / 7, 0.001);
-  const samples = Array.from({ length: 24 }, (_, index) => minimum + (range * index) / 23);
-  const densities = samples.map((sample) =>
-    values.reduce((sum, value) => {
-      const z = (sample - value) / bandwidth;
-      return sum + Math.exp(-0.5 * z * z);
-    }, 0),
-  );
-  const maximumDensity = Math.max(...densities, 1);
-  const right = samples.map(
-    (sample, index) => `${x + (densities[index] / maximumDensity) * halfWidth},${yFor(sample)}`,
-  );
-  const left = [...samples].reverse().map((sample, reverseIndex) => {
-    const index = samples.length - 1 - reverseIndex;
-    return `${x - (densities[index] / maximumDensity) * halfWidth},${yFor(sample)}`;
-  });
-  return `M ${right[0]} L ${[...right.slice(1), ...left].join(" L ")} Z`;
-}
-
 function ExperimentGraphSvg({
   shape,
   readoutLabel,
@@ -897,9 +863,14 @@ function ExperimentGraphSvg({
   const topLegendRows =
     showLegend && appearance.legendPosition === "top" ? Math.ceil(legendConditions.length / 3) : 0;
   const topLegendHeight = topLegendRows * Math.max(34, appearance.legendFontSize * 2);
+  const singleCategoricalFactorTitle =
+    axes.xSemantic === "categorical" && (axisLabels[0]?.levels.length ?? 0) === 1
+      ? axisLabels[0]?.levels[0]?.label?.trim()
+      : "";
   const xAxisTitle =
     axes.xSemantic === "categorical"
-      ? omitGenericCategoricalAxisTitle(axes.xTitle)
+      ? omitGenericCategoricalAxisTitle(axes.xTitle) ||
+        (singleCategoricalFactorTitle === "条件" ? "" : singleCategoricalFactorTitle)
       : axes.xTitle.trim() || (axes.xSemantic === "time" ? "Time" : "Covariate");
   const renderedXAxisTitle = xAxisTitle
     ? `${xAxisTitle}${axes.xUnit.trim() ? ` (${axes.xUnit.trim()})` : ""}`
@@ -909,7 +880,9 @@ function ExperimentGraphSvg({
   const hierarchyHeadingWidth = Math.max(
     0,
     ...(axisLabels[0]?.levels ?? []).flatMap(({ label }, levelIndex) =>
-      label && !(levelIndex === 0 && label === "条件")
+      label &&
+      !(levelIndex === 0 && label === "条件") &&
+      !(levelIndex === 0 && label === singleCategoricalFactorTitle)
         ? [estimatedRenderedTextWidth(label, appearance.hierarchyFontSize)]
         : [],
     ),
@@ -940,7 +913,7 @@ function ExperimentGraphSvg({
   };
   const graphInnerWidth = continuousLine ? 720 : categoryLayout.innerWidth;
   const width = margin.left + margin.right + graphInnerWidth;
-  const yAxisTitleX = Math.max(20, margin.left - 48);
+  const yAxisTitleX = Math.max(20, margin.left - 38);
   const extraLabelHeight = Math.max(0, hierarchyDepth - 1) * 27;
   const xAxisTitleHeight = renderedXAxisTitle ? 34 : 0;
   const statisticsLegendLabels = [
@@ -1706,7 +1679,9 @@ function ExperimentGraphSvg({
               (hierarchyDepth - 1 - levelIndex) * 27;
             const heading = axisLabels[0]?.levels[levelIndex]?.label;
             return [
-              heading && !(levelIndex === 0 && heading === "条件") ? (
+              heading &&
+              !(levelIndex === 0 && heading === "条件") &&
+              !(levelIndex === 0 && heading === singleCategoricalFactorTitle) ? (
                 <text
                   key={`heading-${levelIndex}`}
                   x={margin.left - 10}
@@ -1838,7 +1813,7 @@ function ExperimentGraphSvg({
         const jitterWidth = Math.min(appearance.jitter, Math.max(4, localHalfWidth * 0.58));
         const distributionHalfWidth = Math.min(22, Math.max(8, localHalfWidth * 0.78));
         const barHalfWidth = Math.min(42, Math.max(8, barLocalHalfWidth * appearance.barWidth));
-        const currentViolinPath = violinPath(violinValues, x, yFor, distributionHalfWidth);
+        const currentViolinPath = violinDensityPath(violinValues, x, yFor, distributionHalfWidth);
         const barBaselineValue = axes.yScale === "log10" ? domainMin : Math.max(0, domainMin);
         const barBaselineY = yFor(barBaselineValue);
         return (
@@ -2611,10 +2586,11 @@ function csvField(value: string | number): string {
   return `"${String(value).replaceAll('"', '""')}"`;
 }
 
-function serializeVisibleGraphData(
+export function serializeVisibleGraphData(
   series: readonly GraphSeries[],
-  shape: ReadoutDraft["shape"],
+  readout: ReadoutDraft,
 ): string {
+  const shape = readout.shape;
   const rows: Array<Array<string | number>> = [
     ["条件", "時点", "実験回", "データ層", "値", "陽性数", "対象数"],
   ];
@@ -2633,23 +2609,29 @@ function serializeVisibleGraphData(
       });
       return;
     }
-    item.rawPoints.forEach((point) => {
-      rows.push([
-        item.conditionLabel,
-        item.timeLabel ?? "",
-        point.experimentLabel,
-        "細胞・ROI生データ",
-        point.value,
-        "",
-        "",
-      ]);
-    });
+    if (shape === "nested_continuous" && readout.nestedInputMode !== "unit_summary") {
+      item.rawPoints.forEach((point) => {
+        rows.push([
+          item.conditionLabel,
+          item.timeLabel ?? "",
+          point.experimentLabel,
+          "細胞・ROI生データ",
+          point.value,
+          "",
+          "",
+        ]);
+      });
+    }
     item.experimentPoints.forEach((point) => {
       rows.push([
         item.conditionLabel,
         item.timeLabel ?? "",
         point.experimentLabel,
-        shape === "wb_ratio" ? "標的/reference比" : "実験単位平均",
+        shape === "wb_ratio"
+          ? "標的/reference比"
+          : readout.nestedInputMode === "unit_summary"
+            ? "実験単位の値"
+            : "実験単位平均",
         point.value,
         "",
         "",
@@ -2857,9 +2839,10 @@ export function ExperimentGraphWorkbench({
   );
   const [fitOverview, setFitOverview] = useState(false);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
-  const [pngExportFeedback, setPngExportFeedback] = useState<
-    Readonly<{ kind: "success" | "error"; text: string }> | null
-  >(null);
+  const [pngExportFeedback, setPngExportFeedback] = useState<Readonly<{
+    kind: "success" | "error";
+    text: string;
+  }> | null>(null);
   const [benchmarkCaptureStatus, setBenchmarkCaptureStatus] = useState<string | null>(null);
   const benchmarkRun = useBenchmarkRun();
   const analysisResult = analysis?.result ?? null;
@@ -3797,7 +3780,7 @@ export function ExperimentGraphWorkbench({
               selectedConditionIds,
               selectedTimePointIds,
             )
-          : serializeVisibleGraphData(series, readout.shape),
+          : serializeVisibleGraphData(series, readout),
         `${safeFileStem(readout.label)}-graph-data.csv`,
         "text/csv;charset=utf-8",
       );
@@ -4150,14 +4133,18 @@ export function ExperimentGraphWorkbench({
             ) : null}
             {benchmarkCaptureStatus ? <p role="status">{benchmarkCaptureStatus}</p> : null}
             {hasData ? (
-              <div className="experiment-graph-view-controls" role="group" aria-label="表示倍率">
+              <div
+                className="experiment-graph-view-controls"
+                role="group"
+                aria-label="Graph表示サイズ"
+              >
                 <button
                   className={!fitOverview ? "is-active" : ""}
                   type="button"
                   aria-pressed={!fitOverview}
                   onClick={() => setFitOverview(false)}
                 >
-                  読みやすい表示
+                  実寸（横スクロール）
                 </button>
                 <button
                   className={fitOverview ? "is-active" : ""}
@@ -4165,7 +4152,7 @@ export function ExperimentGraphWorkbench({
                   aria-pressed={fitOverview}
                   onClick={() => setFitOverview(true)}
                 >
-                  全体表示
+                  画面に全体を収める
                 </button>
               </div>
             ) : null}

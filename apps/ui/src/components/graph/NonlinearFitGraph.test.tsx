@@ -157,6 +157,8 @@ describe("NonlinearFitGraph", () => {
         }}
         xLabel="Substrate concentration"
         yLabel="Initial velocity"
+        title="Enzyme kinetics"
+        palette={["#112233", "#445566"]}
         seriesLabels={Object.fromEntries(series.map(({ id, label }) => [id, label]))}
       />,
     );
@@ -172,6 +174,11 @@ describe("NonlinearFitGraph", () => {
     expect(svg.querySelectorAll('[data-legend-mark="fitted-curve"]')).toHaveLength(2);
     expect(svg).toHaveTextContent("HIP");
     expect(svg).toHaveTextContent("FFCC");
+    expect(svg).toHaveTextContent("Enzyme kinetics");
+    expect(svg.querySelector('[data-fit-series="condition.hip"] circle')).toHaveAttribute(
+      "stroke",
+      "#112233",
+    );
     expect(
       [...svg.querySelectorAll<SVGLineElement>('[data-axis-tick="x"]')].every(
         (tick) =>
@@ -198,5 +205,6 @@ describe("NonlinearFitGraph", () => {
     expect(exportedSvg.querySelectorAll('[data-legend-mark="fitted-curve"]')).toHaveLength(2);
     expect(exportedSvg.documentElement.textContent).toContain("HIP");
     expect(exportedSvg.documentElement.textContent).toContain("FFCC");
+    expect(exportedSvg.documentElement.textContent).toContain("Enzyme kinetics");
   });
 });

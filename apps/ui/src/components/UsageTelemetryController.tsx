@@ -170,19 +170,24 @@ export function UsageTelemetryController({ route }: Readonly<{ route: AppRoute }
               測定値、表の内容、実験名、条件名、readout名、試料ID、自由記述、ファイル名・パス、clipboard内容、project名は収集しません。
             </strong>
           </p>
-          <p>
-            ONにすると、複数回の利用をまとめるためのランダムなアプリID、起動ごとのセッションID、操作日時、アプリ・ビルド版、OS種別を記録します。
-          </p>
-          {uploadConfigured ? (
-            <p>
-              このビルドには送信先が設定されています。送信時には、通信に伴うIPアドレスなどの通信情報が送信先で扱われる可能性があります。
-            </p>
-          ) : (
-            <p>このビルドには送信先が設定されていないため、外部への送信は行いません。</p>
-          )}
-          <p>
-            Aboutからいつでも変更できます。OFFにすると未送信情報とランダムなアプリIDを削除します。
-          </p>
+          <details>
+            <summary>記録項目と送信について詳しく見る</summary>
+            <div className="usage-consent-details">
+              <p>
+                ONにすると、複数回の利用をまとめるためのランダムなアプリID、起動ごとのセッションID、操作日時、アプリ・ビルド版、OS種別を記録します。
+              </p>
+              {uploadConfigured ? (
+                <p>
+                  このビルドには送信先が設定されています。送信時には、通信に伴うIPアドレスなどの通信情報が送信先で扱われる可能性があります。
+                </p>
+              ) : (
+                <p>このビルドには送信先が設定されていないため、外部への送信は行いません。</p>
+              )}
+              <p>
+                Aboutからいつでも変更できます。OFFにすると未送信情報とランダムなアプリIDを削除します。
+              </p>
+            </div>
+          </details>
           {doNotTrack ? (
             <p className="usage-consent-dnt" role="note">
               この環境では追跡拒否設定が有効です。「協力する」を明示的に選んだ場合だけ、このアプリの利用情報収集をONにします。

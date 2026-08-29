@@ -447,6 +447,28 @@ button:focus-visible {
   background: #eef3ff;
 }
 
+.topbar .about-menu > button,
+.topbar .diagnostic-menu > button {
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid #b9c7db;
+  border-radius: 999px;
+  color: #24405f;
+  background: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.topbar .about-menu > button:hover,
+.topbar .diagnostic-menu > button:hover,
+.topbar .about-menu > button[aria-expanded="true"],
+.topbar .diagnostic-menu > button[aria-expanded="true"] {
+  border-color: #8da7c5;
+  background: #eef4fa;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -540,6 +562,15 @@ button:focus-visible {
   width: 100%;
   max-width: none;
   padding: 24px clamp(18px, 2.5vw, 38px) 52px;
+}
+
+/* Dedicated scientific workspaces need the same canvas width as the main
+ * Graph editor. A reading-column wrapper made Survival/Heatmap/curve Graphs
+ * look like small previews beside their inspector. */
+.main-content:has(.specialized-analysis-page) {
+  width: 100%;
+  max-width: none;
+  padding-inline: clamp(18px, 2.5vw, 38px);
 }
 
 /* Route headings receive programmatic focus so screen readers announce the

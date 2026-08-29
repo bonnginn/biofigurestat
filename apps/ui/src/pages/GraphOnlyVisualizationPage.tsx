@@ -7,12 +7,13 @@ import {
   createUnresolvedVisualizationProjectState,
   resolveUnresolvedVisualizationIdentityDecision,
   resolveUnresolvedVisualizationSourceRowUnitDecision,
+  UnresolvedVisualizationProjectStateSchema,
   type UnresolvedVisualizationProjectState,
   type UnresolvedVisualizationColumnMapping,
   type UnresolvedVisualizationIdentityDecision,
   type UnresolvedVisualizationSourceRowUnitDecision,
 } from "@lsaa/project";
-import type { GraphSpec } from "@lsaa/graph-spec";
+import { GraphSpecSchema, type GraphSpec } from "@lsaa/graph-spec";
 
 import type {
   OpenUnresolvedVisualizationProjectAction,
@@ -23,9 +24,13 @@ import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/
 import { routeFromPath } from "../app/routes";
 import { DelimitedTextSpreadsheet } from "../components/DelimitedTextSpreadsheet";
 import {
-  recordUsageGraphConfiguration,
-  recordUsageMilestone,
-} from "../app/usageTelemetry";
+  GRAPH_ONLY_DEFAULT_PALETTE,
+  GraphOnlyDescriptiveWorkbench,
+  graphOnlySeriesKeys,
+  graphOnlyUsesNumericXAxis,
+  type GraphOnlyPresentation,
+} from "../components/graph/GraphOnlyDescriptiveWorkbench";
+import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 import "./GraphOnlyVisualizationPage.css";
 
 type ColumnIndex = number | "";
@@ -144,11 +149,18 @@ function graphSpecFor(
   yColumn: number,
   seriesColumn: ColumnIndex,
   graphId: string,
+  presentation: GraphOnlyPresentation,
+  numericXAxis: boolean,
+  seriesKeys: readonly string[],
 ): GraphSpec {
   const seriesHeader = seriesColumn === "" ? undefined : headers[seriesColumn];
-  return {
+  return GraphSpecSchema.parse({
     id: graphId,
     version: "0.1.0",
+    // `scatter` is reserved for the Core D09 paired-measurement contract. A
+    // graph-only numeric X/Y table remains descriptive until biological unit
+    // identity is explicitly supplied, so persist it as a dot graph with a
+    // continuous x scale instead of fabricating a D09 pair mapping.
     type: seriesHeader ? "grouped_dot" : "dot_summary",
     dataSource: { kind: "visualization_table", id: tableId, revision },
     analysisResultId: null,
@@ -167,9 +179,9 @@ function graphSpecFor(
     summary: { center: "none", interval: "none" },
     annotations: [],
     appearance: {
-      palette: ["#176f63", "#d27b2c", "#5877a9", "#9b4d8f", "#6f8f3d"],
-      pointSize: 5,
-      opacity: 0.9,
+      palette: [...presentation.palette],
+      pointSize: presentation.pointSize,
+      opacity: presentation.opacity,
       showRawPoints: true,
       showPairedLines: false,
       distributionFill: "none",
@@ -183,18 +195,28 @@ function graphSpecFor(
       boxWhiskerMode: "tukey_1_5_iqr",
       uncertaintyStyle: "none",
       ribbonOpacity: 0.18,
-      seriesStyles: {},
+      seriesStyles: Object.fromEntries(
+        seriesKeys.map((series, index) => [
+          series,
+          {
+            color: presentation.palette[index % presentation.palette.length],
+            legendLabel: presentation.seriesLabels[series]?.trim() || series,
+            visible: true,
+          },
+        ]),
+      ),
     },
     axes: {
-      yStartAtZero: false,
+      yStartAtZero: presentation.yStartAtZero,
       yScale: "linear",
-      xLabel: headers[xColumn] ?? "X",
-      yLabel: headers[yColumn] ?? "測定値",
+      ...(numericXAxis ? { xScale: "linear" as const } : {}),
+      xLabel: presentation.xLabel ?? headers[xColumn] ?? "X",
+      yLabel: presentation.yLabel ?? headers[yColumn] ?? "測定値",
       showMinorTicks: true,
       tickDirection: "outside",
       showCategoryGroupSeparators: Boolean(seriesHeader),
     },
-  };
+  });
 }
 
 function newMetadata(projectName: string, timestamp: string) {
@@ -244,23 +266,42 @@ function graphOnlyLifecycleSnapshot(
     idColumn: ColumnIndex;
     identityDecision: UnresolvedVisualizationIdentityDecision;
     sourceRowUnitDecision: UnresolvedVisualizationSourceRowUnitDecision;
+    presentation: GraphOnlyPresentation;
   }>,
 ): string {
   return JSON.stringify(values);
 }
 
-function sameStringRows(
-  left: readonly (readonly string[])[],
-  right: readonly (readonly string[])[],
-): boolean {
-  return (
-    left.length === right.length &&
-    left.every(
-      (row, rowIndex) =>
-        row.length === right[rowIndex]?.length &&
-        row.every((cell, columnIndex) => cell === right[rowIndex]?.[columnIndex]),
-    )
+function activeGraphFor(
+  state: UnresolvedVisualizationProjectState | null | undefined,
+): GraphSpec | null {
+  if (!state?.activeGraphId) return null;
+  return state.graphSpecs.find(({ id }) => id === state.activeGraphId) ?? null;
+}
+
+function initialGraphOnlyPresentation(
+  state: UnresolvedVisualizationProjectState | null | undefined,
+): GraphOnlyPresentation {
+  const graph = activeGraphFor(state);
+  const seriesLabels = Object.fromEntries(
+    Object.entries(graph?.appearance.seriesStyles ?? {}).flatMap(([series, style]) =>
+      style.legendLabel ? [[series, style.legendLabel]] : [],
+    ),
   );
+  return {
+    title: state?.metadata.projectName ?? "表から作成したGraph",
+    xLabel: graph?.axes.xLabel ?? null,
+    yLabel: graph?.axes.yLabel ?? null,
+    pointSize: graph?.appearance.pointSize ?? 5,
+    opacity: graph?.appearance.opacity ?? 0.9,
+    palette: graph?.appearance.palette ?? GRAPH_ONLY_DEFAULT_PALETTE,
+    yStartAtZero: graph?.axes.yStartAtZero ?? false,
+    seriesLabels,
+  };
+}
+
+function sameGraphDefinition(left: GraphSpec | null, right: GraphSpec): boolean {
+  return left !== null && JSON.stringify(left) === JSON.stringify(right);
 }
 
 function sameMappingDefinition(
@@ -290,119 +331,6 @@ function sameMappingDefinition(
 }
 
 const DIRECT_ENTRY_TEMPLATE = "X / condition\tY / value\tGroup (optional)\tID (optional)";
-
-function GraphOnlyPlot({
-  parsed,
-  xColumn,
-  yColumn,
-  seriesColumn,
-}: {
-  parsed: ParsedAdaptiveInput;
-  xColumn: number;
-  yColumn: number;
-  seriesColumn: ColumnIndex;
-}) {
-  const points = parsed.rows.flatMap((row, rowIndex) => {
-    const y = numericValue(row[yColumn]);
-    if (y === null) return [];
-    const series = seriesColumn === "" ? "" : row[seriesColumn]?.trim() || "（空欄）";
-    return [{ x: row[xColumn] || `行 ${rowIndex + 2}`, y, series, rowIndex }];
-  });
-  if (!points.length) return null;
-
-  const width = 760;
-  const height = 360;
-  const left = 60;
-  const right = 24;
-  const top = 24;
-  const bottom = 72;
-  const plotWidth = width - left - right;
-  const plotHeight = height - top - bottom;
-  const labels: string[] = [];
-  points.forEach(({ x }) => {
-    if (!labels.includes(x)) labels.push(x);
-  });
-  const maxY = Math.max(...points.map(({ y }) => y), 0);
-  const minY = Math.min(...points.map(({ y }) => y), 0);
-  const range = maxY - minY || 1;
-  const seriesLabels: string[] = [];
-  points.forEach(({ series }) => {
-    if (series && !seriesLabels.includes(series)) seriesLabels.push(series);
-  });
-  const palette = ["#176f63", "#d27b2c", "#5877a9", "#9b4d8f", "#6f8f3d"];
-  const xPosition = (label: string) =>
-    left +
-    (labels.length <= 1
-      ? plotWidth / 2
-      : (labels.indexOf(label) / (labels.length - 1)) * plotWidth);
-  const yPosition = (value: number) => top + ((maxY - value) / range) * plotHeight;
-
-  return (
-    <figure className="graph-only__figure">
-      <svg
-        className="graph-only__svg"
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        aria-label={`${parsed.headers[yColumn] ?? "測定値"}を${parsed.headers[xColumn] ?? "X"}ごとに表示したGraph`}
-      >
-        <line x1={left} x2={left} y1={top} y2={top + plotHeight} stroke="currentColor" />
-        <line
-          x1={left}
-          x2={left + plotWidth}
-          y1={top + plotHeight}
-          y2={top + plotHeight}
-          stroke="currentColor"
-        />
-        {points.map(({ x, y, series, rowIndex }) => {
-          const xJitter =
-            seriesLabels.length > 1
-              ? (seriesLabels.indexOf(series) - (seriesLabels.length - 1) / 2) * 8
-              : 0;
-          const fill =
-            palette[(seriesLabels.length ? seriesLabels.indexOf(series) : 0) % palette.length]!;
-          return (
-            <circle
-              key={`${rowIndex}.${x}.${y}`}
-              cx={xPosition(x) + xJitter}
-              cy={yPosition(y)}
-              r={5}
-              fill={fill}
-              opacity={0.9}
-            />
-          );
-        })}
-        {labels.map((label) => {
-          const x = xPosition(label);
-          return (
-            <text
-              key={label}
-              x={x}
-              y={height - 42}
-              textAnchor="end"
-              transform={`rotate(-32 ${x} ${height - 42})`}
-            >
-              {label}
-            </text>
-          );
-        })}
-        <text x={left + plotWidth / 2} y={height - 8} textAnchor="middle">
-          {parsed.headers[xColumn] ?? "X"}
-        </text>
-        <text
-          x={16}
-          y={top + plotHeight / 2}
-          textAnchor="middle"
-          transform={`rotate(-90 16 ${top + plotHeight / 2})`}
-        >
-          {parsed.headers[yColumn] ?? "測定値"}
-        </text>
-      </svg>
-      <figcaption>
-        これは表の数値をそのまま表示する説明用Graphです。統計的な比較は含みません。
-      </figcaption>
-    </figure>
-  );
-}
 
 export function GraphOnlyVisualizationPage({
   onNavigate,
@@ -451,6 +379,9 @@ export function GraphOnlyVisualizationPage({
     useState<UnresolvedVisualizationSourceRowUnitDecision>(
       initialSourceRowUnitDecision(compatibleInitialState),
     );
+  const [graphPresentation, setGraphPresentation] = useState<GraphOnlyPresentation>(() =>
+    initialGraphOnlyPresentation(compatibleInitialState),
+  );
   const [error, setError] = useState<string | null>(initialIntentError);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [statisticsMessage, setStatisticsMessage] = useState<string | null>(null);
@@ -467,10 +398,9 @@ export function GraphOnlyVisualizationPage({
     idColumn,
     identityDecision,
     sourceRowUnitDecision,
+    presentation: graphPresentation,
   });
-  const savedLifecycleSnapshotRef = useRef<string | null>(
-    initialDirty ? null : lifecycleSnapshot,
-  );
+  const savedLifecycleSnapshotRef = useRef<string | null>(initialDirty ? null : lifecycleSnapshot);
   const isDirty =
     savedLifecycleSnapshotRef.current === null ||
     lifecycleSnapshot !== savedLifecycleSnapshotRef.current;
@@ -487,6 +417,12 @@ export function GraphOnlyVisualizationPage({
     setIdColumn("");
     setIdentityDecision("unanswered");
     setSourceRowUnitDecision("unanswered");
+    setGraphPresentation((current) => ({
+      ...current,
+      xLabel: null,
+      yLabel: null,
+      seriesLabels: {},
+    }));
   };
 
   const applyImportedText = (contents: string, nextSourceLabel: string) => {
@@ -559,7 +495,10 @@ export function GraphOnlyVisualizationPage({
     const selectedY = yColumn as number;
     const timestamp = nowIso();
     const tableId = loadedState?.table.id ?? visualizationId("table");
-    const metadata = loadedState?.metadata ?? newMetadata(`表から作成したGraph`, timestamp);
+    const projectTitle = graphPresentation.title.trim() || "表から作成したGraph";
+    const metadata = loadedState?.metadata ?? newMetadata(projectTitle, timestamp);
+    const numericXAxis = graphOnlyUsesNumericXAxis(parsed, selectedX, selectedY, seriesColumn);
+    const seriesKeys = graphOnlySeriesKeys(parsed, selectedX, selectedY, seriesColumn);
     const lineageSource = sourceKindFor(sourceLabel, parsed.delimiter);
     const candidateMapping = mappingFor(
       parsed,
@@ -588,22 +527,6 @@ export function GraphOnlyVisualizationPage({
       loadedState?.rawLineage.sourceLabel === sourceLabel &&
       loadedState.rawLineage.sourceKind === lineageSource;
     const rawTextUnchanged = sourceUnchanged && loadedState?.rawLineage.rawText === text;
-    const tableUnchanged =
-      loadedState !== null &&
-      loadedState.table.id === table.id &&
-      loadedState.table.delimiter === table.delimiter &&
-      loadedState.table.headerRow === table.headerRow &&
-      loadedState.table.headers.length === table.headers.length &&
-      loadedState.table.headers.every((header, index) => header === table.headers[index]) &&
-      sameStringRows(loadedState.table.rows, table.rows);
-    const mappingUnchanged =
-      loadedState !== null && sameMappingDefinition(loadedState.mapping, mapping);
-    const activeGraphRetained =
-      loadedState?.activeGraphId !== null &&
-      loadedState?.graphSpecs.some(({ id }) => id === loadedState.activeGraphId) === true;
-    if (rawTextUnchanged && tableUnchanged && mappingUnchanged && activeGraphRetained) {
-      return loadedState;
-    }
     const transformations = rawTextUnchanged
       ? [...loadedState!.rawLineage.transformations]
       : [
@@ -619,7 +542,7 @@ export function GraphOnlyVisualizationPage({
       sha256: rawTextUnchanged ? (loadedState?.rawLineage.sha256 ?? null) : null,
       transformations,
     };
-    const base = loadedState
+    let base = loadedState
       ? appendUnresolvedVisualizationDataRevision(loadedState, {
           table,
           rawLineage,
@@ -638,15 +561,27 @@ export function GraphOnlyVisualizationPage({
           mapping,
           actor: "researcher",
         });
-    const spec = graphSpecFor(
+    if (base.metadata.projectName !== projectTitle) {
+      base = UnresolvedVisualizationProjectStateSchema.parse({
+        ...base,
+        metadata: { ...base.metadata, projectName: projectTitle, updatedAt: timestamp },
+      });
+    }
+    const activeGraph = activeGraphFor(base);
+    const comparisonSpec = graphSpecFor(
       tableId,
       base.activeDataRevisionId,
       parsed.headers,
       selectedX,
       selectedY,
       seriesColumn,
-      visualizationId("graph"),
+      activeGraph?.id ?? visualizationId("graph"),
+      graphPresentation,
+      numericXAxis,
+      seriesKeys,
     );
+    if (sameGraphDefinition(activeGraph, comparisonSpec)) return base;
+    const spec = activeGraph ? { ...comparisonSpec, id: visualizationId("graph") } : comparisonSpec;
     return appendUnresolvedVisualizationGraph(base, {
       spec,
       actor: "researcher",
@@ -668,6 +603,8 @@ export function GraphOnlyVisualizationPage({
     setIdColumn(initialColumn(state, "id"));
     setIdentityDecision(initialIdentityDecision(state));
     setSourceRowUnitDecision(initialSourceRowUnitDecision(state));
+    const loadedPresentation = initialGraphOnlyPresentation(state);
+    setGraphPresentation(loadedPresentation);
     setError(null);
     setSaveMessage(target ? "保存したGraph用データを開きました。" : null);
     setStatisticsMessage(null);
@@ -686,6 +623,7 @@ export function GraphOnlyVisualizationPage({
       idColumn: initialColumn(state, "id"),
       identityDecision: initialIdentityDecision(state),
       sourceRowUnitDecision: initialSourceRowUnitDecision(state),
+      presentation: loadedPresentation,
     });
     onDirtyChange?.(false);
     recordUsageMilestone(routeFromPath(window.location.pathname), "project_opened");
@@ -843,7 +781,8 @@ export function GraphOnlyVisualizationPage({
             }}
           />
           <small>
-            現在は文字形式のCSV / TSV / TXTに対応しています。XLS / XLSXの直接読込と、任意の行だけを解析対象から外す操作はまだ対応していません。
+            現在は文字形式のCSV / TSV / TXTに対応しています。XLS /
+            XLSXの直接読込と、任意の行だけを解析対象から外す操作はまだ対応していません。
           </small>
         </label>
         {parsedResult.error ? (
@@ -864,9 +803,10 @@ export function GraphOnlyVisualizationPage({
             <select
               aria-label="Graphの横軸"
               value={xColumn}
-              onChange={(event) =>
-                setXColumn(event.target.value === "" ? "" : Number(event.target.value))
-              }
+              onChange={(event) => {
+                setXColumn(event.target.value === "" ? "" : Number(event.target.value));
+                setGraphPresentation((current) => ({ ...current, xLabel: null }));
+              }}
             >
               <option value="">列を選択</option>
               {columns}
@@ -877,9 +817,10 @@ export function GraphOnlyVisualizationPage({
             <select
               aria-label="Graphの測定値"
               value={yColumn}
-              onChange={(event) =>
-                setYColumn(event.target.value === "" ? "" : Number(event.target.value))
-              }
+              onChange={(event) => {
+                setYColumn(event.target.value === "" ? "" : Number(event.target.value));
+                setGraphPresentation((current) => ({ ...current, yLabel: null }));
+              }}
             >
               <option value="">列を選択</option>
               {columns}
@@ -890,9 +831,10 @@ export function GraphOnlyVisualizationPage({
             <select
               aria-label="Graphのグループ"
               value={seriesColumn}
-              onChange={(event) =>
-                setSeriesColumn(event.target.value === "" ? "" : Number(event.target.value))
-              }
+              onChange={(event) => {
+                setSeriesColumn(event.target.value === "" ? "" : Number(event.target.value));
+                setGraphPresentation((current) => ({ ...current, seriesLabels: {} }));
+              }}
             >
               <option value="">グループなし</option>
               {columns}
@@ -924,11 +866,13 @@ export function GraphOnlyVisualizationPage({
           </span>
         </div>
         {canGraph ? (
-          <GraphOnlyPlot
+          <GraphOnlyDescriptiveWorkbench
             parsed={parsed}
             xColumn={xColumn as number}
             yColumn={yColumn as number}
             seriesColumn={seriesColumn}
+            presentation={graphPresentation}
+            onPresentationChange={setGraphPresentation}
           />
         ) : (
           <p className="graph-only__subtle">

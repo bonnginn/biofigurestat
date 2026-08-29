@@ -129,7 +129,7 @@ describe("App-level project save commands", () => {
         saveSpecializedEntryDraftProject,
       };
       render(<App projectActions={actions} />);
-      await screen.findByRole("heading", { name: heading });
+      await screen.findByRole("heading", { name: heading, level: 1 });
 
       pressSave();
       await waitFor(() => expect(saveSpecializedEntryDraftProject).toHaveBeenCalledTimes(1));

@@ -19,6 +19,7 @@ describe("UsageTelemetryController", () => {
       screen.getByRole("dialog", { name: /研究データを含まない利用情報/ }),
     ).toBeInTheDocument();
     expect(screen.getByText(/測定値、表の内容、実験名/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText("記録項目と送信について詳しく見る"));
     expect(screen.getByText(/複数回の利用をまとめるためのランダムなアプリID/)).toBeInTheDocument();
     expect(screen.getByText(/起動ごとのセッションID、操作日時/)).toBeInTheDocument();
     expect(screen.getByText(/送信先が設定されていない/)).toBeInTheDocument();

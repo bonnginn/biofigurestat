@@ -505,12 +505,10 @@
 }
 
 .experiment-graph-inspector {
-  position: sticky;
-  top: 16px;
+  position: static;
   display: block;
-  max-height: calc(100vh - 155px);
-  overflow-x: auto;
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
   border: 1px solid #d9e2ec;
   border-radius: 12px;
   background: #fff;

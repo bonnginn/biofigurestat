@@ -1,0 +1,90 @@
+.graph-workspace-frame {
+  display: grid;
+  gap: 14px;
+}
+
+.graph-workspace-frame__header {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+}
+
+.graph-workspace-frame__header h2,
+.graph-workspace-frame__header p {
+  margin: 0;
+}
+
+.graph-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.graph-workspace-frame__body {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 310px);
+}
+
+.graph-workspace-frame__canvas {
+  min-width: 0;
+  overflow: auto;
+}
+
+.graph-workspace-frame__canvas svg {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+
+.graph-workspace-frame__inspector {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border-color, #d8dee6);
+  border-radius: 12px;
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.graph-workspace-frame__inspector-tabs {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.graph-workspace-frame__inspector-tabs button[aria-selected="true"] {
+  background: #173e66;
+  color: #fff;
+}
+
+.graph-workspace-frame__settings {
+  display: grid;
+  gap: 12px;
+}
+
+.graph-workspace-frame__settings label {
+  display: grid;
+  gap: 5px;
+}
+
+.graph-workspace-frame__inspector .nonlinear-fit-axis-fields {
+  grid-template-columns: 1fr;
+}
+
+.graph-workspace-frame__inspector input,
+.graph-workspace-frame__inspector select {
+  min-width: 0;
+  width: 100%;
+}
+
+.graph-workspace-frame__feedback p {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .graph-workspace-frame__body {
+    grid-template-columns: 1fr;
+  }
+}

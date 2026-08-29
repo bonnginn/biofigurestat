@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest";
 import { createUnresolvedVisualizationProjectState, ProjectStateSchema } from "@lsaa/project";
 import type * as BenchmarkEvaluation from "../app/benchmarkEvaluation";
+import type * as GraphExport from "../app/graphExport";
 import type * as SpecializedGraphExport from "../app/specializedGraphExport";
 import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
 import type {
@@ -19,6 +20,7 @@ const recordUsageMilestone = vi.hoisted(() => vi.fn());
 const recordUsageGraphEdit = vi.hoisted(() => vi.fn());
 const recordUsageGraphConfiguration = vi.hoisted(() => vi.fn());
 const exportRenderedGraphPng = vi.hoisted(() => vi.fn(async () => undefined));
+const exportGraphPng = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock("../app/benchmarkEvaluation", async (importOriginal) => ({
   ...(await importOriginal<typeof BenchmarkEvaluation>()),
   recordBenchmarkEvent,
@@ -26,6 +28,10 @@ vi.mock("../app/benchmarkEvaluation", async (importOriginal) => ({
 vi.mock("../app/specializedGraphExport", async (importOriginal) => ({
   ...(await importOriginal<typeof SpecializedGraphExport>()),
   exportRenderedGraphPng,
+}));
+vi.mock("../app/graphExport", async (importOriginal) => ({
+  ...(await importOriginal<typeof GraphExport>()),
+  exportGraphPng,
 }));
 vi.mock("../app/usageTelemetry", () => ({
   recordUsageGraphConfiguration,
@@ -151,7 +157,7 @@ describe("specialized Core entry pages", () => {
   });
 
   it("Case 5 PNG export reports rasterization failure without replacing the rendered Graph", async () => {
-    exportRenderedGraphPng.mockRejectedValueOnce(new Error("rasterization failed"));
+    exportGraphPng.mockRejectedValueOnce(new Error("rasterization failed"));
     render(<SpecializedCorePage mode="survival" onBack={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "入力形式の例を読み込む（合成値）" }));
     const graph = await screen.findByRole("img", { name: "Kaplan–Meier survival graph" });
@@ -159,10 +165,10 @@ describe("specialized Core entry pages", () => {
     fireEvent.click(screen.getByRole("button", { name: "PNGを書き出す" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "PNGを書き出せませんでした。GraphとSVG書き出しは利用できます。",
+      "PNGを保存できませんでした。Graphは保持されています。SVG書き出しを利用してください。",
     );
     expect(graph).toBeVisible();
-    expect(exportRenderedGraphPng).toHaveBeenCalledWith(graph, "survival.png");
+    expect(exportGraphPng).toHaveBeenCalledWith(graph, "Kaplan–Meier survival.png");
   });
 
   it("shows the Graph before statistics while an unresolved or nested row grain stays out of n", () => {
@@ -660,7 +666,7 @@ describe("specialized Core entry pages", () => {
       savedProjects.push(saved);
       return saved;
     });
-    render(
+    const rendered = render(
       <SpecializedCorePage
         mode="survival"
         onBack={vi.fn()}
@@ -670,6 +676,23 @@ describe("specialized Core entry pages", () => {
         initialText={survivalExample}
       />,
     );
+    fireEvent.change(screen.getByLabelText("Survival Graph title"), {
+      target: { value: "Tumor-free survival" },
+    });
+    fireEvent.change(screen.getByLabelText("Survival X axis title"), {
+      target: { value: "Days after treatment" },
+    });
+    fireEvent.change(screen.getByLabelText("Survival Y axis title"), {
+      target: { value: "Tumor-free probability" },
+    });
+    fireEvent.change(screen.getByLabelText("ControlのSurvival曲線色"), {
+      target: { value: "#123456" },
+    });
+    expect(
+      screen
+        .getByRole("img", { name: "Kaplan–Meier survival graph" })
+        .querySelector('[data-condition-id="condition.1"]'),
+    ).toHaveAttribute("stroke", "#123456");
     expandAdaptiveStatistics();
     fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
       target: { value: "subject_is_experimental_unit" },
@@ -714,6 +737,31 @@ describe("specialized Core entry pages", () => {
       "stale",
       "current",
     ]);
+    const savedGraphSpec = savedProjects[2]!.state.graphs.find(
+      ({ state }) => state === "current",
+    )!.spec;
+    expect(savedProjects[2]!.state.metadata.projectName).toBe("Tumor-free survival");
+    expect(savedGraphSpec.axes).toMatchObject({
+      xLabel: "Days after treatment",
+      yLabel: "Tumor-free probability",
+    });
+    expect(savedGraphSpec.appearance.palette[0]).toBe("#123456");
+
+    rendered.unmount();
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        analysisRunner={analysisRunner}
+        initialProject={savedProjects[2]}
+      />,
+    );
+    expect(screen.getByLabelText("Survival Graph title")).toHaveValue("Tumor-free survival");
+    expect(screen.getByLabelText("Survival X axis title")).toHaveValue("Days after treatment");
+    expect(screen.getByLabelText("Survival Y axis title")).toHaveValue("Tumor-free probability");
+    fireEvent.click(screen.getByRole("tab", { name: "Graph" }));
+    expect(screen.getByLabelText("ControlのSurvival曲線色")).toHaveValue("#123456");
   });
 
   it("ブラウザレビューでengine未接続ならsurvival実行をdisabledで説明する", () => {
@@ -741,7 +789,7 @@ describe("specialized Core entry pages", () => {
     expect(screen.getByRole("link", { name: "グラフ" })).toHaveAttribute("href", "#heatmap-graph");
     expect(screen.getByRole("button", { name: "統計" })).toBeDisabled();
     expect(screen.getByRole("heading", { level: 2, name: "データ" })).toBeVisible();
-    expect(screen.getByRole("heading", { level: 2, name: "グラフ" })).toBeVisible();
+    expect(screen.getByRole("region", { name: "Heatmap Graphワークスペース" })).toBeVisible();
     expect(screen.getByText("値の変換")).toBeVisible();
     expect(screen.getByRole("option", { name: "変換しない" })).toBeVisible();
     expect(screen.getByLabelText("Matrix data")).toHaveValue("");
@@ -752,6 +800,8 @@ describe("specialized Core entry pages", () => {
     fireEvent.change(screen.getByLabelText("Matrix data"), { target: { value: matrix } });
 
     expect(screen.getByRole("img", { name: "Heatmap" })).toBeVisible();
+    expect(document.querySelector('[data-graph-layer="color-scale-legend"]')).not.toBeNull();
+    expect(screen.getByRole("button", { name: "グラフをコピー" })).toBeEnabled();
     await waitFor(() =>
       expect(recordUsageGraphConfiguration).toHaveBeenCalledWith("home", {
         graphFamily: "heatmap",
@@ -782,6 +832,7 @@ describe("specialized Core entry pages", () => {
     expect(savedState.graphSpecs[0]?.type).toBe("heatmap");
     expect(savedState.graphSpecs[0]?.dataSource.kind).toBe("visualization_table");
     expect(savedState.graphSpecs[0]?.heatmap?.transform).toBe("row_z_score");
+    expect(savedState.graphSpecs[0]?.appearance.palette).toEqual(["#3b4cc0", "#f7f7f7", "#b40426"]);
     expect("design" in savedState).toBe(false);
   });
 

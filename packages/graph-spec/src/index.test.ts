@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCoreTwoConditionGraphSpec, GraphSpecSchema } from "./index";
+import { createCoreTwoConditionGraphSpec, createSurvivalGraphSpec, GraphSpecSchema } from "./index";
 
 const dataSource = {
   kind: "derived_dataset" as const,
@@ -8,6 +8,23 @@ const dataSource = {
 };
 
 describe("Core D01/D02 graph specifications", () => {
+  it("retains Survival workspace axis labels and palette in its GraphSpec", () => {
+    const spec = createSurvivalGraphSpec({
+      graphId: "graph.survival",
+      dataSource: { kind: "analysis_result", id: "result.survival", revision: "result.1" },
+      analysisResultId: "result.survival",
+      timeLabel: "Days after treatment",
+      probabilityLabel: "Tumor-free probability",
+      palette: ["#123456", "#abcdef"],
+    });
+
+    expect(spec.axes).toMatchObject({
+      xLabel: "Days after treatment",
+      yLabel: "Tumor-free probability",
+    });
+    expect(spec.appearance.palette).toEqual(["#123456", "#abcdef"]);
+  });
+
   it("round-trips grouped categories with independent color and shape channels", () => {
     const parsed = GraphSpecSchema.parse({
       id: "graph.grouped-channels",

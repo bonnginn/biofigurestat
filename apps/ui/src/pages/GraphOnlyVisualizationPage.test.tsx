@@ -9,10 +9,7 @@ import { ADAPTIVE_INPUT_FEATURE_FLAG } from "../app/adaptiveInputFeature";
 import type { WorkspaceExitRequest } from "../app/workspaceLifecycle";
 import { NewExperimentPage } from "./NewExperimentPage";
 import { GraphOnlyVisualizationPage } from "./GraphOnlyVisualizationPage";
-import {
-  recordUsageGraphConfiguration,
-  recordUsageMilestone,
-} from "../app/usageTelemetry";
+import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 
 vi.mock("../app/usageTelemetry", () => ({
   recordUsageEntry: vi.fn(),
@@ -144,7 +141,9 @@ describe("Graph-only visualization entry", () => {
     expect(screen.getByRole("region", { name: "Graph用データシート" })).toBeVisible();
     expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("X / condition");
     expect(screen.getByText(/直接入力用のX列とY列だけを最初からGraphへ対応付け/)).toBeVisible();
-    expect(screen.getByText(/貼り付け・ファイル読込では列の意味を推測せず指定を解除/)).toBeVisible();
+    expect(
+      screen.getByText(/貼り付け・ファイル読込では列の意味を推測せず指定を解除/),
+    ).toBeVisible();
     expect(screen.queryByRole("button", { name: "保存したGraph用データを開く" })).toBeNull();
     const saveButton = screen.getByRole("button", { name: "このGraph用データを保存" });
     expect(saveButton).toBeDisabled();
@@ -214,6 +213,104 @@ describe("Graph-only visualization entry", () => {
     expect(screen.getByRole("combobox", { name: "Graphの測定値" })).toHaveValue("1");
     expect(screen.getByRole("combobox", { name: "Graphのグループ" })).toHaveValue("2");
     expect(screen.queryByText(/ExperimentDesign|biological n|identity column/i)).toBeNull();
+  });
+
+  it("keeps numeric X values on a numeric axis instead of spacing them as categories", () => {
+    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
+
+    pasteGraphOnlyTable("Dose\tResponse\n0\t1\n1\t2\n10\t3");
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
+      target: { value: "1" },
+    });
+
+    const graph = screen.getByRole("img", { name: /ResponseをDoseごと/ });
+    expect(graph).toHaveAttribute("data-x-scale", "numeric");
+    const xPositions = Array.from(
+      graph.querySelectorAll<SVGCircleElement>("[data-graph-only-point='true']"),
+      (point) => Number(point.getAttribute("cx")),
+    );
+    expect(xPositions).toHaveLength(3);
+    expect(xPositions[2]! - xPositions[1]!).toBeGreaterThan((xPositions[1]! - xPositions[0]!) * 7);
+    expect(screen.getByText(/横軸の数値間隔を保って表示/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "グラフをコピー" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();
+  });
+
+  it("persists title, axes, legend labels, and appearance without resolving statistics", async () => {
+    const savedStates: UnresolvedVisualizationProjectState[] = [];
+    const saveProject = vi.fn(async (state: UnresolvedVisualizationProjectState) => {
+      savedStates.push(state);
+      return { state, target: "C:/tmp/presented-graph-only.lsa" };
+    });
+    const view = render(
+      <GraphOnlyVisualizationPage onNavigate={vi.fn()} saveProject={saveProject} />,
+    );
+
+    pasteGraphOnlyTable(rawText);
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
+      target: { value: "1" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Graphのグループ" }), {
+      target: { value: "2" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Graphタイトル" }), {
+      target: { value: "Drug response overview" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "横軸の表示名" }), {
+      target: { value: "Treatment" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "縦軸の表示名" }), {
+      target: { value: "Signal (AU)" },
+    });
+    fireEvent.change(screen.getByRole("slider", { name: "点の大きさ" }), {
+      target: { value: "8" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Aの凡例名" }), {
+      target: { value: "Batch alpha" },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: "縦軸を0から始める" }));
+    fireEvent.click(screen.getByRole("button", { name: "このGraph用データを保存" }));
+
+    await waitFor(() => expect(savedStates).toHaveLength(1));
+    const saved = savedStates[0]!;
+    const activeGraph = saved.graphSpecs.find(({ id }) => id === saved.activeGraphId)!;
+    expect(saved.metadata.projectName).toBe("Drug response overview");
+    expect(activeGraph.axes).toMatchObject({
+      xLabel: "Treatment",
+      yLabel: "Signal (AU)",
+      yStartAtZero: true,
+    });
+    expect(activeGraph.appearance.pointSize).toBe(8);
+    expect(activeGraph.appearance.seriesStyles.A?.legendLabel).toBe("Batch alpha");
+    expect(saved.rawLineage.rawText).toBe(rawText);
+    expect(saved.statisticsReadiness.status).toBe("unresolved");
+    expect(activeGraph.analysisResultId).toBeNull();
+    expect("design" in saved).toBe(false);
+
+    view.unmount();
+    render(
+      <GraphOnlyVisualizationPage
+        onNavigate={vi.fn()}
+        initialState={saved}
+        initialTarget="C:/tmp/presented-graph-only.lsa"
+      />,
+    );
+    expect(screen.getByRole("textbox", { name: "Graphタイトル" })).toHaveValue(
+      "Drug response overview",
+    );
+    expect(screen.getByRole("textbox", { name: "横軸の表示名" })).toHaveValue("Treatment");
+    expect(screen.getByRole("textbox", { name: "縦軸の表示名" })).toHaveValue("Signal (AU)");
+    expect(screen.getByRole("textbox", { name: "Aの凡例名" })).toHaveValue("Batch alpha");
+    expect(screen.getByRole("img", { name: /Signal \(AU\)をTreatmentごと/ })).toHaveTextContent(
+      "Drug response overview",
+    );
   });
 
   it("preserves mapping, Graph history, and lineage on an unchanged open-save cycle", async () => {

@@ -22,6 +22,7 @@ import {
   analysisTestAnnotationLabel,
   ExperimentGraphWorkbench,
   repeatedAxisAnnotationLabel,
+  serializeVisibleGraphData,
 } from "./ExperimentGraphWorkbench";
 
 function readBlobText(blob: Blob): Promise<string> {
@@ -109,6 +110,53 @@ describe("repeated-axis scientific wording", () => {
         "wilcoxon_signed_rank_test",
       ),
     ).toBe("Control vs Treatment · Wilcoxon signed-rank");
+  });
+});
+
+describe("visible Graph data CSV", () => {
+  const series = [
+    {
+      seriesKey: "condition.1::time.none",
+      conditionId: "condition.1",
+      conditionLabel: "Vehicle",
+      xGroupKey: "condition.1",
+      xGroupLabel: "Vehicle",
+      visualSeriesKey: "condition.1",
+      visualSeriesLabel: "Vehicle",
+      facetKey: "facet.none",
+      facetLabel: "",
+      auxiliaryReference: false,
+      proportionPoints: [],
+      experimentPoints: [{ experimentId: "unit.1", experimentLabel: "Exp 1", value: 1.2 }],
+      rawPoints: [{ experimentId: "unit.1", experimentLabel: "Exp 1", value: 1.2, index: 0 }],
+      summary: { n: 1, mean: 1.2, median: 1.2, sd: null },
+    },
+  ] as Parameters<typeof serializeVisibleGraphData>[0];
+
+  it("does not duplicate one unit-summary value as both raw child data and a mean", () => {
+    const csv = serializeVisibleGraphData(series, {
+      id: "readout.1",
+      label: "Relative protein amount",
+      shape: "nested_continuous",
+      nestedInputMode: "unit_summary",
+    });
+
+    expect(csv).toContain("実験単位の値");
+    expect(csv).not.toContain("細胞・ROI生データ");
+    expect(csv.split("\n").filter(Boolean)).toHaveLength(2);
+  });
+
+  it("keeps raw children and their derived unit mean distinct for nested observations", () => {
+    const csv = serializeVisibleGraphData(series, {
+      id: "readout.1",
+      label: "Cell circularity",
+      shape: "nested_continuous",
+      nestedInputMode: "nested_observations",
+    });
+
+    expect(csv).toContain("細胞・ROI生データ");
+    expect(csv).toContain("実験単位平均");
+    expect(csv.split("\n").filter(Boolean)).toHaveLength(3);
   });
 });
 
@@ -408,7 +456,7 @@ describe("ExperimentGraphWorkbench", () => {
     ).toBe(true);
   });
 
-  it("Treatment階層見出しの先頭をSVG内とexport viewBox内に確保する", () => {
+  it("単一factor名のTreatmentをカテゴリの前ではなく中央のX軸タイトルとして表示する", () => {
     const fixture = simpleThreeGroupFixture();
     const draft: ExperimentSetDraft = {
       ...fixture.draft,
@@ -419,24 +467,30 @@ describe("ExperimentGraphWorkbench", () => {
     const svg = screen.getByRole("img", {
       name: /実験単位ごとのグラフ/,
     }) as unknown as SVGSVGElement;
-    const heading = [
-      ...svg.querySelectorAll<SVGTextElement>(".experiment-graph-hierarchy-heading"),
+    expect(
+      [...svg.querySelectorAll<SVGTextElement>(".experiment-graph-hierarchy-heading")].find(
+        (node) => node.textContent === "Treatment",
+      ),
+    ).toBeUndefined();
+    const xAxisTitle = [
+      ...svg.querySelectorAll<SVGTextElement>(".experiment-graph-axis-title"),
     ].find((node) => node.textContent === "Treatment");
-    expect(heading).toBeDefined();
-    const estimatedTreatmentWidth = "Treatment".length * 17 * 0.58;
-    expect(Number(heading?.getAttribute("x")) - estimatedTreatmentWidth).toBeGreaterThan(8);
-    expect(Number(svg.dataset.leftMargin)).toBeGreaterThan(88);
-    const yAxisTitle = svg.querySelector<SVGTextElement>(".experiment-graph-axis-title");
-    expect(Number(yAxisTitle?.getAttribute("x"))).toBe(Number(svg.dataset.leftMargin) - 48);
+    expect(xAxisTitle).toBeDefined();
+    expect(Number(xAxisTitle?.getAttribute("x"))).toBeGreaterThan(Number(svg.dataset.leftMargin));
+    expect(xAxisTitle?.getAttribute("text-anchor")).toBe("middle");
+    const yAxisTitle = [
+      ...svg.querySelectorAll<SVGTextElement>(".experiment-graph-axis-title"),
+    ].find((node) => node.getAttribute("transform")?.startsWith("rotate(-90"));
+    expect(Number(yAxisTitle?.getAttribute("x"))).toBe(Number(svg.dataset.leftMargin) - 38);
 
     const exported = serializeGraphSvg(svg);
     const exportedSvg = new DOMParser().parseFromString(exported, "image/svg+xml");
     expect(exportedSvg.querySelector("parsererror")).toBeNull();
-    const exportedHeading = [
-      ...exportedSvg.querySelectorAll<SVGTextElement>(".experiment-graph-hierarchy-heading"),
+    const exportedXAxisTitle = [
+      ...exportedSvg.querySelectorAll<SVGTextElement>(".experiment-graph-axis-title"),
     ].find((node) => node.textContent === "Treatment");
-    expect(exportedHeading).not.toBeUndefined();
-    expect(Number(exportedHeading?.getAttribute("x"))).toBe(Number(heading?.getAttribute("x")));
+    expect(exportedXAxisTitle).not.toBeUndefined();
+    expect(exportedXAxisTitle?.getAttribute("x")).toBe(xAxisTitle?.getAttribute("x"));
     expect(exportedSvg.documentElement.getAttribute("data-left-margin")).toBe(
       svg.dataset.leftMargin,
     );
@@ -1679,11 +1733,11 @@ describe("ExperimentGraphWorkbench", () => {
     const graphScroll = document.querySelector(".experiment-graph-svg-scroll")!;
     expect(graphScroll).toHaveAttribute("data-view-mode", "readable");
     expect(graphScroll.querySelectorAll("[data-condition-index]")).toHaveLength(24);
-    fireEvent.click(screen.getByRole("button", { name: "全体表示" }));
+    fireEvent.click(screen.getByRole("button", { name: "画面に全体を収める" }));
     expect(graphScroll).toHaveAttribute("data-view-mode", "fit");
     expect(graphScroll).toHaveClass("is-fit-overview");
     expect(graphScroll.querySelectorAll("[data-condition-index]")).toHaveLength(24);
-    fireEvent.click(screen.getByRole("button", { name: "読みやすい表示" }));
+    fireEvent.click(screen.getByRole("button", { name: "実寸（横スクロール）" }));
     expect(graphScroll).toHaveAttribute("data-view-mode", "readable");
   });
 

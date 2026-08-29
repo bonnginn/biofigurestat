@@ -49,7 +49,10 @@ import type {
   SaveProjectAction,
   SaveSpecializedEntryDraftProjectAction,
 } from "../app/projectActions";
-import { createSpecializedEntryDraft, specializedSafeStop } from "../app/specializedEntryDraftPersistence";
+import {
+  createSpecializedEntryDraft,
+  specializedSafeStop,
+} from "../app/specializedEntryDraftPersistence";
 import { routeFromPath, type AppRoute } from "../app/routes";
 import {
   recordUsageGraphConfiguration,
@@ -70,7 +73,7 @@ import {
   writeBenchmarkArtifacts,
 } from "../app/benchmarkEvaluation";
 import { evaluationMode } from "../app/evaluationMode";
-import { serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
+import { copyGraphToClipboard, serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
 import { exportRenderedGraphPng, exportRenderedGraphSvg } from "../app/specializedGraphExport";
 import { generateCommonCoverageMethods } from "../app/commonCoverageMethods";
 import { generateMethodsText } from "../app/methodsText";
@@ -117,6 +120,7 @@ import {
   RegressionGraph,
 } from "../components/graph/CommonMethodGraphs";
 import { NonlinearFitGraph } from "../components/graph/NonlinearFitGraph";
+import { GraphWorkspaceFrame } from "../components/graph/GraphWorkspaceFrame";
 import { AnalysisRouteSwitcher } from "../components/AnalysisRouteSwitcher";
 import { DelimitedTextSpreadsheet } from "../components/DelimitedTextSpreadsheet";
 import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
@@ -560,12 +564,20 @@ export function CommonCoveragePage({
       : undefined;
   const initialNonlinearRequest =
     initialNonlinearRun?.request.protocolVersion === "0.14.0" ? initialNonlinearRun.request : null;
+  const initialNonlinearGraphSpec = initialNonlinearRun
+    ? initialProject?.state.graphs.find(
+        ({ state, sourceAnalysisRunId, spec }) =>
+          state === "current" &&
+          sourceAnalysisRunId === initialNonlinearRun.id &&
+          spec.type === "nonlinear_xy",
+      )?.spec
+    : undefined;
   const adaptiveOrderedCurveActive =
     mode === "nonlinear-fit" &&
     Boolean(
       entryIntent ||
-        initialProject?.state.adaptiveInput?.contract.orderedAxes.length ||
-        initialSpecializedEntryDraft,
+      initialProject?.state.adaptiveInput?.contract.orderedAxes.length ||
+      initialSpecializedEntryDraft,
     );
   const initialAdaptiveSnapshot =
     mode === "nonlinear-fit" ? initialProject?.state.adaptiveInput : null;
@@ -706,7 +718,10 @@ export function CommonCoveragePage({
     } as EntryModuleFacts;
     return createEntryModuleTargetedFactsState(
       "ordered_curve_kinetics",
-      initialDraft?.entryModuleFacts ?? restoredSpecializedAnswers?.facts ?? entryIntent?.facts ?? retainedFacts,
+      initialDraft?.entryModuleFacts ??
+        restoredSpecializedAnswers?.facts ??
+        entryIntent?.facts ??
+        retainedFacts,
     );
   });
   const entryFactsView = useMemo(
@@ -1339,6 +1354,7 @@ export function CommonCoveragePage({
               xLabel: xLabel.trim() || "X",
               yLabel: yLabel.trim() || "Y",
               seriesIds: graphSeries.map(({ id }) => id),
+              palette: initialNonlinearGraphSpec?.appearance.palette,
             }),
             graphPoints,
             result,
@@ -1356,6 +1372,12 @@ export function CommonCoveragePage({
           ref={svgRef}
           model={fittedModel}
           displayMode={result?.nonlinearFit ? "fitted" : "observed_only"}
+          title={
+            entryIntent?.experimentName ??
+            initialProject?.state.metadata.projectName ??
+            (adaptiveOrderedCurveActive ? "Ordered X/Y observations" : undefined)
+          }
+          palette={initialNonlinearGraphSpec?.appearance.palette}
           xLabel={`${xLabel.trim() || "X"}${xUnit.trim() ? ` (${xUnit.trim()})` : ""}`}
           yLabel={`${yLabel.trim() || "Y"}${yUnit.trim() ? ` (${yUnit.trim()})` : ""}`}
           seriesLabels={Object.fromEntries(
@@ -1374,6 +1396,14 @@ export function CommonCoveragePage({
   const dataMilestoneRecordedRef = useRef(initialUsageDataPresentRef.current);
   const graphMilestoneRecordedRef = useRef(initialUsageDataPresentRef.current);
   const validAdaptiveOrderedCurveGraph = adaptiveOrderedCurveActive && graphExportAvailable;
+  const orderedCurveSetupMissingItems = adaptiveOrderedCurveActive
+    ? [
+        !text.trim() || "error" in parsed ? "入力表" : null,
+        !xLabel.trim() ? "横軸名" : null,
+        !yLabel.trim() ? "測定値名" : null,
+        orderedCurveEntry?.status !== "surface_ready" ? "実験構造の回答" : null,
+      ].filter((item): item is string => Boolean(item))
+    : [];
   useEffect(() => {
     if (dataMilestoneRecordedRef.current || !validAdaptiveOrderedCurveGraph) return;
     dataMilestoneRecordedRef.current = true;
@@ -1455,6 +1485,7 @@ export function CommonCoveragePage({
           xLabel: executedRequest.xLabel,
           yLabel: executedRequest.yLabel,
           seriesIds: executedRequest.seriesIds,
+          palette: initialNonlinearGraphSpec?.appearance.palette,
         })
       : null;
   const methods =
@@ -1528,11 +1559,11 @@ export function CommonCoveragePage({
         setCurrentSpecializedEntryDraft(saved);
         lastSaveSucceededRef.current = true;
         adoptCurrentAsBaseline();
-        setMessage(
-          "入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。",
-        );
+        setMessage("入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。");
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "入力途中のprojectを保存できませんでした");
+        setMessage(
+          error instanceof Error ? error.message : "入力途中のprojectを保存できませんでした",
+        );
       }
       return;
     }
@@ -1706,10 +1737,7 @@ export function CommonCoveragePage({
           adaptiveInput: nonlinearDesignData.snapshot,
         });
       }
-      const saved = await saveProject(
-        projectState,
-        saveAs ? undefined : persistedBaseline?.target,
-      );
+      const saved = await saveProject(projectState, saveAs ? undefined : persistedBaseline?.target);
       if (saved) {
         lastSaveSucceededRef.current = true;
         setPersistedBaseline(saved);
@@ -2224,6 +2252,20 @@ export function CommonCoveragePage({
       );
     }
   };
+  const copyRenderedGraph = async () => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    try {
+      const format = await copyGraphToClipboard(svg);
+      setMessage(`表示中のGraphをクリップボードへコピーしました（${format.toUpperCase()}）。`);
+    } catch (error) {
+      setMessage(
+        `Graphをコピーできませんでした。${
+          error instanceof Error && error.message ? ` ${error.message}` : ""
+        }`,
+      );
+    }
+  };
   const graphExportButton = (
     <>
       <button type="button" disabled={!graphExportAvailable} onClick={exportGraphSvg}>
@@ -2231,6 +2273,13 @@ export function CommonCoveragePage({
       </button>
       <button type="button" disabled={!graphExportAvailable} onClick={() => void exportGraphPng()}>
         PNGを書き出す
+      </button>
+      <button
+        type="button"
+        disabled={!graphExportAvailable}
+        onClick={() => void copyRenderedGraph()}
+      >
+        Graphをコピー
       </button>
     </>
   );
@@ -2332,14 +2381,13 @@ export function CommonCoveragePage({
                 : !saveSpecializedEntryDraftProject
             }
             title={
-              orderedCurveEntry?.status !== "surface_ready" &&
-              !saveSpecializedEntryDraftProject
+              orderedCurveEntry?.status !== "surface_ready" && !saveSpecializedEntryDraftProject
                 ? "入力途中のプロジェクト保存はデスクトップ版で利用できます"
                 : !saveProject
-                ? "プロジェクトの保存はデスクトップ版で利用できます"
-                : orderedCurveEntry?.status !== "surface_ready"
-                  ? "未確定の回答と入力表を、入力途中のプロジェクトとして保存します"
-                  : undefined
+                  ? "プロジェクトの保存はデスクトップ版で利用できます"
+                  : orderedCurveEntry?.status !== "surface_ready"
+                    ? "未確定の回答と入力表を、入力途中のプロジェクトとして保存します"
+                    : undefined
             }
             onClick={() => void saveNonlinearProject()}
           >
@@ -2389,7 +2437,6 @@ export function CommonCoveragePage({
           </section>
         ) : null}
         {orderedCurveFactPanel}
-        {adaptiveOrderedCurveActive ? nonlinearAxisFields : null}
         {adaptiveOrderedCurveActive ? (
           <>
             <DelimitedTextSpreadsheet
@@ -2653,57 +2700,79 @@ export function CommonCoveragePage({
         id={adaptiveOrderedCurveActive ? "ordered-curve-graph" : undefined}
         className="workspace-panel specialized-workspace-panel"
       >
-        {graph}
         {mode === "nonlinear-fit" && adaptiveOrderedCurveActive ? (
-          <>
-            <div className="specialized-graph-actions">
-              {nonlinearSaveButton}
-              {graphExportButton}
-            </div>
-            {nonlinearSaveUnavailableNote}
-            {nonlinearAnalysisSetupVisible &&
-            orderedCurveEntry?.status === "surface_ready" ? (
-              <section
-                id="ordered-curve-analysis"
-                className="nonlinear-analysis-stage"
-                aria-label="統計解析の設定"
-              >
-                <header>
-                  <h2>
-                    {orderedCurveAnalysisReadiness.fitInterpretation ===
-                    "descriptive_point_estimate_only"
-                      ? "曲線モデルを設定"
-                      : "統計解析を設定"}
-                  </h2>
-                  <button type="button" onClick={() => setNonlinearAnalysisSetupVisible(false)}>
-                    設定を閉じる
-                  </button>
-                </header>
-                {nonlinearFitSettings}
-                {nonlinearRunButton}
-                {!analysisAvailable ? (
-                  <p className="specialized-engine-note" role="note">
-                    このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
-                  </p>
-                ) : null}
-              </section>
-            ) : (
-              <button
-                type="button"
-                disabled={
-                  !graphExportAvailable ||
-                  orderedCurveEntry?.status !== "surface_ready" ||
-                  orderedCurveAnalysisReadiness.status === "safe_stop"
-                }
-                onClick={() => setNonlinearAnalysisSetupVisible(true)}
-              >
-                {orderedCurveAnalysisReadiness.status === "ready_descriptive_only"
-                  ? "曲線モデルを設定"
-                  : "統計解析を設定"}
-              </button>
-            )}
-          </>
-        ) : null}
+          <GraphWorkspaceFrame
+            title={
+              entryIntent?.experimentName ??
+              initialProject?.state.metadata.projectName ??
+              "濃度–反応・酵素反応"
+            }
+            actions={graphExportButton}
+            canvas={graph}
+            inspector={
+              <div className="graph-workspace-frame__settings">
+                <h3>Graph設定</h3>
+                {nonlinearAxisFields}
+                {nonlinearAnalysisSetupVisible && orderedCurveEntry?.status === "surface_ready" ? (
+                  <section
+                    id="ordered-curve-analysis"
+                    className="nonlinear-analysis-stage"
+                    aria-label="統計解析の設定"
+                  >
+                    <header>
+                      <h3>
+                        {orderedCurveAnalysisReadiness.fitInterpretation ===
+                        "descriptive_point_estimate_only"
+                          ? "曲線モデルを設定"
+                          : "統計解析を設定"}
+                      </h3>
+                      <button type="button" onClick={() => setNonlinearAnalysisSetupVisible(false)}>
+                        設定を閉じる
+                      </button>
+                    </header>
+                    {nonlinearFitSettings}
+                    {nonlinearRunButton}
+                    {!analysisAvailable ? (
+                      <p className="specialized-engine-note" role="note">
+                        このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
+                      </p>
+                    ) : null}
+                  </section>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled={
+                        !graphExportAvailable ||
+                        orderedCurveEntry?.status !== "surface_ready" ||
+                        orderedCurveAnalysisReadiness.status === "safe_stop"
+                      }
+                      onClick={() => setNonlinearAnalysisSetupVisible(true)}
+                    >
+                      {orderedCurveAnalysisReadiness.status === "ready_descriptive_only"
+                        ? "曲線モデルを設定"
+                        : "統計解析を設定"}
+                    </button>
+                    {orderedCurveSetupMissingItems.length > 0 ? (
+                      <small role="status">
+                        あと{orderedCurveSetupMissingItems.length}項目：
+                        {orderedCurveSetupMissingItems.join("、")}
+                      </small>
+                    ) : orderedCurveAnalysisReadiness.status === "safe_stop" ? (
+                      <small role="status">
+                        この構造では解析を開始できません。上に表示された理由を確認してください。
+                      </small>
+                    ) : null}
+                  </>
+                )}
+                {nonlinearSaveButton}
+                {nonlinearSaveUnavailableNote}
+              </div>
+            }
+          />
+        ) : (
+          graph
+        )}
         {result?.nonlinearFit ? (
           <div className="nonlinear-fit-results" role="region" aria-label="非線形fit結果">
             <header>

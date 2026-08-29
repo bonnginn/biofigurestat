@@ -36,6 +36,7 @@ export function createNonlinearFitGraphSpec(
     xLabel: string;
     yLabel: string;
     seriesIds: readonly string[];
+    palette?: readonly string[];
   }>,
 ): GraphSpec {
   return GraphSpecSchema.parse({
@@ -53,7 +54,7 @@ export function createNonlinearFitGraphSpec(
     },
     summary: { center: "none", interval: "none" },
     appearance: {
-      palette: ["#245c8a", "#c26532", "#3e7c67"],
+      palette: input.palette ? [...input.palette] : ["#245c8a", "#c26532", "#3e7c67"],
       pointSize: 5,
       opacity: 0.9,
       showRawPoints: true,

@@ -16,10 +16,7 @@ import {
 import { ExperimentWorkspace } from "../pages/ExperimentWorkspace";
 import { SpecializedCorePage } from "../pages/SpecializedCorePage";
 import type { SaveProjectAction } from "./projectActions";
-import {
-  adaptiveSurvivalUnitId,
-  createAdaptiveSurvivalProject,
-} from "./adaptiveSurvivalProject";
+import { adaptiveSurvivalUnitId, createAdaptiveSurvivalProject } from "./adaptiveSurvivalProject";
 import { OpenProjectPage } from "../pages/OpenProjectPage";
 
 const now = "2026-08-26T00:00:00.000Z";
@@ -342,7 +339,10 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
       workspace.snapshot.rawLineage?.rawText,
     );
     expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
-    expect(screen.getByRole("region", { name: "統計ワークスペース" })).toBeVisible();
+    expect(
+      screen.getByRole("region", { name: "Animal survival Graphワークスペース" }),
+    ).toBeVisible();
+    expect(screen.getByRole("tab", { name: "Statistics" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
     await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const unchanged = ProjectStateSchema.parse(saveProject.mock.calls[0]![0]);
@@ -410,6 +410,7 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
       }),
     );
     expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: "Statistics" }));
     fireEvent.click(screen.getByRole("button", { name: "統計解析を設定" }));
     fireEvent.click(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" }));
     expect(await screen.findByText(/log-rank検定が完了/)).toBeVisible();
@@ -445,6 +446,7 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
         value: handoff.replace("M1-1\tVehicle\t5\tCensored", "M1-1\tVehicle\t7\tCensored"),
       },
     });
+    fireEvent.click(screen.getByRole("tab", { name: "Statistics" }));
     fireEvent.click(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" }));
     await waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(2));
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));

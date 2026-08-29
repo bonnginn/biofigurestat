@@ -593,9 +593,7 @@ describe("final common coverage workflows", () => {
     const data = screen.getByLabelText("非線形XYフィッティング data");
     fireEvent.change(data, { target: { value: retainedInput } });
     answerOrderedCurveFacts("elapsed_time", "same_physical_material_across_axis");
-    fireEvent.click(
-      screen.getByRole("button", { name: /^(統計解析|曲線モデル)を設定$/ }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /^(統計解析|曲線モデル)を設定$/ }));
     const retainedModel = screen.getByRole("radio", { name: /One-phase association/ });
     fireEvent.click(retainedModel);
     expect(retainedModel).toBeChecked();
@@ -607,13 +605,9 @@ describe("final common coverage workflows", () => {
 
     expect(screen.getByText(/2つの順序をもつ量があります。1つの軸へまとめず/)).toBeVisible();
     expect(screen.queryByRole("radio", { name: /One-phase association/ })).toBeNull();
-    expect(
-      screen.getByRole("button", { name: /^(統計解析|曲線モデル)を設定$/ }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^(統計解析|曲線モデル)を設定$/ })).toBeDisabled();
     expect(data).toHaveValue(retainedInput);
-    expect(screen.getByRole("combobox", { name: orderedAxisQuestion })).toHaveValue(
-      "elapsed_time",
-    );
+    expect(screen.getByRole("combobox", { name: orderedAxisQuestion })).toHaveValue("elapsed_time");
 
     fireEvent.click(multipleAxes);
 
@@ -708,7 +702,7 @@ describe("final common coverage workflows", () => {
         persistedProject={{ state: saved, target: "C:/tmp/prefit-ordered-curve.lsa" }}
       />,
     );
-    expect(screen.getByRole("heading", { name: "Reaction time course" })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Reaction time course" })).toBeVisible();
     expect(screen.getByLabelText("非線形XYフィッティング data")).toHaveValue(
       rawText.replaceAll("\r\n", "\n"),
     );
@@ -951,7 +945,9 @@ describe("final common coverage workflows", () => {
         persistedProject={{ state: saved, target: "C:/tmp/michaelis-menten.lsa" }}
       />,
     );
-    expect(screen.getByRole("heading", { name: "Michaelis–Menten enzyme kinetics" })).toBeVisible();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Michaelis–Menten enzyme kinetics" }),
+    ).toBeVisible();
     expect(screen.getByRole("img", { name: "非線形フィットGraph" })).toHaveAttribute(
       "data-fit-model",
       "michaelis_menten",

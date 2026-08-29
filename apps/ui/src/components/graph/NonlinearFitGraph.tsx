@@ -4,7 +4,7 @@ import { createMinorTicks } from "./graphSemantics";
 
 const WIDTH = 820;
 const HEIGHT = 500;
-const MARGIN = { top: 38, right: 34, bottom: 70, left: 82 };
+const MARGIN = { top: 62, right: 34, bottom: 70, left: 82 };
 const COLORS = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00"];
 
 function linearScale(value: number, min: number, max: number, start: number, end: number) {
@@ -27,11 +27,13 @@ export const NonlinearFitGraph = forwardRef<
     model: NonlinearFitGraphModel;
     xLabel: string;
     yLabel: string;
+    title?: string;
+    palette?: readonly string[];
     seriesLabels?: Readonly<Record<string, string>>;
     displayMode?: "observed_only" | "fitted";
   }
 >(function NonlinearFitGraph(
-  { model, xLabel, yLabel, seriesLabels = {}, displayMode = "fitted" },
+  { model, xLabel, yLabel, title, palette = COLORS, seriesLabels = {}, displayMode = "fitted" },
   ref,
 ) {
   const allX = model.series.flatMap(({ points, fittedCurve }) => [
@@ -64,6 +66,11 @@ export const NonlinearFitGraph = forwardRef<
       data-fit-model={displayMode === "fitted" ? model.modelId : undefined}
       data-graph-mode={displayMode}
     >
+      {title ? (
+        <text x={WIDTH / 2} y="24" textAnchor="middle" fontSize="17" fontWeight="600">
+          {title}
+        </text>
+      ) : null}
       {yMinorTicks.map((value) => (
         <line
           key={`y.minor.${value}`}
@@ -148,7 +155,7 @@ export const NonlinearFitGraph = forwardRef<
         strokeWidth="1.4"
       />
       {model.series.map((series, index) => {
-        const color = COLORS[index % COLORS.length]!;
+        const color = palette[index % palette.length] ?? COLORS[index % COLORS.length]!;
         const curve = series.fittedCurve
           .map((point, pointIndex) => `${pointIndex ? "L" : "M"} ${x(point.x)} ${y(point.y)}`)
           .join(" ");
@@ -204,11 +211,7 @@ export const NonlinearFitGraph = forwardRef<
                 strokeWidth="2"
                 data-legend-mark="observed-points"
               />
-              <text
-                x={WIDTH - MARGIN.right - 116}
-                y={MARGIN.top + 17 + index * 24}
-                fontSize="13"
-              >
+              <text x={WIDTH - MARGIN.right - 116} y={MARGIN.top + 17 + index * 24} fontSize="13">
                 {seriesLabels[series.seriesId] ?? series.seriesId}
               </text>
             </g>
@@ -221,7 +224,7 @@ export const NonlinearFitGraph = forwardRef<
       <text x="22" y={HEIGHT / 2} transform={`rotate(-90 22 ${HEIGHT / 2})`} textAnchor="middle">
         {yLabel}
       </text>
-      <text x={MARGIN.left} y="22" fontSize="12" fill="#536171">
+      <text x={MARGIN.left} y={title ? 47 : 22} fontSize="12" fill="#536171">
         {displayMode === "fitted"
           ? `observed points + saved ${model.modelId} fit`
           : "observed X/Y points"}

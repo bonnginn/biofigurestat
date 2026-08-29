@@ -35,16 +35,21 @@ export function ExternalLlmConsultation({
       aria-label={placement === "statistics" ? "統計を外部LLMに相談" : "実験入力を外部LLMに相談"}
     >
       {!open ? (
-        <button className="secondary-button" type="button" onClick={reveal}>
-          外部LLMに相談する
-        </button>
+        <div className="external-llm-consultation__entry">
+          <button className="secondary-button" type="button" onClick={reveal}>
+            外部LLMに相談する
+          </button>
+          <small>
+            アプリ内AIではありません。測定値を含まない相談文を表示するだけで、自動送信しません。
+          </small>
+        </div>
       ) : (
         <div className="external-llm-consultation__panel">
           <div className="external-llm-consultation__heading">
             <div>
               <strong>外部LLMへ渡す相談文</strong>
               <p>
-                アプリから送信はしません。内容を確認・編集してからコピーしてください。標準では測定値を含みません。
+                アプリから外部サイトを開いたり送信したりしません。標準では測定値を含まない相談文だけを作ります。内容を確認・編集し、自分で選んだ外部LLMへ貼り付けてください。
               </p>
             </div>
             <button type="button" onClick={() => setOpen(false)}>

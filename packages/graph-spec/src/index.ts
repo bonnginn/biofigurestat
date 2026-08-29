@@ -273,6 +273,7 @@ export function createHeatmapGraphSpec(
     dataSource: GraphSpec["dataSource"];
     transform: "none" | "row_z_score" | "column_z_score" | "log10";
     range?: Readonly<{ min: number; max: number }> | null;
+    palette?: readonly string[];
     missingColor?: string;
     showCellValues?: boolean;
   }>,
@@ -286,7 +287,7 @@ export function createHeatmapGraphSpec(
     mappings: { x: "columnId", y: "rowId", color: "value" },
     summary: { center: "none", interval: "none" },
     appearance: {
-      palette: ["#3b4cc0", "#f7f7f7", "#b40426"],
+      palette: input.palette ? [...input.palette] : ["#3b4cc0", "#f7f7f7", "#b40426"],
       pointSize: 1,
       opacity: 1,
       showRawPoints: false,
@@ -310,6 +311,8 @@ export function createSurvivalGraphSpec(
     dataSource: GraphSpec["dataSource"];
     analysisResultId: string;
     timeLabel: string;
+    probabilityLabel?: string;
+    palette?: readonly string[];
   }>,
 ): GraphSpec {
   return GraphSpecSchema.parse({
@@ -321,7 +324,7 @@ export function createSurvivalGraphSpec(
     mappings: { x: "followUpTime", y: "survivalProbability", color: "conditionId" },
     summary: { center: "none", interval: "none" },
     appearance: {
-      palette: ["#4477AA", "#CC6677", "#228833"],
+      palette: [...(input.palette ?? ["#4477AA", "#CC6677", "#228833"])],
       pointSize: 5,
       opacity: 1,
       showRawPoints: false,
@@ -331,7 +334,7 @@ export function createSurvivalGraphSpec(
       yStartAtZero: true,
       yScale: "linear",
       xLabel: input.timeLabel,
-      yLabel: "Survival probability",
+      yLabel: input.probabilityLabel ?? "Survival probability",
     },
   });
 }

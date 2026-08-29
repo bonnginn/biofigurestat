@@ -6,6 +6,41 @@ import { serializeGraphSvg } from "../../app/graphExport";
 import { SurvivalGraph } from "./SurvivalGraph";
 
 describe("SurvivalGraph", () => {
+  it("applies persisted axis labels and palette without changing Kaplan–Meier geometry", () => {
+    const model = createKaplanMeierGraphModel(
+      [{ id: "control", label: "Control" }],
+      [
+        {
+          observationId: "control.1",
+          experimentalUnitId: "mouse.control.1",
+          conditionId: "control",
+          followUpTime: 4,
+          eventObserved: true,
+        },
+      ],
+    );
+    const originalSteps = structuredClone(model.groups[0]?.steps);
+    render(
+      <SurvivalGraph
+        model={model}
+        timeLabel="Days after treatment"
+        probabilityLabel="Tumor-free probability"
+        palette={["#123456"]}
+      />,
+    );
+
+    const svg = screen.getByRole("img", {
+      name: "Kaplan–Meier survival graph",
+    }) as unknown as SVGSVGElement;
+    expect(svg).toHaveTextContent("Days after treatment");
+    expect(svg).toHaveTextContent("Tumor-free probability");
+    expect(svg.querySelector('[data-graph-layer="survival-curve"]')).toHaveAttribute(
+      "stroke",
+      "#123456",
+    );
+    expect(model.groups[0]?.steps).toEqual(originalSteps);
+  });
+
   it("keeps readable probability ticks and every cohort curve in SVG/PNG export source", () => {
     const model = createKaplanMeierGraphModel(
       [
@@ -155,20 +190,19 @@ describe("SurvivalGraph", () => {
     const timeZero = svg.querySelector<SVGTextElement>(
       '[data-graph-layer="risk-time-header"][data-risk-time="0"]',
     )!;
-    const firstGroup = svg.querySelector<SVGTextElement>(
-      '[data-graph-layer="risk-group-label"]',
-    )!;
+    const firstGroup = svg.querySelector<SVGTextElement>('[data-graph-layer="risk-group-label"]')!;
 
     expect(riskTitle.textContent).toBe("Number at risk");
     expect(timeZero.textContent).toBe("0");
     expect(Number(riskTitle.getAttribute("x"))).toBe(Number(timeZero.getAttribute("x")));
-    expect(Number(timeZero.getAttribute("y")) - Number(riskTitle.getAttribute("y"))).toBeGreaterThanOrEqual(20);
-    expect(Number(firstGroup.getAttribute("y")) - Number(timeZero.getAttribute("y"))).toBeGreaterThanOrEqual(20);
+    expect(
+      Number(timeZero.getAttribute("y")) - Number(riskTitle.getAttribute("y")),
+    ).toBeGreaterThanOrEqual(20);
+    expect(
+      Number(firstGroup.getAttribute("y")) - Number(timeZero.getAttribute("y")),
+    ).toBeGreaterThanOrEqual(20);
 
-    const exportedSvg = new DOMParser().parseFromString(
-      serializeGraphSvg(svg),
-      "image/svg+xml",
-    );
+    const exportedSvg = new DOMParser().parseFromString(serializeGraphSvg(svg), "image/svg+xml");
     expect(
       exportedSvg.querySelector('[data-graph-layer="risk-time-header"][data-risk-time="0"]')
         ?.textContent,

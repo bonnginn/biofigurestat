@@ -1,5 +1,7 @@
 .delimited-spreadsheet {
   display: grid;
+  min-width: 0;
+  max-width: 100%;
   gap: 0.45rem;
 }
 
@@ -52,6 +54,8 @@
 }
 
 .delimited-spreadsheet__scroll {
+  min-width: 0;
+  max-width: 100%;
   overflow: auto;
   max-height: min(44vh, 31rem);
   overscroll-behavior: contain;

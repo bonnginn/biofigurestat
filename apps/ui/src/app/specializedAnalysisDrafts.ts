@@ -47,6 +47,10 @@ export type SpecializedCoreDraft = Readonly<{
   subjectUnitRelationship?: SubjectUnitRelationship;
   followUpUnit?: string;
   numericStatusMapping?: "event_is_1" | "event_is_0" | null;
+  graphTitle?: string;
+  survivalXAxisLabel?: string;
+  survivalYAxisLabel?: string;
+  survivalPalette?: readonly string[];
   /** Preserves unsupported/deferred module facts when the researcher revisits this route. */
   entryIntent?: DedicatedEntryIntent;
 }>;
