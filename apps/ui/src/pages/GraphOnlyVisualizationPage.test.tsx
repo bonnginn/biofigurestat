@@ -526,6 +526,20 @@ describe("Graph-only visualization entry", () => {
     ]);
   });
 
+  it("keeps the direct X/Y mapping when values are pasted below unchanged headers", () => {
+    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
+
+    fireEvent.paste(screen.getByTestId("graph-only-cell-1-0"), {
+      clipboardData: {
+        getData: () => ["Control\t10", "Control\t11", "Drug\t14", "Drug\t15"].join("\n"),
+      },
+    });
+
+    expect(screen.getByRole("combobox", { name: "Graphの横軸" })).toHaveValue("0");
+    expect(screen.getByRole("combobox", { name: "Graphの測定値" })).toHaveValue("1");
+    expect(screen.getByRole("img", { name: /Y \/ valueをX \/ conditionごと/ })).toBeVisible();
+  });
+
   it("edits any parsed cell without truncating the full table and serializes it to raw text", () => {
     const longRawText = [
       "Condition\tValue",

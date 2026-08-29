@@ -748,12 +748,22 @@ export function GraphOnlyVisualizationPage({
         <DelimitedTextSpreadsheet
           value={text}
           onChange={(nextText, source) => {
+            const nextParsedResult = parseVisualizationInput(nextText);
+            const headersChanged =
+              Boolean(nextParsedResult.error) ||
+              nextParsedResult.parsed.headers.length !== parsed.headers.length ||
+              nextParsedResult.parsed.headers.some(
+                (header, index) => header !== parsed.headers[index],
+              );
             setText(nextText);
             setSaveMessage(null);
             setError(null);
             if (source === "clipboard") {
               setSourceLabel("clipboard");
-              resetImportedMapping();
+              // Pasting values below unchanged headers is ordinary spreadsheet
+              // entry and must retain the direct X/Y mapping. A paste that
+              // changes the table schema still requires explicit remapping.
+              if (headersChanged) resetImportedMapping();
             }
           }}
           ariaLabel="Graph用データシート"
@@ -795,7 +805,7 @@ export function GraphOnlyVisualizationPage({
       <section className="graph-only__mapping" aria-labelledby="graph-only-mapping-heading">
         <h2 id="graph-only-mapping-heading">2. Graphに使う列を指定する</h2>
         <p className="graph-only__subtle">
-          空の直接入力シートでは最初の2列だけをXとYへ対応付けています。貼り付け・ファイル読込では列の意味を推測せず指定を解除するため、表を見て横軸・測定値・（必要なら）グループ列を選んでください。
+          空の直接入力シートでは最初の2列だけをXとYへ対応付けています。見出しが変わる表の貼り付け・ファイル読込では列の意味を推測せず指定を解除するため、表を見て横軸・測定値・（必要なら）グループ列を選んでください。
         </p>
         <div className="graph-only__mapping-grid">
           <label className="experiment-start__field">
