@@ -79,6 +79,12 @@ strictly allowlisted Cloudflare Workers/D1 telemetry collector. The collector is
 not a production service until its account, endpoint, public ingestion key, CSP/CORS origins,
 privacy contact and deployment region are approved and configured. See ADR 0055.
 
+The telemetry release preflight rejects a placeholder D1 ID, non-exact/non-HTTPS endpoints,
+wildcard or incomplete native-origin CORS, invalid public ingestion keys, invalid retention, and a
+missing privacy contact. Its generated Tauri overlay contains only the approved endpoint origin and
+never the key or contact. Collector regression coverage includes exact CORS preflight, schema/key
+rejection, request-size and daily-volume limits, research-data-free storage, and scheduled expiry.
+
 The native workbook regression includes a real two-sheet `.xlsx` fixture with internal blanks,
 formulas, dates, decimals, negative values and Japanese labels. Legacy `.xls` remains part of the
 packaged manual gate because no trustworthy `.xls` authoring runtime is bundled in the Windows
