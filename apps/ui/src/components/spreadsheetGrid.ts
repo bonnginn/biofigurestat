@@ -32,8 +32,49 @@ function focusControl(control: SpreadsheetControl) {
   // adjacent cell is already visible. Preserve the current viewport first,
   // then request only the minimum movement needed for an off-screen target.
   control.focus({ preventScroll: true });
-  control.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  const scrollContainer = control.closest<HTMLElement>(
+    ".adaptive-canonical-spreadsheet__table-wrap, .delimited-spreadsheet__scroll",
+  );
+  if (scrollContainer) {
+    const cellRect = control.getBoundingClientRect();
+    const containerRect = scrollContainer.getBoundingClientRect();
+    if (cellRect.left < containerRect.left) {
+      scrollContainer.scrollLeft -= containerRect.left - cellRect.left;
+    } else if (cellRect.right > containerRect.right) {
+      scrollContainer.scrollLeft += cellRect.right - containerRect.right;
+    }
+    if (cellRect.top < containerRect.top) {
+      scrollContainer.scrollTop -= containerRect.top - cellRect.top;
+    } else if (cellRect.bottom > containerRect.bottom) {
+      scrollContainer.scrollTop += cellRect.bottom - containerRect.bottom;
+    }
+  } else {
+    control.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  }
   if (control instanceof HTMLInputElement) control.select();
+}
+
+function restoreFocusAfterCommit(
+  table: HTMLTableElement | null,
+  targetCoordinate: { row: number; column: number },
+) {
+  if (!table) return;
+  queueMicrotask(() => {
+    const active = document.activeElement;
+    if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+      const activeCoordinate = coordinate(active);
+      if (
+        activeCoordinate?.row === targetCoordinate.row &&
+        activeCoordinate.column === targetCoordinate.column
+      )
+        return;
+      if (table.contains(active)) return;
+    }
+    const replacement = table.querySelector<SpreadsheetControl>(
+      `[data-spreadsheet-cell="true"][data-spreadsheet-row="${targetCoordinate.row}"][data-spreadsheet-column="${targetCoordinate.column}"]:not(:disabled)`,
+    );
+    if (replacement) focusControl(replacement);
+  });
 }
 
 /**
@@ -118,6 +159,9 @@ export function moveSpreadsheetFocus(event: KeyboardEvent<SpreadsheetControl>): 
 
   if (!target) return false;
   event.preventDefault();
+  const targetCoordinate = coordinate(target);
+  const table = current.closest("table");
   focusControl(target);
+  if (targetCoordinate) restoreFocusAfterCommit(table, targetCoordinate);
   return true;
 }

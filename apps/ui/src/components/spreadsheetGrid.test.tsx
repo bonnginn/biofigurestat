@@ -59,6 +59,14 @@ function MixedControlGrid() {
   );
 }
 
+function ScrollableGrid() {
+  return (
+    <div className="delimited-spreadsheet__scroll" data-testid="scroll-container">
+      <Grid />
+    </div>
+  );
+}
+
 describe("spreadsheet grid interaction", () => {
   it("preserves rectangular cells and interior blanks from clipboard text", () => {
     expect(parseClipboardMatrix("1\t\n3\t4\n")).toEqual([
@@ -94,6 +102,44 @@ describe("spreadsheet grid interaction", () => {
 
     expect(focus).toHaveBeenCalledWith({ preventScroll: true });
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
+    expect(next).toHaveFocus();
+  });
+
+  it("does not invoke page-level scrolling for an adjacent visible worksheet cell", () => {
+    render(<ScrollableGrid />);
+    const container = screen.getByTestId("scroll-container");
+    const first = screen.getByRole("textbox", { name: "0:0" });
+    const next = screen.getByRole("textbox", { name: "0:2" });
+    const scrollIntoView = vi.fn();
+    next.scrollIntoView = scrollIntoView;
+    vi.spyOn(container, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      right: 400,
+      top: 0,
+      bottom: 200,
+      width: 400,
+      height: 200,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+    vi.spyOn(next, "getBoundingClientRect").mockReturnValue({
+      left: 120,
+      right: 220,
+      top: 20,
+      bottom: 60,
+      width: 100,
+      height: 40,
+      x: 120,
+      y: 20,
+      toJSON: () => ({}),
+    });
+
+    first.focus();
+    fireEvent.keyDown(first, { key: "Tab" });
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(container.scrollLeft).toBe(0);
     expect(next).toHaveFocus();
   });
 
