@@ -42,7 +42,7 @@ entry and must not be presented as the default.
 | Windows sidecar smoke | D01–D17 passed; engine `0.14.0` |
 | UI typecheck | Passed |
 | UI lint | Passed |
-| Production Web build | Passed with revision `84dc119-alpha.20260829.5` |
+| Production Web build | Passed with revision `13c68e6-alpha.20260829.6` |
 | Release-bundle forbidden-content scan | Passed |
 | Windows Tauri release and NSIS generation | Passed |
 
@@ -53,14 +53,15 @@ machine.
 ## Windows candidate
 
 - Installer: `apps/desktop/src-tauri/target/release/bundle/nsis/Life Science Analysis_0.1.0_x64-setup.exe`
-- Size: `46,637,152` bytes
-- SHA-256: `E5094368804F72855C7172FA70F78F958BB9F97C1417AE9456E4EF46DA91081A`
-- Build revision: `84dc119-alpha.20260829.5`
-- Build time: 2026-08-29 17:43 JST
+- Size: `46,632,687` bytes
+- SHA-256: `A41033350B86F9E9D7E7108AC259D9BEFB5654EC456ADC25A582D2215582BD19`
+- Build revision: `13c68e6-alpha.20260829.6`
+- Build time: 2026-08-29 17:54 JST
 
 This Windows artifact contains the progressive experiment-entry, shared Graph workspace,
 canonical-value integrity changes, bounded UX clarifications, and manual external-LLM
-implementation-request copy and Graph-only value-paste mapping preservation through `84dc119`. It passed the Windows bundle verifier, release
+implementation-request copy, Graph-only value-paste mapping preservation, and adjacent reasons for
+disabled Survival Statistics actions through `13c68e6`. It passed the Windows bundle verifier, release
 content verifier, and D01–D17 packaged-engine sidecar smoke. Clean-machine human validation is
 still required.
 
@@ -74,15 +75,16 @@ still require clean-machine confirmation with this exact installer.
 The authoritative command sequence, artifact evidence template, and reduced four-task gate are in
 `MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md`. The concise commands below remain a quick reference.
 
-Use Apple Silicon macOS and build from the verified branch. `84dc119` is the minimum commit for
+Use Apple Silicon macOS and build from the verified branch. `13c68e6` is the minimum commit for
 the current reduced gate; it includes the Node 26 test-isolation correction and the latest
-Graph-only direct-paste UX correction on top of the verified product candidate.
+Graph-only direct-paste and Survival disabled-action explanation corrections on top of the verified
+product candidate.
 
 ```bash
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 84dc119 HEAD
+git merge-base --is-ancestor 13c68e6 HEAD
 npx --yes pnpm@11.19.0 install --frozen-lockfile
 npx --yes pnpm@11.19.0 test
 npx --yes pnpm@11.19.0 typecheck
@@ -142,6 +144,9 @@ native evidence.
 - Pasting values below unchanged Graph-only headers preserves the initial X/Y mapping and renders
   immediately. A paste or file import that changes the headers still clears the mapping and asks
   the researcher to assign column meaning explicitly.
+- Disabled Survival Statistics actions now state the adjacent missing requirement or unsupported
+  boundary and expose that reason through `aria-describedby`; unsupported event structures remain
+  safe-stopped rather than being coerced.
 - Usage telemetry remains off until explicit consent. With no approved remote endpoint, it fails
   closed and remains local-only; research values, labels, notes, paths, clipboard/file content and
   free text are excluded.
