@@ -42,7 +42,7 @@ entry and must not be presented as the default.
 | Windows sidecar smoke | D01–D17 passed; engine `0.14.0` |
 | UI typecheck | Passed |
 | UI lint | Passed |
-| Production Web build | Passed with revision `97976b5-alpha.20260829.4` |
+| Production Web build | Passed with revision `84dc119-alpha.20260829.5` |
 | Release-bundle forbidden-content scan | Passed |
 | Windows Tauri release and NSIS generation | Passed |
 
@@ -53,14 +53,14 @@ machine.
 ## Windows candidate
 
 - Installer: `apps/desktop/src-tauri/target/release/bundle/nsis/Life Science Analysis_0.1.0_x64-setup.exe`
-- Size: `46,631,746` bytes
-- SHA-256: `D2276BC3D11856CA4F908C515E8C849A2E875CA5D0A146A561015775E7003C7A`
-- Build revision: `97976b5-alpha.20260829.4`
-- Build time: 2026-08-29 16:56 JST
+- Size: `46,637,152` bytes
+- SHA-256: `E5094368804F72855C7172FA70F78F958BB9F97C1417AE9456E4EF46DA91081A`
+- Build revision: `84dc119-alpha.20260829.5`
+- Build time: 2026-08-29 17:43 JST
 
 This Windows artifact contains the progressive experiment-entry, shared Graph workspace,
 canonical-value integrity changes, bounded UX clarifications, and manual external-LLM
-implementation-request copy through `97976b5`. It passed the Windows bundle verifier, release
+implementation-request copy and Graph-only value-paste mapping preservation through `84dc119`. It passed the Windows bundle verifier, release
 content verifier, and D01–D17 packaged-engine sidecar smoke. Clean-machine human validation is
 still required.
 

@@ -40,8 +40,8 @@ tests, 290 semantic-package tests, 190 experiment-first prototype tests, 63 Pyth
 Rust native tests, and a real Rust→Python engine round trip. A Windows x64 NSIS candidate containing
 the progressive experiment-entry, canonical-value integrity, and current bounded UX changes was
 built on 2026-08-29 with SHA-256
-`D2276BC3D11856CA4F908C515E8C849A2E875CA5D0A146A561015775E7003C7A` and build revision
-`97976b5-alpha.20260829.4`. Node 26 test environments now bind feature flags to each isolated
+`E5094368804F72855C7172FA70F78F958BB9F97C1417AE9456E4EF46DA91081A` and build revision
+`84dc119-alpha.20260829.5`. Node 26 test environments now bind feature flags to each isolated
 jsdom window rather than a process-level shared localStorage file. The macOS native candidate must
 still be rebuilt from the current branch
 before the next native human gate.
