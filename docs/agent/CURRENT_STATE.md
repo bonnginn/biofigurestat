@@ -15,6 +15,8 @@ feedback-provider, and final product-identity decisions remain external human ga
 
 The dated engineering evidence and public-distribution blockers are recorded in
 `docs/alpha/ALPHA_CANDIDATE_READINESS_2026-08-29.md`.
+The executable macOS build and reduced native-human gate are specified in
+`docs/alpha/MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md`.
 
 ## Active product boundary
 

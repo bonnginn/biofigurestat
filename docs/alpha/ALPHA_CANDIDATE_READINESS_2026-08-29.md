@@ -67,6 +67,9 @@ still require clean-machine confirmation with this exact installer.
 
 ## macOS native build handoff
 
+The authoritative command sequence, artifact evidence template, and reduced four-task gate are in
+`MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md`. The concise commands below remain a quick reference.
+
 Use Apple Silicon macOS and build from the verified branch. `417c024` is the minimum verified
 baseline; a later descendant is acceptable only when it contains no unreviewed product changes.
 
