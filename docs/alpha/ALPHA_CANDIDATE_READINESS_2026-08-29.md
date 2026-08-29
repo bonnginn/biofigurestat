@@ -39,7 +39,7 @@ entry and must not be presented as the default.
 | Windows sidecar smoke | D01–D17 passed; engine `0.14.0` |
 | UI typecheck | Passed |
 | UI lint | Passed |
-| Production Web build | Passed at verified baseline `27500c5` (native bundle rebuild pending) |
+| Production Web build | Passed with revision `3086c66-alpha.20260829.1` |
 | Release-bundle forbidden-content scan | Passed |
 | Windows Tauri release and NSIS generation | Passed |
 
@@ -50,13 +50,14 @@ machine.
 ## Windows candidate
 
 - Installer: `apps/desktop/src-tauri/target/release/bundle/nsis/Life Science Analysis_0.1.0_x64-setup.exe`
-- Size: `46,621,436` bytes
-- SHA-256: `49076A477447F5A8AD2488B338B374E17B80EABE3F80474A9E2311537817BF9D`
-- Build time: 2026-08-29 11:50 JST
+- Size: `46,632,774` bytes
+- SHA-256: `23899574227D9CD85EBD7F0340AD6606EB951505A3B03512FED8FFA74285507D`
+- Build revision: `3086c66-alpha.20260829.1`
+- Build time: 2026-08-29 15:22 JST
 
-This Windows artifact predates the progressive experiment-entry changes at `0d9165c`. It remains
-historical native evidence, not the binary for the next human pass. Rebuild Windows and macOS from
-the current `codex/native-hardening-2026-08-28` branch before revalidation.
+This Windows artifact contains the progressive experiment-entry changes through `0d9165c` and the
+verified documentation baseline at `3086c66`. It passed the Windows bundle verifier and D01–D17
+sidecar smoke. Clean-machine human validation is still required.
 
 This is an unsigned engineering candidate, not a public release. The packaged executable is
 verified as PE subsystem `Windows GUI (2)` so it does not own a command-prompt window. Windows
