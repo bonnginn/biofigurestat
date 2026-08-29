@@ -31,15 +31,15 @@ entry and must not be presented as the default.
 | Area | Current result |
 | --- | ---: |
 | UI tests | 1,071 passed |
-| Semantic package tests | 289 passed |
+| Semantic package tests | 290 passed |
 | Experiment-first prototype tests | 190 passed |
 | Python engine tests | 63 passed |
-| Rust native tests | 15 passed, 1 opt-in test ignored in the ordinary run |
+| Rust native tests | 17 passed, 1 development-environment round trip ignored in the ordinary run |
 | Real Rust → packaged Python-engine round trip | Passed for representative D01, D03 and D04 requests |
 | Windows sidecar smoke | D01–D17 passed; engine `0.14.0` |
 | UI typecheck | Passed |
 | UI lint | Passed |
-| Production Web build | Passed with revision `f7d3a3d-alpha.20260829.3` |
+| Production Web build | Passed at verified baseline `27500c5` (native bundle rebuild pending) |
 | Release-bundle forbidden-content scan | Passed |
 | Windows Tauri release and NSIS generation | Passed |
 
@@ -62,6 +62,34 @@ This is an unsigned engineering candidate, not a public release. The packaged ex
 verified as PE subsystem `Windows GUI (2)` so it does not own a command-prompt window. Windows
 sidecar processes use `CREATE_NO_WINDOW`, and native PNG clipboard support is implemented. These
 still require clean-machine confirmation with this exact installer.
+
+## macOS native build handoff
+
+Use Apple Silicon macOS and build from the verified branch. `27500c5` is the minimum verified
+baseline; a later descendant is acceptable only when it contains no unreviewed product changes.
+
+```bash
+git fetch origin
+git switch codex/native-hardening-2026-08-28
+git pull --ff-only origin codex/native-hardening-2026-08-28
+git merge-base --is-ancestor 27500c5 HEAD
+corepack pnpm install --frozen-lockfile
+NODE_OPTIONS=--localstorage-file=/private/tmp/lsaa-vitest-localstorage.json pnpm test
+pnpm typecheck
+pnpm lint
+pnpm engine:build:mac
+pnpm tauri:build
+pnpm native:verify:mac
+```
+
+The production build enables the experiment-first task hub by default. Do not add the historical
+`VITE_EXPERIMENT_FIRST_ADAPTIVE_INPUT=1` override unless explicitly testing the rollback mechanism.
+The expected application is:
+`apps/desktop/src-tauri/target/release/bundle/macos/Life Science Analysis.app`.
+
+Record the exact `git rev-parse HEAD`, `.app` code-signing identity, bundle SHA-256, macOS version,
+hardware architecture, and every failed command. A browser preview does not substitute for this
+native evidence.
 
 ## Generic failures closed in this candidate
 
