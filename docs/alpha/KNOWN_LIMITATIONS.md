@@ -8,5 +8,5 @@
 - Contextual Help is explanatory and local/deterministic. It does not calculate results or edit the project.
 - The product name, logo, public license, repository URL, bundle-identifier ownership, and signing identities are not final.
 - macOS signing/notarization and external-machine smoke testing remain open.
-- An unsigned Windows x64 NSIS installer with the packaged statistical sidecar is available for internal validation. External-machine install/smoke, signing, and native PNG clipboard support remain open.
+- An unsigned Windows x64 NSIS installer with the packaged statistical sidecar and native PNG clipboard path is available for internal validation. External-machine install/smoke, image-paste compatibility across target applications, and signing remain open.
 - Expanded benchmark Rounds 1–3, unseen Pool C validation, and the 35-case context-rich Graph audit are complete. Pool D remains sealed; current release gates are manual Web review and macOS/Windows native packaging smoke.

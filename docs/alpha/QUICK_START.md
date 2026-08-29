@@ -1,13 +1,17 @@
 # Five-Minute Alpha Quick Start
 
-1. Open `新しい実験`.
-2. Choose a real experiment context, or start from one of the six curated synthetic demos.
-3. Confirm conditions, experimental unit, pairing/nesting, repeated structure, and readouts.
-4. Enter measurements. Technical observations remain associated with their biological unit.
-5. Create a Graph, review the default view, then open Statistics if the design has a supported route.
-6. Check biological n, the selected method, warnings, result provenance, and Methods text.
-7. Save the `.lsa` project locally.
+1. `新しい実験`を開き、開始方法を選びます。
+   - 通常の実験は`実験から始める`。
+   - 既存のExcel/CSV表からまずGraphを作る場合は`手元の表からGraphを作る`。
+   - 生存時間、濃度–反応・酵素反応、Heatmapは専用シートへ直接進みます。
+2. 実験から始める場合は、処理・群分け、測定した値、条件を受けた対象・試料、条件間の関係、Cell/ROI等の内側の測定、時間等の順序について、実際に行った事実だけを入力します。
+3. 生成されたシートへ直接入力するか、Excel等から矩形で貼り付けます。`条件別シート`、`まとめて入力`、`1測定1行`は同じ測定記録の表示です。
+4. `＋ グラフを作成`で推奨Graphを確認し、必要なら点、要約、誤差線、系列、軸、注釈を調整します。
+5. 推論解析が必要なときだけ`統計`を開きます。アプリが表示する実験単位n、対応、選択した比較、注意事項を確認して実行します。
+6. Methodsとprovenanceを確認し、`.lsa` projectをローカルへ保存します。
 
-Curated synthetic demos cover independent two-group, independent multi-group, paired two-condition, nested microscopy, longitudinal/time-course, and Western blot target/reference workflows. Additional XY, proportion/count, composition, and multiple-readout demos are available under the expanded list. All are artificial and must not be treated as research results.
+対象・試料IDは入力時に自動作成されます。既存IDを使う、対応関係を確認する、または詳細を点検する場合だけ`対象・試料IDを表示／編集`を開きます。横に並んだ独立群の同じ行は、pairや同じ実験日を意味しません。
 
-Use `ヘルプ` for local contextual explanations. Use `診断` to explicitly copy or save a privacy-reduced report when something goes wrong.
+入力方法や統計の選択に迷った場合は、画面内の`外部LLMに相談する`から、測定値を含まない相談文を確認・編集してコピーできます。アプリから外部サービスへ自動送信はしません。
+
+`ヘルプ`はローカルの説明、`問題を報告`はprivacy-reduced診断のコピー・保存に使います。ブラウザUXプレビューではnative保存とローカル統計は無効で、デスクトップ版でのみ実行できます。

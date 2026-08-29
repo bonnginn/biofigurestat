@@ -1,10 +1,10 @@
 # Alpha Release Checklist
 
-Updated: 2026-08-25
+Updated: 2026-08-29
 
-Current phase: manual Web UX review in parallel with native-smoke preparation
+Current phase: reduced targeted researcher revalidation and clean-machine native smoke
 
-Current engineering verdict: `READY FOR NATIVE SMOKE`
+Current engineering verdict: `READY FOR TARGETED HUMAN REVALIDATION`
 
 ## Status legend
 
@@ -13,6 +13,9 @@ Current engineering verdict: `READY FOR NATIVE SMOKE`
 - `[-] POST-ALPHA` — useful, but not required for the bounded Alpha claim.
 
 This checklist does not itself authorize release. Public Alpha requires all `BEFORE ALPHA` items to be closed and no unresolved P0/P1 scientific-safety defect.
+
+Current engineering evidence and the reduced human gate are summarized in
+`ALPHA_CANDIDATE_READINESS_2026-08-29.md`.
 
 ## Scientific safety
 
@@ -68,7 +71,7 @@ This checklist does not itself authorize release. Public Alpha requires all `BEF
 - [ ] BEFORE ALPHA — macOS clean-machine create/save/quit/reopen/export/recovery smoke passes on a real `.lsa` file.
 - [ ] BEFORE ALPHA — Windows clean-machine create/save/quit/reopen/export/recovery smoke passes on a real `.lsa` file.
 - [ ] BEFORE ALPHA — `.lsa` file association and migration from the oldest supported fixture are verified in packaged builds.
-- [ ] BEFORE ALPHA — native PNG clipboard is implemented or explicitly documented as deferred for the Alpha package.
+- [x] COMPLETE — native PNG clipboard paths are implemented for macOS and Windows; target-application paste compatibility remains part of clean-machine smoke.
 
 ## Provenance / Methods
 
@@ -80,12 +83,14 @@ This checklist does not itself authorize release. Public Alpha requires all `BEF
 
 ## Privacy / security
 
-- [x] COMPLETE — standard research data and deterministic statistics remain local; no implicit telemetry or upload.
+- [x] COMPLETE — standard research data and deterministic statistics remain local; no product-usage event is recorded or queued before explicit first-run consent.
+- [x] COMPLETE — first-run Yes/No, later on/off control, exact event allowlist, bounded queue, opt-out purge, HTTPS-only transport, failure isolation, and a research-data-free local copy are implemented and tested. The allowlist excludes raw or derived measurements, experiment titles, researcher-entered labels/notes/project or sample identifiers, file paths, free text, clipboard/file content, content hashes, and error payloads. It does include disclosed random app/session IDs, timestamps, application/build and OS-family metadata, typed workflow categories, bounded counts, and fixed error codes; this is not presented as complete anonymity.
 - [x] COMPLETE — diagnostic export excludes raw values, labels, notes, paths and secrets by default.
 - [x] COMPLETE — evaluation mode is development-gated; production CSP and restricted Tauri permissions exist.
-- [ ] BEFORE ALPHA — packaged artifacts pass the evaluation/Gold/tunnel/source-map/secret forbidden-string scan.
+- [x] COMPLETE — the 2026-08-29 production Web bundle passed the evaluation/Gold/tunnel/source-map/secret forbidden-string scan before Windows packaging.
 - [ ] BEFORE ALPHA — CSP, file-dialog scope, sidecar invocation and diagnostic export are smoke-tested on both platforms.
-- [ ] BEFORE ALPHA — product-usage telemetry is either absent/off, or ships only after approval of an explicit first-run Yes/No consent, later on/off control, event allowlist, endpoint/operator/region, retention, and deletion policy. Raw or derived measurements, experiment titles, labels, notes, identifiers, file paths, free text, content hashes, and error payloads are never telemetry fields.
+- [ ] BEFORE ALPHA — before configuring a remote telemetry endpoint, approve its operator, hosting region, remote retention period and deletion/contact procedure, then publish the corresponding user-facing notice, including that ordinary IP/HTTP transport metadata may be handled by that operator. Bump `USAGE_TELEMETRY_CONSENT_NOTICE_VERSION` to an explicit `remote-*` notice, require fresh opt-in, discard local-only-notice queues rather than silently uploading them, and allow only the approved endpoint origin in the packaged CSP/CORS configuration; prior opt-out remains respected. Until then the fail-closed local-only configuration makes no external telemetry request.
+- [ ] BEFORE ALPHA — approve the researcher-facing feedback-form provider, form fields, privacy/retention notice and support contact; configure its static HTTPS URL; verify external opening on packaged macOS/Windows; and name the owner/process for moving submissions into a private internal issue tracker. The application must not append project data or diagnostics automatically.
 - [ ] BEFORE ALPHA — external security review is completed or a named owner/risk acceptance is recorded before public distribution.
 - [-] POST-ALPHA — cloud sync, collaboration and external AI Help remain out of scope unless separately approved.
 
@@ -122,7 +127,7 @@ This checklist does not itself authorize release. Public Alpha requires all `BEF
 - [x] COMPLETE — Windows icon/version/file-association base configuration exists.
 - [ ] BEFORE ALPHA — final product identity, icon, bundle identifier and version/build revision are injected.
 - [ ] BEFORE ALPHA — macOS signing identity, notarization/stapling and DMG or approved delivery method pass.
-- [ ] BEFORE ALPHA — Windows bundle override, x64 engine resource, installer and WebView2 strategy pass.
+- [x] COMPLETE — Windows bundle override, x64 engine resource mapping, release compile and NSIS generation pass; the 2026-08-29 installer checksum is recorded in `CURRENT_STATE.md`.
 - [ ] BEFORE ALPHA — packaged artifact scan passes and installation/uninstallation behavior is documented.
 - [-] POST-ALPHA — Store distribution and automatic updater are out of the current Alpha scope.
 

@@ -363,3 +363,17 @@ human revalidation gates. The three specialist hub controls also routed directly
 ordered curve/enzyme kinetics, and Heatmap without opening the compatibility workflow; each
 destination focused its page heading, and the browser-only limitations remained visible. Pool D
 was not accessed.
+
+## Researcher-facing row-grain clarification — 2026-08-28
+
+For Graph-only promotion without a source ID column, confirming that the column is absent is not
+evidence that every source row is an independent biological or experimental unit. Before any local
+unit identity is generated, the researcher is asked whether each row represents a separately
+treated animal, dish, well, or other experimental unit; multiple Cell, ROI, or field rows within
+one parent unit and an unknown row meaning both stop without changing the retained table or Graph.
+
+Only an explicit answer that each row is a separate unit permits deterministic local identities
+such as `unit-001`, `unit-002`, and so on. These identities are local stable addresses and do not
+create matching across conditions. The earlier implementation-checkpoint wording that described
+generated `source-row-*` identities is superseded by this clarification; row position alone never
+establishes biological independence or pairing.

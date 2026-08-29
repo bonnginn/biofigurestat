@@ -2,7 +2,7 @@
 
 Status: Internal Alpha, 2026-08-22  
 Application: Life Science Analysis App 0.1.0  
-Engine: `lsaa-python` 0.13.0; NumPy 2.3.5; SciPy 1.18.0; Statsmodels 0.14.6
+Engine: `lsaa-python` 0.14.0; NumPy 2.3.5; SciPy 1.18.0; Statsmodels 0.14.6
 
 Package availability does not guarantee scientific appropriateness. The application must still
 preserve the declared experimental unit, matching, grouping, missing-data handling, contrast,
