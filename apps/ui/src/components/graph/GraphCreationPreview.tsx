@@ -12,6 +12,7 @@ import {
 import { deriveTimeMetricValue } from "../../app/experimentDraftAnalysis";
 import { defaultLayersForGraphType } from "../../app/graphDefaults";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { violinDensityPath } from "./graphGeometry";
 
 import "./graph-creation-preview.css";
 
@@ -353,9 +354,21 @@ export function CurrentDataGraphPreview({
   const plotHeight = height - top - bottom;
   const observedMin = Math.min(...allValues);
   const observedMax = Math.max(...allValues);
-  const range = Math.max(1, observedMax - observedMin);
-  const domainMin = selectedReadout?.shape === "proportion" ? 0 : observedMin - range * 0.1;
-  const domainMax = selectedReadout?.shape === "proportion" ? 100 : observedMax + range * 0.1;
+  const observedRange = observedMax - observedMin;
+  const scale = Math.max(Math.abs(observedMin), Math.abs(observedMax), 1);
+  const padding = Math.max(observedRange * 0.1, scale * 0.04);
+  const domainMin =
+    selectedReadout?.shape === "proportion"
+      ? 0
+      : type === "bar"
+        ? Math.min(0, observedMin - padding)
+        : observedMin - padding;
+  const domainMax =
+    selectedReadout?.shape === "proportion"
+      ? 100
+      : type === "bar"
+        ? Math.max(0, observedMax + padding)
+        : observedMax + padding;
   const yFor = (value: number) =>
     top + ((domainMax - value) / (domainMax - domainMin)) * plotHeight;
   const xFor = (index: number) => 62 + index * 72;
@@ -410,6 +423,8 @@ export function CurrentDataGraphPreview({
         viewBox={`0 0 ${width} ${height}`}
         role="img"
         aria-label={`${type}で現在のデータを表示したpreview`}
+        data-domain-min={domainMin}
+        data-domain-max={domainMax}
       >
         <line
           className="graph-current-preview__axis"
@@ -450,8 +465,7 @@ export function CurrentDataGraphPreview({
           const q3 = quantile(group.experimentValues, 0.75);
           const source =
             group.observationValues.length > 0 ? group.observationValues : group.experimentValues;
-          const observationMin = quantile(source, 0);
-          const observationMax = quantile(source, 1);
+          const currentViolinPath = violinDensityPath(source, x, yFor, 22);
           return (
             <g key={group.key}>
               {type === "bar" && average !== null ? (
@@ -481,10 +495,11 @@ export function CurrentDataGraphPreview({
                   />
                 </>
               ) : null}
-              {type === "violin" && observationMin !== null && observationMax !== null ? (
+              {type === "violin" && currentViolinPath ? (
                 <path
                   className="graph-current-preview__violin"
-                  d={`M ${x} ${yFor(observationMax)} C ${x - 22} ${yFor(observationMax + (observationMin - observationMax) * 0.35)}, ${x - 22} ${yFor(observationMin + (observationMax - observationMin) * 0.35)}, ${x} ${yFor(observationMin)} C ${x + 22} ${yFor(observationMin + (observationMax - observationMin) * 0.35)}, ${x + 22} ${yFor(observationMax + (observationMin - observationMax) * 0.35)}, ${x} ${yFor(observationMax)} Z`}
+                  data-graph-layer="violin"
+                  d={currentViolinPath}
                 />
               ) : null}
               {layers.raw &&
