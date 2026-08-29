@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ADAPTIVE_INPUT_FEATURE_FLAG } from "../app/adaptiveInputFeature";
 import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
@@ -41,7 +41,18 @@ function chooseDedicatedEntry(
 }
 
 describe("New Experiment dedicated entry handoff", () => {
-  afterEach(() => window.localStorage.removeItem(ADAPTIVE_INPUT_FEATURE_FLAG));
+  beforeEach(() => {
+    // The page tests exercise both modes explicitly. A developer's shell-level
+    // production rollback must not silently choose a different test surface.
+    vi.stubEnv("VITE_EXPERIMENT_FIRST_ADAPTIVE_INPUT", "");
+    window.history.replaceState({}, "", "/");
+    window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    window.localStorage.clear();
+    vi.unstubAllEnvs();
+  });
 
   it("keeps the legacy destination available when the adaptive feature flag is off", () => {
     const { onDedicatedEntryReady, onNavigate } = chooseDedicatedEntry(

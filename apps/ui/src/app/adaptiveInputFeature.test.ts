@@ -1,16 +1,25 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ADAPTIVE_INPUT_FEATURE_FLAG,
   adaptiveInputFeatureEnabled,
   resolveAdaptiveInputFeature,
 } from "./adaptiveInputFeature";
 
+beforeEach(() => {
+  vi.stubEnv("VITE_EXPERIMENT_FIRST_ADAPTIVE_INPUT", "");
+});
+
 afterEach(() => {
   window.history.replaceState({}, "", "/");
   window.localStorage.clear();
+  vi.unstubAllEnvs();
 });
 
 describe("adaptive input feature flag", () => {
+  it("uses the isolated jsdom storage instead of a Node process-level store", () => {
+    expect(globalThis.localStorage).toBe(window.localStorage);
+  });
+
   it("is opt-in in the test environment and can be enabled per URL or durable local setting", () => {
     expect(adaptiveInputFeatureEnabled()).toBe(false);
     window.history.replaceState({}, "", "/?adaptiveInput=1");
