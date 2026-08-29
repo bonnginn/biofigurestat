@@ -481,7 +481,7 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
 
     expect(screen.queryByLabelText("順序の値 1")).toBeNull();
     fireEvent.change(
-      screen.getByRole("textbox", { name: "各条件を実験するために用いた対象・試料は？" }),
+      screen.getByRole("textbox", { name: "条件を直接受けた、または群として分けた対象・試料は？" }),
       { target: { value: "culture dish" } },
     );
     fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
@@ -611,7 +611,7 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
       />,
     );
     fireEvent.change(
-      screen.getByRole("textbox", { name: "各条件を実験するために用いた対象・試料は？" }),
+      screen.getByRole("textbox", { name: "条件を直接受けた、または群として分けた対象・試料は？" }),
       { target: { value: "culture dish" } },
     );
     fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
@@ -657,7 +657,7 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
       target: { value: "細胞面積" },
     });
     fireEvent.change(
-      screen.getByRole("textbox", { name: "各条件を実験するために用いた対象・試料は？" }),
+      screen.getByRole("textbox", { name: "条件を直接受けた、または群として分けた対象・試料は？" }),
       {
         target: { value: "culture dish" },
       },
@@ -697,7 +697,7 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     fireEvent.click(screen.getByRole("button", { name: "処理・群分け 1（薬剤）に列を追加" }));
     expect(screen.getByRole("textbox", { name: "行 3 列 3" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
-    expect(screen.getByText(/測定項目と、各条件を実験するために用いた対象・試料/)).toBeVisible();
+    expect(screen.getByText(/測定項目と、条件を直接受けた、または群として分けた対象・試料/)).toBeVisible();
     expect(screen.getByRole("textbox", { name: "行 2 列 2" })).toHaveValue("100");
     expect(onReady).not.toHaveBeenCalled();
   });

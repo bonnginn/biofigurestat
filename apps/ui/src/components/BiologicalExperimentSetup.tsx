@@ -276,7 +276,7 @@ export function safelyBuildBiologicalSetup(input: SafeBuildInput): SafeBuildResu
   if (!measurementLabel || !receiverLabel) {
     return {
       status: "stopped",
-      reason: "測定項目と、各条件を実験するために用いた対象・試料を入力してください。",
+      reason: "測定項目と、条件を直接受けた、または群として分けた対象・試料を入力してください。",
     };
   }
   if (additionalReadouts.some(({ label }) => !label)) {
@@ -1504,7 +1504,7 @@ export function BiologicalExperimentSetup({
                 </div>
               </div>
               <label className="biological-setup__field">
-                <span>各条件を実験するために用いた対象・試料は？</span>
+                <span>条件を直接受けた、または群として分けた対象・試料は？</span>
                 <input
                   placeholder="例：culture dish、mouse、donor由来試料"
                   value={receiverLabel}
@@ -1514,7 +1514,7 @@ export function BiologicalExperimentSetup({
               <details className="biological-setup__inline-help">
                 <summary aria-label="対象・試料の入力について詳しく見る">?</summary>
                 <p>
-                  アプリ内の番号は自動で作ります。実験日や表の行番号ではなく、条件を実際に受けたものを入力します。
+                  例はmouse、culture dish、well、donor由来試料などです。測定値そのものを得たCellや視野ではなく、処置や群分けを個別に割り当てたものを入力します。同じ対象を複数条件で測った場合も、その対象を入力します。
                 </p>
               </details>
               <fieldset>
