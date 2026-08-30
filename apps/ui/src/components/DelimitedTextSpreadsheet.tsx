@@ -30,6 +30,7 @@ type Props = Readonly<{
   replaceOnPasteAtOrigin?: boolean;
   workbookImporter?: SpreadsheetWorkbookImporter;
   allowWorkbookSheetStacking?: boolean;
+  columnOptions?: Readonly<Record<number, readonly string[]>>;
 }>;
 
 type ParsedGrid = Readonly<{
@@ -144,6 +145,7 @@ export function DelimitedTextSpreadsheet({
   replaceOnPasteAtOrigin = false,
   workbookImporter = importLocalSpreadsheetWorkbook,
   allowWorkbookSheetStacking = false,
+  columnOptions = {},
 }: Props) {
   const [spreadsheetZoom, setSpreadsheetZoom] = useState<number>(initialSpreadsheetZoom);
   const [importedWorkbook, setImportedWorkbook] = useState<ImportedSpreadsheetWorkbook | null>(
@@ -211,7 +213,7 @@ export function DelimitedTextSpreadsheet({
     onChange(serializeGrid(next, "\t"), "clipboard");
   };
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => {
     moveSpreadsheetFocus(event);
   };
 
@@ -295,29 +297,58 @@ export function DelimitedTextSpreadsheet({
             {rows.map((row, rowIndex) => (
               <tr key={rowIndex}>
                 <th scope="row">{rowIndex === 0 ? "見出し" : rowIndex}</th>
-                {row.map((cell, columnIndex) => (
-                  <td key={columnIndex}>
-                    <input
-                      aria-label={`${ariaLabel} 行${rowIndex + 1} 列${columnIndex + 1}`}
-                      data-spreadsheet-cell="true"
-                      data-spreadsheet-row={rowIndex}
-                      data-spreadsheet-column={columnIndex}
-                      data-testid={
-                        testIdPrefix ? `${testIdPrefix}-cell-${rowIndex}-${columnIndex}` : undefined
-                      }
-                      value={cell}
-                      onChange={(event) => updateCell(rowIndex, columnIndex, event.target.value)}
-                      onFocus={(event) => {
-                        if (rowIndex === 0) event.currentTarget.select();
-                      }}
-                      onClick={(event) => {
-                        if (rowIndex === 0) event.currentTarget.select();
-                      }}
-                      onPaste={(event) => pasteCells(event, rowIndex, columnIndex)}
-                      onKeyDown={handleKeyDown}
-                    />
-                  </td>
-                ))}
+                {row.map((cell, columnIndex) => {
+                  const options = rowIndex > 0 ? columnOptions[columnIndex] : undefined;
+                  const cellProps = {
+                    "aria-label": `${ariaLabel} 行${rowIndex + 1} 列${columnIndex + 1}`,
+                    "data-spreadsheet-cell": true,
+                    "data-spreadsheet-row": rowIndex,
+                    "data-spreadsheet-column": columnIndex,
+                    "data-testid": testIdPrefix
+                      ? `${testIdPrefix}-cell-${rowIndex}-${columnIndex}`
+                      : undefined,
+                  };
+                  return (
+                    <td key={columnIndex}>
+                      {options ? (
+                        <select
+                          {...cellProps}
+                          value={cell}
+                          onChange={(event) =>
+                            updateCell(rowIndex, columnIndex, event.target.value)
+                          }
+                          onKeyDown={handleKeyDown}
+                        >
+                          <option value="">選択</option>
+                          {!options.includes(cell) && cell ? (
+                            <option value={cell}>{cell}</option>
+                          ) : null}
+                          {options.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          {...cellProps}
+                          value={cell}
+                          onChange={(event) =>
+                            updateCell(rowIndex, columnIndex, event.target.value)
+                          }
+                          onFocus={(event) => {
+                            if (rowIndex === 0) event.currentTarget.select();
+                          }}
+                          onClick={(event) => {
+                            if (rowIndex === 0) event.currentTarget.select();
+                          }}
+                          onPaste={(event) => pasteCells(event, rowIndex, columnIndex)}
+                          onKeyDown={handleKeyDown}
+                        />
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>

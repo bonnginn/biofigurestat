@@ -718,7 +718,6 @@ describe("ExperimentGraphWorkbench", () => {
     await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
     expect(runner.mock.calls[0][0]).toMatchObject({ templateId: "D01", method: "welch_t" });
     expect(screen.getByRole("group", { name: "統計解析結果" })).toHaveTextContent("p = 0.042");
-    fireEvent.click(screen.getByText("診断と注意（1件）"));
     expect(screen.getByText(/少数例の有意差検定だけで正規性を断定/)).toBeVisible();
     fireEvent.click(screen.getByText("解析エンジンと再現情報"));
     expect(screen.getByText("fixture-engine 0.1.0")).toBeVisible();

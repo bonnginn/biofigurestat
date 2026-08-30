@@ -47,7 +47,7 @@ import {
 } from "../app/nonlinearModelRegistry";
 import { adaptiveSurvivalPaste } from "../app/adaptiveWorkspace";
 import { SpecializedCorePage } from "./SpecializedCorePage";
-import type { CommonCoverageDraft } from "../app/specializedAnalysisDrafts";
+import type { CommonCoverageDraft, SpecializedDraftStore } from "../app/specializedAnalysisDrafts";
 import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
 import type {
   AxisMaterialRelationship,
@@ -75,6 +75,7 @@ type OpenProjectPageProps = {
   onOpenProject?: () => void;
   onRequestExit?: RequestWorkspaceExit;
   onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
+  restoredSpecializedDrafts?: SpecializedDraftStore;
 };
 
 function orderedCurveReopenState(
@@ -197,6 +198,7 @@ function PersistedProjectView({
   onOpenProject,
   onRequestExit,
   onRegisterSaveHandler,
+  restoredSpecializedDrafts,
 }: {
   project: OpenedProject;
   saveProject?: SaveProjectAction;
@@ -207,6 +209,7 @@ function PersistedProjectView({
   onOpenProject?: () => void;
   onRequestExit?: RequestWorkspaceExit;
   onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
+  restoredSpecializedDrafts?: SpecializedDraftStore;
 }) {
   const { state } = project;
   const [editingOrderedCurve, setEditingOrderedCurve] = useState(false);
@@ -276,7 +279,7 @@ function PersistedProjectView({
           else onBack();
         }}
         saveProject={saveProject}
-        initialDraft={orderedCurveReopen.draft}
+        initialDraft={restoredSpecializedDrafts?.["nonlinear-fit"] ?? orderedCurveReopen.draft}
         entryIntent={orderedCurveReopen.entryIntent}
         initialProject={project}
         onDirtyChange={onDirtyChange}
@@ -434,6 +437,7 @@ function PersistedProjectView({
           state.adaptiveInput.rawLineage?.rawText ?? adaptiveSurvivalPaste(state.adaptiveInput)
         }
         adaptiveInput={state.adaptiveInput}
+        initialDraft={restoredSpecializedDrafts?.survival}
         onDirtyChange={onDirtyChange}
         onOpenProject={onOpenProject}
         onRequestExit={onRequestExit}
@@ -574,6 +578,7 @@ export function OpenProjectPage({
   onOpenProject,
   onRequestExit,
   onRegisterSaveHandler,
+  restoredSpecializedDrafts,
 }: OpenProjectPageProps) {
   const [status, setStatus] = useState<"idle" | "opening" | "success" | "error">(
     initialError ? "error" : "idle",
@@ -672,6 +677,7 @@ export function OpenProjectPage({
         onOpenProject={onOpenProject}
         onRequestExit={onRequestExit}
         onRegisterSaveHandler={onRegisterSaveHandler}
+        restoredSpecializedDrafts={restoredSpecializedDrafts}
       />
     );
   }

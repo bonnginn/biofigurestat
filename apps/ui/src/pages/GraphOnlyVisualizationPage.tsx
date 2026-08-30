@@ -767,14 +767,24 @@ export function GraphOnlyVisualizationPage({
     }
   };
   const saveCurrentProjectRef = useRef(saveCurrentProject);
+  const buildStateRef = useRef(buildState);
   useEffect(() => {
     saveCurrentProjectRef.current = saveCurrentProject;
+    buildStateRef.current = buildState;
   }, [saveCurrentProject]);
   useEffect(() => {
     if (!onRegisterSaveHandler) return;
-    onRegisterSaveHandler((saveAs) => saveCurrentProjectRef.current(Boolean(saveAs)));
+    onRegisterSaveHandler({
+      save: (saveAs) => saveCurrentProjectRef.current(Boolean(saveAs)),
+      checkpoint: () => {
+        const state = buildStateRef.current();
+        return state && savedTarget
+          ? { kind: "unresolved_visualization", project: { state, target: savedTarget } }
+          : null;
+      },
+    });
     return () => onRegisterSaveHandler(null);
-  }, [onRegisterSaveHandler]);
+  }, [onRegisterSaveHandler, savedTarget]);
 
   const requestExit = (actionLabel: string, proceed: () => void | Promise<void>) => {
     if (!isDirty) {

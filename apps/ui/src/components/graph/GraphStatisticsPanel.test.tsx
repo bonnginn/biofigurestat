@@ -347,6 +347,44 @@ describe("GraphStatisticsPanel validation repair routes", () => {
     expect(recordUsageMilestone).toHaveBeenCalledTimes(2);
   });
 
+  it("shows important diagnostics immediately and marks warning severity", async () => {
+    const analysisRunner = vi.fn().mockResolvedValue(
+      AnalysisEngineResultSchema.parse({
+        protocolVersion: "0.1.0",
+        requestId: "request.test",
+        status: "ok",
+        engine: { name: "lsaa-python", version: "test", packages: {} },
+        estimates: [],
+        tests: [],
+        diagnostics: [],
+        warnings: [
+          {
+            code: "small_sample_size",
+            message: "Interpret this estimate cautiously.",
+          },
+        ],
+        completedAt: "2026-08-28T00:00:00.000Z",
+      }),
+    );
+    const { container } = render(
+      <GraphStatisticsPanel
+        assessment={readyAssessment}
+        design={panelDesign()}
+        outcomeId="outcome.value"
+        analysisRunner={analysisRunner}
+        relationshipAlreadyDeclared
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+
+    expect(await screen.findByText("重要な注意（1件）")).toBeVisible();
+    const details = container.querySelector(".experiment-graph-analysis-diagnostics");
+    expect(details).toHaveAttribute("open");
+    expect(details).toHaveClass("is-important");
+    expect(details?.querySelector('[data-severity="warning"]')).not.toBeNull();
+  });
+
   it("shows the exact D01 duplicate-unit cause returned by the engine", async () => {
     vi.mocked(recordUsageMilestone).mockClear();
     const analysisRunner = vi.fn().mockResolvedValue(

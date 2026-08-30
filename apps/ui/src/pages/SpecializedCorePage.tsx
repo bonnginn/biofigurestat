@@ -1465,12 +1465,35 @@ export function SpecializedCorePage({
   }, [save]);
   useEffect(() => {
     if (!onRegisterSaveHandler) return;
-    onRegisterSaveHandler(async (saveAs) => {
-      await saveRef.current(Boolean(saveAs));
-      return lastSaveSucceededRef.current;
+    onRegisterSaveHandler({
+      save: async (saveAs) => {
+        await saveRef.current(Boolean(saveAs));
+        return lastSaveSucceededRef.current;
+      },
+      checkpoint: () => {
+        if (currentProject) return { kind: "experiment" as const, project: currentProject };
+        if (currentVisualizationProject) {
+          return {
+            kind: "unresolved_visualization" as const,
+            project: currentVisualizationProject,
+          };
+        }
+        if (currentSpecializedEntryDraft) {
+          return {
+            kind: "specialized_entry_draft" as const,
+            project: currentSpecializedEntryDraft,
+          };
+        }
+        return null;
+      },
     });
     return () => onRegisterSaveHandler(null);
-  }, [onRegisterSaveHandler]);
+  }, [
+    currentProject,
+    currentSpecializedEntryDraft,
+    currentVisualizationProject,
+    onRegisterSaveHandler,
+  ]);
   const requestBack = () => {
     if (onRequestExit) {
       onRequestExit({ actionLabel: "前の画面に戻る", proceed: onBack });
@@ -2143,6 +2166,11 @@ export function SpecializedCorePage({
           >
             保存
           </button>
+          {currentProject ? (
+            <button type="button" disabled={!saveProject} onClick={() => void save(true)}>
+              別名で保存
+            </button>
+          ) : null}
         </nav>
       ) : null}
       {mode === "heatmap" ? (
@@ -2190,6 +2218,15 @@ export function SpecializedCorePage({
           >
             保存
           </button>
+          {currentVisualizationProject ? (
+            <button
+              type="button"
+              disabled={!saveUnresolvedVisualizationProject}
+              onClick={() => void save(true)}
+            >
+              別名で保存
+            </button>
+          ) : null}
         </nav>
       ) : null}
       <section
@@ -2243,6 +2280,7 @@ export function SpecializedCorePage({
             ariaLabel={mode === "survival" ? "生存時間データ表" : "ヒートマップデータ表"}
             caption={mode === "survival" ? "対象ごとの生存時間データ" : "ヒートマップ行列"}
             minimumColumns={mode === "survival" ? 4 : 3}
+            columnOptions={mode === "survival" ? { 3: ["Event", "Censored", "1", "0"] } : undefined}
             value={text}
             onChange={(nextText, source) => {
               setText(nextText);

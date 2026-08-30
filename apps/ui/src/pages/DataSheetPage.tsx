@@ -1098,110 +1098,118 @@ export function DataSheetPage({
     }));
   };
 
+  const buildCurrentProjectState = (updatedAt = new Date().toISOString()) => {
+    if (!canonicalData || !validated || !metadataDraftIsComplete(metadataDraft)) return null;
+    const persistedMetadata = metadataForPersistence(metadataDraft);
+    const analysis = analysisRun
+      ? {
+          recommendation,
+          request: analysisRun.request,
+          result: analysisRun.result,
+          graphSpec: analysisRun.graphSpec,
+          inputDerivedDatasetRevisionId: canonicalData.derivedRevision?.id ?? null,
+        }
+      : null;
+    let state: ProjectState;
+    if (!lastSavedState) {
+      state = createInitialProjectState({
+        metadata: {
+          ...workspaceIdentity.metadata,
+          ...persistedMetadata,
+        },
+        design: canonicalData.projectDesign ?? design,
+        rawRevision: {
+          id: draftRawRevisionId,
+          previousRevisionId: null,
+          sourceKind: hasPastedValues ? "paste" : "manual",
+          sourceName: hasPastedValues ? "ImageJ / clipboard table" : "BioFigureStat data sheet",
+          createdAt: workspaceIdentity.metadata.createdAt,
+          createdBy: "local-user",
+          note: "Canonical observations created from a validated design-aware data sheet.",
+        },
+        unitInstances: canonicalData.unitInstances,
+        observations: canonicalData.rawObservations ?? canonicalData.observations,
+        transformations: canonicalData.transformation ? [canonicalData.transformation] : [],
+        derivedDatasetRevisions: canonicalData.derivedRevision
+          ? [canonicalData.derivedRevision]
+          : [],
+        derivedValues: canonicalData.derivedValues ?? [],
+        actor: "local-user",
+        ...(analysis ? { analysis } : {}),
+      });
+    } else {
+      state = ProjectStateSchema.parse({
+        ...lastSavedState,
+        metadata: {
+          ...lastSavedState.metadata,
+          ...persistedMetadata,
+          updatedAt,
+        },
+      });
+      const activeDesign = state.designRevisions.find(
+        (revision) => revision.id === state.activeDesignRevisionId,
+      )?.design;
+      if (
+        canonicalData.projectDesign &&
+        JSON.stringify(activeDesign) !== JSON.stringify(canonicalData.projectDesign)
+      ) {
+        state = appendDesignRevision(state, canonicalData.projectDesign, "local-user", updatedAt);
+      }
+      if (draftRawRevisionId !== lastSavedState.activeRawRevisionId) {
+        state = appendRawRevision(
+          state,
+          {
+            id: draftRawRevisionId,
+            previousRevisionId: lastSavedState.activeRawRevisionId,
+            sourceKind: "project_edit",
+            createdAt: updatedAt,
+            createdBy: "local-user",
+            note: "Canonical observations created from an edited data sheet.",
+          },
+          canonicalData.unitInstances,
+          canonicalData.rawObservations ?? canonicalData.observations,
+          "local-user",
+          canonicalData.transformation ? [canonicalData.transformation] : [],
+          canonicalData.derivedRevision ? [canonicalData.derivedRevision] : [],
+          canonicalData.derivedValues ?? [],
+        );
+      }
+      if (
+        analysis &&
+        !state.analysisRuns.some((run) => run.request.requestId === analysis.request.requestId)
+      ) {
+        state = appendAnalysisExecution(state, analysis, "local-user");
+      }
+      if (analysis?.graphSpec) {
+        const analysisRunId = `analysis-run.${analysis.request.requestId}`;
+        state = ProjectStateSchema.parse({
+          ...state,
+          graphs: state.graphs.map((graph) =>
+            graph.sourceAnalysisRunId === analysisRunId
+              ? { ...graph, spec: analysis.graphSpec }
+              : graph,
+          ),
+        });
+      }
+    }
+    return ProjectStateSchema.parse(state);
+  };
+  const buildCurrentProjectStateRef = useRef(buildCurrentProjectState);
+  useEffect(() => {
+    buildCurrentProjectStateRef.current = buildCurrentProjectState;
+  }, [buildCurrentProjectState]);
+
   const saveCurrentProject = async () => {
-    if (!saveProject || !canonicalData || !validated || !metadataDraftIsComplete(metadataDraft))
-      return false;
+    if (!saveProject) return false;
     setSaveStatus("saving");
     setSaveError(null);
     try {
-      const persistedMetadata = metadataForPersistence(metadataDraft);
-      const analysis = analysisRun
-        ? {
-            recommendation,
-            request: analysisRun.request,
-            result: analysisRun.result,
-            graphSpec: analysisRun.graphSpec,
-            inputDerivedDatasetRevisionId: canonicalData.derivedRevision?.id ?? null,
-          }
-        : null;
-      let state: ProjectState;
-      if (!lastSavedState) {
-        state = createInitialProjectState({
-          metadata: {
-            ...workspaceIdentity.metadata,
-            ...persistedMetadata,
-          },
-          design: canonicalData.projectDesign ?? design,
-          rawRevision: {
-            id: draftRawRevisionId,
-            previousRevisionId: null,
-            sourceKind: hasPastedValues ? "paste" : "manual",
-            sourceName: hasPastedValues ? "ImageJ / clipboard table" : "BioFigureStat data sheet",
-            createdAt: workspaceIdentity.metadata.createdAt,
-            createdBy: "local-user",
-            note: "Canonical observations created from a validated design-aware data sheet.",
-          },
-          unitInstances: canonicalData.unitInstances,
-          observations: canonicalData.rawObservations ?? canonicalData.observations,
-          transformations: canonicalData.transformation ? [canonicalData.transformation] : [],
-          derivedDatasetRevisions: canonicalData.derivedRevision
-            ? [canonicalData.derivedRevision]
-            : [],
-          derivedValues: canonicalData.derivedValues ?? [],
-          actor: "local-user",
-          ...(analysis ? { analysis } : {}),
-        });
-      } else {
-        state = ProjectStateSchema.parse({
-          ...lastSavedState,
-          metadata: {
-            ...lastSavedState.metadata,
-            ...persistedMetadata,
-            updatedAt: new Date().toISOString(),
-          },
-        });
-        const activeDesign = state.designRevisions.find(
-          (revision) => revision.id === state.activeDesignRevisionId,
-        )?.design;
-        if (
-          canonicalData.projectDesign &&
-          JSON.stringify(activeDesign) !== JSON.stringify(canonicalData.projectDesign)
-        ) {
-          state = appendDesignRevision(
-            state,
-            canonicalData.projectDesign,
-            "local-user",
-            new Date().toISOString(),
-          );
-        }
-        if (draftRawRevisionId !== lastSavedState.activeRawRevisionId) {
-          state = appendRawRevision(
-            state,
-            {
-              id: draftRawRevisionId,
-              previousRevisionId: lastSavedState.activeRawRevisionId,
-              sourceKind: "project_edit",
-              createdAt: new Date().toISOString(),
-              createdBy: "local-user",
-              note: "Canonical observations created from an edited data sheet.",
-            },
-            canonicalData.unitInstances,
-            canonicalData.rawObservations ?? canonicalData.observations,
-            "local-user",
-            canonicalData.transformation ? [canonicalData.transformation] : [],
-            canonicalData.derivedRevision ? [canonicalData.derivedRevision] : [],
-            canonicalData.derivedValues ?? [],
-          );
-        }
-        if (
-          analysis &&
-          !state.analysisRuns.some((run) => run.request.requestId === analysis.request.requestId)
-        ) {
-          state = appendAnalysisExecution(state, analysis, "local-user");
-        }
-        if (analysis?.graphSpec) {
-          const analysisRunId = `analysis-run.${analysis.request.requestId}`;
-          state = ProjectStateSchema.parse({
-            ...state,
-            graphs: state.graphs.map((graph) =>
-              graph.sourceAnalysisRunId === analysisRunId
-                ? { ...graph, spec: analysis.graphSpec }
-                : graph,
-            ),
-          });
-        }
+      const state = buildCurrentProjectState();
+      if (!state) {
+        setSaveStatus("idle");
+        return false;
       }
-      const savedProject = await saveProject(ProjectStateSchema.parse(state), saveTarget);
+      const savedProject = await saveProject(state, saveTarget);
       if (savedProject === null) {
         setSaveStatus("idle");
         return false;
@@ -1230,9 +1238,18 @@ export function DataSheetPage({
   }, [saveCurrentProject]);
   useEffect(() => {
     if (!onRegisterSaveHandler) return;
-    onRegisterSaveHandler(() => saveCurrentProjectRef.current());
+    onRegisterSaveHandler({
+      save: () => saveCurrentProjectRef.current(),
+      checkpoint: () => {
+        if (!saveTarget) return null;
+        const state = buildCurrentProjectStateRef.current();
+        return state
+          ? { kind: "experiment" as const, project: { state, target: saveTarget } }
+          : null;
+      },
+    });
     return () => onRegisterSaveHandler(null);
-  }, [onRegisterSaveHandler]);
+  }, [onRegisterSaveHandler, saveTarget]);
 
   const requestBack = () => {
     if (onRequestExit) {

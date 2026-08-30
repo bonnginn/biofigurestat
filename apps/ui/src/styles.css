@@ -434,7 +434,8 @@ button:focus-visible {
 }
 
 .topbar {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: var(--layer-global-header);
   display: flex;
   align-items: center;
@@ -543,6 +544,9 @@ button:focus-visible {
 }
 
 .project-tabs {
+  position: sticky;
+  z-index: calc(var(--layer-global-header) - 1);
+  top: 76px;
   display: flex;
   min-height: 42px;
   padding: 5px 24px 0;
@@ -1728,6 +1732,10 @@ h3 {
   .topbar {
     height: 68px;
     padding: 0 18px;
+  }
+
+  .project-tabs {
+    top: 68px;
   }
 
   .brand-subtitle,

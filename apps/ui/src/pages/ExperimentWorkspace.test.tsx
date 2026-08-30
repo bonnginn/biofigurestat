@@ -795,9 +795,8 @@ describe("ExperimentWorkspace", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "＋ 実験" }));
 
-    expect(screen.getByRole("tab", { name: "Exp 4" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("heading", { name: "データ入力" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("tab", { name: "Overview" }));
+    expect(screen.getByRole("tab", { name: "Exp 4" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
     expect(
       screen.getByText("未入力のセルが8件あります。途中の状態でもグラフを作成できます。"),
     ).toBeInTheDocument();
@@ -1395,7 +1394,7 @@ describe("ExperimentWorkspace", () => {
         onBack={vi.fn()}
         saveProject={saveProject}
         onRegisterSaveHandler={(handler) => {
-          registeredSave = handler;
+          registeredSave = typeof handler === "function" ? handler : (handler?.save ?? null);
         }}
       />,
     );

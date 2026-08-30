@@ -2,6 +2,7 @@ export type ProjectTab = Readonly<{
   target: string;
   name: string;
   kind: "experiment" | "unresolved_visualization" | "specialized_entry_draft";
+  dirty?: boolean;
 }>;
 
 type Props = Readonly<{
@@ -13,7 +14,7 @@ type Props = Readonly<{
   onOpen: () => void;
 }>;
 
-/** Disk-backed project tabs. Every switch still passes through the shared unsaved-work guard. */
+/** Project tabs may retain a validated in-memory checkpoint until the user saves or closes them. */
 export function ProjectTabBar({
   tabs,
   activeTarget,
@@ -40,7 +41,7 @@ export function ProjectTabBar({
                 onClick={() => onSelect(tab.target)}
               >
                 <span className="project-tab__name">{tab.name}</span>
-                {active && activeDirty ? (
+                {(active ? activeDirty : tab.dirty) ? (
                   <span className="project-tab__dirty" aria-label="未保存の変更あり">
                     ●
                   </span>

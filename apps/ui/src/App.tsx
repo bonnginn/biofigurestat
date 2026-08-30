@@ -64,7 +64,7 @@ import type {
   RegisterWorkspaceSaveHandler,
   RequestWorkspaceExit,
   WorkspaceExitRequest,
-  WorkspaceSaveHandler,
+  WorkspaceLifecycleRegistration,
 } from "./app/workspaceLifecycle";
 import { recordUsageMilestone } from "./app/usageTelemetry";
 import { resolveAnalysisRouteSwitcherAccess } from "./app/analysisRouteSwitcherAccess";
@@ -224,10 +224,15 @@ export default function App({
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>(loadRecentProjects);
   const [workspaceDirty, setWorkspaceDirty] = useState(false);
   const [projectTabs, setProjectTabs] = useState<ProjectTab[]>([]);
+  const [pendingTabCloseTarget, setPendingTabCloseTarget] = useState<string | null>(null);
   const [activeProjectTabTarget, setActiveProjectTabTarget] = useState<string | null>(null);
+  const activeProjectTabTargetRef = useRef<string | null>(activeProjectTabTarget);
   const routeRef = useRef(route);
   const workspaceDirtyRef = useRef(workspaceDirty);
-  const workspaceSaveHandlerRef = useRef<WorkspaceSaveHandler | null>(null);
+  const workspaceLifecycleRef = useRef<WorkspaceLifecycleRegistration | null>(null);
+  const workspaceSessionCheckpointsRef = useRef(new Map<string, OpenedAnyProject>());
+  const specializedDraftCheckpointsRef = useRef(new Map<string, SpecializedDraftStore>());
+  const restoredDirtyTargetRef = useRef<string | null>(null);
   const [workspaceSaveAvailable, setWorkspaceSaveAvailable] = useState(false);
   const requestWorkspaceExitRef = useRef<RequestWorkspaceExit>(() => undefined);
   const approvedWorkspaceExitRef = useRef(false);
@@ -255,8 +260,14 @@ export default function App({
     activeSpecializedEntryDraft?.project.target ??
     null;
   const updateWorkspaceDirty = useCallback((dirty: boolean) => {
-    workspaceDirtyRef.current = dirty;
-    setWorkspaceDirty(dirty);
+    const target = activeProjectTabTargetRef.current;
+    if (!dirty && !target) return;
+    const effectiveDirty = dirty || restoredDirtyTargetRef.current !== null;
+    workspaceDirtyRef.current = effectiveDirty;
+    setWorkspaceDirty(effectiveDirty);
+    setProjectTabs((current) =>
+      current.map((tab) => (tab.target === target ? { ...tab, dirty: effectiveDirty } : tab)),
+    );
   }, []);
 
   useEffect(() => {
@@ -265,12 +276,16 @@ export default function App({
   useEffect(() => {
     workspaceDirtyRef.current = workspaceDirty;
   }, [workspaceDirty]);
+  useEffect(() => {
+    activeProjectTabTargetRef.current = activeProjectTabTarget;
+  }, [activeProjectTabTarget]);
   const registerWorkspaceSaveHandler = useCallback<RegisterWorkspaceSaveHandler>((handler) => {
-    workspaceSaveHandlerRef.current = handler;
-    setWorkspaceSaveAvailable(handler !== null);
+    const registration = typeof handler === "function" ? { save: handler } : handler;
+    workspaceLifecycleRef.current = registration;
+    setWorkspaceSaveAvailable(registration !== null);
   }, []);
   const executeRegisteredWorkspaceSave = useCallback(async (saveAs = false) => {
-    const saveCurrent = workspaceSaveHandlerRef.current;
+    const saveCurrent = workspaceLifecycleRef.current?.save;
     if (!saveCurrent) return false;
     try {
       return await saveCurrent(saveAs);
@@ -284,7 +299,7 @@ export default function App({
 
     const handleSaveShortcut = (event: globalThis.KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "s") return;
-      if (!workspaceSaveHandlerRef.current) return;
+      if (!workspaceLifecycleRef.current) return;
       event.preventDefault();
       void executeRegisteredWorkspaceSave(event.shiftKey);
     };
@@ -389,14 +404,36 @@ export default function App({
       target: opened.project.target,
       name: opened.project.state.metadata.projectName,
       kind: opened.kind,
+      dirty: false,
     };
     setProjectTabs((current) => {
       const existing = current.findIndex((tab) => tab.target === next.target);
       if (existing < 0) return [...current, next];
       return current.map((tab, index) => (index === existing ? next : tab));
     });
+    activeProjectTabTargetRef.current = next.target;
     setActiveProjectTabTarget(next.target);
   }, []);
+
+  const checkpointActiveWorkspace = useCallback(() => {
+    if (!workspaceDirtyRef.current || !activeProjectTabTarget) return true;
+    let checkpoint: OpenedAnyProject | null = null;
+    try {
+      checkpoint = workspaceLifecycleRef.current?.checkpoint?.() ?? null;
+    } catch (error) {
+      recordDiagnosticError("UNEXPECTED_APPLICATION_ERROR", error);
+      return false;
+    }
+    if (!checkpoint || checkpoint.project.target !== activeProjectTabTarget) return false;
+    workspaceSessionCheckpointsRef.current.set(activeProjectTabTarget, checkpoint);
+    specializedDraftCheckpointsRef.current.set(activeProjectTabTarget, {
+      ...specializedDrafts.current,
+    });
+    setProjectTabs((current) =>
+      current.map((tab) => (tab.target === activeProjectTabTarget ? { ...tab, dirty: true } : tab)),
+    );
+    return true;
+  }, [activeProjectTabTarget]);
 
   const saveProject = useCallback<NonNullable<ProjectActions["saveProject"]>>(
     async (request, existingTarget) => {
@@ -404,6 +441,9 @@ export default function App({
       try {
         const saved = await activeProjectActions.saveProject(request, existingTarget);
         if (saved) {
+          restoredDirtyTargetRef.current = null;
+          workspaceSessionCheckpointsRef.current.delete(saved.target);
+          specializedDraftCheckpointsRef.current.delete(saved.target);
           recordRecentProject(saved);
           rememberProjectTab({ kind: "experiment", project: saved });
           recordDiagnosticEvent("project_saved", { state: "success" });
@@ -436,7 +476,12 @@ export default function App({
       const action = activeProjectActions.saveUnresolvedVisualizationProject;
       if (!action) return null;
       const saved = await action(...args);
-      if (saved) rememberProjectTab({ kind: "unresolved_visualization", project: saved });
+      if (saved) {
+        restoredDirtyTargetRef.current = null;
+        workspaceSessionCheckpointsRef.current.delete(saved.target);
+        specializedDraftCheckpointsRef.current.delete(saved.target);
+        rememberProjectTab({ kind: "unresolved_visualization", project: saved });
+      }
       return saved;
     },
     [activeProjectActions.saveUnresolvedVisualizationProject, rememberProjectTab],
@@ -449,7 +494,12 @@ export default function App({
       const action = activeProjectActions.saveSpecializedEntryDraftProject;
       if (!action) return null;
       const saved = await action(...args);
-      if (saved) rememberProjectTab({ kind: "specialized_entry_draft", project: saved });
+      if (saved) {
+        restoredDirtyTargetRef.current = null;
+        workspaceSessionCheckpointsRef.current.delete(saved.target);
+        specializedDraftCheckpointsRef.current.delete(saved.target);
+        rememberProjectTab({ kind: "specialized_entry_draft", project: saved });
+      }
       return saved;
     },
     [activeProjectActions.saveSpecializedEntryDraftProject, rememberProjectTab],
@@ -495,13 +545,21 @@ export default function App({
   }, []);
 
   const handleOpenedAnyProject = useCallback(
-    (opened: OpenedAnyProject, source: DiagnosticProjectOpenSource) => {
-      workspaceDirtyRef.current = false;
-      setWorkspaceDirty(false);
+    (
+      opened: OpenedAnyProject,
+      source: DiagnosticProjectOpenSource,
+      options: Readonly<{ restoreDirty?: boolean }> = {},
+    ) => {
+      const restoreDirty = Boolean(options.restoreDirty);
+      restoredDirtyTargetRef.current = restoreDirty ? opened.project.target : null;
+      workspaceDirtyRef.current = restoreDirty;
+      setWorkspaceDirty(restoreDirty);
       setSystemOpenError(null);
       setReusedDraft(null);
       setFavoriteDefaults([]);
-      specializedDrafts.current = {};
+      specializedDrafts.current = restoreDirty
+        ? { ...(specializedDraftCheckpointsRef.current.get(opened.project.target) ?? {}) }
+        : {};
       setAdaptiveSurvivalHandoff(null);
       setDedicatedEntryIntent(null);
       setRecentProjects(
@@ -513,6 +571,13 @@ export default function App({
       recordDiagnosticEvent("project_opened", { state: "success", source });
       recordUsageMilestone("open-project", "project_opened");
       rememberProjectTab(opened);
+      if (restoreDirty) {
+        setProjectTabs((current) =>
+          current.map((tab) =>
+            tab.target === opened.project.target ? { ...tab, dirty: true } : tab,
+          ),
+        );
+      }
 
       if (opened.kind === "experiment") {
         setActiveVisualizationProject(null);
@@ -547,7 +612,7 @@ export default function App({
     const handlePopState = (event: PopStateEvent) => {
       const nextRoute = routeFromPath(window.location.pathname);
       const requestedState = event.state;
-      if (!workspaceDirtyRef.current) {
+      if (!workspaceDirtyRef.current || checkpointActiveWorkspace()) {
         setDedicatedEntryIntent(
           dedicatedEntryIntentFromHistoryState(requestedState, nextRoute) ??
             (experimentFirstEntryEnabled ? defaultDedicatedEntryIntentForRoute(nextRoute) : null),
@@ -570,7 +635,7 @@ export default function App({
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [experimentFirstEntryEnabled, navigate, requestWorkspaceExit]);
+  }, [checkpointActiveWorkspace, experimentFirstEntryEnabled, navigate, requestWorkspaceExit]);
   const rememberSpecializedDraft = useCallback(function rememberSpecializedDraft<
     Route extends SpecializedAnalysisRoute,
   >(draftRoute: Route, draft: SpecializedDraftByRoute[Route]) {
@@ -578,7 +643,7 @@ export default function App({
   }, []);
   const navigateAsFreshStart = useCallback(
     (nextRoute: AppRoute) => {
-      requestWorkspaceExit({
+      const request: WorkspaceExitRequest = {
         actionLabel:
           nextRoute === "home"
             ? "ホームへ移動する"
@@ -586,10 +651,13 @@ export default function App({
               ? "新しい実験を始める"
               : "別の画面へ移動する",
         proceed: () => {
+          restoredDirtyTargetRef.current = null;
+          workspaceDirtyRef.current = false;
           setActiveProject(null);
           setActiveVisualizationProject(null);
           setActiveSpecializedEntryDraft(null);
           setActiveProjectTabTarget(null);
+          activeProjectTabTargetRef.current = null;
           setSystemOpenError(null);
           setWorkspaceDirty(false);
           if (nextRoute === "new-experiment") {
@@ -602,13 +670,21 @@ export default function App({
           }
           navigate(nextRoute);
         },
-      });
+      };
+      if (
+        (nextRoute === "home" || nextRoute === "new-experiment") &&
+        (!workspaceDirtyRef.current || checkpointActiveWorkspace())
+      ) {
+        void request.proceed();
+        return;
+      }
+      requestWorkspaceExit(request);
     },
-    [navigate, requestWorkspaceExit],
+    [checkpointActiveWorkspace, navigate, requestWorkspaceExit],
   );
   const saveAndContinueWorkspaceExit = useCallback(async () => {
     const request = pendingWorkspaceExit;
-    const saveCurrent = workspaceSaveHandlerRef.current;
+    const saveCurrent = workspaceLifecycleRef.current?.save;
     if (!request || !saveCurrent) {
       setWorkspaceExitError(
         "この画面から保存を開始できません。キャンセルしてFileメニューから保存してください。",
@@ -667,7 +743,7 @@ export default function App({
   }, [workspaceExitSaving]);
 
   const openProjectFromWorkspace = useCallback(() => {
-    requestWorkspaceExit({
+    const request: WorkspaceExitRequest = {
       actionLabel: "別のプロジェクトを開く",
       proceed: async () => {
         try {
@@ -688,8 +764,18 @@ export default function App({
           );
         }
       },
-    });
-  }, [activeProjectActions, handleOpenedAnyProject, requestWorkspaceExit]);
+    };
+    if (!workspaceDirtyRef.current || checkpointActiveWorkspace()) {
+      void request.proceed();
+      return;
+    }
+    requestWorkspaceExit(request);
+  }, [
+    activeProjectActions,
+    checkpointActiveWorkspace,
+    handleOpenedAnyProject,
+    requestWorkspaceExit,
+  ]);
 
   const openProjectTabTarget = useCallback(
     async (target: string) => {
@@ -707,19 +793,35 @@ export default function App({
   const selectProjectTab = useCallback(
     (target: string) => {
       if (target === activeProjectTarget) return;
-      requestWorkspaceExit({
+      const request: WorkspaceExitRequest = {
         actionLabel: "別のプロジェクトへ切り替える",
         proceed: async () => {
           try {
-            await openProjectTabTarget(target);
+            const checkpoint = workspaceSessionCheckpointsRef.current.get(target);
+            if (checkpoint) {
+              handleOpenedAnyProject(checkpoint, "workspace_file_menu", { restoreDirty: true });
+            } else {
+              await openProjectTabTarget(target);
+            }
           } catch (error) {
             recordDiagnosticError("PROJECT_OPEN_FAILED", error);
             setSystemOpenError(actionErrorMessage(error, "プロジェクトタブを開けませんでした。"));
           }
         },
-      });
+      };
+      if (!workspaceDirtyRef.current || checkpointActiveWorkspace()) {
+        void request.proceed();
+        return;
+      }
+      requestWorkspaceExit(request);
     },
-    [activeProjectTarget, openProjectTabTarget, requestWorkspaceExit],
+    [
+      activeProjectTarget,
+      checkpointActiveWorkspace,
+      handleOpenedAnyProject,
+      openProjectTabTarget,
+      requestWorkspaceExit,
+    ],
   );
 
   const closeProjectTab = useCallback(
@@ -727,6 +829,13 @@ export default function App({
       const closingIndex = projectTabs.findIndex((tab) => tab.target === target);
       if (closingIndex < 0) return;
       if (target !== activeProjectTarget) {
+        if (projectTabs[closingIndex]?.dirty) {
+          setPendingTabCloseTarget(target);
+          selectProjectTab(target);
+          return;
+        }
+        workspaceSessionCheckpointsRef.current.delete(target);
+        specializedDraftCheckpointsRef.current.delete(target);
         setProjectTabs((current) => current.filter((tab) => tab.target !== target));
         return;
       }
@@ -737,7 +846,16 @@ export default function App({
         proceed: async () => {
           if (next) {
             try {
-              await openProjectTabTarget(next.target);
+              const checkpoint = workspaceSessionCheckpointsRef.current.get(next.target);
+              if (checkpoint) {
+                handleOpenedAnyProject(checkpoint, "workspace_file_menu", {
+                  restoreDirty: true,
+                });
+              } else {
+                await openProjectTabTarget(next.target);
+              }
+              workspaceSessionCheckpointsRef.current.delete(target);
+              specializedDraftCheckpointsRef.current.delete(target);
               setProjectTabs(remaining);
             } catch (error) {
               recordDiagnosticError("PROJECT_OPEN_FAILED", error);
@@ -750,6 +868,8 @@ export default function App({
             }
             return;
           }
+          workspaceSessionCheckpointsRef.current.delete(target);
+          specializedDraftCheckpointsRef.current.delete(target);
           setProjectTabs(remaining);
           workspaceDirtyRef.current = false;
           setWorkspaceDirty(false);
@@ -761,8 +881,28 @@ export default function App({
         },
       });
     },
-    [activeProjectTarget, navigate, openProjectTabTarget, projectTabs, requestWorkspaceExit],
+    [
+      activeProjectTarget,
+      handleOpenedAnyProject,
+      navigate,
+      openProjectTabTarget,
+      projectTabs,
+      requestWorkspaceExit,
+      selectProjectTab,
+    ],
   );
+  useEffect(() => {
+    if (
+      !pendingTabCloseTarget ||
+      pendingTabCloseTarget !== activeProjectTarget ||
+      !workspaceSaveAvailable
+    ) {
+      return;
+    }
+    const target = pendingTabCloseTarget;
+    setPendingTabCloseTarget(null);
+    closeProjectTab(target);
+  }, [activeProjectTarget, closeProjectTab, pendingTabCloseTarget, workspaceSaveAvailable]);
   useEffect(() => {
     if (browserPreview || !isTauri()) return;
     let disposed = false;
@@ -817,12 +957,12 @@ export default function App({
     if (browserPreview || !isTauri() || !openProjectTarget) return;
     let disposed = false;
     let stopListening: (() => void) | undefined;
-    const handledTargets = new Set<string>();
+    const inFlightTargets = new Set<string>();
     const handleTargets = async (targets: readonly string[]) => {
-      const target = [...targets].reverse().find((candidate) => !handledTargets.has(candidate));
+      const target = [...targets].reverse().find((candidate) => !inFlightTargets.has(candidate));
       if (!target) return;
       const openTarget = async () => {
-        handledTargets.add(target);
+        inFlightTargets.add(target);
         try {
           const opened = await openProjectTarget(target).then((project) =>
             "kind" in project ? project : { kind: "experiment" as const, project },
@@ -835,8 +975,14 @@ export default function App({
           setSystemOpenError(
             actionErrorMessage(error, "指定されたプロジェクトを開けませんでした。"),
           );
+        } finally {
+          inFlightTargets.delete(target);
         }
       };
+      if (!workspaceDirtyRef.current || checkpointActiveWorkspace()) {
+        await openTarget();
+        return;
+      }
       requestWorkspaceExit({ actionLabel: "指定されたプロジェクトを開く", proceed: openTarget });
     };
     void (async () => {
@@ -854,6 +1000,7 @@ export default function App({
     activeProjectActions.openAnyProjectTarget,
     activeProjectActions.openProjectTarget,
     browserPreview,
+    checkpointActiveWorkspace,
     handleOpenedAnyProject,
     requestWorkspaceExit,
   ]);
@@ -1116,6 +1263,7 @@ export default function App({
             onOpenProject={browserPreview ? undefined : openProjectFromWorkspace}
             onRequestExit={requestWorkspaceExit}
             onRegisterSaveHandler={browserPreview ? undefined : registerWorkspaceSaveHandler}
+            restoredSpecializedDrafts={specializedDrafts.current}
           />
         );
       case "home":

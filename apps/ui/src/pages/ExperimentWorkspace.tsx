@@ -86,10 +86,7 @@ import {
 } from "../app/adaptiveStructureRevision";
 import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import { routeFromPath } from "../app/routes";
-import {
-  recordUsageGraphConfiguration,
-  recordUsageMilestone,
-} from "../app/usageTelemetry";
+import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 import { recordDiagnosticError, recordDiagnosticEvent } from "../app/diagnostics";
 
 const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
@@ -3425,6 +3422,7 @@ export function ExperimentWorkspace({
   };
 
   const addExperiment = () => {
+    const keepOverviewVisible = activeTab === "overview";
     const nextIndex = nextExperimentSessionIndex(draft.experiments);
     const created = createExperimentSession(nextIndex);
     const nextExperiment =
@@ -3448,7 +3446,7 @@ export function ExperimentWorkspace({
       ...previous,
       ...createCellsForDraft({ ...draft, experiments: [nextExperiment] }),
     }));
-    setActiveTab(`experiment:${nextExperiment.id}`);
+    if (!keepOverviewVisible) setActiveTab(`experiment:${nextExperiment.id}`);
   };
 
   const removeExperiment = (experimentId: string) => {
@@ -3982,9 +3980,27 @@ export function ExperimentWorkspace({
   );
   useEffect(() => {
     if (!onRegisterSaveHandler) return;
-    onRegisterSaveHandler((saveAs) => handleSave(Boolean(saveAs)));
+    onRegisterSaveHandler({
+      save: (saveAs) => handleSave(Boolean(saveAs)),
+      checkpoint: () =>
+        savedProject
+          ? {
+              kind: "experiment",
+              project: {
+                target: savedProject.target,
+                state: createExperimentWorkspaceProject({
+                  draft,
+                  cells,
+                  graphs,
+                  dataViewMode,
+                  existingState: savedProject.state,
+                }),
+              },
+            }
+          : null,
+    });
     return () => onRegisterSaveHandler(null);
-  }, [handleSave, onRegisterSaveHandler]);
+  }, [cells, dataViewMode, draft, graphs, handleSave, onRegisterSaveHandler, savedProject]);
 
   if (structureRevisionSession) {
     return (

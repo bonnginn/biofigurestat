@@ -10,6 +10,7 @@ import { recordUsageError, usageTelemetryUploadConfigured } from "./usageTelemet
 import type { PrivacyReducedDiagnostic } from "./problemReports";
 
 const MAX_EVENTS = 50;
+let nativeArchitecture: string | null = null;
 
 const DIAGNOSTIC_GRAPH_TYPES = [
   "dot",
@@ -339,8 +340,21 @@ function projectSummary(project: ProjectState | null): Record<string, Diagnostic
 }
 
 function browserArchitecture(): string {
+  if (nativeArchitecture) return nativeArchitecture;
   const match = navigator.userAgent.match(/\b(arm64|aarch64|x86_64|x64|win64|wow64)\b/i);
   return match?.[1]?.toLowerCase() ?? "unknown";
+}
+
+export async function initializeNativeDiagnosticEnvironment(): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    const architecture = await invoke<string>("native_architecture");
+    if (/^(aarch64|arm64|x86_64|x86|i686)$/u.test(architecture)) {
+      nativeArchitecture = architecture;
+    }
+  } catch {
+    // Diagnostics remain available with a conservative browser-derived fallback.
+  }
 }
 
 export type DiagnosticReport = Readonly<{
@@ -493,6 +507,7 @@ export async function saveDiagnosticReport(report: DiagnosticReport): Promise<bo
 }
 
 export function resetDiagnosticsForTest(): void {
+  nativeArchitecture = null;
   runtime.events = [];
   runtime.lastErrorCode = null;
   runtime.technicalErrors = [];

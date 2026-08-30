@@ -64,4 +64,23 @@ describe("ExternalLlmConsultation", () => {
     expect(copied).not.toContain("相談内容");
     expect(screen.getByRole("status")).toHaveTextContent("実装要望をコピーしました");
   });
+
+  it("hands a reviewed request to the report form without sending it", () => {
+    const prefill = vi.fn();
+    window.addEventListener("biofigurestat:problem-report-prefill", prefill, { once: true });
+    render(<ExternalLlmConsultation prompt="相談内容" placement="statistics" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "外部LLMに相談する" }));
+    fireEvent.click(screen.getByText("相談結果から改善要望を作る"));
+    fireEvent.change(screen.getByLabelText("実装してほしい内容"), {
+      target: { value: "比較目的を先に確認してほしい" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "改善要望として報告" }));
+
+    expect(prefill).toHaveBeenCalledOnce();
+    expect((prefill.mock.calls[0]?.[0] as CustomEvent).detail.observed).toContain(
+      "比較目的を先に確認してほしい",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("確認するまで送信されません");
+  });
 });

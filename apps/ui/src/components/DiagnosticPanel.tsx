@@ -14,8 +14,10 @@ import { researcherError } from "../app/errorCatalog";
 import {
   configuredProblemReportEndpoint,
   createProblemReportSubmission,
+  PROBLEM_REPORT_PREFILL_EVENT,
   submitProblemReport,
   type ProblemReportDraft,
+  type ProblemReportPrefill,
   type ProblemReportSubmission,
 } from "../app/problemReports";
 
@@ -67,6 +69,25 @@ export function DiagnosticPanel({
   const [status, setStatus] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const applyPrefill = (event: Event) => {
+      const detail = (event as CustomEvent<ProblemReportPrefill>).detail;
+      if (!detail?.attempted.trim() || !detail.observed.trim()) return;
+      setDraft({
+        ...initialDraft(route),
+        type: detail.type ?? "feature_request",
+        attempted: detail.attempted.trim(),
+        observed: detail.observed.trim(),
+      });
+      setSubmission(null);
+      setReportId(null);
+      setStatus(null);
+      setOpen(true);
+    };
+    window.addEventListener(PROBLEM_REPORT_PREFILL_EVENT, applyPrefill);
+    return () => window.removeEventListener(PROBLEM_REPORT_PREFILL_EVENT, applyPrefill);
+  }, [route]);
 
   useEffect(() => {
     if (!open) return;

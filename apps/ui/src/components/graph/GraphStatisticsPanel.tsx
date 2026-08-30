@@ -489,7 +489,15 @@ export function GraphStatisticsPanel({
         })
       : [];
   const diagnosticItems =
-    result?.status === "ok" ? [...result.diagnostics, ...result.warnings] : [];
+    result?.status === "ok"
+      ? [
+          ...result.diagnostics.map((item) => ({ ...item, severity: "diagnostic" as const })),
+          ...result.warnings.map((item) => ({ ...item, severity: "warning" as const })),
+        ]
+      : [];
+  const hasImportantDiagnostic = diagnosticItems.some(
+    (item) => item.severity === "warning" || /small|few|n_lt|n_less|underpowered/iu.test(item.code),
+  );
   const humanMethodLabel = (method: string | null | undefined) =>
     assessment.methodChoices?.find((choice) => choice.method === method)?.label ??
     (method === "pearson"
@@ -1006,10 +1014,17 @@ export function GraphStatisticsPanel({
             </details>
           ) : null}
           {diagnosticItems.length > 0 ? (
-            <details className="experiment-graph-analysis-diagnostics">
-              <summary>診断と注意（{diagnosticItems.length}件）</summary>
+            <details
+              className={`experiment-graph-analysis-diagnostics${
+                hasImportantDiagnostic ? " is-important" : ""
+              }`}
+              open
+            >
+              <summary>
+                {hasImportantDiagnostic ? "重要な注意" : "診断と注意"}（{diagnosticItems.length}件）
+              </summary>
               {diagnosticItems.map((item) => (
-                <p key={`${item.code}-${item.message}`}>
+                <p data-severity={item.severity} key={`${item.code}-${item.message}`}>
                   {diagnosticLabel(item.code, matchedRelationship)}
                 </p>
               ))}

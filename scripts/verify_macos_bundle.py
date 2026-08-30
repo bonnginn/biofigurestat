@@ -35,6 +35,11 @@ def main() -> int:
     require_file(APP / "Contents/MacOS" / executable_name, "application executable", True)
     sidecar = APP / "Contents/Resources/engine/lsaa-engine"
     require_file(sidecar, "packaged statistical sidecar", True)
+    icon_name = plist.get("CFBundleIconFile")
+    if not isinstance(icon_name, str) or not icon_name:
+        raise RuntimeError("CFBundleIconFile is missing from Info.plist")
+    icon_file = icon_name if icon_name.endswith(".icns") else f"{icon_name}.icns"
+    require_file(APP / "Contents/Resources" / icon_file, "application icon")
 
     document_types = plist.get("CFBundleDocumentTypes", [])
     extensions = {
@@ -109,7 +114,7 @@ def main() -> int:
     print(f"macOS bundle verified: {APP}")
     print(
         f"executable={executable_name}; fileAssociation=.lsa; "
-        "sidecar=engine/lsaa-engine; D17=ok"
+        f"sidecar=engine/lsaa-engine; icon={icon_file}; D17=ok"
     )
     return 0
 

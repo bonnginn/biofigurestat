@@ -2,7 +2,7 @@ import { PRODUCT_IDENTITY } from "./productIdentity";
 
 export const EXTERNAL_LLM_GUIDE_VERSION = "0.1.0" as const;
 export const EXTERNAL_LLM_GUIDE_URL =
-  "https://raw.githubusercontent.com/bonnginn/life-science-analysis-app/main/docs/help/EXTERNAL_LLM_ASSIST_GUIDE_v0.1.md";
+  "https://raw.githubusercontent.com/bonnginn/life-science-analysis-app/ca0b1bf0951d5ef2b909b4fef072fc99ea8d0484/docs/help/EXTERNAL_LLM_ASSIST_GUIDE_v0.1.md";
 
 export type ExternalLlmImprovementRequest = Readonly<{
   placement: "experiment_setup" | "statistics";
@@ -10,11 +10,11 @@ export type ExternalLlmImprovementRequest = Readonly<{
   externalLlmResponse?: string;
 }>;
 
-export function createExternalLlmImprovementRequest(
-  input: ExternalLlmImprovementRequest,
-): string {
+export function createExternalLlmImprovementRequest(input: ExternalLlmImprovementRequest): string {
   const placement =
-    input.placement === "statistics" ? "Statistics（統計の選択・解釈）" : "Experiment setup（実験入力）";
+    input.placement === "statistics"
+      ? "Statistics（統計の選択・解釈）"
+      : "Experiment setup（実験入力）";
   return [
     "BioFigureStatの改善要望です。",
     `対象アプリ: ${PRODUCT_IDENTITY.displayNameJa} ${PRODUCT_IDENTITY.version}（build ${PRODUCT_IDENTITY.buildRevision}）`,
@@ -47,9 +47,7 @@ export type ExperimentConsultationContext = Readonly<{
   orderedAxis?: string;
 }>;
 
-export function createExperimentConsultationPrompt(
-  context: ExperimentConsultationContext,
-): string {
+export function createExperimentConsultationPrompt(context: ExperimentConsultationContext): string {
   const factorText = context.conditionFactors.length
     ? context.conditionFactors
         .map(
@@ -98,9 +96,7 @@ export type StatisticsConsultationContext = Readonly<{
   selectedMethod?: string | null;
 }>;
 
-export function createStatisticsConsultationPrompt(
-  context: StatisticsConsultationContext,
-): string {
+export function createStatisticsConsultationPrompt(context: StatisticsConsultationContext): string {
   const nText = Object.entries(context.nByCondition)
     .map(([condition, n]) => `${condition}: n=${n}`)
     .join(" / ");

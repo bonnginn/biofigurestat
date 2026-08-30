@@ -65,7 +65,7 @@ describe("workspace home", () => {
     vi.unstubAllEnvs();
   });
 
-  it("新しいrouteとfresh-startを常に画面先頭から開く", async () => {
+  it("新しいrouteとfresh-startを確認dialogなしで画面先頭から開く", async () => {
     render(<App />);
     const scrollTo = vi.mocked(window.scrollTo);
     scrollTo.mockClear();
@@ -77,7 +77,8 @@ describe("workspace home", () => {
     await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
     scrollTo.mockClear();
     fireEvent.click(screen.getByRole("button", { name: /新しい実験/ }));
-    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
+    await screen.findByRole("heading", { name: "何をした実験ですか？" });
+    expect(screen.queryByRole("button", { name: "変更を破棄して続ける" })).toBeNull();
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
   });
 
@@ -843,6 +844,102 @@ describe("workspace home", () => {
       "aria-selected",
       "true",
     );
+  });
+
+  it("reopens the same project immediately after its tab is closed", async () => {
+    const base = createExperimentSetDraft("cell_culture", "proportion");
+    const draft = {
+      ...base,
+      name: "Immediate reopen",
+      conditions: base.conditions.slice(0, 2).map((condition, index) => ({
+        ...condition,
+        label: index === 0 ? "Control" : "Treatment",
+        attributes: { "attribute.1": index === 0 ? "Control" : "Treatment" },
+      })),
+    };
+    const project = {
+      state: createExperimentWorkspaceProject({
+        draft,
+        cells: {},
+        graphs: [],
+        now: "2026-08-30T00:00:00.000Z",
+      }),
+      target: "/tmp/immediate-reopen.lsa",
+    };
+    const picker = vi.fn(async () => ({ kind: "experiment" as const, project }));
+    render(
+      <App
+        projectActions={{
+          openProject: async () => null,
+          openAnyProject: picker,
+          saveProject: async () => null,
+        }}
+      />,
+    );
+
+    fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
+    await screen.findByRole("tab", { name: "Immediate reopen" });
+    fireEvent.click(screen.getByRole("button", { name: "Immediate reopenを閉じる" }));
+    await waitFor(() => expect(screen.queryByRole("tab", { name: "Immediate reopen" })).toBeNull());
+
+    fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
+    await waitFor(() => expect(picker).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole("tab", { name: "Immediate reopen" })).toBeVisible();
+  });
+
+  it("keeps a dirty project checkpoint when Home is opened and restores it without disk reload", async () => {
+    const base = createExperimentSetDraft("cell_culture", "proportion");
+    const draft = {
+      ...base,
+      name: "Dirty checkpoint",
+      conditions: base.conditions.slice(0, 2).map((condition, index) => ({
+        ...condition,
+        label: index === 0 ? "Control" : "Treatment",
+        attributes: { "attribute.1": index === 0 ? "Control" : "Treatment" },
+      })),
+    };
+    const project = {
+      state: createExperimentWorkspaceProject({
+        draft,
+        cells: {},
+        graphs: [],
+        now: "2026-08-30T00:00:00.000Z",
+      }),
+      target: "/tmp/dirty-checkpoint.lsa",
+    };
+    const picker = vi.fn(async () => ({ kind: "experiment" as const, project }));
+    const openTarget = vi.fn(async () => ({ kind: "experiment" as const, project }));
+    render(
+      <App
+        projectActions={{
+          openProject: async () => null,
+          openAnyProject: picker,
+          openAnyProjectTarget: openTarget,
+          saveProject: async (state, target) => ({ state, target: target ?? project.target }),
+        }}
+      />,
+    );
+
+    fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
+    await screen.findByRole("tab", { name: "Dirty checkpoint" });
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
+    const positive = screen.getByRole("spinbutton", { name: "Controlの陽性数" });
+    fireEvent.change(positive, { target: { value: "5" } });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Controlの対象数" }), {
+      target: { value: "10" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /ホーム/ }));
+    expect(screen.queryByRole("dialog", { name: "この実験を保存しますか？" })).toBeNull();
+    expect(
+      screen.getByRole("tab", { name: /Dirty checkpoint.*未保存の変更あり/ }),
+    ).toHaveTextContent("●");
+
+    fireEvent.click(screen.getByRole("tab", { name: /Dirty checkpoint.*未保存の変更あり/ }));
+    await screen.findByRole("tab", { name: "Exp 1" });
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
+    expect(screen.getByRole("spinbutton", { name: "Controlの陽性数" })).toHaveValue(5);
+    expect(openTarget).not.toHaveBeenCalled();
   });
 
   it("keeps the active tab when opening its replacement fails during close", async () => {

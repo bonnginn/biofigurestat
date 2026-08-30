@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resetDiagnosticsForTest } from "../app/diagnostics";
+import { openProblemReportWithPrefill } from "../app/problemReports";
 import { DiagnosticPanel } from "./DiagnosticPanel";
 
 describe("DiagnosticPanel", () => {
@@ -30,6 +31,25 @@ describe("DiagnosticPanel", () => {
     expect(screen.getByText("保存ボタンを押した")).toBeVisible();
     expect(screen.getByText("添付しない")).toBeVisible();
     expect(screen.getByRole("button", { name: "この内容を送信" })).toBeVisible();
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("opens with an external-LLM improvement request prefilled but unsent", () => {
+    const fetcher = vi.spyOn(globalThis, "fetch");
+    render(<DiagnosticPanel route="home" project={null} />);
+
+    act(() => {
+      openProblemReportWithPrefill({
+        type: "feature_request",
+        attempted: "相談結果から改善したい",
+        observed: "比較目的の説明を追加してほしい",
+      });
+    });
+
+    expect(screen.getByLabelText("不具合報告")).toBeVisible();
+    expect(screen.getByLabelText("何をしようとしたか")).toHaveValue("相談結果から改善したい");
+    expect(screen.getByLabelText("何が起きたか")).toHaveValue("比較目的の説明を追加してほしい");
+    expect(screen.getByLabelText("種類")).toHaveValue("feature_request");
     expect(fetcher).not.toHaveBeenCalled();
   });
 

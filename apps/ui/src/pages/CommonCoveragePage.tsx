@@ -1758,12 +1758,26 @@ export function CommonCoveragePage({
   }, [saveNonlinearProject]);
   useEffect(() => {
     if (!onRegisterSaveHandler || mode !== "nonlinear-fit") return;
-    onRegisterSaveHandler(async (saveAs) => {
-      await saveNonlinearProjectRef.current(Boolean(saveAs));
-      return lastSaveSucceededRef.current;
+    onRegisterSaveHandler({
+      save: async (saveAs) => {
+        await saveNonlinearProjectRef.current(Boolean(saveAs));
+        return lastSaveSucceededRef.current;
+      },
+      checkpoint: () => {
+        if (persistedBaseline) {
+          return { kind: "experiment" as const, project: persistedBaseline };
+        }
+        if (currentSpecializedEntryDraft) {
+          return {
+            kind: "specialized_entry_draft" as const,
+            project: currentSpecializedEntryDraft,
+          };
+        }
+        return null;
+      },
     });
     return () => onRegisterSaveHandler(null);
-  }, [mode, onRegisterSaveHandler]);
+  }, [currentSpecializedEntryDraft, mode, onRegisterSaveHandler, persistedBaseline]);
   const requestBack = () => {
     if (onRequestExit) {
       onRequestExit({ actionLabel: "前の画面に戻る", proceed: onBack });
@@ -2393,6 +2407,15 @@ export function CommonCoveragePage({
           >
             保存
           </button>
+          {persistedBaseline ? (
+            <button
+              type="button"
+              disabled={!saveProject}
+              onClick={() => void saveNonlinearProject(true)}
+            >
+              別名で保存
+            </button>
+          ) : null}
         </nav>
       ) : null}
       {adaptiveOrderedCurveActive ? null : (

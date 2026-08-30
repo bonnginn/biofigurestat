@@ -10,23 +10,34 @@ mod project_open;
 mod project_storage;
 mod spreadsheet_import;
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{
     menu::{Menu, MenuItemBuilder, SubmenuBuilder},
     Emitter, Manager,
 };
 
+#[derive(Default)]
+struct ApprovedApplicationExit(AtomicBool);
+
 #[tauri::command]
-fn exit_application(app: tauri::AppHandle) {
+fn exit_application(app: tauri::AppHandle, approved: tauri::State<'_, ApprovedApplicationExit>) {
     // The UI invokes this only after its shared unsaved-workspace guard has completed.
     // Keeping final process termination in Rust avoids depending on WebView window-destroy ACLs.
+    approved.0.store(true, Ordering::SeqCst);
     app.exit(0);
 }
 
-fn exit_requires_workspace_guard(exit_code: Option<i32>) -> bool {
-    // Tauri reports user-initiated application Quit with no code. The UI calls
-    // `exit_application` only after its save/cancel/discard guard, which produces
-    // a programmatic request with an explicit code and must be allowed through.
-    exit_code.is_none()
+#[tauri::command]
+fn native_architecture() -> &'static str {
+    std::env::consts::ARCH
+}
+
+fn exit_requires_workspace_guard(approved: bool) -> bool {
+    // Both Command+Q and a programmatic app.exit(0) may carry an explicit exit
+    // code on macOS.  The exit code therefore cannot establish that the UI's
+    // Save / Cancel / discard guard ran.  Only the one-shot approval set by the
+    // guarded `exit_application` command may allow process termination.
+    !approved
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -36,6 +47,7 @@ pub fn run() {
         .manage(project_open::PendingProjectOpen::from_command_line())
         .manage(project_storage::ProjectWriteState::default())
         .manage(engine::EngineProcessRegistry::default())
+        .manage(ApprovedApplicationExit::default())
         .setup(|app| {
             let open = MenuItemBuilder::with_id("project-open", "Open…")
                 .accelerator("CmdOrCtrl+O")
@@ -85,6 +97,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             exit_application,
+            native_architecture,
             clipboard::copy_graph_png,
             diagnostic::write_diagnostic_report,
             digest::sha256_bytes,
@@ -105,8 +118,12 @@ pub fn run() {
         .expect("error while building BioFigureStat");
 
     app.run(|app_handle, event| {
-        if let tauri::RunEvent::ExitRequested { code, api, .. } = &event {
-            if exit_requires_workspace_guard(*code) {
+        if let tauri::RunEvent::ExitRequested { api, .. } = &event {
+            let approved = app_handle
+                .state::<ApprovedApplicationExit>()
+                .0
+                .swap(false, Ordering::SeqCst);
+            if exit_requires_workspace_guard(approved) {
                 api.prevent_exit();
                 let _ = app_handle.emit("app-exit-request", ());
             }
@@ -147,13 +164,12 @@ mod tests {
     use super::exit_requires_workspace_guard;
 
     #[test]
-    fn user_quit_requires_the_workspace_guard() {
-        assert!(exit_requires_workspace_guard(None));
+    fn all_unapproved_exit_routes_require_the_workspace_guard() {
+        assert!(exit_requires_workspace_guard(false));
     }
 
     #[test]
-    fn approved_programmatic_exit_is_not_guarded_twice() {
-        assert!(!exit_requires_workspace_guard(Some(0)));
-        assert!(!exit_requires_workspace_guard(Some(1)));
+    fn explicitly_approved_programmatic_exit_is_not_guarded_twice() {
+        assert!(!exit_requires_workspace_guard(true));
     }
 }

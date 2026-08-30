@@ -4,6 +4,19 @@ export const PROBLEM_REPORT_SCHEMA_VERSION = "1.0.0" as const;
 export const PROBLEM_REPORT_NOTICE_VERSION = "public-alpha-2026-08-30" as const;
 
 const REPORTER_ID_KEY = "biofigurestat.problem-report.reporter-id.v1";
+export const PROBLEM_REPORT_PREFILL_EVENT = "biofigurestat:problem-report-prefill" as const;
+
+export type ProblemReportPrefill = Readonly<{
+  attempted: string;
+  observed: string;
+  type?: ProblemReportType;
+}>;
+
+export function openProblemReportWithPrefill(prefill: ProblemReportPrefill): void {
+  window.dispatchEvent(
+    new CustomEvent<ProblemReportPrefill>(PROBLEM_REPORT_PREFILL_EVENT, { detail: prefill }),
+  );
+}
 
 export const PROBLEM_REPORT_TYPES = [
   "bug",

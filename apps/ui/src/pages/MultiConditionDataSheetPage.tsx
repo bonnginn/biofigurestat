@@ -897,105 +897,113 @@ export function MultiConditionDataSheetPage({
     }
   };
 
+  const buildCurrentProjectState = (updatedAt = new Date().toISOString()) => {
+    if (!canonicalData || !validated || !metadataDraftIsComplete(metadataDraft)) return null;
+    const metadata = metadataForPersistence(metadataDraft);
+    const analysis = analysisRun
+      ? {
+          recommendation,
+          request: analysisRun.request,
+          result: analysisRun.result,
+          graphSpec: analysisRun.graphSpec,
+          inputDerivedDatasetRevisionId: canonicalData.derivedRevision?.id ?? null,
+        }
+      : null;
+    let state: ProjectState;
+    if (!lastSavedState) {
+      const now = updatedAt;
+      state = createInitialProjectState({
+        metadata: {
+          ...workspaceRef.current.metadata,
+          projectId: workspaceRef.current.projectId,
+          ...metadata,
+          createdAt: workspaceRef.current.metadata?.createdAt ?? now,
+          updatedAt: now,
+        } as ProjectMetadata,
+        design: canonicalData.projectDesign ?? design,
+        rawRevision: {
+          id: draftRawRevisionId,
+          previousRevisionId: null,
+          sourceKind: hasPastedValues ? "paste" : "manual",
+          sourceName: hasPastedValues
+            ? "ImageJ / clipboard table"
+            : `BioFigureStat ${recommendation.templateId} data sheet`,
+          createdAt: now,
+          createdBy: "local-user",
+          note: `Canonical observations created from a validated ${recommendation.templateId} data sheet.`,
+        },
+        unitInstances: canonicalData.unitInstances,
+        observations: canonicalData.rawObservations ?? canonicalData.observations,
+        transformations: canonicalData.transformation ? [canonicalData.transformation] : [],
+        derivedDatasetRevisions: canonicalData.derivedRevision
+          ? [canonicalData.derivedRevision]
+          : [],
+        derivedValues: canonicalData.derivedValues ?? [],
+        actor: "local-user",
+        ...(analysis ? { analysis } : {}),
+      });
+    } else {
+      state = ProjectStateSchema.parse({
+        ...lastSavedState,
+        metadata: {
+          ...lastSavedState.metadata,
+          ...metadata,
+          updatedAt,
+        },
+      });
+      const activeDesign = state.designRevisions.find(
+        (revision) => revision.id === state.activeDesignRevisionId,
+      )?.design;
+      if (
+        canonicalData.projectDesign &&
+        JSON.stringify(activeDesign) !== JSON.stringify(canonicalData.projectDesign)
+      ) {
+        state = appendDesignRevision(state, canonicalData.projectDesign, "local-user", updatedAt);
+      }
+      if (draftRawRevisionId !== lastSavedState.activeRawRevisionId) {
+        state = appendRawRevision(
+          state,
+          {
+            id: draftRawRevisionId,
+            previousRevisionId: lastSavedState.activeRawRevisionId,
+            sourceKind: "project_edit",
+            createdAt: updatedAt,
+            createdBy: "local-user",
+            note: `Canonical observations created from an edited ${recommendation.templateId} data sheet.`,
+          },
+          canonicalData.unitInstances,
+          canonicalData.rawObservations ?? canonicalData.observations,
+          "local-user",
+          canonicalData.transformation ? [canonicalData.transformation] : [],
+          canonicalData.derivedRevision ? [canonicalData.derivedRevision] : [],
+          canonicalData.derivedValues ?? [],
+        );
+      }
+      if (
+        analysis &&
+        !state.analysisRuns.some((run) => run.request.requestId === analysis.request.requestId)
+      ) {
+        state = appendAnalysisExecution(state, analysis, "local-user");
+      }
+    }
+    return ProjectStateSchema.parse(state);
+  };
+  const buildCurrentProjectStateRef = useRef(buildCurrentProjectState);
+  useEffect(() => {
+    buildCurrentProjectStateRef.current = buildCurrentProjectState;
+  }, [buildCurrentProjectState]);
+
   const saveCurrentProject = async () => {
-    if (!saveProject || !canonicalData || !validated || !metadataDraftIsComplete(metadataDraft))
-      return false;
+    if (!saveProject) return false;
     setSaveStatus("saving");
     setSaveError(null);
     try {
-      const metadata = metadataForPersistence(metadataDraft);
-      const analysis = analysisRun
-        ? {
-            recommendation,
-            request: analysisRun.request,
-            result: analysisRun.result,
-            graphSpec: analysisRun.graphSpec,
-            inputDerivedDatasetRevisionId: canonicalData.derivedRevision?.id ?? null,
-          }
-        : null;
-      let state: ProjectState;
-      if (!lastSavedState) {
-        const now = new Date().toISOString();
-        state = createInitialProjectState({
-          metadata: {
-            ...workspaceRef.current.metadata,
-            projectId: workspaceRef.current.projectId,
-            ...metadata,
-            createdAt: workspaceRef.current.metadata?.createdAt ?? now,
-            updatedAt: now,
-          } as ProjectMetadata,
-          design: canonicalData.projectDesign ?? design,
-          rawRevision: {
-            id: draftRawRevisionId,
-            previousRevisionId: null,
-            sourceKind: hasPastedValues ? "paste" : "manual",
-            sourceName: hasPastedValues
-              ? "ImageJ / clipboard table"
-              : `BioFigureStat ${recommendation.templateId} data sheet`,
-            createdAt: now,
-            createdBy: "local-user",
-            note: `Canonical observations created from a validated ${recommendation.templateId} data sheet.`,
-          },
-          unitInstances: canonicalData.unitInstances,
-          observations: canonicalData.rawObservations ?? canonicalData.observations,
-          transformations: canonicalData.transformation ? [canonicalData.transformation] : [],
-          derivedDatasetRevisions: canonicalData.derivedRevision
-            ? [canonicalData.derivedRevision]
-            : [],
-          derivedValues: canonicalData.derivedValues ?? [],
-          actor: "local-user",
-          ...(analysis ? { analysis } : {}),
-        });
-      } else {
-        state = ProjectStateSchema.parse({
-          ...lastSavedState,
-          metadata: {
-            ...lastSavedState.metadata,
-            ...metadata,
-            updatedAt: new Date().toISOString(),
-          },
-        });
-        const activeDesign = state.designRevisions.find(
-          (revision) => revision.id === state.activeDesignRevisionId,
-        )?.design;
-        if (
-          canonicalData.projectDesign &&
-          JSON.stringify(activeDesign) !== JSON.stringify(canonicalData.projectDesign)
-        ) {
-          state = appendDesignRevision(
-            state,
-            canonicalData.projectDesign,
-            "local-user",
-            new Date().toISOString(),
-          );
-        }
-        if (draftRawRevisionId !== lastSavedState.activeRawRevisionId) {
-          state = appendRawRevision(
-            state,
-            {
-              id: draftRawRevisionId,
-              previousRevisionId: lastSavedState.activeRawRevisionId,
-              sourceKind: "project_edit",
-              createdAt: new Date().toISOString(),
-              createdBy: "local-user",
-              note: `Canonical observations created from an edited ${recommendation.templateId} data sheet.`,
-            },
-            canonicalData.unitInstances,
-            canonicalData.rawObservations ?? canonicalData.observations,
-            "local-user",
-            canonicalData.transformation ? [canonicalData.transformation] : [],
-            canonicalData.derivedRevision ? [canonicalData.derivedRevision] : [],
-            canonicalData.derivedValues ?? [],
-          );
-        }
-        if (
-          analysis &&
-          !state.analysisRuns.some((run) => run.request.requestId === analysis.request.requestId)
-        ) {
-          state = appendAnalysisExecution(state, analysis, "local-user");
-        }
+      const state = buildCurrentProjectState();
+      if (!state) {
+        setSaveStatus("idle");
+        return false;
       }
-      const saved = await saveProject(ProjectStateSchema.parse(state), saveTarget);
+      const saved = await saveProject(state, saveTarget);
       if (!saved) {
         setSaveStatus("idle");
         return false;
@@ -1021,9 +1029,18 @@ export function MultiConditionDataSheetPage({
   }, [saveCurrentProject]);
   useEffect(() => {
     if (!onRegisterSaveHandler) return;
-    onRegisterSaveHandler(() => saveCurrentProjectRef.current());
+    onRegisterSaveHandler({
+      save: () => saveCurrentProjectRef.current(),
+      checkpoint: () => {
+        if (!saveTarget) return null;
+        const state = buildCurrentProjectStateRef.current();
+        return state
+          ? { kind: "experiment" as const, project: { state, target: saveTarget } }
+          : null;
+      },
+    });
     return () => onRegisterSaveHandler(null);
-  }, [onRegisterSaveHandler]);
+  }, [onRegisterSaveHandler, saveTarget]);
 
   const requestBack = () => {
     if (onRequestExit) {

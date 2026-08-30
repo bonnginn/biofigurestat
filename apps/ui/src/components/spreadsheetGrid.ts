@@ -10,7 +10,7 @@ export function parseClipboardMatrix(text: string): ClipboardMatrix {
   return withoutTerminalLine.split("\n").map((row) => row.split("\t"));
 }
 
-type SpreadsheetControl = HTMLInputElement | HTMLTextAreaElement;
+type SpreadsheetControl = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
 function controlsFor(control: SpreadsheetControl): SpreadsheetControl[] {
   return [
@@ -61,7 +61,11 @@ function restoreFocusAfterCommit(
   if (!table) return;
   queueMicrotask(() => {
     const active = document.activeElement;
-    if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+    if (
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement ||
+      active instanceof HTMLSelectElement
+    ) {
       const activeCoordinate = coordinate(active);
       if (
         activeCoordinate?.row === targetCoordinate.row &&
@@ -93,6 +97,7 @@ export function moveSpreadsheetFocus(event: KeyboardEvent<SpreadsheetControl>): 
   if (event.key === "Tab") {
     target = controls[currentIndex + (event.shiftKey ? -1 : 1)];
   } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+    if (current instanceof HTMLSelectElement) return false;
     const selectionStart = current.selectionStart;
     const selectionEnd = current.selectionEnd;
     const supportsCaretNavigation = selectionStart !== null && selectionEnd !== null;
@@ -149,9 +154,9 @@ export function moveSpreadsheetFocus(event: KeyboardEvent<SpreadsheetControl>): 
             (candidate) => coordinate(candidate)!.column === currentCoordinate.column,
           ) ??
           rowControls.sort(
-          (left, right) =>
-            Math.abs(coordinate(left)!.column - currentCoordinate.column) -
-            Math.abs(coordinate(right)!.column - currentCoordinate.column),
+            (left, right) =>
+              Math.abs(coordinate(left)!.column - currentCoordinate.column) -
+              Math.abs(coordinate(right)!.column - currentCoordinate.column),
           )[0]);
       if (target) break;
     }

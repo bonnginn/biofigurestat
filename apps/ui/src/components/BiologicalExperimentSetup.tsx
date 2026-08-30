@@ -101,7 +101,7 @@ export type BiologicalExperimentSetupProps = Readonly<{
 // Condition levels are normally entered left-to-right. Additional rows are
 // created only when the researcher asks for a real parent/subgroup dimension.
 const VISIBLE_ROWS = 1;
-const VISIBLE_VALUE_COLUMNS = 2;
+const VISIBLE_VALUE_COLUMNS = 4;
 
 type PendingDeletionFocus = Readonly<{
   collection: "blocks" | "readouts";
@@ -679,6 +679,7 @@ export function BiologicalExperimentSetup({
   );
   const [relationshipAnswered, setRelationshipAnswered] = useState(Boolean(initial?.relationship));
   const [sourceLabel, setSourceLabel] = useState(initial?.sourceLabel ?? "");
+  const [simpleFactsConfirmed, setSimpleFactsConfirmed] = useState(false);
   const [sharedSourcePairedBlockId, setSharedSourcePairedBlockId] = useState(
     initial?.sharedSourcePairedBlockId ?? "",
   );
@@ -727,6 +728,7 @@ export function BiologicalExperimentSetup({
       relationship,
       relationshipAnswered,
       sourceLabel,
+      simpleFactsConfirmed,
       sharedSourcePairedBlockId,
       childObservationEnabled,
       childLabel,
@@ -928,6 +930,41 @@ export function BiologicalExperimentSetup({
         accepted === false ? null : "条件と材料のつながりを確認できました。入力表を作成します。",
       );
     }
+  };
+  const submitSimpleIndependentExperiment = () => {
+    if (!receiverLabel.trim()) {
+      setMessage("条件を個別に割り当てた対象・試料の名前を入力してください。");
+      return;
+    }
+    if (!simpleFactsConfirmed) {
+      setMessage("3つの実験事実を確認してから入力表を作ってください。");
+      return;
+    }
+    const built = safelyBuildBiologicalSetup({
+      title,
+      experimentDescription: initial?.experimentDescription,
+      measurementLabel,
+      valueForm,
+      additionalReadouts: [],
+      measurementUsesNestedObservation: false,
+      measurementUsesOrderedAxis: false,
+      blocks,
+      combinations,
+      statuses,
+      receiverLabel,
+      receiverIdLabel: initial?.receiverIdLabel ?? "",
+      relationship: "separate",
+      sourceLabel: "",
+      sourceIdLabel: initial?.sourceIdLabel ?? "",
+      sharedSourcePairedBlockId: null,
+      childLabel: "",
+    });
+    if (built.status === "stopped") {
+      setMessage(built.reason);
+      return;
+    }
+    const accepted = onReady(built.result);
+    setMessage(accepted === false ? null : "単純な独立条件の入力表を作成します。");
   };
   const experimentSummary = buildBiologicalExperimentSummary({
     blocks,
@@ -1424,6 +1461,50 @@ export function BiologicalExperimentSetup({
                 </section>
               ) : null}
 
+              {!initial &&
+              showMaterialSection &&
+              valueForm === "single" &&
+              additionalReadouts.length === 0 ? (
+                <section
+                  className="biological-setup__simple-path"
+                  aria-labelledby="simple-path-heading"
+                >
+                  <div>
+                    <p className="biological-setup__eyebrow">短い経路</p>
+                    <h2 id="simple-path-heading">単純な独立条件なら、ここから入力表へ進めます</h2>
+                    <p>
+                      統計手法ではなく、次の実験事実を確認します。該当しない場合は下の通常質問へ進んでください。
+                    </p>
+                  </div>
+                  <label className="biological-setup__field">
+                    <span>各条件を個別に割り当てた対象・試料</span>
+                    <input
+                      aria-label="短い経路の対象・試料"
+                      placeholder="例：culture dish、mouse"
+                      value={receiverLabel}
+                      onChange={(event) => setReceiverLabel(event.currentTarget.value)}
+                    />
+                  </label>
+                  <label className="biological-setup__simple-confirmation">
+                    <input
+                      type="checkbox"
+                      checked={simpleFactsConfirmed}
+                      onChange={(event) => setSimpleFactsConfirmed(event.currentTarget.checked)}
+                    />
+                    <span>
+                      条件ごとに別々の対象を使い、1つの対象から複数Cell・視野などを数えておらず、同じ対象の経時・反復測定もしていない
+                    </span>
+                  </label>
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={submitSimpleIndependentExperiment}
+                  >
+                    この実験事実で入力表を作る
+                  </button>
+                </section>
+              ) : null}
+
               {showMaterialSection ? (
                 <section
                   className="biological-setup__section"
@@ -1514,7 +1595,8 @@ export function BiologicalExperimentSetup({
               <details className="biological-setup__inline-help">
                 <summary aria-label="対象・試料の入力について詳しく見る">?</summary>
                 <p>
-                  例はmouse、culture dish、well、donor由来試料などです。測定値そのものを得たCellや視野ではなく、処置や群分けを個別に割り当てたものを入力します。同じ対象を複数条件で測った場合も、その対象を入力します。
+                  例はmouse、culture
+                  dish、well、donor由来試料などです。測定値そのものを得たCellや視野ではなく、処置や群分けを個別に割り当てたものを入力します。同じ対象を複数条件で測った場合も、その対象を入力します。
                 </p>
               </details>
               <fieldset>

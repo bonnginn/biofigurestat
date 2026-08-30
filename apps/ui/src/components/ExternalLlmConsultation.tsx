@@ -4,6 +4,7 @@ import {
   createExternalLlmImprovementRequest,
   EXTERNAL_LLM_GUIDE_URL,
 } from "../app/externalLlmConsultation";
+import { openProblemReportWithPrefill } from "../app/problemReports";
 import "./ExternalLlmConsultation.css";
 
 export function ExternalLlmConsultation({
@@ -43,6 +44,22 @@ export function ExternalLlmConsultation({
         "自動コピーできませんでした。入力内容を選択して手動でコピーしてください。",
       );
     }
+  };
+
+  const reportImprovementRequest = () => {
+    const request = createExternalLlmImprovementRequest({
+      placement,
+      requestedChange,
+      externalLlmResponse,
+    });
+    openProblemReportWithPrefill({
+      type: "feature_request",
+      attempted: "外部LLMへの相談結果をもとに、BioFigureStatの改善を依頼したい",
+      observed: request,
+    });
+    setRequestCopyStatus(
+      "問題報告フォームへ引き継ぎました。送信内容とprivacyを確認するまで送信されません。",
+    );
   };
 
   const copy = async () => {
@@ -133,6 +150,14 @@ export function ExternalLlmConsultation({
               onClick={() => void copyImprovementRequest()}
             >
               実装要望をコピー
+            </button>
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={!requestedChange.trim() && !externalLlmResponse.trim()}
+              onClick={reportImprovementRequest}
+            >
+              改善要望として報告
             </button>
             {requestCopyStatus ? <p role="status">{requestCopyStatus}</p> : null}
           </details>

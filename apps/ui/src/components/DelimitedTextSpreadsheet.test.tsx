@@ -28,6 +28,29 @@ describe("DelimitedTextSpreadsheet", () => {
     );
   });
 
+  it("uses a constrained Event/Censored status cell while retaining spreadsheet navigation", () => {
+    const onChange = vi.fn();
+    render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Survival sheet"
+        value={"Unit ID\tGroup\tTime\tStatus\nm1\tControl\t4\tEvent"}
+        onChange={onChange}
+        columnOptions={{ 3: ["Event", "Censored"] }}
+      />,
+    );
+
+    const status = screen.getByLabelText("Survival sheet 行2 列4");
+    expect(status).toHaveRole("combobox");
+    fireEvent.change(status, { target: { value: "Censored" } });
+    expect(onChange).toHaveBeenCalledWith(
+      "Unit ID\tGroup\tTime\tStatus\nm1\tControl\t4\tCensored",
+      "cell_edit",
+    );
+    status.focus();
+    fireEvent.keyDown(status, { key: "Tab", shiftKey: true });
+    expect(screen.getByLabelText("Survival sheet 行2 列3")).toHaveFocus();
+  });
+
   it("pastes a rectangular Excel range including empty cells", () => {
     const onChange = vi.fn();
     render(

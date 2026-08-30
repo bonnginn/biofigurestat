@@ -113,7 +113,8 @@
   z-index: 4;
 }
 
-.delimited-spreadsheet input {
+.delimited-spreadsheet input,
+.delimited-spreadsheet td select {
   box-sizing: border-box;
   width: clamp(8.5rem, 16vw, 14rem);
   min-height: 2.35rem;
@@ -125,17 +126,13 @@
   font: inherit;
 }
 
-.delimited-spreadsheet input:focus {
+.delimited-spreadsheet input:focus,
+.delimited-spreadsheet td select:focus {
   position: relative;
   z-index: 3;
   outline: 2px solid var(--accent, #147d6c);
   outline-offset: -2px;
   background: #fff;
-}
-
-.delimited-spreadsheet td:focus-within,
-.delimited-spreadsheet th:focus-within {
-  box-shadow: inset 0 0 0 2px var(--accent, #147d6c);
 }
 
 .delimited-spreadsheet p {
