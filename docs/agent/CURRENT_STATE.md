@@ -47,10 +47,10 @@ is reduced to the four composite tasks recorded there. Current automated evidenc
 tests across 121 files, the semantic-package and experiment-first suites, 63 Python-engine tests,
 24 passing Rust native tests (plus one development-environment round trip ignored in the ordinary
 run), and a real Rust→Python engine round trip. The current Windows x64 NSIS candidate includes the
-BioFigureStat identity, project tabs, native Excel import, and telemetry collector client. It was
-built on 2026-08-30 from implementation commit `4a68448` with SHA-256
-`B80DE5B6060CE91B7CBBD057132DFCA87B3CDB11DC7B234AD50C7CC7127728A7`; Windows bundle verification
-and the packaged Python-sidecar smoke passed. Node 26 test environments install an explicit in-memory Storage for
+BioFigureStat identity, project tabs, native Excel import, and the deployed telemetry collector
+client. It was built on 2026-08-30 from implementation commit `4dabbe5` with SHA-256
+`67FFEBF3489804BA68C77ADAF90E26C8EB7FC69A72856103EA9666F7D74D685C`; Windows bundle verification,
+the packaged Python-sidecar smoke, and the telemetry release preflight passed. Node 26 test environments install an explicit in-memory Storage for
 each isolated jsdom window rather than reading Node's unavailable or process-level localStorage.
 The macOS native candidate must also be rebuilt from the current branch before the next native
 human gate.
@@ -61,7 +61,7 @@ The highest-value remaining evidence is:
 - clean-machine native Statistics, PNG clipboard/export, and save/reopen identity/lineage validation;
 - macOS and Windows packaging/smoke/signing/migration checks;
 - real assistive-technology and localization validation;
-- provider/notice decisions for opt-in remote telemetry and the feedback form;
+- packaged-native telemetry lifecycle validation and the feedback-form provider/notice decision;
 - lifecycle validation for the remaining bounded semantic gaps.
 
 External-LLM assistance remains a manual, user-controlled boundary. The application can create a

@@ -8,7 +8,7 @@ overwrite that historical evidence.
 
 - Branch: `codex/native-hardening-2026-08-28`
 - Base HEAD before the latest UX follow-up: `26e8df8c92324ff3d5b217264d3ff40f2a61d3d8`
-- Minimum candidate commit: `4a68448` (includes the existing native/UX hardening plus the BioFigureStat identity, disk-backed project tabs, native Excel workbook import, and consent-versioned telemetry client)
+- Minimum candidate commit: `4dabbe5` (includes the existing native/UX hardening plus the BioFigureStat identity, disk-backed project tabs, native Excel workbook import, and the deployed consent-versioned telemetry client/contact UI)
 - Pool D: not accessed
 - Product route: experiment-first task hub; do not enable the historical feature flag
 - Expected artifact: `apps/desktop/src-tauri/target/release/bundle/macos/BioFigureStat.app`
@@ -26,7 +26,7 @@ analysis or omit a failing verifier.
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 4a68448 HEAD
+git merge-base --is-ancestor 4dabbe5 HEAD
 git status --short
 
 node --version
@@ -36,7 +36,12 @@ npx --yes pnpm@11.19.0 test
 npx --yes pnpm@11.19.0 typecheck
 npx --yes pnpm@11.19.0 lint
 npx --yes pnpm@11.19.0 engine:build:mac
-VITE_LSAA_BUILD_REVISION="$(git rev-parse --short HEAD)-alpha.20260829.mac1" npx --yes pnpm@11.19.0 tauri:build
+export VITE_USAGE_TELEMETRY_ENDPOINT="https://biofigurestat-telemetry.biofigurestat.workers.dev/v1/usage"
+export VITE_USAGE_TELEMETRY_INGEST_KEY="<release-owner-provided public ingestion key>"
+export BIOFIGURESTAT_PRIVACY_CONTACT="<approved privacy/deletion contact>"
+export VITE_USAGE_TELEMETRY_PRIVACY_CONTACT="$BIOFIGURESTAT_PRIVACY_CONTACT"
+npx --yes pnpm@11.19.0 telemetry:release-config
+VITE_LSAA_BUILD_REVISION="$(git rev-parse --short HEAD)-alpha.20260830.mac2" npx --yes pnpm@11.19.0 --filter @lsaa/desktop tauri:build -- --config ../../.tmp/telemetry-release-config.json
 npx --yes pnpm@11.19.0 native:verify:mac
 ```
 
