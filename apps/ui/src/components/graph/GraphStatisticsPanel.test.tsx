@@ -1,17 +1,19 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import {
   AnalysisEngineRequestSchema,
   AnalysisEngineResultSchema,
   type AnalysisEngineResult,
 } from "@lsaa/analysis-contracts";
 import { ExperimentDesignSchema } from "@lsaa/domain";
-import { vi } from "vitest";
+import { afterEach, vi } from "vitest";
 
 import type { DraftAnalysisAssessment } from "../../app/experimentDraftAnalysis";
 import { recordUsageMilestone } from "../../app/usageTelemetry";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
+import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
 
 vi.mock("../../app/usageTelemetry", () => ({ recordUsageMilestone: vi.fn() }));
+afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 const request = AnalysisEngineRequestSchema.parse({
   protocolVersion: "0.1.0",
@@ -88,6 +90,22 @@ it("shows a concise method and design-based reason before detailed controls", ()
   expect(screen.getByText("推奨: Welchの2標本t検定")).toBeVisible();
   expect(screen.getByText("理由:")).toBeVisible();
   expect(screen.getByText(/dishを独立した実験単位として比較します/)).toBeVisible();
+});
+
+it("shows the recommendation and analysis action in English without changing the request", () => {
+  act(() => setAppLocale("en"));
+  render(
+    <GraphStatisticsPanel
+      assessment={readyAssessment}
+      design={panelDesign()}
+      analysisRunner={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByText("Recommended: Welch's t-test")).toBeVisible();
+  expect(screen.getByText(/The design contains 2 independent conditions/)).toBeVisible();
+  expect(screen.getByRole("button", { name: "Run selected analysis" })).toBeVisible();
+  expect(readyAssessment.request).toBe(request);
 });
 
 const defaultConditionOptions = [

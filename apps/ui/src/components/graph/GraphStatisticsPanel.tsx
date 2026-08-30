@@ -31,6 +31,7 @@ import { routeFromPath } from "../../app/routes";
 import { recordUsageMilestone } from "../../app/usageTelemetry";
 import { createStatisticsConsultationPrompt } from "../../app/externalLlmConsultation";
 import { ExternalLlmConsultation } from "../ExternalLlmConsultation";
+import { localizedText, useAppLocale, type AppLocale } from "../../app/appLocale";
 
 type MatchedRelationship =
   | Readonly<{ kind: "same_entity"; unitLabel: string }>
@@ -130,7 +131,31 @@ function comparisonDisplayLabel(
   return firstLabel && secondLabel ? `${firstLabel} vs ${secondLabel}` : null;
 }
 
-function diagnosticLabel(code: string, matchedRelationship?: MatchedRelationship): string {
+const ENGLISH_METHOD_LABELS: Readonly<Record<string, string>> = {
+  welch_t: "Welch's t-test",
+  student_t: "Student's t-test",
+  paired_t: "Paired t-test",
+  mann_whitney: "Mann–Whitney test",
+  wilcoxon_signed_rank: "Wilcoxon signed-rank test",
+  welch_anova: "Welch's ANOVA",
+  one_way_anova: "Ordinary one-way ANOVA",
+  kruskal_wallis: "Kruskal–Wallis test",
+  pearson: "Pearson correlation",
+  spearman: "Spearman rank correlation",
+};
+
+function diagnosticLabel(code: string, matchedRelationship?: MatchedRelationship, locale: AppLocale = "ja"): string {
+  if (locale === "en") {
+    if (code === "assumptions_not_fully_evaluated") return "Normality is not established by a significance test in a small sample. Review the experimental-unit distribution and design as well.";
+    if (code === "variance_robust_multi_group_default") return "This multi-group comparison does not assume equal variances. Independence of experimental units is still required.";
+    if (code === "very_small_biological_n") return "At least one condition has fewer than three experimental units. Estimates and assumption checks are highly uncertain.";
+    if (code === "equal_variance_assumption_selected") return "The selected method assumes equal variances. This stronger assumption will be recorded in the result and Methods.";
+    if (code === "rank_distribution_test_semantics") return "Mann–Whitney evaluates ranks and distributional ordering. Without additional assumptions, do not interpret it as only a test of medians.";
+    if (code === "paired_rank_test_semantics") return matchedRelationship?.kind === "shared_source" ? `Wilcoxon evaluates the signs and ranks of differences between condition-specific ${matchedRelationship.unitLabel}s explicitly matched by a shared ${matchedRelationship.sourceLabel} ID. The condition-specific units remain separate experimental units.` : "Wilcoxon evaluates the signs and ranks of within-unit differences matched by stable IDs.";
+    if (code === "paired_difference_distribution") return "The analysis calculates the between-condition difference for each matched experimental unit and evaluates the distribution of those differences. It does not test the two original condition distributions as independent groups.";
+    if (code === "omnibus_only_no_posthoc") return "Only the overall difference was evaluated. Unrequested pairwise comparisons were not generated.";
+    if (code === "planned_pairwise_no_simultaneous_ci") return "Only prespecified condition pairs were adjusted with Holm's method. Simultaneous confidence intervals are not shown for this option.";
+  }
   if (code === "assumptions_not_fully_evaluated") {
     return "少数例の有意差検定だけで正規性を断定していません。実験単位の分布と実験設計も確認してください。";
   }
@@ -188,6 +213,8 @@ export function GraphStatisticsPanel({
   onCorrectionRequested,
   independentNestedSourceContext,
 }: GraphStatisticsPanelProps) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [independenceConfirmed, setIndependenceConfirmed] = useState(
     (Boolean(initialAnalysis) && !independentNestedSourceContext) || relationshipAlreadyDeclared,
   );
@@ -502,35 +529,42 @@ export function GraphStatisticsPanel({
     (item) => item.severity === "warning" || /small|few|n_lt|n_less|underpowered/iu.test(item.code),
   );
   const humanMethodLabel = (method: string | null | undefined) =>
+    (locale === "en" && method ? ENGLISH_METHOD_LABELS[method] : undefined) ??
     assessment.methodChoices?.find((choice) => choice.method === method)?.label ??
     (method === "pearson"
-      ? "Pearson相関"
+      ? t("Pearson相関", "Pearson correlation")
       : method === "spearman"
-        ? "Spearman順位相関"
+        ? t("Spearman順位相関", "Spearman rank correlation")
         : assessment.title.replace(/を推奨$/, ""));
+  const recommendationTitle = locale === "en"
+    ? humanMethodLabel(assessment.recommendedMethod ?? assessment.method)
+    : assessment.title.replace(/を推奨$/, "");
+  const recommendationReason = locale === "en"
+    ? `The design contains ${assessment.nByCondition.length} ${matchedAnalysis ? "matched" : "independent"} conditions (${assessment.nByCondition.map(({ label, n }) => `${label}: n=${n}`).join(", ")}). The recommendation follows the declared experimental-unit relationship and comparison objective; multiplicity is handled when condition comparisons are requested.`
+    : assessment.reason;
   const externalLlmPrompt = createStatisticsConsultationPrompt({
     conditions: conditionOptions.map(({ label }) => label),
-    methodTitle: assessment.title,
-    methodReason: assessment.reason,
+    methodTitle: recommendationTitle,
+    methodReason: recommendationReason,
     nByCondition: Object.fromEntries(assessment.nByCondition.map(({ label, n }) => [label, n])),
     missingCount: assessment.missingCount,
     notPlannedCount: assessment.notPlannedCount,
     relationship:
       matchedRelationship?.kind === "same_entity"
-        ? `同じ${matchedRelationship.unitLabel}を条件間で測定`
+        ? t(`同じ${matchedRelationship.unitLabel}を条件間で測定`, `The same ${matchedRelationship.unitLabel} was measured across conditions`)
         : matchedRelationship?.kind === "shared_source"
-          ? `条件別${matchedRelationship.unitLabel}が同じ${matchedRelationship.sourceLabel}に由来`
-          : "条件ごとに独立、または未確認",
+          ? t(`条件別${matchedRelationship.unitLabel}が同じ${matchedRelationship.sourceLabel}に由来`, `Condition-specific ${matchedRelationship.unitLabel}s came from the same ${matchedRelationship.sourceLabel}`)
+          : t("条件ごとに独立、または未確認", "Independent across conditions, or not confirmed"),
     selectedMethod: assessment.method,
   });
 
   return (
-    <section className="experiment-graph-statistics-section" aria-label="このグラフの統計">
+    <section className="experiment-graph-statistics-section" aria-label={t("このグラフの統計", "Statistics for this Graph")}>
       <div>
-        <p className="experiment-graph-overline">実データ確認後</p>
-        <h3>このグラフの統計</h3>
+        <p className="experiment-graph-overline">{t("実データ確認後", "After reviewing the data")}</p>
+        <h3>{t("このグラフの統計", "Statistics for this Graph")}</h3>
         <ContextualHelp
-          label="この統計のHelp"
+          label={t("この統計のHelp", "Help for these statistics")}
           context={{
             surface: "statistics",
             ...(assessment.method ? { selectedMethod: assessment.method } : {}),
@@ -549,9 +583,9 @@ export function GraphStatisticsPanel({
       <div className={`experiment-graph-recommendation is-${assessment.state}`}>
         {assessment.state === "ready" ? (
           <>
-            <strong>推奨: {assessment.title.replace(/を推奨$/, "")}</strong>
+            <strong>{t("推奨", "Recommended")}: {recommendationTitle}</strong>
             <p>
-              <strong>理由:</strong> {assessment.reason}
+              <strong>{t("理由", "Why")}:</strong> {recommendationReason}
             </p>
           </>
         ) : (
@@ -562,7 +596,7 @@ export function GraphStatisticsPanel({
         )}
         {assessment.analysisSetSummary ? (
           <div className="experiment-graph-analysis-set" role="status">
-            <strong>解析対象:</strong> {assessment.analysisSetSummary}
+            <strong>{t("解析対象", "Analysis set")}:</strong> {assessment.analysisSetSummary}
             {assessment.graphAnalysisSetDifference ? (
               <p>{assessment.graphAnalysisSetDifference}</p>
             ) : null}
@@ -570,12 +604,11 @@ export function GraphStatisticsPanel({
         ) : null}
         {assessment.missingCount > 0 ? (
           <p>
-            表上の空欄または無効な値：{assessment.missingCount}件
-            （条件ごとの件数差による空欄は、解析のnに数えません）
+            {t(`表上の空欄または無効な値：${assessment.missingCount}件（条件ごとの件数差による空欄は、解析のnに数えません）`, `Blank or invalid table values: ${assessment.missingCount} (padding blanks caused by unequal group sizes are not counted in analysis n)`)}
           </p>
         ) : null}
         {assessment.notPlannedCount > 0 ? (
-          <p>測定予定なし（解析対象外）：{assessment.notPlannedCount}件</p>
+          <p>{t(`測定予定なし（解析対象外）：${assessment.notPlannedCount}件`, `Not planned (excluded from analysis): ${assessment.notPlannedCount}`)}</p>
         ) : null}
       </div>
 
@@ -626,7 +659,7 @@ export function GraphStatisticsPanel({
               type="button"
               onClick={() => onSelectedMethodChange(assessment.correction!.suggestedMethod!)}
             >
-              Wilcoxonの代替案を選ぶ
+              {t("Wilcoxonの代替案を選ぶ", "Select the Wilcoxon alternative")}
             </button>
           ) : null}
         </div>
@@ -637,7 +670,7 @@ export function GraphStatisticsPanel({
           {assessment.request?.protocolVersion === "0.2.0" ||
           assessment.request?.protocolVersion === "0.4.0" ? (
             <fieldset className="experiment-graph-method-choices">
-              <legend>何を比較しますか</legend>
+              <legend>{t("何を比較しますか", "What do you want to compare?")}</legend>
               <label>
                 <input
                   type="radio"
@@ -646,7 +679,7 @@ export function GraphStatisticsPanel({
                   checked={(contrastIntent ?? assessment.contrastIntent) === "all_pairs"}
                   onChange={() => onContrastIntentChange?.("all_pairs")}
                 />
-                <span>すべての群を比較</span>
+                <span>{t("すべての群を比較", "Compare all groups")}</span>
               </label>
               <label>
                 <input
@@ -660,7 +693,7 @@ export function GraphStatisticsPanel({
                   checked={(contrastIntent ?? assessment.contrastIntent) === "control_vs_many"}
                   onChange={() => onContrastIntentChange?.("control_vs_many")}
                 />
-                <span>各処置を対照群と比較</span>
+                <span>{t("各処置を対照群と比較", "Compare each treatment with the control")}</span>
               </label>
               <label>
                 <input
@@ -670,7 +703,7 @@ export function GraphStatisticsPanel({
                   checked={(contrastIntent ?? assessment.contrastIntent) === "omnibus_only"}
                   onChange={() => onContrastIntentChange?.("omnibus_only")}
                 />
-                <span>まず全体差のみを評価</span>
+                <span>{t("まず全体差のみを評価", "Evaluate only the overall difference")}</span>
               </label>
               <label>
                 <input
@@ -680,7 +713,7 @@ export function GraphStatisticsPanel({
                   checked={effectiveContrastIntent === "planned_comparisons"}
                   onChange={() => onContrastIntentChange?.("planned_comparisons")}
                 />
-                <span>事前に決めた条件ペアだけを比較</span>
+                <span>{t("事前に決めた条件ペアだけを比較", "Compare only prespecified condition pairs")}</span>
               </label>
             </fieldset>
           ) : null}
@@ -688,7 +721,7 @@ export function GraphStatisticsPanel({
             assessment.request?.protocolVersion === "0.4.0") &&
           effectiveContrastIntent === "planned_comparisons" ? (
             <fieldset className="experiment-graph-method-choices">
-              <legend>事前に決めた比較を選択</legend>
+              <legend>{t("事前に決めた比較を選択", "Select prespecified comparisons")}</legend>
               {plannedPairChoices.map(({ first, second }) => {
                 const checked = plannedContrastConditionIds.some(
                   ([firstId, secondId]) =>
@@ -719,14 +752,14 @@ export function GraphStatisticsPanel({
                   </label>
                 );
               })}
-              <small>ここで選んだペアだけを比較し、p値をHolm法で調整します。</small>
+              <small>{t("ここで選んだペアだけを比較し、p値をHolm法で調整します。", "Only the selected pairs are compared, with p values adjusted using Holm's method.")}</small>
             </fieldset>
           ) : null}
           {correlationAnalysis ? (
             <label className="experiment-graph-field">
-              <span>相関の方法</span>
+              <span>{t("相関の方法", "Correlation method")}</span>
               <select
-                aria-label="相関の方法"
+                aria-label={t("相関の方法", "Correlation method")}
                 value={correlationMethod ?? assessment.method ?? "pearson"}
                 onChange={(event) => {
                   const method = event.currentTarget.value as "pearson" | "spearman";
@@ -744,14 +777,14 @@ export function GraphStatisticsPanel({
                   );
                 }}
               >
-                <option value="pearson">Pearson（直線的な関係）</option>
-                <option value="spearman">Spearman（順位・単調な関係）</option>
+                <option value="pearson">{t("Pearson（直線的な関係）", "Pearson (linear relationship)")}</option>
+                <option value="spearman">{t("Spearman（順位・単調な関係）", "Spearman (rank/monotonic relationship)")}</option>
               </select>
-              <small>どちらもローカルの検証済みエンジンで実行します。</small>
+              <small>{t("どちらもローカルの検証済みエンジンで実行します。", "Both methods run in the validated local engine.")}</small>
             </label>
           ) : null}
           {!correlationAnalysis && assessment.methodChoices?.length ? (
-            <div className="experiment-graph-method-levels" aria-label="統計解析法の選択">
+            <div className="experiment-graph-method-levels" aria-label={t("統計解析法の選択", "Statistical method selection")}>
               {(["recommended", "alternative", "advanced"] as const).map((level) => {
                 const choices = assessment.methodChoices?.filter(
                   (choice) => choice.level === level,
@@ -761,10 +794,10 @@ export function GraphStatisticsPanel({
                   <fieldset key={level} className="experiment-graph-method-choices">
                     <legend>
                       {level === "recommended"
-                        ? "推奨"
+                        ? t("推奨", "Recommended")
                         : level === "alternative"
-                          ? "代替案"
-                          : "詳細設定"}
+                          ? t("代替案", "Alternatives")
+                          : t("詳細設定", "Advanced")}
                     </legend>
                     {choices.map((choice) => (
                       <label key={choice.method} aria-disabled={!choice.enabled}>
@@ -796,8 +829,8 @@ export function GraphStatisticsPanel({
                           }}
                         />
                         <span>
-                          <strong>{choice.label}</strong>
-                          <small>{choice.explanation}</small>
+                          <strong>{locale === "en" ? (ENGLISH_METHOD_LABELS[choice.method] ?? choice.label) : choice.label}</strong>
+                          <small>{locale === "en" ? t(choice.explanation, "This option is provided for the declared design. Review its assumptions before use.") : choice.explanation}</small>
                           {!choice.enabled && choice.unavailableReason ? (
                             <small>{choice.unavailableReason}</small>
                           ) : null}
@@ -814,9 +847,9 @@ export function GraphStatisticsPanel({
               <p>
                 {recommendationDecision
                   ? recommendationDecision.kind === "accepted"
-                    ? `推奨法を選択中：${humanMethodLabel(recommendationDecision.selectedMethod)}。別の方法を選ぶと、その選択を解析履歴へ記録します。`
-                    : `推奨とは異なる方法として${humanMethodLabel(recommendationDecision.selectedMethod)}を選択中です。この選択は解析履歴へ記録されます。`
-                  : "選択中の解析法は実行時にprovenanceへ記録します。"}
+                    ? t(`推奨法を選択中：${humanMethodLabel(recommendationDecision.selectedMethod)}。別の方法を選ぶと、その選択を解析履歴へ記録します。`, `Selected recommendation: ${humanMethodLabel(recommendationDecision.selectedMethod)}. Choosing another method records that decision in the analysis history.`)
+                    : t(`推奨とは異なる方法として${humanMethodLabel(recommendationDecision.selectedMethod)}を選択中です。この選択は解析履歴へ記録されます。`, `Selected ${humanMethodLabel(recommendationDecision.selectedMethod)} instead of the recommendation. This decision will be recorded in the analysis history.`)
+                  : t("選択中の解析法は実行時にprovenanceへ記録します。", "The selected analysis method will be recorded in provenance when run.")}
               </p>
             </div>
           ) : null}
@@ -824,9 +857,9 @@ export function GraphStatisticsPanel({
             <p
               className="experiment-graph-confirmation is-declared"
               role="status"
-              aria-label="実験構造の確認状況"
+              aria-label={t("実験構造の確認状況", "Experiment-structure confirmation")}
             >
-              <strong>実験の組み立てで回答済み：</strong>
+              <strong>{t("実験の組み立てで回答済み", "Already declared in experiment setup")}:</strong>
               {matchedAnalysis
                 ? sharedSourcePairing
                   ? `同じ${sharedSourcePairing.sourceLabel}に由来する条件別${sharedSourcePairing.unitLabel}を共有IDで対応づけます。`
@@ -892,7 +925,7 @@ export function GraphStatisticsPanel({
                       )
                     }
                   >
-                    共通材料・実験回を確認
+                    {t("共通材料・実験回を確認", "Review shared material or experimental run")}
                   </button>
                 ) : null}
               </details>
@@ -906,16 +939,16 @@ export function GraphStatisticsPanel({
             }
             onClick={run}
           >
-            {running ? "ローカルで解析中…" : "選択した解析を実行"}
+            {running ? t("ローカルで解析中…", "Running locally…") : t("選択した解析を実行", "Run selected analysis")}
           </button>
           {running && runningRequestId ? (
             <button type="button" onClick={() => void cancelLocalAnalysis(runningRequestId)}>
-              解析を中止
+              {t("解析を中止", "Cancel analysis")}
             </button>
           ) : null}
           {!analysisAvailable ? (
             <p className="experiment-graph-help" role="note">
-              このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
+              {t("このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。", "The analysis engine is unavailable in this browser preview. It is available in the desktop app.")}
             </p>
           ) : null}
         </>
@@ -933,22 +966,22 @@ export function GraphStatisticsPanel({
       ) : null}
 
       {result?.status === "ok" ? (
-        <div className="experiment-graph-analysis-result" role="group" aria-label="統計解析結果">
+        <div className="experiment-graph-analysis-result" role="group" aria-label={t("統計解析結果", "Statistical analysis results")}>
           <div className="experiment-graph-analysis-summary">
-            <strong>解析完了（ローカル）</strong>
+            <strong>{t("解析完了（ローカル）", "Analysis complete (local)")}</strong>
             <p>
-              解析に用いた実験単位：
+              {t("解析に用いた実験単位", "Experimental units used in analysis")}:
               {assessment.nDisplay ??
                 assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join("、")}
             </p>
           </div>
           {result.estimates.length > 0 ? (
-            <dl aria-label="主要な推定値">
+            <dl aria-label={t("主要な推定値", "Primary estimates")}>
               {result.estimates.map((estimate) => (
                 <div key={estimate.name}>
                   <dt>{estimate.name}</dt>
                   <dd>
-                    推定値 = {formatNumber(estimate.value)}
+                    {t("推定値", "Estimate")} = {formatNumber(estimate.value)}
                     {estimate.standardError === null
                       ? ""
                       : `、SE = ${formatNumber(estimate.standardError)}`}
@@ -962,14 +995,14 @@ export function GraphStatisticsPanel({
               ))}
             </dl>
           ) : null}
-          <dl aria-label="主要な検定結果">
+          <dl aria-label={t("主要な検定結果", "Primary test results")}>
             {primaryTests.map((test) => (
               <div key={test.name}>
-                <dt>全体／主解析</dt>
+                <dt>{t("全体／主解析", "Overall / primary analysis")}</dt>
                 <dd>
                   {test.statisticName} = {formatNumber(test.statistic)}、p ={" "}
                   {formatP(test.adjustedPValue ?? test.pValue)}
-                  {test.adjustedPValue !== null ? "（多重比較調整済み）" : ""}
+                  {test.adjustedPValue !== null ? t("（多重比較調整済み）", " (multiplicity-adjusted)") : ""}
                   {test.degreesOfFreedom ? `、df = ${test.degreesOfFreedom.join(", ")}` : ""}
                   {test.effectSizeName && test.effectSize !== null
                     ? `、${test.effectSizeName} = ${formatNumber(test.effectSize)}`
@@ -980,16 +1013,16 @@ export function GraphStatisticsPanel({
           </dl>
           {comparisonRows.length > 0 ? (
             <details className="experiment-graph-analysis-comparisons" open>
-              <summary>条件間比較（{comparisonRows.length}件）</summary>
+              <summary>{t(`条件間比較（${comparisonRows.length}件）`, `Condition comparisons (${comparisonRows.length})`)}</summary>
               <div className="data-table-scroll">
-                <table className="data-table" aria-label="条件間比較の結果">
+                <table className="data-table" aria-label={t("条件間比較の結果", "Condition-comparison results")}>
                   <thead>
                     <tr>
-                      <th scope="col">比較</th>
-                      <th scope="col">検定統計量・自由度</th>
-                      <th scope="col">p値</th>
-                      <th scope="col">調整済みp値</th>
-                      <th scope="col">効果量</th>
+                      <th scope="col">{t("比較", "Comparison")}</th>
+                      <th scope="col">{t("検定統計量・自由度", "Test statistic and df")}</th>
+                      <th scope="col">{t("p値", "p value")}</th>
+                      <th scope="col">{t("調整済みp値", "Adjusted p value")}</th>
+                      <th scope="col">{t("効果量", "Effect size")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1024,69 +1057,71 @@ export function GraphStatisticsPanel({
               open
             >
               <summary>
-                {hasImportantDiagnostic ? "重要な注意" : "診断と注意"}（{diagnosticItems.length}件）
+                {locale === "ja"
+                  ? `${hasImportantDiagnostic ? "重要な注意" : "診断と注意"}（${diagnosticItems.length}件）`
+                  : `${hasImportantDiagnostic ? "Important warnings" : "Diagnostics and notes"} (${diagnosticItems.length})`}
               </summary>
               {diagnosticItems.map((item) => (
                 <p data-severity={item.severity} key={`${item.code}-${item.message}`}>
-                  {diagnosticLabel(item.code, matchedRelationship)}
+                  {diagnosticLabel(item.code, matchedRelationship, locale)}
                 </p>
               ))}
             </details>
           ) : null}
           <details>
-            <summary>解析エンジンと再現情報</summary>
+            <summary>{t("解析エンジンと再現情報", "Analysis engine and reproducibility")}</summary>
             <dl>
               <div>
-                <dt>検定・モデル</dt>
+                <dt>{t("検定・モデル", "Test or model")}</dt>
                 <dd>{humanMethodLabel(assessment.method)}</dd>
               </div>
               <div>
-                <dt>エンジン</dt>
+                <dt>{t("エンジン", "Engine")}</dt>
                 <dd>
                   {result.engine.name} {result.engine.version}
                 </dd>
               </div>
               {Object.entries(result.engine.packages).map(([name, version]) => (
                 <div key={name}>
-                  <dt>統計ライブラリ</dt>
+                  <dt>{t("統計ライブラリ", "Statistical library")}</dt>
                   <dd>
                     {name} {version}
                   </dd>
                 </div>
               ))}
               <div>
-                <dt>アプリケーション</dt>
+                <dt>{t("アプリケーション", "Application")}</dt>
                 <dd>
                   {PRODUCT_IDENTITY.developmentName} {PRODUCT_IDENTITY.version}
                 </dd>
               </div>
               <div>
-                <dt>多重性の調整</dt>
-                <dd>{assessment.request?.options.multiplicityMethod ?? "なし"}</dd>
+                <dt>{t("多重性の調整", "Multiplicity adjustment")}</dt>
+                <dd>{assessment.request?.options.multiplicityMethod ?? t("なし", "None")}</dd>
               </div>
               <div>
-                <dt>実行リクエスト</dt>
+                <dt>{t("実行リクエスト", "Execution request")}</dt>
                 <dd>
                   {assessment.request?.templateId} / {assessment.request?.templateVersion}
                 </dd>
               </div>
             </dl>
           </details>
-          <p>プロジェクト保存時に、使用データと解析条件を再現可能な解析履歴として保存します。</p>
+          <p>{t("プロジェクト保存時に、使用データと解析条件を再現可能な解析履歴として保存します。", "When the project is saved, the data used and analysis settings are stored as reproducible analysis history.")}</p>
           {methodsText ? (
             <details>
-              <summary>Methodsと再現記録</summary>
+              <summary>{t("Methodsと再現記録", "Methods and reproducibility record")}</summary>
               <pre className="experiment-graph-methods-text">{methodsText}</pre>
               <button
                 type="button"
                 onClick={async () => {
                   const copied = await copyMethodsText(methodsText);
                   setMethodsCopyStatus(
-                    copied ? "Methodsをコピーしました。" : "コピーできませんでした。",
+                    copied ? t("Methodsをコピーしました。", "Methods copied.") : t("コピーできませんでした。", "Could not copy Methods."),
                   );
                 }}
               >
-                Methodsをコピー
+                {t("Methodsをコピー", "Copy Methods")}
               </button>
               {methodsCopyStatus ? <p role="status">{methodsCopyStatus}</p> : null}
             </details>
