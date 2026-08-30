@@ -7,8 +7,12 @@ This is the current macOS build and reduced-human-gate handoff. It supersedes
 overwrite that historical evidence.
 
 - Branch: `codex/native-hardening-2026-08-28`
-- Base HEAD before the latest UX follow-up: `26e8df8c92324ff3d5b217264d3ff40f2a61d3d8`
-- Minimum candidate commit: `4dabbe5` (includes the existing native/UX hardening plus the BioFigureStat identity, disk-backed project tabs, native Excel workbook import, and the deployed consent-versioned telemetry client/contact UI)
+- Previous native baseline: `4dabbe5`
+- Minimum candidate commit: `f69876bec457cfd18decfa6a09dbeb4ef67a3711`
+- This candidate adds the integrated Graph-only Data → Graph → Statistics workspace, multi-sheet
+  Exp import, Windows/native clipboard hardening, project-version migration matrix and typed errors,
+  request-scoped analysis cancellation, a 120-second engine timeout, and retained numerical-library
+  reliability warnings.
 - Pool D: not accessed
 - Product route: experiment-first task hub; do not enable the historical feature flag
 - Expected artifact: `apps/desktop/src-tauri/target/release/bundle/macos/BioFigureStat.app`
@@ -26,7 +30,7 @@ analysis or omit a failing verifier.
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor 4dabbe5 HEAD
+git merge-base --is-ancestor f69876bec457cfd18decfa6a09dbeb4ef67a3711 HEAD
 git status --short
 
 node --version
@@ -36,14 +40,16 @@ npx --yes pnpm@11.19.0 test
 npx --yes pnpm@11.19.0 typecheck
 npx --yes pnpm@11.19.0 lint
 npx --yes pnpm@11.19.0 engine:build:mac
-export VITE_USAGE_TELEMETRY_ENDPOINT="https://biofigurestat-telemetry.biofigurestat.workers.dev/v1/usage"
-export VITE_USAGE_TELEMETRY_INGEST_KEY="<release-owner-provided public ingestion key>"
-export BIOFIGURESTAT_PRIVACY_CONTACT="<approved privacy/deletion contact>"
-export VITE_USAGE_TELEMETRY_PRIVACY_CONTACT="$BIOFIGURESTAT_PRIVACY_CONTACT"
-npx --yes pnpm@11.19.0 telemetry:release-config
-VITE_LSAA_BUILD_REVISION="$(git rev-parse --short HEAD)-alpha.20260830.mac2" npx --yes pnpm@11.19.0 --filter @lsaa/desktop tauri:build -- --config ../../.tmp/telemetry-release-config.json
+VITE_LSAA_BUILD_REVISION="$(git rev-parse --short HEAD)-alpha.20260830.mac3" npx --yes pnpm@11.19.0 --filter @lsaa/desktop tauri:build
 npx --yes pnpm@11.19.0 native:verify:mac
 ```
+
+This command set creates a private human-validation `.app` with remote telemetry/report upload
+fail-closed. It is appropriate for the user's Mac review and does not require release ingestion
+keys. Do not describe it as the public-distribution artifact. The later public Alpha build must use
+the release-owner-provided usage/report endpoints, both public ingestion keys, approved privacy
+contact, `telemetry:release-config`, signing and notarization; never invent or recover those values
+from an older binary.
 
 The repository pins `pnpm@11.19.0`. The commands deliberately use `npx` so a
 Mac without the optional `corepack` executable can build without installing a
@@ -156,6 +162,10 @@ and ordered coordinates, and no coercion into an ordinary scalar design.
    clears queued usage events; confirm the diagnostic export contains no research values, labels,
    file paths, or clipboard/file content. Remote upload itself is tested only after the exact Alpha
    endpoint and CSP are configured.
+8. Start one Statistics run and use `解析を中止`; verify the spinner ends and entered values remain.
+   Ordinary analyses should finish before the 120-second hard timeout. Open a copied project
+   fixture with a deliberately newer project-state version and verify that BioFigureStat asks for a
+   newer app without showing a Zod error or internal `PROJECT_*` code.
 
 PASS requires no silent data loss, no console window, working native exports,
 and no research values, labels, paths, or clipboard/file content in telemetry.
