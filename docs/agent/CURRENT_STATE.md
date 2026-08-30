@@ -80,9 +80,9 @@ passed. UI typecheck and lint passed. The Python engine passed 64 tests and all 
 reference cases; Rust passed 27 native tests with the pinned-development round trip ignored in the
 ordinary run. Windows sidecar build/smoke, x64 NSIS build, and `native:verify:win` passed. The
 installer SHA-256 is
-`7FE9F00B25DC64AD615791E4FD6750342F21AA4D4F466BC0316B7A85E64D0AD3`. This is Windows build
-evidence, not a substitute for Command+Q, Dock icon, responsive layout, and native export dialog
-validation on macOS.
+`46436FB49F99E34FE19C22D84625353068245B1C263F5E8186738FEE3EA9235D`; its embedded build
+revision is `ad5f147-alpha.20260830.win4`. This is Windows build evidence, not a substitute for
+Command+Q, Dock icon, responsive layout, and native export dialog validation on macOS.
 
 The highest-value remaining evidence is:
 

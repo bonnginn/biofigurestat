@@ -314,8 +314,9 @@ ADR 0057がADR 0055のdirty tab switch部分を明示的に置き換える。che
 - Windows sidecar build/smoke: PASS
 - Windows x64 NSIS build: PASS
 - `native:verify:win`: PASS
+- Embedded build revision: `ad5f147-alpha.20260830.win4`
 - Installer: `BioFigureStat_0.1.0_x64-setup.exe`
-- Installer SHA-256: `7FE9F00B25DC64AD615791E4FD6750342F21AA4D4F466BC0316B7A85E64D0AD3`
+- Installer SHA-256: `46436FB49F99E34FE19C22D84625353068245B1C263F5E8186738FEE3EA9235D`
 
 UI全体の単一Vitest processは全ファイル実行後に終了しない既存runner挙動があるため、変更面を
 直列分割して完走させた。一括processを中断した事実を全suite PASSとして数えていない。
