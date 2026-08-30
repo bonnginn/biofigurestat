@@ -18,8 +18,10 @@ import {
 } from "@lsaa/project";
 import { defaultProjectFileName } from "./projectFileName";
 import type { OpenedAnyProject } from "./projectActions";
+import { getAppLocale } from "./appLocale";
 
 const APP_VERSION = "0.1.0";
+const nativeText = (ja: string, en: string) => (getAppLocale() === "ja" ? ja : en);
 
 export type ProjectIoStage =
   | "checksum"
@@ -137,7 +139,7 @@ export async function openLocalProjectPackage(): Promise<OpenedLocalProject | nu
   const selected = await open({
     directory: false,
     multiple: false,
-    title: "BioFigureStat projectを開く",
+    title: nativeText("BioFigureStat projectを開く", "Open BioFigureStat project"),
     filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
   });
   if (selected === null) return null;
@@ -195,7 +197,7 @@ export async function openLocalAnyProjectPackage(): Promise<OpenedAnyProject | n
   const selected = await open({
     directory: false,
     multiple: false,
-    title: "BioFigureStat projectを開く",
+    title: nativeText("BioFigureStat projectを開く", "Open BioFigureStat project"),
     filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
   });
   if (selected === null) return null;
@@ -225,7 +227,7 @@ export async function openLocalUnresolvedVisualizationProjectPackage(): Promise<
   const selected = await open({
     directory: false,
     multiple: false,
-    title: "BioFigureStat Graph projectを開く",
+    title: nativeText("BioFigureStat Graph projectを開く", "Open BioFigureStat Graph project"),
     filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
   });
   if (selected === null) return null;
@@ -238,7 +240,10 @@ export async function openLegacyLocalProjectPackage(): Promise<OpenedLocalProjec
   const selected = await open({
     directory: true,
     multiple: false,
-    title: "旧形式のBioFigureStat projectフォルダを取り込む",
+    title: nativeText(
+      "旧形式のBioFigureStat projectフォルダを取り込む",
+      "Import legacy BioFigureStat project folder",
+    ),
   });
   if (selected === null) return null;
 
@@ -259,7 +264,7 @@ export async function saveLocalProjectPackage(
   const selected =
     existingTarget ??
     (await save({
-      title: "BioFigureStatプロジェクトを保存",
+      title: nativeText("BioFigureStatプロジェクトを保存", "Save BioFigureStat project"),
       defaultPath: defaultProjectFileName(state.metadata.projectName),
       filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
     }));
@@ -297,7 +302,10 @@ export async function saveLocalUnresolvedVisualizationProjectPackage(
   const selected =
     existingTarget ??
     (await save({
-      title: "BioFigureStat Graphプロジェクトを保存",
+      title: nativeText(
+        "BioFigureStat Graphプロジェクトを保存",
+        "Save BioFigureStat Graph project",
+      ),
       defaultPath: defaultProjectFileName(state.metadata.projectName),
       filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
     }));
@@ -346,7 +354,10 @@ export async function saveLocalSpecializedEntryDraftProjectPackage(
   const selected =
     existingTarget ??
     (await save({
-      title: "入力途中のBioFigureStatプロジェクトを保存",
+      title: nativeText(
+        "入力途中のBioFigureStatプロジェクトを保存",
+        "Save in-progress BioFigureStat project",
+      ),
       defaultPath: defaultProjectFileName(state.metadata.projectName),
       filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
     }));

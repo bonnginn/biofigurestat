@@ -39,8 +39,21 @@ import {
   openLocalAnyProjectPackageAt,
   saveLocalSpecializedEntryDraftProjectPackage,
 } from "./desktopProjectPackage";
+import { setAppLocale } from "./appLocale";
 
 describe("common .lsa desktop opener", () => {
+  it("uses English native dialog titles when English is selected", async () => {
+    setAppLocale("en");
+    mocks.open.mockResolvedValue(null);
+
+    await openLocalAnyProjectPackage();
+
+    expect(mocks.open).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Open BioFigureStat project" }),
+    );
+    setAppLocale("ja");
+  });
+
   beforeEach(() => {
     mocks.decodeProjectManifest.mockReset();
     mocks.invoke.mockReset().mockResolvedValue([123]);
