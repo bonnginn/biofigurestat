@@ -1,8 +1,15 @@
 use serde_json::Value;
-use std::io::Write;
+use std::collections::HashMap;
+use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
-use tauri::{AppHandle, Manager};
+use std::process::{Child, Command, ExitStatus, Stdio};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
+use std::thread;
+use std::time::{Duration, Instant};
+use tauri::{AppHandle, Manager, State};
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -10,9 +17,58 @@ use std::os::windows::process::CommandExt;
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
+const ANALYSIS_TIMEOUT: Duration = Duration::from_secs(120);
+
+#[derive(Clone, Default)]
+pub struct EngineProcessRegistry {
+    active: Arc<Mutex<HashMap<String, Arc<ActiveEngineProcess>>>>,
+}
+
+struct ActiveEngineProcess {
+    child: Mutex<Child>,
+    cancelled: AtomicBool,
+}
+
+enum EngineWaitOutcome {
+    Completed(ExitStatus),
+    Cancelled,
+    TimedOut,
+}
+
 enum EngineLaunch {
     PythonModule { python: PathBuf },
     PackagedBinary { executable: PathBuf },
+}
+
+fn wait_for_engine_process(
+    active: &ActiveEngineProcess,
+    timeout: Duration,
+) -> Result<EngineWaitOutcome, String> {
+    let started = Instant::now();
+    loop {
+        let status = active
+            .child
+            .lock()
+            .map_err(|_| "ENGINE_PROCESS_STATE_UNAVAILABLE".to_string())?
+            .try_wait()
+            .map_err(|error| format!("ENGINE_PROCESS_WAIT_FAILED: {error}"))?;
+        match status {
+            Some(_) if active.cancelled.load(Ordering::SeqCst) => {
+                return Ok(EngineWaitOutcome::Cancelled);
+            }
+            Some(status) => return Ok(EngineWaitOutcome::Completed(status)),
+            None if started.elapsed() < timeout => thread::sleep(Duration::from_millis(20)),
+            None => {
+                let mut child = active
+                    .child
+                    .lock()
+                    .map_err(|_| "ENGINE_PROCESS_STATE_UNAVAILABLE".to_string())?;
+                let _ = child.kill();
+                let _ = child.wait();
+                return Ok(EngineWaitOutcome::TimedOut);
+            }
+        }
+    }
 }
 
 fn resolve_engine(app: &AppHandle) -> Result<EngineLaunch, String> {
@@ -55,7 +111,16 @@ fn resolve_engine(app: &AppHandle) -> Result<EngineLaunch, String> {
     Ok(EngineLaunch::PackagedBinary { executable })
 }
 
-fn execute_engine_process(launch: EngineLaunch, request: Value) -> Result<Value, String> {
+fn execute_engine_process(
+    launch: EngineLaunch,
+    request: Value,
+    registry: &EngineProcessRegistry,
+) -> Result<Value, String> {
+    let request_id = request
+        .get("requestId")
+        .and_then(Value::as_str)
+        .ok_or_else(|| "ENGINE_REQUEST_ID_MISSING".to_string())?
+        .to_string();
     let mut command = match launch {
         EngineLaunch::PythonModule { python } => {
             let mut command = Command::new(python);
@@ -85,36 +150,192 @@ fn execute_engine_process(launch: EngineLaunch, request: Value) -> Result<Value,
         .write_all(&encoded)
         .map_err(|error| format!("Could not send the request to the analysis engine: {error}"))?;
 
-    let output = child
-        .wait_with_output()
-        .map_err(|error| format!("Could not wait for the analysis engine: {error}"))?;
-    if !output.status.success() {
-        let detail = String::from_utf8_lossy(&output.stderr);
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "Analysis engine output stream is unavailable".to_string())?;
+    let mut stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "Analysis engine error stream is unavailable".to_string())?;
+    let stdout_reader = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        stdout.read_to_end(&mut bytes).map(|_| bytes)
+    });
+    let stderr_reader = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        stderr.read_to_end(&mut bytes).map(|_| bytes)
+    });
+    let active = Arc::new(ActiveEngineProcess {
+        child: Mutex::new(child),
+        cancelled: AtomicBool::new(false),
+    });
+    registry
+        .active
+        .lock()
+        .map_err(|_| "ENGINE_PROCESS_STATE_UNAVAILABLE".to_string())?
+        .insert(request_id.clone(), Arc::clone(&active));
+
+    let outcome = wait_for_engine_process(&active, ANALYSIS_TIMEOUT);
+    if outcome.is_err() {
+        if let Ok(mut child) = active.child.lock() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
+    if let Ok(mut processes) = registry.active.lock() {
+        processes.remove(&request_id);
+    }
+    let stdout = stdout_reader
+        .join()
+        .map_err(|_| "ENGINE_OUTPUT_READER_FAILED".to_string())?
+        .map_err(|error| format!("ENGINE_OUTPUT_READ_FAILED: {error}"))?;
+    let stderr = stderr_reader
+        .join()
+        .map_err(|_| "ENGINE_ERROR_READER_FAILED".to_string())?
+        .map_err(|error| format!("ENGINE_ERROR_READ_FAILED: {error}"))?;
+
+    let status = match outcome? {
+        EngineWaitOutcome::Completed(status) => status,
+        EngineWaitOutcome::Cancelled => return Err("ENGINE_PROCESS_CANCELLED".to_string()),
+        EngineWaitOutcome::TimedOut => return Err("ENGINE_PROCESS_TIMEOUT".to_string()),
+    };
+    if !status.success() {
+        let detail = String::from_utf8_lossy(&stderr);
         return Err(format!(
             "The local analysis engine failed: {}",
             detail.trim()
         ));
     }
-    serde_json::from_slice(&output.stdout)
+    serde_json::from_slice(&stdout)
         .map_err(|error| format!("The analysis engine returned invalid JSON: {error}"))
 }
 
-fn execute_engine(app: AppHandle, request: Value) -> Result<Value, String> {
-    execute_engine_process(resolve_engine(&app)?, request)
+fn execute_engine(
+    app: AppHandle,
+    request: Value,
+    registry: &EngineProcessRegistry,
+) -> Result<Value, String> {
+    execute_engine_process(resolve_engine(&app)?, request, registry)
 }
 
 #[tauri::command]
-pub async fn run_analysis(app: AppHandle, request: Value) -> Result<Value, String> {
-    tauri::async_runtime::spawn_blocking(move || execute_engine(app, request))
+pub async fn run_analysis(
+    app: AppHandle,
+    request: Value,
+    registry: State<'_, EngineProcessRegistry>,
+) -> Result<Value, String> {
+    let registry = registry.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || execute_engine(app, request, &registry))
         .await
         .map_err(|error| format!("The analysis task could not complete: {error}"))?
 }
 
+#[tauri::command]
+pub fn cancel_analysis(
+    request_id: String,
+    registry: State<'_, EngineProcessRegistry>,
+) -> Result<bool, String> {
+    let active = registry
+        .active
+        .lock()
+        .map_err(|_| "ENGINE_PROCESS_STATE_UNAVAILABLE".to_string())?
+        .get(&request_id)
+        .cloned();
+    let Some(active) = active else {
+        return Ok(false);
+    };
+    active.cancelled.store(true, Ordering::SeqCst);
+    let mut child = active
+        .child
+        .lock()
+        .map_err(|_| "ENGINE_PROCESS_STATE_UNAVAILABLE".to_string())?;
+    match child.kill() {
+        Ok(()) => Ok(true),
+        Err(_) if child.try_wait().ok().flatten().is_some() => Ok(false),
+        Err(error) => Err(format!("ENGINE_PROCESS_CANCEL_FAILED: {error}")),
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{execute_engine_process, EngineLaunch};
+    use super::{
+        execute_engine_process, wait_for_engine_process, ActiveEngineProcess, EngineLaunch,
+        EngineProcessRegistry, EngineWaitOutcome,
+    };
     use serde_json::json;
     use std::path::PathBuf;
+    use std::process::{Command, Stdio};
+    use std::sync::{
+        atomic::{AtomicBool, Ordering},
+        Mutex,
+    };
+    use std::time::Duration;
+
+    #[test]
+    fn timeout_terminates_an_unresponsive_process() {
+        #[cfg(target_os = "windows")]
+        let mut command = {
+            let mut command = Command::new("cmd");
+            command.args(["/C", "ping 127.0.0.1 -n 6 >NUL"]);
+            command
+        };
+        #[cfg(not(target_os = "windows"))]
+        let mut command = {
+            let mut command = Command::new("sh");
+            command.args(["-c", "sleep 5"]);
+            command
+        };
+        let child = command
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("spawn timeout fixture");
+
+        let active = ActiveEngineProcess {
+            child: Mutex::new(child),
+            cancelled: AtomicBool::new(false),
+        };
+        let outcome = wait_for_engine_process(&active, Duration::from_millis(20))
+            .expect("fixture wait should be handled");
+        assert!(matches!(outcome, EngineWaitOutcome::TimedOut));
+    }
+
+    #[test]
+    fn cancellation_terminates_only_the_registered_process() {
+        #[cfg(target_os = "windows")]
+        let mut command = {
+            let mut command = Command::new("cmd");
+            command.args(["/C", "ping 127.0.0.1 -n 6 >NUL"]);
+            command
+        };
+        #[cfg(not(target_os = "windows"))]
+        let mut command = {
+            let mut command = Command::new("sh");
+            command.args(["-c", "sleep 5"]);
+            command
+        };
+        let child = command
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("spawn cancellation fixture");
+        let active = ActiveEngineProcess {
+            child: Mutex::new(child),
+            cancelled: AtomicBool::new(false),
+        };
+        active.cancelled.store(true, Ordering::SeqCst);
+        active
+            .child
+            .lock()
+            .expect("lock cancellation fixture")
+            .kill()
+            .expect("kill cancellation fixture");
+
+        let outcome = wait_for_engine_process(&active, Duration::from_secs(1))
+            .expect("cancelled fixture wait should be handled");
+        assert!(matches!(outcome, EngineWaitOutcome::Cancelled));
+    }
 
     #[test]
     #[ignore = "requires the pinned engine/python development environment"]
@@ -158,8 +379,10 @@ mod tests {
             "options": {"alternative": "two_sided", "confidenceLevel": 0.95, "multiplicityMethod": null}
         });
 
-        let result = execute_engine_process(EngineLaunch::PythonModule { python }, request)
-            .expect("engine round trip");
+        let registry = EngineProcessRegistry::default();
+        let result =
+            execute_engine_process(EngineLaunch::PythonModule { python }, request, &registry)
+                .expect("engine round trip");
         assert_eq!(result["protocolVersion"], "0.1.0");
         assert_eq!(result["requestId"], "request.rust-round-trip");
         assert_eq!(result["status"], "ok");
@@ -199,6 +422,7 @@ mod tests {
                 },
             },
             d03_request,
+            &registry,
         )
         .expect("D03 engine round trip");
         assert_eq!(d03_result["protocolVersion"], "0.2.0");
@@ -237,6 +461,7 @@ mod tests {
                 },
             },
             d04_request,
+            &registry,
         )
         .expect("D04 engine round trip");
         assert_eq!(d04_result["protocolVersion"], "0.3.0");

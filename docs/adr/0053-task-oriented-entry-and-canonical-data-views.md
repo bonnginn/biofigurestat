@@ -377,3 +377,26 @@ such as `unit-001`, `unit-002`, and so on. These identities are local stable add
 create matching across conditions. The earlier implementation-checkpoint wording that described
 generated `source-row-*` identities is superseded by this clarification; row position alone never
 establishes biological independence or pairing.
+
+## Graph-only common-workspace checkpoint — 2026-08-30
+
+Graph-only no longer maintains a reduced preview/editor beside the production Graph editor. Its
+Data, Graph, and Statistics stages are separate workspace tabs, and Graph uses the same
+`ExperimentGraphWorkbench`, export actions, axis controls, graph types, and appearance controls as
+experiment-first projects. A presentation-only adapter may construct local rendering addresses for
+the editor, but those addresses are not persisted as an ExperimentDesign and are never offered to
+Statistics. The unresolved GraphSpec may persist the complete visual-editor presentation so that
+save/reopen is lossless without asserting experimental units, independence, pairing, or biological
+n.
+
+Sample/subject ID and visual series are separate mappings. An ID column labels retained source rows
+and cannot create legend entries or colors. A proposed series column whose nonempty value is unique
+for every displayed row is treated as a likely ID and is blocked until the researcher either moves
+it to ID or explicitly confirms that one series per row is intentional. This prevents the observed
+failure in which culture-dish IDs became three unrelated legend series.
+
+For native Excel workbooks, selecting one worksheet remains available. Graph-only additionally
+offers an explicit operation to stack all nonempty worksheets when their headers match, prefixing
+each row with the worksheet name in an `Experiment / worksheet` source column. The operation
+retains provenance but does not infer that sheets are independent experiment runs or statistical
+replicates; that fact remains part of the Statistics biological-structure handoff.

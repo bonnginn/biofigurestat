@@ -76,6 +76,18 @@ describe("evaluation analysis client", () => {
 });
 
 describe("local engine failure guidance", () => {
+  it("explains a bounded engine timeout without exposing an internal process code", () => {
+    const message = localEngineFailureMessage("ENGINE_PROCESS_TIMEOUT");
+    expect(message).toContain("制限時間内に完了しなかった");
+    expect(message).not.toContain("ENGINE_PROCESS_TIMEOUT");
+  });
+
+  it("explains user cancellation without exposing an internal process code", () => {
+    const message = localEngineFailureMessage("ENGINE_PROCESS_CANCELLED");
+    expect(message).toContain("解析を中止しました");
+    expect(message).not.toContain("ENGINE_PROCESS_CANCELLED");
+  });
+
   it("distinguishes insufficient nonlinear-fit data from a missing engine", () => {
     expect(
       localEngineFailureMessage(

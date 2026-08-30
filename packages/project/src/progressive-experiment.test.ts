@@ -825,7 +825,7 @@ describe("progressive experiment project", () => {
         target: "sparse.lsa",
         sha256,
       }),
-    ).rejects.toThrow(/REQUIRES_UNRESOLVED/);
+    ).rejects.toMatchObject({ code: "PROJECT_KIND_MISMATCH" });
   });
 
   it("rejects a coherently rehashed data package whose same Canvas ID has changed semantics", async () => {
@@ -916,7 +916,7 @@ describe("progressive experiment project", () => {
         target: "pre-sheet.lsa",
         sha256,
       }),
-    ).rejects.toThrow(/REQUIRES_UNRESOLVED/);
+    ).rejects.toMatchObject({ code: "PROJECT_KIND_MISMATCH" });
   });
 
   it("rejects a coherently rehashed setup recovery export that differs from the database state", async () => {

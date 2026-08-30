@@ -14,6 +14,7 @@ describe("ExternalLlmConsultation", () => {
     fireEvent.click(screen.getByRole("button", { name: "外部LLMに相談する" }));
     expect(screen.getByLabelText("外部LLMへ渡す相談文")).toHaveValue("相談内容");
     expect(screen.getByText(/アプリから外部サイトを開いたり送信したりしません/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "BioFigureStat使用ガイドを開く" })).toBeVisible();
   });
 
   it("copies only after the researcher asks for a copy", async () => {

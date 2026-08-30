@@ -41,7 +41,11 @@ import {
   type ProjectState,
 } from "@lsaa/project";
 
-import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
+import {
+  cancelLocalAnalysis,
+  defaultAnalysisRunner,
+  type AnalysisRunner,
+} from "../app/analysisClient";
 import { updateNestedPayloadExperimentDate } from "../app/nestedPayloadDates";
 import {
   actionErrorMessage,
@@ -880,6 +884,7 @@ export function DataSheetPage({
   const [analysisRun, setAnalysisRun] = useState<AnalysisRun | null>(restoredAnalysis);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisStatus, setAnalysisStatus] = useState<"idle" | "running" | "error">("idle");
+  const [runningRequestId, setRunningRequestId] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [metadataDraft, setMetadataDraft] = useState<ProjectMetadataDraft>(
@@ -1372,6 +1377,7 @@ export function DataSheetPage({
               unitInstances: canonicalData.unitInstances,
             });
       const runner = analysisRunner ?? defaultAnalysisRunner;
+      setRunningRequestId(request.requestId);
       const rawResult = await runner(request);
       const result = AnalysisEngineResultSchema.parse(rawResult);
       if (result.status !== "ok") {
@@ -1470,6 +1476,8 @@ export function DataSheetPage({
           ? error.message
           : "ローカル解析エンジンが有効な結果を返せませんでした。入力したデータは保持されています。",
       );
+    } finally {
+      setRunningRequestId(null);
     }
   };
 
@@ -1789,6 +1797,11 @@ export function DataSheetPage({
             >
               {analysisStatus === "running" ? "ローカルで解析中…" : "推奨解析を実行"}
             </button>
+            {analysisStatus === "running" && runningRequestId ? (
+              <button type="button" onClick={() => void cancelLocalAnalysis(runningRequestId)}>
+                解析を中止
+              </button>
+            ) : null}
           </section>
           {!canonicalData && (
             <p className="project-action-note" role="status">

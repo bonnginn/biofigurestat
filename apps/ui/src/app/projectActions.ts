@@ -3,6 +3,7 @@ import type {
   SpecializedEntryDraftProjectState,
   UnresolvedVisualizationProjectState,
 } from "@lsaa/project";
+import { ProjectCompatibilityError } from "@lsaa/project";
 
 /**
  * The only state a desktop save adapter may receive is a fully validated
@@ -93,5 +94,25 @@ export type ProjectActions = Readonly<{
  * the missing desktop bridge explicit. No project data is fabricated here.
  */
 export function actionErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message.trim() ? error.message : fallback;
+  if (error instanceof ProjectCompatibilityError) {
+    switch (error.code) {
+      case "PROJECT_SCHEMA_VERSION_NEWER_THAN_APP":
+        return `このプロジェクトは新しいBioFigureStat（保存形式 ${error.foundVersion ?? "不明"}）で作成されています。ファイルを変更せず、アプリを更新してから開いてください。`;
+      case "PROJECT_SCHEMA_VERSION_UNSUPPORTED":
+        return `このプロジェクトの保存形式（${error.foundVersion ?? "不明"}）には対応していません。元ファイルを変更せず、対応するBioFigureStatのversionを確認してください。`;
+      case "PROJECT_SCHEMA_VERSION_MISSING":
+      case "PROJECT_CONTENT_INVALID":
+        return "このプロジェクトの保存形式または内容を安全に確認できません。元ファイルを変更せず、診断情報とともに保管してください。";
+      case "PROJECT_KIND_MISMATCH":
+        return "このプロジェクトは、現在の編集画面とは別の種類です。Homeの「開く」から開き直してください。";
+    }
+  }
+  if (!(error instanceof Error) || !error.message.trim()) return fallback;
+  const message = error.message.trim();
+  if (
+    /(?:Zod|PROJECT_[A-Z_]+|Workspace|manifest|database|lineage|project contains)/iu.test(message)
+  ) {
+    return fallback;
+  }
+  return message;
 }

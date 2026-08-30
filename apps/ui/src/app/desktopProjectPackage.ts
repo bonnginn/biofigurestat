@@ -21,7 +21,7 @@ import type { OpenedAnyProject } from "./projectActions";
 
 const APP_VERSION = "0.1.0";
 
-type ProjectIoStage =
+export type ProjectIoStage =
   | "checksum"
   | "database_encode"
   | "container_begin"
@@ -29,9 +29,19 @@ type ProjectIoStage =
   | "container_commit"
   | "package_assembly";
 
+export class ProjectIoError extends Error {
+  readonly stage: ProjectIoStage;
+
+  constructor(stage: ProjectIoStage, detail: string, cause?: unknown) {
+    super(`PROJECT_IO_STAGE[${stage}]: ${detail}`, { cause });
+    this.name = "ProjectIoError";
+    this.stage = stage;
+  }
+}
+
 function projectIoStageError(stage: ProjectIoStage, error: unknown): Error {
   const detail = error instanceof Error ? error.message : String(error);
-  return new Error(`PROJECT_IO_STAGE[${stage}]: ${detail}`, { cause: error });
+  return new ProjectIoError(stage, detail, error);
 }
 
 export class TauriProjectContainerStorage implements ProjectPackageStorage {
@@ -268,7 +278,7 @@ export async function saveLocalProjectPackage(
       savedAt,
     });
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith("PROJECT_IO_STAGE[")) throw error;
+    if (error instanceof ProjectIoError) throw error;
     throw projectIoStageError("package_assembly", error);
   }
   return { state: savedState, target: selected };
@@ -305,7 +315,7 @@ export async function saveLocalUnresolvedVisualizationProjectPackage(
       savedAt,
     });
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith("PROJECT_IO_STAGE[")) throw error;
+    if (error instanceof ProjectIoError) throw error;
     throw projectIoStageError("package_assembly", error);
   }
   return { state: savedState, target: selected };
@@ -354,7 +364,7 @@ export async function saveLocalSpecializedEntryDraftProjectPackage(
       savedAt,
     });
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith("PROJECT_IO_STAGE[")) throw error;
+    if (error instanceof ProjectIoError) throw error;
     throw projectIoStageError("package_assembly", error);
   }
   return { state: savedState, target: selected };

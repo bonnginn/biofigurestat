@@ -112,8 +112,7 @@ function survivalFixture() {
 }
 
 function orderedCurveFixture() {
-  const rawText =
-    "Unit ID\tSeries\tX\tY\nreaction-1\tEnzyme A\t0\t0\nreaction-1\tEnzyme A\t5\t2.4";
+  const rawText = "Unit ID\tSeries\tX\tY\nreaction-1\tEnzyme A\t0\t0\nreaction-1\tEnzyme A\t5\t2.4";
   return createSpecializedEntryDraftProjectState({
     metadata: {
       projectId: "project.specialized.curve",
@@ -236,7 +235,7 @@ describe("specialized entry draft persistence", () => {
         target: "curve-draft.lsa",
         sha256,
       }),
-    ).rejects.toThrow("PROJECT_KIND_IS_NOT_UNRESOLVED_VISUALIZATION");
+    ).rejects.toMatchObject({ code: "PROJECT_KIND_MISMATCH" });
     await expect(
       openProjectStatePackage({
         storage,
@@ -249,7 +248,7 @@ describe("specialized entry draft persistence", () => {
           },
         },
       }),
-    ).rejects.toThrow("PROJECT_KIND_REQUIRES_UNRESOLVED_VISUALIZATION_READER");
+    ).rejects.toMatchObject({ code: "PROJECT_KIND_MISMATCH" });
   });
 
   it("fails closed for an unknown future version rather than guessing a design", () => {

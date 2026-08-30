@@ -373,7 +373,7 @@ describe("unresolved visualization project state", () => {
         target: "table.lsa",
         sha256,
       }),
-    ).rejects.toThrow("PROJECT_KIND_REQUIRES_UNRESOLVED_VISUALIZATION_READER");
+    ).rejects.toMatchObject({ code: "PROJECT_KIND_MISMATCH" });
   });
 
   it("keeps intent, raw bytes, mapping, and Graph specs stable across save-open-resave", async () => {
@@ -561,7 +561,7 @@ describe("unresolved visualization project state", () => {
         target: "wrong-kind.lsa",
         sha256,
       }),
-    ).rejects.toThrow("PROJECT_KIND_IS_NOT_UNRESOLVED_VISUALIZATION");
+    ).rejects.toMatchObject({ code: "PROJECT_KIND_MISMATCH" });
 
     await saveUnresolvedVisualizationProjectPackage({
       storage,

@@ -12,6 +12,7 @@ import {
 } from "@lsaa/project";
 import { rememberRecentProject } from "./app/recentProjects";
 import { setUsageConsent } from "./app/usageTelemetry";
+import { ProjectIoError } from "./app/desktopProjectPackage";
 
 const desktopTestActions = {
   openProject: async () => null,
@@ -34,6 +35,9 @@ const specializedBridgeCases = [
 
 describe("project save diagnostics", () => {
   it("extracts a privacy-safe save stage without requiring technical details", () => {
+    expect(projectIoStage(new ProjectIoError("container_write", "disk detail"))).toBe(
+      "container_write",
+    );
     expect(
       projectIoStage(
         new Error("PROJECT_IO_STAGE[container_commit]: Could not replace the project atomically"),
@@ -206,17 +210,19 @@ describe("workspace home", () => {
       fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
         target: { value: "1" },
       });
+      fireEvent.click(screen.getByRole("button", { name: "Graphを作成" }));
 
       const graphOnlySave = screen.getByRole("button", {
         name: "このGraph用データを保存",
-      });
-      const graphOnlyOpen = screen.queryByRole("button", {
-        name: "保存したGraph用データを開く",
       });
       expect(graphOnlySave).toBeEnabled();
       fireEvent.click(graphOnlySave);
       await waitFor(() => expect(unresolvedSave).toHaveBeenCalledOnce());
       await screen.findByText(/Graph用データを保存しました/);
+      fireEvent.click(screen.getByRole("button", { name: "データ" }));
+      const graphOnlyOpen = screen.queryByRole("button", {
+        name: "保存したGraph用データを開く",
+      });
       expect(graphOnlyOpen).toBeVisible();
       fireEvent.click(graphOnlyOpen!);
       await waitFor(() => expect(unresolvedOpen).toHaveBeenCalledOnce());

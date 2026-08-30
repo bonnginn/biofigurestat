@@ -67,6 +67,22 @@ describe("DelimitedTextSpreadsheet", () => {
     expect(onChange).toHaveBeenCalledWith("Condition\tValue\nControl\t10", "clipboard");
   });
 
+  it("selects a heading cell on click so typing replaces the starter label", () => {
+    render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Graph sheet"
+        value={"X / condition\tY / value"}
+        onChange={vi.fn()}
+      />,
+    );
+
+    const heading = screen.getByLabelText("Graph sheet 行1 列1") as HTMLInputElement;
+    fireEvent.click(heading);
+
+    expect(heading.selectionStart).toBe(0);
+    expect(heading.selectionEnd).toBe(heading.value.length);
+  });
+
   it("moves through the rectangular sheet with arrows, Enter, Shift+Enter, and Tab", () => {
     render(
       <DelimitedTextSpreadsheet
@@ -199,6 +215,60 @@ describe("DelimitedTextSpreadsheet", () => {
       target: { value: "1" },
     });
     expect(onChange).toHaveBeenLastCalledWith("ID\tValue\ncell-1\t4.5", "workbook_import");
+  });
+
+  it("explicitly stacks matching worksheets as Exp while retaining worksheet provenance", async () => {
+    const onChange = vi.fn();
+    const workbookImporter = vi.fn(async () => ({
+      fileName: "three-runs.xlsx",
+      sheets: [
+        {
+          name: "Exp 1",
+          rows: [
+            ["Condition", "Value"],
+            ["Control", "1.2"],
+          ],
+        },
+        {
+          name: "Exp 2",
+          rows: [
+            ["Condition", "Value"],
+            ["Control", "1.4"],
+          ],
+        },
+        {
+          name: "Exp 3",
+          rows: [
+            ["Condition", "Value"],
+            ["Drug", "2.1"],
+          ],
+        },
+      ],
+    }));
+    render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Graph sheet"
+        value={"X\tY"}
+        onChange={onChange}
+        workbookImporter={workbookImporter}
+        allowWorkbookSheetStacking
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "XLS / XLSXを直接読み込む" }));
+    await waitFor(() => expect(workbookImporter).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole("button", { name: "全worksheetをExpとしてまとめる" }));
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      [
+        "Experiment / worksheet\tCondition\tValue",
+        "Exp 1\tControl\t1.2",
+        "Exp 2\tControl\t1.4",
+        "Exp 3\tDrug\t2.1",
+      ].join("\n"),
+      "workbook_import",
+    );
+    expect(screen.getByRole("note")).toHaveTextContent("統計的なnであることは自動判定しません");
   });
 
   it("keeps the existing grid when workbook selection is cancelled or fails", async () => {

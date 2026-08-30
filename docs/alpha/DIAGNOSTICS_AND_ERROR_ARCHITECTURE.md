@@ -20,6 +20,14 @@ User-correctable errors explain what happened, why the structure matters, and a 
 
 Stable codes are centralized in `apps/ui/src/app/errorCatalog.ts`. Diagnostic redaction and event retention are centralized in `apps/ui/src/app/diagnostics.ts`.
 
+Project compatibility failures use typed boundary errors rather than parsing display strings. Newer,
+unsupported, missing, invalid and wrong-kind project files receive researcher-facing recovery
+guidance while parser details remain in the local cause chain. The desktop analysis sidecar is
+bounded to 120 seconds and can be cancelled by the active request ID; both paths terminate the
+child process, preserve entered data and return a fixed safe-stop message. Numerical-library
+reliability warnings emitted during a successful run are retained in the canonical result warnings
+instead of being discarded with stderr.
+
 ## Local events
 
 Diagnostic events exist only in process memory until the user explicitly copies or saves a report. They are never placed in the product-usage queue and are never uploaded automatically. Current diagnostic event classes include route changes, analysis execution metadata, Graph-state fingerprints, and stable error IDs.

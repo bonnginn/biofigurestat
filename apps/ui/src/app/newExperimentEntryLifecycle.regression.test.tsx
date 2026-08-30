@@ -36,7 +36,7 @@ async function enterBiologicalQuestionsFromGraphOnly(): Promise<void> {
   fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
   fireEvent.click(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" }));
   pasteGraphOnlyTable();
-  fireEvent.click(screen.getByRole("button", { name: "統計を確認" }));
+  fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
   fireEvent.click(
     screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
   );
@@ -105,6 +105,7 @@ describe("new experiment cross-stage dirty lifecycle", () => {
     await enterBiologicalQuestionsFromGraphOnly();
     fireEvent.click(screen.getByRole("button", { name: "戻る" }));
     expect(await screen.findByRole("heading", { name: "手元の表からGraphを作る" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "データ" }));
 
     fireEvent.click(screen.getByRole("button", { name: "保存したGraph用データを開く" }));
     expect(screen.getByRole("dialog", { name: "この実験を保存しますか？" })).toBeVisible();

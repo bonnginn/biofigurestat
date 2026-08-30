@@ -1,5 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { AnalysisEngineRequestSchema, AnalysisEngineResultSchema } from "@lsaa/analysis-contracts";
+import {
+  AnalysisEngineRequestSchema,
+  AnalysisEngineResultSchema,
+  type AnalysisEngineResult,
+} from "@lsaa/analysis-contracts";
 import { ExperimentDesignSchema } from "@lsaa/domain";
 import { vi } from "vitest";
 
@@ -232,6 +236,22 @@ function pairwiseResult(name: string) {
 }
 
 describe("GraphStatisticsPanel validation repair routes", () => {
+  it("offers request-scoped cancellation while the local analysis is running", async () => {
+    const analysisRunner = vi.fn(() => new Promise<AnalysisEngineResult>(() => undefined));
+    render(
+      <GraphStatisticsPanel
+        assessment={readyAssessment}
+        design={panelDesign()}
+        analysisRunner={analysisRunner}
+        relationshipAlreadyDeclared
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+
+    expect(await screen.findByRole("button", { name: "解析を中止" })).toBeVisible();
+  });
+
   it("persists the package-owned recommendation rather than UI display copy", async () => {
     const onAnalysisChange = vi.fn();
     const analysisRunner = vi.fn().mockResolvedValue(

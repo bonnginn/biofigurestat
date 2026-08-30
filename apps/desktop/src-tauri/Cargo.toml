@@ -21,3 +21,4 @@ sha2 = "=0.10.9"
 tauri-plugin-dialog = "=2.7.2"
 rusqlite = { version = "=0.40.2", features = ["bundled"] }
 calamine = { version = "=0.26.1", features = ["dates"] }
+png = "=0.17.16"

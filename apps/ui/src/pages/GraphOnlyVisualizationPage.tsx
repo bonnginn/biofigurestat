@@ -13,7 +13,7 @@ import {
   type UnresolvedVisualizationIdentityDecision,
   type UnresolvedVisualizationSourceRowUnitDecision,
 } from "@lsaa/project";
-import { GraphSpecSchema, type GraphSpec } from "@lsaa/graph-spec";
+import { GraphSpecSchema, type GraphEditorPresentation, type GraphSpec } from "@lsaa/graph-spec";
 
 import type {
   OpenUnresolvedVisualizationProjectAction,
@@ -25,11 +25,13 @@ import { routeFromPath } from "../app/routes";
 import { DelimitedTextSpreadsheet } from "../components/DelimitedTextSpreadsheet";
 import {
   GRAPH_ONLY_DEFAULT_PALETTE,
-  GraphOnlyDescriptiveWorkbench,
   graphOnlySeriesKeys,
   graphOnlyUsesNumericXAxis,
   type GraphOnlyPresentation,
 } from "../components/graph/GraphOnlyDescriptiveWorkbench";
+import { ExperimentGraphWorkbench } from "../components/graph/ExperimentGraphWorkbench";
+import { createGraphOnlyWorkbenchModel } from "../app/graphOnlyWorkbenchAdapter";
+import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 import "./GraphOnlyVisualizationPage.css";
 
@@ -152,6 +154,7 @@ function graphSpecFor(
   presentation: GraphOnlyPresentation,
   numericXAxis: boolean,
   seriesKeys: readonly string[],
+  editorPresentation?: GraphEditorPresentation,
 ): GraphSpec {
   const seriesHeader = seriesColumn === "" ? undefined : headers[seriesColumn];
   return GraphSpecSchema.parse({
@@ -176,7 +179,15 @@ function graphSpecFor(
       y: headers[yColumn] ?? `column_${yColumn + 1}`,
       ...(seriesHeader ? { series: seriesHeader, color: seriesHeader } : {}),
     },
-    summary: { center: "none", interval: "none" },
+    summary: editorPresentation
+      ? {
+          center: editorPresentation.layers.overall ? "mean" : "none",
+          interval:
+            editorPresentation.layers.errorBar && editorPresentation.appearance.errorBar !== "none"
+              ? editorPresentation.appearance.errorBar
+              : "none",
+        }
+      : { center: "none", interval: "none" },
     annotations: [],
     appearance: {
       palette: [...presentation.palette],
@@ -207,16 +218,41 @@ function graphSpecFor(
       ),
     },
     axes: {
-      yStartAtZero: presentation.yStartAtZero,
-      yScale: "linear",
-      ...(numericXAxis ? { xScale: "linear" as const } : {}),
-      xLabel: presentation.xLabel ?? headers[xColumn] ?? "X",
-      yLabel: presentation.yLabel ?? headers[yColumn] ?? "測定値",
-      showMinorTicks: true,
-      tickDirection: "outside",
-      showCategoryGroupSeparators: Boolean(seriesHeader),
+      yStartAtZero: editorPresentation
+        ? editorPresentation.axes.yRangeMode === "manual" && editorPresentation.axes.yMin === 0
+        : presentation.yStartAtZero,
+      yScale: editorPresentation?.axes.yScale ?? "linear",
+      ...(numericXAxis ? { xScale: editorPresentation?.axes.xScale ?? ("linear" as const) } : {}),
+      xLabel: editorPresentation?.axes.xTitle || presentation.xLabel || headers[xColumn] || "X",
+      yLabel:
+        editorPresentation?.axes.yTitle || presentation.yLabel || headers[yColumn] || "測定値",
+      showMinorTicks: editorPresentation?.axes.showMinorTicks ?? true,
+      tickDirection: editorPresentation?.axes.tickDirection ?? "outside",
+      showCategoryGroupSeparators:
+        editorPresentation?.axes.showCategoryGroupSeparators ?? Boolean(seriesHeader),
     },
+    ...(editorPresentation ? { editorPresentation } : {}),
   });
+}
+
+function editorPresentationFromWorkspaceState(
+  state: Omit<WorkspaceGraphState, "id" | "displayName"> | null,
+): GraphEditorPresentation | undefined {
+  if (!state) return undefined;
+  return {
+    graphType: state.graphType,
+    grouping: state.grouping!,
+    layers: state.layers,
+    appearance: {
+      ...state.appearance,
+      barOutline: state.appearance.barOutline ?? true,
+      barMeanMarker: state.appearance.barMeanMarker ?? false,
+      boxWhiskerMode: state.appearance.boxWhiskerMode ?? "tukey_1_5_iqr",
+      uncertaintyStyle: state.appearance.uncertaintyStyle ?? "error_bars",
+      ribbonOpacity: state.appearance.ribbonOpacity ?? 0.18,
+    },
+    axes: state.axes,
+  };
 }
 
 function newMetadata(projectName: string, timestamp: string) {
@@ -267,6 +303,7 @@ function graphOnlyLifecycleSnapshot(
     identityDecision: UnresolvedVisualizationIdentityDecision;
     sourceRowUnitDecision: UnresolvedVisualizationSourceRowUnitDecision;
     presentation: GraphOnlyPresentation;
+    editorPresentation?: GraphEditorPresentation;
   }>,
 ): string {
   return JSON.stringify(values);
@@ -330,6 +367,40 @@ function sameMappingDefinition(
   );
 }
 
+function initialEditorStateFor(
+  model: NonNullable<ReturnType<typeof createGraphOnlyWorkbenchModel>>,
+  graph: GraphSpec | null,
+): Omit<WorkspaceGraphState, "id" | "displayName"> | undefined {
+  const editor = graph?.editorPresentation;
+  if (!editor) return undefined;
+  return {
+    selectedReadoutId: model.draft.readouts[0]!.id,
+    sourceMode: "raw_readout",
+    selectedConditionIds: [...model.conditionIds],
+    analysisConditionIds: [...model.conditionIds],
+    selectedTimePointIds: [...model.timePointIds],
+    dataSets: {
+      displaySet: {
+        conditionIds: [...model.conditionIds],
+        timePointIds: [...model.timePointIds],
+      },
+      analysisSet: {
+        conditionIds: [...model.conditionIds],
+        timePointIds: [...model.timePointIds],
+      },
+      comparisonSet: [],
+      annotationSet: [],
+    },
+    analysisTimePointId: null,
+    analysisMetric: { kind: "selected_timepoint" },
+    ...editor,
+    statisticsAnnotation: { mode: "hidden", testIndex: 0 },
+    statisticsAnnotations: [],
+    analysisRunId: null,
+    analysis: null,
+  };
+}
+
 const DIRECT_ENTRY_TEMPLATE = "X / condition\tY / value\tGroup (optional)\tID (optional)";
 
 export function GraphOnlyVisualizationPage({
@@ -389,6 +460,14 @@ export function GraphOnlyVisualizationPage({
   const [statisticsXMeaning, setStatisticsXMeaning] = useState<
     "" | "condition" | "ordered" | "unknown"
   >("");
+  const [workspaceTab, setWorkspaceTab] = useState<"data" | "graph" | "statistics">(
+    compatibleInitialState?.activeGraphId ? "graph" : "data",
+  );
+  const [allowUniqueSeries, setAllowUniqueSeries] = useState(false);
+  const [workspaceGraphState, setWorkspaceGraphState] = useState<Omit<
+    WorkspaceGraphState,
+    "id" | "displayName"
+  > | null>(null);
   const lifecycleSnapshot = graphOnlyLifecycleSnapshot({
     text,
     sourceLabel,
@@ -399,6 +478,9 @@ export function GraphOnlyVisualizationPage({
     identityDecision,
     sourceRowUnitDecision,
     presentation: graphPresentation,
+    editorPresentation:
+      editorPresentationFromWorkspaceState(workspaceGraphState) ??
+      activeGraphFor(compatibleInitialState)?.editorPresentation,
   });
   const savedLifecycleSnapshotRef = useRef<string | null>(initialDirty ? null : lifecycleSnapshot);
   const isDirty =
@@ -417,6 +499,9 @@ export function GraphOnlyVisualizationPage({
     setIdColumn("");
     setIdentityDecision("unanswered");
     setSourceRowUnitDecision("unanswered");
+    setWorkspaceGraphState(null);
+    setAllowUniqueSeries(false);
+    setWorkspaceTab("data");
     setGraphPresentation((current) => ({
       ...current,
       xLabel: null,
@@ -430,6 +515,8 @@ export function GraphOnlyVisualizationPage({
     setSourceLabel(nextSourceLabel);
     setSaveMessage(null);
     setError(null);
+    setWorkspaceGraphState(null);
+    setWorkspaceTab("data");
     resetImportedMapping();
   };
 
@@ -448,13 +535,41 @@ export function GraphOnlyVisualizationPage({
       (seriesColumn !== "" && (seriesColumn === xColumn || seriesColumn === yColumn)) ||
       (idColumn !== "" &&
         (idColumn === xColumn || idColumn === yColumn || idColumn === seriesColumn)));
+  const mappedSeriesKeys =
+    xColumn === "" || yColumn === ""
+      ? []
+      : graphOnlySeriesKeys(parsed, xColumn, yColumn, seriesColumn);
+  const seriesMappingLooksLikeId =
+    seriesColumn !== "" && finiteYCount > 1 && mappedSeriesKeys.length === finiteYCount;
   const canGraph =
     !parsedResult.error &&
     parsed.rows.length > 0 &&
     xColumn !== "" &&
     yColumn !== "" &&
     !duplicateMapping &&
-    finiteYCount > 0;
+    finiteYCount > 0 &&
+    (!seriesMappingLooksLikeId || allowUniqueSeries);
+  const workbenchModel = useMemo(
+    () =>
+      canGraph
+        ? createGraphOnlyWorkbenchModel({
+            parsed,
+            xColumn: xColumn as number,
+            yColumn: yColumn as number,
+            seriesColumn,
+            idColumn,
+            title: graphPresentation.title,
+          })
+        : null,
+    [canGraph, graphPresentation.title, idColumn, parsed, seriesColumn, xColumn, yColumn],
+  );
+  const loadedEditorState = useMemo(
+    () =>
+      workbenchModel
+        ? initialEditorStateFor(workbenchModel, activeGraphFor(loadedState))
+        : undefined,
+    [loadedState, workbenchModel],
+  );
   const dataEntryRecordedRef = useRef(Boolean(compatibleInitialState));
   const graphCreatedRecordedRef = useRef(Boolean(compatibleInitialState?.activeGraphId));
   const statisticsRequestedRecordedRef = useRef(false);
@@ -579,6 +694,7 @@ export function GraphOnlyVisualizationPage({
       graphPresentation,
       numericXAxis,
       seriesKeys,
+      editorPresentationFromWorkspaceState(workspaceGraphState) ?? activeGraph?.editorPresentation,
     );
     if (sameGraphDefinition(activeGraph, comparisonSpec)) return base;
     const spec = activeGraph ? { ...comparisonSpec, id: visualizationId("graph") } : comparisonSpec;
@@ -605,6 +721,8 @@ export function GraphOnlyVisualizationPage({
     setSourceRowUnitDecision(initialSourceRowUnitDecision(state));
     const loadedPresentation = initialGraphOnlyPresentation(state);
     setGraphPresentation(loadedPresentation);
+    setWorkspaceGraphState(null);
+    setWorkspaceTab(state.activeGraphId ? "graph" : "data");
     setError(null);
     setSaveMessage(target ? "保存したGraph用データを開きました。" : null);
     setStatisticsMessage(null);
@@ -624,6 +742,7 @@ export function GraphOnlyVisualizationPage({
       identityDecision: initialIdentityDecision(state),
       sourceRowUnitDecision: initialSourceRowUnitDecision(state),
       presentation: loadedPresentation,
+      editorPresentation: activeGraphFor(state)?.editorPresentation,
     });
     onDirtyChange?.(false);
     recordUsageMilestone(routeFromPath(window.location.pathname), "project_opened");
@@ -670,7 +789,7 @@ export function GraphOnlyVisualizationPage({
   };
 
   return (
-    <div className="page-stack narrow-page graph-only">
+    <div className="page-stack graph-only graph-only--workspace">
       <button
         className="back-link"
         type="button"
@@ -684,253 +803,368 @@ export function GraphOnlyVisualizationPage({
         <p>表の列を指定してGraphを作ります。実験構造や統計的なnは、統計を使うまで質問しません。</p>
       </header>
 
-      <section className="graph-only__input" aria-labelledby="graph-only-input-heading">
-        <div className="graph-only__section-heading">
-          <h2 id="graph-only-input-heading">1. 表に入力・貼り付ける</h2>
-          <div className="graph-only__actions">
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => {
-                const clipboard = navigator.clipboard;
-                if (!clipboard) {
-                  setError(
-                    "クリップボードを読み取れませんでした。下のシートへ直接貼り付けてください。",
-                  );
-                  return;
-                }
-                void clipboard
-                  .readText()
-                  .then((clipboardText) => {
-                    if (clipboardText) {
-                      applyImportedText(clipboardText, "clipboard");
-                    }
-                  })
-                  .catch(() =>
-                    setError(
-                      "クリップボードを読み取れませんでした。下のシートへ直接貼り付けてください。",
-                    ),
-                  );
-              }}
-            >
-              クリップボードから貼り付け
-            </button>
-            {openProject ? (
+      <nav className="graph-only__workspace-tabs" aria-label="表からGraphの作業段階">
+        <button
+          type="button"
+          aria-current={workspaceTab === "data" ? "page" : undefined}
+          onClick={() => setWorkspaceTab("data")}
+        >
+          データ
+        </button>
+        <button
+          type="button"
+          disabled={!canGraph}
+          aria-current={workspaceTab === "graph" ? "page" : undefined}
+          onClick={() => setWorkspaceTab("graph")}
+        >
+          Graph
+        </button>
+        <button
+          type="button"
+          disabled={!canGraph}
+          aria-current={workspaceTab === "statistics" ? "page" : undefined}
+          onClick={() => {
+            setWorkspaceTab("statistics");
+            setStatisticsHandoffVisible(true);
+            if (!statisticsRequestedRecordedRef.current) {
+              statisticsRequestedRecordedRef.current = true;
+              recordUsageMilestone(routeFromPath(window.location.pathname), "statistics_requested");
+            }
+          }}
+        >
+          Statistics
+        </button>
+      </nav>
+
+      <div className="graph-only__data-workspace" hidden={workspaceTab !== "data"}>
+        <section className="graph-only__input" aria-labelledby="graph-only-input-heading">
+          <div className="graph-only__section-heading">
+            <h2 id="graph-only-input-heading">1. 表に入力・貼り付ける</h2>
+            <div className="graph-only__actions">
               <button
                 className="secondary-button"
                 type="button"
                 onClick={() => {
-                  requestExit("保存したGraph用データを開く", async () => {
-                    await openProject()
-                      .then((opened) => {
-                        if (opened) applyLoadedState(opened.state, opened.target);
-                      })
-                      .catch((reason: unknown) =>
-                        setError(
-                          reason instanceof Error
-                            ? reason.message
-                            : "保存したGraph用データを開けませんでした。",
-                        ),
-                      );
-                  });
+                  const clipboard = navigator.clipboard;
+                  if (!clipboard) {
+                    setError(
+                      "クリップボードを読み取れませんでした。下のシートへ直接貼り付けてください。",
+                    );
+                    return;
+                  }
+                  void clipboard
+                    .readText()
+                    .then((clipboardText) => {
+                      if (clipboardText) {
+                        applyImportedText(clipboardText, "clipboard");
+                      }
+                    })
+                    .catch(() =>
+                      setError(
+                        "クリップボードを読み取れませんでした。下のシートへ直接貼り付けてください。",
+                      ),
+                    );
                 }}
               >
-                保存したGraph用データを開く
+                クリップボードから貼り付け
               </button>
-            ) : null}
+              {openProject ? (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => {
+                    requestExit("保存したGraph用データを開く", async () => {
+                      await openProject()
+                        .then((opened) => {
+                          if (opened) applyLoadedState(opened.state, opened.target);
+                        })
+                        .catch((reason: unknown) =>
+                          setError(
+                            reason instanceof Error
+                              ? reason.message
+                              : "保存したGraph用データを開けませんでした。",
+                          ),
+                        );
+                    });
+                  }}
+                >
+                  保存したGraph用データを開く
+                </button>
+              ) : null}
+            </div>
           </div>
-        </div>
-        <p className="graph-only__subtle">
-          見出しの下へ直接入力するか、Excelから長方形の範囲を左上セルへ貼り付けてください。直接入力用のX列とY列だけを最初からGraphへ対応付けています。GroupとIDは必要なときだけ使います。
-        </p>
-        <DelimitedTextSpreadsheet
-          value={text}
-          onChange={(nextText, source) => {
-            const nextParsedResult = parseVisualizationInput(nextText);
-            const headersChanged =
-              Boolean(nextParsedResult.error) ||
-              nextParsedResult.parsed.headers.length !== parsed.headers.length ||
-              nextParsedResult.parsed.headers.some(
-                (header, index) => header !== parsed.headers[index],
-              );
-            setText(nextText);
-            setSaveMessage(null);
-            setError(null);
-            if (source === "clipboard") {
-              setSourceLabel("clipboard");
-              // Pasting values below unchanged headers is ordinary spreadsheet
-              // entry and must retain the direct X/Y mapping. A paste that
-              // changes the table schema still requires explicit remapping.
-              if (headersChanged) resetImportedMapping();
-            } else if (source === "workbook_import") {
-              setSourceLabel("excel workbook import");
-              resetImportedMapping();
-            }
-          }}
-          ariaLabel="Graph用データシート"
-          caption="Graph用データ"
-          minimumRows={6}
-          minimumColumns={4}
-          testIdPrefix="graph-only"
-          replaceOnPasteAtOrigin
-        />
-        <label className="graph-only__file">
-          <span>CSV / TSV / TXTファイルを同じシートへ読み込む</span>
-          <input
-            aria-label="Graph用の表ファイル"
-            accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
-            type="file"
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              if (!file) return;
-              void file
-                .text()
-                .then((contents) => {
-                  applyImportedText(contents, file.name);
-                })
-                .catch(() => setError("表ファイルを読み込めませんでした。"));
+          <p className="graph-only__subtle">
+            見出しの下へ直接入力するか、Excelから長方形の範囲を左上セルへ貼り付けてください。直接入力用のX列とY列だけを最初からGraphへ対応付けています。GroupとIDは必要なときだけ使います。
+          </p>
+          <DelimitedTextSpreadsheet
+            value={text}
+            onChange={(nextText, source) => {
+              const nextParsedResult = parseVisualizationInput(nextText);
+              const headersChanged =
+                Boolean(nextParsedResult.error) ||
+                nextParsedResult.parsed.headers.length !== parsed.headers.length ||
+                nextParsedResult.parsed.headers.some(
+                  (header, index) => header !== parsed.headers[index],
+                );
+              setText(nextText);
+              setSaveMessage(null);
+              setError(null);
+              if (source === "clipboard") {
+                setSourceLabel("clipboard");
+                // Pasting values below unchanged headers is ordinary spreadsheet
+                // entry and must retain the direct X/Y mapping. A paste that
+                // changes the table schema still requires explicit remapping.
+                if (headersChanged) resetImportedMapping();
+              } else if (source === "workbook_import") {
+                setSourceLabel("excel workbook import");
+                resetImportedMapping();
+              }
             }}
+            ariaLabel="Graph用データシート"
+            caption="Graph用データ"
+            minimumRows={6}
+            minimumColumns={4}
+            testIdPrefix="graph-only"
+            replaceOnPasteAtOrigin
+            allowWorkbookSheetStacking
           />
-          <small>
-            CSV / TSV / TXTはここから、XLS / XLSX / XLSM /
-            XLSBは上のExcel読込から開けます。任意の行だけを解析対象から外す操作は未対応です。
-          </small>
-        </label>
-        {parsedResult.error ? (
-          <p className="graph-only__error" role="alert">
-            {parsedResult.error}
-          </p>
-        ) : null}
-      </section>
+          <label className="graph-only__file">
+            <span>CSV / TSV / TXTファイルを同じシートへ読み込む</span>
+            <input
+              aria-label="Graph用の表ファイル"
+              accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+              type="file"
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                if (!file) return;
+                void file
+                  .text()
+                  .then((contents) => {
+                    applyImportedText(contents, file.name);
+                  })
+                  .catch(() => setError("表ファイルを読み込めませんでした。"));
+              }}
+            />
+            <small>
+              CSV / TSV / TXTはここから、XLS / XLSX / XLSM /
+              XLSBは上のExcel読込から開けます。任意の行だけを解析対象から外す操作は未対応です。
+            </small>
+          </label>
+          {parsedResult.error ? (
+            <p className="graph-only__error" role="alert">
+              {parsedResult.error}
+            </p>
+          ) : null}
+        </section>
 
-      <section className="graph-only__mapping" aria-labelledby="graph-only-mapping-heading">
-        <h2 id="graph-only-mapping-heading">2. Graphに使う列を指定する</h2>
-        <p className="graph-only__subtle">
-          空の直接入力シートでは最初の2列だけをXとYへ対応付けています。見出しが変わる表の貼り付け・ファイル読込では列の意味を推測せず指定を解除するため、表を見て横軸・測定値・（必要なら）グループ列を選んでください。
-        </p>
-        <div className="graph-only__mapping-grid">
-          <label className="experiment-start__field">
-            <span>横軸（カテゴリまたはX）</span>
-            <select
-              aria-label="Graphの横軸"
-              value={xColumn}
-              onChange={(event) => {
-                setXColumn(event.target.value === "" ? "" : Number(event.target.value));
-                setGraphPresentation((current) => ({ ...current, xLabel: null }));
-              }}
-            >
-              <option value="">列を選択</option>
-              {columns}
-            </select>
-          </label>
-          <label className="experiment-start__field">
-            <span>測定値（数値）</span>
-            <select
-              aria-label="Graphの測定値"
-              value={yColumn}
-              onChange={(event) => {
-                setYColumn(event.target.value === "" ? "" : Number(event.target.value));
-                setGraphPresentation((current) => ({ ...current, yLabel: null }));
-              }}
-            >
-              <option value="">列を選択</option>
-              {columns}
-            </select>
-          </label>
-          <label className="experiment-start__field">
-            <span>グループ（任意）</span>
-            <select
-              aria-label="Graphのグループ"
-              value={seriesColumn}
-              onChange={(event) => {
-                setSeriesColumn(event.target.value === "" ? "" : Number(event.target.value));
-                setGraphPresentation((current) => ({ ...current, seriesLabels: {} }));
-              }}
-            >
-              <option value="">グループなし</option>
-              {columns}
-            </select>
-          </label>
-        </div>
-        {duplicateMapping ? (
-          <p className="graph-only__error" role="alert">
-            同じ列を複数の役割には使えません。別の列を選んでください。
-          </p>
-        ) : null}
-        {yColumn !== "" && finiteYCount === 0 && parsed.rows.length > 0 ? (
-          <p className="graph-only__error" role="alert">
-            測定値の列に数値がありません。数値列を指定してください。
-          </p>
-        ) : null}
-        {yColumn !== "" && finiteYCount > 0 && skippedYCount > 0 ? (
+        <section className="graph-only__mapping" aria-labelledby="graph-only-mapping-heading">
+          <h2 id="graph-only-mapping-heading">2. Graphに使う列を指定する</h2>
           <p className="graph-only__subtle">
-            数値として読めない {skippedYCount} 行はGraphに表示せず、元の表には残します。
+            空の直接入力シートでは最初の2列だけをXとYへ対応付けています。見出しが変わる表の貼り付け・ファイル読込では列の意味を推測せず指定を解除するため、表を見て横軸・測定値・（必要なら）グループ列を選んでください。
           </p>
-        ) : null}
-      </section>
-
-      <section className="graph-only__result" aria-labelledby="graph-only-result-heading">
-        <div className="graph-only__result-heading">
-          <h2 id="graph-only-result-heading">3. Graph</h2>
-          <span className={canGraph ? "graph-only__ready" : "graph-only__waiting"}>
-            {canGraph ? "Graphを表示中" : "列の指定を待っています"}
-          </span>
-        </div>
-        {canGraph ? (
-          <GraphOnlyDescriptiveWorkbench
-            parsed={parsed}
-            xColumn={xColumn as number}
-            yColumn={yColumn as number}
-            seriesColumn={seriesColumn}
-            presentation={graphPresentation}
-            onPresentationChange={setGraphPresentation}
-          />
-        ) : (
-          <p className="graph-only__subtle">
-            表を貼り付け、横軸と測定値を指定するとGraphが表示されます。
-          </p>
-        )}
-        <div className="graph-only__result-actions">
+          <div className="graph-only__mapping-grid">
+            <label className="experiment-start__field">
+              <span>横軸（カテゴリまたはX）</span>
+              <select
+                aria-label="Graphの横軸"
+                value={xColumn}
+                onChange={(event) => {
+                  setXColumn(event.target.value === "" ? "" : Number(event.target.value));
+                  setGraphPresentation((current) => ({ ...current, xLabel: null }));
+                  setWorkspaceGraphState(null);
+                }}
+              >
+                <option value="">列を選択</option>
+                {columns}
+              </select>
+            </label>
+            <label className="experiment-start__field">
+              <span>測定値（数値）</span>
+              <select
+                aria-label="Graphの測定値"
+                value={yColumn}
+                onChange={(event) => {
+                  setYColumn(event.target.value === "" ? "" : Number(event.target.value));
+                  setGraphPresentation((current) => ({ ...current, yLabel: null }));
+                  setWorkspaceGraphState(null);
+                }}
+              >
+                <option value="">列を選択</option>
+                {columns}
+              </select>
+            </label>
+            <label className="experiment-start__field">
+              <span>色・線で分ける系列（任意）</span>
+              <select
+                aria-label="Graphの系列"
+                value={seriesColumn}
+                onChange={(event) => {
+                  setSeriesColumn(event.target.value === "" ? "" : Number(event.target.value));
+                  setGraphPresentation((current) => ({ ...current, seriesLabels: {} }));
+                  setAllowUniqueSeries(false);
+                  setWorkspaceGraphState(null);
+                }}
+              >
+                <option value="">系列で分けない</option>
+                {columns}
+              </select>
+              <small>
+                薬剤の種類やgenotypeなど、同じ系列に複数の点がある列です。試料IDは右へ指定します。
+              </small>
+            </label>
+            <label className="experiment-start__field">
+              <span>対象・試料ID（任意）</span>
+              <select
+                aria-label="Graph用データの対象ID"
+                value={idColumn}
+                onChange={(event) => {
+                  const next = event.target.value === "" ? "" : Number(event.target.value);
+                  setIdColumn(next);
+                  setIdentityDecision(next === "" ? "unanswered" : "selected_column");
+                  setSourceRowUnitDecision("unanswered");
+                  setWorkspaceGraphState(null);
+                }}
+              >
+                <option value="">ID列を指定しない</option>
+                {columns}
+              </select>
+              <small>dish ID・Animal IDなどです。IDは凡例や色分けには使いません。</small>
+            </label>
+          </div>
+          {duplicateMapping ? (
+            <p className="graph-only__error" role="alert">
+              同じ列を複数の役割には使えません。別の列を選んでください。
+            </p>
+          ) : null}
+          {yColumn !== "" && finiteYCount === 0 && parsed.rows.length > 0 ? (
+            <p className="graph-only__error" role="alert">
+              測定値の列に数値がありません。数値列を指定してください。
+            </p>
+          ) : null}
+          {yColumn !== "" && finiteYCount > 0 && skippedYCount > 0 ? (
+            <p className="graph-only__subtle">
+              数値として読めない {skippedYCount} 行はGraphに表示せず、元の表には残します。
+            </p>
+          ) : null}
+          {seriesMappingLooksLikeId ? (
+            <div className="graph-only__mapping-warning" role="alert">
+              <strong>選んだ系列列は、各行で値がすべて異なります。</strong>
+              <p>
+                試料IDの可能性があります。dish ID・Animal
+                IDなどなら「対象・試料ID」へ移してください。
+              </p>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={allowUniqueSeries}
+                  onChange={(event) => setAllowUniqueSeries(event.target.checked)}
+                />
+                各行を別系列として表示する意図である
+              </label>
+            </div>
+          ) : null}
+        </section>
+        <div className="graph-only__data-next">
           <button
             className="primary-button"
             type="button"
-            disabled={!canGraph || !saveProject}
-            aria-describedby={!saveProject ? "graph-only-save-unavailable" : undefined}
-            onClick={() => void saveCurrentProject()}
+            disabled={!canGraph}
+            onClick={() => setWorkspaceTab("graph")}
           >
-            このGraph用データを保存
-          </button>
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={() => {
-              if (onStatisticsStructureRequested && canGraph) {
-                if (!statisticsRequestedRecordedRef.current) {
-                  statisticsRequestedRecordedRef.current = true;
-                  recordUsageMilestone(
-                    routeFromPath(window.location.pathname),
-                    "statistics_requested",
-                  );
-                }
-                setStatisticsHandoffVisible(true);
-                setStatisticsMessage(null);
-                return;
-              }
-              setStatisticsMessage(
-                "実験構造が未確定のため、統計解析は開始できません。実験から始める入口で、独立した対象・条件・対応関係を確認してください。",
-              );
-              recordStatisticsSafeStop();
-            }}
-          >
-            統計を確認
+            Graphを作成
           </button>
         </div>
+      </div>
+
+      <section
+        className="graph-only__result"
+        aria-labelledby="graph-only-result-heading"
+        hidden={workspaceTab === "data"}
+      >
+        <div className="graph-only__result-heading">
+          <h2 id="graph-only-result-heading">
+            {workspaceTab === "statistics" ? "Statistics" : "Graph"}
+          </h2>
+          <span className={canGraph ? "graph-only__ready" : "graph-only__waiting"}>
+            {workspaceTab === "statistics"
+              ? "実験構造を確認"
+              : canGraph
+                ? "Graphを編集中"
+                : "列の指定を待っています"}
+          </span>
+        </div>
+        {workspaceTab === "graph" && workbenchModel ? (
+          <>
+            <label className="graph-only__title-field">
+              <span>Graphタイトル</span>
+              <input
+                value={graphPresentation.title}
+                onChange={(event) =>
+                  setGraphPresentation((current) => ({ ...current, title: event.target.value }))
+                }
+              />
+            </label>
+            <ExperimentGraphWorkbench
+              key={JSON.stringify({ text, xColumn, yColumn, seriesColumn, idColumn })}
+              draft={{ ...workbenchModel.draft, name: graphPresentation.title }}
+              cells={workbenchModel.cells}
+              workspaceMode="graph"
+              analysisAvailable={false}
+              semanticReadiness="unresolved_descriptive"
+              initialState={workspaceGraphState ?? loadedEditorState}
+              onStateChange={setWorkspaceGraphState}
+              onClose={() => setWorkspaceTab("data")}
+            />
+          </>
+        ) : workspaceTab === "graph" ? (
+          <p className="graph-only__subtle">
+            表を貼り付け、横軸と測定値を指定するとGraphが表示されます。
+          </p>
+        ) : null}
+        {workspaceTab === "graph" ? (
+          <div className="graph-only__result-actions">
+            <button
+              className="primary-button"
+              type="button"
+              disabled={!canGraph || !saveProject}
+              aria-describedby={!saveProject ? "graph-only-save-unavailable" : undefined}
+              onClick={() => void saveCurrentProject()}
+            >
+              このGraph用データを保存
+            </button>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                if (onStatisticsStructureRequested && canGraph) {
+                  if (!statisticsRequestedRecordedRef.current) {
+                    statisticsRequestedRecordedRef.current = true;
+                    recordUsageMilestone(
+                      routeFromPath(window.location.pathname),
+                      "statistics_requested",
+                    );
+                  }
+                  setStatisticsHandoffVisible(true);
+                  setWorkspaceTab("statistics");
+                  setStatisticsMessage(null);
+                  return;
+                }
+                setStatisticsMessage(
+                  "実験構造が未確定のため、統計解析は開始できません。実験から始める入口で、独立した対象・条件・対応関係を確認してください。",
+                );
+                recordStatisticsSafeStop();
+              }}
+            >
+              統計を確認
+            </button>
+          </div>
+        ) : null}
         {!saveProject ? (
           <p id="graph-only-save-unavailable" className="graph-only__subtle">
             このブラウザレビューではGraph用データを保存できません。デスクトップ版で利用できます。
           </p>
         ) : null}
-        {statisticsHandoffVisible ? (
+        {workspaceTab === "statistics" && statisticsHandoffVisible ? (
           <section
             className="graph-only__statistics-handoff"
             aria-labelledby="graph-only-statistics-handoff-heading"

@@ -375,6 +375,8 @@ export type ExperimentGraphWorkbenchProps = Readonly<{
   workspaceMode?: "graph" | "statistics" | "combined";
   analysisRunner?: AnalysisRunner;
   analysisAvailable?: boolean;
+  /** Render imported rows descriptively without declaring them biological n. */
+  semanticReadiness?: "resolved" | "unresolved_descriptive";
   initialState?: Omit<WorkspaceGraphState, "id" | "displayName">;
   onStateChange?: (state: Omit<WorkspaceGraphState, "id" | "displayName">) => void;
   onAnalysisCorrection?: (correction: DraftAnalysisCorrection) => void;
@@ -2709,6 +2711,7 @@ export function ExperimentGraphWorkbench({
   workspaceMode = "combined",
   analysisRunner = defaultAnalysisRunner,
   analysisAvailable = true,
+  semanticReadiness = "resolved",
   initialState,
   onStateChange,
   onAnalysisCorrection,
@@ -2793,7 +2796,18 @@ export function ExperimentGraphWorkbench({
         ])
       : [];
   });
-  const [layers, setLayers] = useState<LayerState>(initialState?.layers ?? DEFAULT_LAYERS);
+  const [layers, setLayers] = useState<LayerState>(() => {
+    if (initialState?.layers) return initialState.layers;
+    if (semanticReadiness !== "unresolved_descriptive") return DEFAULT_LAYERS;
+    return {
+      ...defaultLayersForGraphType("dot", draft.readouts[0]?.shape ?? "proportion"),
+      // Summarizing unresolved rows can silently imply a statistical unit.
+      // Start with the source rows only; the researcher may opt into a visual
+      // summary without that changing Statistics readiness.
+      overall: false,
+      errorBar: false,
+    };
+  });
   const proposedInitialGrouping = useMemo(
     () =>
       normalizeGraphGroupingChannels(initialState?.grouping ?? createInitialGraphGrouping(draft)),
@@ -3723,7 +3737,7 @@ export function ExperimentGraphWorkbench({
     stacked_100: "100% stacked",
     category_percentage: "Category percentage",
   };
-  const activeLayerDescription = describeActiveGraphLayers({
+  const resolvedLayerDescription = describeActiveGraphLayers({
     graphType,
     shape,
     layers,
@@ -3731,6 +3745,13 @@ export function ExperimentGraphWorkbench({
     timeSampling: draft.time.sampling,
     matched: draft.conditionAssignment.kind === "matched",
   });
+  const activeLayerDescription =
+    semanticReadiness === "unresolved_descriptive"
+      ? resolvedLayerDescription
+          .replaceAll("Raw observations", "元表の行")
+          .replaceAll("Experiment summaries", "元表の行")
+          .replaceAll("Biological replicates", "元表の行")
+      : resolvedLayerDescription;
   const exportSvg = async () => {
     if (!svgRef.current || !readout) return;
     setPngExportFeedback(null);
@@ -4042,7 +4063,13 @@ export function ExperimentGraphWorkbench({
   return (
     <section
       className={`experiment-graph-workbench experiment-graph-workbench--${workspaceMode}`}
-      aria-label={workspaceMode === "statistics" ? "統計ワークスペース" : "実験からグラフを作成"}
+      aria-label={
+        workspaceMode === "statistics"
+          ? "統計ワークスペース"
+          : semanticReadiness === "unresolved_descriptive"
+            ? "表からグラフを作成"
+            : "実験からグラフを作成"
+      }
     >
       <header className="experiment-graph-workbench-header">
         <div>
@@ -4051,7 +4078,11 @@ export function ExperimentGraphWorkbench({
           </p>
           <h2>{readout?.label ?? "測定項目を選択"}</h2>
           <p className="experiment-graph-subtitle">
-            {timeLabel ? `時点：${timeLabel}` : "実験単位ごとの値を比較"}
+            {semanticReadiness === "unresolved_descriptive"
+              ? "表の行を記述的に表示（実験単位と統計的なnは未確認）"
+              : timeLabel
+                ? `時点：${timeLabel}`
+                : "実験単位ごとの値を比較"}
             {workspaceMode !== "statistics" ? " · 図の要素をクリックして設定" : ""}
           </p>
         </div>
@@ -4235,17 +4266,19 @@ export function ExperimentGraphWorkbench({
               </div>
             )}
             <p className="experiment-graph-caption">
-              {sharedSourceTopology
-                ? `各点は条件別${draft.conditionAssignment.unitLabel}の値です。同じ${sharedSourceTopology.sourceUnitLabel}に由来する組は共有IDで対応づけていますが、条件別${draft.conditionAssignment.unitLabel}は別の実験単位として保持しています。`
-                : shape === "categorical_counts"
-                  ? "カテゴリ別countを保持し、構成割合を自動計算しています。連続値として扱わず、カテゴリ構成の推論統計はまだ実行しません。"
-                  : draft.analysisIntent.kind === "correlation"
-                    ? "各点は同じ実験単位から得たXとYの完全な1組です。行順や日付から対応を推測していません。"
-                    : shape === "wb_ratio"
-                      ? `各点は実験単位（Exp）ごとの${readout.label} / ${readout.referenceLabel ?? "reference"}です。標的とreferenceの生値は別々に保持しています。`
-                      : shape === "proportion"
-                        ? `現在の表示：${activeLayerDescription}。割合と要約は実験単位（Exp）から計算しています。`
-                        : `現在の表示：${activeLayerDescription}。細胞・ROIなどの生データを表示しても、統計上のnは実験単位です。`}
+              {semanticReadiness === "unresolved_descriptive"
+                ? `現在の表示：${activeLayerDescription}。元の表の行を保持した記述的Graphです。行数をbiological nや対応関係とは解釈していません。`
+                : sharedSourceTopology
+                  ? `各点は条件別${draft.conditionAssignment.unitLabel}の値です。同じ${sharedSourceTopology.sourceUnitLabel}に由来する組は共有IDで対応づけていますが、条件別${draft.conditionAssignment.unitLabel}は別の実験単位として保持しています。`
+                  : shape === "categorical_counts"
+                    ? "カテゴリ別countを保持し、構成割合を自動計算しています。連続値として扱わず、カテゴリ構成の推論統計はまだ実行しません。"
+                    : draft.analysisIntent.kind === "correlation"
+                      ? "各点は同じ実験単位から得たXとYの完全な1組です。行順や日付から対応を推測していません。"
+                      : shape === "wb_ratio"
+                        ? `各点は実験単位（Exp）ごとの${readout.label} / ${readout.referenceLabel ?? "reference"}です。標的とreferenceの生値は別々に保持しています。`
+                        : shape === "proportion"
+                          ? `現在の表示：${activeLayerDescription}。割合と要約は実験単位（Exp）から計算しています。`
+                          : `現在の表示：${activeLayerDescription}。細胞・ROIなどの生データを表示しても、統計上のnは実験単位です。`}
             </p>
             <details className="experiment-graph-data-details">
               <summary>使用データの内訳を表示</summary>

@@ -44,7 +44,11 @@ import {
   type ProjectState,
 } from "@lsaa/project";
 
-import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
+import {
+  cancelLocalAnalysis,
+  defaultAnalysisRunner,
+  type AnalysisRunner,
+} from "../app/analysisClient";
 import { updateNestedPayloadExperimentDate } from "../app/nestedPayloadDates";
 import {
   actionErrorMessage,
@@ -434,6 +438,7 @@ export function MultiConditionDataSheetPage({
   const [validated, setValidated] = useState(initialCanonicalData !== null);
   const [analysisRun, setAnalysisRun] = useState<AnalysisRun | null>(restoredAnalysis);
   const [analysisStatus, setAnalysisStatus] = useState<"idle" | "running" | "error">("idle");
+  const [runningRequestId, setRunningRequestId] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [hasPastedValues, setHasPastedValues] = useState(false);
   const [activeReplicateIndex, setActiveReplicateIndex] = useState(0);
@@ -776,6 +781,7 @@ export function MultiConditionDataSheetPage({
           : recommendation.templateId === "D05"
             ? createD05EngineRequest(requestInput)
             : createD03EngineRequest(requestInput);
+      setRunningRequestId(request.requestId);
       const result = AnalysisEngineResultSchema.parse(
         await (analysisRunner ?? defaultAnalysisRunner)(request),
       );
@@ -851,6 +857,8 @@ export function MultiConditionDataSheetPage({
       setAnalysisError(
         error instanceof Error ? error.message : "ローカル解析を実行できませんでした。",
       );
+    } finally {
+      setRunningRequestId(null);
     }
   };
 
@@ -1385,6 +1393,11 @@ export function MultiConditionDataSheetPage({
             >
               {analysisStatus === "running" ? "ローカルで解析中…" : "推奨解析を実行"}
             </button>
+            {analysisStatus === "running" && runningRequestId ? (
+              <button type="button" onClick={() => void cancelLocalAnalysis(runningRequestId)}>
+                解析を中止
+              </button>
+            ) : null}
           </section>
           {!canonicalData && (
             <p className="project-action-note" role="status">

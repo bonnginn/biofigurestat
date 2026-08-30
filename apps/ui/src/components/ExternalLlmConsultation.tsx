@@ -92,7 +92,7 @@ export function ExternalLlmConsultation({
               相談文をコピー
             </button>
             <a href={EXTERNAL_LLM_GUIDE_URL} target="_blank" rel="noreferrer">
-              LSA使用ガイドを開く
+              BioFigureStat使用ガイドを開く
             </a>
           </div>
           {copyStatus ? <p role="status">{copyStatus}</p> : null}

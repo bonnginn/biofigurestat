@@ -77,6 +77,32 @@ class D01D02EngineTests(unittest.TestCase):
         self.assertAlmostEqual(result["tests"][0]["pValue"], 0.004002714883968111, places=12)
         self.assertAlmostEqual(result["tests"][0]["effectSize"], -2.4210372418329253, places=12)
 
+    def test_welch_retains_numerical_warning_for_one_zero_variance_condition(self):
+        observations = []
+        for condition, values in (
+            ("condition.control", [1.0, 1.0, 1.0]),
+            ("condition.treatment", [2.0, 3.0, 5.0]),
+        ):
+            for index, value in enumerate(values):
+                observations.append(
+                    {
+                        "observationId": f"observation.{condition}.{index}",
+                        "conditionId": condition,
+                        "value": value,
+                        "experimentalUnitId": f"unit.{condition}.{index}",
+                    }
+                )
+
+        result = run_request(request("D01", "welch_t", observations))
+
+        self.assertEqual(result["status"], "ok")
+        self.assertTrue(
+            any(
+                warning["code"] == "numerical_library_reliability_warning"
+                for warning in result["warnings"]
+            )
+        )
+
     def test_paired_fixture(self):
         observations = []
         for index, (control, treatment) in enumerate(((10, 12), (13, 15), (9, 14), (15, 18), (11, 13))):

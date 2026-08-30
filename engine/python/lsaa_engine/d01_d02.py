@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import warnings
 from collections import defaultdict
 from typing import Any
 
@@ -359,7 +360,7 @@ def run_wilcoxon(request: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
-def run_request(request: dict[str, Any]) -> dict[str, Any]:
+def _dispatch_request(request: dict[str, Any]) -> dict[str, Any]:
     if request.get("protocolVersion") == "0.14.0":
         from .d17 import run_nonlinear_xy
         if request.get("templateId") == "D17" and request.get("method") == "nonlinear_xy_fit":
@@ -470,3 +471,23 @@ def run_request(request: dict[str, Any]) -> dict[str, Any]:
         if method == "wilcoxon_signed_rank":
             return run_wilcoxon(request)
     raise ValueError(f"Unsupported template/method combination: {request.get('templateId')}/{method}")
+
+
+def run_request(request: dict[str, Any]) -> dict[str, Any]:
+    """Run one request while retaining numerical-library reliability warnings."""
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always")
+        result = _dispatch_request(request)
+    existing = {warning.get("message") for warning in result.get("warnings", [])}
+    for captured_warning in captured:
+        message = str(captured_warning.message).strip()
+        if not message or message in existing:
+            continue
+        result.setdefault("warnings", []).append(
+            {
+                "code": "numerical_library_reliability_warning",
+                "message": f"The numerical library reported a reliability warning: {message}",
+            }
+        )
+        existing.add(message)
+    return result

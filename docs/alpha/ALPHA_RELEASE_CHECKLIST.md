@@ -66,6 +66,7 @@ Current engineering evidence and the reduced human gate are summarized in
 ## Save / open / export
 
 - [x] COMPLETE — versioned `.lsa` project, atomic save/validated replacement, migrations, checksums and recovery contracts exist.
+- [x] COMPLETE — every known project-state schema version is represented in a migration fixture matrix; newer/unsupported/invalid/wrong-kind files use typed compatibility errors and do not expose parser output in the normal UI.
 - [x] COMPLETE — raw, design, analysis, Graph and Methods round-trip regressions pass, including D17 lineage.
 - [x] COMPLETE — SVG and displayed-data export paths are implemented; browser preview does not pretend to perform native save/analysis.
 - [ ] BEFORE ALPHA — macOS clean-machine create/save/quit/reopen/export/recovery smoke passes on a real `.lsa` file.
@@ -116,6 +117,7 @@ Current engineering evidence and the reduced human gate are summarized in
 ## Diagnostics
 
 - [x] COMPLETE — stable error taxonomy, actionable next steps, local contextual Help and privacy-reduced diagnostics exist.
+- [x] COMPLETE — local analysis has a 120-second hard timeout and request-scoped user cancellation; successful numerical-library reliability warnings are retained in Results.
 - [x] COMPLETE — browser-only attempts to run local analysis fail explicitly instead of displaying invented output.
 - [ ] BEFORE ALPHA — packaged sidecar missing/crash/version-mismatch, unwritable target, corrupt project and recovery messages are exercised.
 - [ ] BEFORE ALPHA — diagnostic JSON can be copied/saved on macOS and Windows and contains no research data by default.

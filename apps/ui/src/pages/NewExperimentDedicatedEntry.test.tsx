@@ -154,12 +154,8 @@ describe("New Experiment dedicated entry handoff", () => {
     expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("X / condition");
     expect(screen.getByTestId("graph-only-cell-1-0")).toBeEnabled();
     expect(screen.queryByRole("button", { name: "保存したGraph用データを開く" })).toBeNull();
-    const saveButton = screen.getByRole("button", { name: "このGraph用データを保存" });
-    expect(saveButton).toBeDisabled();
-    const unavailableNote = screen.getByText(
-      "このブラウザレビューではGraph用データを保存できません。デスクトップ版で利用できます。",
-    );
-    expect(saveButton).toHaveAttribute("aria-describedby", unavailableNote.id);
+    expect(screen.getByRole("button", { name: "Graph" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Statistics" })).toBeDisabled();
     expect(onNavigate).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "入口へ戻る" }));
@@ -180,7 +176,7 @@ describe("New Experiment dedicated entry handoff", () => {
       target: { value: "1" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "統計を確認" }));
+    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
     fireEvent.click(
       screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
     );
@@ -219,11 +215,9 @@ describe("New Experiment dedicated entry handoff", () => {
 
   it("keeps explicit X/Y/ID mapping and raw rows when Statistics setup is canceled", () => {
     window.localStorage.setItem(ADAPTIVE_INPUT_FEATURE_FLAG, "enabled");
-    const source = [
-      "Condition\tValue\tDishID",
-      "Control\t10\tdish-c1",
-      "Drug\t14\tdish-d1",
-    ].join("\n");
+    const source = ["Condition\tValue\tDishID", "Control\t10\tdish-c1", "Drug\t14\tdish-d1"].join(
+      "\n",
+    );
     render(
       <NewExperimentPage browserPreview onNavigate={vi.fn()} onDedicatedEntryReady={vi.fn()} />,
     );
@@ -235,7 +229,7 @@ describe("New Experiment dedicated entry handoff", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
       target: { value: "1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "統計を確認" }));
+    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
     fireEvent.click(
       screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
     );
@@ -248,6 +242,7 @@ describe("New Experiment dedicated entry handoff", () => {
     fireEvent.click(screen.getByRole("button", { name: "戻る" }));
 
     expect(screen.getByRole("heading", { name: "手元の表からGraphを作る" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "データ" }));
     expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("Condition");
     expect(screen.getByTestId("graph-only-cell-0-1")).toHaveValue("Value");
     expect(screen.getByTestId("graph-only-cell-0-2")).toHaveValue("DishID");
@@ -260,7 +255,7 @@ describe("New Experiment dedicated entry handoff", () => {
     expect(screen.getByRole("combobox", { name: "Graphの横軸" })).toHaveValue("0");
     expect(screen.getByRole("combobox", { name: "Graphの測定値" })).toHaveValue("1");
 
-    fireEvent.click(screen.getByRole("button", { name: "統計を確認" }));
+    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
     fireEvent.click(
       screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
     );
@@ -290,7 +285,7 @@ describe("New Experiment dedicated entry handoff", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
       target: { value: "1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "統計を確認" }));
+    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
     fireEvent.click(
       screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
     );

@@ -368,7 +368,10 @@ function PersistedProjectView({
     } catch (error) {
       return (
         <p role="alert">
-          D17 projectを復元できません：{error instanceof Error ? error.message : "不明なエラー"}
+          {actionErrorMessage(
+            error,
+            "D17 projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
+          )}
         </p>
       );
     }
@@ -413,8 +416,10 @@ function PersistedProjectView({
       } catch (error) {
         return (
           <p role="alert">
-            Survival projectを復元できません：
-            {error instanceof Error ? error.message : "不明なエラー"}
+            {actionErrorMessage(
+              error,
+              "Survival projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
+            )}
           </p>
         );
       }
@@ -543,8 +548,10 @@ function PersistedProjectView({
   } catch (error) {
     return (
       <p role="alert">
-        編集画面を復元できません：
-        {error instanceof Error ? error.message : "不明なエラー"}
+        {actionErrorMessage(
+          error,
+          "編集画面を安全に復元できません。元ファイルは変更されていません。",
+        )}
       </p>
     );
   }

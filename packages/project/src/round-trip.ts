@@ -1,4 +1,5 @@
 import { assembleProjectPackage } from "./assembly";
+import { ProjectCompatibilityError } from "./compatibility-error";
 import {
   openProjectPackage,
   saveProjectPackage,
@@ -82,13 +83,16 @@ export async function openProjectStatePackage(input: {
 }): Promise<ProjectState> {
   const opened = await openProjectPackage(input.storage, input.target, input.sha256);
   if (opened.manifest.projectKind !== "experiment") {
-    throw new Error("PROJECT_KIND_REQUIRES_UNRESOLVED_VISUALIZATION_READER");
+    throw new ProjectCompatibilityError("PROJECT_KIND_MISMATCH");
   }
   const database = opened.files[opened.manifest.recovery.databasePath];
   if (!database) throw new Error("The project database declared by the manifest is missing");
-  const state = ProjectStateSchema.parse(
-    migrateProjectState(await input.databaseCodec.decode(database)),
-  );
+  const migrated = migrateProjectState(await input.databaseCodec.decode(database));
+  const parsed = ProjectStateSchema.safeParse(migrated);
+  if (!parsed.success) {
+    throw new ProjectCompatibilityError("PROJECT_CONTENT_INVALID", { cause: parsed.error });
+  }
+  const state = parsed.data;
   if (
     state.metadata.projectId !== opened.manifest.projectId ||
     state.metadata.projectName !== opened.manifest.metadata.projectName
@@ -176,7 +180,7 @@ export async function openUnresolvedVisualizationProjectPackage(input: {
 }): Promise<UnresolvedVisualizationProjectState> {
   const opened = await openProjectPackage(input.storage, input.target, input.sha256);
   if (opened.manifest.projectKind !== "unresolved_visualization") {
-    throw new Error("PROJECT_KIND_IS_NOT_UNRESOLVED_VISUALIZATION");
+    throw new ProjectCompatibilityError("PROJECT_KIND_MISMATCH");
   }
   const database = opened.files[opened.manifest.recovery.databasePath];
   if (!database) throw new Error("The unresolved visualization database is missing");
@@ -306,7 +310,7 @@ export async function openProgressiveExperimentProjectPackage(input: {
 }): Promise<ProgressiveExperimentProjectState> {
   const opened = await openProjectPackage(input.storage, input.target, input.sha256);
   if (opened.manifest.projectKind !== "progressive_experiment") {
-    throw new Error("PROJECT_KIND_IS_NOT_PROGRESSIVE_EXPERIMENT");
+    throw new ProjectCompatibilityError("PROJECT_KIND_MISMATCH");
   }
   const database = opened.files[opened.manifest.recovery.databasePath];
   if (!database) throw new Error("The progressive experiment database is missing");
@@ -432,7 +436,7 @@ export async function openSpecializedEntryDraftProjectPackage(input: {
 }): Promise<SpecializedEntryDraftProjectState> {
   const opened = await openProjectPackage(input.storage, input.target, input.sha256);
   if (opened.manifest.projectKind !== "specialized_entry_draft") {
-    throw new Error("PROJECT_KIND_IS_NOT_SPECIALIZED_ENTRY_DRAFT");
+    throw new ProjectCompatibilityError("PROJECT_KIND_MISMATCH");
   }
   const database = opened.files[opened.manifest.recovery.databasePath];
   if (!database) throw new Error("The specialized entry draft database is missing");

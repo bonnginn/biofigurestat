@@ -11,6 +11,7 @@ import {
   importLocalSpreadsheetWorkbook,
   spreadsheetWorkbookImportAvailable,
   spreadsheetRowsToTsv,
+  spreadsheetWorkbookToStackedTsv,
   type ImportedSpreadsheetWorkbook,
   type SpreadsheetWorkbookImporter,
 } from "../app/spreadsheetWorkbookImport";
@@ -28,6 +29,7 @@ type Props = Readonly<{
   testIdPrefix?: string;
   replaceOnPasteAtOrigin?: boolean;
   workbookImporter?: SpreadsheetWorkbookImporter;
+  allowWorkbookSheetStacking?: boolean;
 }>;
 
 type ParsedGrid = Readonly<{
@@ -141,6 +143,7 @@ export function DelimitedTextSpreadsheet({
   testIdPrefix,
   replaceOnPasteAtOrigin = false,
   workbookImporter = importLocalSpreadsheetWorkbook,
+  allowWorkbookSheetStacking = false,
 }: Props) {
   const [spreadsheetZoom, setSpreadsheetZoom] = useState<number>(initialSpreadsheetZoom);
   const [importedWorkbook, setImportedWorkbook] = useState<ImportedSpreadsheetWorkbook | null>(
@@ -218,6 +221,17 @@ export function DelimitedTextSpreadsheet({
     onChange(spreadsheetRowsToTsv(sheet.rows), "workbook_import");
   };
 
+  const applyAllSheetsAsExperiments = (workbook: ImportedSpreadsheetWorkbook) => {
+    try {
+      onChange(spreadsheetWorkbookToStackedTsv(workbook), "workbook_import");
+      setWorkbookImportError(null);
+    } catch (error) {
+      setWorkbookImportError(
+        error instanceof Error ? error.message : "worksheetをExpとしてまとめられませんでした。",
+      );
+    }
+  };
+
   const openWorkbook = async () => {
     setWorkbookImporting(true);
     setWorkbookImportError(null);
@@ -293,6 +307,12 @@ export function DelimitedTextSpreadsheet({
                       }
                       value={cell}
                       onChange={(event) => updateCell(rowIndex, columnIndex, event.target.value)}
+                      onFocus={(event) => {
+                        if (rowIndex === 0) event.currentTarget.select();
+                      }}
+                      onClick={(event) => {
+                        if (rowIndex === 0) event.currentTarget.select();
+                      }}
                       onPaste={(event) => pasteCells(event, rowIndex, columnIndex)}
                       onKeyDown={handleKeyDown}
                     />
@@ -317,24 +337,31 @@ export function DelimitedTextSpreadsheet({
         </button>
         {!workbookImportEnabled ? <span>デスクトップ版で利用できます</span> : null}
         {importedWorkbook && importedWorkbook.sheets.length > 1 ? (
-          <label>
-            worksheet
-            <select
-              aria-label="読み込むworksheet"
-              value={selectedSheetIndex}
-              onChange={(event) => {
-                const nextIndex = Number(event.currentTarget.value);
-                setSelectedSheetIndex(nextIndex);
-                applyImportedSheet(importedWorkbook, nextIndex);
-              }}
-            >
-              {importedWorkbook.sheets.map((sheet, index) => (
-                <option key={`${sheet.name}:${index}`} value={index}>
-                  {sheet.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <>
+            <label>
+              worksheetを1枚読み込む
+              <select
+                aria-label="読み込むworksheet"
+                value={selectedSheetIndex}
+                onChange={(event) => {
+                  const nextIndex = Number(event.currentTarget.value);
+                  setSelectedSheetIndex(nextIndex);
+                  applyImportedSheet(importedWorkbook, nextIndex);
+                }}
+              >
+                {importedWorkbook.sheets.map((sheet, index) => (
+                  <option key={`${sheet.name}:${index}`} value={index}>
+                    {sheet.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {allowWorkbookSheetStacking ? (
+              <button type="button" onClick={() => applyAllSheetsAsExperiments(importedWorkbook)}>
+                全worksheetをExpとしてまとめる
+              </button>
+            ) : null}
+          </>
         ) : null}
         {importedWorkbook ? (
           <span role="status">
@@ -345,6 +372,12 @@ export function DelimitedTextSpreadsheet({
           <p role="note">
             数式セル {importedWorkbook?.sheets[selectedSheetIndex]?.formulaCellCount}
             件は、Excel保存時の計算結果を読み込みました。BioFigureStat内では数式を再計算しません。
+          </p>
+        ) : null}
+        {allowWorkbookSheetStacking && importedWorkbook && importedWorkbook.sheets.length > 1 ? (
+          <p role="note">
+            まとめるとworksheet名を「Experiment /
+            worksheet」列へ残します。別々の実験回や統計的なnであることは自動判定しません。
           </p>
         ) : null}
         {workbookImportError ? <p role="alert">{workbookImportError}</p> : null}

@@ -35,6 +35,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(project_open::PendingProjectOpen::from_command_line())
         .manage(project_storage::ProjectWriteState::default())
+        .manage(engine::EngineProcessRegistry::default())
         .setup(|app| {
             let open = MenuItemBuilder::with_id("project-open", "Open…")
                 .accelerator("CmdOrCtrl+O")
@@ -88,6 +89,7 @@ pub fn run() {
             diagnostic::write_diagnostic_report,
             digest::sha256_bytes,
             engine::run_analysis,
+            engine::cancel_analysis,
             export_file::write_export_file,
             project_open::take_pending_project_open,
             project_storage::begin_atomic_project_write,

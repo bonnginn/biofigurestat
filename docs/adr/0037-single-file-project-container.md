@@ -24,3 +24,12 @@ containerは既にpin済みの`rusqlite 0.40.2` / bundled SQLiteを用いる。�
 ## Migration
 
 現在の安定Internal Alpha directory projectは、明示的な一回性import/migration対象とする。古いprototypeの包括的互換は目標にしない。
+
+### Public Alpha compatibility amendment (2026-08-30)
+
+Public Alphaで保存された既知のproject-state schema versionは、versionごとのfixtureを持つ
+migration matrixへ登録し、現行schemaまで非破壊で開けることを回帰testにする。新しいappで
+作られたversion、未対応の古いversion、version欠落、schema不整合、project kind不一致は
+stableなtyped compatibility errorとして区別する。UIはこのcodeを行動可能な説明へ変換し、
+Zod issue、内部project code、migration実装詳細を通常画面へ表示しない。未知versionのfileは
+変更せず停止する。

@@ -1835,6 +1835,7 @@ name = "lifescience-analysis-app"
 version = "0.1.0"
 dependencies = [
  "calamine",
+ "png 0.17.16",
  "rusqlite",
  "serde",
  "serde_json",

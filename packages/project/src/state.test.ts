@@ -9,7 +9,9 @@ import {
   appendRawRevision,
   createInitialProjectState,
   migrateProjectState,
+  KNOWN_PROJECT_STATE_SCHEMA_VERSIONS,
 } from "./state";
+import { ProjectCompatibilityError } from "./compatibility-error";
 
 const now = "2026-08-20T00:00:00Z";
 
@@ -219,12 +221,55 @@ describe("project state lineage", () => {
     expect(migrated.experimentWorkspace).toBeNull();
   });
 
-  it("refuses an unknown project schema instead of coercing it through migration", () => {
-    const migrated = migrateProjectState({
-      schemaVersion: "9.9.9",
-      metadata: { projectId: "project.future" },
+  it("opens every known project-state version through the migration matrix", () => {
+    const current = createInitialProjectState({
+      metadata: {
+        projectId: "project.fixture-matrix",
+        projectName: "Fixture matrix",
+        experimentDate: "2026-08-20",
+        createdAt: now,
+        updatedAt: now,
+      },
+      design,
+      rawRevision: {
+        id: "raw.fixture-matrix.1",
+        previousRevisionId: null,
+        sourceKind: "manual",
+        createdAt: now,
+        createdBy: "researcher",
+      },
+      unitInstances: [],
+      observations: [],
+      actor: "researcher",
     });
-    expect(ProjectStateSchema.safeParse(migrated).success).toBe(false);
+    const fixtures: Record<(typeof KNOWN_PROJECT_STATE_SCHEMA_VERSIONS)[number], unknown> = {
+      "0.2.0": { ...current, schemaVersion: "0.2.0" },
+      "0.3.0": current,
+    };
+
+    for (const version of KNOWN_PROJECT_STATE_SCHEMA_VERSIONS) {
+      expect(ProjectStateSchema.parse(migrateProjectState(fixtures[version])).schemaVersion).toBe(
+        "0.3.0",
+      );
+    }
+  });
+
+  it("returns a stable compatibility error for newer and unsupported project schemas", () => {
+    expect(() => migrateProjectState({ schemaVersion: "9.9.9", metadata: {} })).toThrowError(
+      ProjectCompatibilityError,
+    );
+    try {
+      migrateProjectState({ schemaVersion: "9.9.9", metadata: {} });
+    } catch (error) {
+      expect(error).toMatchObject({
+        code: "PROJECT_SCHEMA_VERSION_NEWER_THAN_APP",
+        foundVersion: "9.9.9",
+        supportedVersion: "0.3.0",
+      });
+    }
+    expect(() => migrateProjectState({ schemaVersion: "0.1.0", metadata: {} })).toThrowError(
+      expect.objectContaining({ code: "PROJECT_SCHEMA_VERSION_UNSUPPORTED" }),
+    );
   });
 
   it("adds a design revision before accepting a newly declared nested unit level", () => {

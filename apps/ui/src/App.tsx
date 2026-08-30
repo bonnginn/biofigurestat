@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { OpenedAnyProject, OpenedProject } from "./app/projectActions";
+import {
+  actionErrorMessage,
+  type OpenedAnyProject,
+  type OpenedProject,
+} from "./app/projectActions";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -13,6 +17,7 @@ import { OpenProjectPage } from "./pages/OpenProjectPage";
 import { SpecializedCorePage } from "./pages/SpecializedCorePage";
 import { CommonCoveragePage } from "./pages/CommonCoveragePage";
 import { defaultProjectActions } from "./app/desktopProjectActions";
+import { ProjectIoError } from "./app/desktopProjectPackage";
 import type { ProjectActions } from "./app/projectActions";
 import { pathForRoute, routeFromPath, type AppRoute } from "./app/routes";
 import { invoke, isTauri } from "@tauri-apps/api/core";
@@ -82,7 +87,9 @@ const PROJECT_IO_STAGE_LABELS: Record<string, string> = {
 export function projectIoStage(
   error: unknown,
 ): Exclude<DiagnosticProjectIoStage, "unknown"> | null {
+  if (error instanceof ProjectIoError) return error.stage;
   const message = error instanceof Error ? error.message : String(error);
+  // Compatibility fallback for errors produced by an older desktop adapter.
   const stage = message.match(/PROJECT_IO_STAGE\[([^\]]+)\]/)?.[1];
   return stage && Object.hasOwn(PROJECT_IO_STAGE_LABELS, stage)
     ? (stage as Exclude<DiagnosticProjectIoStage, "unknown">)
@@ -674,9 +681,10 @@ export default function App({
         } catch (error) {
           recordDiagnosticError("PROJECT_OPEN_FAILED", error);
           setSystemOpenError(
-            error instanceof Error && error.message.trim()
-              ? error.message
-              : "プロジェクトを開けませんでした。現在のワークスペースは変更されていません。",
+            actionErrorMessage(
+              error,
+              "プロジェクトを開けませんでした。現在のワークスペースは変更されていません。",
+            ),
           );
         }
       },
@@ -706,11 +714,7 @@ export default function App({
             await openProjectTabTarget(target);
           } catch (error) {
             recordDiagnosticError("PROJECT_OPEN_FAILED", error);
-            setSystemOpenError(
-              error instanceof Error && error.message.trim()
-                ? error.message
-                : "プロジェクトタブを開けませんでした。",
-            );
+            setSystemOpenError(actionErrorMessage(error, "プロジェクトタブを開けませんでした。"));
           }
         },
       });
@@ -738,9 +742,10 @@ export default function App({
             } catch (error) {
               recordDiagnosticError("PROJECT_OPEN_FAILED", error);
               setSystemOpenError(
-                error instanceof Error && error.message.trim()
-                  ? error.message
-                  : "次のプロジェクトタブを開けなかったため、現在のタブは閉じていません。",
+                actionErrorMessage(
+                  error,
+                  "次のプロジェクトタブを開けなかったため、現在のタブは閉じていません。",
+                ),
               );
             }
             return;
@@ -828,9 +833,7 @@ export default function App({
           if (disposed) return;
           recordDiagnosticError("PROJECT_OPEN_FAILED", error);
           setSystemOpenError(
-            error instanceof Error && error.message.trim()
-              ? error.message
-              : "指定されたプロジェクトを開けませんでした。",
+            actionErrorMessage(error, "指定されたプロジェクトを開けませんでした。"),
           );
         }
       };
@@ -1069,9 +1072,7 @@ export default function App({
                   } catch (error) {
                     recordDiagnosticError("PROJECT_OPEN_FAILED", error);
                     setSystemOpenError(
-                      error instanceof Error && error.message.trim()
-                        ? error.message
-                        : "最近のプロジェクトを開けませんでした。",
+                      actionErrorMessage(error, "最近のプロジェクトを開けませんでした。"),
                     );
                     navigate("open-project");
                   }

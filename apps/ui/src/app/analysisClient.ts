@@ -14,6 +14,16 @@ import { recordDiagnosticError } from "./diagnostics";
 
 export type AnalysisRunner = (request: AnalysisEngineRequest) => Promise<AnalysisEngineResult>;
 
+export async function cancelLocalAnalysis(requestId: string): Promise<boolean> {
+  if (!isTauri()) return false;
+  try {
+    return await invoke<boolean>("cancel_analysis", { requestId });
+  } catch (error) {
+    recordDiagnosticError("ENGINE_EXECUTION_FAILED", error);
+    return false;
+  }
+}
+
 export class AnalysisClientError extends Error {
   readonly code: AppErrorCode;
 
@@ -68,6 +78,12 @@ export function createEvaluationAnalysisRunner(config: EvaluationModeConfig): An
 
 export function localEngineFailureMessage(error: unknown): string {
   const detail = error instanceof Error ? error.message : String(error);
+  if (/ENGINE_PROCESS_TIMEOUT/u.test(detail)) {
+    return "ローカル統計エンジンが制限時間内に完了しなかったため、安全に停止しました。入力したデータは保持されています。再試行しても繰り返す場合は診断情報を保存してください。";
+  }
+  if (/ENGINE_PROCESS_CANCELLED/u.test(detail)) {
+    return "解析を中止しました。入力したデータは保持されています。";
+  }
   if (/requires at least|insufficient residual degrees of freedom/i.test(detail)) {
     return "非線形fitに必要な異なるX値が不足しています。各seriesの時点数と欠損値を確認してください。入力したデータは保持されています。";
   }

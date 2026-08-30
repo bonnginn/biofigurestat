@@ -21,6 +21,16 @@ same Graph workspace presentation for Graph-only and specialist routes. Browser 
 the common worksheet and Graph shell for Survival and ordered-curve/enzyme entry; native behavior
 still requires the macOS gate below.
 
+The Graph-only production path now uses separate Data, Graph, and Statistics tabs and the same
+full `ExperimentGraphWorkbench` used by experiment-first projects. Source/sample ID has a separate
+mapping and is never used as a legend series; a column with one unique value per row is blocked from
+the series channel unless the researcher explicitly confirms that intention. The saved unresolved
+GraphSpec retains full editor presentation but still contains no ExperimentDesign or analysis
+request. Matching Excel worksheets may also be explicitly stacked with worksheet names retained in
+an `Experiment / worksheet` source column; this does not by itself declare biological replication.
+Windows Graph clipboard output now publishes both PNG and standard CF_DIB image formats for broader
+consumer interoperability.
+
 The dated engineering evidence and public-distribution blockers are recorded in
 `docs/alpha/ALPHA_CANDIDATE_READINESS_2026-08-29.md`.
 The executable macOS build and reduced native-human gate are specified in
@@ -72,6 +82,25 @@ execute, or treat the external answer as product authority.
 Browser review does not close native gates. Automated semantic tests do not establish human
 navigation success.
 
+The user-supplied Claude browser review dated 2026-08-30 reports no new P0. Its sole proposed P1
+(Backspace did not clear a wide-grid cell) was subsequently withdrawn by the reviewer after they
+confirmed that synthetic key events in the review environment did not perform native editing; a
+real input event cleared both views correctly. The revised external verdict is therefore no new
+P0/P1 and browser UX suitable for an Alpha candidate, while authoritative native Statistics and
+save/reopen remain separate gates. See
+`docs/alpha/external-reviews/CLAUDE_PUBLIC_ALPHA_UX_TRIAGE_2026-08-30.md`.
+
+A subsequent external robustness review identified three Alpha-boundary risks that are now closed
+in code: project-state compatibility has a compile-time-complete known-version fixture matrix and
+typed user-facing failures; native analysis is bounded to 120 seconds and supports request-scoped
+cancel; and numerical-library reliability warnings from successful runs are retained in the
+canonical result. Project-open UI paths translate compatibility failures without exposing Zod or
+internal project codes. Current regression evidence for this change is 1,086 UI tests across 123
+files, 65 project-package tests across 9 files, 64 Python-engine tests, and 28 passing Rust native
+tests. The normally ignored pinned-development-engine Rust→Python round trip was also run explicitly
+and passed. Packaged
+timeout/cancel and project-version messages still require the cross-platform native smoke below.
+
 The current Alpha branch also contains four newly accepted ingress/lifecycle capabilities awaiting
 final packaged validation: a disk-backed project tab strip with the shared unsaved-work guard,
 native `.xls`/`.xlsx`/`.xlsm`/`.xlsb` worksheet import through a bounded Rust adapter, and a
@@ -119,6 +148,8 @@ part of the packaged macOS/Windows manual gate.
 - Multi-section input for heterogeneous readout grains.
 - Human-facing source-history provenance presentation.
 - Renderer/performance follow-up, including route-level code splitting.
+- Centralize researcher-facing terminology and messages before any English/localization work;
+  do not use mechanical JSX string replacement for statistical or biological terms.
 - The named master product and UX specification files are absent from the repository.
 
 ## Working-tree rule

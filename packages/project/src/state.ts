@@ -1,4 +1,6 @@
 import { z } from "zod";
+
+import { ProjectCompatibilityError } from "./compatibility-error";
 import {
   AnalysisEngineRequestSchema,
   AnalysisEngineResultSchema,
@@ -35,6 +37,7 @@ import {
 import { ExperimentEntrySourceHistorySchema } from "./entry-source-history";
 
 export const PROJECT_STATE_SCHEMA_VERSION = "0.3.0" as const;
+export const KNOWN_PROJECT_STATE_SCHEMA_VERSIONS = ["0.2.0", PROJECT_STATE_SCHEMA_VERSION] as const;
 
 function numericallyEquivalent(first: number, second: number): boolean {
   if (Object.is(first, second)) return true;
@@ -1243,8 +1246,17 @@ export type ExperimentWorkspaceState = z.infer<typeof ExperimentWorkspaceStateSc
 export type PersistedMatrixView = z.infer<typeof PersistedMatrixViewSchema>;
 
 export function migrateProjectState(input: unknown): unknown {
-  if (!input || typeof input !== "object") return input;
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw new ProjectCompatibilityError("PROJECT_CONTENT_INVALID");
+  }
   const record = input as Record<string, unknown>;
+  const foundVersion = record.schemaVersion;
+  if (typeof foundVersion !== "string" || !foundVersion.trim()) {
+    throw new ProjectCompatibilityError("PROJECT_SCHEMA_VERSION_MISSING", {
+      supportedVersion: PROJECT_STATE_SCHEMA_VERSION,
+    });
+  }
+  if (foundVersion === PROJECT_STATE_SCHEMA_VERSION) return input;
   if (record.schemaVersion === "0.2.0") {
     return {
       ...record,
@@ -1253,7 +1265,23 @@ export function migrateProjectState(input: unknown): unknown {
       adaptiveInput: null,
     };
   }
-  return input;
+  const versionParts = (version: string) =>
+    /^\d+\.\d+\.\d+$/u.test(version) ? version.split(".").map(Number) : null;
+  const foundParts = versionParts(foundVersion);
+  const currentParts = versionParts(PROJECT_STATE_SCHEMA_VERSION)!;
+  const isNewer =
+    foundParts !== null &&
+    foundParts.some(
+      (part, index) =>
+        part > currentParts[index]! &&
+        foundParts!
+          .slice(0, index)
+          .every((earlier, earlierIndex) => earlier === currentParts[earlierIndex]),
+    );
+  throw new ProjectCompatibilityError(
+    isNewer ? "PROJECT_SCHEMA_VERSION_NEWER_THAN_APP" : "PROJECT_SCHEMA_VERSION_UNSUPPORTED",
+    { foundVersion, supportedVersion: PROJECT_STATE_SCHEMA_VERSION },
+  );
 }
 
 export type CreateInitialProjectStateInput = {

@@ -10,7 +10,7 @@ import {
 } from "@lsaa/analysis-contracts";
 import type { ExperimentDesign } from "@lsaa/domain";
 
-import type { AnalysisRunner } from "../../app/analysisClient";
+import { cancelLocalAnalysis, type AnalysisRunner } from "../../app/analysisClient";
 import type { ContrastIntent, DraftAnalysisAssessment } from "../../app/experimentDraftAnalysis";
 import {
   nestedIndependentSourceCorrection,
@@ -193,6 +193,7 @@ export function GraphStatisticsPanel({
   );
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [runningRequestId, setRunningRequestId] = useState<string | null>(null);
   const [staleNotice, setStaleNotice] = useState<string | null>(null);
   const [methodsCopyStatus, setMethodsCopyStatus] = useState<string | null>(null);
   const [recommendationDecision, setRecommendationDecision] = useState<NonNullable<
@@ -238,6 +239,7 @@ export function GraphStatisticsPanel({
       const usageRoute = routeFromPath(window.location.pathname);
       if (mode === "manual") recordUsageMilestone(usageRoute, "statistics_requested");
       setRunning(true);
+      setRunningRequestId(request.requestId);
       setError(null);
       try {
         const coreRecommendationOwned = (
@@ -383,6 +385,10 @@ export function GraphStatisticsPanel({
         );
       } catch (reason) {
         if (mode === "manual") recordUsageMilestone(usageRoute, "safe_stop");
+        if (reason instanceof Error && reason.message.includes("解析を中止")) {
+          setError(reason.message);
+          return;
+        }
         const errorCode = reason instanceof Error && "code" in reason ? String(reason.code) : null;
         const researcherMessage = researcherError(
           errorCode === "ENGINE_INPUT_INVALID" ? "ENGINE_INPUT_INVALID" : "ENGINE_EXECUTION_FAILED",
@@ -391,7 +397,10 @@ export function GraphStatisticsPanel({
           `${researcherMessage.title}（${researcherMessage.code}）。${researcherMessage.nextAction}`,
         );
       } finally {
-        if (executionGenerationRef.current === generation) setRunning(false);
+        if (executionGenerationRef.current === generation) {
+          setRunning(false);
+          setRunningRequestId(null);
+        }
       }
     },
     [analysisRunner, assessment, design, onAnalysisChange, outcomeId],
@@ -888,6 +897,11 @@ export function GraphStatisticsPanel({
           >
             {running ? "ローカルで解析中…" : "選択した解析を実行"}
           </button>
+          {running && runningRequestId ? (
+            <button type="button" onClick={() => void cancelLocalAnalysis(runningRequestId)}>
+              解析を中止
+            </button>
+          ) : null}
           {!analysisAvailable ? (
             <p className="experiment-graph-help" role="note">
               このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
