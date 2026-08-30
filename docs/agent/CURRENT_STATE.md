@@ -75,9 +75,12 @@ navigation success.
 The current Alpha branch also contains three newly accepted ingress/lifecycle capabilities awaiting
 final packaged validation: a disk-backed project tab strip with the shared unsaved-work guard,
 native `.xls`/`.xlsx`/`.xlsm`/`.xlsb` worksheet import through a bounded Rust adapter, and a
-strictly allowlisted Cloudflare Workers/D1 telemetry collector. The collector is fail-closed and is
-not a production service until its account, endpoint, public ingestion key, CSP/CORS origins,
-privacy contact and deployment region are approved and configured. See ADR 0055.
+strictly allowlisted Cloudflare Workers/D1 telemetry collector. The collector is now deployed at
+`https://biofigurestat-telemetry.biofigurestat.workers.dev/v1/usage`; deployment smoke confirmed
+health, rejection of an unapproved origin, accepted synthetic ingestion, APAC/NRT D1 persistence,
+and 90-day expiry. The telemetry-enabled Windows bundle uses an exact-origin CSP and shows the
+privacy/deletion contact in the consent and About surfaces. Packaged native opt-in/opt-out and
+scheduled-expiry operation still require release validation. See ADR 0055.
 
 The telemetry release preflight rejects a placeholder D1 ID, non-exact/non-HTTPS endpoints,
 wildcard or incomplete native-origin CORS, invalid public ingestion keys, invalid retention, and a

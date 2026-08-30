@@ -6,6 +6,7 @@ import {
   copyLocalUsageTelemetryReport,
   setUsageConsent,
   usageTelemetryEventCount,
+  usageTelemetryPrivacyContact,
   usageTelemetryUploadConfigured,
   useUsageConsent,
 } from "../app/usageTelemetry";
@@ -15,6 +16,7 @@ export function AboutPanel() {
   const [usageCopyStatus, setUsageCopyStatus] = useState<string | null>(null);
   const [usageCount, setUsageCount] = useState(0);
   const usageConsent = useUsageConsent();
+  const privacyContact = usageTelemetryPrivacyContact();
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -73,11 +75,19 @@ export function AboutPanel() {
               </p>
             ) : null}
             {usageConsent === "opted_in" && usageTelemetryUploadConfigured() ? (
-              <p className="about-usage-note">
-                Cloudflare Workers /
-                D1のBioFigureStat利用情報受付へ送信し、eventは90日後に削除します。通信時のIPアドレスはCloudflareで一時的に扱われる可能性がありますが、event
-                databaseには保存しません。
-              </p>
+              <div className="about-usage-note">
+                <p>
+                  Cloudflare Workers /
+                  D1のBioFigureStat利用情報受付へ送信し、eventは90日後に削除します。通信時のIPアドレスはCloudflareで一時的に扱われる可能性がありますが、event
+                  databaseには保存しません。
+                </p>
+                {privacyContact ? (
+                  <p>
+                    利用情報の削除・プライバシーに関する問い合わせ：
+                    <a href={privacyContact.href}>{privacyContact.label}</a>
+                  </p>
+                ) : null}
+              </div>
             ) : null}
             {usageConsent === "opted_in" && browserRequestsNoTracking() ? (
               <p className="about-usage-note">

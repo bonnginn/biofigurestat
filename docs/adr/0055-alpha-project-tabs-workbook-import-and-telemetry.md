@@ -41,6 +41,16 @@ the event database and deletes events after 90 days. Cloudflare may process tran
 Deployment, exact endpoint origin, CSP allowlisting, privacy-contact details, and account ownership
 remain a release gate; an unconfigured build sends nothing.
 
+### Deployment status — 2026-08-30
+
+The approved collector is deployed at
+`https://biofigurestat-telemetry.biofigurestat.workers.dev/v1/usage` with D1 in APAC (observed at
+NRT), exact native-origin CORS, a 90-day expiry, and a researcher-visible privacy/deletion contact.
+The release overlay permits only that HTTPS origin. Deployment smoke verified health `200`,
+unapproved-origin rejection `403`, accepted synthetic upload `202`, and the allowlisted D1 row
+shape. Packaged native opt-in/opt-out and scheduled-expiry operation remain release-validation
+evidence, not changes to this decision.
+
 ## Consequences
 
 - Unsaved work is never represented as a background tab.

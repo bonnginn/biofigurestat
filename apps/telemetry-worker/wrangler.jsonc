@@ -3,11 +3,13 @@
   "name": "biofigurestat-telemetry",
   "main": "src/index.ts",
   "compatibility_date": "2026-08-30",
+  "workers_dev": true,
+  "preview_urls": false,
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "biofigurestat-telemetry",
-      "database_id": "REPLACE_AFTER_D1_CREATE",
+      "database_id": "86cfbb8c-77e6-4944-8f8b-51ce67b71a6e",
       "migrations_dir": "migrations"
     }
   ],

@@ -440,6 +440,27 @@ export function resolveConfiguredUsageTelemetryIngestKey(value: string | undefin
   return /^[A-Za-z0-9._~-]{16,128}$/u.test(normalized) ? normalized : null;
 }
 
+export function resolveConfiguredUsageTelemetryPrivacyContact(
+  value: string | undefined,
+): string | null {
+  const normalized = value?.trim() ?? "";
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalized)) return normalized;
+  try {
+    const contact = new URL(normalized);
+    if (
+      contact.protocol !== "https:" ||
+      contact.username ||
+      contact.password ||
+      contact.hash
+    ) {
+      return null;
+    }
+    return contact.toString();
+  } catch {
+    return null;
+  }
+}
+
 function defaultRandomId(): string {
   try {
     const generated = globalThis.crypto?.randomUUID?.();
@@ -982,6 +1003,10 @@ const configuredUsageTelemetryEndpoint = resolveConfiguredUsageTelemetryEndpoint
 const configuredUsageTelemetryIngestKey = resolveConfiguredUsageTelemetryIngestKey(
   import.meta.env.VITE_USAGE_TELEMETRY_INGEST_KEY,
 );
+const configuredUsageTelemetryPrivacyContact =
+  resolveConfiguredUsageTelemetryPrivacyContact(
+    import.meta.env.VITE_USAGE_TELEMETRY_PRIVACY_CONTACT,
+  );
 
 const usageTelemetry = new UsageTelemetryService({
   storage: safeStorage(),
@@ -1053,6 +1078,19 @@ export function flushUsageTelemetry(): void {
 
 export function usageTelemetryUploadConfigured(): boolean {
   return usageTelemetry.endpoint !== null;
+}
+
+export function usageTelemetryPrivacyContact(): Readonly<{
+  label: string;
+  href: string;
+}> | null {
+  if (!configuredUsageTelemetryPrivacyContact) return null;
+  return {
+    label: configuredUsageTelemetryPrivacyContact,
+    href: configuredUsageTelemetryPrivacyContact.includes("@")
+      ? `mailto:${configuredUsageTelemetryPrivacyContact}`
+      : configuredUsageTelemetryPrivacyContact,
+  };
 }
 
 export function usageTelemetryEventCount(): number {

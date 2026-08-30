@@ -104,10 +104,20 @@ async function main() {
   const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const wranglerPath = path.join(repositoryRoot, "apps", "telemetry-worker", "wrangler.jsonc");
   const wranglerConfig = JSON.parse(await fs.readFile(wranglerPath, "utf8"));
+  const privacyContact = process.env.BIOFIGURESTAT_PRIVACY_CONTACT;
+  const compiledPrivacyContact = requiredText(
+    process.env.VITE_USAGE_TELEMETRY_PRIVACY_CONTACT,
+    "VITE_USAGE_TELEMETRY_PRIVACY_CONTACT",
+  );
+  if (compiledPrivacyContact !== requiredText(privacyContact, "BIOFIGURESTAT_PRIVACY_CONTACT")) {
+    throw new Error(
+      "VITE_USAGE_TELEMETRY_PRIVACY_CONTACT must match BIOFIGURESTAT_PRIVACY_CONTACT.",
+    );
+  }
   const overlay = createTelemetryReleaseOverlay({
     endpoint: process.env.VITE_USAGE_TELEMETRY_ENDPOINT,
     ingestKey: process.env.VITE_USAGE_TELEMETRY_INGEST_KEY,
-    privacyContact: process.env.BIOFIGURESTAT_PRIVACY_CONTACT,
+    privacyContact,
     wranglerConfig,
   });
   const outputPath = path.join(repositoryRoot, ".tmp", "telemetry-release-config.json");

@@ -9,7 +9,7 @@
 - Consent can be changed later from About. Turning it off stops collection and purges the bounded unsent queue and random app-installation ID from the device.
 - Upload is possible only when `VITE_USAGE_TELEMETRY_ENDPOINT` is a valid credential-free HTTPS URL, `VITE_USAGE_TELEMETRY_INGEST_KEY` is a valid public ingestion key, and the compiled consent-notice version is explicitly a `remote-*` notice. Missing or invalid configuration performs zero external telemetry requests; a local research-data-free report can still be copied explicitly from About.
 - The Alpha collector is implemented for Cloudflare Workers with D1. It independently validates the exact event allowlist, rejects extra fields, bounds request size and per-installation volume, deduplicates events, stores no source-IP field, and deletes stored events after 90 days. Cloudflare may nevertheless process source IP and ordinary HTTP transport metadata while handling the request.
-- The current `remote-alpha-2026-08-30` notice requires a fresh choice and discards queues created under the earlier local-only notice. A prior explicit opt-out remains respected. Actual remote transmission remains disabled until the approved Worker URL, ingestion key, exact CSP/CORS origins, account ownership, privacy contact, and deployment region are configured in a release build.
+- The current `remote-alpha-2026-08-30` notice requires a fresh choice and discards queues created under the earlier local-only notice. A prior explicit opt-out remains respected. The approved Alpha collector is deployed at `https://biofigurestat-telemetry.biofigurestat.workers.dev/v1/usage` in APAC, with exact CSP/CORS origins, a public ingestion key, a researcher-visible privacy/deletion contact, and 90-day expiry. Builds lacking the complete approved configuration remain fail-closed and make no upload.
 - Diagnostic export excludes raw measurements and identifying labels/notes by default.
 - The researcher-facing problem-report link is a static, explicitly configured HTTPS form URL. No project data, diagnostic report, or query parameter is appended automatically; the researcher chooses whether to copy or save a redacted report.
 - Contextual Help uses a local deterministic glossary. No cloud LLM provider, product API key, or automatic model call is configured.
@@ -38,7 +38,8 @@
 - [x] Fixed allowlist and bounded queue exclude research data and researcher-entered text; the random app/session IDs and timestamp/platform boundary are disclosed without claiming complete anonymity
 - [x] Invalid, credential-bearing, HTTP, absent, keyless, or non-remote-notice telemetry configuration performs zero external upload
 - [x] Collector code enforces the fixed schema, request/rate limits, deduplication, 90-day deletion and no source-IP database field
-- [ ] Cloudflare account owner, deployment region, exact endpoint/CSP/CORS origins, privacy contact, deletion-contact policy and release-build variables approved and deployed
+- [x] Cloudflare account owner, APAC region, exact endpoint/CSP/CORS origins, privacy contact, deletion-contact policy and release-build variables approved and deployed
+- [ ] Packaged Windows/macOS opt-in upload, offline retry, opt-out purge and scheduled expiry operation manually verified
 - [x] No production evaluation activation
 - [x] No token in ordinary UI
 - [x] No server path in evaluation responses

@@ -32,6 +32,15 @@ The ingestion key is a public application key, not an authentication secret. The
 enforces exact origin, schema, request-size and per-installation limits. Cloudflare account tokens
 remain server-side and must never be compiled into the application.
 
+## Current Alpha deployment
+
+- Endpoint: `https://biofigurestat-telemetry.biofigurestat.workers.dev/v1/usage`
+- Health: `https://biofigurestat-telemetry.biofigurestat.workers.dev/health`
+- D1 region observed during deployment smoke: APAC / NRT
+- Event retention: 90 days
+
+Never add the ingestion key to this file or commit it to the repository.
+
 ## Release preflight
 
 Set the following only in the release environment:
@@ -40,6 +49,7 @@ Set the following only in the release environment:
 VITE_USAGE_TELEMETRY_ENDPOINT=https://<worker-host>/v1/usage
 VITE_USAGE_TELEMETRY_INGEST_KEY=<same public key configured as INGEST_KEY>
 BIOFIGURESTAT_PRIVACY_CONTACT=<email or https URL>
+VITE_USAGE_TELEMETRY_PRIVACY_CONTACT=<same email or https URL shown in the consent UI>
 ```
 
 Run `pnpm telemetry:release-config`. It fails if the D1 ID is still a placeholder, the endpoint is

@@ -8,6 +8,7 @@ import {
   recordUsageInteraction,
   recordUsageRoute,
   setUsageConsent,
+  usageTelemetryPrivacyContact,
   usageTelemetryUploadConfigured,
   useUsageConsent,
   type UsageInteractionCategory,
@@ -43,6 +44,7 @@ function interactionCategory(target: EventTarget | null): UsageInteractionCatego
 
 export function UsageTelemetryController({ route }: Readonly<{ route: AppRoute }>) {
   const consent = useUsageConsent();
+  const privacyContact = usageTelemetryPrivacyContact();
   const dialogRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -186,6 +188,12 @@ export function UsageTelemetryController({ route }: Readonly<{ route: AppRoute }
                     送信時には、通信に伴うIPアドレスなどの通信情報がCloudflareで一時的に扱われる可能性がありますが、BioFigureStatのevent
                     databaseには保存しません。
                   </p>
+                  {privacyContact ? (
+                    <p>
+                      利用情報の削除・プライバシーに関する問い合わせ：
+                      <a href={privacyContact.href}>{privacyContact.label}</a>
+                    </p>
+                  ) : null}
                 </>
               ) : (
                 <p>このビルドには送信先が設定されていないため、外部への送信は行いません。</p>

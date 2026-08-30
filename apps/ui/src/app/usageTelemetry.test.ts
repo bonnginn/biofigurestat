@@ -10,6 +10,7 @@ import {
   UsageTelemetryService,
   resolveConfiguredUsageTelemetryEndpoint,
   resolveConfiguredUsageTelemetryIngestKey,
+  resolveConfiguredUsageTelemetryPrivacyContact,
 } from "./usageTelemetry";
 
 class MemoryStorage implements Storage {
@@ -224,6 +225,13 @@ describe("consent-first usage telemetry", () => {
       "alpha-key_1234567890",
     );
     expect(resolveConfiguredUsageTelemetryIngestKey("short")).toBeNull();
+    expect(resolveConfiguredUsageTelemetryPrivacyContact("privacy@example.test")).toBe(
+      "privacy@example.test",
+    );
+    expect(
+      resolveConfiguredUsageTelemetryPrivacyContact("https://example.test/privacy"),
+    ).toBe("https://example.test/privacy");
+    expect(resolveConfiguredUsageTelemetryPrivacyContact("http://example.test/privacy")).toBeNull();
   });
 
   it("keeps the app path nonblocking and retains the queue when upload fails", async () => {
