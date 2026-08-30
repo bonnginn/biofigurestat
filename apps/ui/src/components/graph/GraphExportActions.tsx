@@ -7,6 +7,7 @@ import {
   saveExportText,
   serializeGraphSvg,
 } from "../../app/graphExport";
+import { useAppLocale } from "../../app/appLocale";
 
 export type GraphExportFeedback = Readonly<{
   kind: "success" | "error";
@@ -32,6 +33,7 @@ export function GraphExportActions({
   disabled?: boolean;
   onFeedback: (feedback: GraphExportFeedback | null) => void;
 }>) {
+  const ja = useAppLocale() === "ja";
   const copy = async () => {
     if (!svgRef.current) return;
     onFeedback(null);
@@ -41,15 +43,23 @@ export function GraphExportActions({
         kind: "success",
         text:
           format === "svg"
-            ? "ベクター形式でコピーしました。"
+            ? ja
+              ? "ベクター形式でコピーしました。"
+              : "Copied as vector graphics."
             : format === "png"
-              ? "PNGでコピーしました。"
-              : "SVGテキストでコピーしました。",
+              ? ja
+                ? "PNGでコピーしました。"
+                : "Copied as PNG."
+              : ja
+                ? "SVGテキストでコピーしました。"
+                : "Copied as SVG text.",
       });
     } catch {
       onFeedback({
         kind: "error",
-        text: "クリップボードへコピーできませんでした。SVG書き出しを利用してください。",
+        text: ja
+          ? "クリップボードへコピーできませんでした。SVG書き出しを利用してください。"
+          : "Could not copy to the clipboard. Use SVG export instead.",
       });
     }
   };
@@ -64,13 +74,18 @@ export function GraphExportActions({
         "image/svg+xml;charset=utf-8",
       );
       if (result === "saved") {
-        onFeedback({ kind: "success", text: "表示中のGraphをSVGで保存しました。" });
+        onFeedback({
+          kind: "success",
+          text: ja ? "表示中のGraphをSVGで保存しました。" : "Saved the displayed Graph as SVG.",
+        });
       }
     } catch (error) {
       if (error instanceof ExportCancelledError) return;
       onFeedback({
         kind: "error",
-        text: "SVGを保存できませんでした。Graphは保持されています。",
+        text: ja
+          ? "SVGを保存できませんでした。Graphは保持されています。"
+          : "Could not save SVG. The Graph is unchanged.",
       });
     }
   };
@@ -80,30 +95,37 @@ export function GraphExportActions({
     onFeedback(null);
     try {
       await exportGraphPng(svgRef.current, `${safeFileStem(fileStem)}.png`);
-      onFeedback({ kind: "success", text: "表示中のGraphを白背景のPNGで保存しました。" });
+      onFeedback({
+        kind: "success",
+        text: ja
+          ? "表示中のGraphを白背景のPNGで保存しました。"
+          : "Saved the displayed Graph as a white-background PNG.",
+      });
     } catch (error) {
       if (error instanceof ExportCancelledError) return;
       onFeedback({
         kind: "error",
-        text: "PNGを保存できませんでした。Graphは保持されています。SVG書き出しを利用してください。",
+        text: ja
+          ? "PNGを保存できませんでした。Graphは保持されています。SVG書き出しを利用してください。"
+          : "Could not save PNG. The Graph is unchanged. Use SVG export instead.",
       });
     }
   };
 
   return (
-    <div className="graph-export-actions" aria-label="グラフの書き出し">
+    <div className="graph-export-actions" aria-label={ja ? "グラフの書き出し" : "Graph export"}>
       <button
         type="button"
         disabled={disabled}
-        aria-label="グラフをコピー"
+        aria-label={ja ? "グラフをコピー" : "Copy Graph"}
         onClick={() => void copy()}
       >
-        コピー
+        {ja ? "コピー" : "Copy"}
       </button>
       <button
         type="button"
         disabled={disabled}
-        aria-label="SVGを書き出す"
+        aria-label={ja ? "SVGを書き出す" : "Export SVG"}
         onClick={() => void exportSvg()}
       >
         SVG
@@ -111,7 +133,7 @@ export function GraphExportActions({
       <button
         type="button"
         disabled={disabled}
-        aria-label="PNGを書き出す"
+        aria-label={ja ? "PNGを書き出す" : "Export PNG"}
         onClick={() => void exportPng()}
       >
         PNG
