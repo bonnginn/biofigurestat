@@ -7,13 +7,13 @@ opening broad documents.
 ## Current state and prioritization
 
 - Short current snapshot: `docs/agent/CURRENT_STATE.md`
-- Current production UX gate and eight evaluation cases:
-  `docs/alpha/PRODUCTION_UX_ACCEPTANCE_GATE_2026-08-28.md`
-- Older handoff/audit context only when historical comparison is needed:
-  `docs/alpha/CURRENT_SOURCE_OF_TRUTH_HANDOFF_2026-08-25.md`
+- Public release behavior and limitations: `docs/alpha/RELEASE_NOTES_0.1.0-alpha.md` and
+  `docs/alpha/KNOWN_LIMITATIONS.md`
+- Public/private source relationship:
+  `docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md`
 
-The dated handoff is partly superseded by ADR 0052, ADR 0053, and the 2026-08-28 acceptance gate.
-Do not use it alone to describe current status.
+Historical handoffs, external reviews, benchmark outputs, and sealed evaluation material are kept
+in the private archive and are not public product authority.
 
 ## Experiment entry, worksheet, and Graph-first flow
 
@@ -21,7 +21,6 @@ Do not use it alone to describe current status.
 - Progressive capability/readiness model: `docs/adr/0052-progressive-semantic-readiness.md`
 - Original adaptive-input contract and five surface families:
   `docs/adr/0051-feature-flagged-experiment-first-adaptive-input.md`
-- Human/production acceptance behavior: `docs/alpha/PRODUCTION_UX_ACCEPTANCE_GATE_2026-08-28.md`
 
 Read ADR 0053 first. Read 0052 or 0051 only when the task touches the semantics they introduced or
 needs historical rationale.
@@ -69,28 +68,21 @@ Open older Graph ADRs only when the current ones explicitly depend on them.
   `docs/adr/0056-explicit-public-alpha-problem-reporting.md`
 - Public Alpha source and bundle licensing: `docs/adr/0058-mit-public-alpha-license.md`
 - Release checklist: `docs/alpha/ALPHA_RELEASE_CHECKLIST.md`
-- Production UX gate: `docs/alpha/PRODUCTION_UX_ACCEPTANCE_GATE_2026-08-28.md`
 - Privacy: `docs/alpha/PRIVACY.md`
 - Known limitations: `docs/alpha/KNOWN_LIMITATIONS.md`
 - Diagnostics: `docs/alpha/DIAGNOSTICS_AND_ERROR_ARCHITECTURE.md`
-- Windows setup/audits: `docs/WINDOWS_BENCHMARK_DEVELOPMENT_SETUP.md` and the relevant dated audit
-- Current macOS Alpha handoff: `docs/alpha/MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md`
-- Latest native macOS manual result: `docs/alpha/MACOS_ALPHA_MANUAL_GATE_RESULTS_2026-08-30.md`
-- Historical macOS validation evidence: `docs/MAC_HUMAN_REVALIDATION_HANDOFF_2026-08-26.md`
+- Windows development setup: `docs/WINDOWS_BENCHMARK_DEVELOPMENT_SETUP.md`
+- Public artifact provenance: `docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md`
 
 Browser preview is not evidence for native engine execution, save/open, packaging, signing, or
 migration. Keep those evidence types separate.
 
 ## Benchmark and evaluation work
 
-- Infrastructure contract: `docs/BENCHMARK_EVALUATION_INFRASTRUCTURE.md`
-- Evaluation family entrypoint:
-  `docs/evaluation/experiment-to-structure-navigation-pilot/README.md`
-- Then open only the named version/run's README, manifest, and required evaluator instructions.
-
-Never inspect sealed data or use evaluator-only materials during a blind run. Treat generated packs,
-external model responses, prototype HTML, and dated run outputs as evidence artifacts, not product
-authority.
+The public source contains product-side benchmark adapters and infrastructure documentation, but
+not sealed pools, external responses, generated packs, or historical run outputs. Do not attempt to
+reconstruct the private evaluation corpus from product work. A task that explicitly requires a
+private blind evaluation must use its separately authorized private environment and instructions.
 
 ## Authority and staleness rules
 
