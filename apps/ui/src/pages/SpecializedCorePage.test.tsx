@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createUnresolvedVisualizationProjectState, ProjectStateSchema } from "@lsaa/project";
 import type * as BenchmarkEvaluation from "../app/benchmarkEvaluation";
 import type * as GraphExport from "../app/graphExport";
@@ -14,6 +14,9 @@ import type { SpecializedCoreDraft } from "../app/specializedAnalysisDrafts";
 import { createTimeToEventContractProjection } from "../app/timeToEventProjection";
 import type { RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import { SpecializedCorePage } from "./SpecializedCorePage";
+import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
+
+afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 const recordBenchmarkEvent = vi.hoisted(() => vi.fn());
 const recordUsageMilestone = vi.hoisted(() => vi.fn());
@@ -78,6 +81,23 @@ const expandAdaptiveStatistics = () =>
   fireEvent.click(screen.getByRole("button", { name: "統計解析を設定" }));
 
 describe("specialized Core entry pages", () => {
+  it("shows the shared Survival workspace and censoring instructions in English", () => {
+    act(() => setAppLocale("en"));
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        entryIntent={cellTimeToEventIntent}
+        initialText={survivalExample}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Data" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Graph" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Statistics" })).toBeVisible();
+    expect(screen.getByText(/Censoring is not converted to missingness/)).toBeVisible();
+  });
+
   it("生存時間はData・Graph・Statisticsを同じワークスペースの別面として切り替える", () => {
     render(
       <SpecializedCorePage
