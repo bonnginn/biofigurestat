@@ -1,0 +1,28 @@
+.progressive-sparse-page { max-width: 1180px; margin: 0 auto; padding: 24px; color: #17332f; }
+.sparse-page-header, .sparse-project-actions, .sparse-paste-row, .sparse-results-grid { display: flex; gap: 12px; }
+.sparse-page-header { justify-content: space-between; align-items: flex-start; }
+.eyebrow { color: #166b5e; font-size: .78rem; font-weight: 700; text-transform: uppercase; }
+.sparse-canvas-summary, .sparse-sheet-card, .sparse-results-grid > article, .sparse-safe-stop { border: 1px solid #bfd4cf; border-radius: 12px; padding: 16px; margin: 16px 0; background: #fff; }
+.sparse-safe-stop { border-color: #d79a3a; background: #fff8e8; }
+.sparse-sheet-card h3 { margin-top: 0; }
+.sparse-paste-row textarea { min-height: 58px; flex: 1; font-family: ui-monospace, monospace; }
+.sparse-table-scroll { overflow: auto; max-height: 300px; border: 1px solid #ccdcd8; margin-top: 12px; }
+.sparse-table-scroll table { border-collapse: collapse; width: 100%; }
+.sparse-table-scroll th, .sparse-table-scroll td { border: 1px solid #d8e4e1; padding: 0; min-width: 150px; }
+.sparse-table-scroll th { background: #edf5f3; padding: 8px; text-align: left; position: sticky; top: 0; }
+.sparse-table-scroll input { width: 100%; min-height: 36px; border: 0; padding: 6px 8px; box-sizing: border-box; }
+.add-row { margin-top: 8px; }
+.field-error { color: #9e2f25; font-size: .85rem; padding: 6px; }
+.sparse-results-grid { align-items: stretch; }
+.sparse-results-grid > article { flex: 1; }
+.sparse-results-grid label { display: grid; gap: 4px; margin: 8px 0; }
+.sparse-graph { width: 100%; min-height: 240px; border: 1px solid #d8e4e1; background: #fbfdfc; }
+.sparse-graph circle { fill: #147b6b; opacity: .8; }
+.graph-axis { stroke: #526c67; stroke-width: 1.5; }
+.graph-axis-label { font-size: 13px; fill: #17332f; text-anchor: middle; }
+.graph-condition-label { font-size: 11px; fill: #17332f; }
+.graph-tick-label { font-size: 10px; fill: #526c67; text-anchor: end; }
+.readiness { font-weight: 700; color: #166b5e; }
+button, select, input, textarea { font: inherit; }
+button { min-height: 38px; }
+@media (max-width: 760px) { .sparse-page-header, .sparse-paste-row, .sparse-results-grid { flex-direction: column; } }

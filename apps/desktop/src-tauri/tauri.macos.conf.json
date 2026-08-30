@@ -1,0 +1,17 @@
+{
+  "build": {
+    "beforeBuildCommand": "pnpm --dir ../.. engine:build:mac && pnpm --filter @lsaa/ui build"
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app"],
+    "macOS": {
+      "signingIdentity": "-"
+    },
+    "resources": {
+      "../../../engine/python/dist/darwin-arm64/lsaa-engine/": "engine/",
+      "../../../LICENSE": "LICENSE",
+      "../../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md"
+    }
+  }
+}

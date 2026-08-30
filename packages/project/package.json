@@ -1,0 +1,24 @@
+{
+  "name": "@lsaa/project",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@lsaa/analysis-contracts": "workspace:*",
+    "@lsaa/domain": "workspace:*",
+    "@lsaa/graph-spec": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.11"
+  }
+}

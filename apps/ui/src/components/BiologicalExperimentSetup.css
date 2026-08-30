@@ -1,0 +1,444 @@
+.biological-setup {
+  display: grid;
+  gap: 14px;
+}
+.biological-setup__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  align-items: start;
+  gap: 16px;
+}
+.biological-setup__main,
+.biological-setup__rail {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+.biological-setup__rail {
+  position: sticky;
+  top: 16px;
+}
+.biological-setup header {
+  position: relative;
+}
+.biological-setup header h1,
+.biological-setup header p,
+.biological-setup__section h2,
+.biological-setup__section-heading p {
+  margin: 0;
+}
+.biological-setup__eyebrow {
+  color: #39746c;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.biological-setup__help {
+  position: absolute;
+  top: 0;
+  right: 0;
+  max-width: 440px;
+}
+.biological-setup__help summary {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #9caaa7;
+  border-radius: 50%;
+  cursor: pointer;
+  font-weight: 800;
+  list-style: none;
+}
+.biological-setup__help[open] {
+  z-index: 2;
+  padding: 8px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 24px #17352d22;
+}
+.biological-setup__help[open] summary {
+  margin-left: auto;
+}
+.biological-setup__help p {
+  margin-top: 8px;
+  color: #53615e;
+  font-size: 0.88rem;
+}
+
+.biological-setup__handoff-note {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border-left: 3px solid #177f6c;
+  color: #33485f;
+  background: #f2f8f6;
+  line-height: 1.45;
+}
+.biological-setup__inherited-facts {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 13px;
+  border: 1px solid #cfe0dc;
+  border-radius: 12px;
+  background: #f7faf9;
+}
+.biological-setup__inherited-facts h2,
+.biological-setup__inherited-facts p {
+  margin: 0;
+}
+.biological-setup__inherited-facts h2 {
+  margin-bottom: 3px;
+  font-size: 0.94rem;
+}
+.biological-setup__inherited-facts p {
+  color: #465855;
+  line-height: 1.4;
+}
+.biological-setup__inherited-facts button {
+  flex: 0 0 auto;
+}
+.biological-setup__inline-help {
+  width: fit-content;
+  margin-top: -4px;
+}
+.biological-setup__inline-help summary {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #9caaa7;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+  list-style: none;
+}
+.biological-setup__inline-help p {
+  max-width: 560px;
+  margin: 6px 0 0;
+  color: #53615e;
+  font-size: 0.84rem;
+}
+.biological-setup__section {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid #d8e1df;
+  border-radius: 14px;
+  background: #fff;
+}
+.biological-setup__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.biological-setup__section-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.biological-setup__section-heading > div > p {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  color: #fff;
+  background: #39746c;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.biological-setup__section-intro {
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  color: #53615e;
+}
+.biological-setup__section-intro > p {
+  margin: 0;
+  line-height: 1.45;
+}
+.biological-setup__section h2 {
+  font-size: 1.08rem;
+}
+.biological-setup button {
+  min-height: 38px;
+  padding: 7px 11px;
+  border: 1px solid #9eaaa8;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.biological-setup button.biological-setup__add-factor {
+  color: #32675f;
+  background: #f6faf9;
+  border-style: dashed;
+}
+.biological-setup button:focus-visible,
+.biological-setup input:focus-visible,
+.biological-setup select:focus-visible,
+.biological-setup summary:focus-visible {
+  outline: 3px solid #84b7ff;
+  outline-offset: 2px;
+}
+.biological-setup__field,
+.biological-setup__condition-heading label,
+.biological-setup__two-fields label {
+  display: grid;
+  gap: 5px;
+  font-weight: 700;
+}
+.biological-setup input,
+.biological-setup select {
+  min-height: 38px;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  border: 1px solid #aeb9b7;
+  border-radius: 7px;
+  background: #fff;
+  font: inherit;
+}
+.biological-setup small {
+  color: #64716e;
+  font-weight: 400;
+}
+.biological-setup__condition {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid #e1e6e5;
+  border-radius: 10px;
+}
+.biological-setup__condition-heading {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  align-items: end;
+  gap: 10px;
+}
+.biological-setup__check {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 8px;
+  font-size: 0.86rem;
+}
+.biological-setup__check input {
+  min-height: auto;
+}
+.biological-setup__grid-wrap {
+  overflow: auto;
+  border: 1px solid #d6dedc;
+  border-radius: 8px;
+}
+.biological-setup table {
+  width: 100%;
+  min-width: 580px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.biological-setup th {
+  padding: 6px;
+  color: #52605d;
+  background: #f2f5f4;
+  font-size: 0.78rem;
+}
+.biological-setup td {
+  padding: 0;
+  border-top: 1px solid #e1e6e5;
+  border-right: 1px solid #e1e6e5;
+}
+.biological-setup td input {
+  width: 100%;
+  min-height: 31px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 0;
+}
+.biological-setup__grid-wrap input:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 3px solid #2979d6;
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 1px #fff;
+}
+.biological-setup__grid-actions {
+  display: flex;
+  gap: 8px;
+}
+.biological-setup fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.biological-setup legend {
+  margin-bottom: 8px;
+  font-weight: 750;
+}
+.biological-setup__choices {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.biological-setup__choices label {
+  display: flex;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid #d9e1df;
+  border-radius: 9px;
+}
+.biological-setup__choices input {
+  min-height: auto;
+}
+.biological-setup__choices span {
+  display: grid;
+  gap: 2px;
+}
+.biological-setup__choices--relations {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.biological-setup__additional-readouts {
+  display: grid;
+  gap: 9px;
+  padding-top: 4px;
+  border-top: 1px solid #e1e6e5;
+}
+.biological-setup__subsection-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.biological-setup__subsection-heading h3 {
+  margin: 0;
+  font-size: 0.96rem;
+}
+.biological-setup__subsection-heading small {
+  display: block;
+  max-width: 650px;
+  margin-top: 3px;
+}
+.biological-setup__additional-readout {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #d9e1df;
+  border-radius: 9px;
+  background: #fbfcfc;
+}
+.biological-setup__additional-readout-heading {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+.biological-setup__additional-readout .biological-setup__choices {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.biological-setup__all-combinations {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+.biological-setup__all-combinations input {
+  min-height: auto;
+}
+.biological-setup__combinations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 7px;
+}
+.biological-setup__combinations label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 130px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px;
+  border: 1px solid #e0e5e4;
+  border-radius: 8px;
+}
+.biological-setup__empty {
+  margin: 0;
+  color: #64716e;
+}
+.biological-setup__two-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.biological-setup__summary {
+  padding: 12px 14px;
+  border-left: 4px solid #39746c;
+  border-radius: 8px;
+  background: #f2f7f5;
+}
+.biological-setup__summary p {
+  margin: 4px 0 0;
+}
+.biological-setup__message {
+  color: #80482c;
+  font-weight: 700;
+}
+.biological-setup__actions {
+  display: grid;
+  gap: 10px;
+}
+.biological-setup .biological-setup__submit {
+  border-color: #2f655e;
+  color: #fff;
+  background: #39746c;
+}
+.biological-setup__completion {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #9fc1ba;
+  border-radius: 12px;
+  background: #f2f8f6;
+}
+.biological-setup__completion p {
+  margin: 0;
+  color: #334f4a;
+}
+.biological-setup__completion .biological-setup__submit {
+  min-height: 48px;
+  font-size: 1rem;
+}
+@media (max-width: 900px) {
+  .biological-setup__layout {
+    grid-template-columns: 1fr;
+  }
+  .biological-setup__rail {
+    position: static;
+  }
+  .biological-setup__actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+@media (max-width: 720px) {
+  .biological-setup__choices,
+  .biological-setup__choices--relations,
+  .biological-setup__two-fields {
+    grid-template-columns: 1fr;
+  }
+  .biological-setup__condition-heading {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .biological-setup__subsection-heading,
+  .biological-setup__additional-readout-heading {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .biological-setup__check {
+    padding-bottom: 0;
+  }
+}
