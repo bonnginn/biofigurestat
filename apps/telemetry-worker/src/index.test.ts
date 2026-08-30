@@ -236,6 +236,28 @@ describe("BioFigureStat telemetry collector", () => {
     expect(JSON.stringify(writes)).not.toContain("measurements");
   });
 
+  it("accepts the next report key during a no-downtime release rotation", async () => {
+    const { env } = fakeReportEnvironment();
+    const rotating = {
+      ...env,
+      REPORT_INGEST_KEY: "prior-report-key_123456",
+      REPORT_INGEST_KEY_NEXT: "public-report-key_123456",
+    } as TelemetryWorkerEnv;
+    const accepted = await handleTelemetryRequest(
+      new Request("https://collector.example/v1/problem-reports", {
+        method: "POST",
+        headers: {
+          Origin: "http://tauri.localhost",
+          "Content-Type": "application/json",
+          "X-BioFigureStat-Report-Key": "public-report-key_123456",
+        },
+        body: JSON.stringify(problemReport),
+      }),
+      rotating,
+    );
+    expect(accepted.status).toBe(201);
+  });
+
   it("rejects report uploads, extra fields, wrong origins and oversized bodies", async () => {
     const { env } = fakeReportEnvironment();
     const withFile = await handleTelemetryRequest(

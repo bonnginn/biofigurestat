@@ -23,6 +23,7 @@ export type TelemetryWorkerEnv = Readonly<{
   ALLOWED_ORIGINS?: string;
   RETENTION_DAYS?: string;
   REPORT_INGEST_KEY?: string;
+  REPORT_INGEST_KEY_NEXT?: string;
   REPORT_CONTACT_ENCRYPTION_KEY?: string;
   REPORT_RATE_LIMITER?: Readonly<{
     limit: (input: { key: string }) => Promise<{ success: boolean }>;
@@ -287,11 +288,13 @@ async function handleProblemReportRequest(
   env: TelemetryWorkerEnv,
 ): Promise<Response> {
   const origin = requestOrigin(request, env);
-  if (
-    !origin ||
-    !env.REPORT_INGEST_KEY ||
-    request.headers.get("X-BioFigureStat-Report-Key") !== env.REPORT_INGEST_KEY
-  )
+  const suppliedKey = request.headers.get("X-BioFigureStat-Report-Key");
+  const acceptedKeys = new Set(
+    [env.REPORT_INGEST_KEY, env.REPORT_INGEST_KEY_NEXT].filter((value): value is string =>
+      Boolean(value),
+    ),
+  );
+  if (!origin || acceptedKeys.size === 0 || !suppliedKey || !acceptedKeys.has(suppliedKey))
     return response(403, { ok: false }, origin);
   if (
     request.headers.get("Content-Type")?.split(";", 1)[0]?.trim().toLowerCase() !==

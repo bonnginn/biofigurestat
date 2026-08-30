@@ -20,6 +20,9 @@ Neither route is a project-data, file, screenshot, or generic upload endpoint.
   accepted.
 - CORS permits only the exact native origins in `ALLOWED_ORIGINS`.
 - A public `REPORT_INGEST_KEY` separates report ingestion from usage ingestion.
+- A release-key rotation may temporarily set `REPORT_INGEST_KEY_NEXT`; both exact values are accepted
+  during the bounded rollout window so an existing native candidate is not broken by an immediate
+  secret replacement.
 - The Workers Rate Limiting binding permits 5 report attempts per reporter ID per minute per
   Cloudflare location. D1 additionally permits 10 accepted reports per reporter ID per UTC day.
 - `submissionId` is unique and makes explicit retry idempotent. An exact normalized-content hash
