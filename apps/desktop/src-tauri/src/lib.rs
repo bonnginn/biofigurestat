@@ -48,6 +48,17 @@ pub fn run() {
         .manage(project_storage::ProjectWriteState::default())
         .manage(engine::EngineProcessRegistry::default())
         .manage(ApprovedApplicationExit::default())
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                // Intercept the native title-bar close before Windows destroys the
+                // WebView.  The JavaScript close listener is useful as a secondary
+                // signal, but it is not a safe persistence boundary by itself: the
+                // operating-system close may win the race and remove the only UI
+                // capable of presenting Save / Cancel / discard.
+                api.prevent_close();
+                let _ = window.app_handle().emit("app-exit-request", ());
+            }
+        })
         .setup(|app| {
             let open = MenuItemBuilder::with_id("project-open", "Open…")
                 .accelerator("CmdOrCtrl+O")
