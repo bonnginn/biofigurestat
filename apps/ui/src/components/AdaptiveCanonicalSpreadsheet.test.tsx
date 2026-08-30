@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   CanonicalAdaptiveObservationSchema,
@@ -9,6 +9,9 @@ import {
   type StructureContract,
 } from "@lsaa/domain";
 import { AdaptiveCanonicalSpreadsheet } from "./AdaptiveCanonicalSpreadsheet";
+import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
+
+afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 function makeContract(overrides: Partial<StructureContract> = {}): StructureContract {
   return StructureContractSchema.parse({
@@ -173,6 +176,20 @@ function ContinuousHarness({
 }
 
 describe("AdaptiveCanonicalSpreadsheet", () => {
+  it("switches worksheet controls to English without changing canonical observations", () => {
+    act(() => setAppLocale("en"));
+    render(<ContinuousHarness />);
+
+    expect(screen.getByRole("button", { name: "Condition sheet" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "One measurement per row" })).toBeVisible();
+    expect(screen.getByRole("group", { name: "Worksheet zoom" })).toBeVisible();
+    expect(scalarObservations.map(({ observationId }) => observationId)).toEqual([
+      "obs.c1",
+      "obs.c2",
+      "obs.d1",
+    ]);
+  });
+
   it("shows every independent condition before values exist and creates stable unit identities", () => {
     render(<Harness initialObservations={[]} />);
 

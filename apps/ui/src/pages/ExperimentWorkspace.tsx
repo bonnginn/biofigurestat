@@ -88,6 +88,7 @@ import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/
 import { routeFromPath } from "../app/routes";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 import { recordDiagnosticError, recordDiagnosticEvent } from "../app/diagnostics";
+import { localizedText, useAppLocale } from "../app/appLocale";
 
 const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
   ? lazy(() =>
@@ -2609,6 +2610,8 @@ export function ExperimentWorkspace({
   onRegisterSaveHandler,
   rootRef,
 }: ExperimentWorkspaceProps) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [draft, setDraft] = useState<ExperimentSetDraft>(initialDraft);
   const sharedSource = sharedSourceTopology(draft);
   const [cells, setCells] = useState<ExperimentCellMap>(() => ({
@@ -4046,19 +4049,19 @@ export function ExperimentWorkspace({
     <div className="experiment-workspace" ref={rootRef}>
       <header className="experiment-workspace-header">
         <button className="experiment-workspace-back" type="button" onClick={requestBack}>
-          ← 戻る
+          ← {t("戻る", "Back")}
         </button>
         <div>
-          <p className="experiment-workspace-eyebrow">実験ワークスペース</p>
+          <p className="experiment-workspace-eyebrow">{t("実験ワークスペース", "Experiment workspace")}</p>
           <h1>{draft.name}</h1>
           <p className="experiment-workspace-context">
             {draft.context === "cell_culture"
-              ? "細胞・培養"
+              ? t("細胞・培養", "Cell culture")
               : draft.context === "microscopy_imaging"
-                ? "顕微鏡・画像解析"
+                ? t("顕微鏡・画像解析", "Microscopy and imaging")
                 : draft.context === "animal"
-                  ? "動物・個体"
-                  : "実験データ"}{" "}
+                  ? t("動物・個体", "Animal or organism")
+                  : t("実験データ", "Experiment data")}{" "}
             · {draft.readouts.map(({ label }) => label).join(" / ")}
           </p>
         </div>
@@ -4066,9 +4069,9 @@ export function ExperimentWorkspace({
 
       {draft.dataOrigin === "synthetic_demo" ? (
         <div className="experiment-workspace-demo-banner" role="status">
-          <strong>合成デモデータ</strong>
+          <strong>{t("合成デモデータ", "Synthetic demo data")}</strong>
           <span>
-            学習・画面確認用の人工データです。実測・未発表データではなく、正式な研究結果として使用しないでください。
+            {t("学習・画面確認用の人工データです。実測・未発表データではなく、正式な研究結果として使用しないでください。", "These are artificial data for learning and interface review. They are not measured or unpublished research data and must not be used as formal research results.")}
           </span>
         </div>
       ) : null}
@@ -4100,13 +4103,13 @@ export function ExperimentWorkspace({
         </Suspense>
       ) : null}
 
-      <nav className="experiment-workspace-project-nav" aria-label="プロジェクト内の移動">
+      <nav className="experiment-workspace-project-nav" aria-label={t("プロジェクト内の移動", "Project navigation")}>
         <details className="experiment-workspace-file-menu">
-          <summary>ファイル</summary>
+          <summary>{t("ファイル", "File")}</summary>
           <div>
             {onOpenProject ? (
               <button type="button" onClick={onOpenProject}>
-                プロジェクトを開く
+                {t("プロジェクトを開く", "Open project")}
               </button>
             ) : null}
             <button
@@ -4114,14 +4117,14 @@ export function ExperimentWorkspace({
               disabled={!saveProject || saveStatus === "saving"}
               onClick={() => void handleSave(false)}
             >
-              保存 <kbd>Ctrl/⌘S</kbd>
+              {t("保存", "Save")} <kbd>Ctrl/⌘S</kbd>
             </button>
             <button
               type="button"
               disabled={!saveProject || saveStatus === "saving"}
               onClick={() => void handleSave(true)}
             >
-              名前を付けて保存 <kbd>Shift+Ctrl/⌘S</kbd>
+              {t("名前を付けて保存", "Save As")} <kbd>Shift+Ctrl/⌘S</kbd>
             </button>
             {onReuseDesign ? (
               <button
@@ -4130,12 +4133,12 @@ export function ExperimentWorkspace({
                   requestExit("設計を使って新しい実験を始める", () => onReuseDesign(draft))
                 }
               >
-                設計だけを新しいprojectに再利用
+                {t("設計だけを新しいprojectに再利用", "Reuse only the design in a new project")}
               </button>
             ) : null}
             {onSaveFavorite ? (
               <button type="button" onClick={() => onSaveFavorite(draft, graphs)}>
-                この設計をお気に入りに保存
+                {t("この設計をお気に入りに保存", "Save this design as a favorite")}
               </button>
             ) : null}
           </div>
@@ -4146,7 +4149,7 @@ export function ExperimentWorkspace({
             type="button"
             onClick={beginAdaptiveStructureRevision}
           >
-            実験の組み立てを修正
+            {t("実験の組み立てを修正", "Revise experiment structure")}
           </button>
         ) : null}
         <button
@@ -4155,7 +4158,7 @@ export function ExperimentWorkspace({
           aria-current={!showGraph ? "page" : undefined}
           onClick={() => setShowGraph(false)}
         >
-          データ
+          {t("データ", "Data")}
         </button>
         <button
           className={showGraph && graphWorkspaceMode === "graph" ? "is-active" : ""}
@@ -4164,7 +4167,7 @@ export function ExperimentWorkspace({
           disabled={graphs.length === 0}
           onClick={openExistingGraphs}
         >
-          グラフ{graphs.length > 0 ? ` (${graphs.length})` : ""}
+          {t("グラフ", "Graph")}{graphs.length > 0 ? ` (${graphs.length})` : ""}
         </button>
         <button
           className={showGraph && graphWorkspaceMode === "statistics" ? "is-active" : ""}
@@ -4173,30 +4176,30 @@ export function ExperimentWorkspace({
           disabled={graphs.length === 0}
           onClick={openStatistics}
         >
-          統計
+          {t("統計", "Statistics")}
         </button>
         <button
           className="experiment-workspace-project-nav-create"
           type="button"
           onClick={openGraph}
         >
-          ＋ グラフを作成
+          {t("＋ グラフを作成", "+ Create Graph")}
         </button>
         <button
           className="experiment-workspace-project-nav-save"
           type="button"
-          aria-label={saveStatus === "saving" ? "保存中" : "プロジェクトを保存"}
-          title="保存（⌘S / Ctrl+S）"
+          aria-label={saveStatus === "saving" ? t("保存中", "Saving") : t("プロジェクトを保存", "Save project")}
+          title={t("保存（⌘S / Ctrl+S）", "Save (⌘S / Ctrl+S)")}
           disabled={!saveProject || saveStatus === "saving"}
           onClick={() => void handleSave(false)}
         >
-          {saveStatus === "saving" ? "…" : "保存"}
+          {saveStatus === "saving" ? "…" : t("保存", "Save")}
         </button>
         <span
           className={`experiment-workspace-dirty-state ${isDirty ? "is-dirty" : ""}`}
-          aria-label="保存状態"
+          aria-label={t("保存状態", "Save status")}
         >
-          {isDirty ? "未保存" : "保存済み"}
+          {isDirty ? t("未保存", "Unsaved") : t("保存済み", "Saved")}
         </span>
       </nav>
       {saveMessage ? (

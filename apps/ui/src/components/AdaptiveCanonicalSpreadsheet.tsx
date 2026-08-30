@@ -25,6 +25,7 @@ import {
 } from "@lsaa/domain";
 
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
+import { localizedText, useAppLocale } from "../app/appLocale";
 import {
   CanonicalMatrixWorksheet,
   canEditCanonicalMatrix,
@@ -1426,6 +1427,8 @@ export function AdaptiveCanonicalSpreadsheet({
   showExperimentDate = false,
   onWorksheetRowChange,
 }: AdaptiveCanonicalSpreadsheetProps) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const headingId = useId();
   const tableId = useId();
   const modeNoteId = useId();
@@ -1475,7 +1478,7 @@ export function AdaptiveCanonicalSpreadsheet({
       : true);
   const compactEditable = editable && model.compactEditability.status === "editable";
   const compactDisabled = continuousWorksheet ? !compactEntryEligible : !compactEditable;
-  const interactionLabel = editable ? "測定値を入力" : "測定値を確認";
+  const interactionLabel = editable ? t("測定値を入力", "Enter measurements") : t("測定値を確認", "Review measurements");
 
   const changeWorksheetZoom = (direction: -1 | 1) => {
     const currentIndex = WORKSHEET_ZOOM_LEVELS.findIndex((level) => level === worksheetZoom);
@@ -1539,14 +1542,14 @@ export function AdaptiveCanonicalSpreadsheet({
         {!embedded ? (
           <div>
             <h2 id={headingId}>{interactionLabel}</h2>
-            <p>2つの表示は同じ測定記録を参照します。表示を変えても値やIDは複製されません。</p>
+            <p>{t("2つの表示は同じ測定記録を参照します。表示を変えても値やIDは複製されません。", "Both views reference the same measurement records. Switching views does not duplicate values or IDs.")}</p>
           </div>
         ) : null}
         <div className="adaptive-canonical-spreadsheet__table-controls">
           <div
             className="adaptive-canonical-spreadsheet__view-switch"
             role="group"
-            aria-label="入力表の表示"
+            aria-label={t("入力表の表示", "Data-table view")}
           >
             <button
               ref={compactModeControlRef}
@@ -1561,7 +1564,7 @@ export function AdaptiveCanonicalSpreadsheet({
                 onModeChange("compact");
               }}
             >
-              {continuousWorksheet ? "条件別シート" : editable ? "まとめて入力" : "まとめて表示"}
+              {continuousWorksheet ? t("条件別シート", "Condition sheet") : editable ? t("まとめて入力", "Grouped entry") : t("まとめて表示", "Grouped view")}
             </button>
             {continuousWorksheet && compactEntryEligible ? (
               <button
@@ -1573,7 +1576,7 @@ export function AdaptiveCanonicalSpreadsheet({
                   onModeChange("compact");
                 }}
               >
-                まとめて入力
+                {t("まとめて入力", "Grouped entry")}
               </button>
             ) : null}
             <button
@@ -1585,25 +1588,25 @@ export function AdaptiveCanonicalSpreadsheet({
                 onModeChange("expanded");
               }}
             >
-              {continuousWorksheet ? "1測定1行" : "すべての値"}
+              {continuousWorksheet ? t("1測定1行", "One measurement per row") : t("すべての値", "All values")}
             </button>
           </div>
           <div
             className="adaptive-canonical-spreadsheet__zoom-control"
             role="group"
-            aria-label="シートの拡大縮小"
+            aria-label={t("シートの拡大縮小", "Worksheet zoom")}
           >
-            <span aria-hidden="true">表示倍率</span>
+            <span aria-hidden="true">{t("表示倍率", "Zoom")}</span>
             <button
               type="button"
-              aria-label="シートを縮小"
+              aria-label={t("シートを縮小", "Zoom out")}
               disabled={worksheetZoom <= WORKSHEET_ZOOM_LEVELS[0]}
               onClick={() => changeWorksheetZoom(-1)}
             >
               −
             </button>
             <select
-              aria-label="表の表示倍率"
+              aria-label={t("表の表示倍率", "Worksheet zoom level")}
               value={worksheetZoom}
               onChange={(event) => setWorksheetZoom(Number(event.currentTarget.value))}
             >
@@ -1615,7 +1618,7 @@ export function AdaptiveCanonicalSpreadsheet({
             </select>
             <button
               type="button"
-              aria-label="シートを拡大"
+              aria-label={t("シートを拡大", "Zoom in")}
               disabled={worksheetZoom >= WORKSHEET_ZOOM_LEVELS[WORKSHEET_ZOOM_LEVELS.length - 1]}
               onClick={() => changeWorksheetZoom(1)}
             >
@@ -1626,7 +1629,7 @@ export function AdaptiveCanonicalSpreadsheet({
               aria-live="polite"
               aria-atomic="true"
             >
-              表の表示倍率 {worksheetZoom}%
+              {t("表の表示倍率", "Worksheet zoom")} {worksheetZoom}%
             </span>
           </div>
         </div>
@@ -1635,23 +1638,23 @@ export function AdaptiveCanonicalSpreadsheet({
       <p id={modeNoteId} className="adaptive-canonical-spreadsheet__mode-note" role="status">
         {continuousWorksheet
           ? !matrixEligible
-            ? "この構造は、対象ID・階層・時間の対応を隠さない1測定1行の表で表示します。"
+            ? t("この構造は、対象ID・階層・時間の対応を隠さない1測定1行の表で表示します。", "This structure is shown as one measurement per row so unit IDs, hierarchy, and time relationships remain explicit.")
             : compactEntryActive
-              ? "これは平均や統合を行う機能ではなく、同じ条件の値を1セル内に改行して入力します。各測定を別々に保持し、IDは「1測定1行」で確認できます。"
+              ? t("これは平均や統合を行う機能ではなく、同じ条件の値を1セル内に改行して入力します。各測定を別々に保持し、IDは「1測定1行」で確認できます。", "This view does not average or merge values. Enter values for one condition on separate lines within a cell. Each measurement remains separate; inspect IDs in One measurement per row.")
               : readOnly
-                ? "元の表との対応と取込履歴を保つため読み取り専用です。1測定1行へ切り替えると、各IDと元データ行を確認できます。"
+                ? t("元の表との対応と取込履歴を保つため読み取り専用です。1測定1行へ切り替えると、各IDと元データ行を確認できます。", "This view is read-only to preserve source-table mapping and import history. Switch to One measurement per row to inspect IDs and source rows.")
                 : effectiveMode === "compact"
                   ? contract.matching.kind === "independent"
-                    ? "1セルに1つの値を入力します。横一行は条件ごとの値を見やすく並べる表示位置で、同じ実験日・実験回・pairを意味しません。この表示では条件ごとの実験日は入力できません。"
-                    : "1セルに1つの値を入力します。行の対応は、先に確認した実験構造を保持します。"
-                  : "1測定1行で、対象ID・条件・値を確認・編集します。表示を変えても同じ記録です。"
+                    ? t("1セルに1つの値を入力します。横一行は条件ごとの値を見やすく並べる表示位置で、同じ実験日・実験回・pairを意味しません。この表示では条件ごとの実験日は入力できません。", "Enter one value per cell. A horizontal row is only a convenient alignment across conditions; it does not imply the same date, run, or pair. Condition-specific experiment dates cannot be entered in this view.")
+                    : t("1セルに1つの値を入力します。行の対応は、先に確認した実験構造を保持します。", "Enter one value per cell. Row matching preserves the experiment structure confirmed earlier.")
+                  : t("1測定1行で、対象ID・条件・値を確認・編集します。表示を変えても同じ記録です。", "Review and edit the unit ID, condition, and value with one measurement per row. Both views use the same records.")
           : compactDisabled
             ? readOnly
-              ? "元の表との対応と取込履歴を保つため、この画面では読み取り専用です。「すべての値」で各IDと元データ行を確認できます。"
-              : `${model.compactEditability.explanation} 「すべての値」でIDと内訳を確認できます。`
+              ? t("元の表との対応と取込履歴を保つため、この画面では読み取り専用です。「すべての値」で各IDと元データ行を確認できます。", "This view is read-only to preserve source mapping and import history. Use All values to inspect IDs and source rows.")
+              : locale === "ja" ? `${model.compactEditability.explanation} 「すべての値」でIDと内訳を確認できます。` : "This structure requires the expanded view. Use All values to inspect IDs and details."
             : effectiveMode === "compact"
-              ? "同じ条件の値を改行して入力します。矩形貼り付けと途中の空欄をそのまま保持します。"
-              : "1測定1行でIDと値を編集します。表示を変えても値やIDは変わりません。"}
+              ? t("同じ条件の値を改行して入力します。矩形貼り付けと途中の空欄をそのまま保持します。", "Enter values for the same condition on separate lines. Rectangular paste and internal blanks are preserved.")
+              : t("1測定1行でIDと値を編集します。表示を変えても値やIDは変わりません。", "Edit IDs and values with one measurement per row. Switching views does not change values or IDs.")}
       </p>
 
       <div
