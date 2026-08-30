@@ -11,6 +11,8 @@ import { DiagnosticPanel } from "./DiagnosticPanel";
 import { CollectionPage } from "../pages/CollectionPage";
 import { OpenProjectPage } from "../pages/OpenProjectPage";
 import { BiologicalExperimentSetup } from "./BiologicalExperimentSetup";
+import { ExperimentWorkspace } from "../pages/ExperimentWorkspace";
+import { createExperimentSetDraft } from "../app/experimentDraft";
 
 afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
@@ -115,5 +117,25 @@ describe("English Public Alpha workflow", () => {
       screen.getByRole("heading", { name: "Experimental units and their relationships" }),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Create data table" })).toHaveLength(1);
+  });
+
+  it("keeps the common Graph creation dialog in English", () => {
+    act(() => setAppLocale("en"));
+    const base = createExperimentSetDraft("cell_culture", "nested_continuous");
+    const draft = {
+      ...base,
+      name: "Protein amount",
+      conditions: [
+        { ...base.conditions[0], label: "Control", attributes: { "attribute.1": "Control" } },
+        { ...base.conditions[1], label: "Drug", attributes: { "attribute.1": "Drug" } },
+      ],
+    };
+    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "+ Create Graph" }));
+    expect(screen.getByRole("heading", { name: "Choose a Graph type" })).toBeInTheDocument();
+    expect(screen.getByText("Recommended Graph")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Initial display after creation" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create this Graph" })).toBeEnabled();
   });
 });

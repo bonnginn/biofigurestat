@@ -3787,10 +3787,10 @@ export function ExperimentWorkspace({
   };
 
   const commitGraphRename = (graphId: string) => {
-    const label = graphRenameDraft.trim() || "名称未設定";
+    const label = graphRenameDraft.trim() || t("名称未設定", "Untitled");
     setGraphs((current) =>
       current.map((graph) =>
-        graph.id === graphId ? { ...graph, displayName: label || "名称未設定" } : graph,
+        graph.id === graphId ? { ...graph, displayName: label || t("名称未設定", "Untitled") } : graph,
       ),
     );
     setRenamingGraphId(null);
@@ -4232,19 +4232,19 @@ export function ExperimentWorkspace({
           >
             <div className="experiment-workspace-graph-choice-heading">
               <div>
-                <p className="experiment-workspace-eyebrow">新しいグラフ</p>
-                <h2 id="graph-choice-heading">グラフの基本形を選ぶ</h2>
-                <p>基本形を選んだ後も、点・箱・誤差線などのレイヤーを追加できます。</p>
+                <p className="experiment-workspace-eyebrow">{t("新しいグラフ", "New Graph")}</p>
+                <h2 id="graph-choice-heading">{t("グラフの基本形を選ぶ", "Choose a Graph type")}</h2>
+                <p>{t("基本形を選んだ後も、点・箱・誤差線などのレイヤーを追加できます。", "After choosing a base type, you can still add layers such as points, boxes, and error bars.")}</p>
               </div>
               <button type="button" onClick={() => setShowGraphTypeChoice(false)}>
-                キャンセル
+                {t("キャンセル", "Cancel")}
               </button>
             </div>
             {draft.readouts.length > 1 ? (
               <label className="experiment-workspace-graph-source">
-                <span>表示する測定項目</span>
+                <span>{t("表示する測定項目", "Measured readout to display")}</span>
                 <select
-                  aria-label="表示する測定項目"
+                  aria-label={t("表示する測定項目", "Measured readout to display")}
                   value={selectedSourceReadout?.id ?? ""}
                   onChange={(event) => selectGraphSource(event.currentTarget.value)}
                 >
@@ -4254,12 +4254,12 @@ export function ExperimentWorkspace({
                     </option>
                   ))}
                 </select>
-                <small>この選択は新しいグラフにだけ保存されます。</small>
+                <small>{t("この選択は新しいグラフにだけ保存されます。", "This selection is saved only in the new Graph.")}</small>
               </label>
             ) : null}
             {draft.time.sampling === "longitudinal" && draft.time.points.length > 1 ? (
               <fieldset className="experiment-workspace-layer-builder">
-                <legend>グラフのデータソース</legend>
+                <legend>{t("グラフのデータソース", "Graph data source")}</legend>
                 <label>
                   <input
                     type="radio"
@@ -4267,7 +4267,7 @@ export function ExperimentWorkspace({
                     checked={selectedCreateSourceMode === "raw_readout"}
                     onChange={() => selectCreateSourceMode("raw_readout")}
                   />
-                  元の時系列（全時間を保持）
+                  {t("元の時系列（全時間を保持）", "Original time series (retain all time points)")}
                 </label>
                 <label>
                   <input
@@ -4276,14 +4276,14 @@ export function ExperimentWorkspace({
                     checked={selectedCreateSourceMode === "derived_metric"}
                     onChange={() => selectCreateSourceMode("derived_metric")}
                   />
-                  各生物学的単位から求めた派生値を別グラフにする
+                  {t("各生物学的単位から求めた派生値を別グラフにする", "Create a separate Graph from a value derived for each biological unit")}
                 </label>
                 {selectedCreateSourceMode === "derived_metric" ? (
                   <>
                     <label className="experiment-graph-field">
-                      <span>派生値</span>
+                      <span>{t("派生値", "Derived value")}</span>
                       <select
-                        aria-label="新しいグラフの派生値"
+                        aria-label={t("新しいグラフの派生値", "Derived value for the new Graph")}
                         value={selectedCreateMetric.kind}
                         onChange={(event) =>
                           setSelectedCreateMetric({
@@ -4291,25 +4291,27 @@ export function ExperimentWorkspace({
                           })
                         }
                       >
-                        <option value="auc">AUC（台形法）</option>
-                        <option value="endpoint">最後の時点</option>
-                        <option value="maximum">最大値</option>
-                        <option value="minimum">最小値</option>
-                        <option value="change_from_baseline">baselineからの変化量</option>
+                        <option value="auc">{t("AUC（台形法）", "AUC (trapezoidal rule)")}</option>
+                        <option value="endpoint">{t("最後の時点", "Last time point")}</option>
+                        <option value="maximum">{t("最大値", "Maximum")}</option>
+                        <option value="minimum">{t("最小値", "Minimum")}</option>
+                        <option value="change_from_baseline">{t("baselineからの変化量", "Change from baseline")}</option>
                         <option value="f_over_f0">F/F0</option>
                       </select>
                     </label>
                     {selectedCreateMetric.kind === "auc" ? (
                       <>
                         <p className="experiment-graph-help">
-                          AUCは時間曲線の下の面積です。選んだ範囲の応答の大きさと持続時間を1つの値にまとめます。単位は「測定値
-                          ×{draft.time.unit}」で、時間経過の形や開始値の違いは別に確認が必要です。
+                          {t(
+                            `AUCは時間曲線の下の面積です。選んだ範囲の応答の大きさと持続時間を1つの値にまとめます。単位は「測定値 × ${draft.time.unit}」で、時間経過の形や開始値の違いは別に確認が必要です。`,
+                            `AUC is the area under the time curve. It summarizes response magnitude and duration over the selected range in one value. Its unit is measured value × ${draft.time.unit}; curve shape and baseline differences still require separate review.`,
+                          )}
                         </p>
                         <div className="experiment-graph-field-grid">
                           <label className="experiment-graph-field">
-                            <span>AUC windowの開始</span>
+                            <span>{t("AUC windowの開始", "Start of AUC window")}</span>
                             <select
-                              aria-label="新しいAUC windowの開始"
+                              aria-label={t("新しいAUC windowの開始", "Start of the new AUC window")}
                               value={selectedCreateMetric.windowStart ?? ""}
                               onChange={(event) => {
                                 const value = event.currentTarget.value;
@@ -4319,7 +4321,7 @@ export function ExperimentWorkspace({
                                 }));
                               }}
                             >
-                              <option value="">最初の時点</option>
+                              <option value="">{t("最初の時点", "First time point")}</option>
                               {draft.time.points.map((point) => (
                                 <option key={point.id} value={point.value}>
                                   {point.value} {draft.time.unit}
@@ -4328,9 +4330,9 @@ export function ExperimentWorkspace({
                             </select>
                           </label>
                           <label className="experiment-graph-field">
-                            <span>AUC windowの終了</span>
+                            <span>{t("AUC windowの終了", "End of AUC window")}</span>
                             <select
-                              aria-label="新しいAUC windowの終了"
+                              aria-label={t("新しいAUC windowの終了", "End of the new AUC window")}
                               value={selectedCreateMetric.windowEnd ?? ""}
                               onChange={(event) => {
                                 const value = event.currentTarget.value;
@@ -4340,7 +4342,7 @@ export function ExperimentWorkspace({
                                 }));
                               }}
                             >
-                              <option value="">最後の時点</option>
+                              <option value="">{t("最後の時点", "Last time point")}</option>
                               {draft.time.points.map((point) => (
                                 <option key={point.id} value={point.value}>
                                   {point.value} {draft.time.unit}
@@ -4350,7 +4352,7 @@ export function ExperimentWorkspace({
                           </label>
                         </div>
                         {!createMetricWindowIsValid ? (
-                          <small role="alert">開始時点は終了時点以前にしてください。</small>
+                          <small role="alert">{t("開始時点は終了時点以前にしてください。", "The start must be at or before the end.")}</small>
                         ) : null}
                       </>
                     ) : null}
@@ -4359,7 +4361,7 @@ export function ExperimentWorkspace({
               </fieldset>
             ) : null}
             <div className="experiment-workspace-graph-choice-recommended">
-              <span>推奨グラフ</span>
+              <span>{t("推奨グラフ", "Recommended Graph")}</span>
               {recommendedGraphTypes.map((graphType) => (
                 <button
                   className={
@@ -4368,29 +4370,33 @@ export function ExperimentWorkspace({
                   key={graphType}
                   type="button"
                   aria-pressed={graphTypeSelectionActive && selectedGraphType === graphType}
-                  aria-label={`${graphTypeChoiceLabel(graphType)}を選択（おすすめ）`}
+                  aria-label={
+                    locale === "ja"
+                      ? `${graphTypeChoiceLabel(graphType)}を選択（おすすめ）`
+                      : `Select ${graphType === "paired_dot" ? "Connected matched points" : graphTypeChoiceLabel(graphType)} (recommended)`
+                  }
                   onClick={() => selectGraphType(graphType)}
                 >
                   <GraphTypeThumbnail type={graphType} />
                   <span>
                     <strong>
                       {graphType === "line"
-                        ? "時間変化を見る"
+                        ? t("時間変化を見る", "View change over time")
                         : graphType === "scatter"
-                          ? "XとYの関係を見る"
+                          ? t("XとYの関係を見る", "View the relationship between X and Y")
                           : graphType === "stacked_100"
-                            ? "全体に占めるカテゴリ構成を見る"
+                            ? t("全体に占めるカテゴリ構成を見る", "View category composition of the whole")
                             : graphType === "category_percentage"
-                              ? "カテゴリごとの割合を見る"
+                              ? t("カテゴリごとの割合を見る", "View the percentage in each category")
                               : graphType === "violin"
-                                ? "各条件・時点の分布を見る"
+                                ? t("各条件・時点の分布を見る", "View distributions by condition and time point")
                                 : graphType === "paired_dot"
                                   ? sharedSource
-                                    ? `同じ${sharedSource.sourceUnitLabel}に由来する組の差を見る`
-                                    : "同じ単位の変化を見る"
-                                  : "実験単位ごとの値を見る"}
+                                    ? t(`同じ${sharedSource.sourceUnitLabel}に由来する組の差を見る`, `View differences among sets derived from the same ${sharedSource.sourceUnitLabel}`)
+                                    : t("同じ単位の変化を見る", "View changes within the same unit")
+                                  : t("実験単位ごとの値を見る", "View values for each experimental unit")}
                     </strong>
-                    <small>データ構造に合う初期表示。選択は後から変更できます。</small>
+                    <small>{t("データ構造に合う初期表示。選択は後から変更できます。", "An initial display suited to the data structure. You can change it later.")}</small>
                   </span>
                 </button>
               ))}
@@ -4400,8 +4406,8 @@ export function ExperimentWorkspace({
               aria-labelledby="current-preview-heading"
             >
               <div>
-                <p className="experiment-workspace-eyebrow">現在のデータで確認</p>
-                <h3 id="current-preview-heading">作成後の初期表示</h3>
+                <p className="experiment-workspace-eyebrow">{t("現在のデータで確認", "Preview with current data")}</p>
+                <h3 id="current-preview-heading">{t("作成後の初期表示", "Initial display after creation")}</h3>
               </div>
               {graphTypeSelectionActive ? (
                 <CurrentDataGraphPreview
@@ -4415,11 +4421,11 @@ export function ExperimentWorkspace({
                 />
               ) : (
                 <p className="graph-current-preview__empty">
-                  グラフ形式を選ぶと、現在のデータでプレビューします。
+                  {t("グラフ形式を選ぶと、現在のデータでプレビューします。", "Choose a Graph type to preview it with the current data.")}
                 </p>
               )}
               <p className="experiment-workspace-current-preview-note">
-                現在の選択とデータを使ったプレビューです。詳細な見た目は作成後に変更できます。
+                {t("現在の選択とデータを使ったプレビューです。詳細な見た目は作成後に変更できます。", "This preview uses the current selection and data. You can adjust detailed appearance after creation.")}
               </p>
               {selectedGraphType === "box" && draft.experiments.length <= 3 ? (
                 <p className="experiment-workspace-box-guidance" role="note">
@@ -4428,7 +4434,7 @@ export function ExperimentWorkspace({
                 </p>
               ) : null}
             </section>
-            <div className="experiment-workspace-graph-type-grid" aria-label="その他のグラフ形式">
+            <div className="experiment-workspace-graph-type-grid" aria-label={t("その他のグラフ形式", "Other Graph types")}>
               {(
                 [
                   ["dot", "Dot"],
@@ -4471,7 +4477,7 @@ export function ExperimentWorkspace({
                     }
                     key={value}
                     type="button"
-                    aria-label={`${label}を選択`}
+                  aria-label={locale === "ja" ? `${label}を選択` : `Select ${value === "paired_dot" ? "Connected matched points" : label}`}
                     aria-pressed={graphTypeSelectionActive && selectedGraphType === value}
                     disabled={
                       (value === "paired_dot" && !canConnectUnits) ||
@@ -4486,16 +4492,16 @@ export function ExperimentWorkspace({
                 ))}
               {draft.analysisIntent.kind !== "correlation" ? (
                 <small id="scatter-disabled-reason">
-                  Scatterは「同じ試料のXとYの関係を見る」設計で利用できます
+                  {t("Scatterは「同じ試料のXとYの関係を見る」設計で利用できます", "Scatter is available for designs that examine X and Y in the same sample.")}
                 </small>
               ) : null}
             </div>
             {!canConnectUnits ? (
               <p className="experiment-workspace-graph-type-guidance">
-                同じ単位の対応情報がある設計で利用できます
+                {t("同じ単位の対応情報がある設計で利用できます", "Available for designs with explicit matching information for the same units.")}
               </p>
             ) : null}
-            <section className="experiment-workspace-layer-builder" aria-label="初期レイヤー">
+            <section className="experiment-workspace-layer-builder" aria-label={t("初期レイヤー", "Initial layers")}>
               <button
                 className="secondary-button"
                 type="button"
@@ -4503,12 +4509,12 @@ export function ExperimentWorkspace({
                 onClick={() => setShowLayerBuilder((current) => !current)}
               >
                 {showLayerBuilder
-                  ? "カスタムグラフ設定を閉じる"
-                  : "＋ カスタムグラフ（レイヤーから組み立てる）"}
+                  ? t("カスタムグラフ設定を閉じる", "Close custom Graph settings")
+                  : t("＋ カスタムグラフ（レイヤーから組み立てる）", "+ Custom Graph (build from layers)")}
               </button>
               {showLayerBuilder ? (
                 <fieldset>
-                  <legend>作成時に表示するもの</legend>
+                  <legend>{t("作成時に表示するもの", "Layers to show on creation")}</legend>
                   {(
                     [
                       ["raw", "個々の測定値（表示用）"],
@@ -4555,11 +4561,11 @@ export function ExperimentWorkspace({
             <div className="experiment-workspace-graph-choice-actions">
               {!graphTypeSelectionActive ? (
                 <p className="experiment-workspace-graph-choice-required" role="status">
-                  グラフ形式を1つ選んでください。選択するまでグラフは作成できません。
+                  {t("グラフ形式を1つ選んでください。選択するまでグラフは作成できません。", "Choose one Graph type. A Graph cannot be created until a type is selected.")}
                 </p>
               ) : null}
               <button type="button" onClick={() => setShowGraphTypeChoice(false)}>
-                キャンセル
+                {t("キャンセル", "Cancel")}
               </button>
               <button
                 className="is-primary"
@@ -4567,7 +4573,7 @@ export function ExperimentWorkspace({
                 disabled={!graphTypeSelectionActive || !createMetricWindowIsValid}
                 onClick={() => createGraph(selectedGraphType, selectedInitialLayers)}
               >
-                このグラフを作成
+                {t("このグラフを作成", "Create this Graph")}
               </button>
             </div>
           </section>
