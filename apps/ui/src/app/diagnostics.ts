@@ -7,6 +7,7 @@ import { PRODUCT_IDENTITY } from "./productIdentity";
 import { evaluationMode } from "./evaluationMode";
 import { primaryRoutes, routeFromPath, type AppRoute } from "./routes";
 import { recordUsageError, usageTelemetryUploadConfigured } from "./usageTelemetry";
+import type { PrivacyReducedDiagnostic } from "./problemReports";
 
 const MAX_EVENTS = 50;
 
@@ -162,14 +163,16 @@ function safeErrorKind(error: unknown): string {
 }
 
 function redactString(value: string): string {
-  return value
-    // Technical errors can contain an absolute path whose later segments include
-    // researcher-entered project or sample names. Redact the complete remainder
-    // of that line instead of retaining a supposedly harmless path tail.
-    .replace(/(?:[A-Za-z]:\\|\\\\)[^\r\n]*/g, "<path>")
-    .replace(/\/(?:Users|home|private|var|tmp)\/[^\r\n]*/g, "<path>")
-    .replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer <redacted>")
-    .slice(0, 500);
+  return (
+    value
+      // Technical errors can contain an absolute path whose later segments include
+      // researcher-entered project or sample names. Redact the complete remainder
+      // of that line instead of retaining a supposedly harmless path tail.
+      .replace(/(?:[A-Za-z]:\\|\\\\)[^\r\n]*/g, "<path>")
+      .replace(/\/(?:Users|home|private|var|tmp)\/[^\r\n]*/g, "<path>")
+      .replace(/Bearer\s+[A-Za-z0-9._~+/-]+=*/gi, "Bearer <redacted>")
+      .slice(0, 500)
+  );
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -185,8 +188,7 @@ function isOneOf<const Values extends readonly string[]>(
 
 function isDiagnosticRoute(value: unknown): value is AppRoute {
   return (
-    value === "home" ||
-    (typeof value === "string" && primaryRoutes.some(({ id }) => id === value))
+    value === "home" || (typeof value === "string" && primaryRoutes.some(({ id }) => id === value))
   );
 }
 
@@ -232,20 +234,15 @@ function safeDiagnosticEvent(
   if (typeof type !== "string" || !isRecord(detail)) return null;
   switch (type) {
     case "project_saved":
-      return detail.state === "success"
-        ? { type, detail: { state: "success" } }
-        : null;
+      return detail.state === "success" ? { type, detail: { state: "success" } } : null;
     case "project_save_failed":
       return isOneOf(detail.stage, DIAGNOSTIC_PROJECT_IO_STAGES)
         ? { type, detail: { stage: detail.stage } }
         : null;
     case "route_changed":
-      return isDiagnosticRoute(detail.route)
-        ? { type, detail: { route: detail.route } }
-        : null;
+      return isDiagnosticRoute(detail.route) ? { type, detail: { route: detail.route } } : null;
     case "project_opened":
-      return detail.state === "success" &&
-        isOneOf(detail.source, DIAGNOSTIC_PROJECT_OPEN_SOURCES)
+      return detail.state === "success" && isOneOf(detail.source, DIAGNOSTIC_PROJECT_OPEN_SOURCES)
         ? { type, detail: { state: "success", source: detail.source } }
         : null;
     case "graph_state_changed":
@@ -281,9 +278,7 @@ function safeDiagnosticEvent(
         : null;
     }
     case "error":
-      return isOneOf(detail.code, APP_ERROR_CODES)
-        ? { type, detail: { code: detail.code } }
-        : null;
+      return isOneOf(detail.code, APP_ERROR_CODES) ? { type, detail: { code: detail.code } } : null;
     default:
       return null;
   }
@@ -433,6 +428,37 @@ export function createDiagnosticReport(input: {
     lastErrorCode: runtime.lastErrorCode,
     recentEvents: [...runtime.events],
     ...(includeTechnicalDetails ? { technicalErrors: [...runtime.technicalErrors] } : {}),
+  };
+}
+
+export function createPrivacyReducedDiagnostic(route: AppRoute): PrivacyReducedDiagnostic {
+  const platform = navigator.platform.toLowerCase();
+  return {
+    schemaVersion: "1.0.0",
+    application: {
+      version: PRODUCT_IDENTITY.version,
+      buildRevision: PRODUCT_IDENTITY.buildRevision,
+    },
+    environment: {
+      platform: platform.includes("win")
+        ? "windows"
+        : platform.includes("mac")
+          ? "macos"
+          : platform.includes("linux")
+            ? "linux"
+            : "other",
+      architecture: browserArchitecture(),
+      tauri: isTauri(),
+    },
+    route,
+    lastErrorCode: runtime.lastErrorCode,
+    recentErrorCodes: runtime.events
+      .filter(
+        (event): event is Extract<DiagnosticEvent, { type: "error" }> => event.type === "error",
+      )
+      .map((event) => event.detail.code)
+      .slice(-10),
+    recentErrorClasses: runtime.technicalErrors.map(({ detail }) => detail).slice(-10),
   };
 }
 

@@ -72,7 +72,7 @@ execute, or treat the external answer as product authority.
 Browser review does not close native gates. Automated semantic tests do not establish human
 navigation success.
 
-The current Alpha branch also contains three newly accepted ingress/lifecycle capabilities awaiting
+The current Alpha branch also contains four newly accepted ingress/lifecycle capabilities awaiting
 final packaged validation: a disk-backed project tab strip with the shared unsaved-work guard,
 native `.xls`/`.xlsx`/`.xlsm`/`.xlsb` worksheet import through a bounded Rust adapter, and a
 strictly allowlisted Cloudflare Workers/D1 telemetry collector. The collector is now deployed at
@@ -82,11 +82,22 @@ and 90-day expiry. The telemetry-enabled Windows bundle uses an exact-origin CSP
 privacy/deletion contact in the consent and About surfaces. Packaged native opt-in/opt-out and
 scheduled-expiry operation still require release validation. See ADR 0055.
 
+The same Worker now exposes the separately keyed `/v1/problem-reports` endpoint backed by separate
+D1 report and append-only status-history tables. The app requires an outbound preview and explicit
+send for every report, never supports files/screenshots/project attachment, and includes a smaller
+closed privacy-reduced diagnostic only when selected. Deployment smoke verified `201` plus an
+opaque report ID, APAC/NRT persistence, AES-GCM reply-contact ciphertext with no plaintext match,
+and cleanup of the exact synthetic row. Reports expire after 90 days. Cloudflare Access team/audience
+configuration is not available in the current account session, so `/admin` and `/v1/admin/*` are
+deliberately fail-closed until that release gate is configured. See ADR 0056.
+
 The telemetry release preflight rejects a placeholder D1 ID, non-exact/non-HTTPS endpoints,
 wildcard or incomplete native-origin CORS, invalid public ingestion keys, invalid retention, and a
 missing privacy contact. Its generated Tauri overlay contains only the approved endpoint origin and
 never the key or contact. Collector regression coverage includes exact CORS preflight, schema/key
 rejection, request-size and daily-volume limits, research-data-free storage, and scheduled expiry.
+The preflight now also requires the exact same-origin problem-report endpoint and separate public
+report key.
 
 The native workbook regression includes a real two-sheet `.xlsx` fixture with internal blanks,
 formulas, dates, decimals, negative values and Japanese labels, plus an attributed MIT-licensed

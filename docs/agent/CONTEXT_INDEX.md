@@ -65,6 +65,8 @@ Open older Graph ADRs only when the current ones explicitly depend on them.
 - Product identity and artifact naming: `docs/adr/0054-biofigurestat-product-identity.md`
 - Alpha tabs, Excel workbook import, and remote telemetry boundary:
   `docs/adr/0055-alpha-project-tabs-workbook-import-and-telemetry.md`
+- Explicit Public Alpha reports and append-only triage:
+  `docs/adr/0056-explicit-public-alpha-problem-reporting.md`
 - Release checklist: `docs/alpha/ALPHA_RELEASE_CHECKLIST.md`
 - Production UX gate: `docs/alpha/PRODUCTION_UX_ACCEPTANCE_GATE_2026-08-28.md`
 - Privacy: `docs/alpha/PRIVACY.md`

@@ -3,5 +3,5 @@
   "compilerOptions": {
     "lib": ["ES2022", "WebWorker"]
   },
-  "include": ["src/index.ts", "src/schema.ts"]
+  "include": ["src/index.ts", "src/schema.ts", "src/problemReportSchema.ts"]
 }

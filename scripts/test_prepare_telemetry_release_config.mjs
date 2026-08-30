@@ -20,6 +20,8 @@ test("creates an exact-origin CSP overlay without writing the ingestion key", ()
   const overlay = createTelemetryReleaseOverlay({
     endpoint: "https://telemetry.biofigurestat.example/v1/usage",
     ingestKey: "public-alpha-key_123456",
+    reportEndpoint: "https://telemetry.biofigurestat.example/v1/problem-reports",
+    reportIngestKey: "public-report-key_123456",
     privacyContact: "privacy@biofigurestat.example",
     wranglerConfig: validConfig,
   });
@@ -37,6 +39,8 @@ test("rejects placeholders, wildcard origins, unsafe endpoints, and missing oper
       createTelemetryReleaseOverlay({
         endpoint: "http://telemetry.example/v1/usage",
         ingestKey: "public-alpha-key_123456",
+        reportEndpoint: "https://telemetry.example/v1/problem-reports",
+        reportIngestKey: "public-report-key_123456",
         privacyContact: "privacy@example.test",
         wranglerConfig: validConfig,
       }),
@@ -47,6 +51,8 @@ test("rejects placeholders, wildcard origins, unsafe endpoints, and missing oper
       createTelemetryReleaseOverlay({
         endpoint: "https://telemetry.example/v1/usage",
         ingestKey: "public-alpha-key_123456",
+        reportEndpoint: "https://telemetry.example/v1/problem-reports",
+        reportIngestKey: "public-report-key_123456",
         privacyContact: "",
         wranglerConfig: validConfig,
       }),
@@ -57,6 +63,8 @@ test("rejects placeholders, wildcard origins, unsafe endpoints, and missing oper
       createTelemetryReleaseOverlay({
         endpoint: "https://telemetry.example/v1/usage",
         ingestKey: "public-alpha-key_123456",
+        reportEndpoint: "https://telemetry.example/v1/problem-reports",
+        reportIngestKey: "public-report-key_123456",
         privacyContact: "privacy@example.test",
         wranglerConfig: {
           ...validConfig,
@@ -70,6 +78,8 @@ test("rejects placeholders, wildcard origins, unsafe endpoints, and missing oper
       createTelemetryReleaseOverlay({
         endpoint: "https://telemetry.example/v1/usage",
         ingestKey: "public-alpha-key_123456",
+        reportEndpoint: "https://telemetry.example/v1/problem-reports",
+        reportIngestKey: "public-report-key_123456",
         privacyContact: "privacy@example.test",
         wranglerConfig: {
           ...validConfig,

@@ -16,13 +16,16 @@ function requiredText(value, name) {
   return normalized;
 }
 
-function validateEndpoint(value) {
+function validateEndpoint(
+  value,
+  { name = "VITE_USAGE_TELEMETRY_ENDPOINT", pathname = "/v1/usage" } = {},
+) {
   let endpoint;
   try {
-    endpoint = new URL(requiredText(value, "VITE_USAGE_TELEMETRY_ENDPOINT"));
+    endpoint = new URL(requiredText(value, name));
   } catch (error) {
     if (error instanceof Error && error.message.includes("is required")) throw error;
-    throw new Error("VITE_USAGE_TELEMETRY_ENDPOINT must be an absolute HTTPS URL.");
+    throw new Error(`${name} must be an absolute HTTPS URL.`);
   }
   if (
     endpoint.protocol !== "https:" ||
@@ -30,11 +33,9 @@ function validateEndpoint(value) {
     endpoint.password ||
     endpoint.hash ||
     endpoint.search ||
-    endpoint.pathname !== "/v1/usage"
+    endpoint.pathname !== pathname
   ) {
-    throw new Error(
-      "VITE_USAGE_TELEMETRY_ENDPOINT must be a credential-free HTTPS URL ending exactly in /v1/usage.",
-    );
+    throw new Error(`${name} must be a credential-free HTTPS URL ending exactly in ${pathname}.`);
   }
   return endpoint;
 }
@@ -71,16 +72,34 @@ function validateWranglerConfig(config) {
 export function createTelemetryReleaseOverlay({
   endpoint,
   ingestKey,
+  reportEndpoint,
+  reportIngestKey,
   privacyContact,
   wranglerConfig,
 }) {
   const validEndpoint = validateEndpoint(endpoint);
+  const validReportEndpoint = validateEndpoint(reportEndpoint, {
+    name: "VITE_PROBLEM_REPORT_ENDPOINT",
+    pathname: "/v1/problem-reports",
+  });
+  if (validReportEndpoint.origin !== validEndpoint.origin) {
+    throw new Error(
+      "Usage telemetry and problem reports must use the same approved Worker origin.",
+    );
+  }
   if (
     !/^[A-Za-z0-9._-]{16,128}$/u.test(requiredText(ingestKey, "VITE_USAGE_TELEMETRY_INGEST_KEY"))
   ) {
     throw new Error(
       "VITE_USAGE_TELEMETRY_INGEST_KEY must contain 16-128 ASCII letters, numbers, dot, underscore, or hyphen.",
     );
+  }
+  if (
+    !/^[A-Za-z0-9._-]{16,128}$/u.test(
+      requiredText(reportIngestKey, "VITE_PROBLEM_REPORT_INGEST_KEY"),
+    )
+  ) {
+    throw new Error("VITE_PROBLEM_REPORT_INGEST_KEY must contain 16-128 allowed ASCII characters.");
   }
   const contact = requiredText(privacyContact, "BIOFIGURESTAT_PRIVACY_CONTACT");
   if (!contact.includes("@") && !/^https:\/\//u.test(contact)) {
@@ -117,6 +136,8 @@ async function main() {
   const overlay = createTelemetryReleaseOverlay({
     endpoint: process.env.VITE_USAGE_TELEMETRY_ENDPOINT,
     ingestKey: process.env.VITE_USAGE_TELEMETRY_INGEST_KEY,
+    reportEndpoint: process.env.VITE_PROBLEM_REPORT_ENDPOINT,
+    reportIngestKey: process.env.VITE_PROBLEM_REPORT_INGEST_KEY,
     privacyContact,
     wranglerConfig,
   });

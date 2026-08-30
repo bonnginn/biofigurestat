@@ -25,3 +25,8 @@ Stable codes are centralized in `apps/ui/src/app/errorCatalog.ts`. Diagnostic re
 Diagnostic events exist only in process memory until the user explicitly copies or saves a report. They are never placed in the product-usage queue and are never uploaded automatically. Current diagnostic event classes include route changes, analysis execution metadata, Graph-state fingerprints, and stable error IDs.
 
 This diagnostic report is separate from consent-based product-usage telemetry. Product-usage telemetry has its own exact allowlist and bounded local queue, never accepts a generic detail object or researcher-entered string, and records nothing until an explicit Yes. Opt-out purges the unsent queue. Remote upload additionally requires both a configured credential-free HTTPS endpoint and a compiled `remote-*` consent-notice version; the current `local-only-*` notice is fail-closed. The user may explicitly copy the privacy-safe local usage report from About.
+
+Public Alpha problem reports are a third, separate channel. They require a preview and explicit
+send for every report regardless of usage-telemetry consent. Selecting privacy-reduced diagnostics
+creates a smaller report-specific diagnostic object; the existing local diagnostic export is never
+uploaded wholesale.
