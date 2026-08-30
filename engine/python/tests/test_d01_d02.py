@@ -1,3 +1,4 @@
+import math
 import unittest
 
 from lsaa_engine.d01_d02 import run_request
@@ -166,6 +167,40 @@ class D01D02EngineTests(unittest.TestCase):
         self.assertAlmostEqual(result["tests"][0]["pValue"], 0.0590718680155165, places=12)
         self.assertAlmostEqual(result["tests"][0]["effectSize"], -0.875, places=12)
         self.assertEqual(result["diagnostics"][0]["code"], "rank_distribution_test_semantics")
+
+    def test_mann_whitney_rejects_only_the_all_identical_boundary(self):
+        def observations_for(groups):
+            return [
+                {
+                    "observationId": f"observation.{condition}.{index}",
+                    "conditionId": condition,
+                    "value": value,
+                    "experimentalUnitId": f"unit.{condition}.{index}",
+                }
+                for condition, values in zip(
+                    ("condition.control", "condition.treatment"), groups, strict=True
+                )
+                for index, value in enumerate(values)
+            ]
+
+        with self.assertRaisesRegex(ValueError, "every analyzed value is identical"):
+            run_request(
+                request(
+                    "D01",
+                    "mann_whitney",
+                    observations_for(([2, 2, 2], [2, 2, 2])),
+                )
+            )
+
+        for groups in (
+            ([1, 1, 1, 1, 1], [3, 3, 3, 3, 3]),
+            ([1, 1, 1, 1, 1], [1, 2, 3, 4, 5]),
+        ):
+            result = run_request(
+                request("D01", "mann_whitney", observations_for(groups))
+            )
+            self.assertEqual(result["status"], "ok")
+            self.assertTrue(math.isfinite(result["tests"][0]["pValue"]))
 
     def test_wilcoxon_signed_rank_fixture(self):
         observations = []

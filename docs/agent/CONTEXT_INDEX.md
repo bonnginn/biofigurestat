@@ -34,6 +34,8 @@ needs historical rationale.
 - Full safety and validation rules: `docs/agent/PROJECT_RULES.md`
 - Relevant contract under `packages/analysis-contracts/` and engine implementation/test under
   `engine/python/lsaa_engine/` and `engine/python/tests/`
+- Latest external engine-scenario triage and deferred defects:
+  `docs/alpha/external-reviews/CLAUDE_ENGINE_SCENARIO_TRIAGE_2026-08-30.md`
 
 For one method, read only its reference section, contract, implementation, and golden/reference
 tests. Do not load the whole benchmark corpus.

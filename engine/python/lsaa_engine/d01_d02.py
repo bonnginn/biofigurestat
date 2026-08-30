@@ -198,6 +198,10 @@ def run_student(request: dict[str, Any]) -> dict[str, Any]:
 
 def run_mann_whitney(request: dict[str, Any]) -> dict[str, Any]:
     a, b = _independent_samples(request)
+    if np.unique(np.concatenate((a, b))).size == 1:
+        raise ValueError(
+            "Mann-Whitney U is undefined when every analyzed value is identical"
+        )
     alternative = request["options"]["alternative"].replace("two_sided", "two-sided")
     test = stats.mannwhitneyu(a, b, alternative=alternative, method="auto")
     rank_biserial = 2.0 * float(test.statistic) / (len(a) * len(b)) - 1.0

@@ -66,6 +66,17 @@ const feedbackRules: readonly Readonly<{
     },
   },
   {
+    pattern:
+      /(?:Mann-Whitney U|Kruskal-Wallis|Friedman) is undefined when every analyzed value is identical/i,
+    feedback: {
+      title: "すべての解析値が同じため、順位検定を計算できません",
+      message:
+        "順位検定は値の順位差に基づくため、すべての解析値が同じ場合は検定統計量を定義できません。",
+      nextAction:
+        "データ表で値と集約単位を確認してください。測定値は保持されています。",
+    },
+  },
+  {
     pattern: /requires at least two independent units per condition/i,
     feedback: {
       title: "独立した実験単位が不足しています",

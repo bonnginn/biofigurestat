@@ -39,4 +39,17 @@ describe("analysisValidationFeedback", () => {
     expect(feedback?.message).toContain("標準誤差が0");
     expect(feedback?.nextAction).toContain("代替法");
   });
+
+  it.each([
+    "Mann-Whitney U is undefined when every analyzed value is identical",
+    "Kruskal-Wallis is undefined when every analyzed value is identical",
+    "Friedman is undefined when every analyzed value is identical",
+  ])("explains an all-identical rank-test boundary: %s", (message) => {
+    const feedback = analysisValidationFeedback(validationResult(message));
+
+    expect(feedback?.title).toContain("順位検定を計算できません");
+    expect(feedback?.message).toContain("順位差");
+    expect(feedback?.nextAction).toContain("集約単位");
+    expect(feedback?.nextAction).toContain("測定値は保持されています");
+  });
 });

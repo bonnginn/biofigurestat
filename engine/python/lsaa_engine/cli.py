@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+import traceback
 from datetime import datetime, timezone
 from typing import Any
 
@@ -12,7 +13,9 @@ from . import ENGINE_VERSION
 from .d01_d02 import run_request
 
 
-def _error_result(request: dict[str, Any], message: str) -> dict[str, Any]:
+def _error_result(
+    request: dict[str, Any], message: str, code: str = "invalid_request"
+) -> dict[str, Any]:
     return {
         "protocolVersion": request.get("protocolVersion", "0.1.0"),
         "requestId": request.get("requestId", "request.unknown"),
@@ -24,10 +27,18 @@ def _error_result(request: dict[str, Any], message: str) -> dict[str, Any]:
         },
         "estimates": [],
         "tests": [],
-        "diagnostics": [{"code": "invalid_request", "message": message}],
+        "diagnostics": [{"code": code, "message": message}],
         "warnings": [],
         "completedAt": datetime.now(timezone.utc).isoformat(),
     }
+
+
+def _internal_error_result(request: dict[str, Any]) -> dict[str, Any]:
+    return _error_result(
+        request,
+        "The local statistical engine could not produce a valid result.",
+        "internal_engine_error",
+    )
 
 
 def main() -> int:
@@ -38,8 +49,18 @@ def main() -> int:
         result["completedAt"] = datetime.now(timezone.utc).isoformat()
     except (KeyError, TypeError, ValueError) as exc:
         result = _error_result(request, str(exc))
-    json.dump(result, sys.stdout, separators=(",", ":"), allow_nan=False)
-    sys.stdout.write("\n")
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+        result = _internal_error_result(request)
+
+    try:
+        payload = json.dumps(result, separators=(",", ":"), allow_nan=False)
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+        payload = json.dumps(
+            _internal_error_result(request), separators=(",", ":"), allow_nan=False
+        )
+    sys.stdout.write(f"{payload}\n")
     return 0
 
 

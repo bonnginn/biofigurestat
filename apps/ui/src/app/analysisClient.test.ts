@@ -101,4 +101,26 @@ describe("local engine failure guidance", () => {
       "一意に推定できません",
     );
   });
+
+  it("does not misclassify a generic engine wrapper as a nonlinear-fit failure", () => {
+    const message = localEngineFailureMessage(
+      "The local analysis engine failed: Traceback: ValueError: Out of range float values are not JSON compliant: nan",
+    );
+    expect(message).toContain("有効な結果を返せませんでした");
+    expect(message).not.toContain("非線形fit");
+  });
+
+  it("still explains a D17 convergence failure", () => {
+    expect(
+      localEngineFailureMessage(
+        "The local analysis engine failed: D17 series.1 fit failed: optimal parameters not found",
+      ),
+    ).toContain("収束しませんでした");
+  });
+
+  it("does not treat unrelated flat data text as a nonlinear-fit diagnostic", () => {
+    const message = localEngineFailureMessage("The local analysis engine failed: flat input data");
+    expect(message).toContain("有効な結果を返せませんでした");
+    expect(message).not.toContain("非線形fit");
+  });
 });

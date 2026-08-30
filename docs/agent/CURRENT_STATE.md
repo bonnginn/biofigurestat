@@ -30,6 +30,14 @@ same Graph workspace presentation for Graph-only and specialist routes. Browser 
 the common worksheet and Graph shell for Survival and ordered-curve/enzyme entry; native behavior
 still requires the macOS gate below.
 
+The 2026-08-30 engine hardening follow-up makes CLI stdout an atomic one-document JSON contract,
+returns generic `internal_engine_error` diagnostics for unexpected internal/serialization failures,
+and rejects the all-identical boundary for Mann–Whitney, Kruskal–Wallis/Dunn, and Friedman without
+rejecting merely groupwise-constant inputs. D17-specific recovery copy is now limited to errors that
+actually carry a D17 marker. Confirmed deferred engine defects and one unconfirmed performance
+concern are routed through
+`docs/alpha/external-reviews/CLAUDE_ENGINE_SCENARIO_TRIAGE_2026-08-30.md`.
+
 The Graph-only production path now uses separate Data, Graph, and Statistics tabs and the same
 full `ExperimentGraphWorkbench` used by experiment-first projects. Source/sample ID has a separate
 mapping and is never used as a legend series; a column with one unique value per row is blocked from

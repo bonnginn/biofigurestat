@@ -1,3 +1,4 @@
+import math
 import unittest
 
 from lsaa_engine.d01_d02 import run_request
@@ -174,6 +175,36 @@ class D03EngineTests(unittest.TestCase):
             all(test["adjustedPValue"] >= test["pValue"] for test in result["tests"][1:])
         )
         self.assertEqual(result["diagnostics"][0]["code"], "dunn_holm_posthoc")
+
+    def test_kruskal_wallis_rejects_only_the_all_identical_boundary(self):
+        for contrast_intent, multiplicity in (
+            ("omnibus_only", None),
+            ("all_pairs", "dunn_holm_all_pairs"),
+        ):
+            with self.assertRaisesRegex(ValueError, "every analyzed value is identical"):
+                run_request(
+                    d03_request(
+                        [[2.0] * 4, [2.0] * 4, [2.0] * 4],
+                        method="kruskal_wallis",
+                        contrast_intent=contrast_intent,
+                        multiplicity=multiplicity,
+                    )
+                )
+
+        for values in (
+            [[1.0] * 5, [2.0] * 5, [3.0] * 5],
+            [[1.0] * 5, [1.0, 2.0, 3.0, 4.0, 5.0], [2.0, 3.0, 4.0, 5.0, 6.0]],
+        ):
+            result = run_request(
+                d03_request(
+                    values,
+                    method="kruskal_wallis",
+                    contrast_intent="all_pairs",
+                    multiplicity="dunn_holm_all_pairs",
+                )
+            )
+            self.assertEqual(result["status"], "ok")
+            self.assertTrue(all(math.isfinite(test["pValue"]) for test in result["tests"]))
 
     def test_selected_planned_pairs_use_pooled_variance_and_holm_adjustment(self):
         result = run_request(

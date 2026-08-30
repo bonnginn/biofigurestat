@@ -441,6 +441,10 @@ def run_kruskal_wallis(request: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Kruskal-Wallis omnibus-only workflow must not declare post-hoc adjustment")
     if contrast_intent == "all_pairs" and multiplicity != "dunn_holm_all_pairs":
         raise ValueError("Kruskal-Wallis all-pairs workflow requires Dunn comparisons with Holm adjustment")
+    if np.unique(np.concatenate(samples)).size == 1:
+        raise ValueError(
+            "Kruskal-Wallis is undefined when every analyzed value is identical"
+        )
     try:
         test = stats.kruskal(*samples)
     except ValueError as error:
@@ -482,6 +486,10 @@ def run_kruskal_wallis(request: dict[str, Any]) -> dict[str, Any]:
                     rank_variance
                     * (1.0 / len(samples[first_index]) + 1.0 / len(samples[second_index]))
                 )
+                if not math.isfinite(standard_error) or standard_error <= 0:
+                    raise ValueError(
+                        "Dunn comparisons are undefined when pooled rank variance is zero"
+                    )
                 statistic = (mean_ranks[first_index] - mean_ranks[second_index]) / standard_error
                 p_value = float(2.0 * stats.norm.sf(abs(statistic)))
                 pair_results.append((first_id, second_id, float(statistic), p_value))

@@ -33,6 +33,10 @@ def run_friedman(request: dict[str, Any]) -> dict[str, Any]:
     if len(by_pair) < 2 or any(set(values) != set(condition_ids) for values in by_pair.values()):
         raise ValueError("Friedman analysis requires complete matched units across every condition")
     arrays = [np.asarray([by_pair[pair][condition] for pair in sorted(by_pair)], dtype=float) for condition in condition_ids]
+    if np.unique(np.concatenate(arrays)).size == 1:
+        raise ValueError(
+            "Friedman is undefined when every analyzed value is identical"
+        )
     omnibus = stats.friedmanchisquare(*arrays)
     pairs = list(combinations(range(len(condition_ids)), 2))
     pair_results = [stats.wilcoxon(arrays[first], arrays[second], alternative="two-sided", method="auto") for first, second in pairs]
