@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type InputHTMLAttributes, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import {
   AnalysisEngineResultSchema,
@@ -70,6 +70,10 @@ import {
 import { AnalysisResultView } from "./AnalysisResultView";
 import { BulkPasteScalar } from "../components/BulkPasteScalar";
 import { NestedImageJPaste, type NestedImageJPastePayload } from "../components/NestedImageJPaste";
+import {
+  SpreadsheetGridInput,
+  type SpreadsheetGridInputProps,
+} from "../components/SpreadsheetGridInput";
 import "./MultiConditionDataSheetPage.css";
 
 type Props = {
@@ -232,55 +236,8 @@ function multiPercentageLabel(measurement: MultiConditionMeasurement): string {
   return `${((measurement.numerator / measurement.denominator) * 100).toFixed(1)}%`;
 }
 
-type MultiGridInputProps = InputHTMLAttributes<HTMLInputElement> & {
-  gridRow: number;
-  gridColumn: number;
-};
-
-function focusAdjacentMultiGridInput(event: KeyboardEvent<HTMLInputElement>) {
-  if (!["Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
-  const grid = event.currentTarget.closest<HTMLElement>("[data-unit-grid]");
-  if (!grid) return;
-  const currentRow = Number(event.currentTarget.dataset.gridRow);
-  const currentColumn = Number(event.currentTarget.dataset.gridColumn);
-  if (!Number.isInteger(currentRow) || !Number.isInteger(currentColumn)) return;
-
-  let nextRow = currentRow;
-  let nextColumn = currentColumn;
-  if (event.key === "Enter") nextRow += event.shiftKey ? -1 : 1;
-  if (event.key === "ArrowLeft") nextColumn -= 1;
-  if (event.key === "ArrowRight") nextColumn += 1;
-  if (event.key === "ArrowUp") nextRow -= 1;
-  if (event.key === "ArrowDown") nextRow += 1;
-  const next = grid.querySelector<HTMLInputElement>(
-    `[data-grid-row="${nextRow}"][data-grid-column="${nextColumn}"]`,
-  );
-  if (!next) return;
-  event.preventDefault();
-  next.focus();
-  next.select();
-}
-
-function MultiGridInput({
-  gridRow,
-  gridColumn,
-  className,
-  onKeyDown,
-  ...props
-}: MultiGridInputProps) {
-  return (
-    <input
-      {...props}
-      className={`multi-sheet-grid-input${className ? ` ${className}` : ""}`}
-      data-grid-input="true"
-      data-grid-row={gridRow}
-      data-grid-column={gridColumn}
-      onKeyDown={(event) => {
-        focusAdjacentMultiGridInput(event);
-        onKeyDown?.(event);
-      }}
-    />
-  );
+function MultiGridInput(props: Omit<SpreadsheetGridInputProps, "baseClassName">) {
+  return <SpreadsheetGridInput {...props} baseClassName="multi-sheet-grid-input" />;
 }
 
 function applyScalarValuesToIndependentMultiCondition(
