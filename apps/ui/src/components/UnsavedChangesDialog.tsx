@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import "./UnsavedChangesDialog.css";
+import { useAppLocale } from "../app/appLocale";
 
 type UnsavedChangesDialogProps = Readonly<{
   actionLabel: string;
@@ -21,6 +22,7 @@ export function UnsavedChangesDialog({
   onDiscard,
   onCancel,
 }: UnsavedChangesDialogProps) {
+  const ja = useAppLocale() === "ja";
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -46,10 +48,14 @@ export function UnsavedChangesDialog({
         aria-labelledby="unsaved-changes-title"
         aria-describedby="unsaved-changes-description"
       >
-        <p className="overline">未保存の変更</p>
-        <h2 id="unsaved-changes-title">この実験を保存しますか？</h2>
+        <p className="overline">{ja ? "未保存の変更" : "Unsaved changes"}</p>
+        <h2 id="unsaved-changes-title">
+          {ja ? "この実験を保存しますか？" : "Save this experiment?"}
+        </h2>
         <p id="unsaved-changes-description">
-          「{actionLabel}」へ進む前に、入力したデータとGraphの変更を保存できます。
+          {ja
+            ? `「${actionLabel}」へ進む前に、入力したデータとGraphの変更を保存できます。`
+            : `You can save entered data and Graph changes before ${actionLabel}.`}
         </p>
         {error ? <p className="unsaved-changes-error" role="alert">{error}</p> : null}
         <div className="unsaved-changes-actions">
@@ -59,18 +65,20 @@ export function UnsavedChangesDialog({
             disabled={!canSave || saving}
             onClick={onSaveAndContinue}
           >
-            {saving ? "保存しています…" : "保存して続ける"}
+            {saving ? (ja ? "保存しています…" : "Saving…") : ja ? "保存して続ける" : "Save and continue"}
           </button>
           <button type="button" disabled={saving} onClick={onDiscard}>
-            変更を破棄して続ける
+            {ja ? "変更を破棄して続ける" : "Discard changes and continue"}
           </button>
           <button ref={cancelRef} type="button" disabled={saving} onClick={onCancel}>
-            キャンセル
+            {ja ? "キャンセル" : "Cancel"}
           </button>
         </div>
         {!canSave ? (
           <p className="unsaved-changes-note">
-            この環境では保存を利用できません。戻るにはキャンセル、内容を破棄する場合だけ「変更を破棄して続ける」を選んでください。
+            {ja
+              ? "この環境では保存を利用できません。戻るにはキャンセル、内容を破棄する場合だけ「変更を破棄して続ける」を選んでください。"
+              : "Saving is unavailable in this environment. Choose Cancel to return, or discard changes only if you intend to lose them."}
           </p>
         ) : null}
       </section>

@@ -28,6 +28,30 @@
   line-height: 1.35;
 }
 
+.usage-consent-language {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  color: #526175;
+  font-size: 0.85rem;
+}
+
+.usage-consent-language button {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid #b9c7db;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.usage-consent-language button[aria-pressed="true"] {
+  border-color: #4779e8;
+  color: #315fab;
+  background: #eef3ff;
+  font-weight: 700;
+}
+
 .usage-consent-copy {
   display: grid;
   gap: 9px;

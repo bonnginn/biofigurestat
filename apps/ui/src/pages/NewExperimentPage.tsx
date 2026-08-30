@@ -53,6 +53,7 @@ import {
 import { createAdaptiveWorkspace } from "../app/adaptiveWorkspace";
 import { createBiologicalSetupPresentation } from "../app/adaptiveStructureRevision";
 import { adaptiveInputFeatureEnabled } from "../app/adaptiveInputFeature";
+import { useAppLocale } from "../app/appLocale";
 import { bridgeGraphOnlyTableToStatistics } from "../app/graphOnlyStatisticsBridge";
 import { rebindGraphOnlyGraphsToWorkspace } from "../app/graphOnlyWorkspaceGraph";
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
@@ -2372,6 +2373,7 @@ export function NewExperimentPage({
   specializedEntryAvailable = false,
   showCompatibilityEntry = false,
 }: NewExperimentPageProps) {
+  const locale = useAppLocale();
   const evaluationPreview =
     import.meta.env.DEV && browserPreview && evaluationModeIsConfigured(evaluationMode);
   const [stage, setStage] = useState<FlowStage>(
@@ -2967,11 +2969,7 @@ export function NewExperimentPage({
 
       {stage === "adaptive" ? (
         <AdaptiveExperimentEntry
-          locale={
-            typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("ja")
-              ? "ja"
-              : "en"
-          }
+          locale={locale}
           onCancel={() => setStage("context")}
           onReady={(adaptiveDraft, adaptiveCells) => {
             setDraft(adaptiveDraft);

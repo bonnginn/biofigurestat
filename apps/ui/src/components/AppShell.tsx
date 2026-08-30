@@ -10,6 +10,7 @@ import { AboutPanel } from "./AboutPanel";
 import { UsageTelemetryController } from "./UsageTelemetryController";
 import { useUsageConsent } from "../app/usageTelemetry";
 import { ProjectTabBar, type ProjectTab } from "./ProjectTabBar";
+import { setAppLocale, useAppLocale } from "../app/appLocale";
 import "./DiagnosticPanel.css";
 import "./AboutPanel.css";
 
@@ -53,6 +54,8 @@ export function AppShell({
 }: AppShellProps) {
   const mainContentRef = useRef<HTMLElement>(null);
   const usageConsent = useUsageConsent();
+  const locale = useAppLocale();
+  const ja = locale === "ja";
 
   useLayoutEffect(() => {
     const heading = mainContentRef.current?.querySelector<HTMLElement>("h1");
@@ -68,17 +71,23 @@ export function AppShell({
           <img className="brand-mark" src="/biofigurestat-icon.png" alt="" aria-hidden="true" />
           <span>
             <span className="brand-title">{PRODUCT_IDENTITY.displayNameJa}</span>
-            <span className="brand-subtitle">ローカル研究ワークスペース</span>
+            <span className="brand-subtitle">
+              {ja ? "ローカル研究ワークスペース" : "Local research workspace"}
+            </span>
           </span>
         </button>
-        <nav className="topbar-nav" aria-label="ワークスペースのナビゲーション">
+        <nav
+          className="topbar-nav"
+          aria-label={ja ? "ワークスペースのナビゲーション" : "Workspace navigation"}
+        >
           <button
             className={route === "home" ? "is-active" : ""}
             type="button"
             aria-current={route === "home" ? "page" : undefined}
             onClick={() => onNavigate("home")}
           >
-            <span aria-hidden="true">⌂</span> <span className="topbar-nav__label">ホーム</span>
+            <span aria-hidden="true">⌂</span>{" "}
+            <span className="topbar-nav__label">{ja ? "ホーム" : "Home"}</span>
           </button>
           <button
             className={route === "new-experiment" ? "is-active" : ""}
@@ -86,20 +95,50 @@ export function AppShell({
             aria-current={route === "new-experiment" ? "page" : undefined}
             onClick={() => onNavigate("new-experiment")}
           >
-            <span aria-hidden="true">＋</span> <span className="topbar-nav__label">新しい実験</span>
+            <span aria-hidden="true">＋</span>{" "}
+            <span className="topbar-nav__label">{ja ? "新しい実験" : "New experiment"}</span>
           </button>
         </nav>
-        <div className="topbar-status" aria-label="アプリケーションの状態">
+        <div
+          className="topbar-status"
+          aria-label={ja ? "アプリケーションの状態" : "Application status"}
+        >
           <span className="status-dot" aria-hidden="true" />
           <span>
             {import.meta.env.DEV && evaluationPreview
-              ? "合成データ評価環境"
+              ? ja
+                ? "合成データ評価環境"
+                : "Synthetic-data evaluation"
               : browserPreview
-                ? "合成デモ・一時プレビュー"
+                ? ja
+                  ? "合成デモ・一時プレビュー"
+                  : "Synthetic demo preview"
                 : usageConsent === "opted_in"
-                  ? "研究データはローカル・利用情報収集ON"
-                  : "ローカルのみ"}
+                  ? ja
+                    ? "研究データはローカル・利用情報収集ON"
+                    : "Research data stay local · usage data ON"
+                  : ja
+                    ? "ローカルのみ"
+                    : "Local only"}
           </span>
+        </div>
+        <div className="topbar-language" role="group" aria-label={ja ? "表示言語" : "Language"}>
+          <button
+            type="button"
+            className={ja ? "is-active" : ""}
+            aria-pressed={ja}
+            onClick={() => setAppLocale("ja")}
+          >
+            日本語
+          </button>
+          <button
+            type="button"
+            className={!ja ? "is-active" : ""}
+            aria-pressed={!ja}
+            onClick={() => setAppLocale("en")}
+          >
+            English
+          </button>
         </div>
         <ContextualHelp
           context={{
@@ -126,13 +165,21 @@ export function AppShell({
         <div className="browser-preview-banner" role="status">
           <strong>
             {import.meta.env.DEV && evaluationPreview
-              ? "開発用Benchmark / Evaluation環境"
-              : "ブラウザUXプレビュー"}
+              ? ja
+                ? "開発用Benchmark / Evaluation環境"
+                : "Development benchmark / evaluation"
+              : ja
+                ? "ブラウザUXプレビュー"
+                : "Browser UX preview"}
           </strong>
           <span>
             {import.meta.env.DEV && evaluationPreview
-              ? "合成benchmarkデータ専用です。ネイティブ版と同じ固定統計エンジンを使いますが、未発表データを入力しないでください。"
-              : "合成デモデータ専用です。プロジェクトの保存・読込とローカル統計解析は無効です。"}
+              ? ja
+                ? "合成benchmarkデータ専用です。ネイティブ版と同じ固定統計エンジンを使いますが、未発表データを入力しないでください。"
+                : "For synthetic benchmark data only. It uses the fixed native statistical engine; do not enter unpublished data."
+              : ja
+                ? "合成デモデータ専用です。プロジェクトの保存・読込とローカル統計解析は無効です。"
+                : "For synthetic demo data only. Project save/open and local statistical analysis are disabled."}
           </span>
         </div>
       ) : null}

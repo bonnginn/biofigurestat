@@ -23,11 +23,12 @@ export function ProjectTabBar({
   onClose,
   onOpen,
 }: Props) {
+  const ja = useAppLocale() === "ja";
   if (tabs.length === 0) return null;
 
   return (
-    <nav className="project-tabs" aria-label="開いているプロジェクト">
-      <div className="project-tabs__list" role="tablist" aria-label="プロジェクト">
+    <nav className="project-tabs" aria-label={ja ? "開いているプロジェクト" : "Open projects"}>
+      <div className="project-tabs__list" role="tablist" aria-label={ja ? "プロジェクト" : "Projects"}>
         {tabs.map((tab) => {
           const active = tab.target === activeTarget;
           return (
@@ -42,7 +43,7 @@ export function ProjectTabBar({
               >
                 <span className="project-tab__name">{tab.name}</span>
                 {(active ? activeDirty : tab.dirty) ? (
-                  <span className="project-tab__dirty" aria-label="未保存の変更あり">
+                  <span className="project-tab__dirty" aria-label={ja ? "未保存の変更あり" : "Unsaved changes"}>
                     ●
                   </span>
                 ) : null}
@@ -50,7 +51,7 @@ export function ProjectTabBar({
               <button
                 className="project-tab__close"
                 type="button"
-                aria-label={`${tab.name}を閉じる`}
+                aria-label={ja ? `${tab.name}を閉じる` : `Close ${tab.name}`}
                 onClick={() => onClose(tab.target)}
               >
                 ×
@@ -60,8 +61,9 @@ export function ProjectTabBar({
         })}
       </div>
       <button className="project-tabs__open" type="button" onClick={onOpen}>
-        ＋ 開く
+        {ja ? "＋ 開く" : "+ Open"}
       </button>
     </nav>
   );
 }
+import { useAppLocale } from "../app/appLocale";

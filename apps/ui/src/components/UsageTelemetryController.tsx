@@ -14,6 +14,7 @@ import {
   type UsageInteractionCategory,
 } from "../app/usageTelemetry";
 import "./UsageTelemetryController.css";
+import { setAppLocale, useAppLocale } from "../app/appLocale";
 
 function interactionCategory(target: EventTarget | null): UsageInteractionCategory {
   if (!(target instanceof Element)) return "other_control";
@@ -44,6 +45,8 @@ function interactionCategory(target: EventTarget | null): UsageInteractionCatego
 
 export function UsageTelemetryController({ route }: Readonly<{ route: AppRoute }>) {
   const consent = useUsageConsent();
+  const locale = useAppLocale();
+  const ja = locale === "ja";
   const privacyContact = usageTelemetryPrivacyContact();
   const dialogRef = useRef<HTMLElement>(null);
 
@@ -161,51 +164,82 @@ export function UsageTelemetryController({ route }: Readonly<{ route: AppRoute }
           }
         }}
       >
-        <p className="overline">初回のみ</p>
+        <div className="usage-consent-language" role="group" aria-label={ja ? "表示言語" : "Language"}>
+          <span>{ja ? "表示言語" : "Language"}</span>
+          <button type="button" aria-pressed={ja} onClick={() => setAppLocale("ja")}>
+            日本語
+          </button>
+          <button type="button" aria-pressed={!ja} onClick={() => setAppLocale("en")}>
+            English
+          </button>
+        </div>
+        <p className="overline">{ja ? "初回のみ" : "First launch"}</p>
         <h1 id="usage-consent-heading">
-          研究データを含まない利用情報を、製品改善に役立ててもよいですか？
+          {ja
+            ? "研究データを含まない利用情報を、製品改善に役立ててもよいですか？"
+            : "May BioFigureStat use privacy-reduced usage data to improve the product?"}
         </h1>
         <div id="usage-consent-description" className="usage-consent-copy">
-          <p>収集するのは、画面・操作・Graph設定・完了／エラーの固定分類と回数です。</p>
+          <p>
+            {ja
+              ? "収集するのは、画面・操作・Graph設定・完了／エラーの固定分類と回数です。"
+              : "Only fixed categories and counts for screens, interactions, graph settings, completions, and errors are collected."}
+          </p>
           <p>
             <strong>
-              測定値、表の内容、実験名、条件名、readout名、試料ID、自由記述、ファイル名・パス、clipboard内容、project名は収集しません。
+              {ja
+                ? "測定値、表の内容、実験名、条件名、readout名、試料ID、自由記述、ファイル名・パス、clipboard内容、project名は収集しません。"
+                : "Measurements, table contents, experiment names, condition names, readout names, sample IDs, free text, file names or paths, clipboard contents, and project names are not collected."}
             </strong>
           </p>
           <details>
-            <summary>記録項目と送信について詳しく見る</summary>
+            <summary>{ja ? "記録項目と送信について詳しく見る" : "Details about recording and upload"}</summary>
             <div className="usage-consent-details">
               <p>
-                ONにすると、複数回の利用をまとめるためのランダムなアプリID、起動ごとのセッションID、操作日時、アプリ・ビルド版、OS種別を記録します。
+                {ja
+                  ? "ONにすると、複数回の利用をまとめるためのランダムなアプリID、起動ごとのセッションID、操作日時、アプリ・ビルド版、OS種別を記録します。"
+                  : "When enabled, BioFigureStat records a random installation ID, a per-launch session ID, interaction times, app and build versions, and operating-system type."}
               </p>
               {uploadConfigured ? (
                 <>
                   <p>
-                    このビルドは、同意後の利用情報をBioFigureStatの利用情報受付へ送信します。受付基盤はCloudflare
-                    Workers / D1で、イベント保持期間は90日です。
+                    {ja
+                      ? "このビルドは、同意後の利用情報をBioFigureStatの利用情報受付へ送信します。受付基盤はCloudflare Workers / D1で、イベント保持期間は90日です。"
+                      : "After consent, this build sends usage events to the BioFigureStat intake service hosted on Cloudflare Workers / D1. Events are retained for 90 days."}
                   </p>
                   <p>
-                    送信時には、通信に伴うIPアドレスなどの通信情報がCloudflareで一時的に扱われる可能性がありますが、BioFigureStatのevent
-                    databaseには保存しません。
+                    {ja
+                      ? "送信時には、通信に伴うIPアドレスなどの通信情報がCloudflareで一時的に扱われる可能性がありますが、BioFigureStatのevent databaseには保存しません。"
+                      : "Cloudflare may temporarily process network metadata such as an IP address during transmission, but BioFigureStat does not store it in the event database."}
                   </p>
                   {privacyContact ? (
                     <p>
-                      利用情報の削除・プライバシーに関する問い合わせ：
+                      {ja
+                        ? "利用情報の削除・プライバシーに関する問い合わせ："
+                        : "Usage-data deletion and privacy contact: "}
                       <a href={privacyContact.href}>{privacyContact.label}</a>
                     </p>
                   ) : null}
                 </>
               ) : (
-                <p>このビルドには送信先が設定されていないため、外部への送信は行いません。</p>
+                <p>
+                  {ja
+                    ? "このビルドには送信先が設定されていないため、外部への送信は行いません。"
+                    : "This build has no upload endpoint configured, so no usage data are sent externally."}
+                </p>
               )}
               <p>
-                Aboutからいつでも変更できます。OFFにすると未送信情報とランダムなアプリIDを削除します。
+                {ja
+                  ? "Aboutからいつでも変更できます。OFFにすると未送信情報とランダムなアプリIDを削除します。"
+                  : "You can change this setting at any time in About. Turning it off deletes queued events and the random installation ID."}
               </p>
             </div>
           </details>
           {doNotTrack ? (
             <p className="usage-consent-dnt" role="note">
-              この環境では追跡拒否設定が有効です。「協力する」を明示的に選んだ場合だけ、このアプリの利用情報収集をONにします。
+              {ja
+                ? "この環境では追跡拒否設定が有効です。「協力する」を明示的に選んだ場合だけ、このアプリの利用情報収集をONにします。"
+                : "A Do Not Track preference is active. Usage collection is enabled only if you explicitly choose Allow."}
             </p>
           ) : null}
         </div>
@@ -215,14 +249,14 @@ export function UsageTelemetryController({ route }: Readonly<{ route: AppRoute }
             className="secondary-button"
             onClick={() => setUsageConsent("opted_out")}
           >
-            協力しない
+            {ja ? "協力しない" : "Do not allow"}
           </button>
           <button
             type="button"
             className="primary-button"
             onClick={() => setUsageConsent("opted_in")}
           >
-            協力する
+            {ja ? "協力する" : "Allow"}
           </button>
         </div>
       </section>

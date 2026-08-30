@@ -562,6 +562,30 @@ button:focus-visible {
   letter-spacing: 0.03em;
 }
 
+.topbar-language {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid #b9c7db;
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.topbar-language button {
+  min-height: 2rem;
+  padding: 0.25rem 0.55rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--soft-muted);
+  font-size: 0.78rem;
+}
+
+.topbar-language button.is-active {
+  background: #eef3ff;
+  color: #315fab;
+  font-weight: 700;
+}
+
 .project-tabs {
   position: sticky;
   z-index: calc(var(--layer-global-header) - 1);

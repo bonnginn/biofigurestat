@@ -1,19 +1,24 @@
 import { workspaceRoutes, type AppRoute } from "../app/routes";
 import { RouteCard } from "../components/RouteCard";
+import { useAppLocale } from "../app/appLocale";
 
 type HomePageProps = {
   onNavigate: (route: AppRoute) => void;
 };
 
 export function HomePage({ onNavigate }: HomePageProps) {
+  const locale = useAppLocale();
+  const text = locale === "ja";
   return (
     <div className="page-stack">
       <section className="hero" aria-labelledby="home-heading">
         <div className="hero-copy">
-          <p className="overline">研究ワークスペース / 01</p>
-          <h1 id="home-heading">どの実験を整理しますか？</h1>
+          <p className="overline">{text ? "研究ワークスペース / 01" : "Research workspace / 01"}</p>
+          <h1 id="home-heading">{text ? "どの実験を整理しますか？" : "Which experiment are you working on?"}</h1>
           <p className="hero-lead">
-            新規作成、よく使う設計、保存済みプロジェクトから作業を始められます。
+            {text
+              ? "新規作成、よく使う設計、保存済みプロジェクトから作業を始められます。"
+              : "Start a new experiment, reuse a saved design, or continue a saved project."}
           </p>
         </div>
         <div className="hero-orbit" aria-hidden="true">
@@ -27,10 +32,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
       <section className="route-section" aria-labelledby="route-heading">
         <div className="section-heading-row">
           <div>
-            <p className="overline">ここから開始</p>
-            <h2 id="route-heading">ワークスペース</h2>
+            <p className="overline">{text ? "ここから開始" : "Start here"}</p>
+            <h2 id="route-heading">{text ? "ワークスペース" : "Workspace"}</h2>
           </div>
-          <span className="section-hint">4つの入口</span>
+          <span className="section-hint">{text ? "4つの入口" : "4 entry points"}</span>
         </div>
         <div className="route-grid">
           {workspaceRoutes.map((route) => (
@@ -39,14 +44,23 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </section>
 
-      <aside className="principle-callout" aria-label="実験の内容を整理する案内">
+      <aside
+        className="principle-callout"
+        aria-label={text ? "実験の内容を整理する案内" : "How to organize an experiment"}
+      >
         <span className="callout-mark" aria-hidden="true">
           ◎
         </span>
         <div>
-          <strong>実験から始めるか、専用シートへ直接進む</strong>
+          <strong>
+            {text
+              ? "実験から始めるか、専用シートへ直接進む"
+              : "Start from the experiment or open a dedicated worksheet"}
+          </strong>
           <p>
-            新しい実験では、処理・群分けと測定内容から入力表を作れます。生存時間、濃度–反応、ヒートマップは専用の入力形式を選べます。
+            {text
+              ? "新しい実験では、処理・群分けと測定内容から入力表を作れます。生存時間、濃度–反応、ヒートマップは専用の入力形式を選べます。"
+              : "New experiment builds a worksheet from treatments, groups, and readouts. Survival, dose-response, and heatmap data also have dedicated formats."}
           </p>
         </div>
       </aside>
