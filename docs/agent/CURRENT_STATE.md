@@ -1,6 +1,6 @@
 # Current Working State
 
-Updated: 2026-08-30
+Updated: 2026-08-30 (macOS `9cd1335-alpha.20260830.mac3` revalidation)
 
 This is the short operational snapshot. It is not a replacement for accepted ADRs, method
 references, schemas, or test evidence.
@@ -8,11 +8,15 @@ references, schemas, or test evidence.
 ## Product phase
 
 BioFigureStat is a local-first, experiment-first Alpha candidate undergoing native hardening. The
-2026-08-30 macOS gate passed canonical integrity, matched/nested semantics, specialist routes, and
-native export, but found a release-blocking application-menu Quit path that discarded unsaved work.
-The fix is implemented in `9e1f68c` and awaits rebuilt macOS native revalidation. The task-oriented
-entry hub and adaptive experiment path remain the intended default; the older compatibility path is
-not the intended product route. Public distribution is not approved.
+native macOS revalidation of `9cd1335-alpha.20260830.mac3` passed canonical integrity and
+matched/nested scientific semantics, but the candidate remains blocked. Application-menu Quit now
+shows the shared guard, while Command+Q can still terminate a dirty project without confirmation.
+Home, New, and Open also prompt instead of retaining the dirty project as an independently open tab,
+contrary to the researcher's explicit multi-project lifecycle requirement. Specialist scientific
+state survived save/reopen, but Survival and ordered X/Y still do not provide the required common
+spreadsheet/Data/Graph/Statistics/File shell after reopen. The recurring UX and packaging items that
+must not be deferred again are recorded in
+`docs/alpha/MACOS_ALPHA_MANUAL_GATE_RESULTS_2026-08-30.md`. Public distribution is not approved.
 
 The 2026-08-30 P1 follow-up now also keeps matched-analysis inclusion explicit, bounds violin
 geometry to observed values, hardens spreadsheet focus/Tab behavior without page jumps, clarifies
