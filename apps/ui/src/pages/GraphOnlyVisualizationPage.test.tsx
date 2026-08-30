@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -8,6 +8,7 @@ import {
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 import type { WorkspaceExitRequest } from "../app/workspaceLifecycle";
 import { GraphOnlyVisualizationPage } from "./GraphOnlyVisualizationPage";
+import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
 
 vi.mock("../app/usageTelemetry", () => ({
   recordUsageEntry: vi.fn(),
@@ -100,7 +101,20 @@ function mappedState(): UnresolvedVisualizationProjectState {
 }
 
 describe("Graph-only production workspace", () => {
-  afterEach(() => vi.clearAllMocks());
+  afterEach(() => {
+    vi.clearAllMocks();
+    act(() => resetAppLocaleForTests("ja"));
+  });
+
+  it("shows the table mapping workflow in English", () => {
+    act(() => setAppLocale("en"));
+    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
+
+    expect(screen.getByRole("heading", { name: "Create a Graph from your table" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "1. Enter or paste a table" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "2. Map columns to the Graph" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Create Graph" })).toBeDisabled();
+  });
 
   it("keeps Data, Graph, and Statistics as separate workspace tabs", () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);

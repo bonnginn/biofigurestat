@@ -33,6 +33,7 @@ import { ExperimentGraphWorkbench } from "../components/graph/ExperimentGraphWor
 import { createGraphOnlyWorkbenchModel } from "../app/graphOnlyWorkbenchAdapter";
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
+import { localizedText, useAppLocale } from "../app/appLocale";
 import "./GraphOnlyVisualizationPage.css";
 
 type ColumnIndex = number | "";
@@ -416,6 +417,8 @@ export function GraphOnlyVisualizationPage({
   onRequestExit,
   onRegisterSaveHandler,
 }: GraphOnlyVisualizationPageProps) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const compatibleInitialState = initialState?.entryIntent === "graph_only" ? initialState : null;
   const initialIntentError =
     initialState && initialState.entryIntent !== "graph_only"
@@ -803,23 +806,23 @@ export function GraphOnlyVisualizationPage({
       <button
         className="back-link"
         type="button"
-        onClick={() => requestExit("入口へ戻る", onBack ?? (() => onNavigate("home")))}
+        onClick={() => requestExit(t("入口へ戻る", "Back to entry"), onBack ?? (() => onNavigate("home")))}
       >
-        <span aria-hidden="true">←</span> 入口へ戻る
+        <span aria-hidden="true">←</span> {t("入口へ戻る", "Back to entry")}
       </button>
       <header className="graph-only__header">
-        <p className="experiment-start__eyebrow">表からGraph</p>
-        <h1>手元の表からGraphを作る</h1>
-        <p>表の列を指定してGraphを作ります。実験構造や統計的なnは、統計を使うまで質問しません。</p>
+        <p className="experiment-start__eyebrow">{t("表からGraph", "Graph from a table")}</p>
+        <h1>{t("手元の表からGraphを作る", "Create a Graph from your table")}</h1>
+        <p>{t("表の列を指定してGraphを作ります。実験構造や統計的なnは、統計を使うまで質問しません。", "Map table columns to a Graph. BioFigureStat will not ask about experimental structure or statistical n until you request statistics.")}</p>
       </header>
 
-      <nav className="graph-only__workspace-tabs" aria-label="表からGraphの作業段階">
+      <nav className="graph-only__workspace-tabs" aria-label={t("表からGraphの作業段階", "Graph-from-table workflow") }>
         <button
           type="button"
           aria-current={workspaceTab === "data" ? "page" : undefined}
           onClick={() => setWorkspaceTab("data")}
         >
-          データ
+          {t("データ", "Data")}
         </button>
         <button
           type="button"
@@ -849,7 +852,7 @@ export function GraphOnlyVisualizationPage({
       <div className="graph-only__data-workspace" hidden={workspaceTab !== "data"}>
         <section className="graph-only__input" aria-labelledby="graph-only-input-heading">
           <div className="graph-only__section-heading">
-            <h2 id="graph-only-input-heading">1. 表に入力・貼り付ける</h2>
+            <h2 id="graph-only-input-heading">{t("1. 表に入力・貼り付ける", "1. Enter or paste a table")}</h2>
             <div className="graph-only__actions">
               <button
                 className="secondary-button"
@@ -876,7 +879,7 @@ export function GraphOnlyVisualizationPage({
                     );
                 }}
               >
-                クリップボードから貼り付け
+                {t("クリップボードから貼り付け", "Paste from clipboard")}
               </button>
               {openProject ? (
                 <button
@@ -898,13 +901,13 @@ export function GraphOnlyVisualizationPage({
                     });
                   }}
                 >
-                  保存したGraph用データを開く
+                  {t("保存したGraph用データを開く", "Open saved Graph data")}
                 </button>
               ) : null}
             </div>
           </div>
           <p className="graph-only__subtle">
-            見出しの下へ直接入力するか、Excelから長方形の範囲を左上セルへ貼り付けてください。直接入力用のX列とY列だけを最初からGraphへ対応付けています。GroupとIDは必要なときだけ使います。
+            {t("見出しの下へ直接入力するか、Excelから長方形の範囲を左上セルへ貼り付けてください。直接入力用のX列とY列だけを最初からGraphへ対応付けています。GroupとIDは必要なときだけ使います。", "Enter data below the headers or paste a rectangular range from Excel into the top-left cell. Only the initial X and Y columns are mapped automatically. Use Group and ID only when needed.")}
           </p>
           <DelimitedTextSpreadsheet
             value={text}
@@ -930,8 +933,8 @@ export function GraphOnlyVisualizationPage({
                 resetImportedMapping();
               }
             }}
-            ariaLabel="Graph用データシート"
-            caption="Graph用データ"
+            ariaLabel={t("Graph用データシート", "Graph data worksheet")}
+            caption={t("Graph用データ", "Graph data")}
             minimumRows={6}
             minimumColumns={4}
             testIdPrefix="graph-only"
@@ -939,7 +942,7 @@ export function GraphOnlyVisualizationPage({
             allowWorkbookSheetStacking
           />
           <label className="graph-only__file">
-            <span>CSV / TSV / TXTファイルを同じシートへ読み込む</span>
+            <span>{t("CSV / TSV / TXTファイルを同じシートへ読み込む", "Load a CSV / TSV / TXT file into the same worksheet")}</span>
             <input
               aria-label="Graph用の表ファイル"
               accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
@@ -968,13 +971,13 @@ export function GraphOnlyVisualizationPage({
         </section>
 
         <section className="graph-only__mapping" aria-labelledby="graph-only-mapping-heading">
-          <h2 id="graph-only-mapping-heading">2. Graphに使う列を指定する</h2>
+          <h2 id="graph-only-mapping-heading">{t("2. Graphに使う列を指定する", "2. Map columns to the Graph")}</h2>
           <p className="graph-only__subtle">
-            空の直接入力シートでは最初の2列だけをXとYへ対応付けています。見出しが変わる表の貼り付け・ファイル読込では列の意味を推測せず指定を解除するため、表を見て横軸・測定値・（必要なら）グループ列を選んでください。
+            {t("空の直接入力シートでは最初の2列だけをXとYへ対応付けています。見出しが変わる表の貼り付け・ファイル読込では列の意味を推測せず指定を解除するため、表を見て横軸・測定値・（必要なら）グループ列を選んでください。", "On a blank worksheet, only the first two columns are initially mapped to X and Y. When pasted or imported headers change, mappings are cleared instead of guessed. Review the table and select the X axis, measured value, and optional series column.")}
           </p>
           <div className="graph-only__mapping-grid">
             <label className="experiment-start__field">
-              <span>横軸（カテゴリまたはX）</span>
+              <span>{t("横軸（カテゴリまたはX）", "X axis (category or numeric X)")}</span>
               <select
                 aria-label="Graphの横軸"
                 value={xColumn}
@@ -984,12 +987,12 @@ export function GraphOnlyVisualizationPage({
                   setWorkspaceGraphState(null);
                 }}
               >
-                <option value="">列を選択</option>
+                <option value="">{t("列を選択", "Select a column")}</option>
                 {columns}
               </select>
             </label>
             <label className="experiment-start__field">
-              <span>測定値（数値）</span>
+              <span>{t("測定値（数値）", "Measured value (numeric)")}</span>
               <select
                 aria-label="Graphの測定値"
                 value={yColumn}
@@ -999,12 +1002,12 @@ export function GraphOnlyVisualizationPage({
                   setWorkspaceGraphState(null);
                 }}
               >
-                <option value="">列を選択</option>
+                <option value="">{t("列を選択", "Select a column")}</option>
                 {columns}
               </select>
             </label>
             <label className="experiment-start__field">
-              <span>色・線で分ける系列（任意）</span>
+              <span>{t("色・線で分ける系列（任意）", "Series for color or line (optional)")}</span>
               <select
                 aria-label="Graphの系列"
                 value={seriesColumn}
@@ -1015,15 +1018,15 @@ export function GraphOnlyVisualizationPage({
                   setWorkspaceGraphState(null);
                 }}
               >
-                <option value="">系列で分けない</option>
+                <option value="">{t("系列で分けない", "Do not split into series")}</option>
                 {columns}
               </select>
               <small>
-                薬剤の種類やgenotypeなど、同じ系列に複数の点がある列です。試料IDは右へ指定します。
+                {t("薬剤の種類やgenotypeなど、同じ系列に複数の点がある列です。試料IDは右へ指定します。", "Use a column such as drug type or genotype, where each series contains multiple points. Specify sample IDs separately.")}
               </small>
             </label>
             <label className="experiment-start__field">
-              <span>対象・試料ID（任意）</span>
+              <span>{t("対象・試料ID（任意）", "Subject or sample ID (optional)")}</span>
               <select
                 aria-label="Graph用データの対象ID"
                 value={idColumn}
@@ -1035,10 +1038,10 @@ export function GraphOnlyVisualizationPage({
                   setWorkspaceGraphState(null);
                 }}
               >
-                <option value="">ID列を指定しない</option>
+                <option value="">{t("ID列を指定しない", "No ID column")}</option>
                 {columns}
               </select>
-              <small>dish ID・Animal IDなどです。IDは凡例や色分けには使いません。</small>
+              <small>{t("dish ID・Animal IDなどです。IDは凡例や色分けには使いません。", "Examples include dish ID or animal ID. IDs are not used for legends or color grouping.")}</small>
             </label>
           </div>
           {duplicateMapping ? (
@@ -1081,7 +1084,7 @@ export function GraphOnlyVisualizationPage({
             disabled={!canGraph}
             onClick={() => setWorkspaceTab("graph")}
           >
-            Graphを作成
+            {t("Graphを作成", "Create Graph")}
           </button>
         </div>
       </div>
@@ -1097,16 +1100,16 @@ export function GraphOnlyVisualizationPage({
           </h2>
           <span className={canGraph ? "graph-only__ready" : "graph-only__waiting"}>
             {workspaceTab === "statistics"
-              ? "実験構造を確認"
+              ? t("実験構造を確認", "Confirm experiment structure")
               : canGraph
-                ? "Graphを編集中"
-                : "列の指定を待っています"}
+                ? t("Graphを編集中", "Editing Graph")
+                : t("列の指定を待っています", "Waiting for column mapping")}
           </span>
         </div>
         {workspaceTab === "graph" && workbenchModel ? (
           <>
             <label className="graph-only__title-field">
-              <span>Graphタイトル</span>
+              <span>{t("Graphタイトル", "Graph title")}</span>
               <input
                 value={graphPresentation.title}
                 onChange={(event) =>
