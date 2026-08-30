@@ -33,7 +33,7 @@ import { ExperimentGraphWorkbench } from "../components/graph/ExperimentGraphWor
 import { createGraphOnlyWorkbenchModel } from "../app/graphOnlyWorkbenchAdapter";
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
-import { localizedText, useAppLocale } from "../app/appLocale";
+import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 import "./GraphOnlyVisualizationPage.css";
 
 type ColumnIndex = number | "";
@@ -69,25 +69,40 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function parseVisualizationInput(text: string): ParsedVisualizationInput {
+function parseVisualizationInput(text: string, locale: AppLocale = "ja"): ParsedVisualizationInput {
   if (!text.trim())
     return { parsed: { headers: [], rows: [], delimiter: "tab", headerRow: 1 }, error: null };
   try {
     const parsed = parseAdaptiveDelimited(text);
     if (parsed.headers.some((header) => !header.trim())) {
-      return { parsed, error: "列名が空です。1行目に列名を入れてください。" };
+      return {
+        parsed,
+        error: localizedText(
+          locale,
+          "列名が空です。1行目に列名を入れてください。",
+          "A column name is blank. Add column names in the first row.",
+        ),
+      };
     }
     if (parsed.rows.some((row) => row.length !== parsed.headers.length)) {
       return {
         parsed,
-        error: "行ごとの列数がそろっていません。元の表で空欄の列も区切りを残してください。",
+        error: localizedText(
+          locale,
+          "行ごとの列数がそろっていません。元の表で空欄の列も区切りを残してください。",
+          "Rows do not contain the same number of columns. Preserve delimiters for blank columns in the source table.",
+        ),
       };
     }
     return { parsed, error: null };
   } catch {
     return {
       parsed: { headers: [], rows: [], delimiter: "tab", headerRow: 1 },
-      error: "表を読み取れませんでした。1行目を列名にしたCSVまたはTSVを貼り付けてください。",
+      error: localizedText(
+        locale,
+        "表を読み取れませんでした。1行目を列名にしたCSVまたはTSVを貼り付けてください。",
+        "The table could not be read. Paste CSV or TSV with column names in the first row.",
+      ),
     };
   }
 }
@@ -422,7 +437,10 @@ export function GraphOnlyVisualizationPage({
   const compatibleInitialState = initialState?.entryIntent === "graph_only" ? initialState : null;
   const initialIntentError =
     initialState && initialState.entryIntent !== "graph_only"
-      ? "このファイルは表からGraph用のprojectではありません。"
+      ? t(
+          "このファイルは表からGraph用のprojectではありません。",
+          "This file is not a Graph-from-table project.",
+        )
       : null;
   const [text, setText] = useState(
     compatibleInitialState?.rawLineage.rawText ?? DIRECT_ENTRY_TEMPLATE,
@@ -492,7 +510,7 @@ export function GraphOnlyVisualizationPage({
   useEffect(() => {
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
-  const parsedResult = useMemo(() => parseVisualizationInput(text), [text]);
+  const parsedResult = useMemo(() => parseVisualizationInput(text, locale), [locale, text]);
   const parsed = parsedResult.parsed;
 
   const resetImportedMapping = () => {
@@ -603,7 +621,7 @@ export function GraphOnlyVisualizationPage({
 
   const columns = parsed.headers.map((header, index) => (
     <option key={`${index}.${header}`} value={index}>
-      {header || `列 ${index + 1}`}
+      {header || t(`列 ${index + 1}`, `Column ${index + 1}`)}
     </option>
   ));
 
@@ -613,7 +631,8 @@ export function GraphOnlyVisualizationPage({
     const selectedY = yColumn as number;
     const timestamp = nowIso();
     const tableId = loadedState?.table.id ?? visualizationId("table");
-    const projectTitle = graphPresentation.title.trim() || "表から作成したGraph";
+    const projectTitle =
+      graphPresentation.title.trim() || t("表から作成したGraph", "Graph created from a table");
     const metadata = loadedState?.metadata ?? newMetadata(projectTitle, timestamp);
     const numericXAxis = graphOnlyUsesNumericXAxis(parsed, selectedX, selectedY, seriesColumn);
     const seriesKeys = graphOnlySeriesKeys(parsed, selectedX, selectedY, seriesColumn);
@@ -710,7 +729,12 @@ export function GraphOnlyVisualizationPage({
 
   const applyLoadedState = (state: UnresolvedVisualizationProjectState, target?: string) => {
     if (state.entryIntent !== "graph_only") {
-      throw new Error("このファイルは表からGraph用のprojectではありません。");
+      throw new Error(
+        t(
+          "このファイルは表からGraph用のprojectではありません。",
+          "This file is not a Graph-from-table project.",
+        ),
+      );
     }
     setLoadedState(state);
     setSavedTarget(target);
@@ -727,7 +751,9 @@ export function GraphOnlyVisualizationPage({
     setWorkspaceGraphState(null);
     setWorkspaceTab(state.activeGraphId ? "graph" : "data");
     setError(null);
-    setSaveMessage(target ? "保存したGraph用データを開きました。" : null);
+    setSaveMessage(
+      target ? t("保存したGraph用データを開きました。", "Opened saved Graph data.") : null,
+    );
     setStatisticsMessage(null);
     setStatisticsHandoffVisible(false);
     setStatisticsXMeaning("");
@@ -760,12 +786,21 @@ export function GraphOnlyVisualizationPage({
       savedLifecycleSnapshotRef.current = lifecycleSnapshot;
       setLoadedState(saved.state);
       setSavedTarget(saved.target);
-      setSaveMessage("Graph用データを保存しました。元の表と列の指定を保持しています。");
+      setSaveMessage(
+        t(
+          "Graph用データを保存しました。元の表と列の指定を保持しています。",
+          "Saved the Graph data, including the source table and column mappings.",
+        ),
+      );
       onDirtyChange?.(false);
       recordUsageMilestone(routeFromPath(window.location.pathname), "project_saved");
       return true;
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Graph用データを保存できませんでした。");
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : t("Graph用データを保存できませんでした。", "The Graph data could not be saved."),
+      );
       return false;
     }
   };
@@ -861,7 +896,10 @@ export function GraphOnlyVisualizationPage({
                   const clipboard = navigator.clipboard;
                   if (!clipboard) {
                     setError(
-                      "クリップボードを読み取れませんでした。下のシートへ直接貼り付けてください。",
+                      t(
+                        "クリップボードを読み取れませんでした。下のシートへ直接貼り付けてください。",
+                        "The clipboard could not be read. Paste directly into the worksheet below.",
+                      ),
                     );
                     return;
                   }
@@ -874,7 +912,10 @@ export function GraphOnlyVisualizationPage({
                     })
                     .catch(() =>
                       setError(
-                        "クリップボードを読み取れませんでした。下のシートへ直接貼り付けてください。",
+                        t(
+                          "クリップボードを読み取れませんでした。下のシートへ直接貼り付けてください。",
+                          "The clipboard could not be read. Paste directly into the worksheet below.",
+                        ),
                       ),
                     );
                 }}
@@ -886,7 +927,7 @@ export function GraphOnlyVisualizationPage({
                   className="secondary-button"
                   type="button"
                   onClick={() => {
-                    requestExit("保存したGraph用データを開く", async () => {
+                    requestExit(t("保存したGraph用データを開く", "Open saved Graph data"), async () => {
                       await openProject()
                         .then((opened) => {
                           if (opened) applyLoadedState(opened.state, opened.target);
@@ -895,7 +936,10 @@ export function GraphOnlyVisualizationPage({
                           setError(
                             reason instanceof Error
                               ? reason.message
-                              : "保存したGraph用データを開けませんでした。",
+                              : t(
+                                  "保存したGraph用データを開けませんでした。",
+                                  "The saved Graph data could not be opened.",
+                                ),
                           ),
                         );
                     });
@@ -912,7 +956,7 @@ export function GraphOnlyVisualizationPage({
           <DelimitedTextSpreadsheet
             value={text}
             onChange={(nextText, source) => {
-              const nextParsedResult = parseVisualizationInput(nextText);
+              const nextParsedResult = parseVisualizationInput(nextText, locale);
               const headersChanged =
                 Boolean(nextParsedResult.error) ||
                 nextParsedResult.parsed.headers.length !== parsed.headers.length ||
@@ -944,7 +988,7 @@ export function GraphOnlyVisualizationPage({
           <label className="graph-only__file">
             <span>{t("CSV / TSV / TXTファイルを同じシートへ読み込む", "Load a CSV / TSV / TXT file into the same worksheet")}</span>
             <input
-              aria-label="Graph用の表ファイル"
+              aria-label={t("Graph用の表ファイル", "Table file for the Graph")}
               accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
               type="file"
               onChange={(event) => {
@@ -955,12 +999,16 @@ export function GraphOnlyVisualizationPage({
                   .then((contents) => {
                     applyImportedText(contents, file.name);
                   })
-                  .catch(() => setError("表ファイルを読み込めませんでした。"));
+                  .catch(() =>
+                    setError(t("表ファイルを読み込めませんでした。", "The table file could not be read.")),
+                  );
               }}
             />
             <small>
-              CSV / TSV / TXTはここから、XLS / XLSX / XLSM /
-              XLSBは上のExcel読込から開けます。任意の行だけを解析対象から外す操作は未対応です。
+              {t(
+                "CSV / TSV / TXTはここから、XLS / XLSX / XLSM / XLSBは上のExcel読込から開けます。任意の行だけを解析対象から外す操作は未対応です。",
+                "Load CSV / TSV / TXT here. Use the Excel import above for XLS / XLSX / XLSM / XLSB. Excluding selected rows from analysis is not supported yet.",
+              )}
             </small>
           </label>
           {parsedResult.error ? (
@@ -979,7 +1027,7 @@ export function GraphOnlyVisualizationPage({
             <label className="experiment-start__field">
               <span>{t("横軸（カテゴリまたはX）", "X axis (category or numeric X)")}</span>
               <select
-                aria-label="Graphの横軸"
+                aria-label={t("Graphの横軸", "Graph X axis")}
                 value={xColumn}
                 onChange={(event) => {
                   setXColumn(event.target.value === "" ? "" : Number(event.target.value));
@@ -994,7 +1042,7 @@ export function GraphOnlyVisualizationPage({
             <label className="experiment-start__field">
               <span>{t("測定値（数値）", "Measured value (numeric)")}</span>
               <select
-                aria-label="Graphの測定値"
+                aria-label={t("Graphの測定値", "Graph measured value")}
                 value={yColumn}
                 onChange={(event) => {
                   setYColumn(event.target.value === "" ? "" : Number(event.target.value));
@@ -1009,7 +1057,7 @@ export function GraphOnlyVisualizationPage({
             <label className="experiment-start__field">
               <span>{t("色・線で分ける系列（任意）", "Series for color or line (optional)")}</span>
               <select
-                aria-label="Graphの系列"
+                aria-label={t("Graphの系列", "Graph series")}
                 value={seriesColumn}
                 onChange={(event) => {
                   setSeriesColumn(event.target.value === "" ? "" : Number(event.target.value));
@@ -1028,7 +1076,7 @@ export function GraphOnlyVisualizationPage({
             <label className="experiment-start__field">
               <span>{t("対象・試料ID（任意）", "Subject or sample ID (optional)")}</span>
               <select
-                aria-label="Graph用データの対象ID"
+                aria-label={t("Graph用データの対象ID", "Subject ID for Graph data")}
                 value={idColumn}
                 onChange={(event) => {
                   const next = event.target.value === "" ? "" : Number(event.target.value);
@@ -1046,33 +1094,33 @@ export function GraphOnlyVisualizationPage({
           </div>
           {duplicateMapping ? (
             <p className="graph-only__error" role="alert">
-              同じ列を複数の役割には使えません。別の列を選んでください。
+              {t("同じ列を複数の役割には使えません。別の列を選んでください。", "A column cannot have more than one role. Select a different column.")}
             </p>
           ) : null}
           {yColumn !== "" && finiteYCount === 0 && parsed.rows.length > 0 ? (
             <p className="graph-only__error" role="alert">
-              測定値の列に数値がありません。数値列を指定してください。
+              {t("測定値の列に数値がありません。数値列を指定してください。", "The measured-value column contains no numeric values. Select a numeric column.")}
             </p>
           ) : null}
           {yColumn !== "" && finiteYCount > 0 && skippedYCount > 0 ? (
             <p className="graph-only__subtle">
-              数値として読めない {skippedYCount} 行はGraphに表示せず、元の表には残します。
+              {t(
+                `数値として読めない ${skippedYCount} 行はGraphに表示せず、元の表には残します。`,
+                `${skippedYCount} row(s) that cannot be read as numbers are omitted from the Graph but retained in the source table.`,
+              )}
             </p>
           ) : null}
           {seriesMappingLooksLikeId ? (
             <div className="graph-only__mapping-warning" role="alert">
-              <strong>選んだ系列列は、各行で値がすべて異なります。</strong>
-              <p>
-                試料IDの可能性があります。dish ID・Animal
-                IDなどなら「対象・試料ID」へ移してください。
-              </p>
+              <strong>{t("選んだ系列列は、各行で値がすべて異なります。", "Every row has a different value in the selected series column.")}</strong>
+              <p>{t("試料IDの可能性があります。dish ID・Animal IDなどなら「対象・試料ID」へ移してください。", "This may be a sample ID. If it is a dish ID, animal ID, or similar identifier, move it to Subject or sample ID.")}</p>
               <label>
                 <input
                   type="checkbox"
                   checked={allowUniqueSeries}
                   onChange={(event) => setAllowUniqueSeries(event.target.checked)}
                 />
-                各行を別系列として表示する意図である
+                {t("各行を別系列として表示する意図である", "I intend to display every row as a separate series")}
               </label>
             </div>
           ) : null}
@@ -1131,7 +1179,7 @@ export function GraphOnlyVisualizationPage({
           </>
         ) : workspaceTab === "graph" ? (
           <p className="graph-only__subtle">
-            表を貼り付け、横軸と測定値を指定するとGraphが表示されます。
+            {t("表を貼り付け、横軸と測定値を指定するとGraphが表示されます。", "Paste a table and map the X axis and measured value to display a Graph.")}
           </p>
         ) : null}
         {workspaceTab === "graph" ? (
@@ -1143,7 +1191,7 @@ export function GraphOnlyVisualizationPage({
               aria-describedby={!saveProject ? "graph-only-save-unavailable" : undefined}
               onClick={() => void saveCurrentProject()}
             >
-              このGraph用データを保存
+              {t("このGraph用データを保存", "Save this Graph data")}
             </button>
             <button
               className="secondary-button"
@@ -1163,18 +1211,21 @@ export function GraphOnlyVisualizationPage({
                   return;
                 }
                 setStatisticsMessage(
-                  "実験構造が未確定のため、統計解析は開始できません。実験から始める入口で、独立した対象・条件・対応関係を確認してください。",
+                  t(
+                    "実験構造が未確定のため、統計解析は開始できません。実験から始める入口で、独立した対象・条件・対応関係を確認してください。",
+                    "Statistics cannot start because the experiment structure is not confirmed. Use Start from an experiment to confirm independent units, conditions, and matching.",
+                  ),
                 );
                 recordStatisticsSafeStop();
               }}
             >
-              統計を確認
+              {t("統計を確認", "Review statistics")}
             </button>
           </div>
         ) : null}
         {!saveProject ? (
           <p id="graph-only-save-unavailable" className="graph-only__subtle">
-            このブラウザレビューではGraph用データを保存できません。デスクトップ版で利用できます。
+            {t("このブラウザレビューではGraph用データを保存できません。デスクトップ版で利用できます。", "Graph data cannot be saved in this browser preview. Use the desktop app.")}
           </p>
         ) : null}
         {workspaceTab === "statistics" && statisticsHandoffVisible ? (
@@ -1182,13 +1233,14 @@ export function GraphOnlyVisualizationPage({
             className="graph-only__statistics-handoff"
             aria-labelledby="graph-only-statistics-handoff-heading"
           >
-            <h3 id="graph-only-statistics-handoff-heading">統計に必要な実験情報を追加</h3>
-            <p>
-              元の表とGraphはこの画面に保持します。まず、横軸の意味だけ確認してから実験の質問へ進みます。
-            </p>
+            <h3 id="graph-only-statistics-handoff-heading">{t("統計に必要な実験情報を追加", "Add experiment information required for statistics")}</h3>
+            <p>{t("元の表とGraphはこの画面に保持します。まず、横軸の意味だけ確認してから実験の質問へ進みます。", "The source table and Graph remain on this screen. First confirm what the X axis means, then continue to the experiment questions.")}</p>
             <fieldset>
               <legend>
-                横軸「{xColumn === "" ? "未指定" : parsed.headers[xColumn]}」は何を表しますか？
+                {t(
+                  `横軸「${xColumn === "" ? "未指定" : parsed.headers[xColumn]}」は何を表しますか？`,
+                  `What does the X axis “${xColumn === "" ? "not selected" : parsed.headers[xColumn]}” represent?`,
+                )}
               </legend>
               <label>
                 <input
@@ -1200,7 +1252,7 @@ export function GraphOnlyVisualizationPage({
                     statisticsSafeStopRecordedRef.current = false;
                   }}
                 />
-                処理・群分け（Control、Drug A、genotypeなど）
+                {t("処理・群分け（Control、Drug A、genotypeなど）", "Treatment or group (for example Control, Drug A, or genotype)")}
               </label>
               <label>
                 <input
@@ -1212,7 +1264,7 @@ export function GraphOnlyVisualizationPage({
                     recordStatisticsSafeStop();
                   }}
                 />
-                時間・濃度・距離など順序のある値
+                {t("時間・濃度・距離など順序のある値", "An ordered value such as time, concentration, or distance")}
               </label>
               <label>
                 <input
@@ -1224,14 +1276,14 @@ export function GraphOnlyVisualizationPage({
                     recordStatisticsSafeStop();
                   }}
                 />
-                その他、または分からない
+                {t("その他、または分からない", "Other or unknown")}
               </label>
             </fieldset>
             {statisticsXMeaning === "condition" ? (
               <label className="experiment-start__field">
-                <span>各行の対象・試料を示すID列（表にある場合）</span>
+                <span>{t("各行の対象・試料を示すID列（表にある場合）", "ID column identifying the subject or sample in each row (if present)")}</span>
                 <select
-                  aria-label="統計で使う対象ID"
+                  aria-label={t("統計で使う対象ID", "Subject ID used for statistics")}
                   value={
                     identityDecision === "unanswered"
                       ? ""
@@ -1255,19 +1307,16 @@ export function GraphOnlyVisualizationPage({
                     }
                   }}
                 >
-                  <option value="">選択してください</option>
-                  <option value="no_id">元の表に対象・試料IDの列はない</option>
+                  <option value="">{t("選択してください", "Select")}</option>
+                  <option value="no_id">{t("元の表に対象・試料IDの列はない", "The source table has no subject or sample ID column")}</option>
                   {columns}
                 </select>
-                <small>
-                  DishID・AnimalIDなど、元の表にあるIDは独立した実験でも保持します。ID列を選んだだけでは対応ありと判断せず、次の質問で条件間の関係を確認します。行の順番から対応付けることはありません。
-                  ID列がない場合は、各行が別々の対象だと確認できたときだけアプリ内IDを作ります。同じ対象を繰り返し測った実験には、元のID列が必要です。
-                </small>
+                <small>{t("DishID・AnimalIDなど、元の表にあるIDは独立した実験でも保持します。ID列を選んだだけでは対応ありと判断せず、次の質問で条件間の関係を確認します。行の順番から対応付けることはありません。ID列がない場合は、各行が別々の対象だと確認できたときだけアプリ内IDを作ります。同じ対象を繰り返し測った実験には、元のID列が必要です。", "IDs present in the source table, such as Dish ID or Animal ID, are retained even for independent experiments. Selecting an ID column does not imply matching; the next question confirms the relationship between conditions. Rows are never matched by order. Without an ID column, app-generated IDs are created only after you confirm that every row is a distinct subject. Repeated measurements of the same subject require an ID column in the source table.")}</small>
               </label>
             ) : null}
             {statisticsXMeaning === "condition" && identityDecision === "no_id" ? (
               <fieldset>
-                <legend>表の各行は、別々に処置した実験対象・試料ですか？</legend>
+                <legend>{t("表の各行は、別々に処置した実験対象・試料ですか？", "Is each row a separately treated experimental subject or sample?")}</legend>
                 <label>
                   <input
                     type="radio"
@@ -1278,7 +1327,7 @@ export function GraphOnlyVisualizationPage({
                       statisticsSafeStopRecordedRef.current = false;
                     }}
                   />
-                  はい。各行が別々のanimal・dish・wellなどです
+                  {t("はい。各行が別々のanimal・dish・wellなどです", "Yes. Each row is a different animal, dish, well, or similar unit")}
                 </label>
                 <label>
                   <input
@@ -1290,7 +1339,7 @@ export function GraphOnlyVisualizationPage({
                       recordStatisticsSafeStop();
                     }}
                   />
-                  いいえ。同じ対象内のCell・ROI・視野などを複数行に記録しています
+                  {t("いいえ。同じ対象内のCell・ROI・視野などを複数行に記録しています", "No. Multiple rows record cells, ROIs, fields, or similar observations within the same subject")}
                 </label>
                 <label>
                   <input
@@ -1302,49 +1351,49 @@ export function GraphOnlyVisualizationPage({
                       recordStatisticsSafeStop();
                     }}
                   />
-                  分からない
+                  {t("分からない", "I do not know")}
                 </label>
               </fieldset>
             ) : null}
             {statisticsXMeaning === "condition" && identityDecision === "unanswered" ? (
               <p className="graph-only__error" role="status">
-                対象・試料IDの列があるか回答してください。未回答のまま行番号をIDとして使うことはありません。
+                {t("対象・試料IDの列があるか回答してください。未回答のまま行番号をIDとして使うことはありません。", "Indicate whether a subject or sample ID column exists. Row numbers will not be used as IDs without your answer.")}
               </p>
             ) : null}
             {statisticsXMeaning === "condition" &&
             identityDecision === "no_id" &&
             sourceRowUnitDecision === "unanswered" ? (
               <p className="graph-only__error" role="status">
-                各行が別々に処置した対象・試料か回答してください。回答前に行を独立したnとして扱うことはありません。
+                {t("各行が別々に処置した対象・試料か回答してください。回答前に行を独立したnとして扱うことはありません。", "Confirm whether each row is a separately treated subject or sample. Rows will not be treated as independent n before confirmation.")}
               </p>
             ) : null}
             {statisticsXMeaning === "condition" &&
             identityDecision === "no_id" &&
             sourceRowUnitDecision === "multiple_rows_per_unit" ? (
               <p className="graph-only__error" role="alert">
-                Cell・ROI・視野を独立したnには変換しません。元の表へdish・animalなど共通の由来を示すID列を追加して選ぶまで、元データを保持して停止します。
+                {t("Cell・ROI・視野を独立したnには変換しません。元の表へdish・animalなど共通の由来を示すID列を追加して選ぶまで、元データを保持して停止します。", "Cells, ROIs, or fields will not be converted into independent n. The source data are retained and the workflow stops until you add and select an ID column identifying their shared dish, animal, or other origin.")}
               </p>
             ) : null}
             {statisticsXMeaning === "condition" &&
             identityDecision === "no_id" &&
             sourceRowUnitDecision === "unknown" ? (
               <p className="graph-only__error" role="alert">
-                1行が何を表すか確認できるまで統計へ進みません。元の表とGraphは保持されています。
+                {t("1行が何を表すか確認できるまで統計へ進みません。元の表とGraphは保持されています。", "Statistics will not continue until the meaning of one row is confirmed. The source table and Graph are retained.")}
               </p>
             ) : null}
             {seriesColumn !== "" ? (
               <p className="graph-only__error" role="alert">
-                選択中のグループ列が、処理条件・batch・表示だけの分類のどれか確認する必要があります。現在は自動で無視せず、元の表を保持して停止します。
+                {t("選択中のグループ列が、処理条件・batch・表示だけの分類のどれか確認する必要があります。現在は自動で無視せず、元の表を保持して停止します。", "The selected group column must be identified as a treatment condition, batch, or display-only category. BioFigureStat retains the source table and stops instead of ignoring it automatically.")}
               </p>
             ) : null}
             {statisticsXMeaning === "ordered" ? (
               <p className="graph-only__error" role="alert">
-                順序のあるXを一般実験へ安全に引き継ぐ仕組みは準備中です。別の実験構造へ変換せず、元の表を保持します。
+                {t("順序のあるXを一般実験へ安全に引き継ぐ仕組みは準備中です。別の実験構造へ変換せず、元の表を保持します。", "Safe transfer of an ordered X axis into the general experiment workflow is not available yet. The source table is retained without converting it to another experiment structure.")}
               </p>
             ) : null}
             {statisticsXMeaning === "unknown" ? (
               <p className="graph-only__error" role="alert">
-                横軸の意味が決まるまで推測して進みません。元の表は保持されています。
+                {t("横軸の意味が決まるまで推測して進みません。元の表は保持されています。", "BioFigureStat will not guess and continue until the meaning of the X axis is known. The source table is retained.")}
               </p>
             ) : null}
             <button
@@ -1363,7 +1412,7 @@ export function GraphOnlyVisualizationPage({
                 else recordStatisticsSafeStop();
               }}
             >
-              実験構造の確認へ
+              {t("実験構造の確認へ", "Continue to experiment structure")}
             </button>
           </section>
         ) : null}

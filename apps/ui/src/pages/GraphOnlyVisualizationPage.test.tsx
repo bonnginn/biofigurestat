@@ -116,6 +116,39 @@ describe("Graph-only production workspace", () => {
     expect(screen.getByRole("button", { name: "Create Graph" })).toBeDisabled();
   });
 
+  it("keeps the Graph-only statistics handoff in English without inferring biological n", () => {
+    act(() => setAppLocale("en"));
+    render(
+      <GraphOnlyVisualizationPage
+        onNavigate={vi.fn()}
+        onStatisticsStructureRequested={vi.fn()}
+      />,
+    );
+
+    pasteTable();
+    fireEvent.change(screen.getByRole("combobox", { name: "Graph X axis" }), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Graph measured value" }), {
+      target: { value: "1" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Subject ID for Graph data" }), {
+      target: { value: "3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Graph" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review statistics" }));
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Add experiment information required for statistics",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/What does the X axis .*Condition.* represent/),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Continue to experiment structure" })).toBeDisabled();
+  });
+
   it("keeps Data, Graph, and Statistics as separate workspace tabs", () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
     expect(screen.getByRole("button", { name: "データ" })).toHaveAttribute("aria-current", "page");
