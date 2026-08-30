@@ -10,6 +10,7 @@ import { ContextualHelp } from "./ContextualHelp";
 import { DiagnosticPanel } from "./DiagnosticPanel";
 import { CollectionPage } from "../pages/CollectionPage";
 import { OpenProjectPage } from "../pages/OpenProjectPage";
+import { BiologicalExperimentSetup } from "./BiologicalExperimentSetup";
 
 afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
@@ -99,5 +100,20 @@ describe("English Public Alpha workflow", () => {
     render(<OpenProjectPage onNavigate={vi.fn()} openProject={vi.fn()} />);
     expect(screen.getByRole("heading", { name: "Open a local project" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Choose project file/ })).toBeInTheDocument();
+  });
+
+  it("shows the general biological interview in researcher-facing English", () => {
+    act(() => setAppLocale("en"));
+    render(<BiologicalExperimentSetup enabled onReady={vi.fn()} />);
+
+    expect(
+      screen.getByRole("heading", { name: "Experimental conditions and measurements" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Treatments and groups" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Measured values" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Experimental units and their relationships" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Create data table" })).toHaveLength(1);
   });
 });
