@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import type { NonlinearFitGraphModel } from "@lsaa/graph-spec";
 import { nonlinearModelLabel } from "../../app/nonlinearModelRegistry";
+import { createNiceTicks } from "./graphLayout";
 import { createMinorTicks } from "./graphSemantics";
 
 const WIDTH = 820;
@@ -10,11 +11,6 @@ const COLORS = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00"];
 
 function linearScale(value: number, min: number, max: number, start: number, end: number) {
   return start + ((value - min) / (max - min || 1)) * (end - start);
-}
-
-function ticks(min: number, max: number, count = 5) {
-  if (min === max) return [min];
-  return Array.from({ length: count }, (_, index) => min + ((max - min) * index) / (count - 1));
 }
 
 function label(value: number) {
@@ -49,8 +45,8 @@ export const NonlinearFitGraph = forwardRef<
   const xMax = Math.max(...allX);
   const yMin = Math.min(0, ...allY);
   const yMax = Math.max(...allY);
-  const xMajorTicks = ticks(xMin, xMax);
-  const yMajorTicks = ticks(yMin, yMax);
+  const xMajorTicks = createNiceTicks(xMin, xMax, 5, null);
+  const yMajorTicks = createNiceTicks(yMin, yMax, 5, null);
   const xMinorTicks = createMinorTicks(xMajorTicks, xMin, xMax, 5);
   const yMinorTicks = createMinorTicks(yMajorTicks, yMin, yMax, 5);
   const x = (value: number) => linearScale(value, xMin, xMax, MARGIN.left, WIDTH - MARGIN.right);
@@ -108,6 +104,7 @@ export const NonlinearFitGraph = forwardRef<
             stroke="#111"
             className="nonlinear-fit-axis-tick"
             data-axis-tick="y"
+            data-tick-value={value}
             data-tick-direction="outside"
           />
           <line
@@ -132,6 +129,7 @@ export const NonlinearFitGraph = forwardRef<
             stroke="#111"
             className="nonlinear-fit-axis-tick"
             data-axis-tick="x"
+            data-tick-value={value}
             data-tick-direction="outside"
           />
           <text x={x(value)} y={HEIGHT - MARGIN.bottom + 24} textAnchor="middle" fontSize="13">

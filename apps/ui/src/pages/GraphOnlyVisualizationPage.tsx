@@ -28,7 +28,7 @@ import {
   graphOnlySeriesKeys,
   graphOnlyUsesNumericXAxis,
   type GraphOnlyPresentation,
-} from "../components/graph/GraphOnlyDescriptiveWorkbench";
+} from "../app/graphOnlyTableSemantics";
 import { ExperimentGraphWorkbench } from "../components/graph/ExperimentGraphWorkbench";
 import { createGraphOnlyWorkbenchModel } from "../app/graphOnlyWorkbenchAdapter";
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
