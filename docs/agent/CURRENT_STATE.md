@@ -91,6 +91,14 @@ and cleanup of the exact synthetic row. Reports expire after 90 days. Cloudflare
 configuration is not available in the current account session, so `/admin` and `/v1/admin/*` are
 deliberately fail-closed until that release gate is configured. See ADR 0056.
 
+The report-enabled Windows x64 NSIS candidate was built from `ec95128` with build revision
+`ec95128-alpha.20260830.report1`. The installer is 47,794,362 bytes with SHA-256
+`617BF0F3A29610C6B3511B527AA52CFDB0330CEE8DE157B22D741994E79F3109`. Windows bundle verification,
+the packaged sidecar smoke, release forbidden-string verification, and release preflight passed.
+The public report key compiled into that candidate received a synthetic report as `new` in APAC/NRT
+D1 and returned an opaque report ID; the exact synthetic report and history row were then deleted.
+The old report key remains valid during the bounded `REPORT_INGEST_KEY_NEXT` rollout window.
+
 The telemetry release preflight rejects a placeholder D1 ID, non-exact/non-HTTPS endpoints,
 wildcard or incomplete native-origin CORS, invalid public ingestion keys, invalid retention, and a
 missing privacy contact. Its generated Tauri overlay contains only the approved endpoint origin and
