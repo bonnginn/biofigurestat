@@ -1,6 +1,6 @@
 # Current Working State
 
-Updated: 2026-08-31 (Public Alpha published; structural simplification in progress)
+Updated: 2026-08-31 (Public Alpha published; English localization in progress)
 
 This is the short operational snapshot. Accepted ADRs, schemas, method references, and tests remain
 the authority for durable behavior.
@@ -25,19 +25,15 @@ unreferenced corpus-coupled prototype are retained only in the private archive.
 
 ## Active work
 
-Branch `codex/post-alpha-structural-simplification-2026-08-31` reduces duplication without adding
-features or changing scientific semantics, the project schema, or analysis behavior. The initial
-bounded changes:
+Branch `codex/english-alpha-localization-2026-08-31` adds a persistent Japanese / English
+application-language setting and reviewed English copy for the main Public Alpha workflow. Locale
+state remains outside `.lsa`; scientific semantic keys, analysis requests, raw lineage, and the
+project schema are unchanged. The completed and remaining scope is recorded in
+`docs/alpha/ENGLISH_ALPHA_LOCALIZATION_STATUS_2026-08-31.md`.
 
-- removed an unused Graph-only renderer after the production route had moved to the common Graph
-  workbench;
-- made nonlinear X/Y use the shared 1/2/5 nice-tick helper;
-- shared legacy DataSheet keyboard-grid navigation;
-- extracted Graph data export and annotation semantics from `ExperimentGraphWorkbench`.
-
-The remaining high-value structural work is to continue splitting the workbench by stable
-responsibility, converge compatible spreadsheet primitives without flattening scientific roles,
-and add a native UI regression harness for mechanical Windows/macOS lifecycle checks.
+The preceding structural-simplification work remains the base of this branch. Further workbench
+and spreadsheet consolidation should resume after the English native candidate, without mixing
+structural refactors into terminology review.
 
 ## Product invariants
 
@@ -71,7 +67,8 @@ candidate.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
-- Researcher-facing terminology must be centralized before English localization.
+- English localization is complete for the main path but not yet for every production-reachable
+  specialist and legacy surface; no English native candidate has been declared ready.
 - Beta work includes Graph-preview parity, compact workspace chrome, editable experiment metadata,
   and Kaplan–Meier appearance-control parity while preserving censoring and risk-table semantics.
 - Windows/macOS native UI regression automation is still required; human review should then focus
