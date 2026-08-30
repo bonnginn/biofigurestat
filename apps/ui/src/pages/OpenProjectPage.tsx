@@ -28,6 +28,7 @@ import {
 } from "../app/projectActions";
 import type { AppRoute } from "../app/routes";
 import type { ExperimentSetDraft } from "../app/experimentDraft";
+import { localizedText, useAppLocale } from "../app/appLocale";
 import { rehydrateExperimentWorkspace } from "../app/experimentWorkspaceProject";
 import { DataSheetPage } from "./DataSheetPage";
 import { CommonCoveragePage } from "./CommonCoveragePage";
@@ -571,6 +572,8 @@ export function OpenProjectPage({
   onRegisterSaveHandler,
   restoredSpecializedDrafts,
 }: OpenProjectPageProps) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [status, setStatus] = useState<"idle" | "opening" | "success" | "error">(
     initialError ? "error" : "idle",
   );
@@ -601,31 +604,31 @@ export function OpenProjectPage({
       }
       if (opened.kind !== "experiment") {
         if (!onAnyProjectOpened) {
-          throw new Error("この環境では、この入力途中projectの表示先がありません。");
+          throw new Error(t("この環境では、この入力途中projectの表示先がありません。", "This environment cannot display this in-progress project."));
         }
         onAnyProjectOpened(opened);
         setStatus("success");
         setMessage(
           opened.kind === "unresolved_visualization"
-            ? `${opened.project.state.metadata.projectName} を開き、入力表とGraph設定を復元しました。`
-            : `${opened.project.state.metadata.projectName} を開き、入力途中の表と回答を復元しました。`,
+            ? t(`${opened.project.state.metadata.projectName} を開き、入力表とGraph設定を復元しました。`, `Opened ${opened.project.state.metadata.projectName} and restored its data table and Graph settings.`)
+            : t(`${opened.project.state.metadata.projectName} を開き、入力途中の表と回答を復元しました。`, `Opened ${opened.project.state.metadata.projectName} and restored the in-progress table and answers.`),
         );
         return;
       }
       setOpenedProject(opened.project);
       onProjectOpened?.(opened.project);
       setStatus("success");
-      setMessage(`${opened.project.state.metadata.projectName} を開き、整合性を確認しました。`);
+      setMessage(t(`${opened.project.state.metadata.projectName} を開き、整合性を確認しました。`, `Opened ${opened.project.state.metadata.projectName} and verified its integrity.`));
     } catch (error) {
       setStatus("error");
       setMessage(
         actionErrorMessage(
           error,
-          "プロジェクトを開けませんでした。現在のワークスペースは変更されていません。",
+          t("プロジェクトを開けませんでした。現在のワークスペースは変更されていません。", "The project could not be opened. The current workspace was not changed."),
         ),
       );
     }
-  }, [onAnyProjectOpened, onProjectOpened, openAnyProject, openProject]);
+  }, [locale, onAnyProjectOpened, onProjectOpened, openAnyProject, openProject]);
 
   const handleLegacyOpen = useCallback(async () => {
     if (!openLegacyProject) return;
@@ -641,13 +644,13 @@ export function OpenProjectPage({
       onProjectOpened?.(project);
       setStatus("success");
       setMessage(
-        `${project.state.metadata.projectName} を開きました。次回の保存で1ファイル形式へ安全に変換します。`,
+        t(`${project.state.metadata.projectName} を開きました。次回の保存で1ファイル形式へ安全に変換します。`, `Opened ${project.state.metadata.projectName}. It will be safely converted to the single-file format the next time you save.`),
       );
     } catch (error) {
       setStatus("error");
-      setMessage(actionErrorMessage(error, "旧形式のprojectフォルダを取り込めませんでした。"));
+      setMessage(actionErrorMessage(error, t("旧形式のprojectフォルダを取り込めませんでした。", "The legacy project folder could not be imported.")));
     }
-  }, [onProjectOpened, openLegacyProject]);
+  }, [locale, onProjectOpened, openLegacyProject]);
 
   useEffect(() => {
     if (!autoOpen || autoOpenAttempted.current || persistedProject || openedProject) return;
@@ -677,16 +680,16 @@ export function OpenProjectPage({
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={() => onNavigate("home")}>
-        <span aria-hidden="true">←</span> ワークスペースに戻る
+        <span aria-hidden="true">←</span> {t("ワークスペースに戻る", "Back to workspace")}
       </button>
       <section className="empty-page" aria-labelledby="open-project-heading">
         <span className="empty-icon empty-icon--orange" aria-hidden="true">
           ↥
         </span>
-        <p className="overline">ワークスペース / 04</p>
-        <h1 id="open-project-heading">ローカルプロジェクトを開く</h1>
+        <p className="overline">{t("ワークスペース", "Workspace")} / 04</p>
+        <h1 id="open-project-heading">{t("ローカルプロジェクトを開く", "Open a local project")}</h1>
         <p>
-          このコンピューター上のプロジェクトパッケージを選びます。ファイル選択と検証の結果だけを表示します。
+          {t("このコンピューター上のプロジェクトパッケージを選びます。ファイル選択と検証の結果だけを表示します。", "Select a project package on this computer. BioFigureStat only displays the result of file selection and validation.")}
         </p>
         <button
           className="primary-button primary-button--ready"
@@ -694,8 +697,8 @@ export function OpenProjectPage({
           disabled={status === "opening"}
           onClick={handleOpen}
         >
-          {status === "opening" ? "プロジェクトを開いています…" : "プロジェクトファイルを選ぶ"}
-          <span className="button-note">ローカルのデスクトッププロジェクトを開きます</span>
+          {status === "opening" ? t("プロジェクトを開いています…", "Opening project…") : t("プロジェクトファイルを選ぶ", "Choose project file")}
+          <span className="button-note">{t("ローカルのデスクトッププロジェクトを開きます", "Open a local desktop project")}</span>
         </button>
         {openLegacyProject ? (
           <button
@@ -704,7 +707,7 @@ export function OpenProjectPage({
             disabled={status === "opening"}
             onClick={() => void handleLegacyOpen()}
           >
-            旧形式のprojectフォルダを取り込む
+            {t("旧形式のprojectフォルダを取り込む", "Import legacy project folder")}
           </button>
         ) : null}
         {status === "success" && message && (
@@ -714,7 +717,7 @@ export function OpenProjectPage({
         )}
         {status === "error" && message && (
           <p className="project-action-message project-action-message--error" role="alert">
-            {message} 現在のワークスペースは変更されていません。
+            {message} {t("現在のワークスペースは変更されていません。", "The current workspace was not changed.")}
           </p>
         )}
       </section>

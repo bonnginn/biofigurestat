@@ -8,6 +8,8 @@ import { SimpleGroupExperimentEntry } from "./SimpleGroupExperimentEntry";
 import { AboutPanel } from "./AboutPanel";
 import { ContextualHelp } from "./ContextualHelp";
 import { DiagnosticPanel } from "./DiagnosticPanel";
+import { CollectionPage } from "../pages/CollectionPage";
+import { OpenProjectPage } from "../pages/OpenProjectPage";
 
 afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
@@ -85,5 +87,17 @@ describe("English Public Alpha workflow", () => {
     fireEvent.click(screen.getByRole("button", { name: "Report a problem" }));
     expect(screen.getByText("Report to BioFigureStat Public Alpha")).toBeInTheDocument();
     expect(screen.getByLabelText("What were you trying to do?")).toBeInTheDocument();
+  });
+
+  it("shows recent projects and the local project picker in English", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<CollectionPage kind="recent" onNavigate={vi.fn()} />);
+    expect(screen.getByRole("heading", { name: "Recent projects" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Start a new experiment/ })).toBeInTheDocument();
+    view.unmount();
+
+    render(<OpenProjectPage onNavigate={vi.fn()} openProject={vi.fn()} />);
+    expect(screen.getByRole("heading", { name: "Open a local project" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Choose project file/ })).toBeInTheDocument();
   });
 });

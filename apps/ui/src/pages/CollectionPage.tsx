@@ -1,6 +1,7 @@
 import type { AppRoute } from "../app/routes";
 import type { FavoriteDesign } from "../app/favoriteDesigns";
 import type { RecentProject } from "../app/recentProjects";
+import { localizedText, useAppLocale } from "../app/appLocale";
 
 type CollectionPageProps = {
   kind: "favorites" | "recent";
@@ -23,57 +24,61 @@ export function CollectionPage({
   onOpenRecent,
   onRemoveRecent,
 }: CollectionPageProps) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const isFavorites = kind === "favorites";
-  const title = isFavorites ? "お気に入り" : "最近のプロジェクト";
+  const title = isFavorites ? t("お気に入り", "Favorites") : t("最近のプロジェクト", "Recent projects");
   const description = isFavorites
-    ? "保存した実験デザインがここに表示されます。実験データは保存されません。"
-    : "最近開いたローカルプロジェクトがここに表示されます。";
+    ? t("保存した実験デザインがここに表示されます。実験データは保存されません。", "Saved experiment designs appear here. Measurement data are not included in favorites.")
+    : t("最近開いたローカルプロジェクトがここに表示されます。", "Recently opened local projects appear here.");
 
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={() => onNavigate("home")}>
-        <span aria-hidden="true">←</span> ワークスペースに戻る
+        <span aria-hidden="true">←</span> {t("ワークスペースに戻る", "Back to workspace")}
       </button>
       <section className="empty-page" aria-labelledby={`${kind}-heading`}>
         <span className="empty-icon" aria-hidden="true">
           {isFavorites ? "☆" : "◷"}
         </span>
-        <p className="overline">ワークスペース / {isFavorites ? "01" : "03"}</p>
+        <p className="overline">{t("ワークスペース", "Workspace")} / {isFavorites ? "01" : "03"}</p>
         <h1 id={`${kind}-heading`}>{title}</h1>
         <p>{description}</p>
         {isFavorites && favorites.length > 0 ? (
-          <ul className="collection-list" aria-label="保存した実験デザイン">
+          <ul className="collection-list" aria-label={t("保存した実験デザイン", "Saved experiment designs")}>
             {favorites.map((favorite) => (
               <li key={favorite.id}>
                 <div>
                   <strong>{favorite.name}</strong>
                   <span>
-                    {favorite.draft.conditions.length}条件・{favorite.draft.readouts.length}測定項目
+                    {locale === "ja"
+                      ? `${favorite.draft.conditions.length}条件・${favorite.draft.readouts.length}測定項目`
+                      : `${favorite.draft.conditions.length} conditions · ${favorite.draft.readouts.length} readouts`}
                   </span>
                 </div>
                 <button type="button" onClick={() => onUseFavorite?.(favorite)}>
-                  この設計から始める
+                  {t("この設計から始める", "Use this design")}
                 </button>
                 <button type="button" onClick={() => onRemoveFavorite?.(favorite.id)}>
-                  削除
+                  {t("削除", "Remove")}
                 </button>
               </li>
             ))}
           </ul>
         ) : null}
         {!isFavorites && recentProjects.length > 0 ? (
-          <ul className="collection-list" aria-label="最近のローカルプロジェクト">
+          <ul className="collection-list" aria-label={t("最近のローカルプロジェクト", "Recent local projects")}>
             {recentProjects.map((project) => (
               <li key={project.target}>
                 <div>
                   <strong>{project.name}</strong>
-                  <span>{new Date(project.lastOpenedAt).toLocaleString("ja-JP")}</span>
+                  <span>{new Date(project.lastOpenedAt).toLocaleString(locale === "ja" ? "ja-JP" : "en-US")}</span>
                 </div>
                 <button type="button" onClick={() => onOpenRecent?.(project)}>
-                  開く
+                  {t("開く", "Open")}
                 </button>
                 <button type="button" onClick={() => onRemoveRecent?.(project.target)}>
-                  履歴から削除
+                  {t("履歴から削除", "Remove from history")}
                 </button>
               </li>
             ))}
@@ -84,7 +89,7 @@ export function CollectionPage({
           type="button"
           onClick={() => onNavigate("new-experiment")}
         >
-          新しい実験を始める <span aria-hidden="true">→</span>
+          {t("新しい実験を始める", "Start a new experiment")} <span aria-hidden="true">→</span>
         </button>
       </section>
     </div>
