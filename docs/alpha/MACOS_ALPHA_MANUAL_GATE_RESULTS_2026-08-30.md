@@ -259,3 +259,75 @@ Command+Qがguardを通らなかった。このため、旧結果をもってlif
 
 今回の結果は、過去の検証証拠を削除するものではない。最新candidateに対する追加native evidenceとして、
 Windows側の次回修正とMac再検証のauthorityにする。
+
+## Windows follow-up implementation — 2026-08-30
+
+この節は上記macOS結果を上書きせず、次回候補へ入ったWindows側実装と自動/native build証拠を
+追記する。実装commitは `da042ab9d470c245b0d4a7098f73343162cb8bca` である。Macでの実操作が
+終わるまではPublic Alpha readyとは判定しない。
+
+### P0 status
+
+| Requirement | Windows follow-up | Evidence |
+| --- | --- | --- |
+| Command+Qを含む全exit route | **IMPLEMENTED** | Rustはexit codeを信用せず、guard済み`exit_application`だけが一回限りの承認を設定。Rust 27 passed / 1 ignored |
+| Home / New / Openでdirty tabを保持 | **IMPLEMENTED** | validated in-memory session checkpoint。App focused regressionでHome後の値保持・disk reloadなしを確認 |
+| 実際のtab/window/app closeだけ確認 | **IMPLEMENTED** | inactive dirty tabは対象をactivateしてから共通guard。Save成功・Cancel・discardの既存contractを維持 |
+| close直後の同一`.lsa`再open | **IMPLEMENTED** | permanent handled-target registryをin-flight registryへ変更。focused regression PASS |
+
+ADR 0057がADR 0055のdirty tab switch部分を明示的に置き換える。checkpointは新しい保存形式ではなく、
+同一process内で既存validated projectを保持するだけである。
+
+### P1 status
+
+| Requirement | Windows follow-up | Evidence / remaining gate |
+| --- | --- | --- |
+| low-ambiguity fast entry / Treatment 4枠 | **IMPLEMENTED** | 2群独立scalarを短い実験事実確認からworksheetへ決定的に生成。Biological setup focused tests PASS |
+| Scalar / Survival / ordered X/Y spreadsheet grammar | **IMPLEMENTED** | 共通spreadsheet selection/navigation、Status select、range paste、二重枠除去。Delimited spreadsheet 11/11 PASS |
+| Overviewの行追加 | **IMPLEMENTED** | Overviewからは行追加後もOverviewに留まるfocused test PASS |
+| sticky header / project tabs | **IMPLEMENTED** | 共通topbarとtab stripをsticky化。Macで実寸再確認が必要 |
+| Graph preview / axis / legend / annotation | **IMPLEMENTED IN CURRENT COMMON WORKBENCH** | 共通Graph layout/export focused regressionを維持。Mac実寸とPNG/SVGを再確認する |
+| Statisticsの回答済み関係を再質問しない | **IMPLEMENTED** | declared relationshipを引継ぐ既存focused regressionを維持 |
+| 重要な診断・注意を初期展開 | **IMPLEMENTED** | severity付き「重要な注意」を初期open。GraphStatistics focused tests PASS |
+| specialist common shell / reopen / Save As | **IMPLEMENTED** | Survival、ordered X/Y、HeatmapにFile/Data/Graph/Statistics shellとSave Asを保持。focused route tests PASS |
+| log-rank label / fit model / report responsive | **IMPLEMENTED** | bounded label、radio/card model、fixed responsive report panel。Mac実寸確認が必要 |
+| macOS icon | **IMPLEMENTED IN CONFIG/VERIFIER** | png/icns/icoをbundleへ明示し、Mac verifierがInfo.plist指定と実在icnsを必須化 |
+| PNG / SVG / CSV native dialog | **IMPLEMENTED** | 既存native export bridgeとcancel regressionを確認。Mac dialogを再確認する |
+| external LLM → reviewed report prefill | **IMPLEMENTED** | local eventでfeature request formをprefill。previewと明示sendは必須。9 focused tests PASS |
+| guide URL | **IMPLEMENTED** | 公開済みversioned commitへ固定し、`main`未配置による404を回避 |
+| Apple Silicon architecture | **IMPLEMENTED** | Rust `std::env::consts::ARCH`を診断へ渡す。Mac bundleで`aarch64`を確認する |
+
+不具合報告Worker/D1/admin UIおよび日次triageは別の完了済みPhase 1/2であり、このfollow-upでは
+重複実装していない。
+
+### Windows verification evidence
+
+- UI changed-surface suite: 12 files / 250 tests PASS
+- App lifecycle focused: route without prompt 1 PASS; multiple tabs / immediate reopen / dirty
+  checkpoint 3 PASS
+- Adaptive canonical round-trip regression: 13/13 PASS
+- UI typecheck: PASS
+- UI lint: PASS
+- Python engine: 64/64 PASS
+- Darwin-arm64 reference agreement: 14/14 PASS (`rtol=1e-10`, `atol=1e-12`)
+- Rust native: 27 PASS / 1 pinned-development test ignored
+- Windows sidecar build/smoke: PASS
+- Windows x64 NSIS build: PASS
+- `native:verify:win`: PASS
+- Installer: `BioFigureStat_0.1.0_x64-setup.exe`
+- Installer SHA-256: `7FE9F00B25DC64AD615791E4FD6750342F21AA4D4F466BC0316B7A85E64D0AD3`
+
+UI全体の単一Vitest processは全ファイル実行後に終了しない既存runner挙動があるため、変更面を
+直列分割して完走させた。一括processを中断した事実を全suite PASSとして数えていない。
+
+### Remaining decision
+
+Windows実装・build gateは通過したが、今回のhard failuresは以前も全自動gate後のnative Macで
+見つかった。したがって最終判定は次のMac targeted gate後に行う。
+
+```text
+WINDOWS_IMPLEMENTATION: PASS
+WINDOWS_NATIVE_BUILD: PASS
+MACOS_TARGETED_REVALIDATION: NOT RUN
+FINAL_GATE: NATIVE CANDIDATE BLOCKED UNTIL MACOS REVALIDATION
+```

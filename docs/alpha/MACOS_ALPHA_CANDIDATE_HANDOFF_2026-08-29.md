@@ -1,4 +1,4 @@
-# macOS Alpha Candidate Handoff — 2026-08-29
+# macOS Alpha Candidate Handoff — updated 2026-08-30
 
 ## Authority and scope
 
@@ -7,12 +7,11 @@ This is the current macOS build and reduced-human-gate handoff. It supersedes
 overwrite that historical evidence.
 
 - Branch: `codex/native-hardening-2026-08-28`
-- Previous native baseline: `4dabbe5`
-- Minimum candidate commit: `f69876bec457cfd18decfa6a09dbeb4ef67a3711`
-- This candidate adds the integrated Graph-only Data → Graph → Statistics workspace, multi-sheet
-  Exp import, Windows/native clipboard hardening, project-version migration matrix and typed errors,
-  request-scoped analysis cancellation, a 120-second engine timeout, and retained numerical-library
-  reliability warnings.
+- Failed macOS baseline: `9cd1335217cc148acd90c73ae87dd749665b42ad`
+- Minimum implementation commit: `da042ab9d470c245b0d4a7098f73343162cb8bca`
+- This candidate adds the required dirty-project session lifecycle and one-shot native exit guard,
+  low-ambiguity fast entry, common specialist spreadsheet/shell behavior, warning visibility,
+  reviewed LLM-to-report prefill, native architecture reporting, and explicit macOS icon checks.
 - Pool D: not accessed
 - Product route: experiment-first task hub; do not enable the historical feature flag
 - Expected artifact: `apps/desktop/src-tauri/target/release/bundle/macos/BioFigureStat.app`
@@ -30,7 +29,7 @@ analysis or omit a failing verifier.
 git fetch origin
 git switch codex/native-hardening-2026-08-28
 git pull --ff-only origin codex/native-hardening-2026-08-28
-git merge-base --is-ancestor f69876bec457cfd18decfa6a09dbeb4ef67a3711 HEAD
+git merge-base --is-ancestor da042ab9d470c245b0d4a7098f73343162cb8bca HEAD
 git status --short
 
 node --version
@@ -40,7 +39,7 @@ npx --yes pnpm@11.19.0 test
 npx --yes pnpm@11.19.0 typecheck
 npx --yes pnpm@11.19.0 lint
 npx --yes pnpm@11.19.0 engine:build:mac
-VITE_LSAA_BUILD_REVISION="$(git rev-parse --short HEAD)-alpha.20260830.mac3" npx --yes pnpm@11.19.0 --filter @lsaa/desktop tauri:build
+VITE_LSAA_BUILD_REVISION="$(git rev-parse --short HEAD)-alpha.20260830.mac4" npx --yes pnpm@11.19.0 --filter @lsaa/desktop tauri:build
 npx --yes pnpm@11.19.0 native:verify:mac
 ```
 
@@ -100,10 +99,12 @@ evidence for public distribution, notarization, or Gatekeeper delivery.
 
 ## Reduced human gate
 
-Before the four tasks, open a saved project, edit one value, and choose the macOS application-menu
-Quit action. Verify Save, Cancel, and discard in separate attempts. Any silent exit remains a hard
-failure. Also confirm the running build revision so Launch Services does not substitute a stale app
-bundle with the same Bundle ID.
+Before the four tasks, confirm the running build revision so Launch Services does not substitute a
+stale app bundle with the same Bundle ID. Open a saved project and edit one value. Verify that Home,
+New, Open, and selection of a second project tab do **not** show a save dialog and that returning to
+the dirty tab restores the edited value. Then test Command+Q, application-menu Quit, the red window
+button, and Dock Quit. Each actual close/exit route must show the same Save / Cancel / discard guard.
+Cancel must preserve both the value and active tab. Any silent exit remains a hard failure.
 
 Use the newly built `.app`, not a browser preview or an older installed copy.
 Record PASS/FAIL and one short note per task. Stop immediately for a hard
@@ -166,13 +167,25 @@ and ordered coordinates, and no coercion into an ordinary scalar design.
    Ordinary analyses should finish before the 120-second hard timeout. Open a copied project
    fixture with a deliberately newer project-state version and verify that BioFigureStat asks for a
    newer app without showing a Zod error or internal `PROJECT_*` code.
+9. In a low-ambiguity two-group scalar experiment, use the fast entry and confirm that it reaches a
+   worksheet without opening the full interview. Confirm four Treatment slots are initially visible
+   on a sufficiently wide window.
+10. In Survival, edit Status using `Event / Censored`, use Tab/Enter and range paste, then save/reopen.
+    Repeat navigation checks in ordered X/Y. Both routes must expose File, Data, Graph, Statistics,
+    Save/Save As, and native exports after reopen.
+11. Confirm the BioFigureStat icon is visible in Finder, Dock, and About. In the privacy-reduced
+    diagnostic, confirm Apple Silicon architecture is `aarch64` (or an equivalent native arm64
+    label), not `unknown` or `MacIntel`.
+12. Create an external-LLM improvement request, choose `改善要望として報告`, and confirm the
+    problem-report form is readable at narrow and normal widths. It must be prefilled but not sent
+    until preview and explicit Send.
 
 PASS requires no silent data loss, no console window, working native exports,
 and no research values, labels, paths, or clipboard/file content in telemetry.
-The improvement request must remain a reviewed manual copy action: it must not
-execute or submit the external answer automatically. Tab switching must preserve each saved
-project, and Excel import must preserve the chosen worksheet's rectangular structure without
-executing formulas.
+The improvement request may prefill the existing report form, but it must not execute or submit the
+external answer automatically; preview and explicit Send remain mandatory. Tab switching must
+preserve each saved project, and Excel import must preserve the chosen worksheet's rectangular
+structure without executing formulas.
 
 ## Hard failure rules
 

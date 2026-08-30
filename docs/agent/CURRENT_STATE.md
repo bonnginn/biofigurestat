@@ -1,6 +1,6 @@
 # Current Working State
 
-Updated: 2026-08-30 (macOS `9cd1335-alpha.20260830.mac3` revalidation)
+Updated: 2026-08-30 (Windows follow-up implementation `da042ab`)
 
 This is the short operational snapshot. It is not a replacement for accepted ADRs, method
 references, schemas, or test evidence.
@@ -9,14 +9,19 @@ references, schemas, or test evidence.
 
 BioFigureStat is a local-first, experiment-first Alpha candidate undergoing native hardening. The
 native macOS revalidation of `9cd1335-alpha.20260830.mac3` passed canonical integrity and
-matched/nested scientific semantics, but the candidate remains blocked. Application-menu Quit now
-shows the shared guard, while Command+Q can still terminate a dirty project without confirmation.
-Home, New, and Open also prompt instead of retaining the dirty project as an independently open tab,
-contrary to the researcher's explicit multi-project lifecycle requirement. Specialist scientific
-state survived save/reopen, but Survival and ordered X/Y still do not provide the required common
-spreadsheet/Data/Graph/Statistics/File shell after reopen. The recurring UX and packaging items that
-must not be deferred again are recorded in
-`docs/alpha/MACOS_ALPHA_MANUAL_GATE_RESULTS_2026-08-30.md`. Public distribution is not approved.
+matched/nested scientific semantics, but found P0 lifecycle and recurring P1 UX failures. Windows
+follow-up implementation `da042ab` closes those code paths: native exit now requires a one-shot
+approval from the shared UI guard; dirty saved projects use validated in-memory session checkpoints
+so Home, New, Open, and tab selection do not imply close or discard; a closed target can be opened
+again immediately. ADR 0057 supersedes ADR 0055's requirement to guard every dirty tab switch.
+
+The same follow-up adds a true low-ambiguity scalar fast entry, four initially visible Treatment
+levels, common spreadsheet editing for Survival and ordered X/Y, context-sensitive Overview row
+addition, sticky global/project navigation, initially visible severity-based Statistics warnings,
+specialist Save As/common shell continuity, reviewed external-LLM improvement prefill into the
+problem-report form, native architecture reporting, and explicit macOS icon verification. Public
+distribution is still not approved until the targeted macOS native revalidation in
+`docs/alpha/MACOS_ALPHA_CANDIDATE_HANDOFF_2026-08-29.md` passes.
 
 The 2026-08-30 P1 follow-up now also keeps matched-analysis inclusion explicit, bounds violin
 geometry to observed values, hardens spreadsheet focus/Tab behavior without page jumps, clarifies
@@ -69,6 +74,16 @@ each isolated jsdom window rather than reading Node's unavailable or process-lev
 The macOS native candidate must also be rebuilt from the current branch before the next native
 human gate.
 
+For follow-up implementation `da042ab`, the directly changed UI surface passed 250 tests across 12
+files; four focused App lifecycle tests and all 13 adaptive canonical round-trip regressions also
+passed. UI typecheck and lint passed. The Python engine passed 64 tests and all 14 Darwin-arm64
+reference cases; Rust passed 27 native tests with the pinned-development round trip ignored in the
+ordinary run. Windows sidecar build/smoke, x64 NSIS build, and `native:verify:win` passed. The
+installer SHA-256 is
+`7FE9F00B25DC64AD615791E4FD6750342F21AA4D4F466BC0316B7A85E64D0AD3`. This is Windows build
+evidence, not a substitute for Command+Q, Dock icon, responsive layout, and native export dialog
+validation on macOS.
+
 The highest-value remaining evidence is:
 
 - first-time researcher navigation/usability through the reduced four-task gate;
@@ -106,7 +121,8 @@ and passed. Packaged
 timeout/cancel and project-version messages still require the cross-platform native smoke below.
 
 The current Alpha branch also contains four newly accepted ingress/lifecycle capabilities awaiting
-final packaged validation: a disk-backed project tab strip with the shared unsaved-work guard,
+final packaged validation: a project tab strip with disk-backed `.lsa` state plus validated
+same-process dirty session checkpoints and the shared close/exit guard,
 native `.xls`/`.xlsx`/`.xlsm`/`.xlsb` worksheet import through a bounded Rust adapter, and a
 strictly allowlisted Cloudflare Workers/D1 telemetry collector. The collector is now deployed at
 `https://biofigurestat-telemetry.biofigurestat.workers.dev/v1/usage`; deployment smoke confirmed
