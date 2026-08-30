@@ -25,8 +25,10 @@ Baseline validation:
 - `pnpm lint`: PASS
 - production UI build: PASS; existing large-chunk advisory remains
 - self-contained package suites: PASS
-- full UI: 1,086 PASS / 1 flaky failure out of 1,087; the exact save-target mock test passed in
-  focused isolation
+- initial full UI baseline: 1,086 PASS / 1 transient save-target mock failure out of 1,087; the
+  exact test passed in focused isolation
+- final full workspace test: PASS — UI 127 files / 1,088 tests, with all other workspace package
+  suites also passing
 - release verifier in the clean snapshot: NOT RUN because the pinned local Python `.venv` is not a
   tracked source artifact; already-published binaries retain their prior native verification
 
@@ -87,6 +89,8 @@ Baseline validation:
 - Graph-only and nonlinear Graph focused suite: 14/14 PASS
 - DataSheet and MultiConditionDataSheet focused suite: 14/14 PASS
 - `ExperimentGraphWorkbench`: 52/52 PASS after each extraction
+- final full workspace test: PASS (UI 127/127 files, 1,088/1,088 tests)
+- production UI build: PASS; the pre-existing large-chunk advisory remains
 - typecheck: PASS after each logical change
 - lint: PASS after each logical change
 - `git diff --check`: PASS before each commit
@@ -118,10 +122,16 @@ Baseline validation:
 
 ## 8. NATIVE_VERIFICATION
 
-No new native binary was produced from this source-only refactor. The published, unchanged Alpha
-assets were anonymously downloaded by HTTP and matched the GitHub-reported sizes and SHA-256
-digests. Their prior Windows and macOS native gates remain the release evidence. A future candidate
-must rerun native bundle verification and the planned native UI regression harness.
+No new native binary was produced from this source-only refactor. A local Cargo test invocation
+stopped before compiling tests because the clean source snapshot does not contain the generated
+Windows engine sidecar at `engine/python/dist/windows-amd64/lsaa-engine.exe`. This is a documented
+native-build prerequisite, not a Rust assertion failure, and no bypass or placeholder binary was
+introduced.
+
+The published, unchanged Alpha assets were anonymously downloaded by HTTP and matched the
+GitHub-reported sizes and SHA-256 digests. Their prior Windows and macOS native gates remain the
+release evidence. A future native candidate must rebuild the engine sidecar, rerun bundle
+verification, and execute the planned native UI regression harness.
 
 ## 9. RECOMMENDED_NEXT_REFACTOR
 
