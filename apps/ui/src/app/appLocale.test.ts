@@ -28,4 +28,21 @@ describe("application locale", () => {
     expect(getAppLocale()).toBe("ja");
     expect(document.documentElement.lang).toBe("ja");
   });
+
+  it("keeps locale outside serialized project data", () => {
+    const project = {
+      schemaVersion: "0.3.0",
+      metadata: { projectId: "project-1", projectName: "Protein amount" },
+      observations: [{ id: "obs-1", value: 1.25 }],
+    };
+    const serializedBefore = JSON.stringify(project);
+
+    setAppLocale("en");
+    const serializedAfterEnglish = JSON.stringify(project);
+    setAppLocale("ja");
+
+    expect(serializedAfterEnglish).toBe(serializedBefore);
+    expect(JSON.parse(serializedAfterEnglish)).not.toHaveProperty("locale");
+    expect(window.localStorage.getItem(appLocaleStorageKey)).toBe("ja");
+  });
 });
