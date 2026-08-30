@@ -183,6 +183,11 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
     expect(screen.getByRole("button", { name: "Condition sheet" })).toBeVisible();
     expect(screen.getByRole("button", { name: "One measurement per row" })).toBeVisible();
     expect(screen.getByRole("group", { name: "Worksheet zoom" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "One measurement per row" }));
+    const expanded = screen.getByRole("table", { name: "All values" });
+    expect(within(expanded).getByRole("columnheader", { name: "Record ID" })).toBeVisible();
+    expect(within(expanded).getByRole("columnheader", { name: "Actions" })).toBeVisible();
+    expect(within(expanded).getAllByRole("button", { name: /delete row/ })).toHaveLength(3);
     expect(scalarObservations.map(({ observationId }) => observationId)).toEqual([
       "obs.c1",
       "obs.c2",

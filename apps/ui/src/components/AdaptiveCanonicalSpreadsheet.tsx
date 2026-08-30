@@ -25,7 +25,7 @@ import {
 } from "@lsaa/domain";
 
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
-import { localizedText, useAppLocale } from "../app/appLocale";
+import { getAppLocale, localizedText, useAppLocale } from "../app/appLocale";
 import {
   CanonicalMatrixWorksheet,
   canEditCanonicalMatrix,
@@ -50,6 +50,10 @@ import "./AdaptiveCanonicalSpreadsheet.css";
 
 const WORKSHEET_ZOOM_LEVELS = [70, 80, 90, 100, 110, 120, 130] as const;
 const WORKSHEET_ZOOM_STORAGE_KEY = "lsaa.adaptive-worksheet.zoom.v1";
+
+function textForLocale(ja: string, en: string): string {
+  return localizedText(getAppLocale(), ja, en);
+}
 
 function initialWorksheetZoom(): number {
   if (typeof window === "undefined") return 100;
@@ -149,8 +153,8 @@ function displayCell(cell: SpreadsheetCell): string {
 }
 
 function columnLabel(column: { label: string; role: string }): string {
-  if (column.role === "observation_id") return "記録ID";
-  if (column.role === "source_row") return "元データ行";
+  if (column.role === "observation_id") return textForLocale("記録ID", "Record ID");
+  if (column.role === "source_row") return textForLocale("元データ行", "Source row");
   return column.label;
 }
 
@@ -194,7 +198,7 @@ function experimentalUnitIdentity(
     ({ unitLevelKey }) => unitLevelKey === contract.experimentalUnitLevelKey,
   )?.key;
   const identity = identityKey ? observation.identities[identityKey] : undefined;
-  return identity?.trim() || `実験単位 ${rowNumber}`;
+  return identity?.trim() || textForLocale(`実験単位 ${rowNumber}`, `Experimental unit ${rowNumber}`);
 }
 
 function expandedRowAccessibleName(
@@ -454,7 +458,10 @@ function CompactTable({
     const width = Math.max(...matrix.map((row) => row.length));
     const startIndex = editableGroups.findIndex(({ groupKey }) => groupKey === startGroup.groupKey);
     if (startIndex < 0 || startIndex + width > editableGroups.length) {
-      return "貼り付け範囲が入力表を超えています。既存の値は変更していません。";
+      return textForLocale(
+        "貼り付け範囲が入力表を超えています。既存の値は変更していません。",
+        "The pasted range exceeds the worksheet. Existing values were not changed.",
+      );
     }
     let next = observations;
     try {
@@ -471,7 +478,13 @@ function CompactTable({
           return value;
         });
         const valueKey = scalarReadoutValueKey(contract, target);
-        if (!valueKey) throw new Error("貼り付け先の測定項目を確認できません。");
+        if (!valueKey)
+          throw new Error(
+            textForLocale(
+              "貼り付け先の測定項目を確認できません。",
+              "The target measured readout could not be identified.",
+            ),
+          );
         next = applyCompactScalarEdit(contract, next, {
           targetCoordinates: target.coordinates,
           values,
@@ -609,7 +622,12 @@ function ExpandedTable({
           if (!trimmed) return null;
           const value = Number(trimmed);
           if (!Number.isFinite(value)) {
-            throw new Error(`数値として読めない値「${trimmed}」があります。`);
+            throw new Error(
+              textForLocale(
+                `数値として読めない値「${trimmed}」があります。`,
+                `“${trimmed}” cannot be read as a number.`,
+              ),
+            );
           }
           return value;
         });
@@ -631,7 +649,12 @@ function ExpandedTable({
       onObservationsChange(next);
       return null;
     } catch (cause) {
-      return cause instanceof Error ? cause.message : "貼り付けた値を適用できませんでした。";
+      return cause instanceof Error
+        ? cause.message
+        : textForLocale(
+            "貼り付けた値を適用できませんでした。",
+            "The pasted values could not be applied.",
+          );
     }
   };
   const pasteExpandedMatrix = (event: ClipboardEvent<HTMLInputElement>) => {
@@ -669,12 +692,23 @@ function ExpandedTable({
         tokens.forEach((token, columnOffset) => {
           const target = controls[startColumn + columnOffset];
           if (!target || target.disabled) {
-            throw new Error("貼り付け範囲が入力表を超えています。");
+            throw new Error(
+              textForLocale(
+                "貼り付け範囲が入力表を超えています。",
+                "The pasted range exceeds the worksheet.",
+              ),
+            );
           }
           const observationId = target.dataset.observationId!;
           const semanticKey = target.dataset.semanticKey!;
           const observation = next.find((candidate) => candidate.observationId === observationId);
-          if (!observation) throw new Error("貼り付け先の記録を確認できません。");
+          if (!observation)
+            throw new Error(
+              textForLocale(
+                "貼り付け先の記録を確認できません。",
+                "The target record could not be identified.",
+              ),
+            );
           if (target.dataset.expandedField === "identity") {
             next = updateExpandedIdentity({
               contract,
@@ -687,7 +721,12 @@ function ExpandedTable({
             const trimmed = token.trim();
             const value = trimmed === "" ? null : Number(trimmed);
             if (value !== null && !Number.isFinite(value)) {
-              throw new Error(`数値として読めない値「${trimmed}」があります。`);
+              throw new Error(
+                textForLocale(
+                  `数値として読めない値「${trimmed}」があります。`,
+                  `“${trimmed}” cannot be read as a number.`,
+                ),
+              );
             }
             next = updateExpandedValue({
               observationId,
@@ -702,7 +741,14 @@ function ExpandedTable({
       setPasteError(null);
     } catch (cause) {
       setPasteError(
-        `${cause instanceof Error ? cause.message : "貼り付けた値を適用できませんでした。"} 既存の値は変更していません。`,
+        `${
+          cause instanceof Error
+            ? cause.message
+            : textForLocale(
+                "貼り付けた値を適用できませんでした。",
+                "The pasted values could not be applied.",
+              )
+        } ${textForLocale("既存の値は変更していません。", "Existing values were not changed.")}`,
       );
     }
   };
@@ -710,8 +756,8 @@ function ExpandedTable({
   return (
     <>
       <div className="adaptive-canonical-spreadsheet__table-wrap">
-        <table id={tableId} aria-label="すべての値を表示">
-          <caption>すべての値を表示</caption>
+        <table id={tableId} aria-label={textForLocale("すべての値を表示", "All values")}>
+          <caption>{textForLocale("すべての値を表示", "All values")}</caption>
           <thead>
             <tr>
               {columns.map((column) => (
@@ -719,7 +765,7 @@ function ExpandedTable({
                   {columnLabel(column)}
                 </th>
               ))}
-              {editable ? <th scope="col">操作</th> : null}
+              {editable ? <th scope="col">{textForLocale("操作", "Actions")}</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -743,7 +789,7 @@ function ExpandedTable({
                             row.observation,
                             rowIndex + 1,
                             embedded,
-                          )}の${column.label}`}
+                          )}${textForLocale("の", ": ")}${column.label}`}
                           observations={observations}
                           onObservationsChange={onObservationsChange}
                           gridRow={rowIndex}
@@ -762,7 +808,7 @@ function ExpandedTable({
                             row.observation,
                             rowIndex + 1,
                             embedded,
-                          )}の${column.label}`}
+                          )}${textForLocale("の", ": ")}${column.label}`}
                           observations={observations}
                           onObservationsChange={onObservationsChange}
                           gridRow={rowIndex}
@@ -787,10 +833,10 @@ function ExpandedTable({
                         row.observation,
                         rowIndex + 1,
                         embedded,
-                      )}を削除`}
+                      )}${textForLocale("を削除", ": delete row")}`}
                       onClick={() => onDeleteObservation(row.observationId, rowIndex)}
                     >
-                      行を削除
+                      {textForLocale("行を削除", "Delete row")}
                     </button>
                   </td>
                 ) : null}
@@ -808,13 +854,18 @@ function ExpandedTable({
                       {columns.map((column, columnIndex) => {
                         const Cell = columnIndex === 0 ? "th" : "td";
                         let content: string | number = "—";
-                        if (column.role === "observation_id") content = "新しい記録";
+                        if (column.role === "observation_id")
+                          content = textForLocale("新しい記録", "New record");
                         else if (column.role === "readout") {
                           content =
                             contract.readouts.find(
                               ({ key }) => key === group.coordinates.readoutKey,
                             )?.label ?? group.coordinates.readoutKey;
-                        } else if (column.role === "identity") content = "値の入力後にIDを作成";
+                        } else if (column.role === "identity")
+                          content = textForLocale(
+                            "値の入力後にIDを作成",
+                            "Create ID after value entry",
+                          );
                         else if (column.role === "factor" && column.semanticKey) {
                           content = group.coordinates.factors[column.semanticKey] ?? "—";
                         } else if (column.role === "axis" && column.semanticKey) {
@@ -839,7 +890,7 @@ function ExpandedTable({
                                 group={group}
                                 observations={observations}
                                 valueKey={valueKey}
-                                label={`${coordinateLabel(contract, group)}の新しい測定値`}
+                                label={`${coordinateLabel(contract, group)}${textForLocale("の新しい測定値", ": new measured value")}`}
                                 nextObservationId={nextObservationId}
                                 nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
                                 onObservationsChange={onObservationsChange}
@@ -855,7 +906,9 @@ function ExpandedTable({
                           </Cell>
                         );
                       })}
-                      <td aria-label="新しい記録の操作">値を入力すると行を追加</td>
+                      <td aria-label={textForLocale("新しい記録の操作", "New-record action")}>
+                        {textForLocale("値を入力すると行を追加", "Enter a value to add a row")}
+                      </td>
                     </tr>
                   );
                 })
