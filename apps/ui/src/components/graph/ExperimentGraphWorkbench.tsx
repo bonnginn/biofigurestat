@@ -59,6 +59,7 @@ import {
 } from "../../app/graphExport";
 import { generateMethodsText } from "../../app/methodsText";
 import { formatExactPValue } from "../../app/statisticalFormat";
+import { localizedText, useAppLocale } from "../../app/appLocale";
 import {
   beginDefaultGraphCapture,
   blobToBase64,
@@ -2381,6 +2382,8 @@ export function ExperimentGraphWorkbench({
   onStateChange,
   onAnalysisCorrection,
 }: ExperimentGraphWorkbenchProps) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const recommendationDesign = useMemo(() => {
     try {
       return createExperimentWorkspaceDesign(draft, "1970-01-01T00:00:00.000Z");
@@ -3730,35 +3733,35 @@ export function ExperimentGraphWorkbench({
       className={`experiment-graph-workbench experiment-graph-workbench--${workspaceMode}`}
       aria-label={
         workspaceMode === "statistics"
-          ? "統計ワークスペース"
+          ? t("統計ワークスペース", "Statistics workspace")
           : semanticReadiness === "unresolved_descriptive"
-            ? "表からグラフを作成"
-            : "実験からグラフを作成"
+            ? t("表からグラフを作成", "Create a Graph from a table")
+            : t("実験からグラフを作成", "Create a Graph from an experiment")
       }
     >
       <header className="experiment-graph-workbench-header">
         <div>
           <p className="experiment-graph-overline">
-            {workspaceMode === "statistics" ? "統計" : "グラフ作成"}
+            {workspaceMode === "statistics" ? t("統計", "Statistics") : t("グラフ作成", "Graph editor")}
           </p>
-          <h2>{readout?.label ?? "測定項目を選択"}</h2>
+          <h2>{readout?.label ?? t("測定項目を選択", "Select a readout")}</h2>
           <p className="experiment-graph-subtitle">
             {semanticReadiness === "unresolved_descriptive"
-              ? "表の行を記述的に表示（実験単位と統計的なnは未確認）"
+              ? t("表の行を記述的に表示（実験単位と統計的なnは未確認）", "Descriptive display of table rows (experimental unit and statistical n not confirmed)")
               : timeLabel
-                ? `時点：${timeLabel}`
-                : "実験単位ごとの値を比較"}
-            {workspaceMode !== "statistics" ? " · 図の要素をクリックして設定" : ""}
+                ? t(`時点：${timeLabel}`, `Time point: ${timeLabel}`)
+                : t("実験単位ごとの値を比較", "Compare values by experimental unit")}
+            {workspaceMode !== "statistics" ? t(" · 図の要素をクリックして設定", " · Click a Graph element to edit it") : ""}
           </p>
         </div>
         <button type="button" className="experiment-graph-close" onClick={onClose}>
-          閉じる
+          {t("閉じる", "Close")}
         </button>
       </header>
 
       <div className="experiment-graph-workbench-layout">
         {workspaceMode !== "statistics" ? (
-          <section className="experiment-graph-canvas-panel" aria-label="グラフプレビュー">
+          <section className="experiment-graph-canvas-panel" aria-label={t("グラフプレビュー", "Graph preview")}>
             <div className="experiment-graph-canvas-heading">
               <div>
                 <p className="experiment-graph-overline">{graphTypeLabel[graphType]}</p>
@@ -3766,18 +3769,18 @@ export function ExperimentGraphWorkbench({
                   {activeLayerDescription}
                 </h3>
               </div>
-              <div className="experiment-graph-export-actions" aria-label="グラフの書き出し">
+              <div className="experiment-graph-export-actions" aria-label={t("グラフの書き出し", "Graph export")}>
                 <button
                   type="button"
-                  aria-label="グラフをコピー"
+                  aria-label={t("グラフをコピー", "Copy Graph")}
                   disabled={!hasData}
                   onClick={() => void copyGraph()}
                 >
-                  コピー
+                  {t("コピー", "Copy")}
                 </button>
                 <button
                   type="button"
-                  aria-label="SVGを書き出す"
+                  aria-label={t("SVGを書き出す", "Export SVG")}
                   disabled={!hasData}
                   onClick={() => void exportSvg()}
                 >
@@ -3785,7 +3788,7 @@ export function ExperimentGraphWorkbench({
                 </button>
                 <button
                   type="button"
-                  aria-label="PNGを書き出す"
+                  aria-label={t("PNGを書き出す", "Export PNG")}
                   disabled={!hasData}
                   onClick={() => void exportPng()}
                 >
@@ -3793,7 +3796,7 @@ export function ExperimentGraphWorkbench({
                 </button>
                 <button
                   type="button"
-                  aria-label="表示データCSV"
+                  aria-label={t("表示データCSV", "Export displayed data as CSV")}
                   disabled={!hasData}
                   onClick={() => void exportCsv()}
                 >
@@ -3835,7 +3838,7 @@ export function ExperimentGraphWorkbench({
               <div
                 className="experiment-graph-view-controls"
                 role="group"
-                aria-label="Graph表示サイズ"
+                aria-label={t("Graph表示サイズ", "Graph display size")}
               >
                 <button
                   className={!fitOverview ? "is-active" : ""}
@@ -3843,7 +3846,7 @@ export function ExperimentGraphWorkbench({
                   aria-pressed={!fitOverview}
                   onClick={() => setFitOverview(false)}
                 >
-                  実寸（横スクロール）
+                  {t("実寸（横スクロール）", "Readable size (horizontal scroll)")}
                 </button>
                 <button
                   className={fitOverview ? "is-active" : ""}
@@ -3851,7 +3854,7 @@ export function ExperimentGraphWorkbench({
                   aria-pressed={fitOverview}
                   onClick={() => setFitOverview(true)}
                 >
-                  画面に全体を収める
+                  {t("画面に全体を収める", "Fit entire Graph")}
                 </button>
               </div>
             ) : null}
@@ -3927,7 +3930,7 @@ export function ExperimentGraphWorkbench({
               </div>
             ) : (
               <div className="experiment-graph-empty" role="status">
-                表示する条件と値を選択してください。
+                {t("表示する条件と値を選択してください。", "Select the conditions and values to display.")}
               </div>
             )}
             <p className="experiment-graph-caption">
@@ -3946,7 +3949,7 @@ export function ExperimentGraphWorkbench({
                           : `現在の表示：${activeLayerDescription}。細胞・ROIなどの生データを表示しても、統計上のnは実験単位です。`}
             </p>
             <details className="experiment-graph-data-details">
-              <summary>使用データの内訳を表示</summary>
+              <summary>{t("使用データの内訳を表示", "Show data used")}</summary>
               {shape === "proportion" ? (
                 <ProportionSummary series={series} />
               ) : shape === "nested_continuous" ? (
@@ -3972,47 +3975,47 @@ export function ExperimentGraphWorkbench({
 
         <aside
           className="experiment-graph-inspector"
-          aria-label={workspaceMode === "statistics" ? "統計設定" : "グラフ設定"}
+          aria-label={workspaceMode === "statistics" ? t("統計設定", "Statistics settings") : t("グラフ設定", "Graph settings")}
         >
           {workspaceMode !== "statistics" ? (
             <div className="experiment-graph-inspector-target">
               <label className="experiment-graph-field">
-                <span>編集対象</span>
+                <span>{t("編集対象", "Edit")}</span>
                 <select
-                  aria-label="編集対象"
+                  aria-label={t("編集対象", "Edit target")}
                   value={inspectorTarget}
                   onChange={(event) => inspectGraphPart(event.target.value as InspectorTarget)}
                 >
-                  <option value="background">グラフ全体</option>
+                  <option value="background">{t("グラフ全体", "Entire Graph")}</option>
                   <option value="x-axis">X軸</option>
                   <option value="y-axis">Y軸</option>
-                  <option value="data">データ</option>
-                  <option value="raw-dots">生データの点</option>
-                  <option value="experiment-summary">実験単位の要約</option>
-                  <option value="series-style">系列の色・線・点</option>
-                  <option value="violin">バイオリン</option>
-                  <option value="box">箱ひげ</option>
-                  <option value="error-bar">誤差線</option>
-                  <option value="connecting-line">接続線</option>
-                  <option value="legend">凡例</option>
+                  <option value="data">{t("データ", "Data")}</option>
+                  <option value="raw-dots">{t("生データの点", "Raw-data points")}</option>
+                  <option value="experiment-summary">{t("実験単位の要約", "Experimental-unit summary")}</option>
+                  <option value="series-style">{t("系列の色・線・点", "Series color, line, and symbol")}</option>
+                  <option value="violin">{t("バイオリン", "Violin")}</option>
+                  <option value="box">{t("箱ひげ", "Box plot")}</option>
+                  <option value="error-bar">{t("誤差線", "Error bars")}</option>
+                  <option value="connecting-line">{t("接続線", "Connecting lines")}</option>
+                  <option value="legend">{t("凡例", "Legend")}</option>
                   {(workspaceMode === "graph" || workspaceMode === "combined") &&
                   analysisResult?.status === "ok" ? (
-                    <option value="annotation">統計注釈</option>
+                    <option value="annotation">{t("統計注釈", "Statistical annotations")}</option>
                   ) : null}
                   {workspaceMode === "combined" ? (
-                    <option value="statistics">統計解析</option>
+                    <option value="statistics">{t("統計解析", "Statistical analysis")}</option>
                   ) : null}
                 </select>
               </label>
-              <div className="experiment-graph-layer-shortcuts" aria-label="現在の表示レイヤー">
-                <span>表示中</span>
+              <div className="experiment-graph-layer-shortcuts" aria-label={t("現在の表示レイヤー", "Visible layers")}>
+                <span>{t("表示中", "Visible")}</span>
                 {shape === "nested_continuous" ? (
                   <button
                     type="button"
                     aria-pressed={layers.raw}
                     onClick={() => setLayers((current) => ({ ...current, raw: !current.raw }))}
                   >
-                    生データ
+                    {t("生データ", "Raw data")}
                   </button>
                 ) : null}
                 <button
@@ -4022,7 +4025,7 @@ export function ExperimentGraphWorkbench({
                     setLayers((current) => ({ ...current, experiment: !current.experiment }))
                   }
                 >
-                  実験単位の点
+                  {t("実験単位の点", "Experimental-unit points")}
                 </button>
                 <button
                   type="button"
@@ -4031,18 +4034,18 @@ export function ExperimentGraphWorkbench({
                     setLayers((current) => ({ ...current, overall: !current.overall }))
                   }
                 >
-                  要約
+                  {t("要約", "Summary")}
                 </button>
                 {visualSeriesOptions.length > 1 ? (
                   <button type="button" onClick={() => inspectGraphPart("series-style")}>
-                    系列を編集
+                    {t("系列を編集", "Edit series")}
                   </button>
                 ) : null}
               </div>
             </div>
           ) : (
             <section className="experiment-graph-inspector-section experiment-statistics-source">
-              <h3>解析対象</h3>
+              <h3>{t("解析対象", "Analysis set")}</h3>
               <label className="experiment-graph-field">
                 <span>測定項目</span>
                 <select
@@ -4117,7 +4120,7 @@ export function ExperimentGraphWorkbench({
           )}
           {inspectorTarget === "data" ? (
             <section className="experiment-graph-inspector-section">
-              <h3>表示するデータ</h3>
+              <h3>{t("表示するデータ", "Data to display")}</h3>
               <label className="experiment-graph-field">
                 <span>測定項目</span>
                 <select
@@ -4513,9 +4516,9 @@ export function ExperimentGraphWorkbench({
 
           {inspectorTarget === "background" ? (
             <section className="experiment-graph-inspector-section">
-              <h3>グラフの外観</h3>
+              <h3>{t("グラフの外観", "Graph appearance")}</h3>
               <label className="experiment-graph-field">
-                <span>基本形</span>
+                <span>{t("基本形", "Graph type")}</span>
                 <select
                   aria-label="グラフの基本形"
                   value={graphType}
@@ -4559,14 +4562,14 @@ export function ExperimentGraphWorkbench({
                           draft.time.sampling !== "longitudinal"
                         }
                       >
-                        対応を線で結ぶ
+                        {t("対応を線で結ぶ", "Connect matched observations")}
                       </option>
                     </>
                   )}
                 </select>
               </label>
               <label className="experiment-graph-field">
-                <span>表示プリセット</span>
+                <span>{t("表示プリセット", "Display preset")}</span>
                 <select
                   aria-label="表示プリセット"
                   defaultValue="simple"
@@ -4577,19 +4580,19 @@ export function ExperimentGraphWorkbench({
                     )
                   }
                 >
-                  <option value="simple">シンプル</option>
-                  <option value="publication">論文</option>
-                  <option value="presentation">発表</option>
+                  <option value="simple">{t("シンプル", "Simple")}</option>
+                  <option value="publication">{t("論文", "Publication")}</option>
+                  <option value="presentation">{t("発表", "Presentation")}</option>
                   {shape === "nested_continuous" ? (
                     <>
-                      <option value="raw">生データ分布を重視</option>
-                      <option value="replicate">実験単位だけを表示</option>
+                      <option value="raw">{t("生データ分布を重視", "Emphasize raw-data distribution")}</option>
+                      <option value="replicate">{t("実験単位だけを表示", "Show experimental units only")}</option>
                     </>
                   ) : null}
                 </select>
               </label>
               <label className="experiment-graph-field">
-                <span>色</span>
+                <span>{t("色", "Color")}</span>
                 <select
                   aria-label="色の使い方"
                   value={appearance.palette}
@@ -4600,16 +4603,16 @@ export function ExperimentGraphWorkbench({
                     }))
                   }
                 >
-                  <option value="single">抑えた単色</option>
-                  <option value="condition">条件ごとに色分け</option>
-                  <option value="publication">論文向け</option>
-                  <option value="colorblind">色覚多様性対応</option>
-                  <option value="grayscale">グレースケール</option>
+                  <option value="single">{t("抑えた単色", "Muted single color")}</option>
+                  <option value="condition">{t("条件ごとに色分け", "Color by condition")}</option>
+                  <option value="publication">{t("論文向け", "Publication palette")}</option>
+                  <option value="colorblind">{t("色覚多様性対応", "Colorblind-accessible palette")}</option>
+                  <option value="grayscale">{t("グレースケール", "Grayscale")}</option>
                 </select>
               </label>
               {appearance.palette !== "single" ? (
                 <details className="experiment-graph-color-details">
-                  <summary>条件ごとの色</summary>
+                  <summary>{t("条件ごとの色", "Colors by condition")}</summary>
                   {activeConditions.map((condition, index) => (
                     <label className="experiment-graph-color-field" key={condition.id}>
                       <span>{condition.label}</span>
@@ -5068,7 +5071,7 @@ export function ExperimentGraphWorkbench({
 
           {inspectorTarget === "violin" ? (
             <section className="experiment-graph-inspector-section">
-              <h3>バイオリン分布</h3>
+              <h3>{t("バイオリン分布", "Violin distribution")}</h3>
               <label className="experiment-graph-checkbox">
                 <input
                   type="checkbox"
@@ -5153,7 +5156,7 @@ export function ExperimentGraphWorkbench({
 
           {inspectorTarget === "box" ? (
             <section className="experiment-graph-inspector-section">
-              <h3>箱ひげ</h3>
+              <h3>{t("箱ひげ", "Box plot")}</h3>
               <label className="experiment-graph-checkbox">
                 <input
                   type="checkbox"
@@ -5210,7 +5213,7 @@ export function ExperimentGraphWorkbench({
 
           {inspectorTarget === "error-bar" ? (
             <section className="experiment-graph-inspector-section">
-              <h3>誤差線</h3>
+              <h3>{t("誤差線", "Error bars")}</h3>
               <label className="experiment-graph-checkbox">
                 <input
                   type="checkbox"
@@ -5311,7 +5314,7 @@ export function ExperimentGraphWorkbench({
 
           {inspectorTarget === "connecting-line" ? (
             <section className="experiment-graph-inspector-section">
-              <h3>接続線</h3>
+              <h3>{t("接続線", "Connecting lines")}</h3>
               <label className="experiment-graph-checkbox">
                 <input
                   type="checkbox"
@@ -5359,7 +5362,7 @@ export function ExperimentGraphWorkbench({
 
           {inspectorTarget === "legend" ? (
             <section className="experiment-graph-inspector-section">
-              <h3>凡例</h3>
+              <h3>{t("凡例", "Legend")}</h3>
               <label className="experiment-graph-field">
                 <span>位置</span>
                 <select
@@ -5403,7 +5406,7 @@ export function ExperimentGraphWorkbench({
 
           {inspectorTarget === "annotation" && analysisResult?.status === "ok" ? (
             <section className="experiment-graph-statistics-section" aria-label="統計注釈">
-              <h3>グラフ上の注釈</h3>
+              <h3>{t("グラフ上の注釈", "Annotations on the Graph")}</h3>
               <p className="experiment-graph-help">
                 Statisticsで保存した解析結果から表示します。まず全比較を一括表示し、不要な比較だけを下の一覧から外せます。ここでは再計算しません。
               </p>
@@ -5669,11 +5672,11 @@ export function ExperimentGraphWorkbench({
 
           {inspectorTarget === "x-axis" || inspectorTarget === "y-axis" ? (
             <section className="experiment-graph-inspector-section">
-              <h3>{inspectorTarget === "y-axis" ? "Y軸" : "X軸"}</h3>
+              <h3>{inspectorTarget === "y-axis" ? t("Y軸", "Y axis") : t("X軸", "X axis")}</h3>
               {inspectorTarget === "y-axis" ? (
                 <>
                   <label className="experiment-graph-field">
-                    <span>軸タイトル</span>
+                    <span>{t("軸タイトル", "Axis title")}</span>
                     <input
                       aria-label="Y軸タイトル"
                       type="text"
@@ -5845,7 +5848,7 @@ export function ExperimentGraphWorkbench({
                         </select>
                       </label>
                       <label className="experiment-graph-field">
-                        <span>X軸タイトル</span>
+                        <span>{t("X軸タイトル", "X-axis title")}</span>
                         <input
                           aria-label="X軸タイトル"
                           type="text"
@@ -6219,7 +6222,7 @@ export function ExperimentGraphWorkbench({
             <>
               {draft.time.points.length > 1 ? (
                 <section className="experiment-graph-statistics-section">
-                  <h3>時系列から何を比較するか</h3>
+                  <h3>{t("時系列から何を比較するか", "What to compare from the time series")}</h3>
                   <label className="experiment-graph-field">
                     <span>解析に使う値</span>
                     <select
