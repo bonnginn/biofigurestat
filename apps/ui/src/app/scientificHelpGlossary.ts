@@ -286,6 +286,15 @@ export function scientificHelpTopic(id: ScientificHelpTopicId): ScientificHelpTo
   return topic;
 }
 
+export function localizedScientificHelpTopic(
+  id: ScientificHelpTopicId,
+  locale: "ja" | "en",
+): ScientificHelpTopic {
+  const topic = scientificHelpTopic(id);
+  if (locale === "ja") return topic;
+  return { ...topic, ...englishScientificHelpText[id] };
+}
+
 const METHOD_TOPICS: Readonly<Record<string, ScientificHelpTopicId>> = {
   welch_t: "welch-t-test",
   student_t: "student-t-test",
@@ -302,3 +311,4 @@ const METHOD_TOPICS: Readonly<Record<string, ScientificHelpTopicId>> = {
 export function helpTopicForMethod(method: string | null | undefined) {
   return method ? METHOD_TOPICS[method] : undefined;
 }
+import { englishScientificHelpText } from "./scientificHelpGlossaryEn";

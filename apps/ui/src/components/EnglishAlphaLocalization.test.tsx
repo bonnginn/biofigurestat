@@ -5,6 +5,9 @@ import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
 import { HomePage } from "../pages/HomePage";
 import { NewExperimentEntryHub } from "./NewExperimentEntryHub";
 import { SimpleGroupExperimentEntry } from "./SimpleGroupExperimentEntry";
+import { AboutPanel } from "./AboutPanel";
+import { ContextualHelp } from "./ContextualHelp";
+import { DiagnosticPanel } from "./DiagnosticPanel";
 
 afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
@@ -63,5 +66,24 @@ describe("English Public Alpha workflow", () => {
         conditionAssignment: { kind: "independent", unitLabel: "culture dish" },
       }),
     );
+  });
+
+  it("exposes local Help, About, and problem reporting in English", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<AboutPanel />);
+    fireEvent.click(screen.getByRole("button", { name: "About" }));
+    expect(screen.getByText("Usage data without research data")).toBeInTheDocument();
+    view.unmount();
+
+    const help = render(<ContextualHelp context={{ surface: "data", nested: true }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Help" }));
+    expect(screen.getByRole("heading", { name: "Terms and analysis concepts" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Experimental unit/ })).toBeInTheDocument();
+    help.unmount();
+
+    render(<DiagnosticPanel route="home" project={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Report a problem" }));
+    expect(screen.getByText("Report to BioFigureStat Public Alpha")).toBeInTheDocument();
+    expect(screen.getByLabelText("What were you trying to do?")).toBeInTheDocument();
   });
 });

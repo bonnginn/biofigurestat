@@ -20,25 +20,26 @@ import {
   type ProblemReportPrefill,
   type ProblemReportSubmission,
 } from "../app/problemReports";
+import { useAppLocale } from "../app/appLocale";
 
 const TYPE_LABELS = {
-  bug: "不具合",
-  usability: "使いにくさ",
-  feature_request: "要望",
-  scientific_concern: "統計・科学的懸念",
+  bug: ["不具合", "Bug"],
+  usability: ["使いにくさ", "Usability"],
+  feature_request: ["要望", "Feature request"],
+  scientific_concern: ["統計・科学的懸念", "Statistical or scientific concern"],
 } as const;
 const REPRO_LABELS = {
-  always: "毎回",
-  sometimes: "ときどき",
-  once: "1回だけ",
-  not_retried: "再試行していない",
-  unknown: "わからない",
+  always: ["毎回", "Every time"],
+  sometimes: ["ときどき", "Sometimes"],
+  once: ["1回だけ", "Once"],
+  not_retried: ["再試行していない", "Not retried"],
+  unknown: ["わからない", "Unknown"],
 } as const;
 const SEVERITY_LABELS = {
-  cannot_continue: "操作を続けられない",
-  possible_data_integrity_risk: "結果やデータの正しさが心配",
-  workaround_available: "回避策はある",
-  minor: "軽微",
+  cannot_continue: ["操作を続けられない", "Cannot continue"],
+  possible_data_integrity_risk: ["結果やデータの正しさが心配", "Possible data-integrity risk"],
+  workaround_available: ["回避策はある", "Workaround available"],
+  minor: ["軽微", "Minor"],
 } as const;
 
 function initialDraft(route: AppRoute): ProblemReportDraft {
@@ -61,6 +62,8 @@ export function DiagnosticPanel({
   route: AppRoute;
   project: ProjectState | null;
 }) {
+  const ja = useAppLocale() === "ja";
+  const label = (value: readonly [string, string]) => value[ja ? 0 : 1];
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<ProblemReportDraft>(() => initialDraft(route));
   const [submission, setSubmission] = useState<ProblemReportSubmission | null>(null);
@@ -115,38 +118,52 @@ export function DiagnosticPanel({
     createDiagnosticReport({ route, project, includeTechnicalDetails: false });
   const localFailure = (error: unknown) => {
     recordDiagnosticError("DIAGNOSTIC_EXPORT_FAILED", error);
-    setStatus(`${researcherError("DIAGNOSTIC_EXPORT_FAILED").title}（DIAGNOSTIC_EXPORT_FAILED）`);
+    setStatus(
+      ja
+        ? `${researcherError("DIAGNOSTIC_EXPORT_FAILED").title}（DIAGNOSTIC_EXPORT_FAILED）`
+        : "Could not export the diagnostic report (DIAGNOSTIC_EXPORT_FAILED).",
+    );
   };
 
   return (
     <div className="diagnostic-menu" ref={menuRef}>
       <button type="button" onClick={() => setOpen((current) => !current)} aria-expanded={open}>
-        問題を報告
+        {ja ? "問題を報告" : "Report a problem"}
       </button>
       {open
         ? createPortal(
-            <section ref={panelRef} className="diagnostic-panel" aria-label="不具合報告">
+            <section
+              ref={panelRef}
+              className="diagnostic-panel"
+              aria-label={ja ? "不具合報告" : "Problem report"}
+            >
               <button
                 className="diagnostic-panel__close"
                 type="button"
-                aria-label="報告を閉じる"
+                aria-label={ja ? "報告を閉じる" : "Close report"}
                 onClick={() => setOpen(false)}
               >
                 ×
               </button>
               <div>
-                <strong>BioFigureStat Public Alphaへの報告</strong>
+                <strong>
+                  {ja ? "BioFigureStat Public Alphaへの報告" : "Report to BioFigureStat Public Alpha"}
+                </strong>
                 <p className="diagnostic-warning">
-                  研究情報を書かないでください。測定値、表、実験名、条件名、readout名、試料ID、ファイル名・path、clipboard、project内容、秘密情報は送信しないでください。
+                  {ja
+                    ? "研究情報を書かないでください。測定値、表、実験名、条件名、readout名、試料ID、ファイル名・path、clipboard、project内容、秘密情報は送信しないでください。"
+                    : "Do not include research information. Do not send measurements, tables, experiment or condition names, readout names, sample IDs, file names or paths, clipboard contents, project contents, or secrets."}
                 </p>
                 <p>
-                  自動送信はしません。次の画面で送信内容を確認してから、報告ごとに明示的に送信します。
+                  {ja
+                    ? "自動送信はしません。次の画面で送信内容を確認してから、報告ごとに明示的に送信します。"
+                    : "Nothing is sent automatically. Review the exact submission first, then explicitly send each report."}
                 </p>
               </div>
 
               {reportId ? (
                 <div className="problem-report-result" role="status">
-                  <strong>報告を受け付けました</strong>
+                  <strong>{ja ? "報告を受け付けました" : "Report received"}</strong>
                   <p>
                     Report ID: <code>{reportId}</code>
                   </p>
@@ -158,56 +175,60 @@ export function DiagnosticPanel({
                       setReportId(null);
                     }}
                   >
-                    別の報告を作成
+                    {ja ? "別の報告を作成" : "Create another report"}
                   </button>
                 </div>
               ) : submission ? (
                 <>
                   <div>
-                    <strong>送信内容の確認</strong>
-                    <p>以下だけを送信します。screenshotやファイルは含まれません。</p>
+                    <strong>{ja ? "送信内容の確認" : "Review submission"}</strong>
+                    <p>
+                      {ja
+                        ? "以下だけを送信します。screenshotやファイルは含まれません。"
+                        : "Only the fields below will be sent. Screenshots and files are not included."}
+                    </p>
                   </div>
                   <dl className="problem-report-preview">
                     <div>
-                      <dt>種類</dt>
-                      <dd>{TYPE_LABELS[submission.type]}</dd>
+                      <dt>{ja ? "種類" : "Type"}</dt>
+                      <dd>{label(TYPE_LABELS[submission.type])}</dd>
                     </div>
                     <div>
-                      <dt>画面</dt>
+                      <dt>{ja ? "画面" : "Screen"}</dt>
                       <dd>{submission.screen}</dd>
                     </div>
                     <div>
-                      <dt>しようとしたこと</dt>
+                      <dt>{ja ? "しようとしたこと" : "What you tried to do"}</dt>
                       <dd>{submission.attempted}</dd>
                     </div>
                     <div>
-                      <dt>起きたこと</dt>
+                      <dt>{ja ? "起きたこと" : "What happened"}</dt>
                       <dd>{submission.observed}</dd>
                     </div>
                     <div>
-                      <dt>再現性</dt>
-                      <dd>{REPRO_LABELS[submission.reproducibility]}</dd>
+                      <dt>{ja ? "再現性" : "Reproducibility"}</dt>
+                      <dd>{label(REPRO_LABELS[submission.reproducibility])}</dd>
                     </div>
                     <div>
-                      <dt>重大度</dt>
-                      <dd>{SEVERITY_LABELS[submission.severity]}</dd>
+                      <dt>{ja ? "重大度" : "Severity"}</dt>
+                      <dd>{label(SEVERITY_LABELS[submission.severity])}</dd>
                     </div>
                     <div>
-                      <dt>返信先</dt>
-                      <dd>{submission.contactEmail ?? "送信しない"}</dd>
+                      <dt>{ja ? "返信先" : "Reply address"}</dt>
+                      <dd>{submission.contactEmail ?? (ja ? "送信しない" : "Not provided")}</dd>
                     </div>
                     <div>
-                      <dt>privacy-reduced診断</dt>
+                      <dt>{ja ? "privacy-reduced診断" : "Privacy-reduced diagnostics"}</dt>
                       <dd>
                         {submission.diagnostic ? (
                           <pre>{JSON.stringify(submission.diagnostic, null, 2)}</pre>
                         ) : (
-                          "添付しない"
+                          ja ? "添付しない" : "Not attached"
                         )}
                       </dd>
                     </div>
                     <div>
-                      <dt>報告用client ID</dt>
+                      <dt>{ja ? "報告用client ID" : "Report client ID"}</dt>
                       <dd>
                         <code>{submission.reporterId}</code>
                       </dd>
@@ -220,7 +241,7 @@ export function DiagnosticPanel({
                       disabled={sending}
                       onClick={() => setSubmission(null)}
                     >
-                      入力へ戻る
+                      {ja ? "入力へ戻る" : "Back to editing"}
                     </button>
                     <button
                       type="button"
@@ -232,59 +253,75 @@ export function DiagnosticPanel({
                           .then(setReportId)
                           .catch(() =>
                             setStatus(
-                              "送信できませんでした。入力内容は保持されています。通常の操作はそのまま続けられます。",
+                              ja
+                                ? "送信できませんでした。入力内容は保持されています。通常の操作はそのまま続けられます。"
+                                : "The report could not be sent. Your text is retained and normal app use can continue.",
                             ),
                           )
                           .finally(() => setSending(false));
                       }}
                     >
-                      {sending ? "送信中…" : "この内容を送信"}
+                      {sending
+                        ? ja
+                          ? "送信中…"
+                          : "Sending…"
+                        : ja
+                          ? "この内容を送信"
+                          : "Send this report"}
                     </button>
                   </div>
                 </>
               ) : (
                 <>
                   <label>
-                    <span>種類</span>
+                    <span>{ja ? "種類" : "Type"}</span>
                     <select
                       value={draft.type}
                       onChange={(event) =>
                         update("type", event.currentTarget.value as ProblemReportDraft["type"])
                       }
                     >
-                      {Object.entries(TYPE_LABELS).map(([value, label]) => (
+                      {Object.entries(TYPE_LABELS).map(([value, labels]) => (
                         <option key={value} value={value}>
-                          {label}
+                          {label(labels)}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label>
-                    <span>発生した画面</span>
+                    <span>{ja ? "発生した画面" : "Screen"}</span>
                     <input value={draft.screen} readOnly />
                   </label>
                   <label>
-                    <span>何をしようとしたか</span>
+                    <span>{ja ? "何をしようとしたか" : "What were you trying to do?"}</span>
                     <textarea
                       required
                       maxLength={1500}
                       value={draft.attempted}
                       onChange={(event) => update("attempted", event.currentTarget.value)}
-                      placeholder="研究内容や名称を使わず、操作だけを書いてください。"
+                      placeholder={
+                        ja
+                          ? "研究内容や名称を使わず、操作だけを書いてください。"
+                          : "Describe the operation without research content or names."
+                      }
                     />
                   </label>
                   <label>
-                    <span>何が起きたか</span>
+                    <span>{ja ? "何が起きたか" : "What happened?"}</span>
                     <textarea
                       required
                       maxLength={2000}
                       value={draft.observed}
                       onChange={(event) => update("observed", event.currentTarget.value)}
-                      placeholder="測定値や表を貼り付けず、画面上の挙動を書いてください。"
+                      placeholder={
+                        ja
+                          ? "測定値や表を貼り付けず、画面上の挙動を書いてください。"
+                          : "Describe the interface behavior without pasting measurements or tables."
+                      }
                     />
                   </label>
                   <label>
-                    <span>再現するか</span>
+                    <span>{ja ? "再現するか" : "Does it reproduce?"}</span>
                     <select
                       value={draft.reproducibility}
                       onChange={(event) =>
@@ -294,15 +331,15 @@ export function DiagnosticPanel({
                         )
                       }
                     >
-                      {Object.entries(REPRO_LABELS).map(([value, label]) => (
+                      {Object.entries(REPRO_LABELS).map(([value, labels]) => (
                         <option key={value} value={value}>
-                          {label}
+                          {label(labels)}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label>
-                    <span>重大度についての認識</span>
+                    <span>{ja ? "重大度についての認識" : "How severe is it?"}</span>
                     <select
                       value={draft.severity}
                       onChange={(event) =>
@@ -312,15 +349,19 @@ export function DiagnosticPanel({
                         )
                       }
                     >
-                      {Object.entries(SEVERITY_LABELS).map(([value, label]) => (
+                      {Object.entries(SEVERITY_LABELS).map(([value, labels]) => (
                         <option key={value} value={value}>
-                          {label}
+                          {label(labels)}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label>
-                    <span>返信を希望する場合のみメールアドレス</span>
+                    <span>
+                      {ja
+                        ? "返信を希望する場合のみメールアドレス"
+                        : "Email address only if you want a reply"}
+                    </span>
                     <input
                       type="email"
                       maxLength={254}
@@ -328,7 +369,9 @@ export function DiagnosticPanel({
                       onChange={(event) => update("contactEmail", event.currentTarget.value)}
                     />
                     {!contactValid ? (
-                      <small role="alert">メールアドレスを確認してください。</small>
+                      <small role="alert">
+                        {ja ? "メールアドレスを確認してください。" : "Check the email address."}
+                      </small>
                     ) : null}
                   </label>
                   <label className="diagnostic-expanded-option">
@@ -338,10 +381,11 @@ export function DiagnosticPanel({
                       onChange={(event) => update("includeDiagnostic", event.currentTarget.checked)}
                     />
                     <span>
-                      privacy-reduced診断を添付する
+                      {ja ? "privacy-reduced診断を添付する" : "Attach privacy-reduced diagnostics"}
                       <small>
-                        アプリ版、OS種別、現在の画面、固定error
-                        codeだけです。project内容や利用telemetry IDは含みません。
+                        {ja
+                          ? "アプリ版、OS種別、現在の画面、固定error codeだけです。project内容や利用telemetry IDは含みません。"
+                          : "Includes only app version, OS type, current screen, and fixed error codes. Project contents and usage-telemetry IDs are excluded."}
                       </small>
                     </span>
                   </label>
@@ -354,41 +398,59 @@ export function DiagnosticPanel({
                       )
                     }
                   >
-                    送信内容を確認
+                    {ja ? "送信内容を確認" : "Review submission"}
                   </button>
                   {!configuredProblemReportEndpoint() ? (
                     <p className="diagnostic-form-note">
-                      このビルドには報告受付先が設定されていません。入力後も外部送信されません。
+                      {ja
+                        ? "このビルドには報告受付先が設定されていません。入力後も外部送信されません。"
+                        : "This build has no report endpoint configured. Nothing will be sent externally."}
                     </p>
                   ) : null}
                 </>
               )}
 
               <details>
-                <summary>ローカル診断レポートをコピー・保存</summary>
-                <p>この操作だけでは外部送信しません。</p>
+                <summary>
+                  {ja ? "ローカル診断レポートをコピー・保存" : "Copy or save a local diagnostic report"}
+                </summary>
+                <p>
+                  {ja ? "この操作だけでは外部送信しません。" : "These actions do not send anything externally."}
+                </p>
                 <div className="diagnostic-actions">
                   <button
                     type="button"
                     onClick={() =>
                       void copyDiagnosticReport(localReport())
                         .then(() =>
-                          setStatus("診断レポートをコピーしました。自動送信はしていません。"),
+                          setStatus(
+                            ja
+                              ? "診断レポートをコピーしました。自動送信はしていません。"
+                              : "Copied the diagnostic report. Nothing was sent automatically.",
+                          ),
                         )
                         .catch(localFailure)
                     }
                   >
-                    診断レポートをコピー
+                    {ja ? "診断レポートをコピー" : "Copy diagnostic report"}
                   </button>
                   <button
                     type="button"
                     onClick={() =>
                       void saveDiagnosticReport(localReport())
-                        .then((saved) => setStatus(saved ? "診断情報を保存しました。" : null))
+                        .then((saved) =>
+                          setStatus(
+                            saved
+                              ? ja
+                                ? "診断情報を保存しました。"
+                                : "Saved diagnostic information."
+                              : null,
+                          ),
+                        )
                         .catch(localFailure)
                     }
                   >
-                    診断情報を保存
+                    {ja ? "診断情報を保存" : "Save diagnostic information"}
                   </button>
                 </div>
               </details>
