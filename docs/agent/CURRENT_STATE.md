@@ -109,10 +109,15 @@ not re-emitted, and analysis-only changes retain their existing event classifica
 extractions now also cover the shared SVG→PNG/hash/base64 capture payload, eligible default-capture
 effect, and final-run controller. Tests preserve the Statistics exclusion for default capture,
 completion prerequisites, descriptive `none_descriptive` semantics, artifact completeness, and
-failure-before-hash behavior. The workbench is reduced to roughly 2,780 lines. Focused workbench and artifact suites,
-typecheck, and lint pass. The expanded full UI suite reached 148/149 files and 1,162/1,163 tests;
-the sole nonlinear-fit presentation wait passed immediately in focused isolation (40/40), so it
-is recorded as a parallel-run flaky rather than a Graph refactor regression. That focused run also
+failure-before-hash behavior. Workspace-mode selection, restored-analysis clearing, and persisted
+snapshot emission now use a tested synchronization hook. Snapshot and callback changes in the same
+render are delivered to the current callback rather than the stale one. Adjusted comparison
+annotations are applied once per new successful request without overwriting restored annotations.
+Analysis-context fingerprints and varying-factor selection are pure tested functions that preserve
+stable-unit fallbacks and exclude unselected conditions. The workbench is reduced to roughly 2,710
+lines. Focused suites, typecheck, and lint pass. The expanded full UI suite passes with 157 files and
+1,183 tests. An earlier parallel nonlinear-fit presentation wait remains recorded as historical
+flaky evidence; the current complete run did not reproduce it. The earlier focused run also
 exposed duplicate `x.-5` ticks for a one-value finite range. The shared nice-tick helper now emits
 one stable tick for such a degenerate range; Graph-layout, nonlinear Graph, and the full focused
 workflow pass together (50/50) without the React warning.
@@ -150,8 +155,10 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   Native SVG/PNG/CSV cancellation remains in the existing export controller, while the duplicated
   success/failure feedback and diagnostic reporting plus clipboard format feedback are now a
   separate tested boundary. Cancellation stays silent and does not mutate Graph state. This reduces
-  the workbench to roughly 2,740 lines. Remaining async Statistics execution coordination and
-  workspace state synchronization are the next safe extraction boundaries.
+  the workbench further. Workspace state synchronization, adjusted-annotation application, analysis
+  context fingerprinting, and varying-factor selection are also separated. Remaining Statistics
+  intent handlers and large presentation/data-selection sections are the next safe extraction
+  boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
