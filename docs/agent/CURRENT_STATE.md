@@ -114,7 +114,10 @@ snapshot emission now use a tested synchronization hook. Snapshot and callback c
 render are delivered to the current callback rather than the stale one. Adjusted comparison
 annotations are applied once per new successful request without overwriting restored annotations.
 Analysis-context fingerprints and varying-factor selection are pure tested functions that preserve
-stable-unit fallbacks and exclude unselected conditions. The workbench is reduced to roughly 2,710
+stable-unit fallbacks and exclude unselected conditions. Statistics method, correlation,
+comparison-intent, and planned-pair state transitions now use a tested hook that preserves
+condition identities, benchmark events, and stale-result clearing. The workbench is reduced to
+roughly 2,660
 lines. Legacy two-condition and multi-condition sheets now share row-major Tab/Shift+Tab movement,
 minimum-scroll focus behavior, roving tab-index calculation, finite numeric parsing, and proportion
 display formatting. The shared boundaries retain each sheet's experimental-unit and condition
@@ -161,8 +164,8 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   separate tested boundary. Cancellation stays silent and does not mutate Graph state. This reduces
   the workbench further. Workspace state synchronization, adjusted-annotation application, analysis
   context fingerprinting, and varying-factor selection are also separated. Remaining Statistics
-  intent handlers and large presentation/data-selection sections are the next safe extraction
-  boundaries.
+  intent state is now separated as well. Large presentation/data-selection sections are the next
+  safe extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, and proportion
   display now use shared primitives. Draft/commit and the remaining cell-editor presentation are
