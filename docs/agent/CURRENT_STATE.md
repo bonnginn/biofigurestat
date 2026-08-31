@@ -22,7 +22,7 @@ specialist Save As/common shell continuity, reviewed external-LLM improvement pr
 problem-report form, native architecture reporting, and explicit macOS icon verification.
 
 The product name is BioFigureStat, version `0.1.0`, and the source license is MIT. The public
-repository is `https://github.com/bonnginn/life-science-analysis-app`. Release-facing README,
+repository is `https://github.com/bonnginn/biofigurestat`. Release-facing README,
 license, third-party notice, known limitations, and Public Alpha release notes are part of the
 release-packaging change. Windows and macOS public artifacts must be rebuilt from that metadata
 commit so the About panel and bundled license files match the source release.

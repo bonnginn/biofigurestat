@@ -8,8 +8,8 @@ authors:
 version: "0.1.0-alpha.1"
 date-released: 2026-08-31
 license: MIT
-repository-code: "https://github.com/bonnginn/life-science-analysis-app"
-url: "https://github.com/bonnginn/life-science-analysis-app/releases/tag/v0.1.0-alpha.1"
+repository-code: "https://github.com/bonnginn/biofigurestat"
+url: "https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.1"
 keywords:
   - life science
   - statistics

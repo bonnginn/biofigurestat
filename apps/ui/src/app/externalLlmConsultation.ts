@@ -2,7 +2,7 @@ import { PRODUCT_IDENTITY } from "./productIdentity";
 
 export const EXTERNAL_LLM_GUIDE_VERSION = "0.1.0" as const;
 export const EXTERNAL_LLM_GUIDE_URL =
-  "https://raw.githubusercontent.com/bonnginn/life-science-analysis-app/ca0b1bf0951d5ef2b909b4fef072fc99ea8d0484/docs/help/EXTERNAL_LLM_ASSIST_GUIDE_v0.1.md";
+  "https://raw.githubusercontent.com/bonnginn/biofigurestat/v0.1.0-alpha.1/docs/help/EXTERNAL_LLM_ASSIST_GUIDE_v0.1.md";
 
 export type ExternalLlmImprovementRequest = Readonly<{
   placement: "experiment_setup" | "statistics";
