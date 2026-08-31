@@ -147,8 +147,11 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   renderer is separated as well; benchmark artifact/event construction, pure state projections,
   usage-edit classification, Graph diagnostics, and benchmark configuration effects are separated.
   Default/final benchmark capture is now separated behind tested effect/controller boundaries.
-  Remaining async Statistics execution coordination and native user export/clipboard feedback
-  remain in the parent and are the next safe extraction boundaries.
+  Native SVG/PNG/CSV cancellation remains in the existing export controller, while the duplicated
+  success/failure feedback and diagnostic reporting plus clipboard format feedback are now a
+  separate tested boundary. Cancellation stays silent and does not mutate Graph state. This reduces
+  the workbench to roughly 2,740 lines. Remaining async Statistics execution coordination and
+  workspace state synchronization are the next safe extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
