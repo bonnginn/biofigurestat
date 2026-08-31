@@ -59,14 +59,8 @@ import {
   useBenchmarkRun,
   writeBenchmarkArtifacts,
 } from "../../app/benchmarkEvaluation";
-import {
-  diagnosticFingerprint,
-  recordDiagnosticError,
-  recordDiagnosticEvent,
-} from "../../app/diagnostics";
+import { recordDiagnosticError } from "../../app/diagnostics";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
-import { routeFromPath } from "../../app/routes";
-import { recordUsageGraphEdit } from "../../app/usageTelemetry";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { CompositionGraphSvg } from "./CompositionGraphSvg";
 import { CorrelationGraphSvg } from "./CorrelationGraphSvg";
@@ -85,14 +79,13 @@ import {
   statisticalMethodForContrastIntent,
 } from "./experimentGraphStatistics";
 import {
-  changedGraphUsageCategories,
   createBenchmarkAnalysisState,
   createBenchmarkGraphConfigurationEvent,
   createBenchmarkRenderedState,
   createGraphUsageState,
   type BenchmarkGraphStateLog,
-  type GraphUsageState,
 } from "./experimentGraphInstrumentation";
+import { useExperimentGraphDiagnosticEffects } from "./useExperimentGraphDiagnosticEffects";
 import {
   createDefaultBenchmarkGraphArtifacts,
   createFinalBenchmarkArtifacts,
@@ -673,14 +666,6 @@ export function ExperimentGraphWorkbench({
     onStateChangeRef.current?.(graphStateSnapshot);
   }, [graphStateSnapshot]);
 
-  const diagnosticGraphStateRef = useRef<string | null>(null);
-  useEffect(() => {
-    const fingerprint = diagnosticFingerprint(benchmarkRenderedState);
-    if (diagnosticGraphStateRef.current === fingerprint) return;
-    diagnosticGraphStateRef.current = fingerprint;
-    recordDiagnosticEvent("graph_state_changed", { graphType, graphFingerprint: fingerprint });
-  }, [benchmarkRenderedState, graphType]);
-
   const usageGraphState = createGraphUsageState({
     graphType,
     selectedReadoutId,
@@ -694,16 +679,7 @@ export function ExperimentGraphWorkbench({
     statisticsAnnotation,
     statisticsAnnotations,
   });
-  const usageGraphStateRef = useRef<GraphUsageState | null>(null);
-  useEffect(() => {
-    const previous = usageGraphStateRef.current;
-    usageGraphStateRef.current = usageGraphState;
-    if (!previous) return;
-    const route = routeFromPath(window.location.pathname);
-    changedGraphUsageCategories(previous, usageGraphState).forEach((category) =>
-      recordUsageGraphEdit(route, category),
-    );
-  }, [usageGraphState]);
+  useExperimentGraphDiagnosticEffects({ benchmarkRenderedState, graphType, usageGraphState });
 
   const benchmarkStateLogRef = useRef<BenchmarkGraphStateLog | null>(null);
   useEffect(() => {
