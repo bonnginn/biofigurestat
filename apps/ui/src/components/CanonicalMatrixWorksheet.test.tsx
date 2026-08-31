@@ -180,7 +180,7 @@ describe("CanonicalMatrixWorksheet", () => {
     expect(screen.getByText("Load CSV / TSV / TXT file")).toBeVisible();
     expect(screen.getByText("Choose file")).toBeVisible();
     expect(screen.getByLabelText("Load CSV / TSV / TXT file")).toHaveClass(
-      "canonical-matrix-worksheet__native-file-input",
+      "localized-file-input__native",
     );
   });
   beforeEach(() => {

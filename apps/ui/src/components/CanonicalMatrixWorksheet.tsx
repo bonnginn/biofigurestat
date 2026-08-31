@@ -15,6 +15,7 @@ import {
   type CanonicalWorksheetFileLayout,
 } from "./canonicalWorksheetFile";
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
+import { LocalizedFileInput } from "./LocalizedFileInput";
 import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 
 export type CanonicalWorksheetRow = Readonly<{
@@ -1206,7 +1207,6 @@ export function CanonicalMatrixWorksheet({
   const [fileStatus, setFileStatus] = useState<string | null>(null);
   const [fileBusy, setFileBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const fileInputId = useId();
   const [identityDrafts, setIdentityDrafts] = useState<Record<string, string>>({});
   const fileLayout = useMemo(
     () => canonicalWorksheetFileLayout(contract, observations, showExperimentDate),
@@ -1608,28 +1608,17 @@ export function CanonicalMatrixWorksheet({
   return (
     <>
       <div className="canonical-matrix-worksheet__file-import">
-        <span className="canonical-matrix-worksheet__file-label">
-          {t("CSV / TSV / TXTファイルを読み込む", "Load CSV / TSV / TXT file")}
-        </span>
-        <label
-          className={`canonical-matrix-worksheet__file-button${!editable || fileBusy ? " canonical-matrix-worksheet__file-button--disabled" : ""}`}
-          htmlFor={fileInputId}
-        >
-          {fileBusy ? t("読み込み中…", "Loading…") : t("ファイルを選択", "Choose file")}
-          <input
-            ref={fileInputRef}
-            id={fileInputId}
-            className="canonical-matrix-worksheet__native-file-input"
-            type="file"
-            accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
-            aria-label={t("CSV / TSV / TXTファイルを読み込む", "Load CSV / TSV / TXT file")}
-            disabled={!editable || fileBusy}
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              if (file) void importWorksheetFile(file);
-            }}
-          />
-        </label>
+        <LocalizedFileInput
+          inputRef={fileInputRef}
+          label={t("CSV / TSV / TXTファイルを読み込む", "Load CSV / TSV / TXT file")}
+          ariaLabel={t("CSV / TSV / TXTファイルを読み込む", "Load CSV / TSV / TXT file")}
+          accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+          disabled={!editable || fileBusy}
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0];
+            if (file) void importWorksheetFile(file);
+          }}
+        />
         <small>
           {t("1行目はこの表の見出しです。現在の条件列だけに対応し、別の実験構造は作りません。", "The first row contains this table’s headings. Import maps only to the current condition columns and does not create another experiment structure.")}
         </small>

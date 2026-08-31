@@ -1,0 +1,49 @@
+.localized-file-input {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+}
+
+.localized-file-input__label {
+  color: var(--adaptive-ink, inherit);
+  font-weight: 700;
+}
+
+.localized-file-input__button {
+  align-items: center;
+  background: white;
+  border: 1px solid var(--adaptive-border, #b5c5d0);
+  border-radius: 0.45rem;
+  color: var(--adaptive-ink, inherit);
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  min-height: 2.35rem;
+  padding: 0.35rem 0.7rem;
+}
+
+.localized-file-input__button:focus-within {
+  outline: 2px solid var(--adaptive-border-strong, #2375c9);
+  outline-offset: 2px;
+}
+
+.localized-file-input__button--disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.localized-file-input__native {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.localized-file-input__selection {
+  color: var(--adaptive-muted, #5d6b76);
+  font-size: 0.92rem;
+}

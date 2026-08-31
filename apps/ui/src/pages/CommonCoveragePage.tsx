@@ -130,6 +130,7 @@ import { NonlinearFitGraph } from "../components/graph/NonlinearFitGraph";
 import { GraphWorkspaceFrame } from "../components/graph/GraphWorkspaceFrame";
 import { AnalysisRouteSwitcher } from "../components/AnalysisRouteSwitcher";
 import { DelimitedTextSpreadsheet } from "../components/DelimitedTextSpreadsheet";
+import { LocalizedFileInput } from "../components/LocalizedFileInput";
 import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import type { AnalysisRouteSwitcherAccess } from "../app/analysisRouteSwitcherAccess";
 import { useWorkspaceDirtyBaseline } from "../app/useWorkspaceDirtyBaseline";
@@ -2665,15 +2666,12 @@ export function CommonCoveragePage({
           />
         )}
         {adaptiveOrderedCurveActive ? (
-          <label>
-            {t("CSV / TSV / TXTを読み込む", "Load CSV / TSV / TXT")}
-            <input
-              aria-label={t("CSV / TSV / TXTを読み込む", "Load CSV / TSV / TXT")}
-              type="file"
-              accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
-              onChange={(event) => void loadOrderedCurveFile(event)}
-            />
-          </label>
+          <LocalizedFileInput
+            label={t("CSV / TSV / TXTを読み込む", "Load CSV / TSV / TXT")}
+            ariaLabel={t("CSV / TSV / TXTを読み込む", "Load CSV / TSV / TXT")}
+            accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+            onChange={(event) => void loadOrderedCurveFile(event)}
+          />
         ) : null}
         {adaptiveOrderedCurveActive && entryIntent ? (
           <button

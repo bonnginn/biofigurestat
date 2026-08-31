@@ -45,6 +45,7 @@ import {
 } from "../app/benchmarkEvaluation";
 import { evaluationMode } from "../app/evaluationMode";
 import { serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
+import { LocalizedFileInput } from "../components/LocalizedFileInput";
 import type { LiteratureExperimenterCase } from "../app/literatureBenchmark";
 import { generateMethodsText } from "../app/methodsText";
 import { PRODUCT_IDENTITY } from "../app/productIdentity";
@@ -2463,67 +2464,63 @@ export function SpecializedCorePage({
           </button>
         ) : null}
         {mode === "survival" ? (
-          <label className="existing-data-import__file">
-            <span>{t("CSV / TSV / TXTファイル", "CSV / TSV / TXT file")}</span>
-            <input
-              aria-label={t("time-to-eventデータファイル", "Time-to-event data file")}
-              accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
-              type="file"
-              onChange={(event) => {
-                const file = event.currentTarget.files?.[0];
-                if (!file) return;
-                void file
-                  .text()
-                  .then((contents) => {
-                    const lowerName = file.name.toLowerCase();
-                    setText(contents);
-                    setTimeToEventInputSource({
-                      kind: lowerName.endsWith(".csv")
-                        ? "csv"
-                        : lowerName.endsWith(".tsv")
-                          ? "tsv"
-                          : "generic_file",
-                      label: file.name,
-                    });
-                    setNumericStatusMapping(null);
-                    setResult(null);
-                    setResultInputFingerprint(null);
-                    setMessage(`${file.name} を読み込みました。`);
-                  })
-                  .catch(() => setMessage("ファイルを読み込めませんでした。"));
-              }}
-            />
-          </label>
+          <LocalizedFileInput
+            className="existing-data-import__file"
+            label={t("CSV / TSV / TXTファイル", "CSV / TSV / TXT file")}
+            ariaLabel={t("time-to-eventデータファイル", "Time-to-event data file")}
+            accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              if (!file) return;
+              void file
+                .text()
+                .then((contents) => {
+                  const lowerName = file.name.toLowerCase();
+                  setText(contents);
+                  setTimeToEventInputSource({
+                    kind: lowerName.endsWith(".csv")
+                      ? "csv"
+                      : lowerName.endsWith(".tsv")
+                        ? "tsv"
+                        : "generic_file",
+                    label: file.name,
+                  });
+                  setNumericStatusMapping(null);
+                  setResult(null);
+                  setResultInputFingerprint(null);
+                  setMessage(t(`${file.name} を読み込みました。`, `Loaded ${file.name}.`));
+                })
+                .catch(() => setMessage(t("ファイルを読み込めませんでした。", "The file could not be loaded.")));
+            }}
+          />
         ) : null}
         {mode === "heatmap" ? (
-          <label className="existing-data-import__file">
-            <span>{t("CSV / TSV / TXTファイル", "CSV / TSV / TXT file")}</span>
-            <input
-              aria-label={t("ヒートマップ用データファイル", "Heatmap data file")}
-              accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
-              type="file"
-              onChange={(event) => {
-                const file = event.currentTarget.files?.[0];
-                if (!file) return;
-                void file
-                  .text()
-                  .then((contents) => {
-                    setText(contents);
-                    const lowerName = file.name.toLowerCase();
-                    setHeatmapInputSource({
-                      kind: lowerName.endsWith(".csv")
-                        ? "csv"
-                        : lowerName.endsWith(".tsv")
-                          ? "tsv"
-                          : "generic_file",
-                      label: file.name,
-                    });
-                    setMessage(`${file.name} を読み込みました。`);
-                  })
-                  .catch(() => setMessage("ファイルを読み込めませんでした。"));
-              }}
-            />
-          </label>
+          <LocalizedFileInput
+            className="existing-data-import__file"
+            label={t("CSV / TSV / TXTファイル", "CSV / TSV / TXT file")}
+            ariaLabel={t("ヒートマップ用データファイル", "Heatmap data file")}
+            accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              if (!file) return;
+              void file
+                .text()
+                .then((contents) => {
+                  setText(contents);
+                  const lowerName = file.name.toLowerCase();
+                  setHeatmapInputSource({
+                    kind: lowerName.endsWith(".csv")
+                      ? "csv"
+                      : lowerName.endsWith(".tsv")
+                        ? "tsv"
+                        : "generic_file",
+                    label: file.name,
+                  });
+                  setMessage(t(`${file.name} を読み込みました。`, `Loaded ${file.name}.`));
+                })
+                .catch(() => setMessage(t("ファイルを読み込めませんでした。", "The file could not be loaded.")));
+            }}
+          />
         ) : null}
         {numericStatusMappingRequired ? (
           <section className="callout-info" aria-label="0/1 statusの意味">

@@ -10,6 +10,7 @@ import {
 } from "../app/existingDataImport";
 import type { TimeSampling } from "../app/experimentDraft";
 import { localizedText, useAppLocale } from "../app/appLocale";
+import { LocalizedFileInput } from "./LocalizedFileInput";
 
 type ColumnChoice = number | "";
 
@@ -87,22 +88,20 @@ export function ExistingDataImport({
           onChange={(event) => loadText(event.currentTarget.value, "clipboard paste")}
         />
       </label>
-      <label className="existing-data-import__file">
-        <span>{t("CSV / TSV / TXTファイル", "CSV / TSV / TXT file")}</span>
-        <input
-          aria-label={t("既存データファイル", "Existing data file")}
-          accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
-          type="file"
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0];
-            if (!file) return;
-            void file
-              .text()
-              .then((contents) => loadText(contents, file.name))
-              .catch(() => setError(t("ファイルを読み込めませんでした。", "The file could not be loaded.")));
-          }}
-        />
-      </label>
+      <LocalizedFileInput
+        className="existing-data-import__file"
+        label={t("CSV / TSV / TXTファイル", "CSV / TSV / TXT file")}
+        ariaLabel={t("既存データファイル", "Existing data file")}
+        accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+        onChange={(event) => {
+          const file = event.currentTarget.files?.[0];
+          if (!file) return;
+          void file
+            .text()
+            .then((contents) => loadText(contents, file.name))
+            .catch(() => setError(t("ファイルを読み込めませんでした。", "The file could not be loaded.")));
+        }}
+      />
 
       {parsed.rows.length > 0 ? (
         <>

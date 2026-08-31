@@ -23,6 +23,7 @@ import type { AppRoute } from "../app/routes";
 import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import { routeFromPath } from "../app/routes";
 import { DelimitedTextSpreadsheet } from "../components/DelimitedTextSpreadsheet";
+import { LocalizedFileInput } from "../components/LocalizedFileInput";
 import {
   GRAPH_ONLY_DEFAULT_PALETTE,
   graphOnlySeriesKeys,
@@ -985,12 +986,11 @@ export function GraphOnlyVisualizationPage({
             replaceOnPasteAtOrigin
             allowWorkbookSheetStacking
           />
-          <label className="graph-only__file">
-            <span>{t("CSV / TSV / TXTファイルを同じシートへ読み込む", "Load a CSV / TSV / TXT file into the same worksheet")}</span>
-            <input
-              aria-label={t("Graph用の表ファイル", "Table file for the Graph")}
+          <div className="graph-only__file">
+            <LocalizedFileInput
+              label={t("CSV / TSV / TXTファイルを同じシートへ読み込む", "Load a CSV / TSV / TXT file into the same worksheet")}
+              ariaLabel={t("Graph用の表ファイル", "Table file for the Graph")}
               accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
-              type="file"
               onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 if (!file) return;
@@ -1010,7 +1010,7 @@ export function GraphOnlyVisualizationPage({
                 "Load CSV / TSV / TXT here. Use the Excel import above for XLS / XLSX / XLSM / XLSB. Excluding selected rows from analysis is not supported yet.",
               )}
             </small>
-          </label>
+          </div>
           {parsedResult.error ? (
             <p className="graph-only__error" role="alert">
               {parsedResult.error}
