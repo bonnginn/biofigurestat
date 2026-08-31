@@ -1,0 +1,84 @@
+import {
+  requireAnalysisRequestRecommendation,
+  type AnalysisRecommendation,
+} from "@lsaa/analysis-contracts";
+
+import type { ExperimentSetDraft, TimeAnalysisPlan } from "../../app/experimentDraft";
+import type { ContrastIntent } from "../../app/experimentDraftAnalysis";
+import {
+  createExperimentWorkspaceDesign,
+  type WorkspaceGraphAnalysis,
+  type WorkspaceGraphState,
+} from "../../app/experimentWorkspaceProject";
+import { generateMethodsText } from "../../app/methodsText";
+import { timeMetricLabel } from "./experimentGraphAnnotations";
+
+type GraphAppearance = WorkspaceGraphState["appearance"];
+type AxisSettings = WorkspaceGraphState["axes"];
+type GraphType = WorkspaceGraphState["graphType"];
+type LayerState = WorkspaceGraphState["layers"];
+
+export function statisticalMethodForContrastIntent(
+  intent: ContrastIntent,
+): AnalysisRecommendation["recommendedMethod"] {
+  if (intent === "all_pairs") return "welch_anova";
+  if (intent === "omnibus_only") return "kruskal_wallis";
+  return "one_way_anova";
+}
+
+export function createExperimentGraphMethodsText(input: Readonly<{
+  analysis: WorkspaceGraphAnalysis | null;
+  draft: ExperimentSetDraft;
+  selectedReadoutId: string;
+  layers: LayerState;
+  appearance: GraphAppearance;
+  axes: AxisSettings;
+  graphType: GraphType;
+  timeAnalysis: TimeAnalysisPlan;
+}>): string | null {
+  const { analysis, draft, selectedReadoutId, layers, appearance, axes, graphType, timeAnalysis } =
+    input;
+  if (!analysis || analysis.result.status !== "ok") return null;
+
+  const design = createExperimentWorkspaceDesign(draft, analysis.result.completedAt);
+  const canonicalRecommendation = requireAnalysisRequestRecommendation(design, analysis.request, {
+    outcomeId: selectedReadoutId,
+  });
+  const recommendation = {
+    ...canonicalRecommendation,
+    ...(analysis.recommendation?.decision ? { decision: analysis.recommendation.decision } : {}),
+  };
+  const base = generateMethodsText({
+    design,
+    recommendation,
+    request: analysis.request,
+    result: analysis.result,
+    graphSpec: null,
+    graphErrorBar: layers.errorBar ? appearance.errorBar : "none",
+    outcomeId: selectedReadoutId,
+    repeatedAxis: {
+      semantic: axes.xSemantic,
+      title: axes.xTitle,
+      unit: axes.xUnit,
+    },
+  });
+  const graphMetadata = [
+    graphType === "box"
+      ? `Box whiskers: ${(appearance.boxWhiskerMode ?? "tukey_1_5_iqr") === "min_max" ? "minimum–maximum" : "Tukey 1.5×IQR"}.`
+      : null,
+    graphType === "line" && (appearance.uncertaintyStyle ?? "error_bars") === "ribbon"
+      ? `Time-course ribbon: ${appearance.errorBar.toUpperCase()}, opacity ${appearance.ribbonOpacity ?? 0.18}. The band is clipped to the measured X domain.`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  if (timeAnalysis.kind === "selected_timepoint" || timeAnalysis.kind === "full_time_course") {
+    return graphMetadata ? `${base}\n${graphMetadata}` : base;
+  }
+  const window = `${timeAnalysis.windowStart ?? "最初"}～${timeAnalysis.windowEnd ?? "最後"} ${draft.time.unit}`;
+  const baseline =
+    timeAnalysis.kind === "change_from_baseline" || timeAnalysis.kind === "f_over_f0"
+      ? `。baseline=${timeAnalysis.baselineTime ?? "最初の時点"} ${draft.time.unit}`
+      : "";
+  return `${base}\n時系列の派生値：${timeMetricLabel(timeAnalysis)}。解析window=${window}${baseline}。raw時系列と変換設定はプロジェクトに保持。${graphMetadata ? ` ${graphMetadata}` : ""}`;
+}

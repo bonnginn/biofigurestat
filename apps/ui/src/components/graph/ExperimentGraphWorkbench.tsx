@@ -59,7 +59,6 @@ import {
   saveGraphPngExport,
   saveGraphSvgExport,
 } from "../../app/graphExportController";
-import { generateMethodsText } from "../../app/methodsText";
 import { formatExactPValue } from "../../app/statisticalFormat";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import {
@@ -96,6 +95,10 @@ import { ExperimentGraphRawDotsEditor } from "./ExperimentGraphRawDotsEditor";
 import { ExperimentGraphXAxisEditor } from "./ExperimentGraphXAxisEditor";
 import { ExperimentGraphYAxisEditor } from "./ExperimentGraphYAxisEditor";
 import { GRAPH_PALETTES } from "./graphAppearance";
+import {
+  createExperimentGraphMethodsText,
+  statisticalMethodForContrastIntent,
+} from "./experimentGraphStatistics";
 import {
   analysisTestAnnotationLabel,
   createAdjustedComparisonAnnotation,
@@ -2151,63 +2154,20 @@ export function ExperimentGraphWorkbench({
     autoAnnotatedAnalysisRef.current = analysisResult.requestId;
     setStatisticsAnnotations(adjustedComparisonAnnotations);
   }, [adjustedComparisonAnnotations, analysisResult]);
-  const methodsText = useMemo(() => {
-    if (!analysis || analysis.result.status !== "ok") return null;
-    const design = createExperimentWorkspaceDesign(draft, analysis.result.completedAt);
-    const canonicalRecommendation = requireAnalysisRequestRecommendation(design, analysis.request, {
-      outcomeId: selectedReadoutId,
-    });
-    const recommendation = {
-      ...canonicalRecommendation,
-      ...(analysis.recommendation?.decision ? { decision: analysis.recommendation.decision } : {}),
-    };
-    const base = generateMethodsText({
-      design,
-      recommendation,
-      request: analysis.request,
-      result: analysis.result,
-      graphSpec: null,
-      graphErrorBar: layers.errorBar ? appearance.errorBar : "none",
-      outcomeId: selectedReadoutId,
-      repeatedAxis: {
-        semantic: axes.xSemantic,
-        title: axes.xTitle,
-        unit: axes.xUnit,
-      },
-    });
-    const graphMetadata = [
-      graphType === "box"
-        ? `Box whiskers: ${(appearance.boxWhiskerMode ?? "tukey_1_5_iqr") === "min_max" ? "minimum–maximum" : "Tukey 1.5×IQR"}.`
-        : null,
-      graphType === "line" && (appearance.uncertaintyStyle ?? "error_bars") === "ribbon"
-        ? `Time-course ribbon: ${appearance.errorBar.toUpperCase()}, opacity ${appearance.ribbonOpacity ?? 0.18}. The band is clipped to the measured X domain.`
-        : null,
-    ]
-      .filter(Boolean)
-      .join(" ");
-    if (timeAnalysis.kind === "selected_timepoint" || timeAnalysis.kind === "full_time_course")
-      return graphMetadata ? `${base}\n${graphMetadata}` : base;
-    const window = `${timeAnalysis.windowStart ?? "最初"}～${timeAnalysis.windowEnd ?? "最後"} ${draft.time.unit}`;
-    const baseline =
-      timeAnalysis.kind === "change_from_baseline" || timeAnalysis.kind === "f_over_f0"
-        ? `。baseline=${timeAnalysis.baselineTime ?? "最初の時点"} ${draft.time.unit}`
-        : "";
-    return `${base}\n時系列の派生値：${timeMetricLabel(timeAnalysis)}。解析window=${window}${baseline}。raw時系列と変換設定はプロジェクトに保持。${graphMetadata ? ` ${graphMetadata}` : ""}`;
-  }, [
-    analysis,
-    appearance.boxWhiskerMode,
-    appearance.errorBar,
-    appearance.ribbonOpacity,
-    appearance.uncertaintyStyle,
-    axes.xSemantic,
-    axes.xTitle,
-    axes.xUnit,
-    draft,
-    graphType,
-    layers.errorBar,
-    selectedReadoutId,
-    timeAnalysis,
-  ]);
+  const methodsText = useMemo(
+    () =>
+      createExperimentGraphMethodsText({
+        analysis,
+        draft,
+        selectedReadoutId,
+        layers,
+        appearance,
+        axes,
+        graphType,
+        timeAnalysis,
+      }),
+    [analysis, appearance, axes, draft, graphType, layers, selectedReadoutId, timeAnalysis],
+  );
   const svgRef = useRef<SVGSVGElement | null>(null);
   const onStateChangeRef = useRef(onStateChange);
   const graphStateSnapshot = useMemo<Omit<WorkspaceGraphState, "id" | "displayName">>(
@@ -4899,12 +4859,7 @@ export function ExperimentGraphWorkbench({
                         { intent },
                         "analysis_only",
                       );
-                      if (intent === "all_pairs") setSelectedStatisticalMethod("welch_anova");
-                      if (intent === "control_vs_many")
-                        setSelectedStatisticalMethod("one_way_anova");
-                      if (intent === "omnibus_only") setSelectedStatisticalMethod("kruskal_wallis");
-                      if (intent === "planned_comparisons")
-                        setSelectedStatisticalMethod("one_way_anova");
+                      setSelectedStatisticalMethod(statisticalMethodForContrastIntent(intent));
                       setAnalysis(null);
                     }}
                     analysisContextKey={analysisContextKey}
