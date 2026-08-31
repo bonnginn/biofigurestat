@@ -22,7 +22,7 @@
 | 3 | ⬜ | 日英統合Alpha更新の公開判断 | 必要 | Windows/macOS証拠、checksum、release noteを揃え、同じBioFigureStatの次candidateとして公開可否を記録 |
 | 4 | ⚠️ | Windows native UI harnessの安定実行環境 | 原則不要 | blank URL targetと再接続には対応済み。clean Windows CI/VMで同じscenarioの連続PASSを確認 |
 | 5 | 🟡 | macOS native UI harness | 原則不要 | Accessibility adapterは実装済み。permission済みMac runnerで初回PASSを記録 |
-| 6 | 🟡 | GraphとSpreadsheetの共通化を再開 | 不要 | 画面ごとの修正漏れを減らし、既存`.lsa`と科学的意味を維持 |
+| 6 | 🟡 | GraphとSpreadsheetの共通化を再開 | 不要 | tick・zoom・native export controllerを共通化済み。画面ごとの修正漏れをさらに減らし、既存`.lsa`と科学的意味を維持 |
 
 ## 公開・運用
 
@@ -90,7 +90,7 @@
 | --- | --- | --- |
 | 🟡 | Graph共通描画 | 通常・Survival・非線形に加え旧Resultsの独自tickも`createNiceTicks`へ統合。plot bounds等は継続 |
 | 🟡 | Spreadsheet共通primitive | keyboard/pasteに加えAdaptiveとdelimited表のzoom状態管理を共通化。cell editor統合は継続 |
-| ⬜ | `ExperimentGraphWorkbench`分割 | state adapter、render、style、axis、annotation、statistics、exportを分離 |
+| 🟡 | `ExperimentGraphWorkbench`分割 | native export controllerを分離済み。次にstate snapshot/selectorを抽出し、render、style、axis、annotation、statisticsを段階的に分離 |
 | ✅ | 未使用prototypeの公開sourceからの分離 | private archiveへ保全し、public sourceには含めない |
 | ✅ | benchmark生成物の公開sourceからの除外 | evaluation/benchmark materialを通常product sourceから分離 |
 | ⬜ | route-level code splitting | 初期bundleと巨大routeの依存を縮小 |

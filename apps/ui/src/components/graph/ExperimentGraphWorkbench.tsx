@@ -51,12 +51,14 @@ import {
 } from "../../app/experimentWorkspaceProject";
 import {
   copyGraphToClipboard,
-  ExportCancelledError,
-  exportGraphPng,
-  saveExportText,
   serializeGraphSvg,
   svgToPngBlob,
 } from "../../app/graphExport";
+import {
+  saveGraphCsvExport,
+  saveGraphPngExport,
+  saveGraphSvgExport,
+} from "../../app/graphExportController";
 import { generateMethodsText } from "../../app/methodsText";
 import { formatExactPValue } from "../../app/statisticalFormat";
 import { localizedText, useAppLocale } from "../../app/appLocale";
@@ -3428,18 +3430,14 @@ export function ExperimentGraphWorkbench({
   const exportSvg = async () => {
     if (!svgRef.current || !readout) return;
     setPngExportFeedback(null);
-    try {
-      const result = await saveExportText(
-        serializeGraphSvg(svgRef.current),
-        `${safeGraphFileStem(readout.label)}.svg`,
-        "image/svg+xml;charset=utf-8",
-      );
-      if (result === "saved") {
-        setPngExportFeedback({ kind: "success", text: "SVGを保存しました。" });
-      }
-    } catch (error) {
-      if (error instanceof ExportCancelledError) return;
-      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
+    const result = await saveGraphSvgExport(
+      svgRef.current,
+      `${safeGraphFileStem(readout.label)}.svg`,
+    );
+    if (result.status === "saved") {
+      setPngExportFeedback({ kind: "success", text: "SVGを保存しました。" });
+    } else if (result.status === "failed") {
+      recordDiagnosticError("GRAPH_EXPORT_FAILED", result.error);
       setPngExportFeedback({
         kind: "error",
         text: "SVGを保存できませんでした。グラフは保持されています。",
@@ -3449,15 +3447,17 @@ export function ExperimentGraphWorkbench({
   const exportPng = async () => {
     if (!svgRef.current || !readout) return;
     setPngExportFeedback(null);
-    try {
-      await exportGraphPng(svgRef.current, `${safeGraphFileStem(readout.label)}.png`);
+    const result = await saveGraphPngExport(
+      svgRef.current,
+      `${safeGraphFileStem(readout.label)}.png`,
+    );
+    if (result.status === "saved") {
       setPngExportFeedback({
         kind: "success",
         text: "現在のグラフを白背景のPNGで書き出しました。",
       });
-    } catch (error) {
-      if (error instanceof ExportCancelledError) return;
-      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
+    } else if (result.status === "failed") {
+      recordDiagnosticError("GRAPH_EXPORT_FAILED", result.error);
       setPngExportFeedback({
         kind: "error",
         text: "PNGを書き出せませんでした。グラフは保持されています。SVG書き出しを利用してください。",
@@ -3467,25 +3467,22 @@ export function ExperimentGraphWorkbench({
   const exportCsv = async () => {
     if (!readout) return;
     setPngExportFeedback(null);
-    try {
-      const result = await saveExportText(
-        readout.shape === "categorical_counts"
-          ? serializeCompositionData(
-              draft,
-              cells,
-              readout,
-              selectedConditionIds,
-              selectedTimePointIds,
-            )
-          : serializeVisibleGraphData(series, readout),
-        `${safeGraphFileStem(readout.label)}-graph-data.csv`,
-        "text/csv;charset=utf-8",
-      );
-      if (result === "saved") {
-        setPngExportFeedback({ kind: "success", text: "表示中のデータをCSVで保存しました。" });
-      }
-    } catch (error) {
-      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
+    const result = await saveGraphCsvExport(
+      readout.shape === "categorical_counts"
+        ? serializeCompositionData(
+            draft,
+            cells,
+            readout,
+            selectedConditionIds,
+            selectedTimePointIds,
+          )
+        : serializeVisibleGraphData(series, readout),
+      `${safeGraphFileStem(readout.label)}-graph-data.csv`,
+    );
+    if (result.status === "saved") {
+      setPngExportFeedback({ kind: "success", text: "表示中のデータをCSVで保存しました。" });
+    } else if (result.status === "failed") {
+      recordDiagnosticError("GRAPH_EXPORT_FAILED", result.error);
       setPngExportFeedback({
         kind: "error",
         text: "CSVを保存できませんでした。グラフとデータは保持されています。",

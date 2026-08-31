@@ -64,7 +64,9 @@ integration harnesses are not distributed because their fixtures are intentional
 For the post-Alpha refactor, focused Graph, Graph-only, DataSheet, MultiConditionDataSheet, and
 `ExperimentGraphWorkbench` suites pass together with typecheck and lint. Native release artifacts
 remain the unchanged Alpha binaries; this source-only refactor has not produced a new native
-candidate.
+candidate. The workbench now routes SVG, PNG, and CSV through a separately tested export controller
+that preserves native Save-dialog cancellation and returns diagnostic failures without changing
+Graph state or export content.
 
 For the English-localization branch, the full UI suite passes with 131 files and 1,117 tests.
 English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
