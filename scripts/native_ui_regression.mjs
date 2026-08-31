@@ -1,9 +1,10 @@
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { promisify } from "node:util";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_WINDOWS_EXECUTABLE = join(
@@ -16,6 +17,7 @@ const DEFAULT_WINDOWS_EXECUTABLE = join(
   "lifescience-analysis-app.exe",
 );
 const JAPANESE_PATTERN_SOURCE = "[ぁ-んァ-ヶ一-龯]";
+const execFileAsync = promisify(execFile);
 
 export function parseNativeRegressionArguments(argv) {
   const parsed = {
@@ -98,9 +100,23 @@ export function japaneseUiAuditExpression() {
   })()`;
 }
 
+export function selectWebviewTarget(targets) {
+  const pages = targets.filter(
+    (target) => target.type === "page" && typeof target.webSocketDebuggerUrl === "string",
+  );
+  return (
+    pages.find((target) => /^(?:https?|tauri):\/\/tauri\.localhost/.test(target.url ?? "")) ??
+    pages.find((target) => (target.url ?? "") === "") ??
+    pages[0]
+  );
+}
+
 export function classifyNativeRegressionFailure(error, steps) {
   const failedStep = steps.find((step) => step.status === "fail")?.name;
   const message = String(error);
+  if (failedStep === "macos_accessibility_attach" && /Accessibility|osascript|not allowed/i.test(message)) {
+    return "HARNESS_INFRASTRUCTURE_BLOCKED";
+  }
   if (
     (failedStep === "native_webview_launch" || failedStep === "native_webview_cdp_connect") &&
     (message.includes("CDP") ||
@@ -110,6 +126,51 @@ export function classifyNativeRegressionFailure(error, steps) {
     return "HARNESS_INFRASTRUCTURE_BLOCKED";
   }
   return "PRODUCT_REGRESSION";
+}
+
+export function macAccessibilityScript(action, names = [], value = "") {
+  return `
+const se = Application("System Events");
+const process = se.processes.byName("BioFigureStat");
+if (!process.exists()) throw new Error("BioFigureStat process is unavailable");
+process.frontmost = true;
+const wanted = ${JSON.stringify(names)};
+const replacement = ${JSON.stringify(value)};
+const action = ${JSON.stringify(action)};
+const nodes = [];
+const queue = [];
+try { queue.push(...process.windows()); } catch (_) {}
+while (queue.length && nodes.length < 5000) {
+  const element = queue.shift();
+  let role = "", name = "", currentValue = "", description = "";
+  try { role = String(element.role()); } catch (_) {}
+  try { name = String(element.name()); } catch (_) {}
+  try { currentValue = String(element.value()); } catch (_) {}
+  try { description = String(element.description()); } catch (_) {}
+  nodes.push({ element, role, name, value: currentValue, description });
+  try { queue.push(...element.uiElements()); } catch (_) {}
+}
+const normalized = (text) => String(text || "").replace(/\\s+/g, " ").trim();
+const matches = (node) => wanted.some((candidate) =>
+  [node.name, node.value, node.description].some((text) => normalized(text) === candidate)
+);
+if (action === "snapshot") {
+  JSON.stringify({ count: nodes.length, elements: nodes.map(({ role, name, value, description }) => ({ role, name, value, description })) });
+} else if (action === "quit") {
+  se.keystroke("q", { using: "command down" });
+  JSON.stringify({ ok: true });
+} else {
+  const target = nodes.find(matches);
+  if (!target) throw new Error("Accessibility element not found: " + wanted.join(" / "));
+  if (action === "click") {
+    target.element.actions.byName("AXPress").perform();
+  } else if (action === "set") {
+    target.element.value = replacement;
+  } else {
+    throw new Error("Unsupported accessibility action: " + action);
+  }
+  JSON.stringify({ ok: true, role: target.role, name: target.name });
+}`;
 }
 
 class CdpClient {
@@ -205,7 +266,10 @@ async function waitForTarget(port, timeoutMs, child) {
       const response = await fetch(`http://127.0.0.1:${port}/json/list`);
       if (response.ok) {
         const targets = await response.json();
-        const page = targets.find((target) => target.type === "page" && target.url.startsWith("http://tauri.localhost"));
+        // A freshly created WebView2 profile exposes its page target before the
+        // initial Tauri URL is committed. In that interval `url` is an empty
+        // string even though the target is already the exact spawned WebView.
+        const page = selectWebviewTarget(targets);
         if (page?.webSocketDebuggerUrl) return page;
       }
     } catch (error) {
@@ -216,6 +280,43 @@ async function waitForTarget(port, timeoutMs, child) {
   throw new Error(
     `Native WebView did not expose a CDP target on 127.0.0.1:${port}${lastError ? `: ${lastError}` : ""}`,
   );
+}
+
+async function connectToStableWebview(port, initialTarget, timeoutMs, child) {
+  const deadline = Date.now() + timeoutMs;
+  const attemptedTargetIds = new Set();
+  let target = initialTarget;
+  let lastError;
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) {
+      throw new Error(`Native application exited before WebView inspection (code ${child.exitCode})`);
+    }
+    if (target && !attemptedTargetIds.has(target.id)) {
+      attemptedTargetIds.add(target.id);
+      const candidate = new CdpClient(target.webSocketDebuggerUrl);
+      try {
+        await candidate.connect();
+        await candidate.evaluate("document.readyState");
+        return { client: candidate, target };
+      } catch (error) {
+        lastError = error;
+        candidate.close();
+      }
+    }
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/json/list`);
+      if (response.ok) {
+        const targets = await response.json();
+        target = selectWebviewTarget(
+          targets.filter((candidate) => !attemptedTargetIds.has(candidate.id)),
+        );
+      }
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 150));
+  }
+  throw new Error(`WebView2 CDP target never became stable: ${String(lastError)}`);
 }
 
 async function waitFor(client, expression, label, timeoutMs) {
@@ -313,8 +414,10 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
 
   try {
     const target = await runStep("native_webview_launch", () => waitForTarget(port, timeoutMs, child));
-    client = new CdpClient(target.webSocketDebuggerUrl);
-    await runStep("native_webview_cdp_connect", () => client.connect());
+    const connection = await runStep("native_webview_cdp_connect", () =>
+      connectToStableWebview(port, target, timeoutMs, child),
+    );
+    client = connection.client;
     await runStep("isolated_english_session", async () => {
       await client.evaluate(`(() => {
         localStorage.setItem("biofigurestat.app-locale.v1", "en");
@@ -451,14 +554,152 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
   return { steps, profileDirectory, exportTarget };
 }
 
+async function runMacAccessibility(action, names = [], value = "") {
+  const { stdout } = await execFileAsync(
+    "osascript",
+    ["-l", "JavaScript", "-e", macAccessibilityScript(action, names, value)],
+    { timeout: 20_000, maxBuffer: 4 * 1024 * 1024 },
+  );
+  const output = stdout.trim();
+  return output ? JSON.parse(output) : {};
+}
+
+async function waitForMacSnapshot(predicate, label, timeoutMs, child) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError;
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) {
+      throw new Error(`Native macOS application exited before ${label} (code ${child.exitCode})`);
+    }
+    try {
+      const snapshot = await runMacAccessibility("snapshot");
+      if (predicate(snapshot)) return snapshot;
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 250));
+  }
+  throw new Error(`${label} was not exposed through macOS Accessibility: ${String(lastError ?? "timeout")}`);
+}
+
+function macSnapshotContains(snapshot, candidates) {
+  const text = snapshot.elements
+    .flatMap((element) => [element.name, element.value, element.description])
+    .join("\n");
+  return candidates.some((candidate) => text.includes(candidate));
+}
+
+async function runMacScenario({ executable, outputDirectory, timeoutMs }) {
+  const child = spawn(executable, [], {
+    cwd: ROOT,
+    env: { ...process.env },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const nativeOutput = [];
+  child.stdout?.on("data", (chunk) => nativeOutput.push(String(chunk)));
+  child.stderr?.on("data", (chunk) => nativeOutput.push(String(chunk)));
+  const steps = [];
+  const runStep = async (name, action) => {
+    const startedAt = Date.now();
+    try {
+      const detail = await action();
+      steps.push({ name, status: "pass", durationMs: Date.now() - startedAt, detail });
+      return detail;
+    } catch (error) {
+      steps.push({ name, status: "fail", durationMs: Date.now() - startedAt, detail: String(error) });
+      throw error;
+    }
+  };
+  try {
+    await runStep("macos_accessibility_attach", () =>
+      waitForMacSnapshot(
+        (snapshot) => snapshot.count > 0,
+        "BioFigureStat native window",
+        timeoutMs,
+        child,
+      ),
+    );
+    await runStep("macos_home_is_accessible", () =>
+      waitForMacSnapshot(
+        (snapshot) => macSnapshotContains(snapshot, ["New experiment", "新しい実験"]),
+        "Home controls",
+        timeoutMs,
+        child,
+      ),
+    );
+    await runStep("macos_open_simple_experiment", async () => {
+      await runMacAccessibility("click", ["New experiment", "新しい実験"]);
+      await waitForMacSnapshot(
+        (snapshot) => macSnapshotContains(snapshot, ["Simple independent-group comparison", "単純な独立群比較"]),
+        "simple experiment entry",
+        timeoutMs,
+        child,
+      );
+      return runMacAccessibility("click", ["Simple independent-group comparison", "単純な独立群比較"]);
+    });
+    await runStep("macos_dirty_entry", async () => {
+      await waitForMacSnapshot(
+        (snapshot) => macSnapshotContains(snapshot, ["Experiment title", "実験タイトル"]),
+        "experiment title field",
+        timeoutMs,
+        child,
+      );
+      return runMacAccessibility(
+        "set",
+        ["Experiment title", "実験タイトル", "実験タイトル（任意）"],
+        "Native macOS regression experiment",
+      );
+    });
+    await runStep("macos_quit_guard_cancel_retains_work", async () => {
+      await runMacAccessibility("quit");
+      await waitForMacSnapshot(
+        (snapshot) => macSnapshotContains(snapshot, ["Cancel", "キャンセル"]),
+        "unsaved-work guard",
+        timeoutMs,
+        child,
+      );
+      await runMacAccessibility("click", ["Cancel", "キャンセル"]);
+      return waitForMacSnapshot(
+        (snapshot) => macSnapshotContains(snapshot, ["Native macOS regression experiment"]),
+        "retained dirty entry",
+        timeoutMs,
+        child,
+      );
+    });
+    await runStep("macos_quit_guard_discard_exits", async () => {
+      await runMacAccessibility("quit");
+      await waitForMacSnapshot(
+        (snapshot) => macSnapshotContains(snapshot, ["Discard changes and continue", "変更を破棄して続ける"]),
+        "second unsaved-work guard",
+        timeoutMs,
+        child,
+      );
+      await runMacAccessibility("click", ["Discard changes and continue", "変更を破棄して続ける"]);
+      await new Promise((resolvePromise, rejectPromise) => {
+        const timer = setTimeout(() => rejectPromise(new Error("macOS application did not exit after discard")), timeoutMs);
+        child.once("exit", (code) => {
+          clearTimeout(timer);
+          if (code === 0 || code === null) resolvePromise();
+          else rejectPromise(new Error(`macOS application exited with code ${code}`));
+        });
+      });
+      return { exited: true };
+    });
+  } catch (error) {
+    if (nativeOutput.length) {
+      await writeFile(join(outputDirectory, "native-output.txt"), nativeOutput.join(""), "utf8");
+    }
+    if (error && typeof error === "object") error.nativeSteps = steps;
+    throw error;
+  } finally {
+    if (child.exitCode === null && !child.killed) child.kill();
+  }
+  return { steps };
+}
+
 export async function runNativeUiRegression(options) {
   const executable = resolve(options.executable ?? defaultNativeExecutable(options.platform));
   if (!isAbsolute(executable)) throw new Error("Native executable path must be absolute");
-  if (options.platform === "macos") {
-    throw new Error(
-      "macOS native UI driving is not implemented yet. Run native:verify:mac and use the bounded manual handoff.",
-    );
-  }
   const outputDirectory = resolve(
     options.output ?? join(ROOT, ".tmp", "native-ui-regression", new Date().toISOString().replaceAll(":", "-")),
   );
@@ -467,7 +708,7 @@ export async function runNativeUiRegression(options) {
   let result;
   let failure;
   try {
-    result = await runWindowsScenario({
+    result = await (options.platform === "macos" ? runMacScenario : runWindowsScenario)({
       executable,
       outputDirectory,
       timeoutMs: options.timeoutMs,

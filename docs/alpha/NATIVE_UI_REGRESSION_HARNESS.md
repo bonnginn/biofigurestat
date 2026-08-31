@@ -79,14 +79,38 @@ Follow-up for the runner layer is to add a second supported Windows attachment b
 the CDP scenario on a clean Windows CI/VM image. A CDP-connection failure must remain
 `HARNESS_INFRASTRUCTURE_BLOCKED`; it must not be reported as a BioFigureStat product regression.
 
+The runner now also accepts WebView2's transient blank-URL page target and retries when that target
+is replaced during startup. This removed one false infrastructure failure. A formal Tauri rebuild
+on the same host still closes the CDP endpoint after the initial target, so that remaining result is
+kept as host infrastructure evidence rather than converted into a product failure.
+
+## macOS usage
+
+The macOS adapter drives the packaged `.app` through macOS Accessibility and writes the same report
+schema:
+
+```bash
+pnpm native:ui-regression:test
+pnpm native:ui-regression:mac
+```
+
+It launches the exact binary inside `BioFigureStat.app`, opens the simple experiment entry, writes a
+dirty title, invokes Command+Q, verifies that Cancel retains the value, then invokes Command+Q again
+and confirms explicit discard exits. The traversal is bounded to 5,000 accessibility nodes and the
+process wait is bounded by the harness timeout.
+
+The runner host must grant Accessibility permission to the terminal or automation runner that calls
+`osascript`. A missing permission is `HARNESS_INFRASTRUCTURE_BLOCKED`, not a product regression. The
+adapter implementation and generated-script tests can run cross-platform; an actual `.app` PASS must
+still be recorded on macOS before making it a mandatory release gate.
+
 ## Current boundary
 
 This is the first native automation layer, not a claim that human review is unnecessary. Native
 file-picker automation, installed-build file association, clipboard paste into third-party apps,
 high-DPI layout judgment, and macOS UI driving remain separate gates.
 
-The next macOS adapter should use the same scenario/report schema while driving WKWebView and the
-native window through platform-supported automation. Until that adapter exists,
+Until the first packaged-app run of the adapter passes on a permissioned Mac runner,
 `pnpm native:verify:mac` plus the bounded manual handoff remains authoritative for macOS.
 
 Human review should increasingly focus on scientific clarity, terminology, clipping, graph

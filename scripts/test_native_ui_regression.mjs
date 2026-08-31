@@ -5,7 +5,9 @@ import {
   classifyNativeRegressionFailure,
   defaultNativeExecutable,
   japaneseUiAuditExpression,
+  macAccessibilityScript,
   parseNativeRegressionArguments,
+  selectWebviewTarget,
 } from "./native_ui_regression.mjs";
 
 test("parses a bounded Windows native regression invocation", () => {
@@ -42,6 +44,22 @@ test("rejects unsupported platforms and unbounded timeouts", () => {
 
 test("uses the packaged Windows application as its default exact target", () => {
   assert.match(defaultNativeExecutable("windows"), /target[\\/]release[\\/]lifescience-analysis-app\.exe$/);
+});
+
+test("accepts the fresh WebView2 page target before its initial URL is committed", () => {
+  const target = selectWebviewTarget([
+    { type: "service_worker", url: "", webSocketDebuggerUrl: "ws://worker" },
+    { type: "page", url: "", webSocketDebuggerUrl: "ws://fresh-page" },
+  ]);
+  assert.equal(target?.webSocketDebuggerUrl, "ws://fresh-page");
+});
+
+test("builds a bounded macOS Accessibility action without interpolating user text as code", () => {
+  const script = macAccessibilityScript("set", ["Experiment title"], 'quote " and 日本語');
+  assert.match(script, /processes\.byName\("BioFigureStat"\)/);
+  assert.match(script, /nodes\.length < 5000/);
+  assert.match(script, /quote \\" and 日本語/);
+  assert.match(defaultNativeExecutable("macos"), /BioFigureStat\.app[\\/]Contents[\\/]MacOS[\\/]BioFigureStat$/);
 });
 
 test("audits visible text and accessibility attributes while allowing the language selector", () => {
