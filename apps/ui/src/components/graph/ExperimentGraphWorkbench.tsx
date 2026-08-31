@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { AnalysisRecommendation } from "@lsaa/analysis-contracts";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
@@ -73,6 +73,7 @@ import {
   useExperimentGraphWorkspaceEffects,
   type GraphInspectorTarget as InspectorTarget,
 } from "./useExperimentGraphWorkspaceEffects";
+import { useAdjustedStatisticsAnnotations } from "./useAdjustedStatisticsAnnotations";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
 import {
   runGraphClipboardCopy,
@@ -505,7 +506,6 @@ export function ExperimentGraphWorkbench({
   const [benchmarkCaptureStatus, setBenchmarkCaptureStatus] = useState<string | null>(null);
   const benchmarkRun = useBenchmarkRun();
   const analysisResult = analysis?.result ?? null;
-  const autoAnnotatedAnalysisRef = useRef(initialState?.analysis?.result.requestId ?? null);
   const adjustedComparisonAnnotations = useMemo(
     () =>
       analysisResult?.status === "ok"
@@ -523,12 +523,12 @@ export function ExperimentGraphWorkbench({
         : [],
     [analysisResult, analysisTimePointId, sourceMode, timeAnalysis],
   );
-  useEffect(() => {
-    if (!analysisResult || analysisResult.status !== "ok") return;
-    if (autoAnnotatedAnalysisRef.current === analysisResult.requestId) return;
-    autoAnnotatedAnalysisRef.current = analysisResult.requestId;
-    setStatisticsAnnotations(adjustedComparisonAnnotations);
-  }, [adjustedComparisonAnnotations, analysisResult]);
+  useAdjustedStatisticsAnnotations({
+    initialRequestId: initialState?.analysis?.result.requestId ?? null,
+    analysisResult,
+    adjustedAnnotations: adjustedComparisonAnnotations,
+    setStatisticsAnnotations,
+  });
   const methodsText = useMemo(
     () =>
       createExperimentGraphMethodsText({
