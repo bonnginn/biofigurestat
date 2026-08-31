@@ -69,8 +69,8 @@ that preserves native Save-dialog cancellation and returns diagnostic failures w
 Graph state or export content. Its persisted-state projection is also isolated in a pure selector;
 focused regression tests keep display and analysis sets distinct, retain only explicit comparison
 and annotation links, and prevent later editor-array mutation from rewriting an emitted snapshot.
-The Y-axis editor is now a separately tested component while retaining the same title, range,
-scale, tick, and appearance state owned by the workbench.
+The X- and Y-axis editors are now separately tested components while retaining the same semantic,
+title, unit, range, scale, tick, hierarchy, grouping, and appearance state owned by the workbench.
 
 For the English-localization branch, the full UI suite passes with 131 files and 1,117 tests.
 English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
@@ -95,8 +95,9 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
   integration, diagnostics, and benchmark capture. Native export and persisted-state projection
-  have been separated, and Y-axis editing has begun moving behind a component boundary; X-axis,
-  rendering, and the remaining editor sections are the next safe extraction boundaries.
+  have been separated, and X/Y-axis editing now sits behind component boundaries; rendering and
+  the remaining appearance, annotation, and statistics editor sections are the next safe
+  extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
