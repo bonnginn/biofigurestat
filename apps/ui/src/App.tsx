@@ -68,6 +68,7 @@ import type {
 } from "./app/workspaceLifecycle";
 import { recordUsageMilestone } from "./app/usageTelemetry";
 import { resolveAnalysisRouteSwitcherAccess } from "./app/analysisRouteSwitcherAccess";
+import { localizedText, useAppLocale } from "./app/appLocale";
 
 type AppProps = {
   projectActions?: ProjectActions;
@@ -133,22 +134,24 @@ const browserPreviewProjectActions: ProjectActions = {
 };
 
 function UnresolvedVisualizationPersistenceStop({ onBack }: Readonly<{ onBack: () => void }>) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={onBack}>
-        <span aria-hidden="true">←</span> 新しい実験へ戻る
+        <span aria-hidden="true">←</span> {t("新しい実験へ戻る", "Back to New Experiment")}
       </button>
       <section className="empty-page" aria-labelledby="visualization-persistence-stop-heading">
         <span className="empty-icon empty-icon--orange" aria-hidden="true">
           !
         </span>
-        <p className="overline">入力を開始する前に停止しました</p>
-        <h1 id="visualization-persistence-stop-heading">Heatmapを開始できません</h1>
+        <p className="overline">{t("入力を開始する前に停止しました", "Stopped before data entry")}</p>
+        <h1 id="visualization-persistence-stop-heading">{t("Heatmapを開始できません", "Heatmap cannot start")}</h1>
         <p role="alert">
-          行列とGraphを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。
+          {t("行列とGraphを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。", "The connections required to save and reopen the matrix and Graph are unavailable. Data entry remains closed in this environment to prevent unsavable work.")}
         </p>
         <button className="primary-button" type="button" onClick={onBack}>
-          入口へ戻る
+          {t("入口へ戻る", "Back to entry options")}
         </button>
       </section>
     </div>
@@ -159,23 +162,25 @@ function SpecializedEntryPersistenceStop({
   entryLabel,
   onBack,
 }: Readonly<{ entryLabel: string; onBack: () => void }>) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const headingId = "specialized-entry-persistence-stop-heading";
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={onBack}>
-        <span aria-hidden="true">←</span> 新しい実験へ戻る
+        <span aria-hidden="true">←</span> {t("新しい実験へ戻る", "Back to New Experiment")}
       </button>
       <section className="empty-page" aria-labelledby={headingId}>
         <span className="empty-icon empty-icon--orange" aria-hidden="true">
           !
         </span>
-        <p className="overline">入力を開始する前に停止しました</p>
-        <h1 id={headingId}>{entryLabel}を開始できません</h1>
+        <p className="overline">{t("入力を開始する前に停止しました", "Stopped before data entry")}</p>
+        <h1 id={headingId}>{locale === "ja" ? `${entryLabel}を開始できません` : `${entryLabel} cannot start`}</h1>
         <p role="alert">
-          入力途中の専用データを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。
+          {t("入力途中の専用データを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。", "The connections required to save and reopen this specialized data are unavailable. Data entry remains closed in this environment to prevent unsavable work.")}
         </p>
         <button className="primary-button" type="button" onClick={onBack}>
-          入口へ戻る
+          {t("入口へ戻る", "Back to entry options")}
         </button>
       </section>
     </div>
@@ -183,22 +188,24 @@ function SpecializedEntryPersistenceStop({
 }
 
 function LegacyAnalysisEntryStop({ onBack }: Readonly<{ onBack: () => void }>) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={onBack}>
-        <span aria-hidden="true">←</span> 新しい実験へ戻る
+        <span aria-hidden="true">←</span> {t("新しい実験へ戻る", "Back to New Experiment")}
       </button>
       <section className="empty-page" aria-labelledby="legacy-analysis-entry-stop-heading">
         <span className="empty-icon empty-icon--orange" aria-hidden="true">
           !
         </span>
-        <p className="overline">以前の解析用入口</p>
-        <h1 id="legacy-analysis-entry-stop-heading">この入口は通常モードでは利用できません</h1>
+        <p className="overline">{t("以前の解析用入口", "Legacy analysis entry")}</p>
+        <h1 id="legacy-analysis-entry-stop-heading">{t("この入口は通常モードでは利用できません", "This entry is unavailable in standard mode")}</h1>
         <p role="alert">
-          実験構造を確認せず解析形式だけを選ぶ以前の入口です。通常は「新しい実験」から目的に合う入口を選んでください。別の解析へ自動変換はしません。
+          {t("実験構造を確認せず解析形式だけを選ぶ以前の入口です。通常は「新しい実験」から目的に合う入口を選んでください。別の解析へ自動変換はしません。", "This legacy entry selects an analysis format without confirming the experimental structure. Choose the appropriate task from New Experiment instead. The app will not convert it to another analysis automatically.")}
         </p>
         <button className="primary-button" type="button" onClick={onBack}>
-          新しい実験へ戻る
+          {t("新しい実験へ戻る", "Back to New Experiment")}
         </button>
       </section>
     </div>
@@ -206,10 +213,12 @@ function LegacyAnalysisEntryStop({ onBack }: Readonly<{ onBack: () => void }>) {
 }
 
 function CompatibilityModeNotice() {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   return (
-    <aside className="browser-preview-banner" role="status" aria-label="互換モード">
-      <strong>互換モード（以前の入力方式）</strong>
-      <span>この画面は通常のexperiment-first入口ではありません。</span>
+    <aside className="browser-preview-banner" role="status" aria-label={t("互換モード", "Compatibility mode")}>
+      <strong>{t("互換モード（以前の入力方式）", "Compatibility mode (legacy entry)")}</strong>
+      <span>{t("この画面は通常のexperiment-first入口ではありません。", "This screen is not part of the standard experiment-first entry.")}</span>
     </aside>
   );
 }
@@ -218,6 +227,8 @@ export default function App({
   projectActions,
   developmentAnalysisRouteSwitcher = false,
 }: AppProps) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const browserPreview = projectActions === undefined && !isTauri();
   const experimentFirstEntryEnabled = adaptiveInputFeatureEnabled();
   const evaluationPreview =
@@ -1094,7 +1105,7 @@ export default function App({
         ) {
           return (
             <SpecializedEntryPersistenceStop
-              entryLabel="濃度–反応・酵素反応"
+              entryLabel={t("濃度–反応・酵素反応", "Concentration–response / enzyme kinetics")}
               onBack={() => navigate("new-experiment")}
             />
           );
@@ -1139,7 +1150,7 @@ export default function App({
         ) {
           return (
             <SpecializedEntryPersistenceStop
-              entryLabel="生存時間"
+              entryLabel={t("生存時間", "Survival")}
               onBack={() => navigate("new-experiment")}
             />
           );

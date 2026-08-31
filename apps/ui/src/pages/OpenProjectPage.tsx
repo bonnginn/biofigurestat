@@ -212,6 +212,8 @@ function PersistedProjectView({
   onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
   restoredSpecializedDrafts?: SpecializedDraftStore;
 }) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const { state } = project;
   const workspace = rehydrateExperimentWorkspace(state);
   if (workspace) {
@@ -237,7 +239,7 @@ function PersistedProjectView({
     (revision) => revision.id === state.activeDesignRevisionId,
   )?.design;
   if (!design) {
-    return <p role="alert">有効な実験デザインを復元できません。</p>;
+    return <p role="alert">{t("有効な実験デザインを復元できません。", "The active experiment design could not be restored.")}</p>;
   }
   const matrixView = state.matrixViews?.at(-1);
   if (matrixView?.spec.heatmap) {
@@ -245,12 +247,12 @@ function PersistedProjectView({
     return (
       <div className="page-stack">
         <button type="button" onClick={onBack}>
-          ← 戻る
+          {t("← 戻る", "← Back")}
         </button>
         <h1>{state.metadata.projectName}</h1>
         <p>
-          保存済みのraw matrixとtransform {matrixView.spec.heatmap.transform} (
-          {matrixView.spec.heatmap.transformVersion}) を復元しました。
+          {t("保存済みのraw matrixとtransform", "Restored the saved raw matrix and transform")} {matrixView.spec.heatmap.transform} (
+          {matrixView.spec.heatmap.transformVersion}){locale === "ja" ? " を復元しました。" : "."}
         </p>
         <HeatmapGraph
           model={model}
@@ -295,7 +297,7 @@ function PersistedProjectView({
         graph.spec.type === "nonlinear_xy",
     );
     if (!graphRecord) {
-      return <p role="alert">保存済みD17結果に対応するGraph specificationがありません。</p>;
+      return <p role="alert">{t("保存済みD17結果に対応するGraph specificationがありません。", "No Graph specification corresponds to the saved D17 result.")}</p>;
     }
     try {
       const labels = Object.fromEntries(
@@ -317,7 +319,7 @@ function PersistedProjectView({
       return (
         <div className="page-stack">
           <button type="button" onClick={onBack}>
-            ← 戻る
+            {t("← 戻る", "← Back")}
           </button>
           <section className="workspace-panel nonlinear-opened-project">
             <p className="overline">Saved authoritative D17 result</p>
@@ -333,7 +335,7 @@ function PersistedProjectView({
               yLabel={`${nonlinearRun.request.yLabel}${nonlinearRun.request.yUnit ? ` (${nonlinearRun.request.yUnit})` : ""}`}
               seriesLabels={labels}
             />
-            <div className="nonlinear-fit-results" aria-label="復元した非線形fit結果">
+            <div className="nonlinear-fit-results" aria-label={t("復元した非線形fit結果", "Restored nonlinear-fit result")}>
               {nonlinearRun.result.nonlinearFit.series.map((seriesFit) => (
                 <section key={seriesFit.seriesId} className="nonlinear-fit-series-result">
                   <h2>{labels[seriesFit.seriesId] ?? seriesFit.seriesId}</h2>
@@ -365,14 +367,17 @@ function PersistedProjectView({
         <p role="alert">
           {actionErrorMessage(
             error,
-            "D17 projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
+            t(
+              "D17 projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
+              "The saved D17 project could not be restored safely. The source file was not changed.",
+            ),
           )}
         </p>
       );
     }
   }
   const outcome = design.outcomes[0];
-  if (!outcome) return <p role="alert">解析項目を復元できません。</p>;
+  if (!outcome) return <p role="alert">{t("解析項目を復元できません。", "The analysis outcome could not be restored.")}</p>;
   if (outcome.type === "time_to_event") {
     if (!state.adaptiveInput) {
       try {
@@ -399,11 +404,13 @@ function PersistedProjectView({
         return (
           <div className="page-stack">
             <button type="button" onClick={onBack}>
-              ← 戻る
+              {t("← 戻る", "← Back")}
             </button>
             <p role="alert">
-              この旧Survival projectには編集に必要なStructureContract・mapping・raw
-              lineageがありません。別のsupported designには変換せず、読み取り専用で表示します。
+              {t(
+                "この旧Survival projectには編集に必要なStructureContract・mapping・raw lineageがありません。別のsupported designには変換せず、読み取り専用で表示します。",
+                "This legacy Survival project lacks the StructureContract, mapping, and raw lineage required for editing. It is shown read-only without conversion to another supported design.",
+              )}
             </p>
             <SurvivalGraph model={model} timeLabel={outcome.unit ?? "Follow-up time"} />
           </div>
@@ -413,7 +420,10 @@ function PersistedProjectView({
           <p role="alert">
             {actionErrorMessage(
               error,
-              "Survival projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
+              t(
+                "Survival projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
+                "The saved Survival project could not be restored safely. The source file was not changed.",
+              ),
             )}
           </p>
         );
@@ -478,7 +488,7 @@ function PersistedProjectView({
             ? recommendD03(design)
             : recommendD04(design);
       if (!multiMatch.matched)
-        throw new Error("この実験デザインはD03/D04/D05編集画面の対象外です。");
+        throw new Error(t("この実験デザインはD03/D04/D05編集画面の対象外です。", "This experiment design is not supported by the D03/D04/D05 editor."));
       const multiSheet =
         design.pairing.kind === "independent"
           ? rehydrateIndependentMultiConditionDataSheet(
@@ -518,7 +528,7 @@ function PersistedProjectView({
       (decision) => decision.questionId === "correlation.relationship_form",
     );
     const match = isCorrelation ? recommendD09(design) : recommendD01OrD02(design);
-    if (!match.matched) throw new Error("この実験デザインはD01/D02編集画面の対象外です。");
+    if (!match.matched) throw new Error(t("この実験デザインはD01/D02編集画面の対象外です。", "This experiment design is not supported by the D01/D02 editor."));
     const sheet = rehydrateTwoConditionDataSheet(
       design,
       outcome.id,
@@ -546,7 +556,10 @@ function PersistedProjectView({
       <p role="alert">
         {actionErrorMessage(
           error,
-          "編集画面を安全に復元できません。元ファイルは変更されていません。",
+          t(
+            "編集画面を安全に復元できません。元ファイルは変更されていません。",
+            "The editor could not be restored safely. The source file was not changed.",
+          ),
         )}
       </p>
     );

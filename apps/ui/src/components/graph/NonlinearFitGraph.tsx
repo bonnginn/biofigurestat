@@ -3,6 +3,7 @@ import type { NonlinearFitGraphModel } from "@lsaa/graph-spec";
 import { nonlinearModelLabel } from "../../app/nonlinearModelRegistry";
 import { createNiceTicks } from "./graphLayout";
 import { createMinorTicks } from "./graphSemantics";
+import { localizedText, useAppLocale } from "../../app/appLocale";
 
 const WIDTH = 820;
 const HEIGHT = 500;
@@ -33,6 +34,8 @@ export const NonlinearFitGraph = forwardRef<
   { model, xLabel, yLabel, title, palette = COLORS, seriesLabels = {}, displayMode = "fitted" },
   ref,
 ) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const allX = model.series.flatMap(({ points, fittedCurve }) => [
     ...points.map(({ x }) => x),
     ...fittedCurve.map(({ x }) => x),
@@ -56,7 +59,11 @@ export const NonlinearFitGraph = forwardRef<
     <svg
       ref={ref}
       role="img"
-      aria-label={displayMode === "fitted" ? "非線形フィットGraph" : "観測X/Y Graph"}
+      aria-label={
+        displayMode === "fitted"
+          ? t("非線形フィットGraph", "Nonlinear fit Graph")
+          : t("観測X/Y Graph", "Observed X/Y Graph")
+      }
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       width={WIDTH}
       height={HEIGHT}
@@ -225,8 +232,10 @@ export const NonlinearFitGraph = forwardRef<
       </text>
       <text x={MARGIN.left} y={title ? 47 : 22} fontSize="12" fill="#536171">
         {displayMode === "fitted"
-          ? `観測点 + 保存済み${nonlinearModelLabel(model.modelId)} fit`
-          : "観測したX/Y点"}
+          ? locale === "ja"
+            ? `観測点 + 保存済み${nonlinearModelLabel(model.modelId)} fit`
+            : `Observed points + saved ${nonlinearModelLabel(model.modelId)} fit`
+          : t("観測したX/Y点", "Observed X/Y points")}
       </text>
     </svg>
   );

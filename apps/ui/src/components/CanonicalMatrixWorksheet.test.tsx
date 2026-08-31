@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState, type ComponentProps } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   CanonicalAdaptiveObservationSchema,
@@ -18,6 +18,10 @@ import {
   type CanonicalMatrixConditionCombination,
   type CanonicalWorksheetRow,
 } from "./CanonicalMatrixWorksheet";
+import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
+import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
+
+afterEach(() => resetAppLocaleForTests("ja"));
 
 function makeContract(overrides: Partial<StructureContract> = {}): StructureContract {
   return StructureContractSchema.parse({
@@ -169,6 +173,11 @@ function currentObservations(): CanonicalAdaptiveObservation[] {
 }
 
 describe("CanonicalMatrixWorksheet", () => {
+  it("shows the canonical matrix without Japanese application copy in English mode", () => {
+    setAppLocale("en");
+    const view = render(<WorksheetHarness />);
+    expectNoJapaneseUi(view.container);
+  });
   beforeEach(() => {
     window.localStorage.removeItem("lsaa.adaptive-worksheet.zoom.v1");
   });
