@@ -62,6 +62,16 @@ See the [Alpha Quick Start](docs/alpha/QUICK_START.md),
 source snapshot and the validated native artifacts is recorded in the
 [source provenance note](docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md).
 
+### Citation
+
+If you use BioFigureStat in research, please cite the version you used. Citation metadata is
+available in [`CITATION.cff`](CITATION.cff).
+
+```text
+Inaba, H. (2026). BioFigureStat (Version 0.1.0-alpha.1) [Computer software].
+https://github.com/bonnginn/life-science-analysis-app/releases/tag/v0.1.0-alpha.1
+```
+
 ### Development
 
 The workspace uses pnpm, TypeScript, React, Tauri, Rust, and a pinned local Python statistical
@@ -142,6 +152,16 @@ Methods、書き出したファイルを確認してください。
 [既知の制限](docs/alpha/KNOWN_LIMITATIONS.md)を参照してください。この公開用ソーススナップショットと、
 検証済みネイティブ成果物の関係は、
 [source provenance note](docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md)に記録しています。
+
+### 引用方法
+
+BioFigureStatを研究で使用した場合は、使用したversionを引用してください。引用情報は
+[`CITATION.cff`](CITATION.cff)にも記載しています。
+
+```text
+Inaba, H. (2026). BioFigureStat (Version 0.1.0-alpha.1) [Computer software].
+https://github.com/bonnginn/life-science-analysis-app/releases/tag/v0.1.0-alpha.1
+```
 
 ### 開発
 

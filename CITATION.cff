@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use BioFigureStat in your research, please cite it using the metadata in this file."
+type: software
+title: "BioFigureStat"
+authors:
+  - family-names: "Inaba"
+    given-names: "Hironori"
+version: "0.1.0-alpha.1"
+date-released: 2026-08-31
+license: MIT
+repository-code: "https://github.com/bonnginn/life-science-analysis-app"
+url: "https://github.com/bonnginn/life-science-analysis-app/releases/tag/v0.1.0-alpha.1"
+keywords:
+  - life science
+  - statistics
+  - scientific visualization
+  - research software
