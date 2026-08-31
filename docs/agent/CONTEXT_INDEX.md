@@ -28,6 +28,8 @@ needs historical rationale.
 
 ## Statistics and scientific routing
 
+- Runtime and independent-reference validation policy:
+  `docs/adr/0058-python-runtime-and-independent-r-validation.md`
 - Numerical-method authority: `docs/STATISTICAL_METHODS_REFERENCE.md`
 - User-facing method catalog: `docs/STATISTICAL_METHOD_CATALOG.md`
 - Pairing/blocking rules: `docs/PAIRING_BLOCKING_WIZARD_RULES_v0.1.md`
@@ -37,8 +39,8 @@ needs historical rationale.
 - Latest external engine-scenario triage and deferred defects:
   `docs/alpha/external-reviews/CLAUDE_ENGINE_SCENARIO_TRIAGE_2026-08-30.md`
 
-For one method, read only its reference section, contract, implementation, and golden/reference
-tests. Do not load the whole benchmark corpus.
+For one method, read ADR 0058 plus only its reference section, contract, implementation, and
+golden/reference tests. Do not load the whole benchmark corpus.
 
 ## Project persistence, lineage, and lifecycle
 

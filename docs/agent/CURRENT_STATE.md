@@ -38,6 +38,11 @@ actually carry a D17 marker. Confirmed deferred engine defects and one unconfirm
 concern are routed through
 `docs/alpha/external-reviews/CLAUDE_ENGINE_SCENARIO_TRIAGE_2026-08-30.md`.
 
+ADR 0058 keeps the pinned Python engine as the production runtime and establishes R as an independent
+method-by-method validation oracle rather than an application dependency or blanket guarantee.
+Public cross-validation claims require recorded mappings, fixtures, tolerances, dependency versions,
+and results; confirmed defects remain release work regardless of whether an R comparison exists.
+
 The Graph-only production path now uses separate Data, Graph, and Statistics tabs and the same
 full `ExperimentGraphWorkbench` used by experiment-first projects. Source/sample ID has a separate
 mapping and is never used as a legend series; a column with one unique value per row is blocked from
