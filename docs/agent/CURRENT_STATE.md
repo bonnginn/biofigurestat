@@ -77,8 +77,13 @@ format, placement, legend text, and removal now use a separate editor; compariso
 derived-metric lineage remain explicitly owned by the workbench. Raw-observation points,
 experiment-unit points, uncertainty/error bars, connecting lines, and legends now also use focused
 editor components. Their layer visibility, point/line styling, ribbon settings, and single-palette
-legend transition are covered independently. The expanded full UI suite passes with 143 files and
-1,147 tests; typecheck and lint pass for the extracted boundaries.
+legend transition are covered independently. Categorical-composition and X/Y-correlation SVG
+renderers now have direct component boundaries and share the same tested numeric label and
+significance formatting as the main renderer. Statistics comparison-intent transitions and
+deterministic Methods generation are isolated from the workbench; tests preserve the existing
+method mapping and verify that presentation metadata never mutates the executed request. The
+expanded full UI suite passes with 146 files and 1,154 tests; typecheck and lint pass for the
+extracted boundaries.
 
 For the English-localization branch, the full UI suite passes with 131 files and 1,117 tests.
 English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
@@ -105,8 +110,9 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   integration, diagnostics, and benchmark capture. Native export and persisted-state projection
   have been separated, and X/Y-axis editing now sits behind component boundaries; rendering and
   the appearance, annotation, raw-point, uncertainty, connecting-line, and legend presentation
-  editors now have component boundaries. Rendering and the remaining statistics orchestration are
-  the next safe extraction boundaries.
+  editors now have component boundaries. Composition and correlation renderers plus the first
+  pure Statistics/Methods orchestration boundary are separated. The main general-purpose SVG
+  renderer and remaining analysis/benchmark orchestration are the next safe extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
