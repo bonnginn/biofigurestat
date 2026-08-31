@@ -338,6 +338,12 @@ function initialGraphOnlyPresentation(
   locale: "ja" | "en",
 ): GraphOnlyPresentation {
   const graph = activeGraphFor(state);
+  const localizedDefaultTitle = localizedText(
+    locale,
+    "表から作成したGraph",
+    "Graph created from a table",
+  );
+  const storedTitle = state?.metadata.projectName;
   const seriesLabels = Object.fromEntries(
     Object.entries(graph?.appearance.seriesStyles ?? {}).flatMap(([series, style]) =>
       style.legendLabel ? [[series, style.legendLabel]] : [],
@@ -345,8 +351,9 @@ function initialGraphOnlyPresentation(
   );
   return {
     title:
-      state?.metadata.projectName ??
-      localizedText(locale, "表から作成したGraph", "Graph created from a table"),
+      storedTitle === "表から作成したGraph" || storedTitle === "Graph created from a table"
+        ? localizedDefaultTitle
+        : (storedTitle ?? localizedDefaultTitle),
     xLabel: graph?.axes.xLabel ?? null,
     yLabel: graph?.axes.yLabel ?? null,
     pointSize: graph?.appearance.pointSize ?? 5,

@@ -135,6 +135,23 @@ describe("Graph-only production workspace", () => {
     );
   });
 
+  it("localizes a legacy app-generated default title", () => {
+    act(() => setAppLocale("en"));
+    const state = mappedState();
+    render(
+      <GraphOnlyVisualizationPage
+        onNavigate={vi.fn()}
+        initialState={state}
+        initialTarget="C:/tmp/legacy-default-title.lsa"
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create Graph" }));
+
+    expect(screen.getByRole("textbox", { name: "Graph title" })).toHaveValue(
+      "Graph created from a table",
+    );
+  });
+
   it("keeps the Graph-only statistics handoff in English without inferring biological n", () => {
     act(() => setAppLocale("en"));
     const view = render(
