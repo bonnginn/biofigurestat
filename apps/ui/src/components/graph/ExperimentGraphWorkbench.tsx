@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
-import type { AnalysisRecommendation } from "@lsaa/analysis-contracts";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
 
 import {
@@ -17,7 +16,6 @@ import {
 import {
   assessDraftGraphAnalysis,
   isDerivedTimeMetric,
-  type ContrastIntent,
 } from "../../app/experimentDraftAnalysis";
 import {
   nestedIndependentSourceContext,
@@ -42,7 +40,7 @@ import {
   saveGraphSvgExport,
 } from "../../app/graphExportController";
 import { localizedText, useAppLocale } from "../../app/appLocale";
-import { recordBenchmarkEvent, useBenchmarkRun } from "../../app/benchmarkEvaluation";
+import { useBenchmarkRun } from "../../app/benchmarkEvaluation";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { CompositionGraphSvg } from "./CompositionGraphSvg";
@@ -60,7 +58,6 @@ import { GRAPH_PALETTES } from "./graphAppearance";
 import {
   createGraphAnalysisContextKey,
   createExperimentGraphMethodsText,
-  statisticalMethodForContrastIntent,
   varyingGraphAnalysisAttributes,
 } from "./experimentGraphStatistics";
 import {
@@ -76,6 +73,7 @@ import {
   type GraphInspectorTarget as InspectorTarget,
 } from "./useExperimentGraphWorkspaceEffects";
 import { useAdjustedStatisticsAnnotations } from "./useAdjustedStatisticsAnnotations";
+import { useExperimentGraphStatisticsIntent } from "./useExperimentGraphStatisticsIntent";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
 import {
   runGraphClipboardCopy,
@@ -420,30 +418,6 @@ export function ExperimentGraphWorkbench({
   const [sourceMode, setSourceMode] = useState<"raw_readout" | "derived_metric">(
     initialState?.sourceMode ?? "raw_readout",
   );
-  const [correlationMethod, setCorrelationMethod] = useState<"pearson" | "spearman" | undefined>(
-    initialState?.analysis?.request.method === "pearson" ||
-      initialState?.analysis?.request.method === "spearman"
-      ? initialState.analysis.request.method
-      : undefined,
-  );
-  const [selectedStatisticalMethod, setSelectedStatisticalMethod] = useState<
-    AnalysisRecommendation["recommendedMethod"] | undefined
-  >(initialState?.analysis?.request.method);
-  const [contrastIntent, setContrastIntent] = useState<ContrastIntent>(() => {
-    const request = initialState?.analysis?.request;
-    return request?.protocolVersion === "0.2.0" ? request.contrastIntent : "all_pairs";
-  });
-  const [plannedContrastConditionIds, setPlannedContrastConditionIds] = useState<
-    Array<readonly [string, string]>
-  >(() => {
-    const request = initialState?.analysis?.request;
-    return request?.protocolVersion === "0.2.0"
-      ? (request.plannedContrastConditionIds ?? []).map(([firstId, secondId]) => [
-          firstId,
-          secondId,
-        ])
-      : [];
-  });
   const [layers, setLayers] = useState<LayerState>(() => {
     if (initialState?.layers) return initialState.layers;
     if (semanticReadiness !== "unresolved_descriptive") return DEFAULT_LAYERS;
@@ -493,6 +467,20 @@ export function ExperimentGraphWorkbench({
   const [analysis, setAnalysis] = useState<WorkspaceGraphAnalysis | null>(
     initialState?.analysis ?? null,
   );
+  const {
+    correlationMethod,
+    selectedMethod: selectedStatisticalMethod,
+    contrastIntent,
+    plannedContrastConditionIds,
+    changeCorrelationMethod,
+    changeSelectedMethod,
+    changePlannedContrastConditionIds,
+    removeConditionFromPlannedContrasts,
+    changeContrastIntent,
+  } = useExperimentGraphStatisticsIntent({
+    initialAnalysis: initialState?.analysis,
+    clearAnalysis: () => setAnalysis(null),
+  });
   const [statisticsAnnotation, setStatisticsAnnotation] = useState<StatisticsAnnotation>(
     initialState?.statisticsAnnotation ?? { mode: "hidden", testIndex: 0 },
   );
@@ -888,9 +876,7 @@ export function ExperimentGraphWorkbench({
         ? [...current, conditionId]
         : current.filter((selectedId) => selectedId !== conditionId),
     );
-    setPlannedContrastConditionIds((current) =>
-      current.filter(([firstId, secondId]) => firstId !== conditionId && secondId !== conditionId),
-    );
+    removeConditionFromPlannedContrasts(conditionId);
     setAnalysis(null);
   };
   const handleTimePointChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -2621,62 +2607,24 @@ export function ExperimentGraphWorkbench({
                     onAnalysisChange={setAnalysis}
                     methodsText={methodsText}
                     correlationMethod={correlationMethod}
-                    onCorrelationMethodChange={(method) => {
-                      setCorrelationMethod(method);
-                      setSelectedStatisticalMethod(method);
-                      recordBenchmarkEvent(
-                        "statistics_method_selected",
-                        {
-                          recommended: analysisAssessment.recommendedMethod ?? method,
-                          selected: method,
-                        },
-                        "analysis_only",
-                      );
-                      setAnalysis(null);
-                    }}
+                    onCorrelationMethodChange={(method) =>
+                      changeCorrelationMethod(
+                        method,
+                        analysisAssessment.recommendedMethod ?? method,
+                      )
+                    }
                     selectedMethod={selectedStatisticalMethod}
-                    onSelectedMethodChange={(method) => {
-                      setSelectedStatisticalMethod(method);
-                      recordBenchmarkEvent(
-                        "statistics_method_selected",
-                        {
-                          recommended: analysisAssessment.recommendedMethod ?? method,
-                          selected: method,
-                        },
-                        "analysis_only",
-                      );
-                      setAnalysis(null);
-                    }}
+                    onSelectedMethodChange={(method) =>
+                      changeSelectedMethod(method, analysisAssessment.recommendedMethod ?? method)
+                    }
                     contrastIntent={contrastIntent}
                     conditionOptions={activeAnalysisConditions.map(({ id, label }) => ({
                       id,
                       label,
                     }))}
                     plannedContrastConditionIds={plannedContrastConditionIds}
-                    onPlannedContrastConditionIdsChange={(pairs) => {
-                      setPlannedContrastConditionIds([...pairs]);
-                      recordBenchmarkEvent(
-                        "statistics_planned_comparisons_selected",
-                        {
-                          pairs: pairs
-                            .map(([firstId, secondId]) => `${firstId}:${secondId}`)
-                            .join("|"),
-                          count: pairs.length,
-                        },
-                        "analysis_only",
-                      );
-                      setAnalysis(null);
-                    }}
-                    onContrastIntentChange={(intent) => {
-                      setContrastIntent(intent);
-                      recordBenchmarkEvent(
-                        "statistics_contrast_selected",
-                        { intent },
-                        "analysis_only",
-                      );
-                      setSelectedStatisticalMethod(statisticalMethodForContrastIntent(intent));
-                      setAnalysis(null);
-                    }}
+                    onPlannedContrastConditionIdsChange={changePlannedContrastConditionIds}
+                    onContrastIntentChange={changeContrastIntent}
                     analysisContextKey={analysisContextKey}
                   />
                 </>
