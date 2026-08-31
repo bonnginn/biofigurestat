@@ -115,8 +115,12 @@ render are delivered to the current callback rather than the stale one. Adjusted
 annotations are applied once per new successful request without overwriting restored annotations.
 Analysis-context fingerprints and varying-factor selection are pure tested functions that preserve
 stable-unit fallbacks and exclude unselected conditions. The workbench is reduced to roughly 2,710
-lines. Focused suites, typecheck, and lint pass. The expanded full UI suite passes with 157 files and
-1,183 tests. An earlier parallel nonlinear-fit presentation wait remains recorded as historical
+lines. Legacy two-condition and multi-condition sheets now share row-major Tab/Shift+Tab movement,
+minimum-scroll focus behavior, roving tab-index calculation, finite numeric parsing, and proportion
+display formatting. The shared boundaries retain each sheet's experimental-unit and condition
+semantics while removing divergent keyboard/value paths. Focused suites, typecheck, and lint pass.
+The expanded full UI suite passes with 160 files and 1,191 tests. An earlier parallel nonlinear-fit
+presentation wait remains recorded as historical
 flaky evidence; the current complete run did not reproduce it. The earlier focused run also
 exposed duplicate `x.-5` ticks for a one-value finite range. The shared nice-tick helper now emits
 one stable tick for such a degenerate range; Graph-layout, nonlinear Graph, and the full focused
@@ -159,8 +163,10 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   context fingerprinting, and varying-factor selection are also separated. Remaining Statistics
   intent handlers and large presentation/data-selection sections are the next safe extraction
   boundaries.
-- Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
-  primitives.
+- Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
+  focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, and proportion
+  display now use shared primitives. Draft/commit and the remaining cell-editor presentation are
+  the next safe commonization boundaries.
 - Route-level code splitting remains a performance and maintainability follow-up.
 - English localization is covered for the production Public Alpha surfaces. Pre-workspace legacy
   D01-D05 editors use an explicit English compatibility stop rather than a partially translated
