@@ -74,7 +74,11 @@ title, unit, range, scale, tick, hierarchy, grouping, and appearance state owned
 Graph type, display presets, palettes, typography, canvas size, and layout reset now use a separate
 appearance editor plus one shared palette definition. Saved-result annotation visibility, display
 format, placement, legend text, and removal now use a separate editor; comparison creation and
-derived-metric lineage remain explicitly owned by the workbench.
+derived-metric lineage remain explicitly owned by the workbench. Raw-observation points,
+experiment-unit points, uncertainty/error bars, connecting lines, and legends now also use focused
+editor components. Their layer visibility, point/line styling, ribbon settings, and single-palette
+legend transition are covered independently. The expanded full UI suite passes with 143 files and
+1,147 tests; typecheck and lint pass for the extracted boundaries.
 
 For the English-localization branch, the full UI suite passes with 131 files and 1,117 tests.
 English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
@@ -100,8 +104,9 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
   integration, diagnostics, and benchmark capture. Native export and persisted-state projection
   have been separated, and X/Y-axis editing now sits behind component boundaries; rendering and
-  the main appearance and annotation presentation editors now have component boundaries.
-  Rendering and the remaining statistics orchestration are the next safe extraction boundaries.
+  the appearance, annotation, raw-point, uncertainty, connecting-line, and legend presentation
+  editors now have component boundaries. Rendering and the remaining statistics orchestration are
+  the next safe extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
