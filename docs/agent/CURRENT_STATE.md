@@ -94,7 +94,11 @@ observation lineage retain their existing meanings. Derived-metric lineage rows 
 adapter while preserving each source time point and its value; the focused Graph and adapter suite
 passes with 55 tests. This further reduces the orchestration
 workbench to roughly 3,200 lines. The
-expanded full UI suite passes with 147 files and 1,156 tests; typecheck and lint pass for the
+benchmark rendered-state, analysis-state, and usage-telemetry projections are now pure tested
+boundaries as well. Tests keep presentation configuration separate from executed analysis facts,
+include derived metrics only when displayed, and centrally classify usage edit categories without
+moving effect order out of the workbench. The expanded full UI suite passes with 148 files and
+1,160 tests; typecheck and lint pass for the
 extracted boundaries.
 
 For the English-localization branch, the full UI suite passes with 131 files and 1,117 tests.
@@ -125,7 +129,8 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   editors now have component boundaries. Composition and correlation renderers plus the first
   pure Statistics/Methods orchestration boundary are separated. The main general-purpose SVG
   renderer is separated as well; remaining analysis, diagnostic, and benchmark orchestration are
-  the next safe extraction boundaries.
+  the next safe extraction boundaries. Their pure state projections and usage-edit classification
+  are already separated; lifecycle effects and artifact writes intentionally remain in the parent.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
