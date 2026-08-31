@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import type { AnalysisRecommendation } from "@lsaa/analysis-contracts";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
@@ -69,6 +69,10 @@ import {
 import { useExperimentGraphDiagnosticEffects } from "./useExperimentGraphDiagnosticEffects";
 import { useBenchmarkGraphConfigurationEffects } from "./useBenchmarkGraphConfigurationEffects";
 import { useDefaultBenchmarkGraphCapture } from "./useDefaultBenchmarkGraphCapture";
+import {
+  useExperimentGraphWorkspaceEffects,
+  type GraphInspectorTarget as InspectorTarget,
+} from "./useExperimentGraphWorkspaceEffects";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
 import {
   runGraphClipboardCopy,
@@ -104,21 +108,6 @@ import "./graph-workbench.css";
 
 type LayerState = WorkspaceGraphState["layers"];
 
-type InspectorTarget =
-  | "background"
-  | "x-axis"
-  | "y-axis"
-  | "data"
-  | "raw-dots"
-  | "experiment-summary"
-  | "series-style"
-  | "violin"
-  | "box"
-  | "error-bar"
-  | "connecting-line"
-  | "legend"
-  | "annotation"
-  | "statistics";
 type GraphAppearance = WorkspaceGraphState["appearance"];
 type AxisSettings = WorkspaceGraphState["axes"];
 type GraphType = WorkspaceGraphState["graphType"];
@@ -555,7 +544,6 @@ export function ExperimentGraphWorkbench({
     [analysis, appearance, axes, draft, graphType, layers, selectedReadoutId, timeAnalysis],
   );
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const onStateChangeRef = useRef(onStateChange);
   const graphStateSnapshot = useMemo<Omit<WorkspaceGraphState, "id" | "displayName">>(
     () =>
       createWorkspaceGraphStateSnapshot({
@@ -627,24 +615,16 @@ export function ExperimentGraphWorkbench({
     analysis,
   });
 
-  useEffect(() => {
-    setInspectorTarget(workspaceMode === "statistics" ? "statistics" : "data");
-  }, [workspaceMode]);
-
-  useEffect(() => {
-    if (initialState?.analysis) return;
-    setAnalysis(null);
-    setStatisticsAnnotation({ mode: "hidden", testIndex: 0 });
-    setStatisticsAnnotations([]);
-  }, [initialState?.analysis]);
-
-  useEffect(() => {
-    onStateChangeRef.current = onStateChange;
-  }, [onStateChange]);
-
-  useLayoutEffect(() => {
-    onStateChangeRef.current?.(graphStateSnapshot);
-  }, [graphStateSnapshot]);
+  useExperimentGraphWorkspaceEffects({
+    workspaceMode,
+    initialAnalysis: initialState?.analysis,
+    graphStateSnapshot,
+    onStateChange,
+    setInspectorTarget,
+    setAnalysis,
+    setStatisticsAnnotation,
+    setStatisticsAnnotations,
+  });
 
   const usageGraphState = createGraphUsageState({
     graphType,
