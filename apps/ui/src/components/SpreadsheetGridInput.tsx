@@ -6,19 +6,46 @@ export type SpreadsheetGridInputProps = InputHTMLAttributes<HTMLInputElement> & 
   baseClassName: string;
 };
 
+function gridCoordinate(input: HTMLInputElement) {
+  const row = Number(input.dataset.gridRow);
+  const column = Number(input.dataset.gridColumn);
+  return Number.isInteger(row) && Number.isInteger(column) ? { row, column } : null;
+}
+
+function focusGridInput(input: HTMLInputElement) {
+  input.focus({ preventScroll: true });
+  input.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  input.select();
+}
+
 /** Shared legacy-grid keyboard navigation; scientific row/column meaning stays with each sheet. */
 export function moveSpreadsheetGridFocus(event: KeyboardEvent<HTMLInputElement>): void {
-  if (!["Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+  if (!["Tab", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
     return;
   }
   const grid = event.currentTarget.closest<HTMLElement>("[data-unit-grid]");
   if (!grid) return;
-  const currentRow = Number(event.currentTarget.dataset.gridRow);
-  const currentColumn = Number(event.currentTarget.dataset.gridColumn);
-  if (!Number.isInteger(currentRow) || !Number.isInteger(currentColumn)) return;
+  const currentCoordinate = gridCoordinate(event.currentTarget);
+  if (!currentCoordinate) return;
 
-  let nextRow = currentRow;
-  let nextColumn = currentColumn;
+  if (event.key === "Tab") {
+    const inputs = [...grid.querySelectorAll<HTMLInputElement>('[data-grid-input="true"]')]
+      .filter((input) => !input.disabled && gridCoordinate(input) !== null)
+      .sort((left, right) => {
+        const leftCoordinate = gridCoordinate(left)!;
+        const rightCoordinate = gridCoordinate(right)!;
+        return leftCoordinate.row - rightCoordinate.row || leftCoordinate.column - rightCoordinate.column;
+      });
+    const currentIndex = inputs.indexOf(event.currentTarget);
+    const next = inputs[currentIndex + (event.shiftKey ? -1 : 1)];
+    if (!next) return;
+    event.preventDefault();
+    focusGridInput(next);
+    return;
+  }
+
+  let nextRow = currentCoordinate.row;
+  let nextColumn = currentCoordinate.column;
   if (event.key === "Enter") nextRow += event.shiftKey ? -1 : 1;
   if (event.key === "ArrowLeft") nextColumn -= 1;
   if (event.key === "ArrowRight") nextColumn += 1;
@@ -29,8 +56,7 @@ export function moveSpreadsheetGridFocus(event: KeyboardEvent<HTMLInputElement>)
   );
   if (!next) return;
   event.preventDefault();
-  next.focus();
-  next.select();
+  focusGridInput(next);
 }
 
 export function SpreadsheetGridInput({
