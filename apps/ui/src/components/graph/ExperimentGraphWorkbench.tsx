@@ -43,7 +43,6 @@ import {
 } from "../../app/graphExportController";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import { recordBenchmarkEvent, useBenchmarkRun } from "../../app/benchmarkEvaluation";
-import { recordDiagnosticError } from "../../app/diagnostics";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { CompositionGraphSvg } from "./CompositionGraphSvg";
@@ -71,6 +70,11 @@ import { useExperimentGraphDiagnosticEffects } from "./useExperimentGraphDiagnos
 import { useBenchmarkGraphConfigurationEffects } from "./useBenchmarkGraphConfigurationEffects";
 import { useDefaultBenchmarkGraphCapture } from "./useDefaultBenchmarkGraphCapture";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
+import {
+  runGraphClipboardCopy,
+  runGraphUserExport,
+  type GraphExportFeedback,
+} from "./experimentGraphUserExports";
 import {
   analysisTestAnnotationLabel,
   createAdjustedComparisonAnnotation,
@@ -508,10 +512,7 @@ export function ExperimentGraphWorkbench({
   );
   const [fitOverview, setFitOverview] = useState(false);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
-  const [pngExportFeedback, setPngExportFeedback] = useState<Readonly<{
-    kind: "success" | "error";
-    text: string;
-  }> | null>(null);
+  const [pngExportFeedback, setPngExportFeedback] = useState<GraphExportFeedback | null>(null);
   const [benchmarkCaptureStatus, setBenchmarkCaptureStatus] = useState<string | null>(null);
   const benchmarkRun = useBenchmarkRun();
   const analysisResult = analysis?.result ?? null;
@@ -1003,65 +1004,39 @@ export function ExperimentGraphWorkbench({
       : resolvedLayerDescription;
   const exportSvg = async () => {
     if (!svgRef.current || !readout) return;
-    setPngExportFeedback(null);
-    const result = await saveGraphSvgExport(
-      svgRef.current,
-      `${safeGraphFileStem(readout.label)}.svg`,
+    await runGraphUserExport(
+      "svg",
+      () => saveGraphSvgExport(svgRef.current!, `${safeGraphFileStem(readout.label)}.svg`),
+      setPngExportFeedback,
     );
-    if (result.status === "saved") {
-      setPngExportFeedback({ kind: "success", text: "SVGを保存しました。" });
-    } else if (result.status === "failed") {
-      recordDiagnosticError("GRAPH_EXPORT_FAILED", result.error);
-      setPngExportFeedback({
-        kind: "error",
-        text: "SVGを保存できませんでした。グラフは保持されています。",
-      });
-    }
   };
   const exportPng = async () => {
     if (!svgRef.current || !readout) return;
-    setPngExportFeedback(null);
-    const result = await saveGraphPngExport(
-      svgRef.current,
-      `${safeGraphFileStem(readout.label)}.png`,
+    await runGraphUserExport(
+      "png",
+      () => saveGraphPngExport(svgRef.current!, `${safeGraphFileStem(readout.label)}.png`),
+      setPngExportFeedback,
     );
-    if (result.status === "saved") {
-      setPngExportFeedback({
-        kind: "success",
-        text: "現在のグラフを白背景のPNGで書き出しました。",
-      });
-    } else if (result.status === "failed") {
-      recordDiagnosticError("GRAPH_EXPORT_FAILED", result.error);
-      setPngExportFeedback({
-        kind: "error",
-        text: "PNGを書き出せませんでした。グラフは保持されています。SVG書き出しを利用してください。",
-      });
-    }
   };
   const exportCsv = async () => {
     if (!readout) return;
-    setPngExportFeedback(null);
-    const result = await saveGraphCsvExport(
-      readout.shape === "categorical_counts"
-        ? serializeCompositionData(
-            draft,
-            cells,
-            readout,
-            selectedConditionIds,
-            selectedTimePointIds,
-          )
-        : serializeVisibleGraphData(series, readout),
-      `${safeGraphFileStem(readout.label)}-graph-data.csv`,
+    await runGraphUserExport(
+      "csv",
+      () =>
+        saveGraphCsvExport(
+          readout.shape === "categorical_counts"
+            ? serializeCompositionData(
+                draft,
+                cells,
+                readout,
+                selectedConditionIds,
+                selectedTimePointIds,
+              )
+            : serializeVisibleGraphData(series, readout),
+          `${safeGraphFileStem(readout.label)}-graph-data.csv`,
+        ),
+      setPngExportFeedback,
     );
-    if (result.status === "saved") {
-      setPngExportFeedback({ kind: "success", text: "表示中のデータをCSVで保存しました。" });
-    } else if (result.status === "failed") {
-      recordDiagnosticError("GRAPH_EXPORT_FAILED", result.error);
-      setPngExportFeedback({
-        kind: "error",
-        text: "CSVを保存できませんでした。グラフとデータは保持されています。",
-      });
-    }
   };
   const descriptiveBenchmarkRun = draft.analysisIntent.kind === "single_cohort";
   const descriptiveMethodsText = [
@@ -1091,22 +1066,7 @@ export function ExperimentGraphWorkbench({
   };
   const copyGraph = async () => {
     if (!svgRef.current) return;
-    setCopyStatus(null);
-    try {
-      const format = await copyGraphToClipboard(svgRef.current);
-      setCopyStatus(
-        format === "svg"
-          ? "ベクター形式でコピーしました。"
-          : format === "png"
-            ? "透明背景のPNGでコピーしました。"
-            : "SVGテキストでコピーしました。",
-      );
-    } catch (error) {
-      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
-      setCopyStatus(
-        "この環境ではクリップボードへコピーできませんでした。SVG書き出しを利用してください。",
-      );
-    }
+    await runGraphClipboardCopy(() => copyGraphToClipboard(svgRef.current!), setCopyStatus);
   };
   const inspectGraphPart = (target: InspectorTarget) => {
     if (workspaceMode === "graph" && target === "statistics") return;
