@@ -88,7 +88,9 @@ import { recordUsageGraphEdit } from "../../app/usageTelemetry";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { ExperimentGraphAnnotationEditor } from "./ExperimentGraphAnnotationEditor";
 import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
+import { ExperimentGraphConnectingLineEditor } from "./ExperimentGraphConnectingLineEditor";
 import { ExperimentGraphErrorBarEditor } from "./ExperimentGraphErrorBarEditor";
+import { ExperimentGraphLegendEditor } from "./ExperimentGraphLegendEditor";
 import { ExperimentGraphRawDotsEditor } from "./ExperimentGraphRawDotsEditor";
 import { ExperimentGraphXAxisEditor } from "./ExperimentGraphXAxisEditor";
 import { ExperimentGraphYAxisEditor } from "./ExperimentGraphYAxisEditor";
@@ -4917,95 +4919,19 @@ export function ExperimentGraphWorkbench({
           ) : null}
 
           {inspectorTarget === "connecting-line" ? (
-            <section className="experiment-graph-inspector-section">
-              <h3>{t("接続線", "Connecting lines")}</h3>
-              <label className="experiment-graph-checkbox">
-                <input
-                  type="checkbox"
-                  checked={layers.connectingLine}
-                  aria-label="接続線を表示"
-                  onChange={(event) =>
-                    setLayers((current) => ({ ...current, connectingLine: event.target.checked }))
-                  }
-                />
-                <span>条件または時点の要約を線で結ぶ</span>
-              </label>
-              <label className="experiment-graph-field">
-                <span>線幅：{appearance.connectingLineWidth.toFixed(1)}px</span>
-                <input
-                  type="range"
-                  min="0.6"
-                  max="4"
-                  step="0.1"
-                  aria-label="接続線の太さ"
-                  value={appearance.connectingLineWidth}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      connectingLineWidth: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-              <label className="experiment-graph-color-field">
-                <span>接続線の色</span>
-                <input
-                  type="color"
-                  aria-label="接続線の色"
-                  value={appearance.connectingLineColor}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      connectingLineColor: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            </section>
+            <ExperimentGraphConnectingLineEditor
+              layers={layers}
+              appearance={appearance}
+              setLayers={setLayers}
+              setAppearance={setAppearance}
+            />
           ) : null}
 
           {inspectorTarget === "legend" ? (
-            <section className="experiment-graph-inspector-section">
-              <h3>{t("凡例", "Legend")}</h3>
-              <label className="experiment-graph-field">
-                <span>位置</span>
-                <select
-                  aria-label="凡例の位置"
-                  value={appearance.legendPosition}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      legendPosition: event.target.value as GraphAppearance["legendPosition"],
-                      palette:
-                        event.target.value === "hidden" || current.palette !== "single"
-                          ? current.palette
-                          : "condition",
-                    }))
-                  }
-                >
-                  <option value="hidden">なし</option>
-                  <option value="top">上</option>
-                  <option value="right">右</option>
-                  <option value="inside">内側</option>
-                </select>
-              </label>
-              <label className="experiment-graph-field">
-                <span>文字：{appearance.legendFontSize}px</span>
-                <input
-                  type="range"
-                  min="9"
-                  max="24"
-                  aria-label="凡例の文字サイズ"
-                  value={appearance.legendFontSize}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      legendFontSize: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-            </section>
+            <ExperimentGraphLegendEditor
+              appearance={appearance}
+              setAppearance={setAppearance}
+            />
           ) : null}
 
           {inspectorTarget === "annotation" && analysisResult?.status === "ok" ? (
