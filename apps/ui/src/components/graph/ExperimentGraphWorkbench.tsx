@@ -89,6 +89,12 @@ import {
   statisticalMethodForContrastIntent,
 } from "./experimentGraphStatistics";
 import {
+  createBenchmarkAnalysisState,
+  createBenchmarkRenderedState,
+  createGraphUsageState,
+  type GraphUsageState,
+} from "./experimentGraphInstrumentation";
+import {
   analysisTestAnnotationLabel,
   createAdjustedComparisonAnnotation,
   graphAnnotationContext,
@@ -613,7 +619,7 @@ export function ExperimentGraphWorkbench({
       timeAnalysis,
     ],
   );
-  const benchmarkRenderedState = JSON.stringify({
+  const benchmarkRenderedState = createBenchmarkRenderedState({
     selectedReadoutId,
     sourceMode,
     selectedConditionIds,
@@ -626,24 +632,21 @@ export function ExperimentGraphWorkbench({
     axes,
     statisticsAnnotation,
     statisticsAnnotations,
-    displayedDerivedMetric:
-      sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis) ? timeAnalysis : null,
+    timeAnalysis,
   });
-  const benchmarkAnalysisState = JSON.stringify({
+  const benchmarkAnalysisState = createBenchmarkAnalysisState({
     selectedReadoutId,
     sourceMode,
     selectedConditionIds,
     analysisConditionIds,
     selectedTimePointIds,
     analysisTimePointId,
-    analysisMetric: timeAnalysis,
+    timeAnalysis,
     selectedStatisticalMethod,
-    correlationMethod: correlationMethod ?? null,
+    correlationMethod,
     contrastIntent,
     plannedContrastConditionIds,
-    executedMethod: analysis?.request.method ?? null,
-    executedProtocolVersion: analysis?.request.protocolVersion ?? null,
-    executedCorrection: analysis?.request.options.multiplicityMethod ?? null,
+    analysis,
   });
 
   useEffect(() => {
@@ -673,21 +676,20 @@ export function ExperimentGraphWorkbench({
     recordDiagnosticEvent("graph_state_changed", { graphType, graphFingerprint: fingerprint });
   }, [benchmarkRenderedState, graphType]);
 
-  const usageGraphState = {
+  const usageGraphState = createGraphUsageState({
     graphType,
-    series: JSON.stringify({
-      selectedReadoutId,
-      sourceMode,
-      selectedConditionIds,
-      selectedTimePointIds,
-      grouping,
-    }),
-    axes: JSON.stringify(axes),
-    layers: JSON.stringify(layers),
-    appearance: JSON.stringify(appearance),
-    annotation: JSON.stringify({ statisticsAnnotation, statisticsAnnotations }),
-  };
-  const usageGraphStateRef = useRef<typeof usageGraphState | null>(null);
+    selectedReadoutId,
+    sourceMode,
+    selectedConditionIds,
+    selectedTimePointIds,
+    grouping,
+    axes,
+    layers,
+    appearance,
+    statisticsAnnotation,
+    statisticsAnnotations,
+  });
+  const usageGraphStateRef = useRef<GraphUsageState | null>(null);
   useEffect(() => {
     const previous = usageGraphStateRef.current;
     usageGraphStateRef.current = usageGraphState;
