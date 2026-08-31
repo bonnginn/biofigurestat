@@ -87,8 +87,12 @@ layout, nice ticks, hierarchy labels, raw and experiment-unit marks, summaries, 
 annotations, and legend drawing. Its extraction reduced the orchestration workbench from roughly
 4,900 to 3,400 lines without moving canonical data construction, Statistics execution, benchmark
 capture, or persisted state ownership. The existing 52-test workbench regression suite covers the
-renderer boundary directly through its public workflow. The
-expanded full UI suite passes with 146 files and 1,154 tests; typecheck and lint pass for the
+renderer boundary directly through its public workflow. Canonical cells are now projected into
+Graph series by a separately tested pure adapter: stable experiment/condition/readout/time keys,
+not-planned cells, proportion percentages, nested summaries, WB ratios, derived metrics, and raw
+observation lineage retain their existing meanings. This further reduces the orchestration
+workbench to roughly 3,200 lines. The
+expanded full UI suite passes with 147 files and 1,156 tests; typecheck and lint pass for the
 extracted boundaries.
 
 For the English-localization branch, the full UI suite passes with 131 files and 1,117 tests.
