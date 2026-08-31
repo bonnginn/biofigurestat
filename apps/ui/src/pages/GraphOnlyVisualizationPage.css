@@ -39,6 +39,24 @@
   cursor: not-allowed;
 }
 
+.graph-only__workspace-save-actions {
+  display: flex;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.graph-only__workspace-tabs .graph-only__save-button {
+  background: #fff;
+  border: 1px solid #aac7c0;
+  min-width: auto;
+  padding-inline: 0.85rem;
+}
+
+.graph-only__workspace-tabs .graph-only__save-button:not(:disabled):hover {
+  background: #f7fbfa;
+  color: #0d644e;
+}
+
 .graph-only__data-workspace {
   display: grid;
   gap: 1rem;

@@ -118,6 +118,23 @@ describe("Graph-only production workspace", () => {
     expectNoJapaneseUi(view.container);
   });
 
+  it("uses an English default title when an English Graph is first created", () => {
+    act(() => setAppLocale("en"));
+    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
+    pasteTable();
+    fireEvent.change(screen.getByRole("combobox", { name: "Graph X axis" }), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Graph measured value" }), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Graph" }));
+
+    expect(screen.getByRole("textbox", { name: "Graph title" })).toHaveValue(
+      "Graph created from a table",
+    );
+  });
+
   it("keeps the Graph-only statistics handoff in English without inferring biological n", () => {
     act(() => setAppLocale("en"));
     const view = render(
@@ -225,6 +242,48 @@ describe("Graph-only production workspace", () => {
     expect(saved.graphSpecs.at(-1)?.analysisResultId).toBeNull();
     expect("design" in saved).toBe(false);
     expect("analysisRequest" in saved).toBe(false);
+  });
+
+  it("keeps an explicitly accepted one-series-per-row Graph available after save and reopen", async () => {
+    const uniqueSeriesText = [
+      "sample ID\tTreatment\tMeasurement",
+      "S01\tVehicle\t1.0",
+      "S02\tVehicle\t1.1",
+      "S03\tDrug A\t1.5",
+      "S04\tDrug A\t1.6",
+    ].join("\n");
+    let savedState: UnresolvedVisualizationProjectState | null = null;
+    const saveProject = vi.fn(async (state: UnresolvedVisualizationProjectState) => {
+      savedState = state;
+      return { state, target: "C:/tmp/unique-series.lsa" };
+    });
+    const first = render(
+      <GraphOnlyVisualizationPage onNavigate={vi.fn()} saveProject={saveProject} />,
+    );
+    pasteTable(uniqueSeriesText);
+    mapColumns({ x: "1", y: "2", series: "0" });
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "各行を別系列として表示する意図である" }),
+    );
+    openGraph();
+    expect(screen.getByRole("button", { name: "保存" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "別名で保存" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
+    first.unmount();
+
+    render(
+      <GraphOnlyVisualizationPage
+        onNavigate={vi.fn()}
+        saveProject={saveProject}
+        initialState={savedState}
+        initialTarget="C:/tmp/unique-series.lsa"
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "グラフ" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "統計" })).toBeEnabled();
+    expect(screen.getByRole("region", { name: "表からグラフを作成" })).toBeVisible();
   });
 
   it("reopens a mapped project and keeps the normal editor available", async () => {

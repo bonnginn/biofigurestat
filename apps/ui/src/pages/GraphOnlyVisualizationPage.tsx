@@ -335,6 +335,7 @@ function activeGraphFor(
 
 function initialGraphOnlyPresentation(
   state: UnresolvedVisualizationProjectState | null | undefined,
+  locale: "ja" | "en",
 ): GraphOnlyPresentation {
   const graph = activeGraphFor(state);
   const seriesLabels = Object.fromEntries(
@@ -343,7 +344,9 @@ function initialGraphOnlyPresentation(
     ),
   );
   return {
-    title: state?.metadata.projectName ?? "表から作成したGraph",
+    title:
+      state?.metadata.projectName ??
+      localizedText(locale, "表から作成したGraph", "Graph created from a table"),
     xLabel: graph?.axes.xLabel ?? null,
     yLabel: graph?.axes.yLabel ?? null,
     pointSize: graph?.appearance.pointSize ?? 5,
@@ -473,7 +476,7 @@ export function GraphOnlyVisualizationPage({
       initialSourceRowUnitDecision(compatibleInitialState),
     );
   const [graphPresentation, setGraphPresentation] = useState<GraphOnlyPresentation>(() =>
-    initialGraphOnlyPresentation(compatibleInitialState),
+    initialGraphOnlyPresentation(compatibleInitialState, locale),
   );
   const [error, setError] = useState<string | null>(initialIntentError);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -485,7 +488,9 @@ export function GraphOnlyVisualizationPage({
   const [workspaceTab, setWorkspaceTab] = useState<"data" | "graph" | "statistics">(
     compatibleInitialState?.activeGraphId ? "graph" : "data",
   );
-  const [allowUniqueSeries, setAllowUniqueSeries] = useState(false);
+  const [allowUniqueSeries, setAllowUniqueSeries] = useState(
+    Boolean(compatibleInitialState?.activeGraphId),
+  );
   const [workspaceGraphState, setWorkspaceGraphState] = useState<Omit<
     WorkspaceGraphState,
     "id" | "displayName"
@@ -747,9 +752,10 @@ export function GraphOnlyVisualizationPage({
     setIdColumn(initialColumn(state, "id"));
     setIdentityDecision(initialIdentityDecision(state));
     setSourceRowUnitDecision(initialSourceRowUnitDecision(state));
-    const loadedPresentation = initialGraphOnlyPresentation(state);
+    const loadedPresentation = initialGraphOnlyPresentation(state, locale);
     setGraphPresentation(loadedPresentation);
     setWorkspaceGraphState(null);
+    setAllowUniqueSeries(Boolean(state.activeGraphId));
     setWorkspaceTab(state.activeGraphId ? "graph" : "data");
     setError(null);
     setSaveMessage(
@@ -883,6 +889,24 @@ export function GraphOnlyVisualizationPage({
         >
           {t("統計", "Statistics")}
         </button>
+        <span className="graph-only__workspace-save-actions">
+          <button
+            className="graph-only__save-button"
+            type="button"
+            disabled={!canGraph || !saveProject}
+            onClick={() => void saveCurrentProject()}
+          >
+            {t("保存", "Save")}
+          </button>
+          <button
+            className="graph-only__save-button"
+            type="button"
+            disabled={!canGraph || !saveProject}
+            onClick={() => void saveCurrentProject(true)}
+          >
+            {t("別名で保存", "Save As")}
+          </button>
+        </span>
       </nav>
 
       <div className="graph-only__data-workspace" hidden={workspaceTab !== "data"}>
