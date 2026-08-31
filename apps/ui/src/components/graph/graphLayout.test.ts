@@ -43,4 +43,8 @@ describe("graph layout", () => {
   it("honors a manual tick interval", () => {
     expect(createNiceTicks(0, 30, 5, 5)).toEqual([30, 25, 20, 15, 10, 5, 0]);
   });
+
+  it("emits one stable tick for a degenerate finite range", () => {
+    expect(createNiceTicks(-5, -5)).toEqual([-5]);
+  });
 });

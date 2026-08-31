@@ -70,9 +70,10 @@ export function createNiceTicks(
   targetTickCount = 5,
   manualInterval: number | null = null,
 ): readonly number[] {
-  if (!Number.isFinite(minimum) || !Number.isFinite(maximum) || maximum <= minimum) {
-    return [minimum, maximum].filter(Number.isFinite);
+  if (!Number.isFinite(minimum) || !Number.isFinite(maximum) || maximum < minimum) {
+    return [...new Set([minimum, maximum].filter(Number.isFinite))];
   }
+  if (maximum === minimum) return [minimum];
   const interval =
     manualInterval && manualInterval > 0
       ? manualInterval
