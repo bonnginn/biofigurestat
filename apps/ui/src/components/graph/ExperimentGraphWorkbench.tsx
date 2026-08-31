@@ -94,6 +94,8 @@ import {
   type GraphUsageState,
 } from "./experimentGraphInstrumentation";
 import {
+  createDefaultBenchmarkGraphArtifacts,
+  createFinalBenchmarkArtifacts,
   createBenchmarkRunArtifact,
   createBenchmarkStatisticsArtifact,
 } from "./experimentGraphBenchmarkArtifacts";
@@ -973,15 +975,12 @@ export function ExperimentGraphWorkbench({
           sha256Hex(png),
           sha256Hex(benchmarkAnalysisState),
         ]);
-        await writeBenchmarkArtifacts([
-          { name: "default_graph.svg", content: svgText, mediaType: "image/svg+xml" },
-          {
-            name: "default_graph.png",
-            content: await blobToBase64(png),
-            encoding: "base64",
-            mediaType: "image/png",
-          },
-        ]);
+        await writeBenchmarkArtifacts(
+          createDefaultBenchmarkGraphArtifacts({
+            svgText,
+            pngBase64: await blobToBase64(png),
+          }),
+        );
         completeDefaultGraphCapture({
           graphStateFingerprint: svgSha256,
           analysisStateFingerprint,
@@ -1237,35 +1236,20 @@ export function ExperimentGraphWorkbench({
         analysisConditionIds,
       });
       await writeBenchmarkArtifacts(
-        [
-          {
-            name: "run.json",
-            content: JSON.stringify(
-              createBenchmarkRunArtifact({
-                run: finalRun,
-                analysis,
-                sourceRevision: evaluationMode.sourceRevision,
-                completedAt: new Date().toISOString(),
-              }),
-              null,
-              2,
-            ),
-          },
-          { name: "final_graph.svg", content: svgText, mediaType: "image/svg+xml" },
-          {
-            name: "final_graph.png",
-            content: await blobToBase64(png),
-            encoding: "base64",
-            mediaType: "image/png",
-          },
-          { name: "statistics.json", content: JSON.stringify(statisticsArtifact, null, 2) },
-          { name: "methods.txt", content: analysis ? methodsText! : descriptiveMethodsText },
-          { name: "graph_state.json", content: JSON.stringify(graphStateSnapshot, null, 2) },
-          {
-            name: "interaction_log.json",
-            content: JSON.stringify(finalRun.events, null, 2),
-          },
-        ],
+        createFinalBenchmarkArtifacts({
+          runArtifact: createBenchmarkRunArtifact({
+            run: finalRun,
+            analysis,
+            sourceRevision: evaluationMode.sourceRevision,
+            completedAt: new Date().toISOString(),
+          }),
+          svgText,
+          pngBase64: await blobToBase64(png),
+          statisticsArtifact,
+          methodsText: analysis ? methodsText! : descriptiveMethodsText,
+          graphState: graphStateSnapshot,
+          interactionLog: finalRun.events,
+        }),
         { requiredArtifacts: COMPLETE_BENCHMARK_ARTIFACT_NAMES },
       );
       setBenchmarkCaptureStatus("Benchmark runのartifactを保存しました。");

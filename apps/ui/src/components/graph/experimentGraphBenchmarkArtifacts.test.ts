@@ -4,6 +4,8 @@ import type { BenchmarkRunState } from "../../app/benchmarkEvaluation";
 import { createExperimentSetDraft } from "../../app/experimentDraft";
 import {
   benchmarkContrastForRequest,
+  createDefaultBenchmarkGraphArtifacts,
+  createFinalBenchmarkArtifacts,
   createBenchmarkRunArtifact,
   createBenchmarkStatisticsArtifact,
 } from "./experimentGraphBenchmarkArtifacts";
@@ -118,5 +120,46 @@ describe("Graph benchmark artifact builders", () => {
       engineVersion: "not_applicable",
       sourceRevision: "revision.test",
     });
+  });
+
+  it("builds the default and final artifact manifests without changing encodings", () => {
+    expect(
+      createDefaultBenchmarkGraphArtifacts({ svgText: "<svg />", pngBase64: "cG5n" }),
+    ).toEqual([
+      { name: "default_graph.svg", content: "<svg />", mediaType: "image/svg+xml" },
+      {
+        name: "default_graph.png",
+        content: "cG5n",
+        encoding: "base64",
+        mediaType: "image/png",
+      },
+    ]);
+
+    const artifacts = createFinalBenchmarkArtifacts({
+      runArtifact: { outcome: "completed" },
+      svgText: "<svg />",
+      pngBase64: "cG5n",
+      statisticsArtifact: { state: "current" },
+      methodsText: "Welch ANOVA",
+      graphState: { graphType: "dot" },
+      interactionLog: [],
+    });
+
+    expect(artifacts.map(({ name }) => name)).toEqual([
+      "run.json",
+      "final_graph.svg",
+      "final_graph.png",
+      "statistics.json",
+      "methods.txt",
+      "graph_state.json",
+      "interaction_log.json",
+    ]);
+    expect(artifacts.find(({ name }) => name === "final_graph.png")).toMatchObject({
+      encoding: "base64",
+      mediaType: "image/png",
+    });
+    expect(
+      JSON.parse(artifacts.find(({ name }) => name === "statistics.json")!.content),
+    ).toEqual({ state: "current" });
   });
 });

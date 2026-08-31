@@ -2,7 +2,7 @@ import {
   requireAnalysisRequestRecommendation,
   type AnalysisEngineRequest,
 } from "@lsaa/analysis-contracts";
-import type { BenchmarkRunState } from "../../app/benchmarkEvaluation";
+import type { BenchmarkArtifact, BenchmarkRunState } from "../../app/benchmarkEvaluation";
 import type { ExperimentSetDraft } from "../../app/experimentDraft";
 import type { DraftAnalysisAssessment } from "../../app/experimentDraftAnalysis";
 import {
@@ -154,4 +154,45 @@ export function createBenchmarkRunArtifact(
       ({ effect }) => effect === "analysis_only" || effect === "both",
     ).length,
   };
+}
+
+export function createDefaultBenchmarkGraphArtifacts(
+  input: Readonly<{ svgText: string; pngBase64: string }>,
+): readonly BenchmarkArtifact[] {
+  return [
+    { name: "default_graph.svg", content: input.svgText, mediaType: "image/svg+xml" },
+    {
+      name: "default_graph.png",
+      content: input.pngBase64,
+      encoding: "base64",
+      mediaType: "image/png",
+    },
+  ];
+}
+
+export function createFinalBenchmarkArtifacts(
+  input: Readonly<{
+    runArtifact: unknown;
+    svgText: string;
+    pngBase64: string;
+    statisticsArtifact: unknown;
+    methodsText: string;
+    graphState: unknown;
+    interactionLog: BenchmarkRunState["events"];
+  }>,
+): readonly BenchmarkArtifact[] {
+  return [
+    { name: "run.json", content: JSON.stringify(input.runArtifact, null, 2) },
+    { name: "final_graph.svg", content: input.svgText, mediaType: "image/svg+xml" },
+    {
+      name: "final_graph.png",
+      content: input.pngBase64,
+      encoding: "base64",
+      mediaType: "image/png",
+    },
+    { name: "statistics.json", content: JSON.stringify(input.statisticsArtifact, null, 2) },
+    { name: "methods.txt", content: input.methodsText },
+    { name: "graph_state.json", content: JSON.stringify(input.graphState, null, 2) },
+    { name: "interaction_log.json", content: JSON.stringify(input.interactionLog, null, 2) },
+  ];
 }
