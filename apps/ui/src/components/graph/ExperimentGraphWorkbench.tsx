@@ -89,6 +89,7 @@ import {
   statisticalMethodForContrastIntent,
 } from "./experimentGraphStatistics";
 import {
+  changedGraphUsageCategories,
   createBenchmarkAnalysisState,
   createBenchmarkRenderedState,
   createGraphUsageState,
@@ -695,14 +696,9 @@ export function ExperimentGraphWorkbench({
     usageGraphStateRef.current = usageGraphState;
     if (!previous) return;
     const route = routeFromPath(window.location.pathname);
-    if (previous.graphType !== usageGraphState.graphType) recordUsageGraphEdit(route, "graph_type");
-    if (previous.series !== usageGraphState.series) recordUsageGraphEdit(route, "series_selection");
-    if (previous.axes !== usageGraphState.axes) recordUsageGraphEdit(route, "axes");
-    if (previous.layers !== usageGraphState.layers) recordUsageGraphEdit(route, "layers");
-    if (previous.appearance !== usageGraphState.appearance)
-      recordUsageGraphEdit(route, "appearance_layout");
-    if (previous.annotation !== usageGraphState.annotation)
-      recordUsageGraphEdit(route, "statistics_annotation");
+    changedGraphUsageCategories(previous, usageGraphState).forEach((category) =>
+      recordUsageGraphEdit(route, category),
+    );
   }, [usageGraphState]);
 
   const benchmarkStateLogRef = useRef<{

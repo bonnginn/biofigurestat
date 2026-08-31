@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  changedGraphUsageCategories,
   createBenchmarkAnalysisState,
   createBenchmarkRenderedState,
   createGraphUsageState,
@@ -166,5 +167,13 @@ describe("Graph instrumentation projections", () => {
     expect(JSON.parse(usage.annotation)).toMatchObject({
       statisticsAnnotation: { mode: "hidden", testIndex: 0 },
     });
+
+    expect(
+      changedGraphUsageCategories(usage, {
+        ...usage,
+        graphType: "bar",
+        axes: JSON.stringify({ ...axes, yTitle: "Normalized response" }),
+      }),
+    ).toEqual(["graph_type", "axes"]);
   });
 });

@@ -92,6 +92,14 @@ export type GraphUsageState = Readonly<{
   annotation: string;
 }>;
 
+export type GraphUsageEditCategory =
+  | "graph_type"
+  | "series_selection"
+  | "axes"
+  | "layers"
+  | "appearance_layout"
+  | "statistics_annotation";
+
 export function createGraphUsageState(
   input: Readonly<{
     graphType: WorkspaceGraphState["graphType"];
@@ -124,4 +132,18 @@ export function createGraphUsageState(
       statisticsAnnotations: input.statisticsAnnotations,
     }),
   };
+}
+
+export function changedGraphUsageCategories(
+  previous: GraphUsageState,
+  current: GraphUsageState,
+): readonly GraphUsageEditCategory[] {
+  return [
+    ...(previous.graphType !== current.graphType ? (["graph_type"] as const) : []),
+    ...(previous.series !== current.series ? (["series_selection"] as const) : []),
+    ...(previous.axes !== current.axes ? (["axes"] as const) : []),
+    ...(previous.layers !== current.layers ? (["layers"] as const) : []),
+    ...(previous.appearance !== current.appearance ? (["appearance_layout"] as const) : []),
+    ...(previous.annotation !== current.annotation ? (["statistics_annotation"] as const) : []),
+  ];
 }
