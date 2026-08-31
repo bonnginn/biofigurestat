@@ -24,6 +24,8 @@
     "telemetry:release-config:test": "node --test scripts/test_prepare_telemetry_release_config.mjs",
     "native:verify:mac": "engine/python/.venv/bin/python scripts/verify_macos_bundle.py && engine/python/.venv/bin/python engine/python/smoke_sidecar.py 'apps/desktop/src-tauri/target/release/bundle/macos/BioFigureStat.app/Contents/Resources/engine/lsaa-engine'",
     "native:verify:win": "engine\\python\\.venv\\Scripts\\python.exe scripts/verify_windows_bundle.py && engine\\python\\.venv\\Scripts\\python.exe engine/python/smoke_sidecar.py",
+    "native:ui-regression:win": "node scripts/native_ui_regression.mjs --platform windows",
+    "native:ui-regression:test": "node --test scripts/test_native_ui_regression.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "pnpm -r --if-present lint",

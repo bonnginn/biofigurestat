@@ -1,0 +1,76 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+  classifyNativeRegressionFailure,
+  defaultNativeExecutable,
+  japaneseUiAuditExpression,
+  parseNativeRegressionArguments,
+} from "./native_ui_regression.mjs";
+
+test("parses a bounded Windows native regression invocation", () => {
+  assert.deepEqual(
+    parseNativeRegressionArguments([
+      "--platform",
+      "windows",
+      "--executable",
+      "C:\\build\\BioFigureStat.exe",
+      "--output",
+      "C:\\evidence",
+      "--timeout-ms",
+      "30000",
+    ]),
+    {
+      platform: "windows",
+      executable: "C:\\build\\BioFigureStat.exe",
+      output: "C:\\evidence",
+      timeoutMs: 30000,
+    },
+  );
+});
+
+test("rejects unsupported platforms and unbounded timeouts", () => {
+  assert.throws(
+    () => parseNativeRegressionArguments(["--platform", "linux"]),
+    /Unsupported native regression platform/,
+  );
+  assert.throws(
+    () => parseNativeRegressionArguments(["--timeout-ms", "999"]),
+    /between 1000 and 120000/,
+  );
+});
+
+test("uses the packaged Windows application as its default exact target", () => {
+  assert.match(defaultNativeExecutable("windows"), /target[\\/]release[\\/]lifescience-analysis-app\.exe$/);
+});
+
+test("audits visible text and accessibility attributes while allowing the language selector", () => {
+  const expression = japaneseUiAuditExpression();
+  assert.match(expression, /aria-label/);
+  assert.match(expression, /placeholder/);
+  assert.match(expression, /日本語/);
+  assert.match(expression, /SHOW_TEXT/);
+});
+
+test("separates a missing WebView inspection channel from a product regression", () => {
+  const steps = [
+    {
+      name: "native_webview_launch",
+      status: "fail",
+      detail: "Native WebView did not expose a CDP target",
+    },
+  ];
+  assert.equal(
+    classifyNativeRegressionFailure(
+      new Error("Native WebView did not expose a CDP target on 127.0.0.1:50000"),
+      steps,
+    ),
+    "HARNESS_INFRASTRUCTURE_BLOCKED",
+  );
+  assert.equal(
+    classifyNativeRegressionFailure(new Error("Cancel lost the dirty entry"), [
+      { name: "native_close_requires_guard_and_cancel_retains_work", status: "fail" },
+    ]),
+    "PRODUCT_REGRESSION",
+  );
+});

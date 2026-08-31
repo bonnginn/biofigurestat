@@ -146,6 +146,8 @@ Current engineering evidence and the reduced human gate are summarized in
 
 ## macOS / Windows native smoke
 
+- [-] POST-ALPHA IN PROGRESS — exact Windows executable automation covers native IPC/export and dirty Close / Cancel / Discard with screenshot/JSON evidence; clean-runner CDP stability and the macOS adapter remain open (`NATIVE_UI_REGRESSION_HARNESS.md`).
+
 - [ ] BEFORE ALPHA — macOS Apple Silicon: install/launch, sidecar/version, representative analysis, Graph, save/open, SVG/PNG/clipboard, diagnostics, quit/reopen.
 - [ ] BEFORE ALPHA — Windows 11 x64: install/launch, sidecar/version, representative analysis, Graph, save/open, SVG/PNG/clipboard or documented deferral, diagnostics, quit/reopen.
 - [ ] BEFORE ALPHA — both platforms: high-DPI/window resize, non-ASCII paths, file association, corrupt/recovery fixture and no-network operation.

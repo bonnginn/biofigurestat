@@ -66,13 +66,24 @@ For the post-Alpha refactor, focused Graph, Graph-only, DataSheet, MultiConditio
 remain the unchanged Alpha binaries; this source-only refactor has not produced a new native
 candidate.
 
-For the English-localization branch, the full UI suite passes with 131 files and 1,116 tests.
+For the English-localization branch, the full UI suite passes with 131 files and 1,117 tests.
 English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
 and image alternative text across the production surfaces. Typecheck, lint, and the production UI
 build pass. Windows candidate `8dec615-alpha.20260831.win-en1` passes the Windows bundle verifier,
 release bundle verifier, and packaged-engine smoke checks. Its installer SHA-256 is
 `B4A30A4288D0DF164766C0B99027E5CC36C4EE7D04AD381659CDD29AC4071554`. Windows human language review
 and the macOS native candidate remain outstanding.
+
+Post-Alpha native regression automation has started on this branch. A dependency-free Windows
+harness now launches the exact packaged Tauri executable with an isolated WebView2 profile and can
+drive native IPC, export, New Experiment input, and the dirty-window Close / Cancel / Discard
+lifecycle while recording screenshots and JSON evidence. Its first attachment found and drove the
+fix for Japanese route-wrapper copy in English mode. After that initial success, repeated CDP
+attachment on the current Windows host stopped exposing an inspection port; the harness records
+this as infrastructure failure rather than product failure. The rebuilt package still passes the
+Windows bundle and release verifiers, typecheck, lint, and the expanded full UI suite (131 files,
+1,117 tests). A clean Windows CI/VM backend and a macOS adapter remain required before this becomes
+a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md`.
 
 ## Known bounded gaps
 
@@ -86,8 +97,9 @@ and the macOS native candidate remain outstanding.
   editor; no English native release has been declared ready.
 - Beta work includes Graph-preview parity, compact workspace chrome, editable experiment metadata,
   and Kaplan–Meier appearance-control parity while preserving censoring and risk-table semantics.
-- Windows/macOS native UI regression automation is still required; human review should then focus
-  on scientific usability and visual judgment.
+- Windows native UI regression automation has an initial exact-executable harness, but its CDP
+  attachment still needs a clean-runner fallback; macOS UI driving is not implemented. Human review
+  should then focus on scientific usability and visual judgment.
 
 ## Working-tree rule
 
