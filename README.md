@@ -102,6 +102,12 @@ biological `n`、対応、階層、反復測定における同一性、変換、
 明示的に保持します。未対応または曖昧な実験構造を、表面的に似た解析へ無理に当てはめず、
 安全に停止します。
 
+### 紹介動画
+
+[![BioFigureStat Alpha 紹介動画](https://img.youtube.com/vi/i6Sf-3Dbg4w/maxresdefault.jpg)](https://youtu.be/i6Sf-3Dbg4w)
+
+[BioFigureStat Alphaの基本操作を動画で見る](https://youtu.be/i6Sf-3Dbg4w)
+
 ### ダウンロード
 
 BioFigureStat `0.1.0-alpha.1`は、
