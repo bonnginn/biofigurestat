@@ -1,9 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
-import {
-  requireAnalysisRequestRecommendation,
-  type AnalysisRecommendation,
-} from "@lsaa/analysis-contracts";
+import type { AnalysisRecommendation } from "@lsaa/analysis-contracts";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
 
 import {
@@ -67,7 +64,6 @@ import {
   recordDiagnosticError,
   recordDiagnosticEvent,
 } from "../../app/diagnostics";
-import { PRODUCT_IDENTITY } from "../../app/productIdentity";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
 import { routeFromPath } from "../../app/routes";
 import { recordUsageGraphEdit } from "../../app/usageTelemetry";
@@ -95,6 +91,10 @@ import {
   createGraphUsageState,
   type GraphUsageState,
 } from "./experimentGraphInstrumentation";
+import {
+  createBenchmarkRunArtifact,
+  createBenchmarkStatisticsArtifact,
+} from "./experimentGraphBenchmarkArtifacts";
 import {
   analysisTestAnnotationLabel,
   createAdjustedComparisonAnnotation,
@@ -1268,131 +1268,25 @@ export function ExperimentGraphWorkbench({
         selectedStatistics: analysis?.request.method ?? "none_descriptive",
       });
       const finalRun = currentBenchmarkRun();
-      const statisticsArtifact = analysis
-        ? {
-            selectedReadoutId,
-            selectedConditionIds: analysisConditionIds,
-            displayedConditionIds: selectedConditionIds,
-            statisticalUnit: draft.conditionAssignment.unitLabel,
-            recommendation: {
-              ...requireAnalysisRequestRecommendation(
-                createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
-                analysis.request,
-                { outcomeId: selectedReadoutId },
-              ),
-              ...(analysis.recommendation?.decision
-                ? { decision: analysis.recommendation.decision }
-                : {}),
-            },
-            recommendedMethod: requireAnalysisRequestRecommendation(
-              createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
-              analysis.request,
-              { outcomeId: selectedReadoutId },
-            ).recommendedMethod,
-            selectedMethod: analysis.request.method,
-            recommendationDiffers:
-              requireAnalysisRequestRecommendation(
-                createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
-                analysis.request,
-                { outcomeId: selectedReadoutId },
-              ).recommendedMethod !== analysis.request.method,
-            contrast:
-              analysis.request.protocolVersion === "0.1.0"
-                ? analysis.request.contrastConditionIds
-                : analysis.request.protocolVersion === "0.2.0"
-                  ? {
-                      intent: analysis.request.contrastIntent,
-                      controlConditionId: analysis.request.controlConditionId ?? null,
-                      plannedConditionPairs: analysis.request.plannedContrastConditionIds ?? [],
-                    }
-                  : analysis.request.protocolVersion === "0.5.0"
-                    ? analysis.request.variableConditionIds
-                    : analysis.request.protocolVersion === "0.11.0"
-                      ? {
-                          rows: analysis.request.rowCategoryIds,
-                          columns: analysis.request.columnCategoryIds,
-                        }
-                      : analysis.request.protocolVersion === "0.12.0"
-                        ? analysis.request.conditionIds
-                        : analysis.request.protocolVersion === "0.13.0"
-                          ? { x: analysis.request.xLabel, y: analysis.request.yLabel }
-                          : analysis.request.protocolVersion === "0.14.0"
-                            ? {
-                                seriesIds: analysis.request.seriesIds,
-                                modelId: analysis.request.modelId,
-                              }
-                            : analysis.request.protocolVersion === "0.6.0" ||
-                                analysis.request.protocolVersion === "0.7.0" ||
-                                analysis.request.protocolVersion === "0.8.0" ||
-                                analysis.request.protocolVersion === "0.10.0"
-                              ? analysis.request.conditionIds
-                              : analysis.request.protocolVersion === "0.9.0"
-                                ? {
-                                    conditionId: analysis.request.conditionId,
-                                    referenceValue: analysis.request.nullValue,
-                                  }
-                                : analysis.request.primaryContrastConditionIds,
-            nByCondition: analysisAssessment.nByCondition,
-            correction: analysis.request.options.multiplicityMethod,
-            request: analysis.request,
-            result: analysis.result,
-            state: "current",
-            applicationVersion: PRODUCT_IDENTITY.version,
-          }
-        : {
-            selectedReadoutId,
-            selectedConditionIds,
-            statisticalUnit: draft.conditionAssignment.unitLabel,
-            selectedMethod: null,
-            state: "not_performed",
-            reason:
-              "Approved Gold brief specifies a descriptive panel without an inferential comparator or null hypothesis.",
-            applicationVersion: PRODUCT_IDENTITY.version,
-          };
+      const statisticsArtifact = createBenchmarkStatisticsArtifact({
+        draft,
+        analysis,
+        analysisAssessment,
+        selectedReadoutId,
+        selectedConditionIds,
+        analysisConditionIds,
+      });
       await writeBenchmarkArtifacts(
         [
           {
             name: "run.json",
             content: JSON.stringify(
-              {
-                ...finalRun.identity,
-                appVersion: PRODUCT_IDENTITY.version,
+              createBenchmarkRunArtifact({
+                run: finalRun,
+                analysis,
                 sourceRevision: evaluationMode.sourceRevision,
-                engineVersion: analysis?.result.engine.version ?? "not_applicable",
-                startedAt: finalRun.startedAt,
                 completedAt: new Date().toISOString(),
-                outcome: finalRun.outcome,
-                supportStatus: finalRun.supportStatus,
-                artifactCompleteness: "complete",
-                defaultGraphCaptured: finalRun.defaultGraphCaptured,
-                captureProvenanceVersion: "1.1.0",
-                defaultCapturedAt: finalRun.defaultGraphCapture?.capturedAt ?? null,
-                defaultCapturedEventIndex: finalRun.defaultGraphCapture?.eventIndex ?? null,
-                finalCapturedAt: finalRun.finalGraphCapture?.capturedAt ?? null,
-                finalCapturedEventIndex: finalRun.finalGraphCapture?.eventIndex ?? null,
-                defaultGraphStateFingerprint:
-                  finalRun.defaultGraphCapture?.graphStateFingerprint ?? null,
-                finalGraphStateFingerprint:
-                  finalRun.finalGraphCapture?.graphStateFingerprint ?? null,
-                defaultAnalysisStateFingerprint:
-                  finalRun.defaultGraphCapture?.analysisStateFingerprint ?? null,
-                finalAnalysisStateFingerprint:
-                  finalRun.finalGraphCapture?.analysisStateFingerprint ?? null,
-                defaultSvgSha256: finalRun.defaultGraphCapture?.svgSha256 ?? null,
-                defaultPngSha256: finalRun.defaultGraphCapture?.pngSha256 ?? null,
-                finalSvgSha256: finalRun.finalGraphCapture?.svgSha256 ?? null,
-                finalPngSha256: finalRun.finalGraphCapture?.pngSha256 ?? null,
-                interactionCount: finalRun.events.length,
-                graphEditCount: finalRun.events.filter(
-                  ({ type }) => type === "graph_configuration_changed",
-                ).length,
-                renderedGraphEditCount: finalRun.events.filter(
-                  ({ effect }) => effect === "rendered_graph" || effect === "both",
-                ).length,
-                analysisEditCount: finalRun.events.filter(
-                  ({ effect }) => effect === "analysis_only" || effect === "both",
-                ).length,
-              },
+              }),
               null,
               2,
             ),
