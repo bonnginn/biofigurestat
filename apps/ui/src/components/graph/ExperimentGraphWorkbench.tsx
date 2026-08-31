@@ -49,6 +49,7 @@ import {
   type WorkspaceGraphAnalysis,
   type WorkspaceGraphState,
 } from "../../app/experimentWorkspaceProject";
+import { createWorkspaceGraphStateSnapshot } from "../../app/experimentGraphStateSelectors";
 import {
   copyGraphToClipboard,
   serializeGraphSvg,
@@ -2622,60 +2623,26 @@ export function ExperimentGraphWorkbench({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const onStateChangeRef = useRef(onStateChange);
   const graphStateSnapshot = useMemo<Omit<WorkspaceGraphState, "id" | "displayName">>(
-    () => ({
-      selectedReadoutId,
-      sourceMode,
-      selectedConditionIds,
-      analysisConditionIds,
-      selectedTimePointIds,
-      dataSets: {
-        displaySet: {
-          conditionIds: selectedConditionIds,
-          timePointIds: selectedTimePointIds,
-        },
-        analysisSet: {
-          conditionIds: analysisConditionIds,
-          timePointIds: analysisTimePointId ? [analysisTimePointId] : selectedTimePointIds,
-        },
-        comparisonSet: [
-          ...new Map(
-            [
-              ...plannedContrastConditionIds.map((conditionIds, index) => ({
-                id: `planned.${index + 1}`,
-                conditionIds: [conditionIds[0], conditionIds[1]] as [string, string],
-              })),
-              ...statisticsAnnotations.flatMap((annotation) =>
-                annotation.endpoints
-                  ? [
-                      {
-                        id: annotation.comparisonId ?? annotation.id,
-                        conditionIds: [
-                          annotation.endpoints[0].conditionId,
-                          annotation.endpoints[1].conditionId,
-                        ] as [string, string],
-                      },
-                    ]
-                  : [],
-              ),
-            ].map((comparison) => [comparison.id, comparison]),
-          ).values(),
-        ],
-        annotationSet: statisticsAnnotations.flatMap((annotation) =>
-          annotation.endpoints ? [{ comparisonId: annotation.comparisonId ?? annotation.id }] : [],
-        ),
-      },
-      analysisTimePointId,
-      analysisMetric: timeAnalysis,
-      graphType,
-      grouping,
-      layers,
-      appearance,
-      axes,
-      statisticsAnnotation,
-      statisticsAnnotations,
-      analysisRunId: analysis ? (initialState?.analysisRunId ?? null) : null,
-      analysis,
-    }),
+    () =>
+      createWorkspaceGraphStateSnapshot({
+        selectedReadoutId,
+        sourceMode,
+        selectedConditionIds,
+        analysisConditionIds,
+        selectedTimePointIds,
+        analysisTimePointId,
+        analysisMetric: timeAnalysis,
+        plannedContrastConditionIds,
+        graphType,
+        grouping,
+        layers,
+        appearance,
+        axes,
+        statisticsAnnotation,
+        statisticsAnnotations,
+        initialAnalysisRunId: initialState?.analysisRunId,
+        analysis,
+      }),
     [
       analysis,
       analysisTimePointId,
