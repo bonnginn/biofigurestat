@@ -1173,6 +1173,14 @@ describe("final common coverage workflows", () => {
     expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();
     expect(screen.getAllByText(/R²/).length).toBeGreaterThan(0);
+    act(() => setAppLocale("en"));
+    expect(screen.getByRole("region", { name: "Nonlinear-fit results" })).toBeVisible();
+    expect(screen.getByText("Analysis result available to save")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Export SVG" }));
+    await waitFor(() =>
+      expect(screen.getByText("Exported an SVG matching the displayed Graph.")).toBeVisible(),
+    );
+    act(() => setAppLocale("ja"));
     expect(nonlinearRunner).toHaveBeenCalledWith(
       expect.objectContaining({
         protocolVersion: "0.14.0",

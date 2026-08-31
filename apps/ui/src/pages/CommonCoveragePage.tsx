@@ -1117,9 +1117,9 @@ export function CommonCoveragePage({
       setRawTextCaptureMode("file_text_exact");
       setResult(null);
       setExecutedRequest(null);
-      setMessage(`${file.name}を読み込みました。`);
+      setMessage(t(`${file.name}を読み込みました。`, `Loaded ${file.name}.`));
     } catch {
-      setMessage(`${file.name}を読み込めませんでした。`);
+      setMessage(t(`${file.name}を読み込めませんでした。`, `Could not load ${file.name}.`));
     } finally {
       input.value = "";
     }
@@ -1128,7 +1128,7 @@ export function CommonCoveragePage({
     const usageRoute = routeFromPath(window.location.pathname);
     recordUsageMilestone(usageRoute, "statistics_requested");
     try {
-      setMessage("解析中…");
+      setMessage(t("解析中…", "Analyzing…"));
       if ("error" in parsed) throw new Error(parsed.error);
       let request;
       if (parsed.kind === "contingency") {
@@ -1203,22 +1203,31 @@ export function CommonCoveragePage({
         ) {
           throw new Error(
             orderedCurveValidationMessage ??
-              "実験構造を確定できないため、別のdesignへ変換せずfitを停止しました。",
+              t(
+                "実験構造を確定できないため、別のdesignへ変換せずfitを停止しました。",
+                "The fit stopped because the experiment structure could not be confirmed. The data were not converted to another design.",
+              ),
           );
         }
         if (adaptiveOrderedCurveActive && !orderedCurveFitAllowed) {
-          throw new Error(orderedCurveAnalysisReadiness.message.ja);
+          throw new Error(orderedCurveAnalysisReadiness.message[locale]);
         }
         if (!modelRationale.trim())
-          throw new Error("model selectionの科学的理由を記録してください");
+          throw new Error(t("model selectionの科学的理由を記録してください", "Record the scientific reason for selecting this model."));
         if (nonlinearDefinition.requiresAxisUnits && (!xUnit.trim() || !yUnit.trim())) {
           throw new Error(
-            "Michaelis–Menten fitでは、基質濃度と反応初速度の単位を両方入力してください",
+            t(
+              "Michaelis–Menten fitでは、基質濃度と反応初速度の単位を両方入力してください",
+              "For a Michaelis–Menten fit, enter units for both substrate concentration and initial reaction rate.",
+            ),
           );
         }
         if (nonlinearModel === "michaelis_menten" && parsed.data.points.some(({ x }) => x < 0)) {
           throw new Error(
-            "Michaelis–Menten fitの基質濃度Xは0以上にしてください。入力値は削除していません。",
+            t(
+              "Michaelis–Menten fitの基質濃度Xは0以上にしてください。入力値は削除していません。",
+              "Substrate-concentration X values must be zero or greater for a Michaelis–Menten fit. Entered values were not deleted.",
+            ),
           );
         }
         const initialTemplate: Record<string, number> = {};
@@ -1230,10 +1239,10 @@ export function CommonCoveragePage({
           const lower = finiteOptional(setting.lower, `${parameterLabel} lower bound`);
           const upper = finiteOptional(setting.upper, `${parameterLabel} upper bound`);
           if ((lower === undefined) !== (upper === undefined)) {
-            throw new Error(`${parameterLabel}のboundはlowerとupperを両方指定してください`);
+            throw new Error(t(`${parameterLabel}のboundはlowerとupperを両方指定してください`, `Specify both lower and upper bounds for ${parameterLabel}.`));
           }
           if (lower !== undefined && upper !== undefined && lower >= upper) {
-            throw new Error(`${parameterLabel}のboundはlower < upperにしてください`);
+            throw new Error(t(`${parameterLabel}のboundはlower < upperにしてください`, `The lower bound for ${parameterLabel} must be less than its upper bound.`));
           }
           if (
             nonlinearModel === "michaelis_menten" &&
@@ -1242,7 +1251,10 @@ export function CommonCoveragePage({
               (upper !== undefined && upper <= 0))
           ) {
             throw new Error(
-              `${parameterLabel}は正のinitial、0以上のlower、正のupperを指定してください`,
+              t(
+                `${parameterLabel}は正のinitial、0以上のlower、正のupperを指定してください`,
+                `For ${parameterLabel}, specify a positive initial value, a nonnegative lower bound, and a positive upper bound.`,
+              ),
             );
           }
           if (initial !== undefined) initialTemplate[parameter] = initial;
@@ -1321,12 +1333,12 @@ export function CommonCoveragePage({
         protocolVersion: validated.protocolVersion,
         engineVersion: next.engine.version,
       });
-      setMessage("解析とprovenance記録が完了しました。");
+      setMessage(t("解析とprovenance記録が完了しました。", "Analysis and provenance recording are complete."));
     } catch (error) {
       recordUsageMilestone(usageRoute, "safe_stop");
       setExecutedRequest(null);
       setResult(null);
-      setMessage(error instanceof Error ? error.message : "解析できませんでした");
+      setMessage(error instanceof Error ? error.message : t("解析できませんでした", "The analysis could not be completed"));
     }
   };
   let graph: React.ReactNode = null;
@@ -1564,7 +1576,7 @@ export function CommonCoveragePage({
   const saveNonlinearProject = async (saveAs = false) => {
     lastSaveSucceededRef.current = false;
     if (!saveProject && !saveSpecializedEntryDraftProject) {
-      setMessage("デスクトップ版で保存できます。");
+      setMessage(t("デスクトップ版で保存できます。", "Saving is available in the desktop app."));
       return;
     }
     if (
@@ -1610,13 +1622,13 @@ export function CommonCoveragePage({
           saveAs ? undefined : currentSpecializedEntryDraft?.target,
         );
         if (!saved) {
-          setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
+          setMessage(t("保存をキャンセルしました。入力内容はこの画面に残っています。", "Saving was canceled. Your entries remain on this screen."));
           return;
         }
         setCurrentSpecializedEntryDraft(saved);
         lastSaveSucceededRef.current = true;
         adoptCurrentAsBaseline();
-        setMessage("入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。");
+        setMessage(t("入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。", "Saved the in-progress table and answers. Experiment structure, Graph, and Statistics remain unresolved."));
       } catch (error) {
         setMessage(
           error instanceof Error ? error.message : "入力途中のprojectを保存できませんでした",
@@ -1633,7 +1645,7 @@ export function CommonCoveragePage({
         !legacyNonlinearDesignData ||
         !nonlinearSpec
       ) {
-        setMessage("先に非線形fitを実行してください。");
+        setMessage(t("先に非線形fitを実行してください。", "Run the nonlinear fit first."));
         return;
       }
       try {
@@ -1672,7 +1684,10 @@ export function CommonCoveragePage({
           adoptCurrentAsBaseline();
         }
         setMessage(
-          "選んだモデル、推定値、診断、入力した測定点、保存済みの適合曲線をプロジェクトへ保存しました。",
+          t(
+            "選んだモデル、推定値、診断、入力した測定点、保存済みの適合曲線をプロジェクトへ保存しました。",
+            "Saved the selected model, estimates, diagnostics, entered observations, and fitted curve to the project.",
+          ),
         );
       } catch (error) {
         setMessage(error instanceof Error ? error.message : "プロジェクトを保存できませんでした");
@@ -1682,7 +1697,10 @@ export function CommonCoveragePage({
     if (!nonlinearDesignData || orderedCurveEntry?.status !== "surface_ready") {
       setMessage(
         orderedCurveValidationMessage ??
-          "実験構造を確定できないため、別のdesignへ変換せず保存を停止しました。",
+          t(
+            "実験構造を確定できないため、別のdesignへ変換せず保存を停止しました。",
+            "Saving stopped because the experiment structure could not be confirmed. The data were not converted to another design.",
+          ),
       );
       return;
     }
@@ -1802,8 +1820,14 @@ export function CommonCoveragePage({
       }
       setMessage(
         analysisPayload
-          ? "選んだモデル、推定値、診断、入力した測定点、保存済みの適合曲線をプロジェクトへ保存しました。"
-          : "入力した測定点、観測Graphを再現する実験構造、元データとの対応履歴をプロジェクトへ保存しました。",
+          ? t(
+              "選んだモデル、推定値、診断、入力した測定点、保存済みの適合曲線をプロジェクトへ保存しました。",
+              "Saved the selected model, estimates, diagnostics, entered observations, and fitted curve to the project.",
+            )
+          : t(
+              "入力した測定点、観測Graphを再現する実験構造、元データとの対応履歴をプロジェクトへ保存しました。",
+              "Saved the entered observations, experiment structure needed to reproduce the observed Graph, and source-data mapping history.",
+            ),
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "プロジェクトを保存できませんでした");
@@ -2330,11 +2354,11 @@ export function CommonCoveragePage({
         "image/svg+xml;charset=utf-8",
       );
       if (result === "saved") {
-        setMessage("表示中のGraphと同じ内容をSVGで書き出しました。");
+        setMessage(t("表示中のGraphと同じ内容をSVGで書き出しました。", "Exported an SVG matching the displayed Graph."));
       }
     } catch (error) {
       if (error instanceof ExportCancelledError) return;
-      setMessage("SVGを書き出せませんでした。Graphは画面に保持されています。");
+      setMessage(t("SVGを書き出せませんでした。Graphは画面に保持されています。", "The SVG could not be exported. The Graph remains on screen."));
     }
   };
   const exportGraphPng = async () => {
@@ -2342,13 +2366,14 @@ export function CommonCoveragePage({
     if (!svg) return;
     try {
       await saveGraphPng(svg, `${mode}.png`);
-      setMessage("表示中のGraphと同じ内容をPNGで書き出しました。");
+      setMessage(t("表示中のGraphと同じ内容をPNGで書き出しました。", "Exported a PNG matching the displayed Graph."));
     } catch (error) {
       if (error instanceof ExportCancelledError) return;
       setMessage(
-        `PNGを書き出せませんでした。GraphとSVG書き出しは利用できます。${
-          error instanceof Error && error.message ? ` ${error.message}` : ""
-        }`,
+        t(
+          `PNGを書き出せませんでした。GraphとSVG書き出しは利用できます。${error instanceof Error && error.message ? ` ${error.message}` : ""}`,
+          `The PNG could not be exported. The Graph and SVG export remain available.${error instanceof Error && error.message ? ` ${error.message}` : ""}`,
+        ),
       );
     }
   };
@@ -2357,12 +2382,13 @@ export function CommonCoveragePage({
     if (!svg) return;
     try {
       const format = await copyGraphToClipboard(svg);
-      setMessage(`表示中のGraphをクリップボードへコピーしました（${format.toUpperCase()}）。`);
+      setMessage(t(`表示中のGraphをクリップボードへコピーしました（${format.toUpperCase()}）。`, `Copied the displayed Graph to the clipboard (${format.toUpperCase()}).`));
     } catch (error) {
       setMessage(
-        `Graphをコピーできませんでした。${
-          error instanceof Error && error.message ? ` ${error.message}` : ""
-        }`,
+        t(
+          `Graphをコピーできませんでした。${error instanceof Error && error.message ? ` ${error.message}` : ""}`,
+          `The Graph could not be copied.${error instanceof Error && error.message ? ` ${error.message}` : ""}`,
+        ),
       );
     }
   };
@@ -2979,9 +3005,9 @@ export function CommonCoveragePage({
           graph
         )}
         {result?.nonlinearFit ? (
-          <div className="nonlinear-fit-results" role="region" aria-label="非線形fit結果">
+          <div className="nonlinear-fit-results" role="region" aria-label={t("非線形fit結果", "Nonlinear-fit results")}>
             <header>
-              <p className="overline">保存対象の解析結果</p>
+              <p className="overline">{t("保存対象の解析結果", "Analysis result available to save")}</p>
               <h2>Parameter estimates & fit diagnostics</h2>
               <p>
                 Model: <strong>{nonlinearModelLabel(result.nonlinearFit.modelId)}</strong> · ID{" "}
@@ -2991,7 +3017,10 @@ export function CommonCoveragePage({
             </header>
             {descriptiveNonlinearFit ? (
               <p className="specialized-engine-note" role="status">
-                同じ対象を順に測った曲線への記述的fitです。Parameterは点推定として表示し、SE・信頼区間・群間推論は生成していません。
+                {t(
+                  "同じ対象を順に測った曲線への記述的fitです。Parameterは点推定として表示し、SE・信頼区間・群間推論は生成していません。",
+                  "This is a descriptive fit to a curve measured sequentially on the same subject. Parameters are shown as point estimates; no SE, confidence interval, or between-group inference is generated.",
+                )}
               </p>
             ) : null}
             {result.nonlinearFit.series.map((seriesFit) => (
