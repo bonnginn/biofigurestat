@@ -55,9 +55,9 @@ export function UnsavedChangesDialog({
         <p id="unsaved-changes-description">
           {ja
             ? `「${actionLabel}」へ進む前に、入力したデータとGraphの変更を保存できます。`
-            : `You can save entered data and Graph changes before ${actionLabel}.`}
+            : "You can save entered data and Graph changes before continuing."}
         </p>
-        {error ? <p className="unsaved-changes-error" role="alert">{error}</p> : null}
+        {error ? <p className="unsaved-changes-error" role="alert">{ja ? error : "Saving did not complete. Your work remains open."}</p> : null}
         <div className="unsaved-changes-actions">
           <button
             className="primary-button"

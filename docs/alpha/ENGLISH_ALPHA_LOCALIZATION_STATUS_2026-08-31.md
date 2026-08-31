@@ -19,6 +19,10 @@ Reviewed English copy is implemented for the main Public Alpha path:
 - general Biological Interview and its live summary;
 - common experiment-workspace shell and File / Data / Graph / Statistics navigation;
 - canonical worksheet view controls, zoom, expanded-record headings, row actions, and paste errors;
+- canonical condition-matrix file import, condition/status headings, IDs, and validation boundaries;
+- compact and expanded nested Cell/ROI measurement entry;
+- existing Excel/CSV/TSV table preview and explicit column assignment;
+- condition/ordered-axis structure preview;
 - common Graph creation dialog and core Graph editor controls;
 - Statistics recommendation, comparison intent, diagnostics, and results chrome;
 - Graph-only table import, column mapping, Graph creation, and safe Statistics handoff;
@@ -29,12 +33,21 @@ Reviewed English copy is implemented for the main Public Alpha path:
 Scientific semantic keys, analysis request IDs, biological-unit identity, pairing, nesting,
 censoring, ordered-axis identity, raw lineage, and the project schema remain language-independent.
 
+Application-generated Japanese copy is not rendered on the covered English surfaces. User-entered
+content and labels stored in a project are preserved verbatim and may of course contain Japanese.
+
+Legacy D01-D05 project files remain valid and unchanged. In English mode, opening a project that
+predates the common experiment workspace shows an English compatibility notice instead of opening
+the untranslated legacy editor. Switching the application language to Japanese opens that editor;
+the application does not convert, discard, or overwrite the project.
+
 ## Verification
 
-- UI full test: 129 files, 1,103 tests passed.
+- UI full test: 131 files, 1,116 tests passed after the final advanced-surface additions.
 - English localization focused tests cover Home, entry hub, simple entry, Biological Interview,
   project discovery, Help/About/reporting, Graph-only safe handoff, common Graph creation,
-  Statistics, and canonical worksheet records.
+  Statistics, canonical worksheet records and matrices, nested measurement entry, existing-data
+  import, Survival, Heatmap, ordered X/Y, and every currently exposed specialist surface.
 - UI typecheck: pass.
 - UI lint: pass.
 - production UI build: pass.
@@ -43,25 +56,14 @@ censoring, ordered-axis identity, raw lineage, and the project schema remain lan
 
 ## Not yet an English native candidate
 
-Some less common or legacy surfaces still contain Japanese copy, especially:
-
-- legacy `DataSheetPage` and `MultiConditionDataSheetPage` workflows;
-- detailed experiment-specific editors for proportion, WB, categorical, and nested raw data;
-- advanced Survival / ordered-curve / Heatmap guidance and validation messages;
-- some specialist Graph inspector explanations and generated Methods text;
-- low-level validation and recovery messages emitted by older adapters.
-
-These gaps do not alter scientific data, but a mixed-language UI is not acceptable as a finished
-English release. Do not label this branch `ENGLISH ALPHA READY` or publish native English assets
-until the remaining production-reachable copy is audited, translated, and checked on both Windows
-and macOS. The existing Japanese `v0.1.0-alpha.1` release is unaffected.
+The source-level production paths now have automated no-Japanese rendering coverage, but no English
+Windows or macOS native candidate has been built or manually reviewed. Do not publish native
+English assets until the final full suite, native lifecycle/export verification, and a short human
+review for terminology, clipping, and layout all pass. The existing Japanese `v0.1.0-alpha.1`
+release is unaffected.
 
 ## Next gate
 
-1. Build a route inventory that distinguishes production-reachable surfaces from compatibility and
-   development-only surfaces.
-2. Complete reviewed English copy for all production-reachable data-entry and specialist routes.
-3. Add English smoke tests for scalar, nested, Survival, ordered X/Y, Heatmap, save/reopen, and
-   export.
-4. Build Windows and macOS native candidates and run the native lifecycle/export verifier.
-5. Perform a short human language review for terminology, clipping, and layout before publishing.
+1. Build Windows and macOS native candidates and run the native lifecycle/export verifier.
+2. Exercise language switching, fresh entry, save/reopen, and export on both native candidates.
+3. Perform a short human language review for terminology, clipping, and layout before publishing.

@@ -91,7 +91,11 @@ export function ConditionTimePreview({ draft, compact = false }: ConditionTimePr
                   <strong>
                     {primaryAttribute?.label || t("条件", "Condition")}: {group.value}
                   </strong>
-                  <span>{t("同じ項目", "Same item")} · {group.conditionIds.length} {t("条件", "conditions")}</span>
+                  <span>
+                    {locale === "ja"
+                      ? `同じ項目 · ${group.conditionIds.length}条件`
+                      : `Same item · ${group.conditionIds.length} conditions`}
+                  </span>
                 </div>
                 <div className="condition-time-preview__conditions">
                   {draft.conditions

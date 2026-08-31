@@ -1367,9 +1367,9 @@ export default function App({
         {systemOpenError &&
         (activeProject || activeVisualizationProject || activeSpecializedEntryDraft) ? (
           <div className="app-system-alert" role="alert">
-            <span>{systemOpenError}</span>
+            <span>{locale === "ja" ? systemOpenError : "The operation could not be completed. The current workspace was retained."}</span>
             <button type="button" onClick={() => setSystemOpenError(null)}>
-              閉じる
+              {t("閉じる", "Close")}
             </button>
           </div>
         ) : null}

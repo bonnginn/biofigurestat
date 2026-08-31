@@ -447,6 +447,21 @@ function PersistedProjectView({
       />
     );
   }
+  if (locale === "en") {
+    return (
+      <div className="page-stack">
+        <button type="button" onClick={onBack}>← Back</button>
+        <section className="workspace-panel" aria-labelledby="legacy-project-language-heading">
+          <p className="overline">Legacy project editor</p>
+          <h1 id="legacy-project-language-heading">This project uses a legacy data-sheet format</h1>
+          <p role="note">
+            The project file was opened and validated, but its legacy editor has not been translated.
+            Switch the display language to Japanese to edit it. The file and its measurements remain unchanged.
+          </p>
+        </section>
+      </div>
+    );
+  }
   const activeDerivedRevision = state.derivedDatasetRevisions.find(
     (revision) =>
       revision.sourceRawRevisionId === state.activeRawRevisionId &&

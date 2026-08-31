@@ -26,10 +26,16 @@ unreferenced corpus-coupled prototype are retained only in the private archive.
 ## Active work
 
 Branch `codex/english-alpha-localization-2026-08-31` adds a persistent Japanese / English
-application-language setting and reviewed English copy for the main Public Alpha workflow. Locale
-state remains outside `.lsa`; scientific semantic keys, analysis requests, raw lineage, and the
-project schema are unchanged. The completed and remaining scope is recorded in
-`docs/alpha/ENGLISH_ALPHA_LOCALIZATION_STATUS_2026-08-31.md`.
+application-language setting and reviewed English copy for the production Public Alpha workflow.
+Automated English rendering checks now cover the application shell, experiment setup, canonical
+data surfaces, Graph and Statistics, specialist workspaces, Help, external-LLM consultation, and
+problem reporting. Locale state remains outside `.lsa`; scientific semantic keys, analysis
+requests, raw lineage, and the project schema are unchanged. The completed and remaining scope is
+recorded in `docs/alpha/ENGLISH_ALPHA_LOCALIZATION_STATUS_2026-08-31.md`.
+
+Legacy D01-D05 files remain backward compatible. When English is active, those pre-workspace files
+stop at an English compatibility notice instead of mixing Japanese legacy-editor copy into the
+English UI. Switching to Japanese opens the unchanged legacy editor; no project conversion occurs.
 
 The preceding structural-simplification work remains the base of this branch. Further workbench
 and spreadsheet consolidation should resume after the English native candidate, without mixing
@@ -60,6 +66,12 @@ For the post-Alpha refactor, focused Graph, Graph-only, DataSheet, MultiConditio
 remain the unchanged Alpha binaries; this source-only refactor has not produced a new native
 candidate.
 
+For the English-localization branch, the full UI suite passes with 131 files and 1,116 tests.
+English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
+and image alternative text across the production surfaces. Typecheck, lint, and the production UI
+build pass. A Windows/macOS native candidate and human terminology/layout review have not yet been
+completed.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, state orchestration,
@@ -67,8 +79,9 @@ candidate.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
-- English localization is complete for the main path but not yet for every production-reachable
-  specialist and legacy surface; no English native candidate has been declared ready.
+- English localization is covered for the production Public Alpha surfaces. Pre-workspace legacy
+  D01-D05 editors use an explicit English compatibility stop rather than a partially translated
+  editor; no English native candidate has been declared ready.
 - Beta work includes Graph-preview parity, compact workspace chrome, editable experiment metadata,
   and Kaplan–Meier appearance-control parity while preserving censoring and risk-table semantics.
 - Windows/macOS native UI regression automation is still required; human review should then focus
