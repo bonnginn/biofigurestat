@@ -80,12 +80,11 @@ import {
 } from "./experimentGraphStatistics";
 import {
   createBenchmarkAnalysisState,
-  createBenchmarkGraphConfigurationEvent,
   createBenchmarkRenderedState,
   createGraphUsageState,
-  type BenchmarkGraphStateLog,
 } from "./experimentGraphInstrumentation";
 import { useExperimentGraphDiagnosticEffects } from "./useExperimentGraphDiagnosticEffects";
+import { useBenchmarkGraphConfigurationEffects } from "./useBenchmarkGraphConfigurationEffects";
 import {
   createDefaultBenchmarkGraphArtifacts,
   createFinalBenchmarkArtifacts,
@@ -681,49 +680,25 @@ export function ExperimentGraphWorkbench({
   });
   useExperimentGraphDiagnosticEffects({ benchmarkRenderedState, graphType, usageGraphState });
 
-  const benchmarkStateLogRef = useRef<BenchmarkGraphStateLog | null>(null);
-  useEffect(() => {
-    if (
-      !import.meta.env.DEV ||
-      !evaluationModeIsConfigured(evaluationMode) ||
-      !benchmarkRun.identity
-    )
-      return;
-    const identity = `${benchmarkRun.identity.caseId}:${benchmarkRun.identity.track}:${benchmarkRun.identity.runId}`;
-    const current = {
-      identity,
-      rendered: benchmarkRenderedState,
-      analysis: benchmarkAnalysisState,
-    };
-    const event = createBenchmarkGraphConfigurationEvent(
-      benchmarkStateLogRef.current,
-      current,
-      {
-        graphType,
-        selectedReadoutId,
-        sourceMode,
-        selectedConditionIds,
-        analysisConditionIds,
-        selectedTimePointIds,
-        timeAnalysis,
-        selectedStatisticalMethod,
-        statisticsAnnotation,
-        appearance,
-        axes,
-        layers,
-      },
-    );
-    benchmarkStateLogRef.current = current;
-    if (event) recordBenchmarkEvent(event.type, event.detail, event.effect);
-  }, [
-    benchmarkAnalysisState,
-    benchmarkRenderedState,
-    benchmarkRun.identity,
-    selectedReadoutId,
-    graphType,
-    selectedStatisticalMethod,
-    statisticsAnnotation.mode,
-  ]);
+  useBenchmarkGraphConfigurationEffects({
+    identity: benchmarkRun.identity,
+    renderedState: benchmarkRenderedState,
+    analysisState: benchmarkAnalysisState,
+    configuration: {
+      graphType,
+      selectedReadoutId,
+      sourceMode,
+      selectedConditionIds,
+      analysisConditionIds,
+      selectedTimePointIds,
+      timeAnalysis,
+      selectedStatisticalMethod,
+      statisticsAnnotation,
+      appearance,
+      axes,
+      layers,
+    },
+  });
 
   const readout = draft.readouts.find((item) => item.id === selectedReadoutId) ?? draft.readouts[0];
   const activeReadoutId = readout?.id ?? "";

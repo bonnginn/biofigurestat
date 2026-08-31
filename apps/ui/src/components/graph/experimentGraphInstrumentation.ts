@@ -112,23 +112,25 @@ export type BenchmarkGraphConfigurationEvent = Readonly<{
   detail: Readonly<Record<string, string | number | boolean | null>>;
 }>;
 
+export type BenchmarkGraphConfigurationInput = Readonly<{
+  graphType: WorkspaceGraphState["graphType"];
+  selectedReadoutId: string;
+  sourceMode: NonNullable<WorkspaceGraphState["sourceMode"]>;
+  selectedConditionIds: readonly string[];
+  analysisConditionIds: readonly string[];
+  selectedTimePointIds: readonly string[];
+  timeAnalysis: TimeAnalysisPlan;
+  selectedStatisticalMethod: AnalysisRecommendation["recommendedMethod"] | undefined;
+  statisticsAnnotation: StatisticsAnnotation;
+  appearance: WorkspaceGraphState["appearance"];
+  axes: WorkspaceGraphState["axes"];
+  layers: WorkspaceGraphState["layers"];
+}>;
+
 export function createBenchmarkGraphConfigurationEvent(
   previous: BenchmarkGraphStateLog | null,
   current: BenchmarkGraphStateLog,
-  input: Readonly<{
-    graphType: WorkspaceGraphState["graphType"];
-    selectedReadoutId: string;
-    sourceMode: NonNullable<WorkspaceGraphState["sourceMode"]>;
-    selectedConditionIds: readonly string[];
-    analysisConditionIds: readonly string[];
-    selectedTimePointIds: readonly string[];
-    timeAnalysis: TimeAnalysisPlan;
-    selectedStatisticalMethod: AnalysisRecommendation["recommendedMethod"] | undefined;
-    statisticsAnnotation: StatisticsAnnotation;
-    appearance: WorkspaceGraphState["appearance"];
-    axes: WorkspaceGraphState["axes"];
-    layers: WorkspaceGraphState["layers"];
-  }>,
+  input: BenchmarkGraphConfigurationInput,
 ): BenchmarkGraphConfigurationEvent | null {
   if (!previous || previous.identity !== current.identity) {
     return {
