@@ -2941,12 +2941,22 @@ export function ExperimentWorkspace({
         onRequestExit({ actionLabel, proceed });
         return;
       }
-      if (window.confirm("未保存の変更があります。この実験を閉じて破棄しますか？")) proceed();
+      if (
+        window.confirm(
+          localizedText(
+            locale,
+            "未保存の変更があります。この実験を閉じて破棄しますか？",
+            "This experiment has unsaved changes. Close it and discard them?",
+          ),
+        )
+      )
+        proceed();
     },
-    [isDirty, onRequestExit],
+    [isDirty, locale, onRequestExit],
   );
 
-  const requestBack = () => requestExit("前の画面に戻る", onBack);
+  const requestBack = () =>
+    requestExit(localizedText(locale, "前の画面に戻る", "go back"), onBack);
 
   useEffect(() => {
     if (!showGraphTypeChoice) {
@@ -4006,7 +4016,13 @@ export function ExperimentWorkspace({
         setSavedProject(saved);
         savedSnapshotRef.current = currentSnapshot;
         setSaveStatus("saved");
-        setSaveMessage("プロジェクトを保存しました。次回もこの入力画面で再編集できます。");
+        setSaveMessage(
+          localizedText(
+            locale,
+            "プロジェクトを保存しました。次回もこの入力画面で再編集できます。",
+            "Project saved. You can reopen it and continue editing this worksheet.",
+          ),
+        );
         return true;
       } catch (error) {
         // Project construction can fail before the native save bridge is
@@ -4020,7 +4036,7 @@ export function ExperimentWorkspace({
         return false;
       }
     },
-    [cells, currentSnapshot, dataViewMode, draft, graphs, saveProject, savedProject],
+    [cells, currentSnapshot, dataViewMode, draft, graphs, locale, saveProject, savedProject],
   );
   useEffect(() => {
     if (!onRegisterSaveHandler) return;

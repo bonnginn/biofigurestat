@@ -12,7 +12,9 @@ import { CollectionPage } from "../pages/CollectionPage";
 import { OpenProjectPage } from "../pages/OpenProjectPage";
 import { BiologicalExperimentSetup } from "./BiologicalExperimentSetup";
 import { ExperimentWorkspace } from "../pages/ExperimentWorkspace";
+import { NewExperimentPage } from "../pages/NewExperimentPage";
 import { createExperimentSetDraft } from "../app/experimentDraft";
+import { ADAPTIVE_INPUT_FEATURE_FLAG } from "../app/adaptiveInputFeature";
 import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 
 afterEach(() => act(() => resetAppLocaleForTests("ja")));
@@ -74,6 +76,20 @@ describe("English Public Alpha workflow", () => {
       }),
     );
     expectNoJapaneseUi(document.body);
+  });
+
+  it("keeps the New Experiment route wrapper in English after choosing simple entry", () => {
+    act(() => setAppLocale("en"));
+    window.localStorage.setItem(ADAPTIVE_INPUT_FEATURE_FLAG, "enabled");
+    const view = render(<NewExperimentPage onNavigate={vi.fn()} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open Simple independent-group comparison" }),
+    );
+
+    expect(screen.getByRole("button", { name: "Change experiment type" })).toBeInTheDocument();
+    expectNoJapaneseUi(view.container);
+    window.localStorage.removeItem(ADAPTIVE_INPUT_FEATURE_FLAG);
   });
 
   it("exposes local Help, About, and problem reporting in English", () => {

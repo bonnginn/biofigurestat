@@ -53,7 +53,7 @@ import {
 import { createAdaptiveWorkspace } from "../app/adaptiveWorkspace";
 import { createBiologicalSetupPresentation } from "../app/adaptiveStructureRevision";
 import { adaptiveInputFeatureEnabled } from "../app/adaptiveInputFeature";
-import { useAppLocale } from "../app/appLocale";
+import { localizedText, useAppLocale } from "../app/appLocale";
 import { bridgeGraphOnlyTableToStatistics } from "../app/graphOnlyStatisticsBridge";
 import { rebindGraphOnlyGraphsToWorkspace } from "../app/graphOnlyWorkspaceGraph";
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
@@ -2706,11 +2706,17 @@ export function NewExperimentPage({
           onClick={(event) => {
             if (!acceptSingleClick(event.detail)) return;
             if (stage === "context") onNavigate("home");
-            else requestEntryExit("実験の種類を変更する", goBackToContext);
+            else
+              requestEntryExit(
+                localizedText(locale, "実験の種類を変更する", "change the experiment type"),
+                goBackToContext,
+              );
           }}
         >
           <span aria-hidden="true">←</span>{" "}
-          {stage === "context" ? "ワークスペースに戻る" : "実験の種類を変更"}
+          {stage === "context"
+            ? localizedText(locale, "ワークスペースに戻る", "Back to workspace")
+            : localizedText(locale, "実験の種類を変更", "Change experiment type")}
         </button>
       ) : null}
 
@@ -2871,7 +2877,11 @@ export function NewExperimentPage({
                 updateEntryDirtySource("biological", false);
                 setStage("graph-only");
               }
-              else requestEntryExit("実験の種類を変更する", goBackToContext);
+              else
+                requestEntryExit(
+                  localizedText(locale, "実験の種類を変更する", "change the experiment type"),
+                  goBackToContext,
+                );
             }}
             onReady={(result) => {
               try {
@@ -2954,7 +2964,12 @@ export function NewExperimentPage({
       {stage === "simple" ? (
         <SimpleGroupExperimentEntry
           onDirtyChange={(dirty) => updateEntryDirtySource("simple", dirty)}
-          onBack={() => requestEntryExit("実験の種類を変更する", goBackToContext)}
+          onBack={() =>
+            requestEntryExit(
+              localizedText(locale, "実験の種類を変更する", "change the experiment type"),
+              goBackToContext,
+            )
+          }
           onReady={(simpleDraft) => {
             setDraft(simpleDraft);
             setFixtureCells(undefined);
