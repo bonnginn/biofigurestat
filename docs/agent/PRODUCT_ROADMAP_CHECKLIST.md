@@ -1,6 +1,6 @@
 # BioFigureStat 今後の作業一覧
 
-更新日: 2026-08-31 (JST)
+更新日: 2026-09-01 (JST)
 
 この文書は、今後の作業と完了状況を一か所で確認するための一覧です。
 実装や検証が終わるたびに状態と証拠を更新します。
@@ -17,10 +17,10 @@
 
 | 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
 | --- | --- | --- | --- | --- |
-| 1 | 🟡 | 日英統合Windows candidateの短い実機確認 | 必要 | 同一アプリ内の言語切替、新規実験、保存・再読込、PNG/SVG/CSV、用語・見切れを確認 |
+| 1 | 🟡 | 日英統合Windows candidateの短い実機確認 | 必要 | 自動native gateはPASS。最新candidateで両言語の用語・見切れを人が最終確認 |
 | 2 | ⬜ | 日英統合macOS candidateのbuildと限定実機確認 | 最終確認のみ必要 | native verifier、保存・再読込、書き出し、両言語表示がPASS |
 | 3 | ⬜ | 日英統合Alpha更新の公開判断 | 必要 | Windows/macOS証拠、checksum、release noteを揃え、同じBioFigureStatの次candidateとして公開可否を記録 |
-| 4 | ⚠️ | Windows native UI harnessの安定実行環境 | 原則不要 | blank URL targetと再接続には対応済み。clean Windows CI/VMで同じscenarioの連続PASSを確認 |
+| 4 | ✅ | Windows native UI harnessの実機scenario | 不要 | 最新packaged exeで入力、Statistics validation、native export、dirty Close / Cancel / DiscardがPASS |
 | 5 | 🟡 | macOS native UI harness | 原則不要 | Accessibility adapterは実装済み。permission済みMac runnerで初回PASSを記録 |
 | 6 | 🟡 | GraphとSpreadsheetの共通化を再開 | 不要 | tick・zoom・native export controller・Graph state selectorを共通化済み。画面ごとの修正漏れをさらに減らし、既存`.lsa`と科学的意味を維持 |
 
@@ -50,8 +50,8 @@
 | ✅ | Public Alpha主要画面の英語化 | Home、実験設定、Data、Graph、Statistics、Help、報告を対象化 |
 | ✅ | 日本語表示漏れの自動検査 | visible text、aria-label、title、placeholder、altを検査 |
 | ✅ | native自動検査で見つけた表示漏れ修正 | New Experiment wrapperとworkspace fallbackを修正 |
-| ✅ | 自動回帰 | UI 131ファイル、1,117テストPASS。typecheck・lintもPASS |
-| 🟡 | 日英統合Windows build | bundle/engine/release verifierはPASS。短い人間の両言語・layout確認が残る |
+| ✅ | 自動回帰 | UI 162ファイル、1,198テストPASS。共有package等278テスト、typecheck・lintもPASS |
+| 🟡 | 日英統合Windows build | `e6d442c-alpha.20260901.win-night1`はbundle/engine/release/native UI verifierがPASS。短い人間の両言語・layout確認が残る |
 | ⬜ | 日英統合macOS build | candidate buildと限定確認が必要 |
 | ⬜ | 日英統合buildの配布 | 両native gate後に、同じアプリの次Alpha assetとrelease noteを追加 |
 
@@ -64,11 +64,19 @@
 | ✅ | dirty close lifecycle scenario | 入力、×、保存確認、Cancel保持、再度×、破棄終了をscenario化 |
 | ✅ | screenshot・JSON evidence | 成功・失敗stepと画面証拠を`.tmp/native-ui-regression/`へ保存 |
 | ✅ | 製品FAILとharness環境FAILの分離 | `PRODUCT_REGRESSION`と`HARNESS_INFRASTRUCTURE_BLOCKED`を区別 |
-| ⚠️ | Windows WebView2再接続の安定化 | blank URL targetの誤除外は修正済み。このhostでは初期target後にCDP port自体が閉じるためclean runnerで再検証 |
+| ✅ | Windows WebView2起動・接続 | transient blank targetを待機し、このhostの最新packaged exeでscenario全体がPASS |
+| ✅ | Graph-only Statistics validation | 実表入力からGraph/Statisticsへ進み、未回答項目の英語alert表示とfocusをnativeで検査 |
 | ⬜ | native file dialog自動操作 | Open、Save、Save As、PNG/SVG/CSVのCancel/保存先を自動確認 |
 | ⬜ | `.lsa` file association自動確認 | ダブルクリック起動と同名・別名projectの内容一致を検査 |
 | 🟡 | macOS adapter | Accessibilityで入力、Command+Q、Cancel保持、破棄終了を同じreport schemaへ実装。Mac実行証拠待ち |
 | ⏸ | 人間の見た目判断 | graph品質、clipping、font、余白、高DPIは最終的に人間が確認 |
+
+### 人の操作が必要な保留項目
+
+- 最新Windows candidateの日本語・英語の用語、文字切れ、余白の短い確認。
+- permission済みMacでmacOS adapterを1回実行し、同じdirty終了scenarioを記録。
+- 日英統合macOS candidateの保存・再読込・native file dialogの限定確認。
+- 日英統合Alpha assetを公開する最終判断。
 
 ## BetaまでのUI/UX改善
 

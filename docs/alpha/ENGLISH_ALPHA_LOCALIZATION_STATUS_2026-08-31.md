@@ -2,7 +2,7 @@
 
 Date: 2026-08-31 (JST)
 
-Branch: `codex/english-alpha-localization-2026-08-31`
+Branch: `codex/native-ui-regression-automation-2026-08-31`
 
 ## Scope completed
 
@@ -28,6 +28,9 @@ Reviewed English copy is implemented for the main Public Alpha path:
 - Graph-only table import, column mapping, Graph creation, and safe Statistics handoff;
 - Survival and Heatmap common workspace shell;
 - local project open, recent/favorite projects, native Open/Save dialog titles;
+- one shared localized file-input control across canonical matrices, existing-data import,
+  Graph-only, ordered X/Y, Survival, and Heatmap;
+- ordered X/Y analysis, save, export, diagnostic, and nonlinear-result action messages;
 - Help, About, external-LLM consultation, and problem reporting.
 
 Scientific semantic keys, analysis request IDs, biological-unit identity, pairing, nesting,
@@ -43,7 +46,8 @@ the application does not convert, discard, or overwrite the project.
 
 ## Verification
 
-- UI full test: 131 files, 1,116 tests passed after the final advanced-surface additions.
+- UI full test: 162 files, 1,198 tests passed.
+- Shared packages and telemetry worker: 278 tests passed.
 - English localization focused tests cover Home, entry hub, simple entry, Biological Interview,
   project discovery, Help/About/reporting, Graph-only safe handoff, common Graph creation,
   Statistics, canonical worksheet records and matrices, nested measurement entry, existing-data
@@ -57,14 +61,17 @@ the application does not convert, discard, or overwrite the project.
 ## Windows native candidate
 
 The source-level production paths have automated no-Japanese rendering coverage. A Windows x64
-candidate was built with revision `8dec615-alpha.20260831.win-en1`:
+candidate was built with revision `e6d442c-alpha.20260901.win-night1`:
 
 - installer: `apps/desktop/src-tauri/target/release/bundle/nsis/BioFigureStat_0.1.0_x64-setup.exe`;
-- size: 47,883,753 bytes;
-- SHA-256: `B4A30A4288D0DF164766C0B99027E5CC36C4EE7D04AD381659CDD29AC4071554`;
+- size: 47,891,826 bytes;
+- SHA-256: `719264C4213ACA0F78DCB926C2F995556808D419193EA4ED6812EADB28038E6C`;
 - Windows bundle verification: pass;
 - release bundle verification: pass;
-- packaged statistical-engine smoke checks: pass.
+- packaged statistical-engine smoke checks: pass;
+- exact packaged-executable native UI regression: pass. This includes an isolated English
+  session, application-copy audit, architecture IPC, exact export bytes, real Graph-only input,
+  Statistics validation visibility/focus, native Close, Cancel retention, and explicit discard.
 
 This candidate has not yet received a short human English-language review. A macOS candidate has
 not been built. Do not publish English assets until native lifecycle/export checks and human review

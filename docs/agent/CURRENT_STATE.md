@@ -129,24 +129,25 @@ exposed duplicate `x.-5` ticks for a one-value finite range. The shared nice-tic
 one stable tick for such a degenerate range; Graph-layout, nonlinear Graph, and the full focused
 workflow pass together (50/50) without the React warning.
 
-For the English-localization branch, the full UI suite passes with 131 files and 1,117 tests.
+For the English-localization branch, the full UI suite passes with 162 files and 1,198 tests.
 English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
 and image alternative text across the production surfaces. Typecheck, lint, and the production UI
-build pass. Windows candidate `8dec615-alpha.20260831.win-en1` passes the Windows bundle verifier,
-release bundle verifier, and packaged-engine smoke checks. Its installer SHA-256 is
-`B4A30A4288D0DF164766C0B99027E5CC36C4EE7D04AD381659CDD29AC4071554`. Windows human language review
-and the macOS native candidate remain outstanding.
+build pass. Windows candidate `e6d442c-alpha.20260901.win-night1` passes the Windows bundle verifier,
+release bundle verifier, packaged-engine smoke checks, and the exact-executable native UI scenario.
+Its installer SHA-256 is
+`719264C4213ACA0F78DCB926C2F995556808D419193EA4ED6812EADB28038E6C`. Windows human language/layout
+review and the macOS native candidate remain outstanding.
 
-Post-Alpha native regression automation has started on this branch. A dependency-free Windows
-harness now launches the exact packaged Tauri executable with an isolated WebView2 profile and can
-drive native IPC, export, New Experiment input, and the dirty-window Close / Cancel / Discard
-lifecycle while recording screenshots and JSON evidence. Its first attachment found and drove the
-fix for Japanese route-wrapper copy in English mode. After that initial success, repeated CDP
-attachment on the current Windows host stopped exposing an inspection port; the harness records
-this as infrastructure failure rather than product failure. The rebuilt package still passes the
-Windows bundle and release verifiers, typecheck, lint, and the expanded full UI suite (131 files,
-1,117 tests). A clean Windows CI/VM backend and a macOS adapter remain required before this becomes
-a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md`.
+Post-Alpha native regression automation now has a complete Windows packaged-app PASS. The
+dependency-free harness launches the exact Tauri executable with an isolated WebView2 profile and
+drives architecture IPC, exact native export, real Graph-only entry and mapping, Statistics
+validation visibility/focus, and the dirty-window Close / Cancel / Discard lifecycle while
+recording screenshots and JSON evidence. Revision `e6d442c-alpha.20260901.win-night1` passed every
+step on this host; evidence is under
+`.tmp/native-ui-regression/nightly-20260901-final/`. The transient blank-target startup race remains
+classified separately from product regressions. The macOS Accessibility adapter is implemented,
+but a permissioned Mac run is still required before the gate is cross-platform. See
+`docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md`.
 
 ## Known bounded gaps
 
@@ -176,9 +177,9 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   editor; no English native release has been declared ready.
 - Beta work includes Graph-preview parity, compact workspace chrome, editable experiment metadata,
   and Kaplan–Meier appearance-control parity while preserving censoring and risk-table semantics.
-- Windows native UI regression automation has an initial exact-executable harness, but its CDP
-  attachment still needs a clean-runner fallback; macOS UI driving is not implemented. Human review
-  should then focus on scientific usability and visual judgment.
+- Windows native UI regression passes against the current exact packaged executable. Clean-runner
+  repetition is desirable, and the implemented macOS Accessibility adapter still needs its first
+  permissioned `.app` PASS. Human review remains for scientific usability and visual judgment.
 
 ## Working-tree rule
 

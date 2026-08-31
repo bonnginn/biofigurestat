@@ -71,25 +71,21 @@ locale-aware, with a route-level no-Japanese regression assertion.
 
 The scenario records every completed step even when a later step fails. A failed WebView attachment
 records the chosen loopback port and any bounded native stdout/stderr in the evidence directory.
-On the 2026-08-31 Windows host, repeated attachment after the initial successful run stopped exposing
-the WebView2 CDP port even though the exact application continued to launch and its isolated profile
-was created. Rebuilding the application, changing the loopback port, and adding the documented
-`remote-allow-origins` flag did not change that host-level result. The packaged Windows verifier,
-release verifier, typecheck, lint, and 1,117 UI tests still pass. Therefore this first harness is
-useful defect-detection infrastructure, but it is not yet a stable mandatory release gate on every
-Windows host.
+The runner accepts WebView2's transient blank-URL target, waits for navigation to the application
+origin and origin storage, and treats a target that remains opaque as
+`HARNESS_INFRASTRUCTURE_BLOCKED` rather than a product regression.
 
-Follow-up for the runner layer is to add a second supported Windows attachment backend or execute
-the CDP scenario on a clean Windows CI/VM image. A CDP-connection failure must remain
-`HARNESS_INFRASTRUCTURE_BLOCKED`; it must not be reported as a BioFigureStat product regression.
+On 2026-09-01, revision `e6d442c-alpha.20260901.win-night1` completed the entire scenario against
+the exact packaged executable on the Windows development host. Evidence is in
+`.tmp/native-ui-regression/nightly-20260901-final/report.json`. The report records `x86_64`
+architecture IPC, zero unexpected Japanese findings, exact native export bytes, the English
+Graph-only Statistics validation alert and focus, dirty-value retention after native Close/Cancel,
+and process exit after explicit discard. This resolves the previously recorded same-host startup
+race for the current runner and candidate. A clean CI/VM remains desirable for repeatability, but
+is no longer required to demonstrate the first complete Windows packaged-app PASS.
 
-The runner now also accepts WebView2's transient blank-URL page target and retries when that target
-is replaced during startup. It waits for that target to navigate to the application origin and for
-origin storage to become available before beginning the scenario; an opaque `about:blank` document
-is infrastructure-blocked rather than a product regression. This removed false failures during the
-native startup race. A formal Tauri rebuild
-on the same host still closes the CDP endpoint after the initial target, so that remaining result is
-kept as host infrastructure evidence rather than converted into a product failure.
+A CDP-connection failure remains `HARNESS_INFRASTRUCTURE_BLOCKED`; it must never be reported as a
+BioFigureStat product regression without product-level evidence.
 
 ## macOS usage
 
