@@ -88,6 +88,8 @@ import { recordUsageGraphEdit } from "../../app/usageTelemetry";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { ExperimentGraphAnnotationEditor } from "./ExperimentGraphAnnotationEditor";
 import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
+import { ExperimentGraphErrorBarEditor } from "./ExperimentGraphErrorBarEditor";
+import { ExperimentGraphRawDotsEditor } from "./ExperimentGraphRawDotsEditor";
 import { ExperimentGraphXAxisEditor } from "./ExperimentGraphXAxisEditor";
 import { ExperimentGraphYAxisEditor } from "./ExperimentGraphYAxisEditor";
 import { GRAPH_PALETTES } from "./graphAppearance";
@@ -127,7 +129,6 @@ import "./graph-workbench.css";
 
 type LayerState = WorkspaceGraphState["layers"];
 
-type ErrorBarMode = "sd" | "sem" | "none";
 type InspectorTarget =
   | "background"
   | "x-axis"
@@ -312,7 +313,7 @@ export function describeActiveGraphLayers(
     graphType: GraphType;
     shape: ReadoutDraft["shape"];
     layers: LayerState;
-    errorBar: ErrorBarMode;
+    errorBar: GraphAppearance["errorBar"];
     timeSampling: ExperimentSetDraft["time"]["sampling"];
     matched: boolean;
   }>,
@@ -4507,80 +4508,13 @@ export function ExperimentGraphWorkbench({
           ) : null}
 
           {inspectorTarget === "raw-dots" ? (
-            <section className="experiment-graph-inspector-section">
-              <h3>{shape === "nested_continuous" ? "細胞・ROIの生データ" : "実験単位の点"}</h3>
-              <label className="experiment-graph-checkbox">
-                <input
-                  type="checkbox"
-                  checked={shape === "nested_continuous" ? layers.raw : layers.experiment}
-                  aria-label={
-                    shape === "nested_continuous" ? "生データの点を表示" : "実験単位の点を表示"
-                  }
-                  onChange={(event) =>
-                    setLayers((current) => ({
-                      ...current,
-                      [shape === "nested_continuous" ? "raw" : "experiment"]: event.target.checked,
-                    }))
-                  }
-                />
-                <span>
-                  {shape === "nested_continuous" ? "細胞・ROIの生データ" : "実験単位の点"}
-                </span>
-              </label>
-              <label className="experiment-graph-field">
-                <span>点の大きさ：{appearance.pointSize}px</span>
-                <input
-                  aria-label="生データ点の大きさ"
-                  type="range"
-                  min="4"
-                  max="10"
-                  step="1"
-                  value={appearance.pointSize}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      pointSize: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-              <label className="experiment-graph-field">
-                <span>横方向のばらし幅：{appearance.jitter}px</span>
-                <input
-                  aria-label="生データ点のjitter"
-                  type="range"
-                  min="0"
-                  max="24"
-                  step="1"
-                  value={appearance.jitter}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      jitter: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-              {shape === "nested_continuous" ? (
-                <label className="experiment-graph-color-field">
-                  <span>生データ点の色</span>
-                  <input
-                    type="color"
-                    aria-label="生データ点の色"
-                    value={appearance.rawPointColor}
-                    onChange={(event) =>
-                      setAppearance((current) => ({
-                        ...current,
-                        rawPointColor: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              ) : null}
-              <p className="experiment-graph-help">
-                細胞・ROIの点は観測分布の表示用で、統計上のnとしては扱いません。
-              </p>
-            </section>
+            <ExperimentGraphRawDotsEditor
+              shape={shape}
+              layers={layers}
+              appearance={appearance}
+              setLayers={setLayers}
+              setAppearance={setAppearance}
+            />
           ) : null}
 
           {inspectorTarget === "experiment-summary" || inspectorTarget === "series-style" ? (
@@ -4974,104 +4908,12 @@ export function ExperimentGraphWorkbench({
           ) : null}
 
           {inspectorTarget === "error-bar" ? (
-            <section className="experiment-graph-inspector-section">
-              <h3>{t("誤差線", "Error bars")}</h3>
-              <label className="experiment-graph-checkbox">
-                <input
-                  type="checkbox"
-                  checked={layers.errorBar}
-                  aria-label="誤差線を表示"
-                  onChange={(event) =>
-                    setLayers((current) => ({ ...current, errorBar: event.target.checked }))
-                  }
-                />
-                <span>誤差線を表示</span>
-              </label>
-              <label className="experiment-graph-field">
-                <span>要約方法</span>
-                <select
-                  aria-label="誤差線の要約方法"
-                  value={appearance.errorBar}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      errorBar: event.target.value as ErrorBarMode,
-                    }))
-                  }
-                >
-                  <option value="sd">SD（標準偏差）</option>
-                  <option value="sem">SEM（標準誤差）</option>
-                  <option value="none">なし</option>
-                </select>
-              </label>
-              <label className="experiment-graph-field">
-                <span>不確実性の表示</span>
-                <select
-                  aria-label="不確実性の表示形式"
-                  value={appearance.uncertaintyStyle ?? "error_bars"}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      uncertaintyStyle: event.target.value as "error_bars" | "ribbon" | "none",
-                    }))
-                  }
-                >
-                  <option value="error_bars">誤差線</option>
-                  <option value="ribbon">リボン</option>
-                  <option value="none">なし</option>
-                </select>
-              </label>
-              {(appearance.uncertaintyStyle ?? "error_bars") === "ribbon" ? (
-                <label className="experiment-graph-field">
-                  <span>リボン透明度：{(appearance.ribbonOpacity ?? 0.18).toFixed(2)}</span>
-                  <input
-                    type="range"
-                    min="0.05"
-                    max="0.6"
-                    step="0.01"
-                    aria-label="リボン透明度"
-                    value={appearance.ribbonOpacity ?? 0.18}
-                    onChange={(event) =>
-                      setAppearance((current) => ({
-                        ...current,
-                        ribbonOpacity: Number(event.target.value),
-                      }))
-                    }
-                  />
-                </label>
-              ) : null}
-              <label className="experiment-graph-field">
-                <span>線幅：{appearance.errorBarLineWidth.toFixed(1)}px</span>
-                <input
-                  type="range"
-                  min="0.6"
-                  max="4"
-                  step="0.1"
-                  aria-label="誤差線の太さ"
-                  value={appearance.errorBarLineWidth}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      errorBarLineWidth: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-              <label className="experiment-graph-color-field">
-                <span>誤差線の色</span>
-                <input
-                  type="color"
-                  aria-label="誤差線の色"
-                  value={appearance.errorBarColor}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      errorBarColor: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            </section>
+            <ExperimentGraphErrorBarEditor
+              layers={layers}
+              appearance={appearance}
+              setLayers={setLayers}
+              setAppearance={setAppearance}
+            />
           ) : null}
 
           {inspectorTarget === "connecting-line" ? (
