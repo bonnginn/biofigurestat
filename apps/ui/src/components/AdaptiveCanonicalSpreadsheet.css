@@ -440,9 +440,14 @@
   margin: 0 0 0.65rem;
 }
 
-.canonical-matrix-worksheet__file-import label {
+.canonical-matrix-worksheet__file-label {
+  color: var(--adaptive-ink);
+  font-weight: 700;
+}
+
+.canonical-matrix-worksheet__file-button {
   align-items: center;
-  background: #f3f7f6;
+  background: white;
   border: 1px solid var(--adaptive-border);
   border-radius: 0.45rem;
   color: var(--adaptive-ink);
@@ -454,18 +459,24 @@
   padding: 0.35rem 0.7rem;
 }
 
-.canonical-matrix-worksheet__file-import label:focus-within {
+.canonical-matrix-worksheet__file-button:focus-within {
   outline: 2px solid var(--adaptive-border-strong);
   outline-offset: 2px;
 }
 
-.canonical-matrix-worksheet__file-import input[type="file"] {
-  font: inherit;
-  max-width: min(22rem, 100%);
+.canonical-matrix-worksheet__native-file-input {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 
-.canonical-matrix-worksheet__file-import input[type="file"]:disabled {
+.canonical-matrix-worksheet__file-button--disabled {
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .canonical-matrix-worksheet__file-import small {

@@ -865,7 +865,7 @@ export function GraphOnlyVisualizationPage({
           aria-current={workspaceTab === "graph" ? "page" : undefined}
           onClick={() => setWorkspaceTab("graph")}
         >
-          Graph
+          {t("グラフ", "Graph")}
         </button>
         <button
           type="button"
@@ -880,7 +880,7 @@ export function GraphOnlyVisualizationPage({
             }
           }}
         >
-          Statistics
+          {t("統計", "Statistics")}
         </button>
       </nav>
 
@@ -1144,7 +1144,7 @@ export function GraphOnlyVisualizationPage({
       >
         <div className="graph-only__result-heading">
           <h2 id="graph-only-result-heading">
-            {workspaceTab === "statistics" ? "Statistics" : "Graph"}
+            {workspaceTab === "statistics" ? t("統計", "Statistics") : t("グラフ", "Graph")}
           </h2>
           <span className={canGraph ? "graph-only__ready" : "graph-only__waiting"}>
             {workspaceTab === "statistics"

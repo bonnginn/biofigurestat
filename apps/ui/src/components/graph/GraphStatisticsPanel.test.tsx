@@ -93,6 +93,39 @@ it("shows a concise method and design-based reason before detailed controls", ()
   expect(screen.getByText(/dishを独立した実験単位として比較します/)).toBeVisible();
 });
 
+it("shows estimate contrasts with researcher-facing condition labels", () => {
+  const result = AnalysisEngineResultSchema.parse({
+    protocolVersion: "0.1.0",
+    requestId: request.requestId,
+    status: "ok",
+    engine: { name: "lsaa-python", version: "test", packages: {} },
+    estimates: [
+      {
+        name: "condition.drug_minus_condition.vehicle",
+        value: -0.21,
+        standardError: 0.04,
+        confidenceInterval: { level: 0.95, lower: -0.29, upper: -0.13 },
+      },
+    ],
+    tests: [],
+    diagnostics: [],
+    warnings: [],
+    completedAt: "2026-08-28T00:00:00.000Z",
+  });
+  render(
+    <GraphStatisticsPanel
+      assessment={readyAssessment}
+      design={panelDesign()}
+      analysisRunner={vi.fn()}
+      conditionOptions={defaultConditionOptions}
+      initialAnalysis={{ request, result }}
+    />,
+  );
+
+  expect(screen.getByText("Drug − Vehicle")).toBeVisible();
+  expect(screen.queryByText("condition.drug_minus_condition.vehicle")).toBeNull();
+});
+
 it("shows the recommendation and analysis action in English without changing the request", () => {
   act(() => setAppLocale("en"));
   const view = render(

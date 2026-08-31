@@ -185,8 +185,8 @@ describe("New Experiment dedicated entry handoff", () => {
     expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("X / condition");
     expect(screen.getByTestId("graph-only-cell-1-0")).toBeEnabled();
     expect(screen.queryByRole("button", { name: "保存したGraph用データを開く" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Graph" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Statistics" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "グラフ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "統計" })).toBeDisabled();
     expect(onNavigate).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "入口へ戻る" }));
@@ -207,7 +207,7 @@ describe("New Experiment dedicated entry handoff", () => {
       target: { value: "1" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
+    fireEvent.click(screen.getByRole("button", { name: "統計" }));
     fireEvent.click(
       screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
     );
@@ -235,7 +235,7 @@ describe("New Experiment dedicated entry handoff", () => {
       target: { value: "culture dish" },
     });
     fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
-    fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
+    fireEvent.click(screen.getByRole("button", { name: "統計設定へ進む" }));
 
     expect(screen.getByText("実験ワークスペース")).toBeVisible();
     expect(screen.getByRole("button", { name: "グラフ (1)" })).toBeVisible();
@@ -260,7 +260,7 @@ describe("New Experiment dedicated entry handoff", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
       target: { value: "1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
+    fireEvent.click(screen.getByRole("button", { name: "統計" }));
     fireEvent.click(
       screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
     );
@@ -286,7 +286,7 @@ describe("New Experiment dedicated entry handoff", () => {
     expect(screen.getByRole("combobox", { name: "Graphの横軸" })).toHaveValue("0");
     expect(screen.getByRole("combobox", { name: "Graphの測定値" })).toHaveValue("1");
 
-    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
+    fireEvent.click(screen.getByRole("button", { name: "統計" }));
     fireEvent.click(
       screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
     );
@@ -316,7 +316,7 @@ describe("New Experiment dedicated entry handoff", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの測定値" }), {
       target: { value: "1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
+    fireEvent.click(screen.getByRole("button", { name: "統計" }));
     fireEvent.click(
       screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
     );
@@ -328,7 +328,7 @@ describe("New Experiment dedicated entry handoff", () => {
       target: { value: "culture dish" },
     });
     fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
-    fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
+    fireEvent.click(screen.getByRole("button", { name: "統計設定へ進む" }));
 
     expect(screen.getByText("実験ワークスペース")).toBeVisible();
     expect(screen.getByRole("button", { name: "グラフ (1)" })).toBeEnabled();

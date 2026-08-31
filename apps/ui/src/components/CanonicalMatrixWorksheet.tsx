@@ -1608,11 +1608,18 @@ export function CanonicalMatrixWorksheet({
   return (
     <>
       <div className="canonical-matrix-worksheet__file-import">
-        <label htmlFor={fileInputId}>
+        <span className="canonical-matrix-worksheet__file-label">
           {t("CSV / TSV / TXTファイルを読み込む", "Load CSV / TSV / TXT file")}
+        </span>
+        <label
+          className={`canonical-matrix-worksheet__file-button${!editable || fileBusy ? " canonical-matrix-worksheet__file-button--disabled" : ""}`}
+          htmlFor={fileInputId}
+        >
+          {fileBusy ? t("読み込み中…", "Loading…") : t("ファイルを選択", "Choose file")}
           <input
             ref={fileInputRef}
             id={fileInputId}
+            className="canonical-matrix-worksheet__native-file-input"
             type="file"
             accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
             aria-label={t("CSV / TSV / TXTファイルを読み込む", "Load CSV / TSV / TXT file")}

@@ -36,7 +36,7 @@ async function enterBiologicalQuestionsFromGraphOnly(): Promise<void> {
   fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
   fireEvent.click(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" }));
   pasteGraphOnlyTable();
-  fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
+  fireEvent.click(screen.getByRole("button", { name: "統計" }));
   fireEvent.click(
     screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
   );

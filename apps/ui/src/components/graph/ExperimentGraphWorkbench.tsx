@@ -305,8 +305,10 @@ function buildConditionAxisLabels(
 }
 
 function ProportionSummary({ series }: { series: readonly GraphSeries[] }) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   return (
-    <div className="experiment-graph-data-summary" aria-label="割合データの要約">
+    <div className="experiment-graph-data-summary" aria-label={t("割合データの要約", "Proportion-data summary")}>
       {series.map((item) => (
         <div className="experiment-graph-summary-row" key={item.seriesKey}>
           <strong>
@@ -314,10 +316,13 @@ function ProportionSummary({ series }: { series: readonly GraphSeries[] }) {
             {item.timeLabel ? `・${item.timeLabel}` : ""}
           </strong>
           <span>
-            {item.proportionPoints.length}実験単位・
+            {t(
+              `${item.proportionPoints.length}実験単位・`,
+              `${item.proportionPoints.length} experimental units · `,
+            )}
             {item.proportionPoints
               .map((point) => `${point.positive}/${point.eligible}`)
-              .join("、") || "有効値なし"}
+              .join(t("、", ", ")) || t("有効値なし", "no valid values")}
           </span>
         </div>
       ))}
@@ -1239,17 +1244,35 @@ export function ExperimentGraphWorkbench({
             )}
             <p className="experiment-graph-caption">
               {semanticReadiness === "unresolved_descriptive"
-                ? `現在の表示：${activeLayerDescription}。元の表の行を保持した記述的Graphです。行数をbiological nや対応関係とは解釈していません。`
+                ? t(
+                    `現在の表示：${activeLayerDescription}。元の表の行を保持した記述的Graphです。行数をbiological nや対応関係とは解釈していません。`,
+                    `Current display: ${activeLayerDescription}. This descriptive Graph retains the source-table rows without interpreting row count as biological n or a matched relationship.`,
+                  )
                 : sharedSourceTopology
-                  ? `各点は条件別${draft.conditionAssignment.unitLabel}の値です。同じ${sharedSourceTopology.sourceUnitLabel}に由来する組は共有IDで対応づけていますが、条件別${draft.conditionAssignment.unitLabel}は別の実験単位として保持しています。`
+                  ? t(
+                      `各点は条件別${draft.conditionAssignment.unitLabel}の値です。同じ${sharedSourceTopology.sourceUnitLabel}に由来する組は共有IDで対応づけていますが、条件別${draft.conditionAssignment.unitLabel}は別の実験単位として保持しています。`,
+                      `Each point is a condition-specific ${draft.conditionAssignment.unitLabel} value. Units from the same ${sharedSourceTopology.sourceUnitLabel} are matched by a shared ID while remaining separate experimental units across conditions.`,
+                    )
                   : shape === "categorical_counts"
-                    ? "カテゴリ別countを保持し、構成割合を自動計算しています。連続値として扱わず、カテゴリ構成の推論統計はまだ実行しません。"
+                    ? t(
+                        "カテゴリ別countを保持し、構成割合を自動計算しています。連続値として扱わず、カテゴリ構成の推論統計はまだ実行しません。",
+                        "Category counts are retained and composition fractions are calculated automatically. They are not treated as continuous values, and inferential statistics for category composition are not run here.",
+                      )
                     : draft.analysisIntent.kind === "correlation"
-                      ? "各点は同じ実験単位から得たXとYの完全な1組です。行順や日付から対応を推測していません。"
+                      ? t(
+                          "各点は同じ実験単位から得たXとYの完全な1組です。行順や日付から対応を推測していません。",
+                          "Each point is one complete X/Y pair from the same experimental unit. Matching is not inferred from row order or dates.",
+                        )
                       : shape === "wb_ratio"
-                        ? `各点は実験単位（Exp）ごとの${readout.label} / ${readout.referenceLabel ?? "reference"}です。標的とreferenceの生値は別々に保持しています。`
+                        ? t(
+                            `各点は実験単位（Exp）ごとの${readout.label} / ${readout.referenceLabel ?? "reference"}です。標的とreferenceの生値は別々に保持しています。`,
+                            `Each point is ${readout.label} / ${readout.referenceLabel ?? "reference"} for one experimental unit (Exp). Raw target and reference values are retained separately.`,
+                          )
                         : shape === "proportion"
-                          ? `現在の表示：${activeLayerDescription}。割合と要約は実験単位（Exp）から計算しています。`
+                          ? t(
+                              `現在の表示：${activeLayerDescription}。割合と要約は実験単位（Exp）から計算しています。`,
+                              `Current display: ${activeLayerDescription}. Proportions and summaries are calculated from experimental units (Exp).`,
+                            )
                           : t(
                               `現在の表示：${activeLayerDescription}。細胞・ROIなどの生データを表示しても、統計上のnは実験単位です。`,
                               `Current display: ${activeLayerDescription}. Showing raw cell or ROI data does not change statistical n, which remains the experimental unit.`,
@@ -1358,7 +1381,7 @@ export function ExperimentGraphWorkbench({
                 <select
                   value={activeReadoutId}
                   disabled={draft.readouts.length <= 1}
-                  aria-label="統計の測定項目"
+                  aria-label={t("統計の測定項目", "Measured readout for statistics")}
                   onChange={(event) => {
                     setSelectedReadoutId(event.target.value);
                     setAnalysis(null);
@@ -1372,7 +1395,7 @@ export function ExperimentGraphWorkbench({
                 </select>
               </label>
               <fieldset className="experiment-graph-condition-fieldset">
-                <legend>統計に含める条件</legend>
+                <legend>{t("統計に含める条件", "Conditions included in statistics")}</legend>
                 {draft.conditions.map((condition) => (
                   <label className="experiment-graph-checkbox" key={condition.id}>
                     <input
@@ -1380,46 +1403,52 @@ export function ExperimentGraphWorkbench({
                       value={condition.id}
                       checked={activeAnalysisConditionIds.has(condition.id)}
                       disabled={draft.analysisIntent.kind === "correlation"}
-                      aria-label={`統計の条件：${condition.label}`}
+                      aria-label={t(`統計の条件：${condition.label}`, `Statistical condition: ${condition.label}`)}
                       onChange={handleAnalysisConditionChange}
                     />
                     <span>
                       {condition.label}
-                      {condition.id === draft.controlConditionId ? "（対照群）" : ""}
-                      {condition.role === "auxiliary_reference" ? "（図のみのreference）" : ""}
+                      {condition.id === draft.controlConditionId ? t("（対照群）", " (control)") : ""}
+                      {condition.role === "auxiliary_reference" ? t("（図のみのreference）", " (Graph-only reference)") : ""}
                     </span>
                   </label>
                 ))}
               </fieldset>
               <p className="experiment-graph-help">
-                図に表示する条件とは独立して選べます。referenceを図に残したまま、事前に決めた比較だけを解析できます。
+                {t(
+                  "図に表示する条件とは独立して選べます。referenceを図に残したまま、事前に決めた比較だけを解析できます。",
+                  "Choose these independently from the conditions shown in the Graph. You can retain a reference in the Graph while analyzing only prespecified comparisons.",
+                )}
               </p>
               <dl className="experiment-statistics-design-summary">
                 <div>
-                  <dt>統計上の単位</dt>
+                  <dt>{t("統計上の単位", "Statistical unit")}</dt>
                   <dd>
                     {sharedSourceTopology
-                      ? `条件別${draft.conditionAssignment.unitLabel}`
+                      ? t(`条件別${draft.conditionAssignment.unitLabel}`, `Condition-specific ${draft.conditionAssignment.unitLabel}`)
                       : draft.conditionAssignment.unitLabel}
                   </dd>
                 </div>
                 <div>
-                  <dt>設計の解釈</dt>
+                  <dt>{t("設計の解釈", "Design interpretation")}</dt>
                   <dd>
                     {sharedSourceTopology
-                      ? `同じ${sharedSourceTopology.sourceUnitLabel}に由来する条件別${draft.conditionAssignment.unitLabel}を対応づけて比較`
+                      ? t(
+                          `同じ${sharedSourceTopology.sourceUnitLabel}に由来する条件別${draft.conditionAssignment.unitLabel}を対応づけて比較`,
+                          `Compare matched condition-specific ${draft.conditionAssignment.unitLabel}s from the same ${sharedSourceTopology.sourceUnitLabel}`,
+                        )
                       : draft.conditionAssignment.kind === "matched"
-                        ? "同じ実験単位を条件間で比較"
-                        : "条件ごとに別の実験単位"}
+                        ? t("同じ実験単位を条件間で比較", "Compare the same experimental units across conditions")
+                        : t("条件ごとに別の実験単位", "Separate experimental units for each condition")}
                   </dd>
                 </div>
                 <div>
-                  <dt>対照群</dt>
+                  <dt>{t("対照群", "Control condition")}</dt>
                   <dd>
                     {draft.controlConditionId
                       ? (draft.conditions.find(({ id }) => id === draft.controlConditionId)
-                          ?.label ?? "指定済み")
-                      : "未指定（表示名からは推測しません）"}
+                          ?.label ?? t("指定済み", "Specified"))
+                      : t("未指定（表示名からは推測しません）", "Not specified (not inferred from the display name)")}
                   </dd>
                 </div>
               </dl>

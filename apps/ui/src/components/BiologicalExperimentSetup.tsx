@@ -675,6 +675,7 @@ export function BiologicalExperimentSetup({
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const valueFormOptions = locale === "ja" ? VALUE_FORM_OPTIONS : VALUE_FORM_OPTIONS_EN;
   const firstEditableControlRef = useRef<HTMLInputElement | null>(null);
+  const messageRef = useRef<HTMLParagraphElement | null>(null);
   const addBlockControlRef = useRef<HTMLButtonElement | null>(null);
   const addReadoutControlRef = useRef<HTMLButtonElement | null>(null);
   const blockDeleteControlRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -736,6 +737,7 @@ export function BiologicalExperimentSetup({
   );
   const [editingInheritedFacts, setEditingInheritedFacts] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [messagePlacement, setMessagePlacement] = useState<"summary" | "material">("summary");
   const combinations = useMemo(() => buildConditionCombinations(blocks), [blocks]);
   // The questions are the general route's required outline. Keep their sections visible so the
   // researcher can understand the whole interview before typing; only optional inner controls
@@ -773,6 +775,12 @@ export function BiologicalExperimentSetup({
     if (!initial?.revisionMode) return;
     firstEditableControlRef.current?.focus({ preventScroll: true });
   }, [initial?.revisionMode]);
+
+  useLayoutEffect(() => {
+    if (!message) return;
+    messageRef.current?.focus({ preventScroll: true });
+    messageRef.current?.scrollIntoView?.({ block: "center" });
+  }, [message]);
 
   useLayoutEffect(() => {
     const pending = pendingDeletionFocusRef.current;
@@ -905,17 +913,33 @@ export function BiologicalExperimentSetup({
   };
   const submit = () => {
     if (!measurementLabel.trim() || !receiverLabel.trim()) {
+      setMessagePlacement(receiverLabel.trim() ? "summary" : "material");
       setMessage(
-        "測定項目と、条件を直接受けた、または群として分けた対象・試料を入力してください。",
+        t(
+          "測定項目と、条件を直接受けた、または群として分けた対象・試料を入力してください。",
+          "Enter the measured readout and the subject or specimen that directly received the condition or group assignment.",
+        ),
       );
       return;
     }
     if (showMaterialSection && !relationshipAnswered) {
-      setMessage("異なる条件の間で、対象・試料がどのような関係かを選んでください。");
+      setMessagePlacement("material");
+      setMessage(
+        t(
+          "異なる条件の間で、対象・試料がどのような関係かを選んでください。",
+          "Select how subjects or specimens are related across conditions.",
+        ),
+      );
       return;
     }
     if (childObservationEnabled && !childLabel.trim()) {
-      setMessage("個別に測ったものの名前を入力してください（例：Cell、ROI、視野）。");
+      setMessagePlacement("material");
+      setMessage(
+        t(
+          "個別に測ったものの名前を入力してください（例：Cell、ROI、視野）。",
+          "Enter a name for the individually measured items (for example, cell, ROI, or field of view).",
+        ),
+      );
       return;
     }
     const built = safelyBuildBiologicalSetup({
@@ -957,11 +981,20 @@ export function BiologicalExperimentSetup({
           }
         : {}),
     });
-    if (built.status === "stopped") setMessage(built.reason);
+    if (built.status === "stopped") {
+      setMessagePlacement("summary");
+      setMessage(built.reason);
+    }
     else {
       const accepted = onReady(built.result);
+      setMessagePlacement("summary");
       setMessage(
-        accepted === false ? null : "条件と材料のつながりを確認できました。入力表を作成します。",
+        accepted === false
+          ? null
+          : t(
+              "条件と材料のつながりを確認できました。入力表を作成します。",
+              "The relationship between conditions and materials is confirmed. Creating the data table.",
+            ),
       );
     }
   };
@@ -1021,11 +1054,16 @@ export function BiologicalExperimentSetup({
     ? [
         ...blocks.map((block) => {
           const values = populatedCells(block).map(({ displayLabel }) => displayLabel);
-          return `${block.name.trim() || "処理・群分け"}: ${values.join("、") || "未入力"}`;
+          return `${block.name.trim() || t("処理・群分け", "Treatment or group")}: ${values.join(t("、", ", ")) || t("未入力", "not entered")}`;
         }),
-        `測定: ${measurementLabel.trim() || "未入力"}`,
-      ].join("。")
+        `${t("測定", "Measurement")}: ${measurementLabel.trim() || t("未入力", "not entered")}`,
+      ].join(t("。", ". "))
     : "";
+  const submitLabel = initial?.revisionMode
+    ? t("変更を適用", "Apply changes")
+    : initial?.statisticsHandoff
+      ? t("統計設定へ進む", "Continue to statistics setup")
+      : t("この内容で入力表を作る", "Create data table");
   const externalLlmPrompt = createExperimentConsultationPrompt({
     title,
     conditionFactors: blocks.map((block) => ({
@@ -1565,6 +1603,16 @@ export function BiologicalExperimentSetup({
                   <h2 id="material-heading">{t("条件を受けたものと材料のつながり", "Experimental units and their relationships")}</h2>
                 </div>
               </div>
+              {message && messagePlacement === "material" ? (
+                <p
+                  ref={messageRef}
+                  className="biological-setup__message"
+                  role="alert"
+                  tabIndex={-1}
+                >
+                  {message}
+                </p>
+              ) : null}
               <label className="biological-setup__field">
                 <span>{t("条件を直接受けた、または群として分けた対象・試料は？", "What unit directly received a condition or was assigned to a group?")}</span>
                 <input
@@ -1927,11 +1975,13 @@ export function BiologicalExperimentSetup({
               aria-label={
                 initial?.revisionMode
                   ? t("変更を適用（入力内容の末尾）", "Apply changes (end of form)")
-                  : t("入力表を作る（入力内容の末尾）", "Create data table (end of form)")
+                  : initial?.statisticsHandoff
+                    ? t("統計設定へ進む（入力内容の末尾）", "Continue to statistics setup (end of form)")
+                    : t("入力表を作る（入力内容の末尾）", "Create data table (end of form)")
               }
               onClick={submit}
             >
-              {initial?.revisionMode ? t("変更を適用", "Apply changes") : t("この内容で入力表を作る", "Create data table")}
+              {submitLabel}
             </button>
           </div>
         </div>
@@ -1944,7 +1994,16 @@ export function BiologicalExperimentSetup({
           <div className="biological-setup__summary" aria-live="polite">
             <strong>{t("現在の実験", "Current experiment")}</strong>
             <p>{experimentSummary}</p>
-            {message ? <p className="biological-setup__message">{message}</p> : null}
+            {message && messagePlacement === "summary" ? (
+              <p
+                ref={messageRef}
+                className="biological-setup__message"
+                role="alert"
+                tabIndex={-1}
+              >
+                {message}
+              </p>
+            ) : null}
           </div>
           <div className="biological-setup__actions">
             {onCancel ? (
@@ -1953,7 +2012,7 @@ export function BiologicalExperimentSetup({
               </button>
             ) : null}
             <button type="button" className="biological-setup__submit" onClick={submit}>
-              {initial?.revisionMode ? t("変更を適用", "Apply changes") : t("この内容で入力表を作る", "Create data table")}
+              {submitLabel}
             </button>
           </div>
         </aside>

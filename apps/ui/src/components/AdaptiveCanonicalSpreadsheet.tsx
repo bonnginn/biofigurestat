@@ -432,7 +432,10 @@ function CompactTable({
   nextExperimentalUnitIdentity: AdaptiveCanonicalSpreadsheetProps["nextExperimentalUnitIdentity"];
   editable: boolean;
 }>) {
-  const tableLabel = editable ? "条件ごとにまとめて入力" : "条件ごとにまとめて表示";
+  const locale = useAppLocale();
+  const tableLabel = editable
+    ? localizedText(locale, "条件ごとにまとめて入力", "Enter values by condition")
+    : localizedText(locale, "条件ごとにまとめて表示", "Values grouped by condition");
   const editableGroups = model.compact.rows.flatMap((row) =>
     columns.flatMap((column) => {
       const group = scalarGroupForValueColumn(contract, row, column);

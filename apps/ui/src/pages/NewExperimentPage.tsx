@@ -53,7 +53,7 @@ import {
 import { createAdaptiveWorkspace } from "../app/adaptiveWorkspace";
 import { createBiologicalSetupPresentation } from "../app/adaptiveStructureRevision";
 import { adaptiveInputFeatureEnabled } from "../app/adaptiveInputFeature";
-import { localizedText, useAppLocale } from "../app/appLocale";
+import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 import { bridgeGraphOnlyTableToStatistics } from "../app/graphOnlyStatisticsBridge";
 import { rebindGraphOnlyGraphsToWorkspace } from "../app/graphOnlyWorkspaceGraph";
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
@@ -130,7 +130,10 @@ export function biologicalWorkspaceStopMessage(diagnostics: readonly string[]): 
   return "この実験内容は現在の入力画面へ安全に変換できません。入力内容は保持されています。";
 }
 
-function graphOnlyBiologicalInitial(state: UnresolvedVisualizationProjectState) {
+function graphOnlyBiologicalInitial(
+  state: UnresolvedVisualizationProjectState,
+  locale: AppLocale,
+) {
   const xColumn = state.mapping?.columns.find(({ role }) => role === "x");
   const yColumn = state.mapping?.columns.find(({ role }) => role === "y");
   if (!xColumn || !yColumn) return undefined;
@@ -142,8 +145,11 @@ function graphOnlyBiologicalInitial(state: UnresolvedVisualizationProjectState) 
     measurementLabel: yColumn.header,
     conditionBlocks: [{ name: xColumn.header, levels }],
     statisticsHandoff: true,
-    notice:
+    notice: localizedText(
+      locale,
       "Graph用の元表は保持しています。横軸の値と測定項目を候補として入れました。実際の対象・試料と条件間の関係だけ追加してください。",
+      "The source table for the Graph is retained. X-axis values and the measured readout are prefilled; add only the actual subject or specimen and its relationship across conditions.",
+    ),
   } as const;
 }
 
@@ -2868,7 +2874,9 @@ export function NewExperimentPage({
             enabled={taskEntryHubEnabled}
             externalError={biologicalHandoffError}
             initial={
-              pendingGraphOnlyState ? graphOnlyBiologicalInitial(pendingGraphOnlyState) : undefined
+              pendingGraphOnlyState
+                ? graphOnlyBiologicalInitial(pendingGraphOnlyState, locale)
+                : undefined
             }
             onDirtyChange={(dirty) => updateEntryDirtySource("biological", dirty)}
             onCancel={() => {

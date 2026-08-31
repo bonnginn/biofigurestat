@@ -1,6 +1,6 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { AnalysisEngineResult } from "@lsaa/analysis-contracts";
-import { vi } from "vitest";
+import { afterEach, vi } from "vitest";
 import type { AnalysisRunner } from "../../app/analysisClient";
 import { copyGraphToClipboard, serializeGraphSvg } from "../../app/graphExport";
 import {
@@ -24,6 +24,10 @@ import {
   repeatedAxisAnnotationLabel,
   serializeVisibleGraphData,
 } from "./ExperimentGraphWorkbench";
+import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
+import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
+
+afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 function readBlobText(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -419,6 +423,23 @@ describe("ExperimentGraphWorkbench", () => {
     });
   };
 
+  it("shows the standard Graph workspace without Japanese application copy in English mode", () => {
+    act(() => setAppLocale("en"));
+    const fixture = simpleThreeGroupFixture();
+    const draft = {
+      ...fixture.draft,
+      readouts: fixture.draft.readouts.map((readout) => ({
+        ...readout,
+        label: "Positive fraction",
+      })),
+    };
+    const view = render(
+      <ExperimentGraphWorkbench draft={draft} cells={fixture.cells} onClose={vi.fn()} />,
+    );
+
+    expectNoJapaneseUi(view.container);
+  });
+
   it("3群は安定スロットと左右余白でコンパクトに表示する", () => {
     const { draft, cells } = simpleThreeGroupFixture();
     render(<ExperimentGraphWorkbench draft={draft} cells={cells} onClose={vi.fn()} />);
@@ -484,9 +505,12 @@ describe("ExperimentGraphWorkbench", () => {
       ...svg.querySelectorAll<SVGTextElement>(".experiment-graph-axis-title"),
     ].find((node) => node.getAttribute("transform")?.startsWith("rotate(-90"));
     expect(Number(svg.dataset.leftMargin)).toBeGreaterThanOrEqual(124);
-    expect(Number(yAxisTitle?.getAttribute("x"))).toBe(24);
-    expect(Number(yAxisTitle?.getAttribute("x"))).toBeLessThan(
-      Number(svg.dataset.leftMargin) - 70,
+    expect(Number(yAxisTitle?.getAttribute("x"))).toBe(
+      Number(svg.dataset.leftMargin) - 82,
+    );
+    expect(Number(yAxisTitle?.getAttribute("x"))).toBeGreaterThanOrEqual(24);
+    expect(Number(yAxisTitle?.getAttribute("x"))).toBeLessThanOrEqual(
+      Number(svg.dataset.leftMargin) - 72,
     );
     const viewBoxHeight = Number(svg.getAttribute("viewBox")?.split(/\s+/u)[3]);
     expect(Number(xAxisTitle?.getAttribute("y"))).toBeLessThan(viewBoxHeight - 40);

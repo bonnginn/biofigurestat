@@ -131,6 +131,21 @@ function comparisonDisplayLabel(
   return firstLabel && secondLabel ? `${firstLabel} vs ${secondLabel}` : null;
 }
 
+function estimateDisplayLabel(
+  name: string,
+  conditionOptions: readonly ConditionOption[],
+): string {
+  for (const first of conditionOptions) {
+    for (const second of conditionOptions) {
+      if (first.id === second.id) continue;
+      if (name === `${first.id}_minus_${second.id}`) {
+        return `${first.label} − ${second.label}`;
+      }
+    }
+  }
+  return name;
+}
+
 const ENGLISH_METHOD_LABELS: Readonly<Record<string, string>> = {
   welch_t: "Welch's t-test",
   student_t: "Student's t-test",
@@ -991,7 +1006,7 @@ export function GraphStatisticsPanel({
             <dl aria-label={t("主要な推定値", "Primary estimates")}>
               {result.estimates.map((estimate) => (
                 <div key={estimate.name}>
-                  <dt>{estimate.name}</dt>
+                  <dt>{estimateDisplayLabel(estimate.name, conditionOptions)}</dt>
                   <dd>
                     {t("推定値", "Estimate")} = {formatNumber(estimate.value)}
                     {estimate.standardError === null

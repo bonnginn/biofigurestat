@@ -155,13 +155,13 @@ describe("Graph-only production workspace", () => {
   it("keeps Data, Graph, and Statistics as separate workspace tabs", () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
     expect(screen.getByRole("button", { name: "データ" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("button", { name: "Graph" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Statistics" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "グラフ" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "統計" })).toBeDisabled();
 
     pasteTable();
     mapColumns({ id: "3" });
     const workbench = openGraph();
-    expect(screen.getByRole("button", { name: "Graph" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("button", { name: "グラフ" })).toHaveAttribute("aria-current", "page");
     expect(within(workbench).getByRole("region", { name: "グラフプレビュー" })).toBeVisible();
     expect(within(workbench).getByRole("button", { name: "グラフをコピー" })).toBeEnabled();
     expect(within(workbench).getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
@@ -249,7 +249,7 @@ describe("Graph-only production workspace", () => {
     );
     pasteTable();
     mapColumns({ id: "3" });
-    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
+    fireEvent.click(screen.getByRole("button", { name: "統計" }));
     fireEvent.click(screen.getByRole("radio", { name: /処理・群分け/ }));
     fireEvent.change(screen.getByRole("combobox", { name: "統計で使う対象ID" }), {
       target: { value: "3" },
@@ -278,7 +278,7 @@ describe("Graph-only production workspace", () => {
         expect.objectContaining({ origin: "direct_table" }),
       );
     });
-    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
+    fireEvent.click(screen.getByRole("button", { name: "統計" }));
     expect(recordUsageMilestone).toHaveBeenCalledWith("home", "statistics_requested");
   });
 

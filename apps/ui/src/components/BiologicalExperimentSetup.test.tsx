@@ -584,6 +584,20 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     expect(screen.getByRole("heading", { name: "条件を受けたものと材料のつながり" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "処理・群分け" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "測定した値" })).toBeNull();
+    expect(screen.getByRole("button", { name: "統計設定へ進む" })).toBeVisible();
+
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "条件を直接受けた、または群として分けた対象・試料は？" }),
+      { target: { value: "culture dish" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "統計設定へ進む" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "異なる条件の間で、対象・試料がどのような関係かを選んでください。",
+    );
+    expect(screen.getByRole("alert")).toHaveFocus();
+    expect(
+      screen.getByRole("alert").closest("section")?.querySelector("#material-heading"),
+    ).not.toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "条件・測定を修正" }));
     expect(screen.getByRole("heading", { name: "処理・群分け" })).toBeVisible();
@@ -610,7 +624,7 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
       { target: { value: "culture dish" } },
     );
     fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
-    fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
+    fireEvent.click(screen.getByRole("button", { name: "統計設定へ進む" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent("IDの対応を確認してください");
     expect(

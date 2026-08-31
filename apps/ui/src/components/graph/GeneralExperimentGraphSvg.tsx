@@ -6,6 +6,7 @@ import type { ExperimentSetDraft } from "../../app/experimentDraft";
 import { defaultGraphYTitle } from "../../app/graphDefaults";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { formatExactPValue } from "../../app/statisticalFormat";
+import { localizedText, useAppLocale } from "../../app/appLocale";
 import { GRAPH_PALETTES } from "./graphAppearance";
 import { isPairwiseComparisonTest } from "./experimentGraphAnnotations";
 import type { ExperimentPoint, GraphSeries } from "./experimentGraphDataExport";
@@ -187,6 +188,8 @@ export function ExperimentGraphSvg({
   onInspect: (target: InspectorTarget) => void;
   activeInspectorTarget: InspectorTarget;
 }) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const series = inputSeries.filter(
     ({ visualSeriesKey }) => appearance.seriesStyles[visualSeriesKey]?.visible !== false,
   );
@@ -361,9 +364,10 @@ export function ExperimentGraphSvg({
   };
   const graphInnerWidth = continuousLine ? 720 : categoryLayout.innerWidth;
   const width = margin.left + margin.right + graphInnerWidth;
-  // Reserve separate horizontal bands for the Y title and tick labels. A fixed
-  // 30 px offset allowed ordinary decimal ticks to overlap a long axis title.
-  const yAxisTitleX = 24;
+  // Keep the Y title in its own band while following any extra left margin
+  // introduced by hierarchical labels. A fixed page-edge coordinate made the
+  // title look detached from otherwise compact Graphs.
+  const yAxisTitleX = Math.max(24, margin.left - 82);
   const extraLabelHeight = Math.max(0, hierarchyDepth - 1) * 27;
   const xAxisTitleHeight = renderedXAxisTitle ? 34 : 0;
   const statisticsLegendLabels = [
@@ -617,7 +621,7 @@ export function ExperimentGraphSvg({
       width={width}
       viewBox={`0 0 ${width} ${height}`}
       role="img"
-      aria-label={`${yLabel}の実験単位ごとのグラフ`}
+      aria-label={t(`${yLabel}の実験単位ごとのグラフ`, `${yLabel} Graph by experimental unit`)}
       data-graph-shape={shape}
       data-category-slot-width={continuousLine ? 0 : categoryLayout.baseSlot}
       data-side-padding={categoryLayout.sidePadding}
@@ -643,8 +647,14 @@ export function ExperimentGraphSvg({
       <desc>
         {`${layerDescription}. ${
           shape === "proportion"
-            ? "割合は実験単位ごとに計算しています。"
-            : "細胞・ROIなどの生データは統計上のnではなく、実験単位を別に保持しています。"
+            ? t(
+                "割合は実験単位ごとに計算しています。",
+                "Proportions are calculated for each experimental unit.",
+              )
+            : t(
+                "細胞・ROIなどの生データは統計上のnではなく、実験単位を別に保持しています。",
+                "Raw cell or ROI values are not statistical n; experimental units are retained separately.",
+              )
         }`}
       </desc>
       {showLegend ? (
@@ -653,7 +663,7 @@ export function ExperimentGraphSvg({
           data-graph-layer="legend"
           data-inspector-target="legend"
           data-selected={activeInspectorTarget === "legend" || undefined}
-          aria-label="条件の色"
+          aria-label={t("条件の色", "Condition colors")}
           onDoubleClick={(event) => {
             event.stopPropagation();
             onInspect("legend");
@@ -1005,7 +1015,7 @@ export function ExperimentGraphSvg({
                 annotation.mode === "symbol"
                   ? significanceSymbol(pValue)
                   : `${
-                      isPairwiseComparisonTest(test.name) ? "p" : "全体 p"
+                      isPairwiseComparisonTest(test.name) ? "p" : t("全体 p", "overall p")
                     } = ${formatExactPValue(pValue)}`
               }`}
             </text>
@@ -1307,7 +1317,10 @@ export function ExperimentGraphSvg({
                 data-inspector-target="experiment-summary"
                 data-selected={activeInspectorTarget === "experiment-summary" || undefined}
                 data-summary-value={mean}
-                aria-label={`${item.conditionLabel}の平均を表す棒: ${formatNumber(mean)}`}
+                aria-label={t(
+                  `${item.conditionLabel}の平均を表す棒: ${formatNumber(mean)}`,
+                  `Bar showing the mean for ${item.conditionLabel}: ${formatNumber(mean)}`,
+                )}
                 onDoubleClick={(event) => {
                   event.stopPropagation();
                   onInspect("experiment-summary");
@@ -1324,7 +1337,7 @@ export function ExperimentGraphSvg({
                   onInspect("violin");
                 }}
               >
-                <title>バイオリン分布を編集（ダブルクリック）</title>
+                <title>{t("バイオリン分布を編集（ダブルクリック）", "Edit violin distribution (double-click)")}</title>
                 <path
                   d={currentViolinPath}
                   fill={distributionFillColor}
@@ -1373,7 +1386,10 @@ export function ExperimentGraphSvg({
                   data-graph-layer="nested-distribution"
                   data-inspector-target="box"
                   data-selected={activeInspectorTarget === "box" || undefined}
-                  aria-label={`${item.conditionLabel}の細胞・ROI分布（記述用）`}
+                  aria-label={t(
+                    `${item.conditionLabel}の細胞・ROI分布（記述用）`,
+                    `Descriptive cell or ROI distribution for ${item.conditionLabel}`,
+                  )}
                   onDoubleClick={(event) => {
                     event.stopPropagation();
                     onInspect("box");
@@ -1462,7 +1478,10 @@ export function ExperimentGraphSvg({
                   data-selected={activeInspectorTarget === "raw-dots" || undefined}
                   data-experiment-id={point.experimentId}
                   data-graph-value={point.value}
-                  aria-label={`${item.conditionLabel} ${point.experimentLabel}の生データ: ${formatNumber(point.value)}`}
+                  aria-label={t(
+                    `${item.conditionLabel} ${point.experimentLabel}の生データ: ${formatNumber(point.value)}`,
+                    `Raw value for ${item.conditionLabel}, ${point.experimentLabel}: ${formatNumber(point.value)}`,
+                  )}
                   onDoubleClick={(event) => {
                     event.stopPropagation();
                     onInspect("raw-dots");
@@ -1486,7 +1505,10 @@ export function ExperimentGraphSvg({
                   selected={activeInspectorTarget === "experiment-summary"}
                   experimentId={point.experimentId}
                   value={point.value}
-                  ariaLabel={`${item.conditionLabel} ${point.experimentLabel}の実験単位平均: ${formatNumber(point.value)}`}
+                  ariaLabel={t(
+                    `${item.conditionLabel} ${point.experimentLabel}の実験単位平均: ${formatNumber(point.value)}`,
+                    `Experimental-unit mean for ${item.conditionLabel}, ${point.experimentLabel}: ${formatNumber(point.value)}`,
+                  )}
                   onInspect={onInspect}
                 />
               ))}
@@ -1593,4 +1615,3 @@ export function ExperimentGraphSvg({
     </svg>
   );
 }
-

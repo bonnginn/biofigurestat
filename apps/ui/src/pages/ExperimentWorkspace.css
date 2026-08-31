@@ -8,8 +8,8 @@
 .experiment-workspace-header {
   display: flex;
   align-items: flex-start;
-  gap: 22px;
-  padding: 2px 0 12px;
+  gap: 12px;
+  padding: 0 0 6px;
 }
 
 .experiment-workspace-header h1,
@@ -18,12 +18,12 @@
 }
 
 .experiment-workspace-header h1 {
-  font-size: clamp(1.55rem, 2.4vw, 2rem);
+  font-size: clamp(1.4rem, 2vw, 1.7rem);
   letter-spacing: -0.03em;
 }
 
 .experiment-workspace-context {
-  margin-top: 5px !important;
+  margin-top: 2px !important;
   color: #6e7785;
   font-size: 1rem;
 }
@@ -41,7 +41,7 @@
 
 .experiment-workspace-eyebrow {
   color: #8b94a3;
-  font-size: 1rem;
+  font-size: 0.84rem;
   font-weight: 800;
   letter-spacing: 0.14em;
   line-height: 1.35;
