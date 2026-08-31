@@ -25,8 +25,10 @@ unreferenced corpus-coupled prototype are retained only in the private archive.
 
 ## Active work
 
-Branch `codex/english-alpha-localization-2026-08-31` adds a persistent Japanese / English
-application-language setting and reviewed English copy for the production Public Alpha workflow.
+Branch `codex/native-ui-regression-automation-2026-08-31` carries the post-Alpha native-regression
+harness and the current source-only structural simplification. Its base includes a persistent
+Japanese / English application-language setting and reviewed English copy for the production
+Public Alpha workflow.
 Automated English rendering checks now cover the application shell, experiment setup, canonical
 data surfaces, Graph and Statistics, specialist workspaces, Help, external-LLM consultation, and
 problem reporting. Locale state remains outside `.lsa`; scientific semantic keys, analysis
@@ -37,9 +39,8 @@ Legacy D01-D05 files remain backward compatible. When English is active, those p
 stop at an English compatibility notice instead of mixing Japanese legacy-editor copy into the
 English UI. Switching to Japanese opens the unchanged legacy editor; no project conversion occurs.
 
-The preceding structural-simplification work remains the base of this branch. Further workbench
-and spreadsheet consolidation should resume after the English native candidate, without mixing
-structural refactors into terminology review.
+Structural simplification is proceeding as small behavior-preserving commits. It does not change
+the published Alpha artifacts, scientific semantics, or the project schema.
 
 ## Product invariants
 
@@ -97,9 +98,15 @@ workbench to roughly 3,200 lines. The
 benchmark rendered-state, analysis-state, and usage-telemetry projections are now pure tested
 boundaries as well. Tests keep presentation configuration separate from executed analysis facts,
 include derived metrics only when displayed, and centrally classify usage edit categories without
-moving effect order out of the workbench. The expanded full UI suite passes with 148 files and
-1,160 tests; typecheck and lint pass for the
-extracted boundaries.
+moving effect order out of the workbench. Benchmark `statistics.json` and `run.json` artifact
+construction now also uses pure tested builders; request-specific contrasts, descriptive
+not-performed status, event counts, and the existing artifact shape are preserved. These
+extractions reduce the workbench to roughly 3,000 lines. Focused workbench and artifact suites,
+typecheck, and lint pass. The expanded full UI suite reached 148/149 files and 1,162/1,163 tests;
+the sole nonlinear-fit presentation wait passed immediately in focused isolation (40/40), so it
+is recorded as a parallel-run flaky rather than a Graph refactor regression. That focused run also
+reports duplicate React key `x.-5` warnings in an existing sparse nonlinear-fit path; the warning
+is a bounded follow-up because the assertions and canonical-data checks pass.
 
 For the English-localization branch, the full UI suite passes with 131 files and 1,117 tests.
 English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
@@ -128,9 +135,13 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   the appearance, annotation, raw-point, uncertainty, connecting-line, and legend presentation
   editors now have component boundaries. Composition and correlation renderers plus the first
   pure Statistics/Methods orchestration boundary are separated. The main general-purpose SVG
-  renderer is separated as well; remaining analysis, diagnostic, and benchmark orchestration are
-  the next safe extraction boundaries. Their pure state projections and usage-edit classification
-  are already separated; lifecycle effects and artifact writes intentionally remain in the parent.
+  renderer is separated as well; benchmark artifact construction, pure state projections, and
+  usage-edit classification are separated. Remaining async analysis, diagnostic, and benchmark
+  lifecycle effects and native artifact writes intentionally remain in the parent and are the next
+  safe extraction boundaries.
+- Sparse nonlinear-fit rendering can emit duplicate React key `x.-5` warnings during focused
+  coverage. Canonical-data assertions pass, but stable unique mark keys should be addressed before
+  React behavior changes turn the warning into visible duplication or omission.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
