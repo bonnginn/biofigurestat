@@ -15,14 +15,14 @@
 
 ## 次に行う順番
 
-| 順位 | 状態 | 作業 | 完了条件 |
-| --- | --- | --- | --- |
-| 1 | 🟡 | 英語版Windows candidateの短い実機確認 | 言語切替、新規実験、保存・再読込、PNG/SVG/CSV、用語・見切れを確認 |
-| 2 | ⬜ | 英語版macOS candidateのbuildと限定実機確認 | native verifier、保存・再読込、書き出し、言語表示がPASS |
-| 3 | ⬜ | 英語版Alpha assetの公開判断 | Windows/macOS証拠、checksum、release noteを揃えて公開可否を記録 |
-| 4 | ⚠️ | Windows native UI harnessの安定実行環境 | clean Windows CI/VMまたは第2接続方式で同じscenarioが連続PASS |
-| 5 | ⬜ | macOS native UI harness | 実アプリで起動、入力、保存確認、Cancel、破棄終了を自動検査 |
-| 6 | 🟡 | GraphとSpreadsheetの共通化を再開 | 画面ごとの修正漏れを減らし、既存`.lsa`と科学的意味を維持 |
+| 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
+| --- | --- | --- | --- | --- |
+| 1 | 🟡 | 英語版Windows candidateの短い実機確認 | 必要 | 言語切替、新規実験、保存・再読込、PNG/SVG/CSV、用語・見切れを確認 |
+| 2 | ⬜ | 英語版macOS candidateのbuildと限定実機確認 | 最終確認のみ必要 | native verifier、保存・再読込、書き出し、言語表示がPASS |
+| 3 | ⬜ | 英語版Alpha assetの公開判断 | 必要 | Windows/macOS証拠、checksum、release noteを揃えて公開可否を記録 |
+| 4 | ⚠️ | Windows native UI harnessの安定実行環境 | 原則不要 | clean Windows CI/VMまたは第2接続方式で同じscenarioが連続PASS |
+| 5 | ⬜ | macOS native UI harness | 原則不要 | 実アプリで起動、入力、保存確認、Cancel、破棄終了を自動検査 |
+| 6 | 🟡 | GraphとSpreadsheetの共通化を再開 | 不要 | 画面ごとの修正漏れを減らし、既存`.lsa`と科学的意味を維持 |
 
 ## 公開・運用
 
@@ -33,7 +33,7 @@
 | ✅ | Windows日本語版 | installer、engine、save/open/exportを検証済み |
 | ✅ | Apple Silicon macOS日本語版 | zip、署名整合、save/open/exportを検証済み |
 | ✅ | GitHub release説明の日本語・英語併記 | release pageへ反映済み |
-| 🟡 | READMEの日本語・英語案内 | ローカルcommit済み。公開source branchへの反映確認が必要 |
+| ⚠️ | READMEの日本語・英語案内 | ローカル`7f52c86`は日本語→英語で案内済み。公開`origin/main`の`38bd2d6`は英語中心のままで、push/mergeが必要 |
 | ✅ | opt-in利用情報収集 | 研究データを含めない同意式送信、停止、診断書き出しを実装済み |
 | ✅ | 不具合報告 | 確認後送信、Worker/D1、rate limit、保持期限、report IDを実装済み |
 | ✅ | 不具合報告の日次triage | 別タスクで毎日1回のread-only分類・提案運用を設定済み |
