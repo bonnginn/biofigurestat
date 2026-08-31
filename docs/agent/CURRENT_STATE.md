@@ -101,7 +101,9 @@ include derived metrics only when displayed, and centrally classify usage edit c
 moving effect order out of the workbench. Benchmark `statistics.json` and `run.json` artifact
 construction now also uses pure tested builders; request-specific contrasts, descriptive
 not-performed status, event counts, and the existing artifact shape are preserved. These
-extractions reduce the workbench to roughly 3,000 lines. Focused workbench and artifact suites,
+builders now also classify benchmark Graph-open/rendered/analysis change events and construct their
+unchanged detail payload outside the React effect. These extractions reduce the workbench to
+roughly 2,960 lines. Focused workbench and artifact suites,
 typecheck, and lint pass. The expanded full UI suite reached 148/149 files and 1,162/1,163 tests;
 the sole nonlinear-fit presentation wait passed immediately in focused isolation (40/40), so it
 is recorded as a parallel-run flaky rather than a Graph refactor regression. That focused run also
@@ -135,8 +137,8 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   the appearance, annotation, raw-point, uncertainty, connecting-line, and legend presentation
   editors now have component boundaries. Composition and correlation renderers plus the first
   pure Statistics/Methods orchestration boundary are separated. The main general-purpose SVG
-  renderer is separated as well; benchmark artifact construction, pure state projections, and
-  usage-edit classification are separated. Remaining async analysis, diagnostic, and benchmark
+  renderer is separated as well; benchmark artifact/event construction, pure state projections,
+  and usage-edit classification are separated. Remaining async analysis, diagnostic, and benchmark
   lifecycle effects and native artifact writes intentionally remain in the parent and are the next
   safe extraction boundaries.
 - Sparse nonlinear-fit rendering can emit duplicate React key `x.-5` warnings during focused
