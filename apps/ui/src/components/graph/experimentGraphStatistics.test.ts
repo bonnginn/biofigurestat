@@ -13,8 +13,10 @@ import type {
   WorkspaceGraphState,
 } from "../../app/experimentWorkspaceProject";
 import {
+  createGraphAnalysisContextKey,
   createExperimentGraphMethodsText,
   statisticalMethodForContrastIntent,
+  varyingGraphAnalysisAttributes,
 } from "./experimentGraphStatistics";
 
 type GraphAppearance = WorkspaceGraphState["appearance"];
@@ -74,6 +76,43 @@ const result: AnalysisEngineResult = {
 };
 
 describe("experiment Graph Statistics orchestration", () => {
+  it("fingerprints the declared analysis context with stable unit fallbacks", () => {
+    const { draft } = fixture();
+    const first = draft.experiments[0]!;
+    const contextualDraft = {
+      ...draft,
+      experiments: [
+        { ...first, sessionId: "session.1", stableUnitId: "animal.1" },
+        { ...draft.experiments[1]!, sessionId: undefined, stableUnitId: undefined },
+      ],
+    };
+    const context = JSON.parse(
+      createGraphAnalysisContextKey({
+        draft: contextualDraft,
+        readoutId: draft.readouts[0]!.id,
+        sourceMode: "raw_readout",
+        conditionIds: draft.conditions.map(({ id }) => id),
+        displayedTimePointIds: [],
+        analysisTimePointId: null,
+        plannedContrastConditionIds: [],
+        timeAnalysis: { kind: "selected_timepoint" },
+      }),
+    ) as { stableUnits: readonly { id: string; sessionId: string; stableUnitId: string }[] };
+    expect(context.stableUnits[0]).toMatchObject({ sessionId: "session.1", stableUnitId: "animal.1" });
+    expect(context.stableUnits[1]).toMatchObject({
+      sessionId: contextualDraft.experiments[1]!.id,
+      stableUnitId: contextualDraft.experiments[1]!.id,
+    });
+  });
+
+  it("finds only attributes that vary across the selected analysis conditions", () => {
+    const { draft } = fixture();
+    expect(
+      varyingGraphAnalysisAttributes(draft, draft.conditions.map(({ id }) => id)).map(({ id }) => id),
+    ).toEqual(["attribute.1"]);
+    expect(varyingGraphAnalysisAttributes(draft, [draft.conditions[0]!.id])).toEqual([]);
+  });
+
   it("keeps the existing deterministic method transition for each comparison intent", () => {
     expect(statisticalMethodForContrastIntent("all_pairs")).toBe("welch_anova");
     expect(statisticalMethodForContrastIntent("control_vs_many")).toBe("one_way_anova");

@@ -58,8 +58,10 @@ import { ExperimentGraphXAxisEditor } from "./ExperimentGraphXAxisEditor";
 import { ExperimentGraphYAxisEditor } from "./ExperimentGraphYAxisEditor";
 import { GRAPH_PALETTES } from "./graphAppearance";
 import {
+  createGraphAnalysisContextKey,
   createExperimentGraphMethodsText,
   statisticalMethodForContrastIntent,
+  varyingGraphAnalysisAttributes,
 } from "./experimentGraphStatistics";
 import {
   createBenchmarkAnalysisState,
@@ -845,7 +847,8 @@ export function ExperimentGraphWorkbench({
       timeAnalysis,
     ],
   );
-  const analysisContextKey = JSON.stringify({
+  const analysisContextKey = createGraphAnalysisContextKey({
+    draft,
     readoutId: activeReadoutId,
     sourceMode,
     conditionIds: analysisConditionIds,
@@ -853,11 +856,6 @@ export function ExperimentGraphWorkbench({
     analysisTimePointId,
     plannedContrastConditionIds,
     timeAnalysis,
-    stableUnits: draft.experiments.map(({ id, sessionId, stableUnitId }) => ({
-      id,
-      sessionId: sessionId ?? id,
-      stableUnitId: stableUnitId ?? id,
-    })),
   });
   useDefaultBenchmarkGraphCapture({
     svgRef,
@@ -869,13 +867,9 @@ export function ExperimentGraphWorkbench({
     analysisState: benchmarkAnalysisState,
     setStatus: setBenchmarkCaptureStatus,
   });
-  const varyingStatisticalAttributes = draft.attributes.filter(
-    (attribute) =>
-      new Set(
-        activeAnalysisConditions
-          .map((condition) => condition.attributes[attribute.id]?.trim())
-          .filter(Boolean),
-      ).size > 1,
+  const varyingStatisticalAttributes = varyingGraphAnalysisAttributes(
+    draft,
+    analysisConditionIds,
   );
   const hasFactorByTimeStructure =
     draft.time.points.length > 1 && varyingStatisticalAttributes.length > 1;

@@ -18,6 +18,48 @@ type AxisSettings = WorkspaceGraphState["axes"];
 type GraphType = WorkspaceGraphState["graphType"];
 type LayerState = WorkspaceGraphState["layers"];
 
+export function createGraphAnalysisContextKey(input: Readonly<{
+  draft: ExperimentSetDraft;
+  readoutId: string;
+  sourceMode: WorkspaceGraphState["sourceMode"];
+  conditionIds: readonly string[];
+  displayedTimePointIds: readonly string[];
+  analysisTimePointId: string | null;
+  plannedContrastConditionIds: readonly (readonly [string, string])[];
+  timeAnalysis: TimeAnalysisPlan;
+}>): string {
+  return JSON.stringify({
+    readoutId: input.readoutId,
+    sourceMode: input.sourceMode,
+    conditionIds: input.conditionIds,
+    displayedTimePointIds: input.displayedTimePointIds,
+    analysisTimePointId: input.analysisTimePointId,
+    plannedContrastConditionIds: input.plannedContrastConditionIds,
+    timeAnalysis: input.timeAnalysis,
+    stableUnits: input.draft.experiments.map(({ id, sessionId, stableUnitId }) => ({
+      id,
+      sessionId: sessionId ?? id,
+      stableUnitId: stableUnitId ?? id,
+    })),
+  });
+}
+
+export function varyingGraphAnalysisAttributes(
+  draft: ExperimentSetDraft,
+  conditionIds: readonly string[],
+): ExperimentSetDraft["attributes"] {
+  const selected = new Set(conditionIds);
+  const conditions = draft.conditions.filter(({ id }) => selected.has(id));
+  return draft.attributes.filter(
+    (attribute) =>
+      new Set(
+        conditions
+          .map((condition) => condition.attributes[attribute.id]?.trim())
+          .filter(Boolean),
+      ).size > 1,
+  );
+}
+
 export function statisticalMethodForContrastIntent(
   intent: ContrastIntent,
 ): AnalysisRecommendation["recommendedMethod"] {
