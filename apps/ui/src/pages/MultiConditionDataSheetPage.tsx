@@ -75,6 +75,10 @@ import {
   type SpreadsheetGridInputProps,
 } from "../components/SpreadsheetGridInput";
 import { nextRovingTabIndex } from "../components/rovingTab";
+import {
+  formatProportionPercentage,
+  parseSpreadsheetNumber,
+} from "../components/spreadsheetValues";
 import "./MultiConditionDataSheetPage.css";
 
 type Props = {
@@ -216,25 +220,8 @@ function updateEntryExperimentDate(
   };
 }
 
-function parseMultiNumber(value: string, integer = false): number | null {
-  const trimmed = value.trim();
-  if (trimmed === "") return null;
-  const parsed = Number(trimmed);
-  if (!Number.isFinite(parsed) || (integer && !Number.isInteger(parsed))) return null;
-  return parsed;
-}
-
 function multiPercentageLabel(measurement: MultiConditionMeasurement): string {
-  if (measurement.kind !== "proportion") return "—";
-  if (
-    measurement.numerator === null ||
-    measurement.denominator === null ||
-    measurement.denominator <= 0 ||
-    measurement.numerator > measurement.denominator
-  ) {
-    return "—";
-  }
-  return `${((measurement.numerator / measurement.denominator) * 100).toFixed(1)}%`;
+  return measurement.kind === "proportion" ? formatProportionPercentage(measurement) : "—";
 }
 
 function MultiGridInput(props: Omit<SpreadsheetGridInputProps, "baseClassName">) {
@@ -1230,7 +1217,7 @@ export function MultiConditionDataSheetPage({
                                   onChange={(event) =>
                                     changeMeasurement(columnIndex, selectedReplicateIndex, {
                                       kind: "proportion",
-                                      numerator: parseMultiNumber(event.target.value, true),
+                                      numerator: parseSpreadsheetNumber(event.target.value, true),
                                       denominator: proportionMeasurement.denominator,
                                     })
                                   }
@@ -1251,7 +1238,7 @@ export function MultiConditionDataSheetPage({
                                     changeMeasurement(columnIndex, selectedReplicateIndex, {
                                       kind: "proportion",
                                       numerator: proportionMeasurement.numerator,
-                                      denominator: parseMultiNumber(event.target.value, true),
+                                      denominator: parseSpreadsheetNumber(event.target.value, true),
                                     })
                                   }
                                 />
@@ -1279,7 +1266,7 @@ export function MultiConditionDataSheetPage({
                                 onChange={(event) =>
                                   changeMeasurement(columnIndex, selectedReplicateIndex, {
                                     kind: "scalar",
-                                    value: parseMultiNumber(event.target.value),
+                                    value: parseSpreadsheetNumber(event.target.value),
                                   })
                                 }
                               />

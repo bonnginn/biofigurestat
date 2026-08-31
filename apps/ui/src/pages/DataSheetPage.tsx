@@ -72,6 +72,10 @@ import {
   type SpreadsheetGridInputProps,
 } from "../components/SpreadsheetGridInput";
 import { nextRovingTabIndex } from "../components/rovingTab";
+import {
+  formatProportionPercentage,
+  parseSpreadsheetNumber,
+} from "../components/spreadsheetValues";
 import "./DataSheetPage.grid.css";
 
 type DataSheetPageProps = {
@@ -151,15 +155,6 @@ type MeasurementLocation =
 type ExperimentDateLocation =
   | { relationship: "independent"; columnIndex: number; entryIndex: number }
   | { relationship: "matched" | "blocked"; rowIndex: number };
-
-function parseNumber(value: string, integer = false): number | null {
-  const trimmed = value.trim();
-  if (trimmed === "") return null;
-  const parsed = Number(trimmed);
-  if (!Number.isFinite(parsed)) return null;
-  if (integer && !Number.isInteger(parsed)) return null;
-  return parsed;
-}
 
 function updateMeasurement(
   sheet: TwoConditionDataSheet,
@@ -245,16 +240,7 @@ function updateExperimentDate(
 }
 
 function percentageLabel(measurement: DraftMeasurement) {
-  if (measurement.kind !== "proportion") return "—";
-  if (
-    measurement.numerator === null ||
-    measurement.denominator === null ||
-    measurement.denominator <= 0 ||
-    measurement.numerator > measurement.denominator
-  ) {
-    return "—";
-  }
-  return `${((measurement.numerator / measurement.denominator) * 100).toFixed(1)}%`;
+  return measurement.kind === "proportion" ? formatProportionPercentage(measurement) : "—";
 }
 
 function loadingControlRatioLabel(measurement: DraftMeasurement) {
@@ -294,7 +280,9 @@ function MeasurementGridCells({
           inputMode="decimal"
           value={measurement.value ?? ""}
           aria-label={label}
-          onChange={(event) => onChange({ kind: "scalar", value: parseNumber(event.target.value) })}
+          onChange={(event) =>
+            onChange({ kind: "scalar", value: parseSpreadsheetNumber(event.target.value) })
+          }
           gridRow={gridRow}
           gridColumn={1}
         />
@@ -315,7 +303,7 @@ function MeasurementGridCells({
           onChange={(event) =>
             onChange({
               kind: "loading_control_ratio",
-              target: parseNumber(event.target.value),
+              target: parseSpreadsheetNumber(event.target.value),
               loadingControl: measurement.loadingControl,
             })
           }
@@ -335,7 +323,7 @@ function MeasurementGridCells({
             onChange({
               kind: "loading_control_ratio",
               target: measurement.target,
-              loadingControl: parseNumber(event.target.value),
+              loadingControl: parseSpreadsheetNumber(event.target.value),
             })
           }
           gridRow={gridRow}
@@ -360,7 +348,10 @@ function MeasurementGridCells({
         value={measurement.numerator ?? ""}
         aria-label={`${label}：陽性細胞数`}
         onChange={(event) =>
-          onChange({ ...measurement, numerator: parseNumber(event.target.value, true) })
+          onChange({
+            ...measurement,
+            numerator: parseSpreadsheetNumber(event.target.value, true),
+          })
         }
         gridRow={gridRow}
         gridColumn={1}
@@ -375,7 +366,10 @@ function MeasurementGridCells({
         value={measurement.denominator ?? ""}
         aria-label={`${label}：総細胞数`}
         onChange={(event) =>
-          onChange({ ...measurement, denominator: parseNumber(event.target.value, true) })
+          onChange({
+            ...measurement,
+            denominator: parseSpreadsheetNumber(event.target.value, true),
+          })
         }
         gridRow={gridRow}
         gridColumn={2}
@@ -574,7 +568,9 @@ export function MeasurementEditor({
           inputMode="decimal"
           value={measurement.value ?? ""}
           aria-label={label}
-          onChange={(event) => onChange({ kind: "scalar", value: parseNumber(event.target.value) })}
+          onChange={(event) =>
+            onChange({ kind: "scalar", value: parseSpreadsheetNumber(event.target.value) })
+          }
         />
         <span className="measurement-unit">{outcomeLabel}</span>
       </label>
@@ -596,7 +592,7 @@ export function MeasurementEditor({
             onChange={(event) =>
               onChange({
                 kind: "loading_control_ratio",
-                target: parseNumber(event.target.value),
+                target: parseSpreadsheetNumber(event.target.value),
                 loadingControl: measurement.loadingControl,
               })
             }
@@ -615,7 +611,7 @@ export function MeasurementEditor({
               onChange({
                 kind: "loading_control_ratio",
                 target: measurement.target,
-                loadingControl: parseNumber(event.target.value),
+                loadingControl: parseSpreadsheetNumber(event.target.value),
               })
             }
           />
@@ -639,7 +635,10 @@ export function MeasurementEditor({
           value={measurement.numerator ?? ""}
           aria-label={`${label}：陽性細胞数`}
           onChange={(event) =>
-            onChange({ ...measurement, numerator: parseNumber(event.target.value, true) })
+            onChange({
+              ...measurement,
+              numerator: parseSpreadsheetNumber(event.target.value, true),
+            })
           }
         />
       </label>
@@ -656,7 +655,10 @@ export function MeasurementEditor({
           value={measurement.denominator ?? ""}
           aria-label={`${label}：総細胞数`}
           onChange={(event) =>
-            onChange({ ...measurement, denominator: parseNumber(event.target.value, true) })
+            onChange({
+              ...measurement,
+              denominator: parseSpreadsheetNumber(event.target.value, true),
+            })
           }
         />
       </label>
