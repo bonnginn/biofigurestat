@@ -91,6 +91,7 @@ import {
   createBenchmarkRunArtifact,
   createBenchmarkStatisticsArtifact,
 } from "./experimentGraphBenchmarkArtifacts";
+import { createBenchmarkGraphCapturePayload } from "./experimentGraphBenchmarkCapture";
 import {
   analysisTestAnnotationLabel,
   createAdjustedComparisonAnnotation,
@@ -916,27 +917,26 @@ export function ExperimentGraphWorkbench({
     if (!beginDefaultGraphCapture(capturedAt)) return;
     void (async () => {
       try {
-        const png = await svgToPngBlob(
-          svgText,
-          viewBox.width || svg.width.baseVal.value || 900,
-          viewBox.height || svg.height.baseVal.value || 520,
+        const capture = await createBenchmarkGraphCapturePayload(
+          {
+            svgText,
+            width: viewBox.width || svg.width.baseVal.value || 900,
+            height: viewBox.height || svg.height.baseVal.value || 520,
+            analysisState: benchmarkAnalysisState,
+          },
+          { renderPng: svgToPngBlob, sha256: sha256Hex, encodeBase64: blobToBase64 },
         );
-        const [svgSha256, pngSha256, analysisStateFingerprint] = await Promise.all([
-          sha256Hex(svgText),
-          sha256Hex(png),
-          sha256Hex(benchmarkAnalysisState),
-        ]);
         await writeBenchmarkArtifacts(
           createDefaultBenchmarkGraphArtifacts({
             svgText,
-            pngBase64: await blobToBase64(png),
+            pngBase64: capture.pngBase64,
           }),
         );
         completeDefaultGraphCapture({
-          graphStateFingerprint: svgSha256,
-          analysisStateFingerprint,
-          svgSha256,
-          pngSha256,
+          graphStateFingerprint: capture.svgSha256,
+          analysisStateFingerprint: capture.analysisStateFingerprint,
+          svgSha256: capture.svgSha256,
+          pngSha256: capture.pngSha256,
         });
         setBenchmarkCaptureStatus("Benchmarkの既定グラフを保存しました。");
       } catch (error) {
@@ -1154,23 +1154,22 @@ export function ExperimentGraphWorkbench({
     try {
       const svgText = serializeGraphSvg(svg);
       const viewBox = svg.viewBox.baseVal;
-      const png = await svgToPngBlob(
-        svgText,
-        viewBox.width || svg.width.baseVal.value || 900,
-        viewBox.height || svg.height.baseVal.value || 520,
+      const capture = await createBenchmarkGraphCapturePayload(
+        {
+          svgText,
+          width: viewBox.width || svg.width.baseVal.value || 900,
+          height: viewBox.height || svg.height.baseVal.value || 520,
+          analysisState: benchmarkAnalysisState,
+        },
+        { renderPng: svgToPngBlob, sha256: sha256Hex, encodeBase64: blobToBase64 },
       );
       const capturedAt = new Date().toISOString();
-      const [svgSha256, pngSha256, analysisStateFingerprint] = await Promise.all([
-        sha256Hex(svgText),
-        sha256Hex(png),
-        sha256Hex(benchmarkAnalysisState),
-      ]);
       recordFinalGraphCapture({
         capturedAt,
-        graphStateFingerprint: svgSha256,
-        analysisStateFingerprint,
-        svgSha256,
-        pngSha256,
+        graphStateFingerprint: capture.svgSha256,
+        analysisStateFingerprint: capture.analysisStateFingerprint,
+        svgSha256: capture.svgSha256,
+        pngSha256: capture.pngSha256,
       });
       setBenchmarkOutcome("completed");
       recordBenchmarkEvent("benchmark_run_finalized", {
@@ -1195,7 +1194,7 @@ export function ExperimentGraphWorkbench({
             completedAt: new Date().toISOString(),
           }),
           svgText,
-          pngBase64: await blobToBase64(png),
+          pngBase64: capture.pngBase64,
           statisticsArtifact,
           methodsText: analysis ? methodsText! : descriptiveMethodsText,
           graphState: graphStateSnapshot,
