@@ -87,8 +87,10 @@ import {
 import {
   changedGraphUsageCategories,
   createBenchmarkAnalysisState,
+  createBenchmarkGraphConfigurationEvent,
   createBenchmarkRenderedState,
   createGraphUsageState,
+  type BenchmarkGraphStateLog,
   type GraphUsageState,
 } from "./experimentGraphInstrumentation";
 import {
@@ -701,11 +703,7 @@ export function ExperimentGraphWorkbench({
     );
   }, [usageGraphState]);
 
-  const benchmarkStateLogRef = useRef<{
-    identity: string;
-    rendered: string;
-    analysis: string;
-  } | null>(null);
+  const benchmarkStateLogRef = useRef<BenchmarkGraphStateLog | null>(null);
   useEffect(() => {
     if (
       !import.meta.env.DEV ||
@@ -714,69 +712,31 @@ export function ExperimentGraphWorkbench({
     )
       return;
     const identity = `${benchmarkRun.identity.caseId}:${benchmarkRun.identity.track}:${benchmarkRun.identity.runId}`;
-    const previous = benchmarkStateLogRef.current;
-    benchmarkStateLogRef.current = {
+    const current = {
       identity,
       rendered: benchmarkRenderedState,
       analysis: benchmarkAnalysisState,
     };
-    if (!previous || previous.identity !== identity) {
-      recordBenchmarkEvent("graph_workspace_opened", {
-        selectedGraph: graphType,
-        readoutId: selectedReadoutId,
-      });
-      return;
-    }
-    const renderedChanged = previous.rendered !== benchmarkRenderedState;
-    const analysisChanged = previous.analysis !== benchmarkAnalysisState;
-    if (!renderedChanged && !analysisChanged) return;
-    recordBenchmarkEvent(
-      renderedChanged ? "graph_configuration_changed" : "analysis_configuration_changed",
+    const event = createBenchmarkGraphConfigurationEvent(
+      benchmarkStateLogRef.current,
+      current,
       {
         graphType,
-        readoutId: selectedReadoutId,
+        selectedReadoutId,
         sourceMode,
-        selectedConditions: selectedConditionIds.join("|"),
-        analysisConditions: analysisConditionIds.join("|"),
-        selectedTimes: selectedTimePointIds.join("|"),
-        timeMetric: timeAnalysis.kind,
-        selectedMethod: selectedStatisticalMethod ?? null,
-        annotationMode: statisticsAnnotation.mode,
-        pointSize: appearance.pointSize,
-        errorBar: appearance.errorBar,
-        spacing: axes.spacing,
-        legendPosition: appearance.legendPosition,
-        palette: appearance.palette,
-        fontFamily: appearance.fontFamily,
-        graphTitleFontSize: appearance.graphTitleFontSize,
-        axisTitleFontSize: appearance.axisTitleFontSize,
-        tickFontSize: appearance.tickFontSize,
-        hierarchyFontSize: appearance.hierarchyFontSize,
-        legendFontSize: appearance.legendFontSize,
-        axisTitle: axes.yTitle,
-        axisRangeMode: axes.yRangeMode,
-        axisMin: axes.yMin,
-        axisMax: axes.yMax,
-        axisScale: axes.yScale,
-        axisTickMode: axes.yTickMode,
-        axisTickInterval: axes.yTickInterval,
-        rawLayer: layers.raw,
-        distributionLayer: layers.distribution,
-        boxLayer: layers.box,
-        experimentLayer: layers.experiment,
-        overallLayer: layers.overall,
-        summaryLineWidth: appearance.summaryLineWidth,
-        axisLineWidth: appearance.axisLineWidth,
-        errorBarLineWidth: appearance.errorBarLineWidth,
-        connectingLineWidth: appearance.connectingLineWidth,
-        distributionLineWidth: appearance.distributionLineWidth,
+        selectedConditionIds,
+        analysisConditionIds,
+        selectedTimePointIds,
+        timeAnalysis,
+        selectedStatisticalMethod,
+        statisticsAnnotation,
+        appearance,
+        axes,
+        layers,
       },
-      renderedChanged && analysisChanged
-        ? "both"
-        : renderedChanged
-          ? "rendered_graph"
-          : "analysis_only",
     );
+    benchmarkStateLogRef.current = current;
+    if (event) recordBenchmarkEvent(event.type, event.detail, event.effect);
   }, [
     benchmarkAnalysisState,
     benchmarkRenderedState,

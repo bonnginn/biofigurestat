@@ -100,6 +100,99 @@ export type GraphUsageEditCategory =
   | "appearance_layout"
   | "statistics_annotation";
 
+export type BenchmarkGraphStateLog = Readonly<{
+  identity: string;
+  rendered: string;
+  analysis: string;
+}>;
+
+export type BenchmarkGraphConfigurationEvent = Readonly<{
+  type: "graph_workspace_opened" | "graph_configuration_changed" | "analysis_configuration_changed";
+  effect: "analysis_only" | "rendered_graph" | "both" | "non_rendering_ui";
+  detail: Readonly<Record<string, string | number | boolean | null>>;
+}>;
+
+export function createBenchmarkGraphConfigurationEvent(
+  previous: BenchmarkGraphStateLog | null,
+  current: BenchmarkGraphStateLog,
+  input: Readonly<{
+    graphType: WorkspaceGraphState["graphType"];
+    selectedReadoutId: string;
+    sourceMode: NonNullable<WorkspaceGraphState["sourceMode"]>;
+    selectedConditionIds: readonly string[];
+    analysisConditionIds: readonly string[];
+    selectedTimePointIds: readonly string[];
+    timeAnalysis: TimeAnalysisPlan;
+    selectedStatisticalMethod: AnalysisRecommendation["recommendedMethod"] | undefined;
+    statisticsAnnotation: StatisticsAnnotation;
+    appearance: WorkspaceGraphState["appearance"];
+    axes: WorkspaceGraphState["axes"];
+    layers: WorkspaceGraphState["layers"];
+  }>,
+): BenchmarkGraphConfigurationEvent | null {
+  if (!previous || previous.identity !== current.identity) {
+    return {
+      type: "graph_workspace_opened",
+      effect: "non_rendering_ui",
+      detail: {
+        selectedGraph: input.graphType,
+        readoutId: input.selectedReadoutId,
+      },
+    };
+  }
+  const renderedChanged = previous.rendered !== current.rendered;
+  const analysisChanged = previous.analysis !== current.analysis;
+  if (!renderedChanged && !analysisChanged) return null;
+  return {
+    type: renderedChanged ? "graph_configuration_changed" : "analysis_configuration_changed",
+    effect:
+      renderedChanged && analysisChanged
+        ? "both"
+        : renderedChanged
+          ? "rendered_graph"
+          : "analysis_only",
+    detail: {
+      graphType: input.graphType,
+      readoutId: input.selectedReadoutId,
+      sourceMode: input.sourceMode,
+      selectedConditions: input.selectedConditionIds.join("|"),
+      analysisConditions: input.analysisConditionIds.join("|"),
+      selectedTimes: input.selectedTimePointIds.join("|"),
+      timeMetric: input.timeAnalysis.kind,
+      selectedMethod: input.selectedStatisticalMethod ?? null,
+      annotationMode: input.statisticsAnnotation.mode,
+      pointSize: input.appearance.pointSize,
+      errorBar: input.appearance.errorBar,
+      spacing: input.axes.spacing,
+      legendPosition: input.appearance.legendPosition,
+      palette: input.appearance.palette,
+      fontFamily: input.appearance.fontFamily,
+      graphTitleFontSize: input.appearance.graphTitleFontSize,
+      axisTitleFontSize: input.appearance.axisTitleFontSize,
+      tickFontSize: input.appearance.tickFontSize,
+      hierarchyFontSize: input.appearance.hierarchyFontSize,
+      legendFontSize: input.appearance.legendFontSize,
+      axisTitle: input.axes.yTitle,
+      axisRangeMode: input.axes.yRangeMode,
+      axisMin: input.axes.yMin,
+      axisMax: input.axes.yMax,
+      axisScale: input.axes.yScale,
+      axisTickMode: input.axes.yTickMode,
+      axisTickInterval: input.axes.yTickInterval,
+      rawLayer: input.layers.raw,
+      distributionLayer: input.layers.distribution,
+      boxLayer: input.layers.box,
+      experimentLayer: input.layers.experiment,
+      overallLayer: input.layers.overall,
+      summaryLineWidth: input.appearance.summaryLineWidth,
+      axisLineWidth: input.appearance.axisLineWidth,
+      errorBarLineWidth: input.appearance.errorBarLineWidth,
+      connectingLineWidth: input.appearance.connectingLineWidth,
+      distributionLineWidth: input.appearance.distributionLineWidth,
+    },
+  };
+}
+
 export function createGraphUsageState(
   input: Readonly<{
     graphType: WorkspaceGraphState["graphType"];

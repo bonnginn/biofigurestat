@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   changedGraphUsageCategories,
   createBenchmarkAnalysisState,
+  createBenchmarkGraphConfigurationEvent,
   createBenchmarkRenderedState,
   createGraphUsageState,
 } from "./experimentGraphInstrumentation";
@@ -175,5 +176,53 @@ describe("Graph instrumentation projections", () => {
         axes: JSON.stringify({ ...axes, yTitle: "Normalized response" }),
       }),
     ).toEqual(["graph_type", "axes"]);
+  });
+
+  it("classifies benchmark configuration effects without changing the recorded detail", () => {
+    const input = {
+      graphType: "dot" as const,
+      selectedReadoutId: shared.selectedReadoutId,
+      sourceMode: shared.sourceMode,
+      selectedConditionIds: shared.selectedConditionIds,
+      analysisConditionIds: shared.analysisConditionIds,
+      selectedTimePointIds: shared.selectedTimePointIds,
+      timeAnalysis: { kind: "selected_timepoint" as const },
+      selectedStatisticalMethod: "welch_t" as const,
+      statisticsAnnotation: { mode: "hidden" as const, testIndex: 0 },
+      appearance,
+      axes,
+      layers,
+    };
+    const current = { identity: "D01:track_A:run-1", rendered: "rendered-2", analysis: "analysis-2" };
+
+    expect(createBenchmarkGraphConfigurationEvent(null, current, input)).toEqual({
+      type: "graph_workspace_opened",
+      effect: "non_rendering_ui",
+      detail: { selectedGraph: "dot", readoutId: "readout.response" },
+    });
+    expect(
+      createBenchmarkGraphConfigurationEvent(
+        { ...current, rendered: "rendered-1", analysis: "analysis-1" },
+        current,
+        input,
+      ),
+    ).toMatchObject({
+      type: "graph_configuration_changed",
+      effect: "both",
+      detail: {
+        selectedConditions: "condition.vehicle|condition.drug",
+        selectedMethod: "welch_t",
+        axisTitle: "Response",
+        rawLayer: true,
+      },
+    });
+    expect(
+      createBenchmarkGraphConfigurationEvent(
+        { ...current, analysis: "analysis-1" },
+        current,
+        input,
+      ),
+    ).toMatchObject({ type: "analysis_configuration_changed", effect: "analysis_only" });
+    expect(createBenchmarkGraphConfigurationEvent(current, current, input)).toBeNull();
   });
 });
