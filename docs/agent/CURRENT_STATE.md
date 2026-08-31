@@ -8,7 +8,7 @@ the authority for durable behavior.
 ## Product phase
 
 BioFigureStat `0.1.0-alpha.1` is publicly available under the MIT License at
-`https://github.com/bonnginn/life-science-analysis-app/releases/tag/v0.1.0-alpha.1`.
+`https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.1`.
 The repository and release are anonymously accessible. The release contains:
 
 - Windows 11 x64 installer, SHA-256

@@ -18,11 +18,11 @@ a superficially similar analysis.
 ## Download / ダウンロード
 
 BioFigureStat `0.1.0-alpha.1`は、次の
-[Public Alphaリリースページ](https://github.com/bonnginn/life-science-analysis-app/releases/tag/v0.1.0-alpha.1)
+[Public Alphaリリースページ](https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.1)
 からダウンロードできます。BioFigureStat `0.1.0-alpha.1` is available from the same release page.
 
-- [Windows 11 x64 installer](https://github.com/bonnginn/life-science-analysis-app/releases/download/v0.1.0-alpha.1/BioFigureStat_0.1.0_x64-setup.exe)
-- [Apple Silicon macOS app (zip)](https://github.com/bonnginn/life-science-analysis-app/releases/download/v0.1.0-alpha.1/BioFigureStat-0.1.0-macOS-Apple-Silicon.zip)
+- [Windows 11 x64 installer](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.1/BioFigureStat_0.1.0_x64-setup.exe)
+- [Apple Silicon macOS app (zip)](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.1/BioFigureStat-0.1.0-macOS-Apple-Silicon.zip)
 
 Windows版は現在未署名です。macOS版はad-hoc署名で、Appleのnotarizationは受けていません。
 そのためOSのセキュリティ警告が表示されることがあります。上記Releaseページ以外からは

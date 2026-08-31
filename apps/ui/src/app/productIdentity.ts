@@ -5,6 +5,6 @@ export const PRODUCT_IDENTITY = {
   version: "0.1.0",
   expectedEngineVersion: "0.14.0",
   licenseStatus: "MIT License",
-  repositoryUrl: "https://github.com/bonnginn/life-science-analysis-app" as string | null,
+  repositoryUrl: "https://github.com/bonnginn/biofigurestat" as string | null,
   buildRevision: import.meta.env.VITE_LSAA_BUILD_REVISION?.trim() || "unavailable",
 } as const;
