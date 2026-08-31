@@ -35,28 +35,14 @@ import {
   type WorkspaceGraphState,
 } from "../../app/experimentWorkspaceProject";
 import { createWorkspaceGraphStateSnapshot } from "../../app/experimentGraphStateSelectors";
-import {
-  copyGraphToClipboard,
-  serializeGraphSvg,
-  svgToPngBlob,
-} from "../../app/graphExport";
+import { copyGraphToClipboard } from "../../app/graphExport";
 import {
   saveGraphCsvExport,
   saveGraphPngExport,
   saveGraphSvgExport,
 } from "../../app/graphExportController";
 import { localizedText, useAppLocale } from "../../app/appLocale";
-import {
-  blobToBase64,
-  COMPLETE_BENCHMARK_ARTIFACT_NAMES,
-  currentBenchmarkRun,
-  recordFinalGraphCapture,
-  recordBenchmarkEvent,
-  setBenchmarkOutcome,
-  sha256Hex,
-  useBenchmarkRun,
-  writeBenchmarkArtifacts,
-} from "../../app/benchmarkEvaluation";
+import { recordBenchmarkEvent, useBenchmarkRun } from "../../app/benchmarkEvaluation";
 import { recordDiagnosticError } from "../../app/diagnostics";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
@@ -84,12 +70,7 @@ import {
 import { useExperimentGraphDiagnosticEffects } from "./useExperimentGraphDiagnosticEffects";
 import { useBenchmarkGraphConfigurationEffects } from "./useBenchmarkGraphConfigurationEffects";
 import { useDefaultBenchmarkGraphCapture } from "./useDefaultBenchmarkGraphCapture";
-import {
-  createFinalBenchmarkArtifacts,
-  createBenchmarkRunArtifact,
-  createBenchmarkStatisticsArtifact,
-} from "./experimentGraphBenchmarkArtifacts";
-import { createBenchmarkGraphCapturePayload } from "./experimentGraphBenchmarkCapture";
+import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
 import {
   analysisTestAnnotationLabel,
   createAdjustedComparisonAnnotation,
@@ -1091,78 +1072,22 @@ export function ExperimentGraphWorkbench({
     "Reason: the approved Gold brief specifies a descriptive panel and does not define an inferential comparator or null hypothesis.",
   ].join("\n");
   const finalizeBenchmarkRun = async () => {
-    const svg = svgRef.current;
-    const run = currentBenchmarkRun();
-    if (
-      !svg ||
-      !run.identity ||
-      !run.supportStatus ||
-      (!analysis && !descriptiveBenchmarkRun) ||
-      (analysis && !methodsText)
-    ) {
-      setBenchmarkCaptureStatus(
-        "完了前にBenchmark runを開始し、対応状況を選び、統計解析を実行してください。",
-      );
-      return;
-    }
-    setBenchmarkCaptureStatus("評価artifactを保存中…");
-    try {
-      const svgText = serializeGraphSvg(svg);
-      const viewBox = svg.viewBox.baseVal;
-      const capture = await createBenchmarkGraphCapturePayload(
-        {
-          svgText,
-          width: viewBox.width || svg.width.baseVal.value || 900,
-          height: viewBox.height || svg.height.baseVal.value || 520,
-          analysisState: benchmarkAnalysisState,
-        },
-        { renderPng: svgToPngBlob, sha256: sha256Hex, encodeBase64: blobToBase64 },
-      );
-      const capturedAt = new Date().toISOString();
-      recordFinalGraphCapture({
-        capturedAt,
-        graphStateFingerprint: capture.svgSha256,
-        analysisStateFingerprint: capture.analysisStateFingerprint,
-        svgSha256: capture.svgSha256,
-        pngSha256: capture.pngSha256,
-      });
-      setBenchmarkOutcome("completed");
-      recordBenchmarkEvent("benchmark_run_finalized", {
-        selectedGraph: graphType,
-        selectedStatistics: analysis?.request.method ?? "none_descriptive",
-      });
-      const finalRun = currentBenchmarkRun();
-      const statisticsArtifact = createBenchmarkStatisticsArtifact({
-        draft,
-        analysis,
-        analysisAssessment,
-        selectedReadoutId,
-        selectedConditionIds,
-        analysisConditionIds,
-      });
-      await writeBenchmarkArtifacts(
-        createFinalBenchmarkArtifacts({
-          runArtifact: createBenchmarkRunArtifact({
-            run: finalRun,
-            analysis,
-            sourceRevision: evaluationMode.sourceRevision,
-            completedAt: new Date().toISOString(),
-          }),
-          svgText,
-          pngBase64: capture.pngBase64,
-          statisticsArtifact,
-          methodsText: analysis ? methodsText! : descriptiveMethodsText,
-          graphState: graphStateSnapshot,
-          interactionLog: finalRun.events,
-        }),
-        { requiredArtifacts: COMPLETE_BENCHMARK_ARTIFACT_NAMES },
-      );
-      setBenchmarkCaptureStatus("Benchmark runのartifactを保存しました。");
-    } catch (error) {
-      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
-      setBenchmarkOutcome("infrastructure_failure");
-      setBenchmarkCaptureStatus("Benchmark runのartifactを保存できませんでした。");
-    }
+    await finalizeBenchmarkGraphCapture({
+      svg: svgRef.current,
+      draft,
+      analysis,
+      analysisAssessment,
+      descriptiveBenchmarkRun,
+      methodsText,
+      descriptiveMethodsText,
+      benchmarkAnalysisState,
+      graphType,
+      selectedReadoutId,
+      selectedConditionIds,
+      analysisConditionIds,
+      graphState: graphStateSnapshot,
+      setStatus: setBenchmarkCaptureStatus,
+    });
   };
   const copyGraph = async () => {
     if (!svgRef.current) return;
