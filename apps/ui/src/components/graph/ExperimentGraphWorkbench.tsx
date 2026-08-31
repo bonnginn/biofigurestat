@@ -19,7 +19,6 @@ import {
 } from "../../app/experimentDraft";
 import {
   assessDraftGraphAnalysis,
-  deriveTimeMetricValue,
   isDerivedTimeMetric,
   type ContrastIntent,
 } from "../../app/experimentDraftAnalysis";
@@ -107,9 +106,8 @@ import {
 } from "./experimentGraphDataExport";
 export { serializeVisibleGraphData } from "./experimentGraphDataExport";
 import {
+  buildDerivedGraphLineageRows,
   buildExperimentGraphSeries,
-  getGraphCell,
-  graphCellValue,
 } from "./experimentGraphSeries";
 import {
   formatGraphNumber as formatNumber,
@@ -845,43 +843,14 @@ export function ExperimentGraphWorkbench({
     ],
   );
 
-  const derivedLineageRows =
-    sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis) && readout
-      ? draft.experiments.flatMap((experiment) =>
-          activeConditions.flatMap((condition) => {
-            const value = deriveTimeMetricValue({
-              draft,
-              cells,
-              experimentId: experiment.id,
-              conditionId: condition.id,
-              readoutId: readout.id,
-              plan: timeAnalysis,
-            });
-            if (value === null) return [];
-            const sourceTrace = draft.time.points
-              .filter(
-                ({ value: time }) =>
-                  (timeAnalysis.windowStart === undefined || time >= timeAnalysis.windowStart) &&
-                  (timeAnalysis.windowEnd === undefined || time <= timeAnalysis.windowEnd),
-              )
-              .flatMap((point) => {
-                const sourceValue = graphCellValue(
-                  getGraphCell(cells, experiment.id, condition.id, readout.id, point.id),
-                );
-                return sourceValue === null ? [] : [`${point.value}: ${formatNumber(sourceValue)}`];
-              });
-            return [
-              {
-                id: `${experiment.id}:${condition.id}`,
-                unit: experiment.label,
-                condition: condition.label,
-                value,
-                sourceTrace,
-              },
-            ];
-          }),
-        )
-      : [];
+  const derivedLineageRows = buildDerivedGraphLineageRows({
+    draft,
+    cells,
+    readout,
+    activeConditions,
+    sourceMode,
+    timeAnalysis,
+  });
 
   const shape =
     sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis)

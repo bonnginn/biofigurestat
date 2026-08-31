@@ -3,7 +3,12 @@ import {
   experimentCellKey,
   type ExperimentCellMap,
 } from "../../app/experimentDraft";
-import { getGraphCell, graphCellValue } from "./experimentGraphSeries";
+import { createLongitudinalFixture } from "../../app/syntheticFixtures";
+import {
+  buildDerivedGraphLineageRows,
+  getGraphCell,
+  graphCellValue,
+} from "./experimentGraphSeries";
 
 describe("experiment graph canonical cell adapter", () => {
   it("reads the exact canonical cell identity and preserves its scientific value", () => {
@@ -57,5 +62,24 @@ describe("experiment graph canonical cell adapter", () => {
         availability: "not_planned",
       }),
     ).toBeNull();
+  });
+
+  it("keeps each derived value linked to its original time-point measurements", () => {
+    const fixture = createLongitudinalFixture();
+    const rows = buildDerivedGraphLineageRows({
+      draft: fixture.draft,
+      cells: fixture.cells,
+      readout: fixture.draft.readouts[0],
+      activeConditions: fixture.draft.conditions,
+      sourceMode: "derived_metric",
+      timeAnalysis: { kind: "auc" },
+    });
+
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((row) => row.id.includes(":"))).toBe(true);
+    expect(rows.every((row) => row.sourceTrace.length === fixture.draft.time.points.length)).toBe(
+      true,
+    );
+    expect(rows[0]?.sourceTrace[0]).toMatch(/^0: /u);
   });
 });

@@ -24,6 +24,7 @@ import type {
   ProportionPoint,
   RawPoint,
 } from "./experimentGraphDataExport";
+import { formatGraphNumber } from "./graphValueFormatting";
 
 type GraphGrouping = NonNullable<WorkspaceGraphState["grouping"]>;
 
@@ -252,12 +253,63 @@ export function buildExperimentGraphSeries(
     built.forEach(({ xGroupKey }) => {
       if (!xOrder.has(xGroupKey)) xOrder.set(xGroupKey, xOrder.size);
     });
-    return built.sort((first, second) => {
+  return built.sort((first, second) => {
       const groupDelta = (xOrder.get(first.xGroupKey) ?? 0) - (xOrder.get(second.xGroupKey) ?? 0);
       if (groupDelta !== 0) return groupDelta;
       return (
         (appearance.seriesStyles[first.visualSeriesKey]?.order ?? 0) -
         (appearance.seriesStyles[second.visualSeriesKey]?.order ?? 0)
       );
-    });
+  });
+}
+
+export function buildDerivedGraphLineageRows(
+  input: Readonly<{
+    draft: ExperimentSetDraft;
+    cells: ExperimentCellMap;
+    readout: ReadoutDraft | undefined;
+    activeConditions: ExperimentSetDraft["conditions"];
+    sourceMode: WorkspaceGraphState["sourceMode"];
+    timeAnalysis: TimeAnalysisPlan;
+  }>,
+) {
+  const { draft, cells, readout, activeConditions, sourceMode, timeAnalysis } = input;
+  if (sourceMode !== "derived_metric" || !isDerivedTimeMetric(timeAnalysis) || !readout) return [];
+
+  return draft.experiments.flatMap((experiment) =>
+    activeConditions.flatMap((condition) => {
+      const value = deriveTimeMetricValue({
+        draft,
+        cells,
+        experimentId: experiment.id,
+        conditionId: condition.id,
+        readoutId: readout.id,
+        plan: timeAnalysis,
+      });
+      if (value === null) return [];
+      const sourceTrace = draft.time.points
+        .filter(
+          ({ value: time }) =>
+            (timeAnalysis.windowStart === undefined || time >= timeAnalysis.windowStart) &&
+            (timeAnalysis.windowEnd === undefined || time <= timeAnalysis.windowEnd),
+        )
+        .flatMap((point) => {
+          const sourceValue = graphCellValue(
+            getGraphCell(cells, experiment.id, condition.id, readout.id, point.id),
+          );
+          return sourceValue === null
+            ? []
+            : [`${point.value}: ${formatGraphNumber(sourceValue)}`];
+        });
+      return [
+        {
+          id: `${experiment.id}:${condition.id}`,
+          unit: experiment.label,
+          condition: condition.label,
+          value,
+          sourceTrace,
+        },
+      ];
+    }),
+  );
 }
