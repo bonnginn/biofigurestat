@@ -90,7 +90,7 @@
 | --- | --- | --- |
 | 🟡 | Graph共通描画 | 通常・Survival・非線形に加え旧Resultsの独自tickも`createNiceTicks`へ統合。plot bounds等は継続 |
 | 🟡 | Spreadsheet共通primitive | keyboard/pasteに加えAdaptiveとdelimited表のzoom状態管理を共通化。cell editor統合は継続 |
-| 🟡 | `ExperimentGraphWorkbench`分割 | 各editorに加え、composition/correlation renderer、comparison intentとMethods生成を分離済み。次にgeneral SVG rendererと残るanalysis/benchmark orchestrationを段階的に分離 |
+| 🟡 | `ExperimentGraphWorkbench`分割 | 各editor、composition/correlation/general renderer、comparison intent、Methods生成を分離済み。workbenchは約4,900行から約3,400行へ縮小。残るanalysis/diagnostic/benchmark orchestrationを段階的に分離 |
 | ✅ | 未使用prototypeの公開sourceからの分離 | private archiveへ保全し、public sourceには含めない |
 | ✅ | benchmark生成物の公開sourceからの除外 | evaluation/benchmark materialを通常product sourceから分離 |
 | ⬜ | route-level code splitting | 初期bundleと巨大routeの依存を縮小 |

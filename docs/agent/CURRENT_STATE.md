@@ -82,6 +82,12 @@ renderers now have direct component boundaries and share the same tested numeric
 significance formatting as the main renderer. Statistics comparison-intent transitions and
 deterministic Methods generation are isolated from the workbench; tests preserve the existing
 method mapping and verify that presentation metadata never mutates the executed request. The
+general-purpose SVG renderer is now also a separate component boundary, including categorical
+layout, nice ticks, hierarchy labels, raw and experiment-unit marks, summaries, uncertainty,
+annotations, and legend drawing. Its extraction reduced the orchestration workbench from roughly
+4,900 to 3,400 lines without moving canonical data construction, Statistics execution, benchmark
+capture, or persisted state ownership. The existing 52-test workbench regression suite covers the
+renderer boundary directly through its public workflow. The
 expanded full UI suite passes with 146 files and 1,154 tests; typecheck and lint pass for the
 extracted boundaries.
 
@@ -112,7 +118,8 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   the appearance, annotation, raw-point, uncertainty, connecting-line, and legend presentation
   editors now have component boundaries. Composition and correlation renderers plus the first
   pure Statistics/Methods orchestration boundary are separated. The main general-purpose SVG
-  renderer and remaining analysis/benchmark orchestration are the next safe extraction boundaries.
+  renderer is separated as well; remaining analysis, diagnostic, and benchmark orchestration are
+  the next safe extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
