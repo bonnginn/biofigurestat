@@ -17,9 +17,9 @@
 
 | 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
 | --- | --- | --- | --- | --- |
-| 1 | 🟡 | 英語版Windows candidateの短い実機確認 | 必要 | 言語切替、新規実験、保存・再読込、PNG/SVG/CSV、用語・見切れを確認 |
-| 2 | ⬜ | 英語版macOS candidateのbuildと限定実機確認 | 最終確認のみ必要 | native verifier、保存・再読込、書き出し、言語表示がPASS |
-| 3 | ⬜ | 英語版Alpha assetの公開判断 | 必要 | Windows/macOS証拠、checksum、release noteを揃えて公開可否を記録 |
+| 1 | 🟡 | 日英統合Windows candidateの短い実機確認 | 必要 | 同一アプリ内の言語切替、新規実験、保存・再読込、PNG/SVG/CSV、用語・見切れを確認 |
+| 2 | ⬜ | 日英統合macOS candidateのbuildと限定実機確認 | 最終確認のみ必要 | native verifier、保存・再読込、書き出し、両言語表示がPASS |
+| 3 | ⬜ | 日英統合Alpha更新の公開判断 | 必要 | Windows/macOS証拠、checksum、release noteを揃え、同じBioFigureStatの次candidateとして公開可否を記録 |
 | 4 | ⚠️ | Windows native UI harnessの安定実行環境 | 原則不要 | clean Windows CI/VMまたは第2接続方式で同じscenarioが連続PASS |
 | 5 | ⬜ | macOS native UI harness | 原則不要 | 実アプリで起動、入力、保存確認、Cancel、破棄終了を自動検査 |
 | 6 | 🟡 | GraphとSpreadsheetの共通化を再開 | 不要 | 画面ごとの修正漏れを減らし、既存`.lsa`と科学的意味を維持 |
@@ -38,7 +38,11 @@
 | ✅ | 不具合報告 | 確認後送信、Worker/D1、rate limit、保持期限、report IDを実装済み |
 | ✅ | 不具合報告の日次triage | 別タスクで毎日1回のread-only分類・提案運用を設定済み |
 
-## 英語版
+## 日本語・英語の統合
+
+日本語版と英語版を別アプリにはしません。同じBioFigureStat、同じ保存形式、同じ統計engine
+の中で表示言語だけを切り替えます。現在公開中の`0.1.0-alpha.1`は英語UI実装前のbuildで、
+次のnative candidateが日英統合buildになります。
 
 | 状態 | 項目 | 証拠・残作業 |
 | --- | --- | --- |
@@ -47,9 +51,9 @@
 | ✅ | 日本語表示漏れの自動検査 | visible text、aria-label、title、placeholder、altを検査 |
 | ✅ | native自動検査で見つけた表示漏れ修正 | New Experiment wrapperとworkspace fallbackを修正 |
 | ✅ | 自動回帰 | UI 131ファイル、1,117テストPASS。typecheck・lintもPASS |
-| 🟡 | Windows英語版 | bundle/engine/release verifierはPASS。短い人間の言語・layout確認が残る |
-| ⬜ | macOS英語版 | candidate buildと限定確認が必要 |
-| ⬜ | 英語版配布 | 両native gate後にassetとrelease noteを追加 |
+| 🟡 | 日英統合Windows build | bundle/engine/release verifierはPASS。短い人間の両言語・layout確認が残る |
+| ⬜ | 日英統合macOS build | candidate buildと限定確認が必要 |
+| ⬜ | 日英統合buildの配布 | 両native gate後に、同じアプリの次Alpha assetとrelease noteを追加 |
 
 ## Native不具合検出の自動化
 
