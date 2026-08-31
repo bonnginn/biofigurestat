@@ -12,6 +12,7 @@ import {
 import { deriveTimeMetricValue } from "../../app/experimentDraftAnalysis";
 import { defaultLayersForGraphType } from "../../app/graphDefaults";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { localizedText, useAppLocale } from "../../app/appLocale";
 import { violinDensityPath } from "./graphGeometry";
 
 import "./graph-creation-preview.css";
@@ -151,13 +152,14 @@ function previewGroups(
 }
 
 export function GraphTypeThumbnail({ type }: { type: CreatableGraphType }) {
+  const locale = useAppLocale();
   const points = [48, 36, 42];
   return (
     <svg
       className="graph-type-thumbnail"
       viewBox="0 0 128 76"
       role="img"
-      aria-label={`${type}の模式図`}
+      aria-label={localizedText(locale, `${type}の模式図`, `${type} schematic`)}
     >
       <line x1="15" x2="15" y1="10" y2="62" />
       <line x1="15" x2="118" y1="62" y2="62" />
@@ -230,6 +232,8 @@ export function CurrentDataGraphPreview({
   timeAnalysis?: TimeAnalysisPlan;
   layers?: WorkspaceGraphState["layers"];
 }) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const selectedReadout = draft.readouts.find(({ id }) => id === readoutId) ?? draft.readouts[0];
   if (type === "stacked" || type === "stacked_100" || type === "category_percentage") {
     const readout = selectedReadout;
@@ -259,7 +263,12 @@ export function CurrentDataGraphPreview({
     });
     if (!groups.some(({ percentages }) => percentages.some((value) => value > 0))) {
       return (
-        <p className="graph-current-preview__empty">カテゴリ別countを入力するとpreviewします。</p>
+        <p className="graph-current-preview__empty">
+          {t(
+            "カテゴリ別countを入力するとpreviewします。",
+            "Enter category counts to preview the Graph.",
+          )}
+        </p>
       );
     }
     return (
@@ -267,7 +276,10 @@ export function CurrentDataGraphPreview({
         className="graph-current-preview"
         viewBox="0 0 620 300"
         role="img"
-        aria-label="現在のカテゴリ構成を表示したpreview"
+        aria-label={t(
+          "現在のカテゴリ構成を表示したpreview",
+          "Preview of the current category composition",
+        )}
       >
         <line x1="62" x2="62" y1="22" y2="222" />
         <line x1="62" x2="580" y1="222" y2="222" />
@@ -299,7 +311,14 @@ export function CurrentDataGraphPreview({
     ...(type === "violin" ? group.observationValues : []),
   ]);
   if (allValues.length === 0) {
-    return <p className="graph-current-preview__empty">測定値を入力するとここにpreviewします。</p>;
+    return (
+      <p className="graph-current-preview__empty">
+        {t(
+          "測定値を入力するとここにpreviewします。",
+          "Enter measured values to preview the Graph here.",
+        )}
+      </p>
+    );
   }
   if (type === "scatter") {
     const [xGroup, yGroup] = groups;
@@ -312,7 +331,11 @@ export function CurrentDataGraphPreview({
         return y === undefined ? [] : [{ id: point.experimentId, x: point.value, y }];
       }) ?? [];
     if (pairs.length === 0) {
-      return <p className="graph-current-preview__empty">XとYを入力するとここにpreviewします。</p>;
+      return (
+        <p className="graph-current-preview__empty">
+          {t("XとYを入力するとここにpreviewします。", "Enter X and Y to preview the Graph here.")}
+        </p>
+      );
     }
     const xValues = pairs.map(({ x }) => x);
     const yValues = pairs.map(({ y }) => y);
@@ -329,7 +352,10 @@ export function CurrentDataGraphPreview({
         className="graph-current-preview"
         viewBox="0 0 620 300"
         role="img"
-        aria-label={`${xGroup?.label ?? "X"}と${yGroup?.label ?? "Y"}の現在のデータによる散布図preview`}
+        aria-label={t(
+          `${xGroup?.label ?? "X"}と${yGroup?.label ?? "Y"}の現在のデータによる散布図preview`,
+          `Scatter-plot preview of the current ${xGroup?.label ?? "X"} and ${yGroup?.label ?? "Y"} data`,
+        )}
       >
         <line x1="62" x2="62" y1="22" y2="222" />
         <line x1="62" x2="562" y1="222" y2="222" />
@@ -422,7 +448,10 @@ export function CurrentDataGraphPreview({
         width={width}
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label={`${type}で現在のデータを表示したpreview`}
+        aria-label={t(
+          `${type}で現在のデータを表示したpreview`,
+          `Preview of current data as ${type}`,
+        )}
         data-domain-min={domainMin}
         data-domain-max={domainMax}
       >

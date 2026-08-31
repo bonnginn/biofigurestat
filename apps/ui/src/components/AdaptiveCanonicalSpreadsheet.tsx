@@ -1121,6 +1121,8 @@ function ExpandedAppendValueEditor({
   gridColumn: number;
 }>) {
   const errorId = useId();
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [text, setText] = useState("");
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1129,7 +1131,12 @@ function ExpandedAppendValueEditor({
     if (!dirty) return;
     const value = Number(text.trim());
     if (!text.trim() || !Number.isFinite(value)) {
-      setError("数値を入力してください。入力内容は消えていません。");
+      setError(
+        t(
+          "数値を入力してください。入力内容は消えていません。",
+          "Enter a numeric value. Your input has not been discarded.",
+        ),
+      );
       return;
     }
     try {
@@ -1149,7 +1156,14 @@ function ExpandedAppendValueEditor({
       setDirty(false);
       setError(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "新しい測定値を追加できませんでした。");
+      setError(
+        locale === "ja" && cause instanceof Error
+          ? cause.message
+          : t(
+              "新しい測定値を追加できませんでした。",
+              "The new measured value could not be added.",
+            ),
+      );
     }
   };
 
@@ -1161,7 +1175,7 @@ function ExpandedAppendValueEditor({
         aria-label={label}
         aria-describedby={error ? errorId : undefined}
         aria-invalid={error ? "true" : undefined}
-        placeholder="新しい値"
+        placeholder={t("新しい値", "New value")}
         value={text}
         data-spreadsheet-cell="true"
         data-spreadsheet-row={gridRow}

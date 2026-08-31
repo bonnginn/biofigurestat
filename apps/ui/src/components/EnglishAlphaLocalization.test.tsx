@@ -13,6 +13,7 @@ import { OpenProjectPage } from "../pages/OpenProjectPage";
 import { BiologicalExperimentSetup } from "./BiologicalExperimentSetup";
 import { ExperimentWorkspace } from "../pages/ExperimentWorkspace";
 import { createExperimentSetDraft } from "../app/experimentDraft";
+import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 
 afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
@@ -44,6 +45,7 @@ describe("English Public Alpha workflow", () => {
     expect(
       screen.getByRole("button", { name: "Open Simple independent-group comparison" }),
     ).toBeInTheDocument();
+    expectNoJapaneseUi(view.container);
   });
 
   it("creates the same semantic simple-group draft from English controls", () => {
@@ -71,6 +73,7 @@ describe("English Public Alpha workflow", () => {
         conditionAssignment: { kind: "independent", unitLabel: "culture dish" },
       }),
     );
+    expectNoJapaneseUi(document.body);
   });
 
   it("exposes local Help, About, and problem reporting in English", () => {
@@ -90,6 +93,7 @@ describe("English Public Alpha workflow", () => {
     fireEvent.click(screen.getByRole("button", { name: "Report a problem" }));
     expect(screen.getByText("Report to BioFigureStat Public Alpha")).toBeInTheDocument();
     expect(screen.getByLabelText("What were you trying to do?")).toBeInTheDocument();
+    expectNoJapaneseUi(document.body);
   });
 
   it("shows recent projects and the local project picker in English", () => {
@@ -102,6 +106,7 @@ describe("English Public Alpha workflow", () => {
     render(<OpenProjectPage onNavigate={vi.fn()} openProject={vi.fn()} />);
     expect(screen.getByRole("heading", { name: "Open a local project" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Choose project file/ })).toBeInTheDocument();
+    expectNoJapaneseUi(document.body);
   });
 
   it("shows the general biological interview in researcher-facing English", () => {
@@ -117,6 +122,7 @@ describe("English Public Alpha workflow", () => {
       screen.getByRole("heading", { name: "Experimental units and their relationships" }),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Create data table" })).toHaveLength(1);
+    expectNoJapaneseUi(document.body);
   });
 
   it("keeps the common Graph creation dialog in English", () => {
@@ -125,6 +131,8 @@ describe("English Public Alpha workflow", () => {
     const draft = {
       ...base,
       name: "Protein amount",
+      attributes: base.attributes.map((attribute) => ({ ...attribute, label: "Treatment" })),
+      readouts: [{ ...base.readouts[0], label: "Cell intensity" }],
       conditions: [
         { ...base.conditions[0], label: "Control", attributes: { "attribute.1": "Control" } },
         { ...base.conditions[1], label: "Drug", attributes: { "attribute.1": "Drug" } },
@@ -137,5 +145,10 @@ describe("English Public Alpha workflow", () => {
     expect(screen.getByText("Recommended Graph")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Initial display after creation" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Create this Graph" })).toBeEnabled();
+    expectNoJapaneseUi(document.body);
+
+    fireEvent.click(screen.getByRole("button", { name: "Create this Graph" }));
+    expect(screen.getByRole("button", { name: "Graph 1" })).toBeVisible();
+    expectNoJapaneseUi(document.body);
   });
 });

@@ -49,6 +49,7 @@ import type {
   SaveProjectAction,
   SaveSpecializedEntryDraftProjectAction,
 } from "../app/projectActions";
+import { localizedText, useAppLocale } from "../app/appLocale";
 import {
   createSpecializedEntryDraft,
   specializedSafeStop,
@@ -174,9 +175,37 @@ const titles: Record<Mode, string> = {
   "nonlinear-fit": "濃度–反応・酵素反応",
   distribution: "Histogram / ECDF",
 };
+const englishTitles: Record<Mode, string> = {
+  contingency: "Categorical / contingency",
+  "repeated-nonparametric": "Repeated nonparametric",
+  regression: "Simple linear regression",
+  "nonlinear-fit": "Concentration–response / enzyme kinetics",
+  distribution: "Histogram / ECDF",
+};
 const dataLabels: Record<Mode, string> = {
   ...titles,
   "nonlinear-fit": "非線形XYフィッティング",
+};
+const englishDataLabels: Record<Mode, string> = {
+  ...englishTitles,
+  "nonlinear-fit": "Nonlinear X/Y fitting",
+};
+
+const nonlinearModelDescriptionsEn: Record<NonlinearModelId, string> = {
+  zero_baseline_association:
+    "A monotonic saturating process over time or another ordered axis, with the starting value fixed at zero",
+  one_phase_association:
+    "A monotonic saturating process over time or another ordered axis, with the starting value estimated from the data",
+  michaelis_menten:
+    "Estimate Vmax and Km from substrate concentration and initial reaction velocity; do not use a raw reaction time series",
+};
+const nonlinearModelRationalesEn: Record<NonlinearModelId, string> = {
+  zero_baseline_association:
+    "A minimal zero-baseline association model is appropriate because the response is a monotonic saturating process and the starting value is fixed at zero.",
+  one_phase_association:
+    "A one-phase association model is appropriate because the response is a monotonic saturating process and the starting value must be estimated from the data.",
+  michaelis_menten:
+    "The experiment estimates Vmax and Km from saturation of initial reaction velocity across substrate concentrations using the single-substrate Michaelis–Menten equation.",
 };
 const options = {
   alternative: "two_sided" as const,
@@ -554,6 +583,8 @@ export function CommonCoveragePage({
   onRequestExit,
   onRegisterSaveHandler,
 }: Props) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const entryIntent = inputEntryIntent ?? initialSpecializedEntryDraft?.state.entryIntent;
   const [currentSpecializedEntryDraft, setCurrentSpecializedEntryDraft] = useState(
     initialSpecializedEntryDraft,
@@ -706,7 +737,9 @@ export function CommonCoveragePage({
       initialNonlinearRequest?.modelSelectionRationale ??
       (adaptiveOrderedCurveActive
         ? ""
-        : nonlinearModelDefinition(DEFAULT_NONLINEAR_MODEL_ID).defaultRationale),
+        : locale === "ja"
+          ? nonlinearModelDefinition(DEFAULT_NONLINEAR_MODEL_ID).defaultRationale
+          : nonlinearModelRationalesEn[DEFAULT_NONLINEAR_MODEL_ID]),
   );
   const [fitSettings, setFitSettings] = useState<Record<NonlinearParameterId, FitSetting>>(
     completeFitSettings(initialDraft?.fitSettings ?? restoredSpecializedAnswers?.fitSettings),
@@ -734,8 +767,8 @@ export function CommonCoveragePage({
     );
   });
   const entryFactsView = useMemo(
-    () => entryModuleTargetedFactsViewModel(entryFactsState, "ja"),
-    [entryFactsState],
+    () => entryModuleTargetedFactsViewModel(entryFactsState, locale),
+    [entryFactsState, locale],
   );
   const draft = useMemo<CommonCoverageDraft>(
     () => ({
@@ -809,8 +842,12 @@ export function CommonCoveragePage({
     setNonlinearModel(modelId);
     setNonlinearModelExplicitlySelected(true);
     setModelRationale((current) =>
-      !current.trim() || isGeneratedNonlinearRationale(current)
-        ? nextDefinition.defaultRationale
+      !current.trim() ||
+      isGeneratedNonlinearRationale(current) ||
+      Object.values(nonlinearModelRationalesEn).includes(current)
+        ? locale === "ja"
+          ? nextDefinition.defaultRationale
+          : nonlinearModelRationalesEn[modelId]
         : current,
     );
     const generatedXLabels = [
@@ -1397,7 +1434,15 @@ export function CommonCoveragePage({
       graphExportAvailable = true;
     }
   } catch (error) {
-    graph = <p role="alert">{error instanceof Error ? error.message : "Graphを表示できません"}</p>;
+    graph = (
+      <p role="alert">
+        {locale === "ja"
+          ? error instanceof Error
+            ? error.message
+            : "Graphを表示できません"
+          : "Check the data table before displaying the Graph."}
+      </p>
+    );
   }
   const initialUsageDataPresentRef = useRef(
     Boolean(initialDraft?.text || initialProject?.state.adaptiveInput?.rawLineage?.rawText),
@@ -1407,10 +1452,12 @@ export function CommonCoveragePage({
   const validAdaptiveOrderedCurveGraph = adaptiveOrderedCurveActive && graphExportAvailable;
   const orderedCurveSetupMissingItems = adaptiveOrderedCurveActive
     ? [
-        !text.trim() || "error" in parsed ? "入力表" : null,
-        !xLabel.trim() ? "横軸名" : null,
-        !yLabel.trim() ? "測定値名" : null,
-        orderedCurveEntry?.status !== "surface_ready" ? "実験構造の回答" : null,
+        !text.trim() || "error" in parsed ? t("入力表", "data table") : null,
+        !xLabel.trim() ? t("横軸名", "X-axis name") : null,
+        !yLabel.trim() ? t("測定値名", "measured-value name") : null,
+        orderedCurveEntry?.status !== "surface_ready"
+          ? t("実験構造の回答", "experiment-structure answers")
+          : null,
       ].filter((item): item is string => Boolean(item))
     : [];
   useEffect(() => {
@@ -2008,13 +2055,13 @@ export function CommonCoveragePage({
     mode === "nonlinear-fit" ? (
       <div className="nonlinear-fit-axis-fields">
         <label>
-          {adaptiveOrderedCurveActive ? "横軸に表示する量の名前" : "X label"}
+          {adaptiveOrderedCurveActive ? t("横軸に表示する量の名前", "Quantity shown on the X axis") : "X label"}
           <input
-            aria-label={adaptiveOrderedCurveActive ? "横軸に表示する量の名前" : "X label"}
+            aria-label={adaptiveOrderedCurveActive ? t("横軸に表示する量の名前", "Quantity shown on the X axis") : "X label"}
             value={xLabel}
             placeholder={
               adaptiveOrderedCurveActive
-                ? "例：経過時間、基質濃度"
+                ? t("例：経過時間、基質濃度", "Example: elapsed time or substrate concentration")
                 : nonlinearDefinition.suggestedXLabel
             }
             onChange={(event) => {
@@ -2029,10 +2076,10 @@ export function CommonCoveragePage({
         </label>
         <label>
           {adaptiveOrderedCurveActive
-            ? "横方向の単位（ない場合は空欄）"
+            ? t("横方向の単位（ない場合は空欄）", "X-axis unit (leave blank if none)")
             : `X unit${nonlinearDefinition.requiresAxisUnits ? "（必須）" : ""}`}
           <input
-            aria-label={adaptiveOrderedCurveActive ? "横方向の単位" : "X unit"}
+            aria-label={adaptiveOrderedCurveActive ? t("横方向の単位", "X-axis unit") : "X unit"}
             value={xUnit}
             placeholder={nonlinearDefinition.xUnitExample}
             onChange={(event) => {
@@ -2046,13 +2093,13 @@ export function CommonCoveragePage({
           />
         </label>
         <label>
-          {adaptiveOrderedCurveActive ? "測った値の名前" : "Y label"}
+          {adaptiveOrderedCurveActive ? t("測った値の名前", "Measured value name") : "Y label"}
           <input
-            aria-label={adaptiveOrderedCurveActive ? "測った値の名前" : "Y label"}
+            aria-label={adaptiveOrderedCurveActive ? t("測った値の名前", "Measured value name") : "Y label"}
             value={yLabel}
             placeholder={
               adaptiveOrderedCurveActive
-                ? "例：反応初速度、蛍光強度"
+                ? t("例：反応初速度、蛍光強度", "Example: initial reaction rate or fluorescence intensity")
                 : nonlinearDefinition.suggestedYLabel
             }
             onChange={(event) => {
@@ -2067,10 +2114,10 @@ export function CommonCoveragePage({
         </label>
         <label>
           {adaptiveOrderedCurveActive
-            ? "測った値の単位（ない場合は空欄）"
+            ? t("測った値の単位（ない場合は空欄）", "Measured-value unit (leave blank if none)")
             : `Y unit${nonlinearDefinition.requiresAxisUnits ? "（必須）" : ""}`}
           <input
-            aria-label={adaptiveOrderedCurveActive ? "測った値の単位" : "Y unit"}
+            aria-label={adaptiveOrderedCurveActive ? t("測った値の単位", "Measured-value unit") : "Y unit"}
             value={yUnit}
             placeholder={nonlinearDefinition.yUnitExample}
             onChange={(event) => {
@@ -2104,7 +2151,11 @@ export function CommonCoveragePage({
               />
               <span>
                 <strong>{definition.label}</strong>
-                <small>{definition.shortDescription}</small>
+                <small>
+                  {locale === "ja"
+                    ? definition.shortDescription
+                    : nonlinearModelDescriptionsEn[definition.id]}
+                </small>
                 <small>{definition.formula}</small>
               </span>
             </label>
@@ -2113,13 +2164,19 @@ export function CommonCoveragePage({
         {nonlinearModel === "michaelis_menten" ? (
           <>
             <p className="callout-info">
-              Xには基質濃度、Yには各濃度で求めた反応初速度を入力します。吸光度などの時系列をそのまま入力する欄ではありません。
+              {t(
+                "Xには基質濃度、Yには各濃度で求めた反応初速度を入力します。吸光度などの時系列をそのまま入力する欄ではありません。",
+                "Enter substrate concentration for X and the initial reaction velocity calculated at each concentration for Y. Do not enter a raw absorbance or other time series here.",
+              )}
             </p>
             {adaptiveOrderedCurveActive && nonlinearModelExplicitlySelected ? (
               <label>
-                Yに入力した値は、各基質濃度で求めた反応初速度ですか？
+                {t(
+                  "Yに入力した値は、各基質濃度で求めた反応初速度ですか？",
+                  "Are the Y values initial reaction velocities calculated at each substrate concentration?",
+                )}
                 <select
-                  aria-label="Michaelis–MentenのY値"
+                  aria-label={t("Michaelis–MentenのY値", "Michaelis–Menten Y values")}
                   value={michaelisReadoutMeaning ?? ""}
                   onChange={(event) => {
                     setMichaelisReadoutMeaning(
@@ -2129,14 +2186,20 @@ export function CommonCoveragePage({
                     setExecutedRequest(null);
                   }}
                 >
-                  <option value="">選択してください</option>
+                  <option value="">{t("選択してください", "Select an answer")}</option>
                   <option value="calculated_initial_velocity">
-                    はい。各濃度の反応初速度を計算した値
+                    {t(
+                      "はい。各濃度の反応初速度を計算した値",
+                      "Yes. They are calculated initial reaction velocities",
+                    )}
                   </option>
                   <option value="raw_time_series_or_other">
-                    いいえ。吸光度などの時系列、または別の値
+                    {t(
+                      "いいえ。吸光度などの時系列、または別の値",
+                      "No. They are a raw time series or another value",
+                    )}
                   </option>
-                  <option value="unknown">判断できない</option>
+                  <option value="unknown">{t("判断できない", "Not sure")}</option>
                 </select>
               </label>
             ) : null}
@@ -2144,13 +2207,13 @@ export function CommonCoveragePage({
         ) : null}
         {adaptiveOrderedCurveActive ? (
           <p className="specialized-engine-note" role="status">
-            {orderedCurveAnalysisReadiness.message.ja}
+            {orderedCurveAnalysisReadiness.message[locale]}
           </p>
         ) : null}
         <label>
-          Model selectionの理由
+          {t("Model selectionの理由", "Reason for model selection")}
           <textarea
-            aria-label="Model selectionの理由"
+            aria-label={t("Model selectionの理由", "Reason for model selection")}
             rows={3}
             value={modelRationale}
             onChange={(event) => {
@@ -2162,9 +2225,14 @@ export function CommonCoveragePage({
         </label>
         {!adaptiveOrderedCurveActive ? nonlinearAxisFields : null}
         <details>
-          <summary>Initial values / bounds（必要な場合のみ）</summary>
+          <summary>
+            {t("Initial values / bounds（必要な場合のみ）", "Initial values / bounds (optional)")}
+          </summary>
           <p>
-            指定値は各系列へ適用し、解析設定と履歴に保存します。空欄ではアプリの既定値を一定の規則で使います。
+            {t(
+              "指定値は各系列へ適用し、解析設定と履歴に保存します。空欄ではアプリの既定値を一定の規則で使います。",
+              "The specified values apply to each series and are saved with the analysis settings and history. Blank fields use deterministic application defaults.",
+            )}
           </p>
           <div className="nonlinear-fit-parameter-scroll">
             <table className="nonlinear-fit-parameter-inputs">
@@ -2223,8 +2291,8 @@ export function CommonCoveragePage({
       onClick={() => void run()}
     >
       {orderedCurveAnalysisReadiness.fitInterpretation === "descriptive_point_estimate_only"
-        ? "選択したmodelで記述的fitを実行"
-        : "選択したmodelでfitを実行"}
+        ? t("選択したmodelで記述的fitを実行", "Run descriptive fit with the selected model")
+        : t("選択したmodelでfitを実行", "Run fit with the selected model")}
     </button>
   );
   const nonlinearSaveButton = (
@@ -2240,15 +2308,15 @@ export function CommonCoveragePage({
       onClick={() => void saveNonlinearProject()}
     >
       {result?.nonlinearFit
-        ? "fit結果をプロジェクトへ保存"
+        ? t("fit結果をプロジェクトへ保存", "Save fit result to project")
         : adaptiveOrderedCurveActive
-          ? "入力と観測Graphをプロジェクトへ保存"
-          : "fit結果をプロジェクトへ保存"}
+          ? t("入力と観測Graphをプロジェクトへ保存", "Save input and observed Graph to project")
+          : t("fit結果をプロジェクトへ保存", "Save fit result to project")}
     </button>
   );
   const nonlinearSaveUnavailableNote = !saveProject ? (
     <p id="nonlinear-save-unavailable-note" className="specialized-engine-note" role="note">
-      このブラウザレビューではプロジェクトを保存できません。デスクトップ版で利用できます。
+      {t("このブラウザレビューではプロジェクトを保存できません。デスクトップ版で利用できます。", "Projects cannot be saved in this browser preview. Use the desktop app.")}
     </p>
   ) : null;
   const exportGraphSvg = async () => {
@@ -2304,23 +2372,23 @@ export function CommonCoveragePage({
         disabled={!graphExportAvailable}
         onClick={() => void exportGraphSvg()}
       >
-        SVGを書き出す
+        {t("SVGを書き出す", "Export SVG")}
       </button>
       <button type="button" disabled={!graphExportAvailable} onClick={() => void exportGraphPng()}>
-        PNGを書き出す
+        {t("PNGを書き出す", "Export PNG")}
       </button>
       <button
         type="button"
         disabled={!graphExportAvailable}
         onClick={() => void copyRenderedGraph()}
       >
-        Graphをコピー
+        {t("Graphをコピー", "Copy Graph")}
       </button>
     </>
   );
   const orderedCurveFactPanel = adaptiveOrderedCurveActive ? (
-    <section className="callout-info" aria-label="曲線データの測定方法">
-      <strong>入力表を決めるための確認</strong>
+    <section className="callout-info" aria-label={t("曲線データの測定方法", "How the curve data were measured")}>
+      <strong>{t("入力表を決めるための確認", "Confirm the facts needed to choose the data table")}</strong>
       <p>{entryFactsView.summary}</p>
       {entryFactsView.questions.map((question) => (
         <label key={question.key}>
@@ -2356,7 +2424,7 @@ export function CommonCoveragePage({
               }
             }}
           >
-            <option value="">選択してください</option>
+            <option value="">{t("選択してください", "Select an answer")}</option>
             {question.choices.map((choice) => (
               <option key={choice.value} value={choice.value}>
                 {choice.label}
@@ -2381,36 +2449,47 @@ export function CommonCoveragePage({
             }
           }}
         />{" "}
-        時間と濃度など、順序のある量を2つ以上同時に変えた
+        {t(
+          "時間と濃度など、順序のある量を2つ以上同時に変えた",
+          "Two or more ordered quantities, such as time and concentration, changed together",
+        )}
       </label>
       <small>
-        入力したX/Y値は回答を変更しても保持します。未対応構造を別の曲線へ自動変換しません。
+        {t(
+          "入力したX/Y値は回答を変更しても保持します。未対応構造を別の曲線へ自動変換しません。",
+          "Entered X/Y values are preserved when answers change. Unsupported structures are not converted into a different curve.",
+        )}
       </small>
     </section>
   ) : null;
   return (
     <div className="page-stack specialized-analysis-page" {...interactionCaptureProps}>
       <button className="back-link" type="button" onClick={requestBack}>
-        ← 戻る
+        {t("← 戻る", "← Back")}
       </button>
       {adaptiveOrderedCurveActive ? (
-        <nav aria-label="プロジェクトワークスペース" className="workspace-mode-tabs">
+        <nav aria-label={t("プロジェクトワークスペース", "Project workspace")} className="workspace-mode-tabs">
           <button
             type="button"
             disabled={!onOpenProject}
             title={
-              !onOpenProject ? "プロジェクトを開く機能はデスクトップ版で利用できます" : undefined
+              !onOpenProject
+                ? t(
+                    "プロジェクトを開く機能はデスクトップ版で利用できます",
+                    "Opening projects is available in the desktop app",
+                  )
+                : undefined
             }
             onClick={onOpenProject}
           >
-            開く
+            {t("開く", "Open")}
           </button>
           <button
             type="button"
             aria-pressed={orderedCurveWorkspaceTab === "data"}
             onClick={() => setOrderedCurveWorkspaceTab("data")}
           >
-            データ
+            {t("データ", "Data")}
           </button>
           <button
             type="button"
@@ -2420,7 +2499,7 @@ export function CommonCoveragePage({
               setNonlinearAnalysisSetupVisible(false);
             }}
           >
-            グラフ
+            {t("グラフ", "Graph")}
           </button>
           <button
             type="button"
@@ -2430,7 +2509,7 @@ export function CommonCoveragePage({
               setNonlinearAnalysisSetupVisible(true);
             }}
           >
-            統計
+            {t("統計", "Statistics")}
           </button>
           <button
             type="button"
@@ -2441,16 +2520,16 @@ export function CommonCoveragePage({
             }
             title={
               orderedCurveEntry?.status !== "surface_ready" && !saveSpecializedEntryDraftProject
-                ? "入力途中のプロジェクト保存はデスクトップ版で利用できます"
+                ? t("入力途中のプロジェクト保存はデスクトップ版で利用できます", "Saving an in-progress project is available in the desktop app")
                 : !saveProject
-                  ? "プロジェクトの保存はデスクトップ版で利用できます"
+                  ? t("プロジェクトの保存はデスクトップ版で利用できます", "Project saving is available in the desktop app")
                   : orderedCurveEntry?.status !== "surface_ready"
-                    ? "未確定の回答と入力表を、入力途中のプロジェクトとして保存します"
+                    ? t("未確定の回答と入力表を、入力途中のプロジェクトとして保存します", "Save the unresolved answers and data table as an in-progress project")
                     : undefined
             }
             onClick={() => void saveNonlinearProject()}
           >
-            保存
+            {t("保存", "Save")}
           </button>
           {persistedBaseline ? (
             <button
@@ -2458,7 +2537,7 @@ export function CommonCoveragePage({
               disabled={!saveProject}
               onClick={() => void saveNonlinearProject(true)}
             >
-              別名で保存
+              {t("別名で保存", "Save As")}
             </button>
           ) : null}
         </nav>
@@ -2481,24 +2560,46 @@ export function CommonCoveragePage({
             : ""
         }`}
       >
-        <p className="overline">{adaptiveOrderedCurveActive ? "実験から入力" : "専門解析"}</p>
+        <p className="overline">
+          {adaptiveOrderedCurveActive
+            ? t("実験から入力", "Experiment-first entry")
+            : t("専門解析", "Specialized analysis")}
+        </p>
         <h1>
           {entryIntent?.experimentName ??
             (adaptiveOrderedCurveActive ? initialProject?.state.metadata.projectName : undefined) ??
-            titles[mode]}
+            (locale === "ja" ? titles[mode] : englishTitles[mode])}
         </h1>
         <p>
           {mode === "contingency"
-            ? "独立した実験単位の整数count、または対応binaryの2×2遷移表だけを入力します。percentageをcountへ変換しません。"
+            ? t(
+                "独立した実験単位の整数count、または対応binaryの2×2遷移表だけを入力します。percentageをcountへ変換しません。",
+                "Enter integer counts from independent experimental units, or a paired-binary 2×2 transition table. Percentages are not converted to counts.",
+              )
             : mode === "repeated-nonparametric"
-              ? "同じ生物学的単位のIDを保ったままFriedman検定とHolm補正済みWilcoxon比較を行います。"
+              ? t(
+                  "同じ生物学的単位のIDを保ったままFriedman検定とHolm補正済みWilcoxon比較を行います。",
+                  "Keep each biological unit ID intact while running the Friedman test and Holm-adjusted Wilcoxon comparisons.",
+                )
               : mode === "regression"
-                ? "相関とは別にOLS回帰を実行します。切片は既定で推定します。"
+                ? t(
+                    "相関とは別にOLS回帰を実行します。切片は既定で推定します。",
+                    "Run OLS regression separately from correlation analysis. The intercept is estimated by default.",
+                  )
                 : mode === "nonlinear-fit"
                   ? adaptiveOrderedCurveActive
-                    ? "横方向に変えたものと試料の対応を確認してX/Yを入力すると、まず観測点をGraphに表示します。必要な場合だけ「統計解析を設定」からmodelを選びます。入力した値は確認内容を変更しても保持します。"
-                    : "入力直後は観測点を表示し、fit後は保存可能なfit曲線を重ねます。見た目の変更では再計算しません。"
-                  : "元の個別値を保持した探索的Graphです。検定は自動追加しません。"}
+                    ? t(
+                        "横方向に変えたものと試料の対応を確認してX/Yを入力すると、まず観測点をGraphに表示します。必要な場合だけ「統計解析を設定」からmodelを選びます。入力した値は確認内容を変更しても保持します。",
+                        "Confirm what changes along the X axis and how specimens relate, then enter X/Y values to display the observed points first. Choose a model from Set up statistical analysis only when needed. Entered values remain when the answers change.",
+                      )
+                    : t(
+                        "入力直後は観測点を表示し、fit後は保存可能なfit曲線を重ねます。見た目の変更では再計算しません。",
+                        "Observed points appear immediately. After fitting, a savable fitted curve is overlaid. Visual edits do not rerun the analysis.",
+                      )
+                  : t(
+                      "元の個別値を保持した探索的Graphです。検定は自動追加しません。",
+                      "This exploratory Graph preserves the original individual values. It does not add a statistical test automatically.",
+                    )}
         </p>
         {import.meta.env.DEV && mode === "regression" && literatureCase ? (
           <section className="benchmark-pilot-loader" aria-label="Literature単回帰合成値">
@@ -2515,8 +2616,8 @@ export function CommonCoveragePage({
         {adaptiveOrderedCurveActive ? (
           <>
             <DelimitedTextSpreadsheet
-              ariaLabel="曲線データ表"
-              caption="Unit ID、Series、X、Y"
+              ariaLabel={t("曲線データ表", "Curve data table")}
+              caption={t("Unit ID、Series、X、Y", "Unit ID, Series, X, Y")}
               minimumColumns={4}
               value={text}
               onChange={(nextText, source) => {
@@ -2532,9 +2633,9 @@ export function CommonCoveragePage({
               }}
             />
             <details>
-              <summary>区切りテキストを直接編集（詳細）</summary>
+              <summary>{t("区切りテキストを直接編集（詳細）", "Edit delimited text directly (advanced)")}</summary>
               <textarea
-                aria-label={`${dataLabels[mode]} data`}
+                aria-label={t(`${dataLabels[mode]} data`, "Nonlinear X/Y fitting data")}
                 rows={7}
                 value={text}
                 onPaste={pasteRawText}
@@ -2550,7 +2651,7 @@ export function CommonCoveragePage({
           </>
         ) : (
           <textarea
-            aria-label={`${dataLabels[mode]} data`}
+            aria-label={`${locale === "ja" ? dataLabels[mode] : englishDataLabels[mode]} data`}
             rows={9}
             value={text}
             onPaste={pasteRawText}
@@ -2565,9 +2666,9 @@ export function CommonCoveragePage({
         )}
         {adaptiveOrderedCurveActive ? (
           <label>
-            CSV / TSV / TXTを読み込む
+            {t("CSV / TSV / TXTを読み込む", "Load CSV / TSV / TXT")}
             <input
-              aria-label="CSV / TSV / TXTを読み込む"
+              aria-label={t("CSV / TSV / TXTを読み込む", "Load CSV / TSV / TXT")}
               type="file"
               accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
               onChange={(event) => void loadOrderedCurveFile(event)}
@@ -2599,7 +2700,7 @@ export function CommonCoveragePage({
               setExecutedRequest(null);
             }}
           >
-            入力形式の例を読み込む（合成値）
+            {t("入力形式の例を読み込む（合成値）", "Load an input-format example (synthetic values)")}
           </button>
         ) : null}
         {mode === "nonlinear-fit" &&
@@ -2614,17 +2715,17 @@ export function CommonCoveragePage({
               setExecutedRequest(null);
             }}
           >
-            入力形式の例を読み込む（合成値）
+            {t("入力形式の例を読み込む（合成値）", "Load an input-format example (synthetic values)")}
           </button>
         ) : null}
         {adaptiveOrderedCurveActive ? (
           <small>
             {entryFactsState.facts.axisMaterialRelationship === "same_physical_material_across_axis"
-              ? "同じ反応・対象の行では、Xが変わっても同じUnit IDを使います。"
+              ? t("同じ反応・対象の行では、Xが変わっても同じUnit IDを使います。", "Use the same Unit ID across X values for rows from the same reaction or subject.")
               : entryFactsState.facts.axisMaterialRelationship ===
                   "separate_material_per_axis_value"
-                ? "X点ごとに別の反応・試料を用意した行には、それぞれのUnit IDを付けます。"
-                : "上の2項目を選ぶと、Unit IDの付け方を例に反映します。"}
+                ? t("X点ごとに別の反応・試料を用意した行には、それぞれのUnit IDを付けます。", "Assign a separate Unit ID to each row when each X value uses a separate reaction or specimen.")
+                : t("上の2項目を選ぶと、Unit IDの付け方を例に反映します。", "Answer the two questions above to reflect the appropriate Unit ID pattern in the example.")}
           </small>
         ) : null}
         {mode === "contingency" ? (
@@ -2732,12 +2833,15 @@ export function CommonCoveragePage({
             disabled={!analysisAvailable}
             onClick={() => void run()}
           >
-            解析を実行
+            {t("解析を実行", "Run analysis")}
           </button>
         ) : null}
         {adaptiveOrderedCurveActive && !entryFactsView.canCompileStructureContract ? (
           <p className="specialized-engine-note" role="status">
-            X/Y値は入力できます。fitを実行する前に、上の測定方法だけ確認してください。
+            {t(
+              "X/Y値は入力できます。fitを実行する前に、上の測定方法だけ確認してください。",
+              "You can enter X/Y values now. Confirm the measurement pattern above before running a fit.",
+            )}
           </p>
         ) : null}
         {adaptiveOrderedCurveActive &&
@@ -2751,12 +2855,15 @@ export function CommonCoveragePage({
         !["ready", "ready_descriptive_only"].includes(orderedCurveAnalysisReadiness.status) &&
         !nonlinearAnalysisSetupVisible ? (
           <p className="specialized-engine-note" role="status">
-            {orderedCurveAnalysisReadiness.message.ja}
+            {orderedCurveAnalysisReadiness.message[locale]}
           </p>
         ) : null}
         {mode !== "distribution" && !analysisAvailable && !adaptiveOrderedCurveActive ? (
           <p className="specialized-engine-note" role="note">
-            このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
+            {t(
+              "このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。",
+              "The analysis engine is unavailable in this browser preview. It is available in the desktop app.",
+            )}
           </p>
         ) : null}
         {mode === "nonlinear-fit" && !adaptiveOrderedCurveActive ? nonlinearSaveButton : null}
@@ -2772,7 +2879,9 @@ export function CommonCoveragePage({
         {message ? <p role="status">{message}</p> : null}
         {"error" in parsed &&
         !(mode === "nonlinear-fit" && entryIntent && text.trim() === ORDERED_CURVE_HEADER) ? (
-          <p role="alert">{parsed.error}</p>
+          <p role="alert">
+            {locale === "ja" ? parsed.error : "Check the data table and required columns."}
+          </p>
         ) : null}
       </section>
       <section
@@ -2791,27 +2900,27 @@ export function CommonCoveragePage({
             title={
               entryIntent?.experimentName ??
               initialProject?.state.metadata.projectName ??
-              "濃度–反応・酵素反応"
+              t("濃度–反応・酵素反応", "Concentration–response / enzyme kinetics")
             }
             actions={graphExportButton}
             canvas={graph}
             inspector={
               <div className="graph-workspace-frame__settings">
-                <h3>Graph設定</h3>
+                <h3>{t("Graph設定", "Graph settings")}</h3>
                 {nonlinearAxisFields}
                 {(orderedCurveWorkspaceTab === "statistics" || nonlinearAnalysisSetupVisible) &&
                 orderedCurveEntry?.status === "surface_ready" ? (
                   <section
                     id="ordered-curve-analysis"
                     className="nonlinear-analysis-stage"
-                    aria-label="統計解析の設定"
+                    aria-label={t("統計解析の設定", "Statistical-analysis settings")}
                   >
                     <header>
                       <h3>
                         {orderedCurveAnalysisReadiness.fitInterpretation ===
                         "descriptive_point_estimate_only"
-                          ? "曲線モデルを設定"
-                          : "統計解析を設定"}
+                          ? t("曲線モデルを設定", "Set up a curve model")
+                          : t("統計解析を設定", "Set up statistical analysis")}
                       </h3>
                       <button
                         type="button"
@@ -2820,14 +2929,14 @@ export function CommonCoveragePage({
                           setOrderedCurveWorkspaceTab("graph");
                         }}
                       >
-                        設定を閉じる
+                        {t("設定を閉じる", "Close settings")}
                       </button>
                     </header>
                     {nonlinearFitSettings}
                     {nonlinearRunButton}
                     {!analysisAvailable ? (
                       <p className="specialized-engine-note" role="note">
-                        このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
+                        {t("このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。", "The analysis engine is unavailable in this browser preview. It is available in the desktop app.")}
                       </p>
                     ) : null}
                   </section>
@@ -2846,17 +2955,19 @@ export function CommonCoveragePage({
                       }}
                     >
                       {orderedCurveAnalysisReadiness.status === "ready_descriptive_only"
-                        ? "曲線モデルを設定"
-                        : "統計解析を設定"}
+                        ? t("曲線モデルを設定", "Set up a curve model")
+                        : t("統計解析を設定", "Set up statistical analysis")}
                     </button>
                     {orderedCurveSetupMissingItems.length > 0 ? (
                       <small role="status">
-                        あと{orderedCurveSetupMissingItems.length}項目：
-                        {orderedCurveSetupMissingItems.join("、")}
+                        {t(
+                          `あと${orderedCurveSetupMissingItems.length}項目：${orderedCurveSetupMissingItems.join("、")}`,
+                          `${orderedCurveSetupMissingItems.length} items remaining: ${orderedCurveSetupMissingItems.join(", ")}`,
+                        )}
                       </small>
                     ) : orderedCurveAnalysisReadiness.status === "safe_stop" ? (
                       <small role="status">
-                        この構造では解析を開始できません。上に表示された理由を確認してください。
+                        {t("この構造では解析を開始できません。上に表示された理由を確認してください。", "Analysis cannot start for this structure. Review the reason shown above.")}
                       </small>
                     ) : null}
                   </>

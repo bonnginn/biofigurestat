@@ -9,6 +9,7 @@ import {
 } from "../app/usageTelemetry";
 import { UsageTelemetryController } from "./UsageTelemetryController";
 import { resetAppLocaleForTests } from "../app/appLocale";
+import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 
 describe("UsageTelemetryController", () => {
   beforeEach(() =>
@@ -233,7 +234,7 @@ describe("UsageTelemetryController", () => {
   });
 
   it("switches the first-run notice to English before consent without changing consent", () => {
-    render(<UsageTelemetryController route="home" />);
+    const view = render(<UsageTelemetryController route="home" />);
 
     fireEvent.click(screen.getByRole("button", { name: "English" }));
 
@@ -246,5 +247,6 @@ describe("UsageTelemetryController", () => {
     expect(screen.getByRole("button", { name: "Allow" })).toBeInTheDocument();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(JSON.parse(serializeLocalUsageTelemetryReport()).eventCount).toBe(0);
+    expectNoJapaneseUi(view.container);
   });
 });

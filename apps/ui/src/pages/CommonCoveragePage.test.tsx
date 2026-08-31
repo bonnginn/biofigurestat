@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AxisMaterialRelationship, OrderedAxisMeaning } from "@lsaa/adaptive-input";
 import type { AnalysisRunner } from "../app/analysisClient";
 import type * as GraphExportModule from "../app/graphExport";
@@ -19,6 +19,10 @@ vi.mock("../app/graphExport", async (importOriginal) => ({
 
 import { CommonCoveragePage } from "./CommonCoveragePage";
 import { OpenProjectPage } from "./OpenProjectPage";
+import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
+import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
+
+afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 const regressionRunner: AnalysisRunner = vi.fn(async (request) => ({
   protocolVersion: request.protocolVersion,
@@ -211,6 +215,33 @@ function answerOrderedCurveFacts(
 describe("final common coverage workflows", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+  it("shows the ordered X/Y workspace without Japanese application copy in English mode", () => {
+    act(() => setAppLocale("en"));
+    const view = render(
+      <CommonCoveragePage
+        mode="nonlinear-fit"
+        onBack={vi.fn()}
+        entryIntent={adaptiveOrderedCurveIntent}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Data" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Graph" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Statistics" })).toBeVisible();
+    expectNoJapaneseUi(view.container);
+  });
+  it.each([
+    "contingency",
+    "repeated-nonparametric",
+    "regression",
+    "nonlinear-fit",
+    "distribution",
+  ] as const)("shows the %s specialist surface without Japanese application copy in English mode", (mode) => {
+    act(() => setAppLocale("en"));
+    const view = render(<CommonCoveragePage mode={mode} onBack={vi.fn()} />);
+
+    expectNoJapaneseUi(view.container);
   });
   it("順序のあるX/YはData・Graph・Statisticsを別面として切り替える", () => {
     render(

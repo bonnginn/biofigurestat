@@ -167,7 +167,7 @@ export function UsageTelemetryController({ route }: Readonly<{ route: AppRoute }
         <div className="usage-consent-language" role="group" aria-label={ja ? "表示言語" : "Language"}>
           <span>{ja ? "表示言語" : "Language"}</span>
           <button type="button" aria-pressed={ja} onClick={() => setAppLocale("ja")}>
-            日本語
+            {ja ? "日本語" : "Japanese"}
           </button>
           <button type="button" aria-pressed={!ja} onClick={() => setAppLocale("en")}>
             English

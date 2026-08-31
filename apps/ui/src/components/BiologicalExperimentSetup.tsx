@@ -1187,7 +1187,10 @@ export function BiologicalExperimentSetup({
                       <label className="biological-setup__check">
                         <input
                           type="checkbox"
-                          aria-label={`${conditionBlockActionLabel(block, blockIndex)}に親グループ列を追加する`}
+                          aria-label={t(
+                            `${conditionBlockActionLabel(block, blockIndex)}に親グループ列を追加する`,
+                            `Add a parent-group column to treatment or grouping factor ${blockIndex + 1}`,
+                          )}
                           checked={block.showGroups}
                           onChange={(event) => {
                             const showGroups = event.currentTarget.checked;
@@ -1206,7 +1209,10 @@ export function BiologicalExperimentSetup({
                             else blockDeleteControlRefs.current.delete(block.id);
                           }}
                           type="button"
-                          aria-label={`${conditionBlockActionLabel(block, blockIndex)}を削除`}
+                          aria-label={t(
+                            `${conditionBlockActionLabel(block, blockIndex)}を削除`,
+                            `Delete treatment or grouping factor ${blockIndex + 1}`,
+                          )}
                           onClick={() => removeBlock(block.id)}
                         >
                           {t("削除", "Remove")}
@@ -1215,7 +1221,10 @@ export function BiologicalExperimentSetup({
                     </div>
                     <div className="biological-setup__grid-wrap">
                       <table
-                        aria-label={`${block.name || `処理・群分け ${blockIndex + 1}`}の具体的な値`}
+                        aria-label={t(
+                          `${block.name || `処理・群分け ${blockIndex + 1}`}の具体的な値`,
+                          `Specific values for ${block.name || `treatment or grouping factor ${blockIndex + 1}`}`,
+                        )}
                       >
                         <thead>
                           <tr>
@@ -1233,11 +1242,14 @@ export function BiologicalExperimentSetup({
                               {block.showGroups ? (
                                 <td>
                                   <input
-                                    aria-label={`${
-                                      blocks.length > 1
-                                        ? `${block.name.trim() || `処理・群分け ${blockIndex + 1}`}：`
-                                        : ""
-                                    }行 ${rowIndex + 1}のまとまり`}
+                                    aria-label={t(
+                                      `${
+                                        blocks.length > 1
+                                          ? `${block.name.trim() || `処理・群分け ${blockIndex + 1}`}：`
+                                          : ""
+                                      }行 ${rowIndex + 1}のまとまり`,
+                                      `${block.name.trim() || `Treatment or grouping factor ${blockIndex + 1}`}: parent group for row ${rowIndex + 1}`,
+                                    )}
                                     value={block.groupLabels[rowIndex] ?? ""}
                                     data-spreadsheet-cell="true"
                                     data-spreadsheet-row={rowIndex}
@@ -1259,11 +1271,14 @@ export function BiologicalExperimentSetup({
                               {row.map((value, columnIndex) => (
                                 <td key={columnIndex}>
                                   <input
-                                    aria-label={`${
-                                      blocks.length > 1
-                                        ? `${block.name.trim() || `処理・群分け ${blockIndex + 1}`}：`
-                                        : ""
-                                    }行 ${rowIndex + 1} 列 ${columnIndex + 1}`}
+                                    aria-label={t(
+                                      `${
+                                        blocks.length > 1
+                                          ? `${block.name.trim() || `処理・群分け ${blockIndex + 1}`}：`
+                                          : ""
+                                      }行 ${rowIndex + 1} 列 ${columnIndex + 1}`,
+                                      `${block.name.trim() || `Treatment or grouping factor ${blockIndex + 1}`}: row ${rowIndex + 1}, column ${columnIndex + 1}`,
+                                    )}
                                     value={value}
                                     data-spreadsheet-cell="true"
                                     data-spreadsheet-row={rowIndex}
@@ -1297,7 +1312,10 @@ export function BiologicalExperimentSetup({
                     <div className="biological-setup__grid-actions">
                       <button
                         type="button"
-                        aria-label={`${conditionBlockActionLabel(block, blockIndex)}に行を追加`}
+                        aria-label={t(
+                          `${conditionBlockActionLabel(block, blockIndex)}に行を追加`,
+                          `Add a row to treatment or grouping factor ${blockIndex + 1}`,
+                        )}
                         onClick={() =>
                           updateBlock(block.id, (current) => ({
                             ...current,
@@ -1313,7 +1331,10 @@ export function BiologicalExperimentSetup({
                       </button>
                       <button
                         type="button"
-                        aria-label={`${conditionBlockActionLabel(block, blockIndex)}に列を追加`}
+                        aria-label={t(
+                          `${conditionBlockActionLabel(block, blockIndex)}に列を追加`,
+                          `Add a column to treatment or grouping factor ${blockIndex + 1}`,
+                        )}
                         onClick={() =>
                           updateBlock(block.id, (current) => ({
                             ...current,
@@ -1408,7 +1429,10 @@ export function BiologicalExperimentSetup({
                           <label className="biological-setup__field">
                             <span>{t("測定項目の名前", "Readout name")}</span>
                             <input
-                              aria-label={`追加の測定項目 ${index + 2}の名前`}
+                              aria-label={t(
+                                `追加の測定項目 ${index + 2}の名前`,
+                                `Name of additional measured readout ${index + 2}`,
+                              )}
                               placeholder={t("例：細胞数、total protein", "Example: cell count, total protein")}
                               value={readout.label}
                               onChange={(event) => {
@@ -1427,7 +1451,10 @@ export function BiologicalExperimentSetup({
                               else readoutDeleteControlRefs.current.delete(readout.id);
                             }}
                             type="button"
-                            aria-label={`追加の測定項目 ${index + 2}を削除`}
+                            aria-label={t(
+                              `追加の測定項目 ${index + 2}を削除`,
+                              `Delete additional measured readout ${index + 2}`,
+                            )}
                             onClick={() => removeAdditionalReadout(readout.id)}
                           >
                             {t("削除", "Remove")}
@@ -1773,9 +1800,14 @@ export function BiologicalExperimentSetup({
                           {orderedAxisLevels.map((value, index) => (
                             <td key={index}>
                               <input
-                                aria-label={`${orderedAxisLabel.trim() || "順序"}の値 ${index + 1}${
-                                  orderedAxisUnit.trim() ? `（${orderedAxisUnit.trim()}）` : ""
-                                }`}
+                                aria-label={t(
+                                  `${orderedAxisLabel.trim() || "順序"}の値 ${index + 1}${
+                                    orderedAxisUnit.trim() ? `（${orderedAxisUnit.trim()}）` : ""
+                                  }`,
+                                  `${orderedAxisLabel.trim() || "Ordered axis"} value ${index + 1}${
+                                    orderedAxisUnit.trim() ? ` (${orderedAxisUnit.trim()})` : ""
+                                  }`,
+                                )}
                                 value={value}
                                 data-spreadsheet-cell="true"
                                 data-spreadsheet-row={0}

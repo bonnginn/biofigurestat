@@ -9,6 +9,7 @@ import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usag
 import type { WorkspaceExitRequest } from "../app/workspaceLifecycle";
 import { GraphOnlyVisualizationPage } from "./GraphOnlyVisualizationPage";
 import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
+import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 
 vi.mock("../app/usageTelemetry", () => ({
   recordUsageEntry: vi.fn(),
@@ -108,17 +109,18 @@ describe("Graph-only production workspace", () => {
 
   it("shows the table mapping workflow in English", () => {
     act(() => setAppLocale("en"));
-    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
+    const view = render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
 
     expect(screen.getByRole("heading", { name: "Create a Graph from your table" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "1. Enter or paste a table" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "2. Map columns to the Graph" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Create Graph" })).toBeDisabled();
+    expectNoJapaneseUi(view.container);
   });
 
   it("keeps the Graph-only statistics handoff in English without inferring biological n", () => {
     act(() => setAppLocale("en"));
-    render(
+    const view = render(
       <GraphOnlyVisualizationPage
         onNavigate={vi.fn()}
         onStatisticsStructureRequested={vi.fn()}
@@ -147,6 +149,7 @@ describe("Graph-only production workspace", () => {
       screen.getByText(/What does the X axis .*Condition.* represent/),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Continue to experiment structure" })).toBeDisabled();
+    expectNoJapaneseUi(view.container);
   });
 
   it("keeps Data, Graph, and Statistics as separate workspace tabs", () => {

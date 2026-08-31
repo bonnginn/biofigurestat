@@ -10,6 +10,7 @@ import {
 } from "@lsaa/domain";
 import { AdaptiveCanonicalSpreadsheet } from "./AdaptiveCanonicalSpreadsheet";
 import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
+import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 
 afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
@@ -178,7 +179,7 @@ function ContinuousHarness({
 describe("AdaptiveCanonicalSpreadsheet", () => {
   it("switches worksheet controls to English without changing canonical observations", () => {
     act(() => setAppLocale("en"));
-    render(<ContinuousHarness />);
+    const view = render(<ContinuousHarness />);
 
     expect(screen.getByRole("button", { name: "Condition sheet" })).toBeVisible();
     expect(screen.getByRole("button", { name: "One measurement per row" })).toBeVisible();
@@ -193,6 +194,7 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
       "obs.c2",
       "obs.d1",
     ]);
+    expectNoJapaneseUi(view.container);
   });
 
   it("shows every independent condition before values exist and creates stable unit identities", () => {

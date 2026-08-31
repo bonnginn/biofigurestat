@@ -222,7 +222,7 @@ export function SimpleGroupExperimentEntry({
         <label>
           <span>{ja ? "測定項目（グラフのY軸）" : "Measured readout (graph Y axis)"}</span>
           <input
-            placeholder="例：Relative protein amount"
+            placeholder={ja ? "例：Relative protein amount" : "Example: Relative protein amount"}
             value={readoutLabel}
             onChange={(event) => setReadoutLabel(event.currentTarget.value)}
           />
@@ -234,7 +234,7 @@ export function SimpleGroupExperimentEntry({
               : "Experimental unit assigned independently to each condition"}
           </span>
           <input
-            placeholder="例：culture dish、mouse"
+            placeholder={ja ? "例：culture dish、mouse" : "Example: culture dish or mouse"}
             value={experimentalUnitLabel}
             onChange={(event) => setExperimentalUnitLabel(event.currentTarget.value)}
           />

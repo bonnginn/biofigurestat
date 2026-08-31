@@ -15,6 +15,7 @@ import { createTimeToEventContractProjection } from "../app/timeToEventProjectio
 import type { RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import { SpecializedCorePage } from "./SpecializedCorePage";
 import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
+import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 
 afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
@@ -83,7 +84,7 @@ const expandAdaptiveStatistics = () =>
 describe("specialized Core entry pages", () => {
   it("shows the shared Survival workspace and censoring instructions in English", () => {
     act(() => setAppLocale("en"));
-    render(
+    const view = render(
       <SpecializedCorePage
         mode="survival"
         onBack={vi.fn()}
@@ -96,6 +97,15 @@ describe("specialized Core entry pages", () => {
     expect(screen.getByRole("button", { name: "Graph" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Statistics" })).toBeVisible();
     expect(screen.getByText(/Censoring is not converted to missingness/)).toBeVisible();
+    expectNoJapaneseUi(view.container);
+  });
+
+  it("shows the Heatmap workspace without Japanese application copy in English mode", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<SpecializedCorePage mode="heatmap" onBack={vi.fn()} />);
+
+    expect(screen.getByRole("heading", { name: "Heatmap" })).toBeVisible();
+    expectNoJapaneseUi(view.container);
   });
 
   it("生存時間はData・Graph・Statisticsを同じワークスペースの別面として切り替える", () => {

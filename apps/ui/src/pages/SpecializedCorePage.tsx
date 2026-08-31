@@ -1862,8 +1862,13 @@ export function SpecializedCorePage({
     ) : null;
   const survivalStatisticsContent = (
     <div id="survival-statistics" className="graph-workspace-frame__settings">
-      <h3>統計</h3>
-      <p>Graphを確認したあと、必要な場合だけ推論解析を実行します。</p>
+      <h3>{t("統計", "Statistics")}</h3>
+      <p>
+        {t(
+          "Graphを確認したあと、必要な場合だけ推論解析を実行します。",
+          "Review the Graph first, then run inferential analysis only when needed.",
+        )}
+      </p>
       {survival && !("error" in survival) && statisticsReadiness.status !== "ready" ? (
         <p className="specialized-engine-note" role="status">
           {statisticsReadiness.researcherMessage}
@@ -1881,7 +1886,7 @@ export function SpecializedCorePage({
             }
             onClick={() => setStatisticsSetupExpanded(true)}
           >
-            統計解析を設定
+            {t("統計解析を設定", "Set up statistical analysis")}
           </button>
           {survivalStatisticsSetupBlockedReason ? (
             <small
@@ -1910,7 +1915,10 @@ export function SpecializedCorePage({
           </button>
           {!analysisAvailable ? (
             <p className="specialized-engine-note" role="note">
-              このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
+              {t(
+                "このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。",
+                "The analysis engine is unavailable in this browser preview. It is available in the desktop app.",
+              )}
             </p>
           ) : null}
           {logRankDisplay ? (
@@ -1928,14 +1936,22 @@ export function SpecializedCorePage({
                     );
                   }}
                 />
-                <span>この保存済みlog-rank結果をGraphに表示</span>
+                <span>{t("この保存済みlog-rank結果をGraphに表示", "Show this saved log-rank result on the Graph")}</span>
               </label>
               <p className="specialized-engine-note">
-                表示だけを切り替えます。解析結果は再計算しません。
+                {t(
+                  "表示だけを切り替えます。解析結果は再計算しません。",
+                  "This changes only the display. The analysis result is not recalculated.",
+                )}
               </p>
             </>
           ) : (
-            <p>解析を実行すると、event/censoringを保持した結果をここに表示します。</p>
+            <p>
+              {t(
+                "解析を実行すると、event/censoringを保持した結果をここに表示します。",
+                "After analysis, results that preserve event and censoring status appear here.",
+              )}
+            </p>
           )}
         </>
       )}
@@ -1943,9 +1959,9 @@ export function SpecializedCorePage({
   );
   const survivalGraphSettings = (
     <div className="graph-workspace-frame__settings">
-      <h3>Graph設定</h3>
+      <h3>{t("Graph設定", "Graph settings")}</h3>
       <label>
-        <span>Graphタイトル</span>
+        <span>{t("Graphタイトル", "Graph title")}</span>
         <input
           aria-label="Survival Graph title"
           value={graphTitle}
@@ -1953,7 +1969,7 @@ export function SpecializedCorePage({
         />
       </label>
       <label>
-        <span>X軸タイトル</span>
+        <span>{t("X軸タイトル", "X-axis title")}</span>
         <input
           aria-label="Survival X axis title"
           value={survivalXAxisLabel}
@@ -1964,7 +1980,7 @@ export function SpecializedCorePage({
         />
       </label>
       <label>
-        <span>Y軸タイトル</span>
+        <span>{t("Y軸タイトル", "Y-axis title")}</span>
         <input
           aria-label="Survival Y axis title"
           value={survivalYAxisLabel}
@@ -1976,13 +1992,16 @@ export function SpecializedCorePage({
       </label>
       {survival && !("error" in survival) ? (
         <fieldset>
-          <legend>凡例と曲線の色</legend>
+          <legend>{t("凡例と曲線の色", "Legend and curve colors")}</legend>
           {survival.conditions.map((condition, index) => (
             <label key={condition.id}>
               <span>{condition.label}</span>
               <input
                 type="color"
-                aria-label={`${condition.label}のSurvival曲線色`}
+                aria-label={t(
+                  `${condition.label}のSurvival曲線色`,
+                  `${condition.label} survival curve color`,
+                )}
                 value={
                   survivalPalette[index] ??
                   DEFAULT_SURVIVAL_COLORS[index % DEFAULT_SURVIVAL_COLORS.length]
@@ -2001,11 +2020,19 @@ export function SpecializedCorePage({
               />
             </label>
           ))}
-          <small>凡例はGroup名、色、各群のnを曲線と同期して表示します。</small>
+          <small>
+            {t(
+              "凡例はGroup名、色、各群のnを曲線と同期して表示します。",
+              "The legend keeps each group name, color, and n synchronized with its curve.",
+            )}
+          </small>
         </fieldset>
       ) : null}
       <p className="specialized-engine-note">
-        Graphの見た目を変更しても、Kaplan–Meier推定やlog-rank検定は再計算しません。
+        {t(
+          "Graphの見た目を変更しても、Kaplan–Meier推定やlog-rank検定は再計算しません。",
+          "Changing Graph appearance does not recalculate the Kaplan–Meier estimate or log-rank test.",
+        )}
       </p>
       {experimentFirstEntry && !statisticsSetupExpanded ? (
         <>
@@ -2022,7 +2049,7 @@ export function SpecializedCorePage({
               setSurvivalWorkspaceTab("statistics");
             }}
           >
-            統計解析を設定
+            {t("統計解析を設定", "Set up statistical analysis")}
           </button>
           {survivalStatisticsSetupBlockedReason ? (
             <small
@@ -2039,9 +2066,9 @@ export function SpecializedCorePage({
   );
   const heatmapGraphSettings = (
     <div className="graph-workspace-frame__settings">
-      <h3>Graph設定</h3>
+      <h3>{t("Graph設定", "Graph settings")}</h3>
       <label>
-        値の変換
+        {t("値の変換", "Value transform")}
         <select
           aria-label="Heatmap transform"
           value={transform}
@@ -2050,14 +2077,14 @@ export function SpecializedCorePage({
             recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
           }}
         >
-          <option value="none">変換しない</option>
-          <option value="row_z_score">行ごとにz-score</option>
-          <option value="column_z_score">列ごとにz-score</option>
+          <option value="none">{t("変換しない", "No transform")}</option>
+          <option value="row_z_score">{t("行ごとにz-score", "Z-score by row")}</option>
+          <option value="column_z_score">{t("列ごとにz-score", "Z-score by column")}</option>
           <option value="log10">Log10</option>
         </select>
       </label>
       <label>
-        色の下限
+        {t("色の下限", "Color minimum")}
         <input
           aria-label="Heatmap color minimum"
           type="number"
@@ -2069,7 +2096,7 @@ export function SpecializedCorePage({
         />
       </label>
       <label>
-        色の上限
+        {t("色の上限", "Color maximum")}
         <input
           aria-label="Heatmap color maximum"
           type="number"
@@ -2081,7 +2108,7 @@ export function SpecializedCorePage({
         />
       </label>
       <label>
-        欠損値の色
+        {t("欠損値の色", "Missing-value color")}
         <input
           aria-label="Heatmap missing color"
           type="color"
@@ -2101,10 +2128,13 @@ export function SpecializedCorePage({
             recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
           }}
         />{" "}
-        各セルの値を表示
+        {t("各セルの値を表示", "Show each cell value")}
       </label>
       <p className="specialized-engine-note">
-        Heatmapは入力行列を可視化します。列を自動的に生物学的な独立例とはみなしません。
+        {t(
+          "Heatmapは入力行列を可視化します。列を自動的に生物学的な独立例とはみなしません。",
+          "The Heatmap visualizes the entered matrix. Columns are not automatically treated as biologically independent observations.",
+        )}
       </p>
     </div>
   );
@@ -2167,11 +2197,20 @@ export function SpecializedCorePage({
             }
             title={
               experimentFirstEntry && !activeAdaptiveInput && !saveSpecializedEntryDraftProject
-                ? "入力途中のプロジェクト保存はデスクトップ版で利用できます"
+                ? t(
+                    "入力途中のプロジェクト保存はデスクトップ版で利用できます",
+                    "Saving an in-progress project is available in the desktop app",
+                  )
                 : !saveProject
-                  ? "プロジェクトの保存はデスクトップ版で利用できます"
+                  ? t(
+                      "プロジェクトの保存はデスクトップ版で利用できます",
+                      "Project saving is available in the desktop app",
+                    )
                   : experimentFirstEntry && !activeAdaptiveInput
-                    ? "未確定の回答と入力表を、入力途中のプロジェクトとして保存します"
+                    ? t(
+                        "未確定の回答と入力表を、入力途中のプロジェクトとして保存します",
+                        "Save the unresolved answers and data table as an in-progress project",
+                      )
                     : undefined
             }
             onClick={() => void save()}
@@ -2192,7 +2231,10 @@ export function SpecializedCorePage({
             disabled={!onOpenProject && !openUnresolvedVisualizationProject}
             title={
               !onOpenProject && !openUnresolvedVisualizationProject
-                ? "プロジェクトを開く機能はデスクトップ版で利用できます"
+                ? t(
+                    "プロジェクトを開く機能はデスクトップ版で利用できます",
+                    "Opening projects is available in the desktop app",
+                  )
                 : undefined
             }
             onClick={() => {
@@ -2207,7 +2249,10 @@ export function SpecializedCorePage({
           <button
             type="button"
             disabled
-            title="この行列だけから生物学的な独立例を推測しないため、統計は未確定です"
+            title={t(
+              "この行列だけから生物学的な独立例を推測しないため、統計は未確定です",
+              "Statistics remain unresolved because biological independence is not inferred from this matrix alone",
+            )}
           >
             {t("統計", "Statistics")}
           </button>
@@ -2221,9 +2266,9 @@ export function SpecializedCorePage({
             }
             title={
               !saveUnresolvedVisualizationProject
-                ? "プロジェクトの保存はデスクトップ版で利用できます"
+                ? t("プロジェクトの保存はデスクトップ版で利用できます", "Project saving is available in the desktop app")
                 : !heatmapTableHasRows || !heatmap || "error" in heatmap
-                  ? "数値行列を入力すると保存できます"
+                  ? t("数値行列を入力すると保存できます", "Enter a numeric matrix to enable saving")
                   : undefined
             }
             onClick={() => void save()}
@@ -2377,7 +2422,7 @@ export function SpecializedCorePage({
             <input
               aria-label="Follow-up time unit"
               value={followUpUnit}
-              placeholder="例: day, hour, week"
+              placeholder={t("例: day, hour, week", "Example: day, hour, week")}
               onChange={(event) => {
                 const previousDefault = survivalTimeAxisLabel(followUpUnit);
                 const nextUnit = event.target.value;
@@ -2421,7 +2466,7 @@ export function SpecializedCorePage({
           <label className="existing-data-import__file">
             <span>{t("CSV / TSV / TXTファイル", "CSV / TSV / TXT file")}</span>
             <input
-              aria-label="time-to-eventデータファイル"
+              aria-label={t("time-to-eventデータファイル", "Time-to-event data file")}
               accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
               type="file"
               onChange={(event) => {
@@ -2454,7 +2499,7 @@ export function SpecializedCorePage({
           <label className="existing-data-import__file">
             <span>{t("CSV / TSV / TXTファイル", "CSV / TSV / TXT file")}</span>
             <input
-              aria-label="ヒートマップ用データファイル"
+              aria-label={t("ヒートマップ用データファイル", "Heatmap data file")}
               accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
               type="file"
               onChange={(event) => {
@@ -2536,7 +2581,10 @@ export function SpecializedCorePage({
           {mode === "heatmap" ? (
             <>
               <p className="specialized-engine-note" role="note">
-                行列の列を生物学的な独立例とみなさず、入力した行列とGraph設定を保存します。統計の構造は未確定のままです。
+                {t(
+                  "行列の列を生物学的な独立例とみなさず、入力した行列とGraph設定を保存します。統計の構造は未確定のままです。",
+                  "The entered matrix and Graph settings are saved without treating matrix columns as biologically independent observations. The statistical structure remains unresolved.",
+                )}
               </p>
               {!openUnresolvedVisualizationProject || !saveUnresolvedVisualizationProject ? (
                 <p
@@ -2544,8 +2592,10 @@ export function SpecializedCorePage({
                   className="specialized-engine-note"
                   role="note"
                 >
-                  ブラウザレビューではHeatmap
-                  projectの保存・開くは利用できません。デスクトップ版で利用できます。
+                  {t(
+                    "ブラウザレビューではHeatmap projectの保存・開くは利用できません。デスクトップ版で利用できます。",
+                    "Heatmap projects cannot be saved or opened in this browser preview. Use the desktop app.",
+                  )}
                 </p>
               ) : null}
             </>

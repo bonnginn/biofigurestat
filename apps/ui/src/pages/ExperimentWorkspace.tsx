@@ -543,6 +543,8 @@ function OverviewUnitSummaryMatrix({
   onChange: (key: string, value: number | null) => void;
   onPaste: (request: OverviewScalarPasteRequest) => OverviewScalarPasteResult;
 }) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [pasteMessage, setPasteMessage] = useState<string | null>(null);
 
   return (
@@ -552,25 +554,37 @@ function OverviewUnitSummaryMatrix({
     >
       <div className="experiment-workspace-quick-entry-heading">
         <div>
-          <h3 id="overview-quick-entry-heading">まとめて入力</h3>
-          <p>
-            左上のセルを選び、Excelから行列をそのまま貼り付けられます。空欄はmissingとして保持します。
-          </p>
+          <h3 id="overview-quick-entry-heading">{t("まとめて入力", "Enter as a table")}</h3>
+          <p>{t("左上のセルを選び、Excelから行列をそのまま貼り付けられます。空欄はmissingとして保持します。", "Select the top-left cell and paste a rectangular range directly from Excel. Blank cells remain missing.")}</p>
         </div>
-        <span>Excel貼り付け対応</span>
+        <span>{t("Excel貼り付け対応", "Paste from Excel")}</span>
       </div>
       <div className="experiment-workspace-overview-condition-wrap">
         <table
           className="experiment-workspace-overview-condition-table experiment-workspace-quick-entry-table"
-          aria-label={`${readout.label}をまとめて入力`}
+          aria-label={t(`${readout.label}をまとめて入力`, `Enter ${readout.label} as a table`)}
         >
           <caption>
             <ReadoutLabel readout={readout} />
-            <small>{matrixRelationshipCopy(draft)}</small>
+            <small>
+              {locale === "ja"
+                ? matrixRelationshipCopy(draft)
+                : draft.conditionAssignment.kind === "matched"
+                  ? "Rows identify explicitly matched units across conditions."
+                  : "Values are aligned by entry order only; rows do not imply matching across conditions."}
+            </small>
           </caption>
           <thead>
             <tr>
-              <th scope="col">{matrixRowHeading(draft)}</th>
+              <th scope="col">
+                {locale === "ja"
+                  ? matrixRowHeading(draft)
+                  : independentAdaptiveInputRows(draft)
+                    ? "Entry row"
+                    : draft.conditionAssignment.kind === "matched"
+                      ? "Matched unit"
+                      : "Experiment"}
+              </th>
               {draft.conditions.map((condition) => (
                 <th scope="col" key={condition.id}>
                   {condition.label}
@@ -595,13 +609,19 @@ function OverviewUnitSummaryMatrix({
                   return (
                     <td key={condition.id}>
                       <DecimalValueInput
-                        label={`${experiment.label}・${condition.label}の${readout.label}`}
+                        label={t(
+                          `${experiment.label}・${condition.label}の${readout.label}`,
+                          `${readout.label}: ${experiment.label}, ${condition.label}`,
+                        )}
                         value={value}
                         disabled={notPlanned}
                         onChange={(nextValue) => onChange(key, nextValue)}
                         onRejectedPaste={() =>
                           setPasteMessage(
-                            "複数値は、表の左上セルから行列として貼り付けてください。",
+                            t(
+                              "複数値は、表の左上セルから行列として貼り付けてください。",
+                              "Paste multiple values as a rectangle starting from the top-left cell.",
+                            ),
                           )
                         }
                         onMatrixPaste={(text) => {
@@ -645,6 +665,8 @@ function OverviewProportionMatrix({
   onChange: (key: string, field: "positive" | "eligible", value: number | null) => void;
   onPaste: (request: OverviewProportionPasteRequest) => OverviewScalarPasteResult;
 }) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [pasteMessage, setPasteMessage] = useState<string | null>(null);
 
   return (
@@ -654,12 +676,10 @@ function OverviewProportionMatrix({
     >
       <div className="experiment-workspace-quick-entry-heading">
         <div>
-          <h3 id="overview-proportion-quick-entry-heading">まとめて入力</h3>
-          <p>
-            各条件は「陽性数・対象数」の2列です。Excelから矩形のまま貼り付けられ、割合は自動計算します。
-          </p>
+          <h3 id="overview-proportion-quick-entry-heading">{t("まとめて入力", "Enter as a table")}</h3>
+          <p>{t("各条件は「陽性数・対象数」の2列です。Excelから矩形のまま貼り付けられ、割合は自動計算します。", "Each condition has two columns: positive count and total count. Paste a rectangle from Excel; percentages are calculated automatically.")}</p>
         </div>
-        <span>Excel貼り付け対応</span>
+        <span>{t("Excel貼り付け対応", "Paste from Excel")}</span>
       </div>
       <div className="experiment-workspace-overview-condition-wrap">
         <table
@@ -861,6 +881,8 @@ function OverviewPanel({
     ) => string;
   }>;
 }) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const totalCells =
     draft.experiments.length *
     draft.conditions.length *
@@ -888,11 +910,11 @@ function OverviewPanel({
     const groups = new Map<string, { label: string; units: Set<string>; observations: number }>();
     canonicalSpreadsheet.observations.forEach((observation) => {
       const factorValues = contract.factors.map(
-        ({ key, label }) => observation.factors[key]?.trim() || `${label}: 未設定`,
+        ({ key, label }) => observation.factors[key]?.trim() || `${label}: ${t("未設定", "not set")}`,
       );
       const groupKey = JSON.stringify(factorValues);
       const group = groups.get(groupKey) ?? {
-        label: factorValues.join(" × ") || "測定",
+        label: factorValues.join(" × ") || t("測定", "Measurement"),
         units: new Set<string>(),
         observations: 0,
       };
@@ -914,16 +936,16 @@ function OverviewPanel({
       <div className="experiment-workspace-panel-heading">
         <div>
           <p className="experiment-workspace-eyebrow">
-            {canonicalSpreadsheet || quickEntryReadout ? "データ" : "実験の確認"}
+            {canonicalSpreadsheet || quickEntryReadout ? t("データ", "Data") : t("実験の確認", "Experiment review")}
           </p>
           <h2 id="experiment-overview-heading">
             {canonicalSpreadsheet
               ? canonicalSpreadsheet.readOnly
-                ? "測定値を確認"
-                : "測定値を入力"
+                ? t("測定値を確認", "Review measured values")
+                : t("測定値を入力", "Enter measured values")
               : quickEntryReadout
-                ? "測定値を入力"
-                : "入力状況"}
+                ? t("測定値を入力", "Enter measured values")
+                : t("入力状況", "Entry status")}
           </h2>
         </div>
       </div>
@@ -977,25 +999,27 @@ function OverviewPanel({
         <div
           className="experiment-workspace-progress is-compact"
           aria-label={
-            canonicalSpreadsheet.readOnly ? "保持している測定値の件数" : "入力した測定値の件数"
+            canonicalSpreadsheet.readOnly
+              ? t("保持している測定値の件数", "Number of retained measurements")
+              : t("入力した測定値の件数", "Number of entered measurements")
           }
         >
           <div className="experiment-workspace-progress-topline">
-            <strong>{canonicalSpreadsheet.observations.length}件の測定値</strong>
+            <strong>{t(`${canonicalSpreadsheet.observations.length}件の測定値`, `${canonicalSpreadsheet.observations.length} measurements`)}</strong>
           </div>
           <p>
             {canonicalSpreadsheet.readOnly
-              ? "元の表との対応を保ったまま、条件ごとの件数と個々の測定値を確認できます。"
-              : "条件ごとの件数が異なっていても、そのまま保持します。"}
+              ? t("元の表との対応を保ったまま、条件ごとの件数と個々の測定値を確認できます。", "Review counts by condition and individual measurements while retaining their source-table mapping.")
+              : t("条件ごとの件数が異なっていても、そのまま保持します。", "Unequal counts between conditions are retained as entered.")}
           </p>
           {canonicalConditionSummaries.length ? (
-            <ul className="experiment-workspace-condition-counts" aria-label="条件ごとの入力件数">
+            <ul className="experiment-workspace-condition-counts" aria-label={t("条件ごとの入力件数", "Entry counts by condition")}>
               {canonicalConditionSummaries.map(({ label, units, observations }) => (
                 <li key={label}>
                   <strong>{label}</strong>
                   <span>
-                    実験単位 n={units.size}
-                    {observations !== units.size ? ` · 測定値 ${observations}件` : ""}
+                    {t("実験単位", "Experimental units")} n={units.size}
+                    {observations !== units.size ? t(` · 測定値 ${observations}件`, ` · ${observations} measurements`) : ""}
                   </span>
                 </li>
               ))}
@@ -1005,11 +1029,11 @@ function OverviewPanel({
       ) : (
         <div
           className={`experiment-workspace-progress${quickEntryReadout ? " is-compact" : ""}`}
-          aria-label="入力の進み具合"
+          aria-label={t("入力の進み具合", "Data-entry progress")}
         >
           <div className="experiment-workspace-progress-topline">
             <strong>
-              {completedCells} / {plannedCells} セル入力済み
+              {t(`${completedCells} / ${plannedCells} セル入力済み`, `${completedCells} / ${plannedCells} cells entered`)}
             </strong>
             <span>{progress}%</span>
           </div>
@@ -1018,11 +1042,11 @@ function OverviewPanel({
           </div>
           <p>
             {missingCells > 0
-              ? `未入力のセルが${missingCells}件あります。途中の状態でもグラフを作成できます。`
-              : "必要なセルがすべて入力されています。"}
+              ? t(`未入力のセルが${missingCells}件あります。途中の状態でもグラフを作成できます。`, `${missingCells} cells are blank. You can create a Graph from partial data.`)
+              : t("必要なセルがすべて入力されています。", "All required cells have been entered.")}
           </p>
           {notPlannedCells > 0 ? (
-            <p>測定予定なし：{notPlannedCells}セル（進捗・解析から除外）</p>
+            <p>{t(`測定予定なし：${notPlannedCells}セル（進捗・解析から除外）`, `Not planned: ${notPlannedCells} cells (excluded from progress and analysis)`)}</p>
           ) : null}
         </div>
       )}
@@ -1212,7 +1236,13 @@ function OverviewPanel({
       {!canonicalSpreadsheet ? (
         <div className="experiment-workspace-notice" role="note">
           <strong>
-            {sharedSource
+            {locale === "en"
+              ? independentAdaptiveInputRows(draft)
+                ? "About entry rows"
+                : draft.conditionAssignment.kind === "matched"
+                  ? `About matched ${draft.conditionAssignment.unitLabel || "units"}`
+                  : "About experiment numbers"
+              : sharedSource
               ? `${sharedSource.sourceUnitLabel}と条件別${draft.conditionAssignment.unitLabel}について`
               : draft.conditionAssignment.kind === "matched"
                 ? `${draft.conditionAssignment.unitLabel || "対応単位"}について`
@@ -1221,7 +1251,15 @@ function OverviewPanel({
                   : "Exp番号について"}
           </strong>
           <p>
-            {sharedSource
+            {locale === "en"
+              ? sharedSource
+                ? `Each row represents one ${sharedSource.sourceIdentityLabel}. The condition-specific ${draft.conditionAssignment.unitLabel} values remain separate experimental units and are matched only as sets derived from the same ${sharedSource.sourceUnitLabel}.`
+                : draft.conditionAssignment.kind === "matched"
+                  ? `Rows 1, 2, and so on match measurements across conditions for the same ${draft.conditionAssignment.unitLabel || "unit"}. They are not counts of experimental sessions.`
+                  : independentAdaptiveInputRows(draft)
+                    ? "Entry rows align values across conditions for display only. Values in the same row are not treated as the same subject or as a pair."
+                    : "Exp 1, Exp 2, and so on organize experimental sessions. They do not statistically pair independent conditions."
+              : sharedSource
               ? `各行は1つの${sharedSource.sourceIdentityLabel}を表します。条件ごとの${draft.conditionAssignment.unitLabel}は別の実験単位で、同じ${sharedSource.sourceUnitLabel}に由来する組として対応づけます。`
               : draft.conditionAssignment.kind === "matched"
                 ? `${draft.conditionAssignment.unitLabel || "対応単位"} 1、2…の各行では、同じ${draft.conditionAssignment.unitLabel || "単位"}の条件間測定を対応づけています。これらは実験回数ではありません。`
@@ -1706,6 +1744,7 @@ function DecimalValueInput({
   onRejectedPaste: () => void;
   onMatrixPaste?: (text: string) => boolean;
 }) {
+  const locale = useAppLocale();
   const inputRef = useRef<HTMLInputElement>(null);
   const focusedRef = useRef(false);
   const [draftValue, setDraftValue] = useState(value === null ? "" : String(value));
@@ -1732,7 +1771,7 @@ function DecimalValueInput({
       className="experiment-workspace-number-input"
       disabled={disabled}
       inputMode="decimal"
-      placeholder="数値を入力"
+      placeholder={localizedText(locale, "数値を入力", "Enter a number")}
       type="text"
       value={draftValue}
       onFocus={(event) => {
@@ -3587,7 +3626,7 @@ export function ExperimentWorkspace({
     );
     const graph: WorkspaceGraphState = {
       id: `graph.${nextIndex}`,
-      displayName: `グラフ ${nextIndex}`,
+      displayName: t(`グラフ ${nextIndex}`, `Graph ${nextIndex}`),
       analysisRunId: null,
       selectedReadoutId: selectedSourceReadout?.id ?? "readout.1",
       sourceMode: selectedCreateSourceMode,
@@ -3691,7 +3730,9 @@ export function ExperimentWorkspace({
       summaryVisible: initialLayers.overall,
     });
     setActiveGraphId(graph.id);
-    setGraphCreateMessage(`${graph.displayName}を作成しました。`);
+    setGraphCreateMessage(
+      t(`${graph.displayName}を作成しました。`, `Created ${graph.displayName}.`),
+    );
     focusCreatedGraphRef.current = true;
     setGraphWorkspaceMode("graph");
     setShowGraph(true);
@@ -4487,7 +4528,11 @@ export function ExperimentWorkspace({
                     onClick={() => selectGraphType(value)}
                   >
                     <GraphTypeThumbnail type={value} />
-                    <strong>{label}</strong>
+                    <strong>
+                      {locale === "en" && value === "paired_dot"
+                        ? "Connected matched points"
+                        : label}
+                    </strong>
                   </button>
                 ))}
               {draft.analysisIntent.kind !== "correlation" ? (
@@ -4581,8 +4626,8 @@ export function ExperimentWorkspace({
       ) : null}
 
       {!showGraph && !canonicalSpreadsheetPresentation.enabled ? (
-        <nav className="experiment-workspace-tabs" aria-label="実験の表示切り替え">
-          <div role="tablist" aria-label="実験タブ">
+        <nav className="experiment-workspace-tabs" aria-label={t("実験の表示切り替え", "Experiment views")}>
+          <div role="tablist" aria-label={t("実験タブ", "Experiment tabs")}>
             <button
               id="workspace-tab-0"
               className={`experiment-workspace-tab ${activeTab === "overview" ? "is-active" : ""}`}
@@ -4625,8 +4670,8 @@ export function ExperimentWorkspace({
             {draft.conditionAssignment.kind === "matched"
               ? matchedSetLabel(draft)
               : independentAdaptiveInputRows(draft)
-                ? "入力行"
-                : "実験"}
+                ? t("入力行", "Entry row")
+                : t("実験", "Experiment")}
           </button>
         </nav>
       ) : null}
@@ -4638,7 +4683,7 @@ export function ExperimentWorkspace({
           ref={graphWorkspaceRef}
           tabIndex={-1}
         >
-          <nav className="experiment-workspace-graph-tabs" aria-label="作成したグラフ">
+          <nav className="experiment-workspace-graph-tabs" aria-label={t("作成したグラフ", "Created Graphs")}>
             {graphs.map((graph) => {
               const active = graph.id === activeGraphId;
               const renaming = graph.id === renamingGraphId;
@@ -4651,7 +4696,7 @@ export function ExperimentWorkspace({
                     <input
                       autoFocus
                       className="experiment-workspace-graph-tab-input"
-                      aria-label="グラフ名"
+                      aria-label={t("グラフ名", "Graph name")}
                       value={graphRenameDraft}
                       onChange={(event) => setGraphRenameDraft(event.currentTarget.value)}
                       onBlur={() => commitGraphRename(graph.id)}
@@ -4680,8 +4725,8 @@ export function ExperimentWorkspace({
                     <button
                       className="experiment-workspace-graph-tab-rename"
                       type="button"
-                      aria-label={`${graph.displayName}の名前を変更`}
-                      title="グラフ名を変更"
+                      aria-label={t(`${graph.displayName}の名前を変更`, `Rename ${graph.displayName}`)}
+                      title={t("グラフ名を変更", "Rename Graph")}
                       onClick={() => beginGraphRename(graph)}
                     >
                       ✎

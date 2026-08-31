@@ -11,6 +11,7 @@ import type { DraftAnalysisAssessment } from "../../app/experimentDraftAnalysis"
 import { recordUsageMilestone } from "../../app/usageTelemetry";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
+import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
 
 vi.mock("../../app/usageTelemetry", () => ({ recordUsageMilestone: vi.fn() }));
 afterEach(() => act(() => resetAppLocaleForTests("ja")));
@@ -94,7 +95,7 @@ it("shows a concise method and design-based reason before detailed controls", ()
 
 it("shows the recommendation and analysis action in English without changing the request", () => {
   act(() => setAppLocale("en"));
-  render(
+  const view = render(
     <GraphStatisticsPanel
       assessment={readyAssessment}
       design={panelDesign()}
@@ -106,6 +107,7 @@ it("shows the recommendation and analysis action in English without changing the
   expect(screen.getByText(/The design contains 2 independent conditions/)).toBeVisible();
   expect(screen.getByRole("button", { name: "Run selected analysis" })).toBeVisible();
   expect(readyAssessment.request).toBe(request);
+  expectNoJapaneseUi(view.container);
 });
 
 const defaultConditionOptions = [

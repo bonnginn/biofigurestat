@@ -15,6 +15,7 @@ import {
   type ImportedSpreadsheetWorkbook,
   type SpreadsheetWorkbookImporter,
 } from "../app/spreadsheetWorkbookImport";
+import { localizedText, useAppLocale } from "../app/appLocale";
 import "./DelimitedTextSpreadsheet.css";
 
 type ChangeSource = "cell_edit" | "clipboard" | "workbook_import";
@@ -140,13 +141,16 @@ export function DelimitedTextSpreadsheet({
   ariaLabel,
   minimumRows = 7,
   minimumColumns = 4,
-  caption = "データ表",
+  caption,
   testIdPrefix,
   replaceOnPasteAtOrigin = false,
   workbookImporter = importLocalSpreadsheetWorkbook,
   allowWorkbookSheetStacking = false,
   columnOptions = {},
 }: Props) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
+  const effectiveCaption = caption ?? t("データ表", "Data table");
   const [spreadsheetZoom, setSpreadsheetZoom] = useState<number>(initialSpreadsheetZoom);
   const [importedWorkbook, setImportedWorkbook] = useState<ImportedSpreadsheetWorkbook | null>(
     null,
@@ -229,7 +233,12 @@ export function DelimitedTextSpreadsheet({
       setWorkbookImportError(null);
     } catch (error) {
       setWorkbookImportError(
-        error instanceof Error ? error.message : "worksheetをExpとしてまとめられませんでした。",
+        locale === "ja" && error instanceof Error
+          ? error.message
+          : t(
+              "worksheetをExpとしてまとめられませんでした。",
+              "The worksheets could not be combined as experiments.",
+            ),
       );
     }
   };
@@ -247,9 +256,12 @@ export function DelimitedTextSpreadsheet({
       applyImportedSheet(workbook, initialSheet);
     } catch (error) {
       setWorkbookImportError(
-        error instanceof Error && error.message.trim()
+        locale === "ja" && error instanceof Error && error.message.trim()
           ? error.message
-          : "Excel workbookを読み込めませんでした。",
+          : t(
+              "Excel workbookを読み込めませんでした。",
+              "The Excel workbook could not be loaded.",
+            ),
       );
     } finally {
       setWorkbookImporting(false);
@@ -261,12 +273,12 @@ export function DelimitedTextSpreadsheet({
       <div
         className="delimited-spreadsheet__zoom-control"
         role="group"
-        aria-label="シートの拡大縮小"
+        aria-label={t("シートの拡大縮小", "Worksheet zoom")}
       >
-        <span>表示倍率</span>
+        <span>{t("表示倍率", "Zoom")}</span>
         <button
           type="button"
-          aria-label="シートを縮小"
+          aria-label={t("シートを縮小", "Zoom out")}
           disabled={spreadsheetZoom <= SPREADSHEET_ZOOM_LEVELS[0]}
           onClick={() => changeSpreadsheetZoom(-1)}
         >
@@ -277,7 +289,7 @@ export function DelimitedTextSpreadsheet({
         </span>
         <button
           type="button"
-          aria-label="シートを拡大"
+          aria-label={t("シートを拡大", "Zoom in")}
           disabled={spreadsheetZoom >= SPREADSHEET_ZOOM_LEVELS[SPREADSHEET_ZOOM_LEVELS.length - 1]}
           onClick={() => changeSpreadsheetZoom(1)}
         >
@@ -292,15 +304,18 @@ export function DelimitedTextSpreadsheet({
             } as CSSProperties
           }
         >
-          <caption>{caption}</caption>
+          <caption>{effectiveCaption}</caption>
           <tbody>
             {rows.map((row, rowIndex) => (
               <tr key={rowIndex}>
-                <th scope="row">{rowIndex === 0 ? "見出し" : rowIndex}</th>
+                <th scope="row">{rowIndex === 0 ? t("見出し", "Header") : rowIndex}</th>
                 {row.map((cell, columnIndex) => {
                   const options = rowIndex > 0 ? columnOptions[columnIndex] : undefined;
                   const cellProps = {
-                    "aria-label": `${ariaLabel} 行${rowIndex + 1} 列${columnIndex + 1}`,
+                    "aria-label": t(
+                      `${ariaLabel} 行${rowIndex + 1} 列${columnIndex + 1}`,
+                      `${ariaLabel} row ${rowIndex + 1}, column ${columnIndex + 1}`,
+                    ),
                     "data-spreadsheet-cell": true,
                     "data-spreadsheet-row": rowIndex,
                     "data-spreadsheet-column": columnIndex,
@@ -319,7 +334,7 @@ export function DelimitedTextSpreadsheet({
                           }
                           onKeyDown={handleKeyDown}
                         >
-                          <option value="">選択</option>
+                          <option value="">{t("選択", "Select")}</option>
                           {!options.includes(cell) && cell ? (
                             <option value={cell}>{cell}</option>
                           ) : null}
@@ -354,25 +369,39 @@ export function DelimitedTextSpreadsheet({
           </tbody>
         </table>
       </div>
-      <p>Excelから範囲をコピーし、左上のセルへそのまま貼り付けられます。空欄も保持します。</p>
+      <p>
+        {t(
+          "Excelから範囲をコピーし、左上のセルへそのまま貼り付けられます。空欄も保持します。",
+          "Copy a range from Excel and paste it directly into the top-left cell. Blank cells are preserved.",
+        )}
+      </p>
       <div className="delimited-spreadsheet__workbook-import">
         <button
           type="button"
           onClick={() => void openWorkbook()}
           disabled={workbookImporting || !workbookImportEnabled}
           title={
-            workbookImportEnabled ? undefined : "XLS / XLSX直接読込はデスクトップ版で利用できます"
+            workbookImportEnabled
+              ? undefined
+              : t(
+                  "XLS / XLSX直接読込はデスクトップ版で利用できます",
+                  "Direct XLS / XLSX import is available in the desktop app",
+                )
           }
         >
-          {workbookImporting ? "Excelを読込中…" : "XLS / XLSXを直接読み込む"}
+          {workbookImporting
+            ? t("Excelを読込中…", "Loading Excel…")
+            : t("XLS / XLSXを直接読み込む", "Import XLS / XLSX directly")}
         </button>
-        {!workbookImportEnabled ? <span>デスクトップ版で利用できます</span> : null}
+        {!workbookImportEnabled ? (
+          <span>{t("デスクトップ版で利用できます", "Available in the desktop app")}</span>
+        ) : null}
         {importedWorkbook && importedWorkbook.sheets.length > 1 ? (
           <>
             <label>
-              worksheetを1枚読み込む
+              {t("worksheetを1枚読み込む", "Import one worksheet")}
               <select
-                aria-label="読み込むworksheet"
+                aria-label={t("読み込むworksheet", "Worksheet to import")}
                 value={selectedSheetIndex}
                 onChange={(event) => {
                   const nextIndex = Number(event.currentTarget.value);
@@ -389,7 +418,10 @@ export function DelimitedTextSpreadsheet({
             </label>
             {allowWorkbookSheetStacking ? (
               <button type="button" onClick={() => applyAllSheetsAsExperiments(importedWorkbook)}>
-                全worksheetをExpとしてまとめる
+                {t(
+                  "全worksheetをExpとしてまとめる",
+                  "Combine all worksheets as experiments",
+                )}
               </button>
             ) : null}
           </>
@@ -401,14 +433,18 @@ export function DelimitedTextSpreadsheet({
         ) : null}
         {(importedWorkbook?.sheets[selectedSheetIndex]?.formulaCellCount ?? 0) > 0 ? (
           <p role="note">
-            数式セル {importedWorkbook?.sheets[selectedSheetIndex]?.formulaCellCount}
-            件は、Excel保存時の計算結果を読み込みました。BioFigureStat内では数式を再計算しません。
+            {t(
+              `数式セル ${importedWorkbook?.sheets[selectedSheetIndex]?.formulaCellCount}件は、Excel保存時の計算結果を読み込みました。BioFigureStat内では数式を再計算しません。`,
+              `${importedWorkbook?.sheets[selectedSheetIndex]?.formulaCellCount} formula cells use the calculated values stored by Excel. BioFigureStat does not recalculate formulas.`,
+            )}
           </p>
         ) : null}
         {allowWorkbookSheetStacking && importedWorkbook && importedWorkbook.sheets.length > 1 ? (
           <p role="note">
-            まとめるとworksheet名を「Experiment /
-            worksheet」列へ残します。別々の実験回や統計的なnであることは自動判定しません。
+            {t(
+              "まとめるとworksheet名を「Experiment / worksheet」列へ残します。別々の実験回や統計的なnであることは自動判定しません。",
+              "When combined, worksheet names are retained in an Experiment / worksheet column. BioFigureStat does not infer that worksheets are separate experimental runs or statistical n.",
+            )}
           </p>
         ) : null}
         {workbookImportError ? <p role="alert">{workbookImportError}</p> : null}

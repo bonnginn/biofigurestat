@@ -862,11 +862,14 @@ export function GraphStatisticsPanel({
               <strong>{t("実験の組み立てで回答済み", "Already declared in experiment setup")}:</strong>
               {matchedAnalysis
                 ? sharedSourcePairing
-                  ? `同じ${sharedSourcePairing.sourceLabel}に由来する条件別${sharedSourcePairing.unitLabel}を共有IDで対応づけます。`
-                  : "同じ実験単位を条件間で対応づけます。"
+                  ? t(
+                      `同じ${sharedSourcePairing.sourceLabel}に由来する条件別${sharedSourcePairing.unitLabel}を共有IDで対応づけます。`,
+                      `Condition-specific ${sharedSourcePairing.unitLabel} from the same ${sharedSourcePairing.sourceLabel} are matched by shared ID.`,
+                    )
+                  : t("同じ実験単位を条件間で対応づけます。", "The same experimental units are matched across conditions.")
                 : correlationAnalysis
-                  ? "同じ実験単位から得たXとYを1組として扱います。"
-                  : "条件ごとに別々の実験単位を扱います。"}
+                  ? t("同じ実験単位から得たXとYを1組として扱います。", "X and Y from the same experimental unit are treated as one pair.")
+                  : t("条件ごとに別々の実験単位を扱います。", "Each condition uses separate experimental units.")}
             </p>
           ) : (
             <>
@@ -884,7 +887,10 @@ export function GraphStatisticsPanel({
                             ? sharedSourcePairing
                               ? `同じ${sharedSourcePairing.sourceLabel}に由来する条件別${sharedSourcePairing.unitLabel}が、共有IDで正しく対応づけられています。条件別${sharedSourcePairing.unitLabel}は別の実験単位です。`
                               : `同じ実験単位の${conditionOptions.length || "複数"}条件が、stable unit IDで正しく対応づけられています。`
-                            : "各条件は別々のdish・試料・動物などの実験単位です。同じ個体や同じ試料を両条件で測った対応データではありません。"
+                            : t(
+                                "各条件は別々のdish・試料・動物などの実験単位です。同じ個体や同じ試料を両条件で測った対応データではありません。",
+                                "Each condition uses separate experimental units such as dishes, specimens, or animals. This is not matched data measured from the same subject or specimen in both conditions.",
+                              )
                   }
                   checked={independenceConfirmed}
                   onChange={(event) => setIndependenceConfirmed(event.target.checked)}
@@ -900,11 +906,14 @@ export function GraphStatisticsPanel({
                           ? sharedSourcePairing
                             ? "共有する由来と、条件別の実験単位を確認しました。"
                             : "同じ実験単位の対応を確認しました。"
-                          : "条件間で実験単位が独立していることを確認しました。"}
+                          : t(
+                              "条件間で実験単位が独立していることを確認しました。",
+                              "I confirmed that experimental units are independent across conditions.",
+                            )}
                 </span>
               </label>
               <details className="experiment-graph-confirmation-details">
-                <summary>確認内容の詳細</summary>
+                <summary>{t("確認内容の詳細", "Confirmation details")}</summary>
                 <p className="experiment-graph-help">
                   {independentNestedSourceContext
                     ? `各${independentNestedSourceContext.nestedObservationLabel}を独立nとして数えず、親${independentNestedSourceContext.unitLabel}ごとに集約します。同じrun/source preparationから条件別${independentNestedSourceContext.unitLabel}を分けた場合は、独立群として実行せず実験の組み立てで共有材料・実験回を登録してください。単に同日という理由ではpairにしません。`
@@ -914,7 +923,10 @@ export function GraphStatisticsPanel({
                         ? sharedSourcePairing
                           ? `日付や行順から対応を推測していません。${sharedSourcePairing.sourceLabel}の共有IDで明示された完全な組だけを解析し、条件別${sharedSourcePairing.unitLabel}のIDは別々に保持します。`
                           : "日付の一致から対応を推測していません。実験設計で明示した対応と、完全な組だけを解析します。"
-                        : "同じ日に実施しただけでは、自動的に「対応あり」にはしません。同じ単位を両条件で測った場合は実行せず、設計を修正してください。"}
+                        : t(
+                            "同じ日に実施しただけでは、自動的に「対応あり」にはしません。同じ単位を両条件で測った場合は実行せず、設計を修正してください。",
+                            "Measurements made on the same day are not automatically treated as matched. If the same units were measured in both conditions, do not run this analysis; correct the design first.",
+                          )}
                 </p>
                 {independentNestedSourceContext && onCorrectionRequested ? (
                   <button

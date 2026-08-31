@@ -2353,8 +2353,10 @@ function ProportionSummary({ series }: { series: readonly GraphSeries[] }) {
 }
 
 function NestedSummary({ series }: { series: readonly GraphSeries[] }) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   return (
-    <div className="experiment-graph-data-summary" aria-label="階層データの要約">
+    <div className="experiment-graph-data-summary" aria-label={t("階層データの要約", "Hierarchical-data summary")}>
       {series.map((item) => (
         <div className="experiment-graph-summary-row" key={item.seriesKey}>
           <strong>
@@ -2362,7 +2364,10 @@ function NestedSummary({ series }: { series: readonly GraphSeries[] }) {
             {item.timeLabel ? `・${item.timeLabel}` : ""}
           </strong>
           <span>
-            実験単位 {item.experimentPoints.length}、細胞・ROI {item.rawPoints.length}
+            {t(
+              `実験単位 ${item.experimentPoints.length}、細胞・ROI ${item.rawPoints.length}`,
+              `Experimental units ${item.experimentPoints.length}, cells/ROIs ${item.rawPoints.length}`,
+            )}
           </span>
         </div>
       ))}
@@ -3946,7 +3951,10 @@ export function ExperimentGraphWorkbench({
                         ? `各点は実験単位（Exp）ごとの${readout.label} / ${readout.referenceLabel ?? "reference"}です。標的とreferenceの生値は別々に保持しています。`
                         : shape === "proportion"
                           ? `現在の表示：${activeLayerDescription}。割合と要約は実験単位（Exp）から計算しています。`
-                          : `現在の表示：${activeLayerDescription}。細胞・ROIなどの生データを表示しても、統計上のnは実験単位です。`}
+                          : t(
+                              `現在の表示：${activeLayerDescription}。細胞・ROIなどの生データを表示しても、統計上のnは実験単位です。`,
+                              `Current display: ${activeLayerDescription}. Showing raw cell or ROI data does not change statistical n, which remains the experimental unit.`,
+                            )}
             </p>
             <details className="experiment-graph-data-details">
               <summary>{t("使用データの内訳を表示", "Show data used")}</summary>
@@ -3987,8 +3995,8 @@ export function ExperimentGraphWorkbench({
                   onChange={(event) => inspectGraphPart(event.target.value as InspectorTarget)}
                 >
                   <option value="background">{t("グラフ全体", "Entire Graph")}</option>
-                  <option value="x-axis">X軸</option>
-                  <option value="y-axis">Y軸</option>
+                  <option value="x-axis">{t("X軸", "X axis")}</option>
+                  <option value="y-axis">{t("Y軸", "Y axis")}</option>
                   <option value="data">{t("データ", "Data")}</option>
                   <option value="raw-dots">{t("生データの点", "Raw-data points")}</option>
                   <option value="experiment-summary">{t("実験単位の要約", "Experimental-unit summary")}</option>
@@ -4047,7 +4055,7 @@ export function ExperimentGraphWorkbench({
             <section className="experiment-graph-inspector-section experiment-statistics-source">
               <h3>{t("解析対象", "Analysis set")}</h3>
               <label className="experiment-graph-field">
-                <span>測定項目</span>
+                <span>{t("測定項目", "Measured readout")}</span>
                 <select
                   value={activeReadoutId}
                   disabled={draft.readouts.length <= 1}
@@ -4122,11 +4130,11 @@ export function ExperimentGraphWorkbench({
             <section className="experiment-graph-inspector-section">
               <h3>{t("表示するデータ", "Data to display")}</h3>
               <label className="experiment-graph-field">
-                <span>測定項目</span>
+                <span>{t("測定項目", "Measured readout")}</span>
                 <select
                   value={activeReadoutId}
                   disabled={draft.readouts.length <= 1}
-                  aria-label="測定項目"
+                  aria-label={t("測定項目", "Measured readout")}
                   onChange={(event) => {
                     const nextReadout = draft.readouts.find(({ id }) => id === event.target.value);
                     setSelectedReadoutId(event.target.value);
@@ -4146,11 +4154,11 @@ export function ExperimentGraphWorkbench({
               </label>
               {draft.analysisIntent.kind !== "correlation" ? (
                 <fieldset className="experiment-graph-condition-fieldset">
-                  <legend>実験要因の表示割り当て</legend>
+                  <legend>{t("実験要因の表示割り当て", "Map experimental factors to the display")}</legend>
                   <label className="experiment-graph-field">
-                    <span>X軸</span>
+                    <span>{t("X軸", "X axis")}</span>
                     <select
-                      aria-label="X軸に使う要因"
+                      aria-label={t("X軸に使う要因", "Factor used on the X axis")}
                       value={
                         axes.xSemantic !== "categorical"
                           ? "time"
@@ -4175,10 +4183,12 @@ export function ExperimentGraphWorkbench({
                     >
                       {axes.xSemantic !== "categorical" || draft.time.points.length > 0 ? (
                         <option value="time">
-                          {axes.xSemantic === "numeric_covariate" ? axes.xTitle || "数値X" : "時間"}
+                            {axes.xSemantic === "numeric_covariate"
+                              ? axes.xTitle || t("数値X", "Numeric X")
+                              : t("時間", "Time")}
                         </option>
                       ) : null}
-                      <option value="condition">条件の組み合わせ</option>
+                      <option value="condition">{t("条件の組み合わせ", "Condition combination")}</option>
                       {draft.attributes
                         .filter(
                           ({ id }) =>
@@ -4196,7 +4206,7 @@ export function ExperimentGraphWorkbench({
                   </label>
                   {grouping.x.source === "factor" && draft.attributes.length > 1 ? (
                     <label className="experiment-graph-field">
-                      <span>X階層（複数選択可）</span>
+                      <span>{t("X階層（複数選択可）", "X hierarchy (multiple selection allowed)")}</span>
                       <select
                         multiple
                         aria-label="X hierarchy factors"
@@ -4238,9 +4248,9 @@ export function ExperimentGraphWorkbench({
                     </label>
                   ) : null}
                   <label className="experiment-graph-field">
-                    <span>系列（色・記号）</span>
+                    <span>{t("系列（色・記号）", "Series (color and symbol)")}</span>
                     <select
-                      aria-label="系列に使う要因"
+                      aria-label={t("系列に使う要因", "Factor used for series")}
                       value={
                         axes.xSemantic !== "categorical"
                           ? "condition"
@@ -4282,11 +4292,11 @@ export function ExperimentGraphWorkbench({
                       }}
                     >
                       {axes.xSemantic !== "categorical" ? (
-                        <option value="condition">条件の組み合わせ</option>
+                        <option value="condition">{t("条件の組み合わせ", "Condition combination")}</option>
                       ) : null}
-                      <option value="none">なし</option>
+                      <option value="none">{t("なし", "None")}</option>
                       {draft.time.points.length > 0 ? (
-                        <option value="time">時間 / numeric X</option>
+                        <option value="time">{t("時間 / numeric X", "Time / numeric X")}</option>
                       ) : null}
                       {draft.attributes
                         .filter(({ id }) => {
@@ -4315,7 +4325,7 @@ export function ExperimentGraphWorkbench({
                         setGrouping((current) => swapSingleXFactorAndSeries(current) ?? current)
                       }
                     >
-                      X軸と系列を入れ替える
+                      {t("X軸と系列を入れ替える", "Swap X axis and series")}
                     </button>
                   ) : null}
                   {axes.xSemantic !== "categorical" ? (
@@ -4325,9 +4335,9 @@ export function ExperimentGraphWorkbench({
                     </p>
                   ) : null}
                   <label className="experiment-graph-field">
-                    <span>パネル分割</span>
+                    <span>{t("パネル分割", "Panel split")}</span>
                     <select
-                      aria-label="パネル分割に使う要因"
+                      aria-label={t("パネル分割に使う要因", "Factor used to split panels")}
                       value={grouping.facet?.factorId ?? "none"}
                       onChange={(event) =>
                         setGrouping((current) => ({
@@ -4344,7 +4354,7 @@ export function ExperimentGraphWorkbench({
                         }))
                       }
                     >
-                      <option value="none">なし</option>
+                      <option value="none">{t("なし", "None")}</option>
                       {draft.attributes
                         .filter(({ id }) => {
                           const xFactorIds =
@@ -4369,8 +4379,10 @@ export function ExperimentGraphWorkbench({
                     </select>
                   </label>
                   <p className="experiment-graph-help">
-                    見た目の系列・Facetは、paired / repeated /
-                    independentの統計的関係を変更しません。
+                    {t(
+                      "見た目の系列・Facetは、paired / repeated / independentの統計的関係を変更しません。",
+                      "Visual series and facets do not change the paired, repeated, or independent statistical relationship.",
+                    )}
                   </p>
                 </fieldset>
               ) : null}
@@ -4380,7 +4392,7 @@ export function ExperimentGraphWorkbench({
                   className="experiment-graph-series-style-shortcut"
                   onClick={() => inspectGraphPart("series-style")}
                 >
-                  系列の色・線・点を編集
+                  {t("系列の色・線・点を編集", "Edit series colors, lines, and points")}
                 </button>
               ) : null}
               {draft.time.sampling === "longitudinal" && draft.time.points.length > 1 ? (
@@ -4493,7 +4505,7 @@ export function ExperimentGraphWorkbench({
                 </fieldset>
               )}
               <fieldset className="experiment-graph-condition-fieldset">
-                <legend>{draft.analysisIntent.kind === "correlation" ? "X / Y" : "条件"}</legend>
+                <legend>{draft.analysisIntent.kind === "correlation" ? "X / Y" : t("条件", "Conditions")}</legend>
                 {draft.conditions.map((condition) => (
                   <label className="experiment-graph-checkbox" key={condition.id}>
                     <input
