@@ -71,6 +71,7 @@ import {
   SpreadsheetGridInput,
   type SpreadsheetGridInputProps,
 } from "../components/SpreadsheetGridInput";
+import { nextRovingTabIndex } from "../components/rovingTab";
 import "./DataSheetPage.grid.css";
 
 type DataSheetPageProps = {
@@ -1522,12 +1523,7 @@ export function DataSheetPage({
     event: KeyboardEvent<HTMLButtonElement>,
     currentIndex: number,
   ) => {
-    let nextIndex: number | null = null;
-    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % WORKFLOW_TABS.length;
-    if (event.key === "ArrowLeft")
-      nextIndex = (currentIndex - 1 + WORKFLOW_TABS.length) % WORKFLOW_TABS.length;
-    if (event.key === "Home") nextIndex = 0;
-    if (event.key === "End") nextIndex = WORKFLOW_TABS.length - 1;
+    const nextIndex = nextRovingTabIndex(event.key, currentIndex, WORKFLOW_TABS.length);
     if (nextIndex === null) return;
     event.preventDefault();
     const nextTab = WORKFLOW_TABS[nextIndex].id;
@@ -1684,12 +1680,9 @@ export function DataSheetPage({
                   tabIndex={activeUnitIndex === index ? 0 : -1}
                   onClick={() => setActiveUnitIndex(index)}
                   onKeyDown={(event) => {
-                    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                    const nextIndex = nextRovingTabIndex(event.key, index, unitCount);
+                    if (nextIndex === null) return;
                     event.preventDefault();
-                    const nextIndex =
-                      event.key === "ArrowRight"
-                        ? (index + 1) % unitCount
-                        : (index - 1 + unitCount) % unitCount;
                     setActiveUnitIndex(nextIndex);
                     document.getElementById(`data-sheet-unit-tab-${nextIndex}`)?.focus();
                   }}

@@ -74,6 +74,7 @@ import {
   SpreadsheetGridInput,
   type SpreadsheetGridInputProps,
 } from "../components/SpreadsheetGridInput";
+import { nextRovingTabIndex } from "../components/rovingTab";
 import "./MultiConditionDataSheetPage.css";
 
 type Props = {
@@ -514,16 +515,7 @@ export function MultiConditionDataSheetPage({
   };
 
   const onReplicateTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tabIndex: number) => {
-    const next =
-      event.key === "ArrowRight"
-        ? (tabIndex + 1) % Math.max(replicateCount, 1)
-        : event.key === "ArrowLeft"
-          ? (tabIndex - 1 + Math.max(replicateCount, 1)) % Math.max(replicateCount, 1)
-          : event.key === "Home"
-            ? 0
-            : event.key === "End"
-              ? Math.max(replicateCount - 1, 0)
-              : null;
+    const next = nextRovingTabIndex(event.key, tabIndex, replicateCount);
     if (next === null) return;
     event.preventDefault();
     setActiveReplicateIndex(next);
@@ -1008,16 +1000,7 @@ export function MultiConditionDataSheetPage({
   };
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const next =
-      event.key === "ArrowRight"
-        ? (index + 1) % TABS.length
-        : event.key === "ArrowLeft"
-          ? (index - 1 + TABS.length) % TABS.length
-          : event.key === "Home"
-            ? 0
-            : event.key === "End"
-              ? TABS.length - 1
-              : null;
+    const next = nextRovingTabIndex(event.key, index, TABS.length);
     if (next === null) return;
     event.preventDefault();
     setActiveTab(TABS[next].id);
