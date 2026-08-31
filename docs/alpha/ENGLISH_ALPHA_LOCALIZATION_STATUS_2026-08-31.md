@@ -46,7 +46,7 @@ the application does not convert, discard, or overwrite the project.
 
 ## Verification
 
-- UI full test: 162 files, 1,198 tests passed.
+- UI full test: 162 files, 1,200 tests passed.
 - Shared packages and telemetry worker: 278 tests passed.
 - English localization focused tests cover Home, entry hub, simple entry, Biological Interview,
   project discovery, Help/About/reporting, Graph-only safe handoff, common Graph creation,
@@ -61,17 +61,24 @@ the application does not convert, discard, or overwrite the project.
 ## Windows native candidate
 
 The source-level production paths have automated no-Japanese rendering coverage. A Windows x64
-candidate was built with revision `e6d442c-alpha.20260901.win-night1`:
+candidate was built with revision `a6a186f-alpha.20260901.win-review2`:
 
 - installer: `apps/desktop/src-tauri/target/release/bundle/nsis/BioFigureStat_0.1.0_x64-setup.exe`;
-- size: 47,891,826 bytes;
-- SHA-256: `719264C4213ACA0F78DCB926C2F995556808D419193EA4ED6812EADB28038E6C`;
+- size: 47,880,936 bytes;
+- SHA-256: `C6D4C37E96A0D17876EB2B9D93F3076A8A23130084915105BFDD77DE553C3FBD`;
 - Windows bundle verification: pass;
 - release bundle verification: pass;
 - packaged statistical-engine smoke checks: pass;
 - exact packaged-executable native UI regression: pass. This includes an isolated English
   session, application-copy audit, architecture IPC, exact export bytes, real Graph-only input,
   Statistics validation visibility/focus, native Close, Cancel retention, and explicit discard.
+
+The Windows review also found and fixed two Graph-only gaps before this candidate: the English
+default Graph title no longer starts in Japanese, and a saved Graph that explicitly allowed one
+series per source row reopens with Graph and Statistics available. Save and Save As are now visible
+beside the Graph-only workspace tabs. The regression uses the same sample-ID/Treatment/Measurement
+shape that exposed the issue and verifies table, mapping, active Graph, and enabled tabs after
+reopen.
 
 This candidate has not yet received a short human English-language review. A macOS candidate has
 not been built. Do not publish English assets until native lifecycle/export checks and human review

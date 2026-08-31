@@ -129,25 +129,32 @@ exposed duplicate `x.-5` ticks for a one-value finite range. The shared nice-tic
 one stable tick for such a degenerate range; Graph-layout, nonlinear Graph, and the full focused
 workflow pass together (50/50) without the React warning.
 
-For the English-localization branch, the full UI suite passes with 162 files and 1,198 tests.
+For the English-localization branch, the full UI suite passes with 162 files and 1,200 tests.
 English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
 and image alternative text across the production surfaces. Typecheck, lint, and the production UI
-build pass. Windows candidate `e6d442c-alpha.20260901.win-night1` passes the Windows bundle verifier,
+build pass. Windows candidate `a6a186f-alpha.20260901.win-review2` passes the Windows bundle verifier,
 release bundle verifier, packaged-engine smoke checks, and the exact-executable native UI scenario.
 Its installer SHA-256 is
-`719264C4213ACA0F78DCB926C2F995556808D419193EA4ED6812EADB28038E6C`. Windows human language/layout
+`C6D4C37E96A0D17876EB2B9D93F3076A8A23130084915105BFDD77DE553C3FBD`. Windows human language/layout
 review and the macOS native candidate remain outstanding.
 
 Post-Alpha native regression automation now has a complete Windows packaged-app PASS. The
 dependency-free harness launches the exact Tauri executable with an isolated WebView2 profile and
 drives architecture IPC, exact native export, real Graph-only entry and mapping, Statistics
 validation visibility/focus, and the dirty-window Close / Cancel / Discard lifecycle while
-recording screenshots and JSON evidence. Revision `e6d442c-alpha.20260901.win-night1` passed every
+recording screenshots and JSON evidence. Revision `a6a186f-alpha.20260901.win-review2` passed every
 step on this host; evidence is under
-`.tmp/native-ui-regression/nightly-20260901-final/`. The transient blank-target startup race remains
+`.tmp/native-ui-regression/win-review2-clean/`. The transient blank-target startup race remains
 classified separately from product regressions. The macOS Accessibility adapter is implemented,
 but a permissioned Mac run is still required before the gate is cross-platform. See
 `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md`.
+
+Windows human review found that a Graph-only project whose sample-ID column had been explicitly
+accepted as one series per row reopened with its table intact but its Graph and Statistics tabs
+disabled. The saved `.lsa` still contained the mapping and active Graph. Revision `a6a186f`
+restores that explicit saved-Graph acceptance, keeps Save and Save As visible in the workspace
+header, and uses an English default title in English mode. The exact user-shaped save/reopen
+regression now passes without changing the schema or stored measurements.
 
 ## Known bounded gaps
 
