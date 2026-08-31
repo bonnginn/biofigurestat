@@ -106,7 +106,10 @@ unchanged detail payload, and define the default/final artifact manifests outsid
 Graph-state diagnostics, usage edit reporting, and benchmark configuration event effects now have
 separately tested hooks: initial projections are not miscounted as edits, repeated fingerprints are
 not re-emitted, and analysis-only changes retain their existing event classification. These
-extractions reduce the workbench to roughly 2,900 lines. Focused workbench and artifact suites,
+extractions now also cover the shared SVG→PNG/hash/base64 capture payload, eligible default-capture
+effect, and final-run controller. Tests preserve the Statistics exclusion for default capture,
+completion prerequisites, descriptive `none_descriptive` semantics, artifact completeness, and
+failure-before-hash behavior. The workbench is reduced to roughly 2,780 lines. Focused workbench and artifact suites,
 typecheck, and lint pass. The expanded full UI suite reached 148/149 files and 1,162/1,163 tests;
 the sole nonlinear-fit presentation wait passed immediately in focused isolation (40/40), so it
 is recorded as a parallel-run flaky rather than a Graph refactor regression. That focused run also
@@ -143,8 +146,9 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   pure Statistics/Methods orchestration boundary are separated. The main general-purpose SVG
   renderer is separated as well; benchmark artifact/event construction, pure state projections,
   usage-edit classification, Graph diagnostics, and benchmark configuration effects are separated.
-  Remaining async analysis execution, default/final benchmark capture, and native artifact writes
-  intentionally remain in the parent and are the next safe extraction boundaries.
+  Default/final benchmark capture is now separated behind tested effect/controller boundaries.
+  Remaining async Statistics execution coordination and native user export/clipboard feedback
+  remain in the parent and are the next safe extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
