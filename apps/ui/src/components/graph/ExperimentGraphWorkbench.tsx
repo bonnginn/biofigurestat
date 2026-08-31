@@ -47,10 +47,8 @@ import {
 } from "../../app/graphExportController";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import {
-  beginDefaultGraphCapture,
   blobToBase64,
   COMPLETE_BENCHMARK_ARTIFACT_NAMES,
-  completeDefaultGraphCapture,
   currentBenchmarkRun,
   recordFinalGraphCapture,
   recordBenchmarkEvent,
@@ -85,8 +83,8 @@ import {
 } from "./experimentGraphInstrumentation";
 import { useExperimentGraphDiagnosticEffects } from "./useExperimentGraphDiagnosticEffects";
 import { useBenchmarkGraphConfigurationEffects } from "./useBenchmarkGraphConfigurationEffects";
+import { useDefaultBenchmarkGraphCapture } from "./useDefaultBenchmarkGraphCapture";
 import {
-  createDefaultBenchmarkGraphArtifacts,
   createFinalBenchmarkArtifacts,
   createBenchmarkRunArtifact,
   createBenchmarkStatisticsArtifact,
@@ -899,59 +897,16 @@ export function ExperimentGraphWorkbench({
       stableUnitId: stableUnitId ?? id,
     })),
   });
-  useLayoutEffect(() => {
-    if (
-      !import.meta.env.DEV ||
-      !evaluationModeIsConfigured(evaluationMode) ||
-      !benchmarkRun.identity ||
-      benchmarkRun.defaultGraphCapture ||
-      !hasData ||
-      workspaceMode === "statistics"
-    )
-      return;
-    const svg = svgRef.current;
-    if (!svg) return;
-    const svgText = serializeGraphSvg(svg);
-    const viewBox = svg.viewBox.baseVal;
-    const capturedAt = new Date().toISOString();
-    if (!beginDefaultGraphCapture(capturedAt)) return;
-    void (async () => {
-      try {
-        const capture = await createBenchmarkGraphCapturePayload(
-          {
-            svgText,
-            width: viewBox.width || svg.width.baseVal.value || 900,
-            height: viewBox.height || svg.height.baseVal.value || 520,
-            analysisState: benchmarkAnalysisState,
-          },
-          { renderPng: svgToPngBlob, sha256: sha256Hex, encodeBase64: blobToBase64 },
-        );
-        await writeBenchmarkArtifacts(
-          createDefaultBenchmarkGraphArtifacts({
-            svgText,
-            pngBase64: capture.pngBase64,
-          }),
-        );
-        completeDefaultGraphCapture({
-          graphStateFingerprint: capture.svgSha256,
-          analysisStateFingerprint: capture.analysisStateFingerprint,
-          svgSha256: capture.svgSha256,
-          pngSha256: capture.pngSha256,
-        });
-        setBenchmarkCaptureStatus("Benchmarkの既定グラフを保存しました。");
-      } catch (error) {
-        recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
-        setBenchmarkCaptureStatus("既定グラフの評価artifactを保存できませんでした。");
-      }
-    })();
-  }, [
-    benchmarkAnalysisState,
-    benchmarkRun.defaultGraphCapture,
-    benchmarkRun.events.length,
-    benchmarkRun.identity,
+  useDefaultBenchmarkGraphCapture({
+    svgRef,
+    identity: benchmarkRun.identity,
+    defaultGraphCapture: benchmarkRun.defaultGraphCapture,
+    eventCount: benchmarkRun.events.length,
     hasData,
     workspaceMode,
-  ]);
+    analysisState: benchmarkAnalysisState,
+    setStatus: setBenchmarkCaptureStatus,
+  });
   const varyingStatisticalAttributes = draft.attributes.filter(
     (attribute) =>
       new Set(
