@@ -69,8 +69,10 @@ candidate.
 For the English-localization branch, the full UI suite passes with 131 files and 1,116 tests.
 English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
 and image alternative text across the production surfaces. Typecheck, lint, and the production UI
-build pass. A Windows/macOS native candidate and human terminology/layout review have not yet been
-completed.
+build pass. Windows candidate `8dec615-alpha.20260831.win-en1` passes the Windows bundle verifier,
+release bundle verifier, and packaged-engine smoke checks. Its installer SHA-256 is
+`B4A30A4288D0DF164766C0B99027E5CC36C4EE7D04AD381659CDD29AC4071554`. Windows human language review
+and the macOS native candidate remain outstanding.
 
 ## Known bounded gaps
 
@@ -81,7 +83,7 @@ completed.
 - Route-level code splitting remains a performance and maintainability follow-up.
 - English localization is covered for the production Public Alpha surfaces. Pre-workspace legacy
   D01-D05 editors use an explicit English compatibility stop rather than a partially translated
-  editor; no English native candidate has been declared ready.
+  editor; no English native release has been declared ready.
 - Beta work includes Graph-preview parity, compact workspace chrome, editable experiment metadata,
   and Kaplan–Meier appearance-control parity while preserving censoring and risk-table semantics.
 - Windows/macOS native UI regression automation is still required; human review should then focus

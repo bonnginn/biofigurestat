@@ -54,16 +54,26 @@ the application does not convert, discard, or overwrite the project.
 - Locale/project boundary test confirms that switching language does not add locale data to the
   serialized project object.
 
-## Not yet an English native candidate
+## Windows native candidate
 
-The source-level production paths now have automated no-Japanese rendering coverage, but no English
-Windows or macOS native candidate has been built or manually reviewed. Do not publish native
-English assets until the final full suite, native lifecycle/export verification, and a short human
-review for terminology, clipping, and layout all pass. The existing Japanese `v0.1.0-alpha.1`
-release is unaffected.
+The source-level production paths have automated no-Japanese rendering coverage. A Windows x64
+candidate was built with revision `8dec615-alpha.20260831.win-en1`:
+
+- installer: `apps/desktop/src-tauri/target/release/bundle/nsis/BioFigureStat_0.1.0_x64-setup.exe`;
+- size: 47,883,753 bytes;
+- SHA-256: `B4A30A4288D0DF164766C0B99027E5CC36C4EE7D04AD381659CDD29AC4071554`;
+- Windows bundle verification: pass;
+- release bundle verification: pass;
+- packaged statistical-engine smoke checks: pass.
+
+This candidate has not yet received a short human English-language review. A macOS candidate has
+not been built. Do not publish English assets until native lifecycle/export checks and human review
+for terminology, clipping, and layout pass on the relevant platform. The existing Japanese
+`v0.1.0-alpha.1` release is unaffected.
 
 ## Next gate
 
-1. Build Windows and macOS native candidates and run the native lifecycle/export verifier.
-2. Exercise language switching, fresh entry, save/reopen, and export on both native candidates.
-3. Perform a short human language review for terminology, clipping, and layout before publishing.
+1. Install the Windows candidate and exercise language switching, fresh entry, save/reopen, and
+   PNG/SVG/CSV export.
+2. Perform a short human Windows language review for terminology, clipping, and layout.
+3. Build and verify the macOS candidate, then repeat the same bounded review.
