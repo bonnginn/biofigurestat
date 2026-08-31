@@ -103,7 +103,10 @@ construction now also uses pure tested builders; request-specific contrasts, des
 not-performed status, event counts, and the existing artifact shape are preserved. These
 builders now also classify benchmark Graph-open/rendered/analysis change events, construct their
 unchanged detail payload, and define the default/final artifact manifests outside the React effect.
-These extractions reduce the workbench to roughly 2,950 lines. Focused workbench and artifact suites,
+Graph-state diagnostics, usage edit reporting, and benchmark configuration event effects now have
+separately tested hooks: initial projections are not miscounted as edits, repeated fingerprints are
+not re-emitted, and analysis-only changes retain their existing event classification. These
+extractions reduce the workbench to roughly 2,900 lines. Focused workbench and artifact suites,
 typecheck, and lint pass. The expanded full UI suite reached 148/149 files and 1,162/1,163 tests;
 the sole nonlinear-fit presentation wait passed immediately in focused isolation (40/40), so it
 is recorded as a parallel-run flaky rather than a Graph refactor regression. That focused run also
@@ -139,9 +142,9 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   editors now have component boundaries. Composition and correlation renderers plus the first
   pure Statistics/Methods orchestration boundary are separated. The main general-purpose SVG
   renderer is separated as well; benchmark artifact/event construction, pure state projections,
-  and usage-edit classification are separated. Remaining async analysis, diagnostic, and benchmark
-  lifecycle effects and native artifact writes intentionally remain in the parent and are the next
-  safe extraction boundaries.
+  usage-edit classification, Graph diagnostics, and benchmark configuration effects are separated.
+  Remaining async analysis execution, default/final benchmark capture, and native artifact writes
+  intentionally remain in the parent and are the next safe extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
