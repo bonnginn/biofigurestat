@@ -17,7 +17,9 @@ The first Windows gate covers:
 - native architecture IPC;
 - visible and accessible application-copy scan for unexpected Japanese text;
 - native export command and exact byte verification;
-- actual New Experiment navigation and dirty-value retention;
+- actual Graph-only table entry, mapping, Graph creation, and Statistics handoff;
+- required biological-structure validation appearing inline and receiving focus;
+- retained Graph-only and biological-answer dirty-value retention;
 - actual native window close interception;
 - Cancel retaining the dirty entry;
 - a second close followed by explicit discard and clean process exit;
@@ -55,7 +57,9 @@ node scripts/native_ui_regression.mjs `
 
 The harness uses a temporary WebView2 user-data folder so it does not change the researcher's real
 locale, consent choice, recent projects, favorites, or project tabs. It starts and terminates only
-the exact process it created.
+the exact process it created. Window-close checks send `WM_CLOSE` to that exact spawned process,
+rather than relying on a WebView IPC permission that may not be present in the least-privilege
+release capability set.
 
 ## First implementation evidence
 
@@ -80,7 +84,10 @@ the CDP scenario on a clean Windows CI/VM image. A CDP-connection failure must r
 `HARNESS_INFRASTRUCTURE_BLOCKED`; it must not be reported as a BioFigureStat product regression.
 
 The runner now also accepts WebView2's transient blank-URL page target and retries when that target
-is replaced during startup. This removed one false infrastructure failure. A formal Tauri rebuild
+is replaced during startup. It waits for that target to navigate to the application origin and for
+origin storage to become available before beginning the scenario; an opaque `about:blank` document
+is infrastructure-blocked rather than a product regression. This removed false failures during the
+native startup race. A formal Tauri rebuild
 on the same host still closes the CDP endpoint after the initial target, so that remaining result is
 kept as host infrastructure evidence rather than converted into a product failure.
 

@@ -8,6 +8,7 @@ import {
   macAccessibilityScript,
   parseNativeRegressionArguments,
   selectWebviewTarget,
+  windowsCloseCommand,
 } from "./native_ui_regression.mjs";
 
 test("parses a bounded Windows native regression invocation", () => {
@@ -46,6 +47,14 @@ test("uses the packaged Windows application as its default exact target", () => 
   assert.match(defaultNativeExecutable("windows"), /target[\\/]release[\\/]lifescience-analysis-app\.exe$/);
 });
 
+test("requests an actual bounded Windows WM_CLOSE for the exact spawned process", () => {
+  const command = windowsCloseCommand(4242);
+  assert.deepEqual(command.slice(0, 2), ["-NoProfile", "-NonInteractive"]);
+  assert.match(command.at(-1), /Get-Process -Id 4242/);
+  assert.match(command.at(-1), /CloseMainWindow/);
+  assert.throws(() => windowsCloseCommand(0), /positive integer/);
+});
+
 test("accepts the fresh WebView2 page target before its initial URL is committed", () => {
   const target = selectWebviewTarget([
     { type: "service_worker", url: "", webSocketDebuggerUrl: "ws://worker" },
@@ -82,6 +91,15 @@ test("separates a missing WebView inspection channel from a product regression",
     classifyNativeRegressionFailure(
       new Error("Native WebView did not expose a CDP target on 127.0.0.1:50000"),
       steps,
+    ),
+    "HARNESS_INFRASTRUCTURE_BLOCKED",
+  );
+  assert.equal(
+    classifyNativeRegressionFailure(
+      new Error(
+        "SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.",
+      ),
+      [{ name: "isolated_english_session", status: "fail" }],
     ),
     "HARNESS_INFRASTRUCTURE_BLOCKED",
   );

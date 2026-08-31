@@ -125,7 +125,25 @@ export function classifyNativeRegressionFailure(error, steps) {
   ) {
     return "HARNESS_INFRASTRUCTURE_BLOCKED";
   }
+  if (
+    failedStep === "isolated_english_session" &&
+    /localStorage.*Access is denied|about:blank|opaque origin/i.test(message)
+  ) {
+    return "HARNESS_INFRASTRUCTURE_BLOCKED";
+  }
   return "PRODUCT_REGRESSION";
+}
+
+export function windowsCloseCommand(processId) {
+  if (!Number.isSafeInteger(processId) || processId <= 0) {
+    throw new Error("Windows native-close process ID must be a positive integer");
+  }
+  return [
+    "-NoProfile",
+    "-NonInteractive",
+    "-Command",
+    `if (-not (Get-Process -Id ${processId} -ErrorAction Stop).CloseMainWindow()) { throw 'Native window did not accept WM_CLOSE' }`,
+  ];
 }
 
 export function macAccessibilityScript(action, names = [], value = "") {
@@ -296,7 +314,30 @@ async function connectToStableWebview(port, initialTarget, timeoutMs, child) {
       const candidate = new CdpClient(target.webSocketDebuggerUrl);
       try {
         await candidate.connect();
-        await candidate.evaluate("document.readyState");
+        const navigationDeadline = Math.min(deadline, Date.now() + 5_000);
+        let appDocumentReady = false;
+        while (Date.now() < navigationDeadline) {
+          const documentState = await candidate.evaluate(`(() => {
+            let storageAccessible = false;
+            try {
+              localStorage.getItem("biofigurestat.native-regression.probe");
+              storageAccessible = true;
+            } catch (_) {}
+            return { href: location.href, readyState: document.readyState, storageAccessible };
+          })()`);
+          if (
+            /^(?:https?|tauri):\/\/tauri\.localhost/.test(documentState?.href ?? "") &&
+            documentState?.readyState !== "loading" &&
+            documentState?.storageAccessible
+          ) {
+            appDocumentReady = true;
+            break;
+          }
+          await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+        }
+        if (!appDocumentReady) {
+          throw new Error("WebView target remained at an opaque or blank document");
+        }
         return { client: candidate, target };
       } catch (error) {
         lastError = error;
@@ -359,10 +400,13 @@ const clickByText = (text) => {
 
 const setInputByLabel = ({ labelText, value }) => {
   const normalize = (candidate) => candidate.replace(/\s+/g, " ").trim();
+  const explicitlyNamed = [...document.querySelectorAll("input, textarea, select")].find(
+    (candidate) => normalize(candidate.getAttribute("aria-label") ?? "") === labelText,
+  );
   const label = [...document.querySelectorAll("label")].find((candidate) =>
     normalize(candidate.textContent ?? "").startsWith(labelText),
   );
-  const input = label?.querySelector("input, textarea, select");
+  const input = explicitlyNamed ?? label?.querySelector("input, textarea, select");
   if (!input) throw new Error(`Could not find input for label: ${labelText}`);
   const prototype = input instanceof HTMLTextAreaElement
     ? HTMLTextAreaElement.prototype
@@ -374,6 +418,43 @@ const setInputByLabel = ({ labelText, value }) => {
   setter.call(input, value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
   input.dispatchEvent(new Event("change", { bubbles: true }));
+  return input.value;
+};
+
+const setInputByTestId = ({ testId, value }) => {
+  const input = document.querySelector(`[data-testid="${testId}"]`);
+  if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement)) {
+    throw new Error(`Could not find spreadsheet input: ${testId}`);
+  }
+  const prototype = input instanceof HTMLSelectElement
+    ? HTMLSelectElement.prototype
+    : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
+  if (!setter) throw new Error(`Input value setter is unavailable: ${testId}`);
+  setter.call(input, value);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.dispatchEvent(new Event("change", { bubbles: true }));
+  return input.value;
+};
+
+const clickControlByLabelText = (labelText) => {
+  const normalize = (candidate) => candidate.replace(/\s+/g, " ").trim();
+  const label = [...document.querySelectorAll("label")].find((candidate) =>
+    normalize(candidate.textContent ?? "").startsWith(labelText),
+  );
+  const control = label?.querySelector("input, select, button");
+  if (!control) throw new Error(`Could not find labeled control: ${labelText}`);
+  control.click();
+  return true;
+};
+
+const inputValueByLabel = (labelText) => {
+  const normalize = (candidate) => candidate.replace(/\s+/g, " ").trim();
+  const label = [...document.querySelectorAll("label")].find((candidate) =>
+    normalize(candidate.textContent ?? "").startsWith(labelText),
+  );
+  const input = label?.querySelector("input, textarea, select");
+  if (!input) throw new Error(`Could not find input for label: ${labelText}`);
   return input.value;
 };
 
@@ -410,6 +491,12 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
       steps.push({ name, status: "fail", durationMs: Date.now() - startedAt, detail: String(error) });
       throw error;
     }
+  };
+  const requestNativeClose = async () => {
+    await execFileAsync("powershell.exe", windowsCloseCommand(child.pid), {
+      timeout: Math.min(timeoutMs, 20_000),
+      windowsHide: true,
+    });
   };
 
   try {
@@ -456,7 +543,7 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
       if (written !== payload.toString("utf8")) throw new Error("Native export bytes changed");
       return { target: exportTarget, bytes: payload.length };
     });
-    await runStep("open_simple_experiment_entry", async () => {
+    await runStep("open_graph_only_statistics_handoff", async () => {
       await client.evaluate(pageAction(clickByText, "New experiment"));
       await waitFor(
         client,
@@ -464,34 +551,79 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         "New Experiment hub",
         timeoutMs,
       );
-      await client.evaluate(`document.querySelector('[data-entry-id="simple"] button').click()`);
+      await client.evaluate(`document.querySelector('[data-entry-id="graphOnly"] button').click()`);
       await waitFor(
         client,
-        `document.body.innerText.includes("Simple independent-group comparison")`,
-        "simple independent-group entry",
+        `document.body.innerText.includes("Create a Graph from your table")`,
+        "Graph-only entry",
+        timeoutMs,
+      );
+      const cells = [
+        ["graph-only-cell-0-0", "Treatment"],
+        ["graph-only-cell-0-1", "Measurement"],
+        ["graph-only-cell-0-2", "sample ID"],
+        ["graph-only-cell-1-0", "Vehicle"],
+        ["graph-only-cell-1-1", "1.0"],
+        ["graph-only-cell-1-2", "S01"],
+        ["graph-only-cell-2-0", "Drug A"],
+        ["graph-only-cell-2-1", "1.5"],
+        ["graph-only-cell-2-2", "S02"],
+        ["graph-only-cell-3-0", "Drug B"],
+        ["graph-only-cell-3-1", "0.7"],
+        ["graph-only-cell-3-2", "S03"],
+      ];
+      for (const [testId, value] of cells) {
+        await client.evaluate(pageAction(setInputByTestId, { testId, value }));
+      }
+      await client.evaluate(pageAction(setInputByLabel, { labelText: "Graph X axis", value: "0" }));
+      await client.evaluate(pageAction(setInputByLabel, { labelText: "Graph measured value", value: "1" }));
+      await client.evaluate(pageAction(setInputByLabel, { labelText: "Subject ID for Graph data", value: "2" }));
+      await client.evaluate(pageAction(clickByText, "Create Graph"));
+      await waitFor(client, `document.body.innerText.includes("Review statistics")`, "Graph workspace", timeoutMs);
+      await client.evaluate(pageAction(clickByText, "Review statistics"));
+      await waitFor(
+        client,
+        `document.body.innerText.includes("Add experiment information required for statistics")`,
+        "Graph-only Statistics handoff",
+        timeoutMs,
+      );
+      await client.evaluate(pageAction(clickControlByLabelText, "Treatment or group"));
+      await client.evaluate(pageAction(setInputByLabel, { labelText: "ID column identifying the subject or sample", value: "2" }));
+      await client.evaluate(pageAction(clickByText, "Continue to experiment structure"));
+      await waitFor(
+        client,
+        `document.body.innerText.includes("Information needed for statistics")`,
+        "biological structure questions",
         timeoutMs,
       );
       const findings = await client.evaluate(japaneseUiAuditExpression());
       if (findings.length) throw new Error(`Japanese application copy found: ${JSON.stringify(findings)}`);
-      await captureScreenshot(client, join(outputDirectory, "simple-independent-entry.png"));
+      await captureScreenshot(client, join(outputDirectory, "graph-only-statistics-handoff.png"));
       return { findings: 0 };
     });
-    await runStep("dirty_entry_retains_values", async () => {
-      await client.evaluate(pageAction(setInputByLabel, { labelText: "Experiment title", value: "Native regression experiment" }));
-      await client.evaluate(pageAction(setInputByLabel, { labelText: "Measured readout", value: "Reporter intensity" }));
-      await client.evaluate(pageAction(setInputByLabel, { labelText: "Experimental unit assigned", value: "culture dish" }));
-      const value = await client.evaluate(`document.querySelector('.simple-group-entry input').value`);
-      if (value !== "Native regression experiment") throw new Error("React input did not retain the entered title");
+    await runStep("statistics_validation_is_visible_and_focused", async () => {
+      await client.evaluate(pageAction(setInputByLabel, {
+        labelText: "What unit directly received a condition or was assigned to a group?",
+        value: "culture dish",
+      }));
+      await client.evaluate(pageAction(clickByText, "Continue to statistics setup"));
+      await waitFor(
+        client,
+        `document.activeElement?.getAttribute("role") === "alert" && document.activeElement?.closest("section")?.querySelector("#material-heading") !== null`,
+        "inline relationship validation",
+        timeoutMs,
+      );
+      const alertText = await client.evaluate(`document.activeElement?.textContent?.trim() ?? ""`);
+      if (!alertText.includes("Select how subjects or specimens are related across conditions")) {
+        throw new Error(`Unexpected Statistics validation: ${alertText}`);
+      }
       // Give React's dirty-state effect one turn to publish to the native lifecycle
-      // adapter. The input value itself is verified above; it is not rendered in
-      // innerText and therefore must not be used as a DOM-text wait condition.
+      // adapter after the retained Graph-only table and biological answer change.
       await new Promise((resolvePromise) => setTimeout(resolvePromise, 250));
-      return { title: value };
+      return { alertText };
     });
     await runStep("native_close_requires_guard_and_cancel_retains_work", async () => {
-      await client.evaluate(
-        `window.__TAURI_INTERNALS__.invoke("plugin:window|close", { label: "main" })`,
-      );
+      await requestNativeClose();
       await waitFor(
         client,
         `document.querySelector('.unsaved-changes-dialog') !== null`,
@@ -507,14 +639,15 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         "close guard cancellation",
         timeoutMs,
       );
-      const value = await client.evaluate(`document.querySelector('.simple-group-entry input').value`);
-      if (value !== "Native regression experiment") throw new Error("Cancel lost the dirty entry");
-      return { retainedTitle: value };
+      const value = await client.evaluate(pageAction(
+        inputValueByLabel,
+        "What unit directly received a condition or was assigned to a group?",
+      ));
+      if (value !== "culture dish") throw new Error("Cancel lost the retained biological-unit answer");
+      return { retainedExperimentalUnit: value };
     });
     await runStep("native_close_discard_exits", async () => {
-      await client.evaluate(
-        `window.__TAURI_INTERNALS__.invoke("plugin:window|close", { label: "main" })`,
-      );
+      await requestNativeClose();
       await waitFor(
         client,
         `document.querySelector('.unsaved-changes-dialog') !== null`,
