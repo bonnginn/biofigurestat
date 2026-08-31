@@ -86,8 +86,10 @@ import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluation
 import { routeFromPath } from "../../app/routes";
 import { recordUsageGraphEdit } from "../../app/usageTelemetry";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
+import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
 import { ExperimentGraphXAxisEditor } from "./ExperimentGraphXAxisEditor";
 import { ExperimentGraphYAxisEditor } from "./ExperimentGraphYAxisEditor";
+import { GRAPH_PALETTES } from "./graphAppearance";
 import {
   analysisTestAnnotationLabel,
   createAdjustedComparisonAnnotation,
@@ -125,7 +127,6 @@ import "./graph-workbench.css";
 type LayerState = WorkspaceGraphState["layers"];
 
 type ErrorBarMode = "sd" | "sem" | "none";
-type PaletteMode = GraphAppearance["palette"];
 type InspectorTarget =
   | "background"
   | "x-axis"
@@ -169,13 +170,6 @@ export type ExperimentGraphWorkbenchProps = Readonly<{
   onAnalysisCorrection?: (correction: DraftAnalysisCorrection) => void;
 }>;
 
-const PALETTES: Record<PaletteMode, readonly string[]> = {
-  single: ["#245c8a"],
-  condition: ["#245c8a", "#c26532", "#3e7c67", "#735a8d", "#9a7628", "#467681"],
-  grayscale: ["#111111", "#4b5563", "#7a828d", "#a0a6ad", "#c0c4c9"],
-  colorblind: ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9"],
-  publication: ["#2B5F8A", "#A45137", "#47745D", "#6C5A80", "#8A6B28", "#467681"],
-};
 const DEFAULT_LAYERS: LayerState = {
   raw: true,
   distribution: true,
@@ -727,7 +721,7 @@ function ExperimentGraphSvg({
     statisticsLegendHeight;
   margin.bottom = baseBottomMargin + extraLabelHeight + xAxisTitleHeight + statisticsLegendHeight;
   const plotHeight = height - margin.top - margin.bottom;
-  const baseColors = PALETTES[appearance.palette];
+  const baseColors = GRAPH_PALETTES[appearance.palette];
   const visualSeriesKeys = [...new Set(series.map((item) => item.visualSeriesKey))];
   const colors = visualSeriesKeys.map(
     (seriesKey, index) =>
@@ -2009,7 +2003,9 @@ function CompositionGraphSvg({
       : 100;
   const yFor = (value: number) => margin.top + ((maximum - value) / maximum) * plotHeight;
   const colors =
-    appearance.palette === "single" ? PALETTES.colorblind : PALETTES[appearance.palette];
+    appearance.palette === "single"
+      ? GRAPH_PALETTES.colorblind
+      : GRAPH_PALETTES[appearance.palette];
   const yTicks = createNiceTicks(0, maximum, 5, null);
   const tickDirection = axes.tickDirection ?? "outside";
   const yTickDelta = tickDirection === "inside" ? 1 : -1;
@@ -2314,7 +2310,7 @@ function CorrelationGraphSvg({
           cx={xFor(pair.x)}
           cy={yFor(pair.y)}
           r={appearance.pointSize}
-          fill={appearance.seriesColors["scatter"] ?? PALETTES[appearance.palette][0]}
+          fill={appearance.seriesColors["scatter"] ?? GRAPH_PALETTES[appearance.palette][0]}
           className="experiment-graph-point"
           data-experimental-unit={pair.id}
         />
@@ -4479,233 +4475,34 @@ export function ExperimentGraphWorkbench({
           ) : null}
 
           {inspectorTarget === "background" ? (
-            <section className="experiment-graph-inspector-section">
-              <h3>{t("グラフの外観", "Graph appearance")}</h3>
-              <label className="experiment-graph-field">
-                <span>{t("基本形", "Graph type")}</span>
-                <select
-                  aria-label="グラフの基本形"
-                  value={graphType}
-                  onChange={(event) => {
-                    const nextType = event.target.value as GraphType;
-                    setGraphType(nextType);
-                    setLayers(defaultLayersForGraphType(nextType, shape));
-                    if (
-                      nextType === "line" &&
-                      draft.time.points.length > 1 &&
-                      activeConditions.length > 1
-                    ) {
-                      setAppearance((current) => ({
-                        ...current,
-                        palette: current.palette === "single" ? "colorblind" : current.palette,
-                        legendPosition:
-                          current.legendPosition === "hidden" ? "right" : current.legendPosition,
-                      }));
-                    }
-                  }}
-                >
-                  {shape === "categorical_counts" ? (
-                    <>
-                      <option value="stacked">Stacked count</option>
-                      <option value="stacked_100">100% stacked</option>
-                      <option value="category_percentage">Category percentage</option>
-                    </>
-                  ) : draft.analysisIntent.kind === "correlation" ? (
-                    <option value="scatter">Scatter</option>
-                  ) : (
-                    <>
-                      <option value="dot">Dot</option>
-                      <option value="box">Box</option>
-                      <option value="violin">Violin</option>
-                      <option value="bar">Bar</option>
-                      <option value="line">Line / Time course</option>
-                      <option
-                        value="paired_dot"
-                        disabled={
-                          draft.conditionAssignment.kind !== "matched" &&
-                          draft.time.sampling !== "longitudinal"
-                        }
-                      >
-                        {t("対応を線で結ぶ", "Connect matched observations")}
-                      </option>
-                    </>
-                  )}
-                </select>
-              </label>
-              <label className="experiment-graph-field">
-                <span>{t("表示プリセット", "Display preset")}</span>
-                <select
-                  aria-label="表示プリセット"
-                  defaultValue="simple"
-                  onChange={(event) =>
-                    applyPreset(
-                      event.target.value as
-                        "simple" | "publication" | "presentation" | "raw" | "replicate",
-                    )
-                  }
-                >
-                  <option value="simple">{t("シンプル", "Simple")}</option>
-                  <option value="publication">{t("論文", "Publication")}</option>
-                  <option value="presentation">{t("発表", "Presentation")}</option>
-                  {shape === "nested_continuous" ? (
-                    <>
-                      <option value="raw">{t("生データ分布を重視", "Emphasize raw-data distribution")}</option>
-                      <option value="replicate">{t("実験単位だけを表示", "Show experimental units only")}</option>
-                    </>
-                  ) : null}
-                </select>
-              </label>
-              <label className="experiment-graph-field">
-                <span>{t("色", "Color")}</span>
-                <select
-                  aria-label="色の使い方"
-                  value={appearance.palette}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      palette: event.target.value as PaletteMode,
-                    }))
-                  }
-                >
-                  <option value="single">{t("抑えた単色", "Muted single color")}</option>
-                  <option value="condition">{t("条件ごとに色分け", "Color by condition")}</option>
-                  <option value="publication">{t("論文向け", "Publication palette")}</option>
-                  <option value="colorblind">{t("色覚多様性対応", "Colorblind-accessible palette")}</option>
-                  <option value="grayscale">{t("グレースケール", "Grayscale")}</option>
-                </select>
-              </label>
-              {appearance.palette !== "single" ? (
-                <details className="experiment-graph-color-details">
-                  <summary>{t("条件ごとの色", "Colors by condition")}</summary>
-                  {activeConditions.map((condition, index) => (
-                    <label className="experiment-graph-color-field" key={condition.id}>
-                      <span>{condition.label}</span>
-                      <input
-                        type="color"
-                        aria-label={`${condition.label}の色`}
-                        value={
-                          appearance.seriesColors[condition.id] ??
-                          PALETTES[appearance.palette][index % PALETTES[appearance.palette].length]
-                        }
-                        onChange={(event) =>
-                          setAppearance((current) => ({
-                            ...current,
-                            seriesColors: {
-                              ...current.seriesColors,
-                              [condition.id]: event.target.value,
-                            },
-                          }))
-                        }
-                      />
-                    </label>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setAppearance((current) => ({ ...current, seriesColors: {} }))}
-                  >
-                    パレット色に戻す
-                  </button>
-                </details>
-              ) : null}
-              <label className="experiment-graph-field">
-                <span>フォント</span>
-                <select
-                  aria-label="グラフのフォント"
-                  value={appearance.fontFamily}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      fontFamily: event.target.value as GraphAppearance["fontFamily"],
-                    }))
-                  }
-                >
-                  <option value="arial">Arial</option>
-                  <option value="helvetica">Helvetica</option>
-                  <option value="system">System Sans Serif</option>
-                </select>
-              </label>
-              <label className="experiment-graph-field">
-                <span>グラフタイトル：{appearance.graphTitleFontSize}px</span>
-                <input
-                  aria-label="グラフタイトルの文字サイズ"
-                  type="range"
-                  min="12"
-                  max="32"
-                  value={appearance.graphTitleFontSize}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      graphTitleFontSize: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-              <label className="experiment-graph-field">
-                <span>キャンバス</span>
-                <select
-                  aria-label="グラフの大きさ"
-                  value={appearance.canvasPreset}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      canvasPreset: event.target.value as GraphAppearance["canvasPreset"],
-                    }))
-                  }
-                >
-                  <option value="compact">Compact</option>
-                  <option value="standard">Standard</option>
-                  <option value="wide">Wide</option>
-                </select>
-              </label>
-              <label className="experiment-graph-field">
-                <span>左右の余白：{appearance.sidePadding}px</span>
-                <input
-                  aria-label="グラフ左右の余白"
-                  type="range"
-                  min="56"
-                  max="180"
-                  step="4"
-                  value={appearance.sidePadding}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      sidePadding: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-              <label className="experiment-graph-field">
-                <span>軸線：{appearance.axisLineWidth.toFixed(1)}px</span>
-                <input
-                  aria-label="軸線の太さ"
-                  type="range"
-                  min="0.8"
-                  max="2.4"
-                  step="0.2"
-                  value={appearance.axisLineWidth}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      axisLineWidth: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-              <button
-                type="button"
-                className="experiment-graph-reset-layout"
-                onClick={() => {
+            <ExperimentGraphAppearanceEditor
+              graphType={graphType}
+              appearance={appearance}
+              readoutShape={shape}
+              analysisIntentKind={draft.analysisIntent.kind}
+              conditionAssignmentKind={draft.conditionAssignment.kind}
+              timeSampling={draft.time.sampling}
+              activeConditions={activeConditions}
+              onGraphTypeChange={(nextType) => {
+                setGraphType(nextType);
+                setLayers(defaultLayersForGraphType(nextType, shape));
+                if (
+                  nextType === "line" &&
+                  draft.time.points.length > 1 &&
+                  activeConditions.length > 1
+                ) {
                   setAppearance((current) => ({
                     ...current,
-                    canvasPreset: "standard",
-                    sidePadding: 72,
+                    palette: current.palette === "single" ? "colorblind" : current.palette,
+                    legendPosition:
+                      current.legendPosition === "hidden" ? "right" : current.legendPosition,
                   }));
-                  setAxes((current) => ({ ...current, spacing: 1 }));
-                }}
-              >
-                レイアウトを自動設定に戻す
-              </button>
-            </section>
+                }
+              }}
+              onApplyPreset={applyPreset}
+              setAxes={setAxes}
+              setAppearance={setAppearance}
+            />
           ) : null}
 
           {inspectorTarget === "raw-dots" ? (
@@ -4918,8 +4715,8 @@ export function ExperimentGraphWorkbench({
                             type="color"
                             value={
                               style.color ??
-                              PALETTES[appearance.palette][
-                                index % PALETTES[appearance.palette].length
+                              GRAPH_PALETTES[appearance.palette][
+                                index % GRAPH_PALETTES[appearance.palette].length
                               ]
                             }
                             onChange={(event) =>
