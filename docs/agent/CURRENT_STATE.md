@@ -90,7 +90,9 @@ capture, or persisted state ownership. The existing 52-test workbench regression
 renderer boundary directly through its public workflow. Canonical cells are now projected into
 Graph series by a separately tested pure adapter: stable experiment/condition/readout/time keys,
 not-planned cells, proportion percentages, nested summaries, WB ratios, derived metrics, and raw
-observation lineage retain their existing meanings. This further reduces the orchestration
+observation lineage retain their existing meanings. Derived-metric lineage rows now use the same
+adapter while preserving each source time point and its value; the focused Graph and adapter suite
+passes with 55 tests. This further reduces the orchestration
 workbench to roughly 3,200 lines. The
 expanded full UI suite passes with 147 files and 1,156 tests; typecheck and lint pass for the
 extracted boundaries.
