@@ -1,4 +1,5 @@
 import type { KeyboardEvent } from "react";
+import { focusSpreadsheetControl, type SpreadsheetControl } from "./spreadsheetFocus";
 
 export type ClipboardMatrix = readonly (readonly string[])[];
 
@@ -9,8 +10,6 @@ export function parseClipboardMatrix(text: string): ClipboardMatrix {
   if (withoutTerminalLine === "") return [[""]];
   return withoutTerminalLine.split("\n").map((row) => row.split("\t"));
 }
-
-type SpreadsheetControl = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
 function controlsFor(control: SpreadsheetControl): SpreadsheetControl[] {
   return [
@@ -25,33 +24,6 @@ function coordinate(control: SpreadsheetControl): { row: number; column: number 
   const row = Number(control.dataset.spreadsheetRow);
   const column = Number(control.dataset.spreadsheetColumn);
   return Number.isInteger(row) && Number.isInteger(column) ? { row, column } : null;
-}
-
-function focusControl(control: SpreadsheetControl) {
-  // Native focus may horizontally recenter a wide worksheet even when the
-  // adjacent cell is already visible. Preserve the current viewport first,
-  // then request only the minimum movement needed for an off-screen target.
-  control.focus({ preventScroll: true });
-  const scrollContainer = control.closest<HTMLElement>(
-    ".adaptive-canonical-spreadsheet__table-wrap, .delimited-spreadsheet__scroll",
-  );
-  if (scrollContainer) {
-    const cellRect = control.getBoundingClientRect();
-    const containerRect = scrollContainer.getBoundingClientRect();
-    if (cellRect.left < containerRect.left) {
-      scrollContainer.scrollLeft -= containerRect.left - cellRect.left;
-    } else if (cellRect.right > containerRect.right) {
-      scrollContainer.scrollLeft += cellRect.right - containerRect.right;
-    }
-    if (cellRect.top < containerRect.top) {
-      scrollContainer.scrollTop -= containerRect.top - cellRect.top;
-    } else if (cellRect.bottom > containerRect.bottom) {
-      scrollContainer.scrollTop += cellRect.bottom - containerRect.bottom;
-    }
-  } else {
-    control.scrollIntoView?.({ block: "nearest", inline: "nearest" });
-  }
-  if (control instanceof HTMLInputElement) control.select();
 }
 
 function restoreFocusAfterCommit(
@@ -77,7 +49,7 @@ function restoreFocusAfterCommit(
     const replacement = table.querySelector<SpreadsheetControl>(
       `[data-spreadsheet-cell="true"][data-spreadsheet-row="${targetCoordinate.row}"][data-spreadsheet-column="${targetCoordinate.column}"]:not(:disabled)`,
     );
-    if (replacement) focusControl(replacement);
+    if (replacement) focusSpreadsheetControl(replacement);
   });
 }
 
@@ -166,7 +138,7 @@ export function moveSpreadsheetFocus(event: KeyboardEvent<SpreadsheetControl>): 
   event.preventDefault();
   const targetCoordinate = coordinate(target);
   const table = current.closest("table");
-  focusControl(target);
+  focusSpreadsheetControl(target);
   if (targetCoordinate) restoreFocusAfterCommit(table, targetCoordinate);
   return true;
 }

@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes, KeyboardEvent } from "react";
+import { focusSpreadsheetControl } from "./spreadsheetFocus";
 
 export type SpreadsheetGridInputProps = InputHTMLAttributes<HTMLInputElement> & {
   gridRow: number;
@@ -10,12 +11,6 @@ function gridCoordinate(input: HTMLInputElement) {
   const row = Number(input.dataset.gridRow);
   const column = Number(input.dataset.gridColumn);
   return Number.isInteger(row) && Number.isInteger(column) ? { row, column } : null;
-}
-
-function focusGridInput(input: HTMLInputElement) {
-  input.focus({ preventScroll: true });
-  input.scrollIntoView?.({ block: "nearest", inline: "nearest" });
-  input.select();
 }
 
 /** Shared legacy-grid keyboard navigation; scientific row/column meaning stays with each sheet. */
@@ -40,7 +35,7 @@ export function moveSpreadsheetGridFocus(event: KeyboardEvent<HTMLInputElement>)
     const next = inputs[currentIndex + (event.shiftKey ? -1 : 1)];
     if (!next) return;
     event.preventDefault();
-    focusGridInput(next);
+    focusSpreadsheetControl(next);
     return;
   }
 
@@ -56,7 +51,7 @@ export function moveSpreadsheetGridFocus(event: KeyboardEvent<HTMLInputElement>)
   );
   if (!next) return;
   event.preventDefault();
-  focusGridInput(next);
+  focusSpreadsheetControl(next);
 }
 
 export function SpreadsheetGridInput({
