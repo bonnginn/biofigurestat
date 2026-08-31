@@ -20,8 +20,8 @@
 | 1 | 🟡 | 日英統合Windows candidateの短い実機確認 | 必要 | 同一アプリ内の言語切替、新規実験、保存・再読込、PNG/SVG/CSV、用語・見切れを確認 |
 | 2 | ⬜ | 日英統合macOS candidateのbuildと限定実機確認 | 最終確認のみ必要 | native verifier、保存・再読込、書き出し、両言語表示がPASS |
 | 3 | ⬜ | 日英統合Alpha更新の公開判断 | 必要 | Windows/macOS証拠、checksum、release noteを揃え、同じBioFigureStatの次candidateとして公開可否を記録 |
-| 4 | ⚠️ | Windows native UI harnessの安定実行環境 | 原則不要 | clean Windows CI/VMまたは第2接続方式で同じscenarioが連続PASS |
-| 5 | ⬜ | macOS native UI harness | 原則不要 | 実アプリで起動、入力、保存確認、Cancel、破棄終了を自動検査 |
+| 4 | ⚠️ | Windows native UI harnessの安定実行環境 | 原則不要 | blank URL targetと再接続には対応済み。clean Windows CI/VMで同じscenarioの連続PASSを確認 |
+| 5 | 🟡 | macOS native UI harness | 原則不要 | Accessibility adapterは実装済み。permission済みMac runnerで初回PASSを記録 |
 | 6 | 🟡 | GraphとSpreadsheetの共通化を再開 | 不要 | 画面ごとの修正漏れを減らし、既存`.lsa`と科学的意味を維持 |
 
 ## 公開・運用
@@ -64,10 +64,10 @@
 | ✅ | dirty close lifecycle scenario | 入力、×、保存確認、Cancel保持、再度×、破棄終了をscenario化 |
 | ✅ | screenshot・JSON evidence | 成功・失敗stepと画面証拠を`.tmp/native-ui-regression/`へ保存 |
 | ✅ | 製品FAILとharness環境FAILの分離 | `PRODUCT_REGRESSION`と`HARNESS_INFRASTRUCTURE_BLOCKED`を区別 |
-| ⚠️ | Windows WebView2再接続の安定化 | 初回接続後、このhostでCDP portが再公開されない。clean runnerで再検証 |
+| ⚠️ | Windows WebView2再接続の安定化 | blank URL targetの誤除外は修正済み。このhostでは初期target後にCDP port自体が閉じるためclean runnerで再検証 |
 | ⬜ | native file dialog自動操作 | Open、Save、Save As、PNG/SVG/CSVのCancel/保存先を自動確認 |
 | ⬜ | `.lsa` file association自動確認 | ダブルクリック起動と同名・別名projectの内容一致を検査 |
-| ⬜ | macOS adapter | WKWebView/window lifecycleを同じreport schemaで検査 |
+| 🟡 | macOS adapter | Accessibilityで入力、Command+Q、Cancel保持、破棄終了を同じreport schemaへ実装。Mac実行証拠待ち |
 | ⏸ | 人間の見た目判断 | graph品質、clipping、font、余白、高DPIは最終的に人間が確認 |
 
 ## BetaまでのUI/UX改善
@@ -88,8 +88,8 @@
 
 | 状態 | 項目 | 完了条件 |
 | --- | --- | --- |
-| 🟡 | Graph共通描画 | tick、plot bounds、axis余白、export経路の同義重複を段階的に除去 |
-| 🟡 | Spreadsheet共通primitive | cell枠、draft/commit、Tab/Enter、paste、zoomを全surfaceへ伝播 |
+| 🟡 | Graph共通描画 | 通常・Survival・非線形に加え旧Resultsの独自tickも`createNiceTicks`へ統合。plot bounds等は継続 |
+| 🟡 | Spreadsheet共通primitive | keyboard/pasteに加えAdaptiveとdelimited表のzoom状態管理を共通化。cell editor統合は継続 |
 | ⬜ | `ExperimentGraphWorkbench`分割 | state adapter、render、style、axis、annotation、statistics、exportを分離 |
 | ✅ | 未使用prototypeの公開sourceからの分離 | private archiveへ保全し、public sourceには含めない |
 | ✅ | benchmark生成物の公開sourceからの除外 | evaluation/benchmark materialを通常product sourceから分離 |

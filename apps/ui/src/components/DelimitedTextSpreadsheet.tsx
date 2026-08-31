@@ -1,5 +1,4 @@
 import {
-  useEffect,
   useState,
   type ClipboardEvent,
   type CSSProperties,
@@ -16,6 +15,7 @@ import {
   type SpreadsheetWorkbookImporter,
 } from "../app/spreadsheetWorkbookImport";
 import { localizedText, useAppLocale } from "../app/appLocale";
+import { SPREADSHEET_ZOOM_LEVELS, useSpreadsheetZoom } from "./spreadsheetZoom";
 import "./DelimitedTextSpreadsheet.css";
 
 type ChangeSource = "cell_edit" | "clipboard" | "workbook_import";
@@ -39,18 +39,7 @@ type ParsedGrid = Readonly<{
   rows: readonly (readonly string[])[];
 }>;
 
-const SPREADSHEET_ZOOM_LEVELS = [70, 80, 90, 100, 110, 120, 130] as const;
 const SPREADSHEET_ZOOM_STORAGE_KEY = "lsaa.delimited-spreadsheet.zoom.v1";
-
-function initialSpreadsheetZoom(): number {
-  if (typeof window === "undefined") return 100;
-  try {
-    const storedZoom = Number(window.localStorage.getItem(SPREADSHEET_ZOOM_STORAGE_KEY));
-    return SPREADSHEET_ZOOM_LEVELS.some((level) => level === storedZoom) ? storedZoom : 100;
-  } catch {
-    return 100;
-  }
-}
 
 function delimiterCharacter(value: string): ParsedGrid["delimiter"] {
   const sample = value.split(/\r?\n/u).slice(0, 8).join("\n");
@@ -151,7 +140,10 @@ export function DelimitedTextSpreadsheet({
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const effectiveCaption = caption ?? t("データ表", "Data table");
-  const [spreadsheetZoom, setSpreadsheetZoom] = useState<number>(initialSpreadsheetZoom);
+  const {
+    zoom: spreadsheetZoom,
+    changeZoom: changeSpreadsheetZoom,
+  } = useSpreadsheetZoom(SPREADSHEET_ZOOM_STORAGE_KEY);
   const [importedWorkbook, setImportedWorkbook] = useState<ImportedSpreadsheetWorkbook | null>(
     null,
   );
@@ -165,23 +157,6 @@ export function DelimitedTextSpreadsheet({
   const rowCount = Math.max(minimumRows, parsed.rows.length + 1);
   const columnCount = Math.max(minimumColumns, contentColumns);
   const rows = rectangularRows(parsed.rows, rowCount, columnCount);
-
-  const changeSpreadsheetZoom = (direction: -1 | 1) => {
-    const currentIndex = SPREADSHEET_ZOOM_LEVELS.findIndex((level) => level === spreadsheetZoom);
-    const boundedIndex = Math.min(
-      SPREADSHEET_ZOOM_LEVELS.length - 1,
-      Math.max(0, (currentIndex < 0 ? 3 : currentIndex) + direction),
-    );
-    setSpreadsheetZoom(SPREADSHEET_ZOOM_LEVELS[boundedIndex] ?? 100);
-  };
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(SPREADSHEET_ZOOM_STORAGE_KEY, String(spreadsheetZoom));
-    } catch {
-      // A blocked preference store must not prevent data entry.
-    }
-  }, [spreadsheetZoom]);
 
   const updateCell = (row: number, column: number, nextValue: string) => {
     const next = rows.map((candidate) => [...candidate]);

@@ -25,6 +25,7 @@ import {
 } from "@lsaa/domain";
 
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
+import { SPREADSHEET_ZOOM_LEVELS, useSpreadsheetZoom } from "./spreadsheetZoom";
 import { getAppLocale, localizedText, useAppLocale } from "../app/appLocale";
 import {
   CanonicalMatrixWorksheet,
@@ -48,21 +49,10 @@ import {
 } from "./adaptiveRecordEntry";
 import "./AdaptiveCanonicalSpreadsheet.css";
 
-const WORKSHEET_ZOOM_LEVELS = [70, 80, 90, 100, 110, 120, 130] as const;
 const WORKSHEET_ZOOM_STORAGE_KEY = "lsaa.adaptive-worksheet.zoom.v1";
 
 function textForLocale(ja: string, en: string): string {
   return localizedText(getAppLocale(), ja, en);
-}
-
-function initialWorksheetZoom(): number {
-  if (typeof window === "undefined") return 100;
-  try {
-    const storedZoom = Number(window.localStorage.getItem(WORKSHEET_ZOOM_STORAGE_KEY));
-    return WORKSHEET_ZOOM_LEVELS.some((level) => level === storedZoom) ? storedZoom : 100;
-  } catch {
-    return 100;
-  }
 }
 
 export type AdaptiveCanonicalSpreadsheetProps = Readonly<{
@@ -1502,7 +1492,11 @@ export function AdaptiveCanonicalSpreadsheet({
   const compactModeControlRef = useRef<HTMLButtonElement | null>(null);
   const expandedDeleteControlRefs = useRef(new Map<string, HTMLButtonElement>());
   const pendingExpandedDeletionFocusRef = useRef<readonly string[] | null>(null);
-  const [worksheetZoom, setWorksheetZoom] = useState<number>(initialWorksheetZoom);
+  const {
+    zoom: worksheetZoom,
+    setZoom: setWorksheetZoom,
+    changeZoom: changeWorksheetZoom,
+  } = useSpreadsheetZoom(WORKSHEET_ZOOM_STORAGE_KEY);
   // The persisted two-state view mode remains backwards compatible.  The
   // condition sheet and the optional multi-value editor are two presentations
   // within its compact branch, so older projects do not need a schema change.
@@ -1547,28 +1541,11 @@ export function AdaptiveCanonicalSpreadsheet({
   const compactDisabled = continuousWorksheet ? !compactEntryEligible : !compactEditable;
   const interactionLabel = editable ? t("測定値を入力", "Enter measurements") : t("測定値を確認", "Review measurements");
 
-  const changeWorksheetZoom = (direction: -1 | 1) => {
-    const currentIndex = WORKSHEET_ZOOM_LEVELS.findIndex((level) => level === worksheetZoom);
-    const boundedIndex = Math.min(
-      WORKSHEET_ZOOM_LEVELS.length - 1,
-      Math.max(0, (currentIndex < 0 ? 3 : currentIndex) + direction),
-    );
-    setWorksheetZoom(WORKSHEET_ZOOM_LEVELS[boundedIndex] ?? 100);
-  };
-
   useEffect(() => {
     if (continuousWorksheet && !matrixEligible && mode === "compact") {
       onModeChange("expanded");
     }
   }, [continuousWorksheet, matrixEligible, mode, onModeChange]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(WORKSHEET_ZOOM_STORAGE_KEY, String(worksheetZoom));
-    } catch {
-      // A blocked preference store must not prevent data entry.
-    }
-  }, [worksheetZoom]);
 
   useLayoutEffect(() => {
     const candidates = pendingExpandedDeletionFocusRef.current;
@@ -1667,7 +1644,7 @@ export function AdaptiveCanonicalSpreadsheet({
             <button
               type="button"
               aria-label={t("シートを縮小", "Zoom out")}
-              disabled={worksheetZoom <= WORKSHEET_ZOOM_LEVELS[0]}
+              disabled={worksheetZoom <= SPREADSHEET_ZOOM_LEVELS[0]}
               onClick={() => changeWorksheetZoom(-1)}
             >
               −
@@ -1677,7 +1654,7 @@ export function AdaptiveCanonicalSpreadsheet({
               value={worksheetZoom}
               onChange={(event) => setWorksheetZoom(Number(event.currentTarget.value))}
             >
-              {WORKSHEET_ZOOM_LEVELS.map((level) => (
+              {SPREADSHEET_ZOOM_LEVELS.map((level) => (
                 <option key={level} value={level}>
                   {level}%
                 </option>
@@ -1686,7 +1663,7 @@ export function AdaptiveCanonicalSpreadsheet({
             <button
               type="button"
               aria-label={t("シートを拡大", "Zoom in")}
-              disabled={worksheetZoom >= WORKSHEET_ZOOM_LEVELS[WORKSHEET_ZOOM_LEVELS.length - 1]}
+              disabled={worksheetZoom >= SPREADSHEET_ZOOM_LEVELS[SPREADSHEET_ZOOM_LEVELS.length - 1]}
               onClick={() => changeWorksheetZoom(1)}
             >
               +

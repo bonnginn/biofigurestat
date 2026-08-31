@@ -17,6 +17,7 @@ import type { CoreGraphModel, GraphSpec } from "@lsaa/graph-spec";
 import { copyMethodsText, copyText, generateMethodsText } from "../app/methodsText";
 import { downloadTextFile, serializeAnalyzedDataCsv, serializeGraphSvg } from "../app/graphExport";
 import { methodLabel, templateLabel } from "../app/recommendationLabels";
+import { createNiceTicks } from "../components/graph/graphLayout";
 
 type AnalysisResultViewProps = {
   result: AnalysisEngineResult;
@@ -530,7 +531,7 @@ function InlineCoreGraph({
     xForGroup(groupIndex) + (pointIndex - (count - 1) / 2) * 12;
   const xForRawPoint = (groupIndex: number, pointIndex: number) =>
     xForGroup(groupIndex) + (((pointIndex * 37) % 101) / 100 - 0.5) * 54;
-  const yTicks = [domainMax, domainMin + domainRange / 2, domainMin];
+  const yTicks = createNiceTicks(domainMin, domainMax, 5, null);
   const palette = spec.appearance.palette;
   const errorBarKind =
     model.groups.find((group) => group.errorBar !== null)?.errorBarKind ?? "none";
@@ -783,13 +784,8 @@ function InlineCorrelationGraph({
   const yRange = yMax - yMin;
   const xFor = (value: number) => margin.left + ((value - xMin) / xRange) * plotWidth;
   const yFor = (value: number) => margin.top + ((yMax - value) / yRange) * plotHeight;
-  const ticks = (minimum: number, maximum: number) => [
-    minimum,
-    minimum + (maximum - minimum) / 2,
-    maximum,
-  ];
-  const xTicks = ticks(xMin, xMax);
-  const yTicks = ticks(yMin, yMax);
+  const xTicks = createNiceTicks(xMin, xMax, 5, null);
+  const yTicks = createNiceTicks(yMin, yMax, 5, null);
 
   return (
     <figure className="core-graph-figure correlation-graph-figure">
