@@ -101,14 +101,15 @@ include derived metrics only when displayed, and centrally classify usage edit c
 moving effect order out of the workbench. Benchmark `statistics.json` and `run.json` artifact
 construction now also uses pure tested builders; request-specific contrasts, descriptive
 not-performed status, event counts, and the existing artifact shape are preserved. These
-builders now also classify benchmark Graph-open/rendered/analysis change events and construct their
-unchanged detail payload outside the React effect. These extractions reduce the workbench to
-roughly 2,960 lines. Focused workbench and artifact suites,
+builders now also classify benchmark Graph-open/rendered/analysis change events, construct their
+unchanged detail payload, and define the default/final artifact manifests outside the React effect.
+These extractions reduce the workbench to roughly 2,950 lines. Focused workbench and artifact suites,
 typecheck, and lint pass. The expanded full UI suite reached 148/149 files and 1,162/1,163 tests;
 the sole nonlinear-fit presentation wait passed immediately in focused isolation (40/40), so it
 is recorded as a parallel-run flaky rather than a Graph refactor regression. That focused run also
-reports duplicate React key `x.-5` warnings in an existing sparse nonlinear-fit path; the warning
-is a bounded follow-up because the assertions and canonical-data checks pass.
+exposed duplicate `x.-5` ticks for a one-value finite range. The shared nice-tick helper now emits
+one stable tick for such a degenerate range; Graph-layout, nonlinear Graph, and the full focused
+workflow pass together (50/50) without the React warning.
 
 For the English-localization branch, the full UI suite passes with 131 files and 1,117 tests.
 English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
@@ -141,9 +142,6 @@ a mandatory cross-platform gate. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md
   and usage-edit classification are separated. Remaining async analysis, diagnostic, and benchmark
   lifecycle effects and native artifact writes intentionally remain in the parent and are the next
   safe extraction boundaries.
-- Sparse nonlinear-fit rendering can emit duplicate React key `x.-5` warnings during focused
-  coverage. Canonical-data assertions pass, but stable unique mark keys should be addressed before
-  React behavior changes turn the warning into visible duplication or omission.
 - Spreadsheet implementations still include legacy and canonical surfaces with only partial shared
   primitives.
 - Route-level code splitting remains a performance and maintainability follow-up.
