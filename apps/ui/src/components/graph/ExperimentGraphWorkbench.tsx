@@ -629,7 +629,7 @@ export function ExperimentGraphWorkbench({
     statisticsAnnotation,
     statisticsAnnotations,
   });
-  useExperimentGraphDiagnosticEffects({ benchmarkRenderedState, graphType, usageGraphState });
+  useExperimentGraphDiagnosticEffects({ renderedState: benchmarkRenderedState, graphType, usageGraphState });
 
   useBenchmarkGraphConfigurationEffects({
     identity: benchmarkRun.identity,

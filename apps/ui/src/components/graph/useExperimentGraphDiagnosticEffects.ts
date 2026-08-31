@@ -9,20 +9,20 @@ import {
 } from "./experimentGraphInstrumentation";
 
 export function useExperimentGraphDiagnosticEffects(input: Readonly<{
-  benchmarkRenderedState: string;
+  renderedState: string;
   graphType: WorkspaceGraphState["graphType"];
   usageGraphState: GraphUsageState;
 }>): void {
   const diagnosticGraphStateRef = useRef<string | null>(null);
   useEffect(() => {
-    const fingerprint = diagnosticFingerprint(input.benchmarkRenderedState);
+    const fingerprint = diagnosticFingerprint(input.renderedState);
     if (diagnosticGraphStateRef.current === fingerprint) return;
     diagnosticGraphStateRef.current = fingerprint;
     recordDiagnosticEvent("graph_state_changed", {
       graphType: input.graphType,
       graphFingerprint: fingerprint,
     });
-  }, [input.benchmarkRenderedState, input.graphType]);
+  }, [input.renderedState, input.graphType]);
 
   const usageGraphStateRef = useRef<GraphUsageState | null>(null);
   useEffect(() => {

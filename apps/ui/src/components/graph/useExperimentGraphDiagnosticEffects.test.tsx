@@ -33,13 +33,13 @@ describe("Graph diagnostic effects", () => {
   it("records fingerprints once and usage edits only after the initial projection", () => {
     const { rerender } = renderHook(
       (props: {
-        benchmarkRenderedState: string;
+        renderedState: string;
         graphType: GraphUsageState["graphType"];
         usageGraphState: GraphUsageState;
       }) => useExperimentGraphDiagnosticEffects(props),
       {
         initialProps: {
-          benchmarkRenderedState: "rendered.1",
+          renderedState: "rendered.1",
           graphType: "dot",
           usageGraphState: usageState,
         },
@@ -50,14 +50,14 @@ describe("Graph diagnostic effects", () => {
     expect(recordUsageGraphEdit).not.toHaveBeenCalled();
 
     rerender({
-      benchmarkRenderedState: "rendered.1",
+      renderedState: "rendered.1",
       graphType: "dot",
       usageGraphState: usageState,
     });
     expect(recordDiagnosticEvent).toHaveBeenCalledTimes(1);
 
     rerender({
-      benchmarkRenderedState: "rendered.2",
+      renderedState: "rendered.2",
       graphType: "dot",
       usageGraphState: { ...usageState, axes: "axes.2" },
     });
