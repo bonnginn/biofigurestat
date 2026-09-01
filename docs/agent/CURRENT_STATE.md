@@ -594,6 +594,15 @@ production build retains the 264.45 kB initial chunk, and the release verifier f
 
 ## Known bounded gaps
 
+Adaptive independent worksheets now retain sparse row identity: entering row 3 before rows 1 and
+2 no longer compacts the value upward. Canonical observations may carry an optional explicit
+experiment-session link, and the worksheet exposes the session date for independent as well as
+matched structures. Save/reopen, Graph, and Statistics use the same linked canonical rows. The
+link is provenance only and never infers pairing from a shared run label or date. Legacy Public
+Alpha `.lsa` observations without the field retain their dense-order fallback until edited. ADR
+0060 records this boundary. Focused worksheet, workspace, project round-trip, domain-schema, and
+Graph/Statistics production-path tests cover the change.
+
 Equivalence / “no meaningful difference” is now represented as a separate saved scientific goal,
 not as an ordinary contrast or an engine method. The Statistics UI safe-stops that goal, does not
 recommend or run NHST, never derives a margin from observed data, and warns that a non-significant
