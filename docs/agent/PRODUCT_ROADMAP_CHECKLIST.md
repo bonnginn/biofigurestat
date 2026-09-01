@@ -17,10 +17,9 @@
 
 | 順位 | 状態 | 作業                                         | ユーザー確認     | 完了条件                                                                                                                               |
 | ---- | ---- | -------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | ⚠️   | 日英統合macOS candidateのbuildと限定実機確認 | 最終確認のみ必要 | `.app` build・bundle/release verifierはPASS。native harnessはAccessibility入力値を観測できない環境BLOCK。限定実機確認は保留            |
-| 2    | ⬜   | 日英統合Alpha更新の公開判断                  | 必要             | Windows/macOS証拠、checksum、release noteを揃え、同じBioFigureStatの次candidateとして公開可否を記録                                    |
-| 3    | 🟡   | macOS native UI harness                      | 原則不要         | Accessibility adapterは実装済み。permission済みMac runnerで初回PASSを記録                                                              |
-| 4    | 🟡   | GraphとSpreadsheetの共通化                   | 不要             | tick・zoom・native export controller・Graph state selectorを共通化済み。画面ごとの修正漏れをさらに減らし、既存`.lsa`と科学的意味を維持 |
+| 1    | ⬜   | 日英統合Alpha更新の公開判断 | 必要     | Windows/macOS証拠、checksum、release noteを揃え、同じBioFigureStatの次candidateとして公開可否を記録                                    |
+| 2    | 🟡   | macOS native UI harness     | 原則不要 | 製品経路は限定実機PASS。Accessibilityで入力値を取得できるrunnerで自動scenarioの初回PASSを記録                                         |
+| 3    | 🟡   | GraphとSpreadsheetの共通化  | 不要     | tick・zoom・native export controller・Graph state selectorを共通化済み。画面ごとの修正漏れをさらに減らし、既存`.lsa`と科学的意味を維持 |
 
 ## 公開・運用
 
@@ -50,7 +49,7 @@
 | ✅   | native自動検査で見つけた表示漏れ修正 | New Experiment wrapperとworkspace fallbackを修正                                                                           |
 | ✅   | 自動回帰                             | UI 162ファイル、1,200テストPASS。共有package等278テスト、typecheck・lintもPASS                                             |
 | ✅   | 日英統合Windows build                | `4041e85-alpha.20260901.win-review3`はbundle/engine/release/native UI verifierと人間の両言語・layout確認がPASS             |
-| ⚠️   | 日英統合macOS build                  | `14f62ac-alpha.20260901.mac-review2`のbuild・bundle/release verifierはPASS。Accessibility harness環境BLOCKと限定確認が残る |
+| ✅   | 日英統合macOS build                  | `15aabd0-alpha.20260901.mac-refactor2`はbuild/engine/bundle/releaseと全限定実機確認がPASS。Accessibility harness環境BLOCKは別管理 |
 | ⬜   | 日英統合buildの配布                  | 両native gate後に、同じアプリの次Alpha assetとrelease noteを追加                                                           |
 
 ## Native不具合検出の自動化

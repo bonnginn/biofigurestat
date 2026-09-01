@@ -137,7 +137,13 @@ release bundle verifier, packaged-engine smoke checks, and the exact-executable 
 Its installer SHA-256 is
 `4382BA7A7534D74270C7E362320CBF2102AC9AAE64B13FEB3CB6310BA01FE8E2`. Windows human language/layout,
 language switching, Graph-only save/reopen, and user-title preservation checks passed on
-2026-09-01. The macOS native candidate remains outstanding.
+2026-09-01. macOS candidate `15aabd0-alpha.20260901.mac-refactor2` also passes its application
+build, packaged-engine smoke, bundle verifier, release verifier, language persistence, older
+Japanese-authored `.lsa` English rendering, Graph-only save/reopen, unsaved-work guard, and native
+PNG/SVG Save-dialog checks. Its release bundle contains zero forbidden `benchmark` markers. The
+Accessibility harness remains environment-blocked when reading a typed field value back, but the
+same product path passed bounded human review. See
+`docs/alpha/MACOS_BILINGUAL_REFACTOR_GATE_2026-09-01.md`.
 
 Post-Alpha native regression automation now has a complete Windows packaged-app PASS. The
 dependency-free harness launches the exact Tauri executable with an isolated WebView2 profile and
@@ -146,9 +152,10 @@ validation visibility/focus, and the dirty-window Close / Cancel / Discard lifec
 recording screenshots and JSON evidence. Revision `4041e85-alpha.20260901.win-review3` passed every
 step on this host; evidence is under
 `.tmp/native-ui-regression/win-review3-clean/`. The transient blank-target startup race remains
-classified separately from product regressions. The macOS Accessibility adapter is implemented,
-but a permissioned Mac run is still required before the gate is cross-platform. See
-`docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md`.
+classified separately from product regressions. The macOS Accessibility adapter launches and
+attaches to the packaged application, but the current managed runner cannot read a typed field
+value back. This remains `HARNESS_INFRASTRUCTURE_BLOCKED`; the corresponding macOS product path has
+passed manual review. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md`.
 
 Windows human review found that a Graph-only project whose sample-ID column had been explicitly
 accepted as one series per row reopened with its table intact but its Graph and Statistics tabs
