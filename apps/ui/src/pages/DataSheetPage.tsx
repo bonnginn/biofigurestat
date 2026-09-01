@@ -4,8 +4,6 @@ import {
   AnalysisEngineResultSchema,
   createD01D02EngineRequest,
   createD09EngineRequest,
-  type AnalysisEngineRequest,
-  type AnalysisEngineResult,
   type AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
 import {
@@ -74,6 +72,13 @@ import {
 } from "../components/SpreadsheetGridInput";
 import { nextRovingTabIndex } from "../components/rovingTab";
 import {
+  createLegacyWorkspaceToken,
+  LEGACY_WORKFLOW_TABS,
+  numericEngineObservations,
+  type LegacyDataSheetAnalysisRun,
+  type LegacyWorkflowTabId,
+} from "./legacyDataSheetShared";
+import {
   formatProportionPercentage,
   parseSpreadsheetNumber,
 } from "../components/spreadsheetValues";
@@ -106,48 +111,11 @@ type CanonicalData = {
   projectDesign?: ExperimentDesign;
 };
 
-type AnalysisRun = {
-  request: AnalysisEngineRequest;
-  result: AnalysisEngineResult;
-  graphSpec: GraphSpec | null;
-  graphModel: CoreGraphModel | null;
-};
-
-type EngineObservation = AnalysisEngineRequest["observations"][number];
-
-function numericEngineObservations(
-  observations: readonly EngineObservation[],
-): Array<EngineObservation & { value: number }> {
-  return observations.filter(
-    (observation): observation is EngineObservation & { value: number } =>
-      typeof observation.value === "number",
-  );
-}
-
 type WorkspaceIdentity = Readonly<{
   projectId: string;
   rawRevisionId: string;
   metadata: ProjectMetadata;
 }>;
-
-let fallbackWorkspaceSequence = 0;
-
-type WorkflowTabId = "input" | "analysis" | "graph" | "save";
-
-const WORKFLOW_TABS: ReadonlyArray<{ id: WorkflowTabId; label: string }> = [
-  { id: "input", label: "1 データ入力" },
-  { id: "analysis", label: "2 解析" },
-  { id: "graph", label: "3 グラフ" },
-  { id: "save", label: "4 保存" },
-];
-
-function createWorkspaceToken(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  fallbackWorkspaceSequence += 1;
-  return `${Date.now().toString(36)}.${fallbackWorkspaceSequence}`;
-}
 
 type MeasurementLocation =
   | { relationship: "independent"; columnIndex: number; entryIndex: number }
@@ -848,7 +816,8 @@ export function DataSheetPage({
   const [issues, setIssues] = useState<SheetValidationIssue[]>([]);
   const [validated, setValidated] = useState(initialCanonicalData !== null);
   const [canonicalData, setCanonicalData] = useState<CanonicalData | null>(initialCanonicalData);
-  const [analysisRun, setAnalysisRun] = useState<AnalysisRun | null>(restoredAnalysis);
+  const [analysisRun, setAnalysisRun] =
+    useState<LegacyDataSheetAnalysisRun | null>(restoredAnalysis);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisStatus, setAnalysisStatus] = useState<"idle" | "running" | "error">("idle");
   const [runningRequestId, setRunningRequestId] = useState<string | null>(null);
@@ -877,7 +846,7 @@ export function DataSheetPage({
     initialProject?.state ?? null,
   );
   const [saveTarget, setSaveTarget] = useState<string | undefined>(initialProject?.target);
-  const [activeTab, setActiveTab] = useState<WorkflowTabId>("input");
+  const [activeTab, setActiveTab] = useState<LegacyWorkflowTabId>("input");
   const unitCount =
     sheet.relationship === "independent"
       ? Math.max(sheet.columns[0].entries.length, sheet.columns[1].entries.length)
@@ -896,7 +865,7 @@ export function DataSheetPage({
         metadata: initialProject.state.metadata,
       };
     } else {
-      const token = createWorkspaceToken();
+      const token = createLegacyWorkspaceToken();
       const projectId = `project.${token}`;
       workspaceIdentityRef.current = {
         projectId,
@@ -946,7 +915,7 @@ export function DataSheetPage({
   const changeMeasurement = (location: MeasurementLocation, measurement: DraftMeasurement) => {
     setNestedPayloads({});
     if (lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId) {
-      setDraftRawRevisionId(`raw-revision.${createWorkspaceToken()}`);
+      setDraftRawRevisionId(`raw-revision.${createLegacyWorkspaceToken()}`);
     }
     setValidated(false);
     setIssues([]);
@@ -968,7 +937,7 @@ export function DataSheetPage({
           : null;
     const nextRawRevisionId =
       lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId
-        ? `raw-revision.${createWorkspaceToken()}`
+        ? `raw-revision.${createLegacyWorkspaceToken()}`
         : draftRawRevisionId;
     if (nextRawRevisionId !== draftRawRevisionId) setDraftRawRevisionId(nextRawRevisionId);
     if (experimentalUnitId) {
@@ -1003,7 +972,7 @@ export function DataSheetPage({
       lastSavedState &&
       draftRawRevisionId === lastSavedState.activeRawRevisionId
     ) {
-      setDraftRawRevisionId(`raw-revision.${createWorkspaceToken()}`);
+      setDraftRawRevisionId(`raw-revision.${createLegacyWorkspaceToken()}`);
     }
     setValidated(false);
     setIssues([]);
@@ -1033,7 +1002,7 @@ export function DataSheetPage({
     // exposing the complete raw/nested payload to the project persistence layer.
     const effectiveRawRevisionId =
       lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId
-        ? `raw-revision.${createWorkspaceToken()}`
+        ? `raw-revision.${createLegacyWorkspaceToken()}`
         : draftRawRevisionId;
     if (effectiveRawRevisionId !== draftRawRevisionId) {
       setDraftRawRevisionId(effectiveRawRevisionId);
@@ -1269,7 +1238,7 @@ export function DataSheetPage({
         );
         const createdAt = new Date().toISOString();
         const derived = createNestedScalarDerivedDataset({
-          derivedDatasetRevisionId: `derived-dataset.${createWorkspaceToken()}`,
+          derivedDatasetRevisionId: `derived-dataset.${createLegacyWorkspaceToken()}`,
           rawRevisionId: draftRawRevisionId,
           outcomeId: sheet.outcomeId,
           experimentalUnitLevelId: sheet.experimentalUnitLevelId,
@@ -1347,7 +1316,7 @@ export function DataSheetPage({
       const request =
         recommendation.templateId === "D09"
           ? createD09EngineRequest({
-              requestId: `request.${createWorkspaceToken()}`,
+              requestId: `request.${createLegacyWorkspaceToken()}`,
               projectId: workspaceIdentity.projectId,
               analysisId: `analysis.${design.id}`,
               design,
@@ -1356,7 +1325,7 @@ export function DataSheetPage({
               unitInstances: canonicalData.unitInstances,
             })
           : createD01D02EngineRequest({
-              requestId: `request.${createWorkspaceToken()}`,
+              requestId: `request.${createLegacyWorkspaceToken()}`,
               projectId: workspaceIdentity.projectId,
               analysisId: `analysis.${design.id}`,
               design,
@@ -1537,10 +1506,10 @@ export function DataSheetPage({
     event: KeyboardEvent<HTMLButtonElement>,
     currentIndex: number,
   ) => {
-    const nextIndex = nextRovingTabIndex(event.key, currentIndex, WORKFLOW_TABS.length);
+    const nextIndex = nextRovingTabIndex(event.key, currentIndex, LEGACY_WORKFLOW_TABS.length);
     if (nextIndex === null) return;
     event.preventDefault();
-    const nextTab = WORKFLOW_TABS[nextIndex].id;
+    const nextTab = LEGACY_WORKFLOW_TABS[nextIndex].id;
     setActiveTab(nextTab);
     document.getElementById(`workflow-tab-${nextTab}`)?.focus();
   };
@@ -1552,7 +1521,7 @@ export function DataSheetPage({
       </button>
 
       <nav className="workflow-tabs" aria-label="解析ワークフロー" role="tablist">
-        {WORKFLOW_TABS.map(({ id: tab, label }) => {
+        {LEGACY_WORKFLOW_TABS.map(({ id: tab, label }) => {
           const status =
             tab === "input"
               ? validated
@@ -1587,7 +1556,7 @@ export function DataSheetPage({
               onKeyDown={(event) =>
                 handleWorkflowTabKeyDown(
                   event,
-                  WORKFLOW_TABS.findIndex(({ id }) => id === tab),
+                  LEGACY_WORKFLOW_TABS.findIndex(({ id }) => id === tab),
                 )
               }
             >

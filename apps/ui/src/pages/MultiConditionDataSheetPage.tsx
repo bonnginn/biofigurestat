@@ -5,8 +5,6 @@ import {
   createD03EngineRequest,
   createD04EngineRequest,
   createD05EngineRequest,
-  type AnalysisEngineRequest,
-  type AnalysisEngineResult,
   type AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
 import {
@@ -77,6 +75,13 @@ import {
 } from "../components/SpreadsheetGridInput";
 import { nextRovingTabIndex } from "../components/rovingTab";
 import {
+  createLegacyWorkspaceToken,
+  LEGACY_WORKFLOW_TABS,
+  numericEngineObservations,
+  type LegacyDataSheetAnalysisRun,
+  type LegacyWorkflowTabId,
+} from "./legacyDataSheetShared";
+import {
   formatProportionPercentage,
   parseSpreadsheetNumber,
 } from "../components/spreadsheetValues";
@@ -97,32 +102,6 @@ type Props = {
   onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
 };
 
-type WorkflowTabId = "input" | "analysis" | "graph" | "save";
-const TABS: ReadonlyArray<{ id: WorkflowTabId; label: string }> = [
-  { id: "input", label: "1 データ入力" },
-  { id: "analysis", label: "2 解析" },
-  { id: "graph", label: "3 グラフ" },
-  { id: "save", label: "4 保存" },
-];
-
-type AnalysisRun = {
-  request: AnalysisEngineRequest;
-  result: AnalysisEngineResult;
-  graphSpec: GraphSpec | null;
-  graphModel: CoreGraphModel | null;
-};
-
-type EngineObservation = AnalysisEngineRequest["observations"][number];
-
-function numericEngineObservations(
-  observations: readonly EngineObservation[],
-): Array<EngineObservation & { value: number }> {
-  return observations.filter(
-    (observation): observation is EngineObservation & { value: number } =>
-      typeof observation.value === "number",
-  );
-}
-
 type CanonicalData = Omit<Extract<CanonicalSheetResult, { success: true }>, "success"> & {
   rawObservations?: Observation[];
   transformation?: TransformationSpec;
@@ -130,15 +109,6 @@ type CanonicalData = Omit<Extract<CanonicalSheetResult, { success: true }>, "suc
   derivedValues?: DerivedScalarValue[];
   projectDesign?: ExperimentDesign;
 };
-
-let sequence = 0;
-function token() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  sequence += 1;
-  return `${Date.now().toString(36)}.${sequence}`;
-}
 
 function issueLabel(issue: SheetValidationIssue) {
   if (issue.code === "missing_value") return "すべての実験単位に値を入力してください。";
@@ -384,13 +354,14 @@ export function MultiConditionDataSheetPage({
     {},
   );
   const [validated, setValidated] = useState(initialCanonicalData !== null);
-  const [analysisRun, setAnalysisRun] = useState<AnalysisRun | null>(restoredAnalysis);
+  const [analysisRun, setAnalysisRun] =
+    useState<LegacyDataSheetAnalysisRun | null>(restoredAnalysis);
   const [analysisStatus, setAnalysisStatus] = useState<"idle" | "running" | "error">("idle");
   const [runningRequestId, setRunningRequestId] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [hasPastedValues, setHasPastedValues] = useState(false);
   const [activeReplicateIndex, setActiveReplicateIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<WorkflowTabId>(initialProject ? "input" : "input");
+  const [activeTab, setActiveTab] = useState<LegacyWorkflowTabId>("input");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [metadataDraft, setMetadataDraft] = useState<ProjectMetadataDraft>(
@@ -417,8 +388,9 @@ export function MultiConditionDataSheetPage({
   );
   const [saveTarget, setSaveTarget] = useState<string | undefined>(initialProject?.target);
   const workspaceRef = useRef({
-    projectId: initialProject?.state.metadata.projectId ?? `project.${token()}`,
-    rawRevisionId: initialProject?.state.activeRawRevisionId ?? `raw-revision.${token()}.1`,
+    projectId: initialProject?.state.metadata.projectId ?? `project.${createLegacyWorkspaceToken()}`,
+    rawRevisionId:
+      initialProject?.state.activeRawRevisionId ?? `raw-revision.${createLegacyWorkspaceToken()}.1`,
     metadata: initialProject?.state.metadata ?? null,
   });
   const [draftRawRevisionId, setDraftRawRevisionId] = useState(workspaceRef.current.rawRevisionId);
@@ -443,7 +415,7 @@ export function MultiConditionDataSheetPage({
 
   const invalidate = (preserveNested = false, nextRawRevisionId?: string) => {
     if (lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId) {
-      setDraftRawRevisionId(nextRawRevisionId ?? `raw-revision.${token()}`);
+      setDraftRawRevisionId(nextRawRevisionId ?? `raw-revision.${createLegacyWorkspaceToken()}`);
     }
     setValidated(false);
     setCanonicalData(null);
@@ -480,7 +452,7 @@ export function MultiConditionDataSheetPage({
           : null;
     const nextRawRevisionId =
       lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId
-        ? `raw-revision.${token()}`
+        ? `raw-revision.${createLegacyWorkspaceToken()}`
         : draftRawRevisionId;
     invalidate(true, nextRawRevisionId);
     if (experimentalUnitId) {
@@ -553,7 +525,7 @@ export function MultiConditionDataSheetPage({
     if (sheet.relationship !== "independent") return;
     const effectiveRawRevisionId =
       lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId
-        ? `raw-revision.${token()}`
+        ? `raw-revision.${createLegacyWorkspaceToken()}`
         : draftRawRevisionId;
     if (effectiveRawRevisionId !== draftRawRevisionId) {
       setDraftRawRevisionId(effectiveRawRevisionId);
@@ -653,7 +625,7 @@ export function MultiConditionDataSheetPage({
               ],
             };
         const derived = createNestedScalarDerivedDataset({
-          derivedDatasetRevisionId: `derived-dataset.${token()}`,
+          derivedDatasetRevisionId: `derived-dataset.${createLegacyWorkspaceToken()}`,
           rawRevisionId: draftRawRevisionId,
           outcomeId: sheet.outcomeId,
           experimentalUnitLevelId: sheet.experimentalUnitLevelId,
@@ -711,7 +683,7 @@ export function MultiConditionDataSheetPage({
     setAnalysisError(null);
     try {
       const requestInput = {
-        requestId: `request.${token()}`,
+        requestId: `request.${createLegacyWorkspaceToken()}`,
         projectId: workspaceRef.current.projectId,
         analysisId: `analysis.${design.id}`,
         design: canonicalData.projectDesign ?? design,
@@ -1012,14 +984,14 @@ export function MultiConditionDataSheetPage({
   };
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const next = nextRovingTabIndex(event.key, index, TABS.length);
+    const next = nextRovingTabIndex(event.key, index, LEGACY_WORKFLOW_TABS.length);
     if (next === null) return;
     event.preventDefault();
-    setActiveTab(TABS[next].id);
-    document.getElementById(`multi-workflow-tab-${TABS[next].id}`)?.focus();
+    setActiveTab(LEGACY_WORKFLOW_TABS[next].id);
+    document.getElementById(`multi-workflow-tab-${LEGACY_WORKFLOW_TABS[next].id}`)?.focus();
   };
 
-  const statusFor = (tab: WorkflowTabId) =>
+  const statusFor = (tab: LegacyWorkflowTabId) =>
     tab === "input"
       ? validated
         ? "検証済み"
@@ -1064,7 +1036,7 @@ export function MultiConditionDataSheetPage({
         <span className="wizard-purpose-chip">{outcomeLabel}</span>
       </section>
       <nav className="workflow-tabs" aria-label="解析ワークフロー" role="tablist">
-        {TABS.map(({ id, label }, index) => (
+        {LEGACY_WORKFLOW_TABS.map(({ id, label }, index) => (
           <button
             key={id}
             id={`multi-workflow-tab-${id}`}
