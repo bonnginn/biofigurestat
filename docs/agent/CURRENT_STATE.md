@@ -416,6 +416,14 @@ label, and role come from the same typed topology. The existing experimental-uni
 now also checks the returned source label; 124 focused draft/workspace/Graph tests, UI typecheck,
 and focused lint pass.
 
+The Graph Statistics recommendation design, analysis assessment, context fingerprint,
+varying-factor projection, and factor-by-time scope decision now form one derived view-model
+boundary. `ExperimentGraphWorkbench` composes that boundary instead of rebuilding the Statistics
+model locally, and is 993 lines versus 6,922 at the Public Alpha tag. The existing 57 focused Graph
+tests passed without adding a move-only regression case. Regression-test retention is now governed
+by `docs/agent/REGRESSION_TEST_POLICY.md`: distinct scientific, persistence, route-wiring, and
+native contracts remain layered, while duplicated implementation-level assertions should not grow.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis

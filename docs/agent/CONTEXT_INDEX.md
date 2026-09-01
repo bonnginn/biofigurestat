@@ -7,6 +7,7 @@ opening broad documents.
 ## Current state and prioritization
 
 - Short current snapshot: `docs/agent/CURRENT_STATE.md`
+- Regression-test retention and rationalization: `docs/agent/REGRESSION_TEST_POLICY.md`
 - Public release behavior and limitations: `docs/alpha/RELEASE_NOTES_0.1.0-alpha.md` and
   `docs/alpha/KNOWN_LIMITATIONS.md`
 - Public/private source relationship:
