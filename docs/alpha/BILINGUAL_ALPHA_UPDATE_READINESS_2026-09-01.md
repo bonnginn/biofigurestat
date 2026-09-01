@@ -82,5 +82,7 @@ Completed on GitHub:
   final Japanese and English notes are visible on the public release page.
 - Both distribution assets are listed on the release; GitHub also exposes its automatic source
   archives.
+- Anonymous HTTP checks return `200` for the release page and versioned external-LLM guide, and
+  `206 Partial Content` for both direct distribution-asset links.
 
 Current status: `PUBLISHED_PRE_RELEASE`.

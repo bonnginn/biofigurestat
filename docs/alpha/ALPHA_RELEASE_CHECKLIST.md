@@ -1,10 +1,14 @@
 # Alpha Release Checklist
 
-Updated: 2026-08-29
+Updated: 2026-09-01
 
-Current phase: Public Alpha artifact packaging and publication
+Current phase: Historical Alpha readiness record; `v0.1.0-alpha.2` is published
 
-Current engineering verdict: `ALPHA READY — REBUILD RELEASE ARTIFACTS FROM FINAL METADATA COMMIT`
+Current engineering verdict: `PUBLIC ALPHA PUBLISHED`
+
+This file preserves the original acceptance inventory and its historical open boxes. It is not the
+current next-work queue. Current priorities and completed items are maintained in
+`docs/agent/PRODUCT_ROADMAP_CHECKLIST.md`.
 
 ## Status legend
 

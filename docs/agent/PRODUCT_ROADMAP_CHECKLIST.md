@@ -17,20 +17,22 @@
 
 | 順位 | 状態 | 作業                                         | ユーザー確認     | 完了条件                                                                                                                               |
 | ---- | ---- | -------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | 🟡   | 日英統合Alpha更新の公開判断 | 必要     | 両OS gate、Windows checksum、日英release note案は完了。macOS zip/checksum後、`v0.1.0-alpha.2`として公開するか判断                       |
-| 2    | 🟡   | macOS native UI harness     | 原則不要 | 製品経路は限定実機PASS。Accessibilityで入力値を取得できるrunnerで自動scenarioの初回PASSを記録                                         |
-| 3    | 🟡   | GraphとSpreadsheetの共通化  | 不要     | tick・zoom・native export controller・Graph state selectorを共通化済み。画面ごとの修正漏れをさらに減らし、既存`.lsa`と科学的意味を維持 |
+| 1    | 🟡   | native UI regression自動化  | 原則不要 | WindowsのPASSを維持し、macOS環境BLOCKを製品FAILと分離。Open/Save/export/file associationの自動範囲を拡張                              |
+| 2    | 🟡   | GraphとSpreadsheetの堅牢化  | 不要     | 具体的な重複だけを共通化し、既存`.lsa`、canonical value、scientific semanticsを維持                                                   |
+| 3    | 🟡   | Beta UI/UX改善               | 最終確認のみ | Graph品質、compact workspace、metadata再編集、Statistics比較一覧、Undo/Redo、Kaplan–Meier外観、日英漏れ検査を順次完了              |
 
 ## 公開・運用
 
 | 状態 | 項目                                 | 証拠・残作業                                                                              |
 | ---- | ------------------------------------ | ----------------------------------------------------------------------------------------- |
 | ✅   | 日本語Public Alpha公開               | `v0.1.0-alpha.1`をGitHub Pre-releaseとして公開済み                                        |
+| ✅   | 日英統合Public Alpha公開             | `v0.1.0-alpha.2`を両OS assetと日英release notes付きPre-releaseとして公開済み              |
 | ✅   | MIT License                          | 公開sourceと配布物へ反映済み                                                              |
 | ✅   | Windows日本語版                      | installer、engine、save/open/exportを検証済み                                             |
 | ✅   | Apple Silicon macOS日本語版          | zip、署名整合、save/open/exportを検証済み                                                 |
 | ✅   | GitHub release説明の日本語・英語併記 | release pageへ反映済み                                                                    |
 | ✅   | READMEの日本語・英語案内             | `biofigurestat`のREADME先頭に日英説明、Download導線、両OSの直接asset link、checksumを掲載 |
+| ✅   | alpha.2公開リンク・checksum整合       | README、final release notes、versioned Help URLを更新し、release/guide/両assetを匿名HTTP確認 |
 | ✅   | opt-in利用情報収集                   | 研究データを含めない同意式送信、停止、診断書き出しを実装済み                              |
 | ✅   | 不具合報告                           | 確認後送信、Worker/D1、rate limit、保持期限、report IDを実装済み                          |
 | ✅   | 不具合報告の日次triage               | 別タスクで毎日1回のread-only分類・提案運用を設定済み                                      |
@@ -38,8 +40,8 @@
 ## 日本語・英語の統合
 
 日本語版と英語版を別アプリにはしません。同じBioFigureStat、同じ保存形式、同じ統計engine
-の中で表示言語だけを切り替えます。現在公開中の`0.1.0-alpha.1`は英語UI実装前のbuildで、
-次のnative candidateが日英統合buildになります。
+の中で表示言語だけを切り替えます。`0.1.0-alpha.2`は、同じアプリと保存形式のまま
+日英統合buildとして公開済みです。
 
 | 状態 | 項目                                 | 証拠・残作業                                                                                                               |
 | ---- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
@@ -50,7 +52,7 @@
 | ✅   | 自動回帰                             | UI 162ファイル、1,200テストPASS。共有package等278テスト、typecheck・lintもPASS                                             |
 | ✅   | 日英統合Windows build                | `ab5b012-alpha.20260901.win-refactor2`はbuild/engine/bundle/releaseとexact-executable native harnessがPASS               |
 | ✅   | 日英統合macOS build                  | `15aabd0-alpha.20260901.mac-refactor2`はbuild/engine/bundle/releaseと全限定実機確認がPASS。Accessibility harness環境BLOCKは別管理 |
-| ⬜   | 日英統合buildの配布                  | 両native gate後に、同じアプリの次Alpha assetとrelease noteを追加                                                           |
+| ✅   | 日英統合buildの配布                  | `v0.1.0-alpha.2`へWindows/macOS assetと日英release notesを掲載済み                                                         |
 
 ## Native不具合検出の自動化
 
@@ -72,8 +74,6 @@
 
 - 最新Windows candidateの日本語・英語の用語、文字切れ、余白の短い確認。
 - permission済みMacでmacOS adapterを1回実行し、同じdirty終了scenarioを記録。
-- 日英統合macOS candidateの保存・再読込・native file dialogの限定確認。
-- 日英統合Alpha assetを公開する最終判断。
 
 ## BetaまでのUI/UX改善
 

@@ -1,8 +1,8 @@
-# BioFigureStat 0.1.0-alpha.2 — Draft release notes
+# BioFigureStat 0.1.0-alpha.2 — Release notes
 
 ## 日本語
 
-BioFigureStat Public Alphaの日英統合更新候補です。同じアプリ、同じ`.lsa`保存形式、同じ
+BioFigureStat Public Alphaの日英統合更新です。同じアプリ、同じ`.lsa`保存形式、同じ
 ローカル統計エンジンのまま、アプリの表示言語を日本語と英語で切り替えられます。
 
 ### 主な更新
@@ -28,7 +28,7 @@ biological `n`、pairing、nesting、censoring、ordered identity、raw lineage�
 
 ## English
 
-This candidate updates the BioFigureStat Public Alpha with integrated Japanese and English UI.
+This release updates the BioFigureStat Public Alpha with integrated Japanese and English UI.
 It remains the same application, `.lsa` project format, and deterministic local statistical
 engine; only the application display language is switched.
 

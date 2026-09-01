@@ -10,7 +10,7 @@ import {
 describe("external LLM consultation prompt boundary", () => {
   it("uses the canonical BioFigureStat repository for the versioned guide", () => {
     expect(EXTERNAL_LLM_GUIDE_URL).toContain("githubusercontent.com/bonnginn/biofigurestat/");
-    expect(EXTERNAL_LLM_GUIDE_URL).toContain("/v0.1.0-alpha.1/");
+    expect(EXTERNAL_LLM_GUIDE_URL).toContain("/v0.1.0-alpha.2/");
     expect(EXTERNAL_LLM_GUIDE_URL).not.toContain("life-science-analysis-app");
   });
 

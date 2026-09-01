@@ -17,12 +17,12 @@ a superficially similar analysis.
 
 ## Download / ダウンロード
 
-BioFigureStat `0.1.0-alpha.1`は、次の
-[Public Alphaリリースページ](https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.1)
-からダウンロードできます。BioFigureStat `0.1.0-alpha.1` is available from the same release page.
+BioFigureStat `0.1.0-alpha.2`は、次の
+[Public Alphaリリースページ](https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.2)
+からダウンロードできます。BioFigureStat `0.1.0-alpha.2` is available from the same release page.
 
-- [Windows 11 x64 installer](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.1/BioFigureStat_0.1.0_x64-setup.exe)
-- [Apple Silicon macOS app (zip)](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.1/BioFigureStat-0.1.0-macOS-Apple-Silicon.zip)
+- [Windows 11 x64 installer](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.2/BioFigureStat-0.1.0-alpha.2-Windows-x64-setup.exe)
+- [Apple Silicon macOS app (zip)](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.2/BioFigureStat-0.1.0-alpha.2-macOS-Apple-Silicon.zip)
 
 Windows版は現在未署名です。macOS版はad-hoc署名で、Appleのnotarizationは受けていません。
 そのためOSのセキュリティ警告が表示されることがあります。上記Releaseページ以外からは
@@ -34,8 +34,8 @@ above and compare the SHA-256 digest before opening the file.
 
 | Platform | SHA-256 |
 | --- | --- |
-| Windows 11 x64 | `74D0C98124DE7319EAC623EADD99392E198E5128B4DDFF730F62015D0B615100` |
-| Apple Silicon macOS | `9C6FAE3076D1D7BD0E7F249451239675160179CBD37AA6618BE48CC9BD4208B6` |
+| Windows 11 x64 | `F7064981BE4A36EB809C6B6C6F18C974E974771BBE001BEB5D37410C3EF85747` |
+| Apple Silicon macOS | `4EE4734D57F703845C38EB00BB8A859D1CB54A2C019E7875F5841D5DFA888722` |
 
 Windowsではinstallerを実行してください。macOSではzipを展開して`BioFigureStat.app`を開きます。
 警告が表示された場合は、ファイル名とSHA-256を確認したうえでOSの「開く」または
@@ -76,7 +76,7 @@ Key boundaries:
 - Unsupported workflows remain visible as safe stops and are listed in the known limitations.
 
 日本語を含む詳細は、[Alpha Quick Start](docs/alpha/QUICK_START.md)、
-[release notes / リリースノート](docs/alpha/RELEASE_NOTES_0.1.0-alpha.md)、
+[release notes / リリースノート](docs/alpha/RELEASE_NOTES_0.1.0-alpha.2.md)、
 [privacy notice / プライバシー](docs/alpha/PRIVACY.md)、
 [known limitations / 既知の制限](docs/alpha/KNOWN_LIMITATIONS.md)を参照してください。
 The relationship between this clean public
