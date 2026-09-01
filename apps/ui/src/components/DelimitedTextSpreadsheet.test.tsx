@@ -263,6 +263,24 @@ describe("DelimitedTextSpreadsheet", () => {
     expect(onChange).toHaveBeenLastCalledWith("ID\tValue\ncell-1\t4.5", "workbook_import");
   });
 
+  it("offers a constrained workbook template and a semantics-safe import recipe", () => {
+    render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Graph sheet"
+        value={"X\tY"}
+        onChange={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Excelテンプレートと取込手順"));
+    const template = screen.getByRole("link", { name: "制約付きExcelテンプレートを保存" });
+    expect(template).toHaveAttribute("href", "./templates/BioFigureStat-import-template.xlsx");
+    expect(template).toHaveAttribute("download");
+    expect(
+      screen.getByText(/IDや実験日だけから対応関係・独立性は推定しません/),
+    ).toHaveTextContent("複数fileの数も統計上のnではありません");
+  });
+
   it("explicitly stacks matching worksheets as Exp while retaining worksheet provenance", async () => {
     const onChange = vi.fn();
     const workbookImporter = vi.fn(async () => ({

@@ -152,6 +152,33 @@
   gap: 0.55rem;
 }
 
+.delimited-spreadsheet__import-recipe {
+  flex-basis: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #bfd8d1;
+  border-radius: 0.55rem;
+  background: #f3faf8;
+}
+
+.delimited-spreadsheet__import-recipe summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #285f55;
+}
+
+.delimited-spreadsheet__import-recipe div {
+  margin-top: 0.55rem;
+}
+
+.delimited-spreadsheet__import-recipe ol {
+  margin: 0.55rem 0;
+  padding-left: 1.35rem;
+}
+
+.delimited-spreadsheet__workbook-import .delimited-spreadsheet__import-recipe p {
+  color: var(--muted, #5c6f69);
+}
+
 .delimited-spreadsheet__workbook-import label {
   display: inline-flex;
   align-items: center;

@@ -187,6 +187,57 @@ mod tests {
     }
 
     #[test]
+    fn reads_the_bundled_constrained_import_template() {
+        let target = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("..")
+            .join("ui")
+            .join("public")
+            .join("templates")
+            .join("BioFigureStat-import-template.xlsx");
+        let imported = read_spreadsheet_workbook(target.to_string_lossy().into_owned())
+            .expect("the bundled import template should stay readable");
+
+        assert_eq!(imported.sheets.len(), 5);
+        assert_eq!(imported.sheets[0].name, "README");
+        assert_eq!(
+            imported.sheets[1].rows[0],
+            [
+                "Unit ID",
+                "Condition",
+                "Measurement",
+                "Experiment ID",
+                "Experiment date",
+                "Notes",
+            ]
+        );
+        assert_eq!(
+            imported.sheets[3].rows[0],
+            [
+                "Subject ID",
+                "Condition",
+                "Follow-up time",
+                "Event (1=event, 0=censored)",
+                "Experiment ID",
+                "Experiment date",
+                "Notes",
+            ]
+        );
+        assert_eq!(
+            imported.sheets[4].rows[0],
+            [
+                "Unit ID",
+                "Series",
+                "X",
+                "Y",
+                "Experiment ID",
+                "Experiment date",
+                "Notes",
+            ]
+        );
+    }
+
+    #[test]
     fn reads_a_real_legacy_biff_xls_workbook() {
         let target = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("tests")

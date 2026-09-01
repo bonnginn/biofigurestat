@@ -402,6 +402,25 @@ export function DelimitedTextSpreadsheet({
         )}
       </p>
       <div className="delimited-spreadsheet__workbook-import">
+        <details className="delimited-spreadsheet__import-recipe">
+          <summary>{t("Excelテンプレートと取込手順", "Excel template and import recipe")}</summary>
+          <div>
+            <a href="./templates/BioFigureStat-import-template.xlsx" download>
+              {t("制約付きExcelテンプレートを保存", "Download the constrained Excel template")}
+            </a>
+            <ol>
+              <li>{t("実験設計に合うsheetを1つ選び、見出し1行を保ちます。", "Choose one sheet that matches the design and keep its single header row.")}</li>
+              <li>{t("1行を1記録として入力し、空欄はmissingのままにします。", "Enter one record per row and leave missing values blank.")}</li>
+              <li>{t("読込後にsheet・A1範囲・見出し行数を確認し、列を明示的に対応付けます。", "After import, confirm the sheet, A1 range, and header count, then map columns explicitly.")}</li>
+            </ol>
+            <p>
+              {t(
+                "IDや実験日だけから対応関係・独立性は推定しません。複数fileの数も統計上のnではありません。",
+                "IDs and experiment dates do not establish pairing or independence. File count is not statistical n.",
+              )}
+            </p>
+          </div>
+        </details>
         <button
           type="button"
           onClick={() => void openWorkbook()}
