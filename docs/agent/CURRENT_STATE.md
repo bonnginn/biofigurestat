@@ -615,6 +615,13 @@ support boundary: continuous independent and paired routes await method review; 
 typed positive/total routes cannot be coerced into naive continuous percentage TOST. Focused
 contract, UI, state-selector, and project-schema tests cover validation, goal transitions, engine
 non-execution, bilingual plan entry, stale-result clearing, and save/reopen compatibility.
+Multiple-comparison planning can record all-selected, separate-claim, or one explicitly selected
+primary-comparison intent without guessing a correction. The optional result envelope rejects a
+TOST p-value that is not the larger one-sided p-value, a conclusion that disagrees with the 90% CI
+and bounds, duplicate comparison IDs, or a primary result that does not match the prespecified ID.
+An interval-centered result component is ready to display estimate, CI, margin, both one-sided
+tests, and the three-state conclusion once a reviewed engine route is enabled. No equivalence
+engine route is enabled by these foundation changes.
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
   integration, diagnostics, and benchmark capture. Native export and persisted-state projection
