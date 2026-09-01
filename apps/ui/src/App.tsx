@@ -12,7 +12,6 @@ import type { ProjectTab } from "./components/ProjectTabBar";
 import { UnsavedChangesDialog } from "./components/UnsavedChangesDialog";
 import { CollectionPage } from "./pages/CollectionPage";
 import { HomePage } from "./pages/HomePage";
-import { NewExperimentPage } from "./pages/NewExperimentPage";
 import { OpenProjectPage } from "./pages/OpenProjectPage";
 import { defaultProjectActions } from "./app/desktopProjectActions";
 import { ProjectIoError } from "./app/desktopProjectPackage";
@@ -70,6 +69,10 @@ import { localizedText, useAppLocale } from "./app/appLocale";
 
 const CommonCoveragePage = lazy(() =>
   import("./pages/CommonCoveragePage").then(({ CommonCoveragePage: Page }) => ({ default: Page })),
+);
+
+const NewExperimentPage = lazy(() =>
+  import("./pages/NewExperimentPage").then(({ NewExperimentPage: Page }) => ({ default: Page })),
 );
 
 const SpecializedCorePage = lazy(() =>

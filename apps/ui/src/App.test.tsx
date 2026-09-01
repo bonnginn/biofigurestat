@@ -73,7 +73,9 @@ describe("workspace home", () => {
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
 
-    fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /^Simple 3群（連続値）/ }, { timeout: 5_000 }),
+    );
     await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
     scrollTo.mockClear();
     fireEvent.click(screen.getByRole("button", { name: /新しい実験/ }));
@@ -82,7 +84,7 @@ describe("workspace home", () => {
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
   });
 
-  it("お気に入りの設計をデータなしで呼び出し、確認画面から修正できる", () => {
+  it("お気に入りの設計をデータなしで呼び出し、確認画面から修正できる", async () => {
     const draft = {
       ...createExperimentSetDraft("cell_culture", "proportion"),
       name: "陽性率の定番設計",
@@ -98,7 +100,7 @@ describe("workspace home", () => {
     expect(screen.getByText("陽性率の定番設計")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "この設計から始める" }));
 
-    expect(screen.getByRole("heading", { name: "この実験の設計を確認" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "この実験の設計を確認" })).toBeVisible();
     expect(screen.getByRole("button", { name: "設計を修正" })).toBeVisible();
   });
 
@@ -115,25 +117,25 @@ describe("workspace home", () => {
     }
   });
 
-  it("keeps the adaptive feature flag while navigating from Home to New Experiment", () => {
+  it("keeps the adaptive feature flag while navigating from Home to New Experiment", async () => {
     window.history.replaceState({}, "", "/?adaptiveInput=1");
     render(<App />);
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
     expect(window.location.search).toBe("?adaptiveInput=1");
-    expect(screen.getByRole("heading", { name: "何から始めますか？" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "何から始めますか？" })).toBeVisible();
     expect(screen.getByRole("button", { name: "実験から始めるを開く" })).toBeVisible();
     expect(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "ヒートマップを開く" })).toBeEnabled();
     expect(screen.queryByText(/保存・再開する接続がそろっていない/)).toBeNull();
   });
 
-  it("opens the task-oriented hub by default in a production build without an override", () => {
+  it("opens the task-oriented hub by default in a production build without an override", async () => {
     vi.stubEnv("PROD", true);
     render(<App />);
 
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
 
-    expect(screen.getByRole("heading", { name: "何から始めますか？" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "何から始めますか？" })).toBeVisible();
     expect(document.querySelectorAll("[data-entry-id]")).toHaveLength(6);
     expect(screen.queryByRole("heading", { name: "何をした実験ですか？" })).toBeNull();
   });
@@ -180,7 +182,7 @@ describe("workspace home", () => {
       render(<App projectActions={projectActions} />);
 
       fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
-      const graphOnlyEntry = screen.getByRole("button", {
+      const graphOnlyEntry = await screen.findByRole("button", {
         name: "手元の表からGraphを作るを開く",
       });
       const heatmapEntry = screen.getByRole("button", { name: "ヒートマップを開く" });
@@ -202,7 +204,7 @@ describe("workspace home", () => {
 
       expect(graphOnlyEntry).toBeEnabled();
       fireEvent.click(graphOnlyEntry);
-      fireEvent.paste(screen.getByTestId("graph-only-cell-0-0"), {
+      fireEvent.paste(await screen.findByTestId("graph-only-cell-0-0"), {
         clipboardData: { getData: () => "X\tY\n0\t1\n1\t2" },
       });
       fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
@@ -1458,10 +1460,10 @@ describe("workspace home", () => {
     expect(screen.getByText(/選んだ場合だけ適用し、標的・referenceの生値は残します/)).toBeVisible();
   });
 
-  it("既存の表をpreviewし、明示的な列割り当てから入力画面を作る", () => {
+  it("既存の表をpreviewし、明示的な列割り当てから入力画面を作る", async () => {
     render(<App projectActions={desktopTestActions} />);
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
-    fireEvent.click(document.querySelector('[data-context="existing_data"]')!);
+    fireEvent.click(await screen.findByRole("button", { name: /既存データを取り込む/ }));
     fireEvent.change(screen.getByRole("textbox", { name: "既存データの表" }), {
       target: {
         value:
@@ -1483,7 +1485,7 @@ describe("workspace home", () => {
     expect(screen.getByRole("heading", { name: "この実験構造で取り込みますか？" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "この構造で取り込む" }));
 
-    expect(screen.getByRole("tab", { name: "E1" })).toBeVisible();
+    expect(await screen.findByRole("tab", { name: "E1" })).toBeVisible();
     expect(screen.getByRole("tab", { name: "E2" })).toBeVisible();
     fireEvent.click(screen.getByText("取込元・列の割り当て・変換履歴を確認"));
     expect(screen.getByRole("table", { name: "取込元の表（未変更）" })).toBeVisible();

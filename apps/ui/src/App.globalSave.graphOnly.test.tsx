@@ -21,8 +21,10 @@ describe("App-level Graph-only save commands", () => {
     };
     render(<App projectActions={actions} />);
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
-    fireEvent.click(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" }));
-    fireEvent.paste(screen.getByTestId("graph-only-cell-0-0"), {
+    fireEvent.click(
+      await screen.findByRole("button", { name: "手元の表からGraphを作るを開く" }),
+    );
+    fireEvent.paste(await screen.findByTestId("graph-only-cell-0-0"), {
       clipboardData: { getData: () => "X\tY\n0\t1\n1\t2" },
     });
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {

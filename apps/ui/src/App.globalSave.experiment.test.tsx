@@ -20,7 +20,9 @@ describe("App-level Experiment save commands", () => {
       />,
     );
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
-    fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /^Simple 3群（連続値）/ }, { timeout: 5_000 }),
+    );
     await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
 
     pressSave();
