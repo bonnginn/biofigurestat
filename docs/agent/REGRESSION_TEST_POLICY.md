@@ -43,6 +43,26 @@ For each proposed regression test, record the failure it distinguishes:
 If questions 1 and 4 have no concrete answer, the test should normally not be added. Runtime,
 warning noise, flakiness, and maintenance cost are part of the decision, not afterthoughts.
 
+## Verification cadence
+
+The full UI suite is a milestone gate, not a per-commit reflex. Use the narrowest evidence that
+matches the risk:
+
+| Change | Required immediate evidence |
+| --- | --- |
+| Pure helper or selector | Its direct test file |
+| Component wiring or local state transition | Direct component test plus the smallest existing route test that proves wiring |
+| Several related source commits | Focused tests, UI typecheck, lint, and production build once for the batch |
+| Project schema/migration, scientific routing, shared persistence, or release candidate | Relevant package tests plus the complete UI/release gate |
+| Native-only behavior | Native verifier or harness; browser tests are not a substitute |
+
+Run the complete UI suite at the end of a meaningful batch or before handoff/release, not after
+each small extraction. If a known parallel flaky fails during a complete run, finish or stop that
+run based on its remaining information value and rerun only the exact failed test in isolation.
+Do not restart the whole suite merely to obtain an all-green screenshot. A source change made
+after the last complete gate requires focused evidence immediately and can wait for the next
+scheduled complete gate unless it touches one of the high-risk contracts above.
+
 ## Current rationalization direction
 
 The largest jsdom suites (`ExperimentGraphWorkbench`, `App`, `CommonCoveragePage`, and the adaptive

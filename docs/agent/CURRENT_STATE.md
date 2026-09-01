@@ -470,6 +470,14 @@ feedback boundary. CSV composition and visible-series serialization are unchange
 the orchestration workbench to 898 lines; the 57 focused Workbench/export tests, UI typecheck, and
 focused lint pass.
 
+Regression verification now has an explicit cost-aware cadence in
+`docs/agent/REGRESSION_TEST_POLICY.md`. Full UI runs are reserved for meaningful batches,
+high-risk schema/scientific/persistence changes, handoff, and release gates; small extractions use
+focused contract and route-wiring tests. A redundant second full run after the export-action move
+was stopped when the already-recorded parallel Workspace save-target flaky recurred. The exact
+Graph change remains covered by its passing focused suite; the next complete run belongs at the
+next batch boundary rather than immediately repeating roughly six minutes of work.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
