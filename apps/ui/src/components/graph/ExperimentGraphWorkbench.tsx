@@ -15,7 +15,6 @@ import {
 import { defaultGraphYTitle, defaultLayersForGraphType } from "../../app/graphDefaults";
 import {
   createExperimentWorkspaceDesign,
-  type WorkspaceGraphAnalysis,
   type WorkspaceGraphState,
 } from "../../app/experimentWorkspaceProject";
 import { createWorkspaceGraphStateSnapshot } from "../../app/experimentGraphStateSelectors";
@@ -65,8 +64,8 @@ import {
   useExperimentGraphWorkspaceEffects,
   type GraphInspectorTarget as InspectorTarget,
 } from "./useExperimentGraphWorkspaceEffects";
-import { useAdjustedStatisticsAnnotations } from "./useAdjustedStatisticsAnnotations";
 import { useExperimentGraphStatisticsIntent } from "./useExperimentGraphStatisticsIntent";
+import { useExperimentGraphAnalysisState } from "./useExperimentGraphAnalysisState";
 import {
   DEFAULT_GRAPH_APPEARANCE,
   DEFAULT_GRAPH_LAYERS,
@@ -81,7 +80,6 @@ import {
 } from "./experimentGraphUserExports";
 import {
   analysisTestAnnotationLabel,
-  createAdjustedComparisonAnnotation,
   graphAnnotationContext,
   timeMetricLabel,
 } from "./experimentGraphAnnotations";
@@ -108,9 +106,7 @@ type LayerState = WorkspaceGraphState["layers"];
 
 type GraphAppearance = WorkspaceGraphState["appearance"];
 type GraphType = WorkspaceGraphState["graphType"];
-type StatisticsAnnotation = NonNullable<WorkspaceGraphState["statisticsAnnotation"]>;
 type StatisticsAnnotationEntry = NonNullable<WorkspaceGraphState["statisticsAnnotations"]>[number];
-
 export type ExperimentGraphWorkbenchProps = Readonly<{
   draft: ExperimentSetDraft;
   cells: ExperimentCellMap;
@@ -263,9 +259,21 @@ export function ExperimentGraphWorkbench({
     semanticReadiness,
     workspaceMode,
   });
-  const [analysis, setAnalysis] = useState<WorkspaceGraphAnalysis | null>(
-    initialState?.analysis ?? null,
-  );
+  const {
+    analysis,
+    setAnalysis,
+    analysisResult,
+    statisticsAnnotation,
+    setStatisticsAnnotation,
+    statisticsAnnotations,
+    setStatisticsAnnotations,
+    adjustedComparisonAnnotations,
+  } = useExperimentGraphAnalysisState({
+    initialState,
+    sourceMode,
+    timeAnalysis,
+    analysisTimePointId,
+  });
   const {
     correlationMethod,
     selectedMethod: selectedStatisticalMethod,
@@ -280,40 +288,10 @@ export function ExperimentGraphWorkbench({
     initialAnalysis: initialState?.analysis,
     clearAnalysis: () => setAnalysis(null),
   });
-  const [statisticsAnnotation, setStatisticsAnnotation] = useState<StatisticsAnnotation>(
-    initialState?.statisticsAnnotation ?? { mode: "hidden", testIndex: 0 },
-  );
-  const [statisticsAnnotations, setStatisticsAnnotations] = useState<StatisticsAnnotationEntry[]>(
-    () => [...(initialState?.statisticsAnnotations ?? [])],
-  );
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [pngExportFeedback, setPngExportFeedback] = useState<GraphExportFeedback | null>(null);
   const [benchmarkCaptureStatus, setBenchmarkCaptureStatus] = useState<string | null>(null);
   const benchmarkRun = useBenchmarkRun();
-  const analysisResult = analysis?.result ?? null;
-  const adjustedComparisonAnnotations = useMemo(
-    () =>
-      analysisResult?.status === "ok"
-        ? analysisResult.tests.flatMap((test, testIndex) => {
-            const annotation = createAdjustedComparisonAnnotation({
-              test,
-              testIndex,
-              requestId: analysisResult.requestId,
-              sourceMode,
-              timeAnalysis,
-              analysisTimePointId,
-            });
-            return annotation ? [annotation] : [];
-          })
-        : [],
-    [analysisResult, analysisTimePointId, sourceMode, timeAnalysis],
-  );
-  useAdjustedStatisticsAnnotations({
-    initialRequestId: initialState?.analysis?.result.requestId ?? null,
-    analysisResult,
-    adjustedAnnotations: adjustedComparisonAnnotations,
-    setStatisticsAnnotations,
-  });
   const methodsText = useMemo(
     () =>
       createExperimentGraphMethodsText({
