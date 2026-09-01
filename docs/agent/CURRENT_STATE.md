@@ -292,16 +292,16 @@ descriptions now follow the selected application language without changing layer
 content semantics. Workbench, creation-dialog, appearance-editor, label, and assessment focused
 tests pass together with typecheck and lint.
 
-The new-experiment route now defers `ExperimentWorkspace`, Graph-only input, and the whole
-new-experiment entry until each boundary is needed. The initial JavaScript chunk is now 457.26 kB
-(gzip 131.30 kB), about 74% below the original 1.77 MB baseline and below the previous greater-than-
-500-kB advisory threshold. New Experiment, Workspace, and Graph-only are separate 148.31 kB,
-197.46 kB, and 38.41 kB chunks. Asynchronous route focus, global save, raw-table handoff, dirty-exit,
-favorite-design, and existing-table import contracts remain covered. The full UI suite passes 190
-files / 1,299 tests; UI typecheck, focused lint, and the production build pass. This is a loading and
-dependency-boundary improvement, not a reduction in the application's total source lines. The
-remaining build advisory is an ineffective specialist dynamic import caused by a static
-`OpenProjectPage` dependency.
+The application now defers `ExperimentWorkspace`, Graph-only input, the whole new-experiment entry,
+and project open/rehydration until each boundary is needed. The initial JavaScript chunk is now
+264.32 kB (gzip 81.16 kB), about 85% below the original 1.77 MB baseline. New Experiment, Workspace,
+Graph-only, and Open Project are separate 148.63 kB, 195.72 kB, 38.53 kB, and 117.39 kB chunks.
+Splitting Open Project also restores the intended specialist chunk boundary and removes the final
+build advisory. Asynchronous route focus, global save, raw-table handoff, dirty-exit, favorite-
+design, existing-table import, multi-project tab, and specialized reopen contracts remain covered.
+The full UI suite passes 190 files / 1,299 tests; the 82 App/open integration tests, UI typecheck,
+focused lint, and the production build pass. This is a loading and dependency-boundary improvement,
+not a reduction in the application's total source lines.
 
 ## Known bounded gaps
 
