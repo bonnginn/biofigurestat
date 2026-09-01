@@ -13,9 +13,9 @@ import {
 } from "../app/experimentDraft";
 
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
-import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
 import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
 import { SpreadsheetDraftTextCell } from "./SpreadsheetDraftTextCell";
+import { SpreadsheetDraftTextareaCell } from "./SpreadsheetDraftTextareaCell";
 import "./WorkspaceNestedMeasurementSheet.css";
 import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 
@@ -142,10 +142,7 @@ function CompactValuesCell({
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const descriptionId = useId();
-  const errorId = useId();
   const valuesText = coordinate.cell.rawValues.join("\n");
-  const { text, error: message, edit, accept, reportError, clearError } =
-    useSpreadsheetCellDraft(valuesText, { preserveDirtyOnCanonicalChange: true });
   const decision = compactEditability(coordinate, locale);
   const notPlanned = cellIsNotPlanned(coordinate.cell);
   const disabledReason = notPlanned
@@ -154,57 +151,30 @@ function CompactValuesCell({
       ? null
       : decision.reason;
 
-  const commit = () => {
-    if (!decision.editable) return;
-    const values = parseValues(text);
-    if (!values) {
-      reportError(t("数値を1行に1つ入力してください。入力内容は消していません。", "Enter one numeric value per line. The entered content was retained."));
-      return;
-    }
-    clearError();
-    onChange({ ...coordinate.cell, rawValues: values, source: "manual" });
-    accept();
-  };
-
   return (
     <div className="nested-measurement-sheet__compact-cell">
-      <textarea
+      <SpreadsheetDraftTextareaCell
+        wrapperClassName="nested-measurement-sheet__compact-editor"
+        canonicalText={valuesText}
+        preserveDirtyOnCanonicalChange
         aria-label={locale === "ja" ? `${rowLabel}・${coordinate.condition.label}の${coordinate.readout.label}` : `${rowLabel}, ${coordinate.condition.label}, ${coordinate.readout.label}`}
-        aria-describedby={
-          [disabledReason ? descriptionId : null, message ? errorId : null]
-            .filter(Boolean)
-            .join(" ") || undefined
-        }
-        aria-invalid={Boolean(message) || undefined}
+        aria-describedby={disabledReason ? descriptionId : undefined}
         disabled={notPlanned || !decision.editable}
         rows={Math.min(5, Math.max(2, coordinate.cell.rawValues.length || 2))}
-        value={text}
-        data-spreadsheet-cell="true"
         data-spreadsheet-row={gridRow}
         data-spreadsheet-column={gridColumn}
-        onBlur={commit}
-        onChange={(event) => {
-          edit(event.currentTarget.value);
-        }}
-        onKeyDown={moveSpreadsheetFocus}
-        onPaste={(event) => {
-          const pasted = event.clipboardData.getData("text");
-          if (!pasted.includes("\t") && !/[\r\n]/u.test(pasted)) return;
-          event.preventDefault();
-          const pasteError = onRectangularPaste(coordinate, pasted);
-          if (pasteError) reportError(pasteError);
-          else {
-            clearError();
-            accept();
+        onCommit={(text) => {
+          if (!decision.editable) return null;
+          const values = parseValues(text);
+          if (!values) {
+            return t("数値を1行に1つ入力してください。入力内容は消していません。", "Enter one numeric value per line. The entered content was retained.");
           }
+          onChange({ ...coordinate.cell, rawValues: values, source: "manual" });
+          return null;
         }}
+        onStructuredPaste={(pasted) => onRectangularPaste(coordinate, pasted)}
       />
       {disabledReason ? <small id={descriptionId}>{disabledReason}</small> : null}
-      {message ? (
-        <small id={errorId} role="alert">
-          {message}
-        </small>
-      ) : null}
     </div>
   );
 }

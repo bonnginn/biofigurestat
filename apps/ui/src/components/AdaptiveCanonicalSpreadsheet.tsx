@@ -29,6 +29,7 @@ import { SPREADSHEET_ZOOM_LEVELS, useSpreadsheetZoom } from "./spreadsheetZoom";
 import { getAppLocale, localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
 import { SpreadsheetDraftTextCell } from "./SpreadsheetDraftTextCell";
+import { SpreadsheetDraftTextareaCell } from "./SpreadsheetDraftTextareaCell";
 import {
   CanonicalMatrixWorksheet,
   canEditCanonicalMatrix,
@@ -337,21 +338,10 @@ function CompactScalarEditor({
   gridColumn: number;
   onRectangularPaste: (group: AdaptiveCompactGroup, text: string) => string | null;
 }>) {
-  const errorId = useId();
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const valueKey = scalarReadoutValueKey(contract, group);
   const initialText = valueKey ? compactText(group, valueKey) : "";
-  const [text, setText] = useState(initialText);
-  const [dirty, setDirty] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setText(initialText);
-    setDirty(false);
-    setError(null);
-  }, [initialText]);
-
   if (!valueKey) return <span aria-label={t("測定値なし", "No measured value")}>—</span>;
 
   const readoutLabel =
@@ -361,74 +351,46 @@ function CompactScalarEditor({
     `${readoutLabel}・${coordinateLabel(contract, group)}の測定値`,
     `${readoutLabel}: measured values for ${coordinateLabel(contract, group)}`,
   );
-  const commit = () => {
-    if (disabled || !dirty) return;
-    const values = parseCompactScalarText(text);
-    if (!values) {
-      setError(
-        t(
-          "数値を改行またはタブで入力してください。入力内容は消えていません。",
-          "Enter numeric values separated by new lines or tabs. Your input was retained.",
-        ),
-      );
-      return;
-    }
-    try {
-      const result = applyCompactScalarEdit(contract, observations, {
-        targetCoordinates: group.coordinates,
-        values,
-        valueKey,
-        createObservationId: nextObservationId,
-        createExperimentalUnitIdentity: nextExperimentalUnitIdentity,
-      });
-      onObservationsChange(result.observations);
-      setError(null);
-    } catch (cause) {
-      setError(
-        locale === "ja" && cause instanceof Error
-          ? cause.message
-          : t("測定値を適用できませんでした。", "The measured values could not be applied."),
-      );
-    }
-  };
-
   return (
-    <div className="adaptive-canonical-spreadsheet__compact-editor">
-      <textarea
-        aria-label={label}
-        aria-describedby={error ? errorId : undefined}
-        aria-invalid={error ? "true" : undefined}
-        disabled={disabled}
-        rows={Math.min(6, Math.max(2, group.observations.length || 2))}
-        value={text}
-        data-spreadsheet-cell="true"
-        data-spreadsheet-row={gridRow}
-        data-spreadsheet-column={gridColumn}
-        onBlur={commit}
-        onChange={(event) => {
-          setText(event.currentTarget.value);
-          setDirty(true);
-          setError(null);
-        }}
-        onKeyDown={moveSpreadsheetFocus}
-        onPaste={(event) => {
-          const pasted = event.clipboardData.getData("text");
-          if (!pasted.includes("\t") && !/[\r\n]/u.test(pasted)) return;
-          event.preventDefault();
-          const pasteError = onRectangularPaste(group, pasted);
-          setError(
-            locale === "ja" || !pasteError
-              ? pasteError
-              : "The pasted values could not be applied. Existing values were not changed.",
+    <SpreadsheetDraftTextareaCell
+      wrapperClassName="adaptive-canonical-spreadsheet__compact-editor"
+      canonicalText={initialText}
+      aria-label={label}
+      disabled={disabled}
+      rows={Math.min(6, Math.max(2, group.observations.length || 2))}
+      data-spreadsheet-row={gridRow}
+      data-spreadsheet-column={gridColumn}
+      onCommit={(text) => {
+        const values = parseCompactScalarText(text);
+        if (!values) {
+          return t(
+            "数値を改行またはタブで入力してください。入力内容は消えていません。",
+            "Enter numeric values separated by new lines or tabs. Your input was retained.",
           );
-        }}
-      />
-      {error ? (
-        <small id={errorId} role="alert">
-          {error}
-        </small>
-      ) : null}
-    </div>
+        }
+        try {
+          const result = applyCompactScalarEdit(contract, observations, {
+            targetCoordinates: group.coordinates,
+            values,
+            valueKey,
+            createObservationId: nextObservationId,
+            createExperimentalUnitIdentity: nextExperimentalUnitIdentity,
+          });
+          onObservationsChange(result.observations);
+          return null;
+        } catch (cause) {
+          return locale === "ja" && cause instanceof Error
+            ? cause.message
+            : t("測定値を適用できませんでした。", "The measured values could not be applied.");
+        }
+      }}
+      onStructuredPaste={(pasted) => {
+        const problem = onRectangularPaste(group, pasted);
+        return locale === "ja" || !problem
+          ? problem
+          : "The pasted values could not be applied. Existing values were not changed.";
+      }}
+    />
   );
 }
 
