@@ -1,6 +1,6 @@
 # Current Working State
 
-Updated: 2026-08-31 (Public Alpha published; English localization in progress)
+Updated: 2026-09-01 (Public Alpha published; post-Alpha hardening in progress)
 
 This is the short operational snapshot. Accepted ADRs, schemas, method references, and tests remain
 the authority for durable behavior.
@@ -180,6 +180,20 @@ The workbench is now 2,614 lines. The full UI suite passes with 164 files and 1,
 typecheck, full lint, and the production build pass. The build retains the existing large-chunk
 warning, so route-level code splitting remains separate future work.
 
+The following source-only increment further reduces `ExperimentGraphWorkbench` from 2,614 to
+1,888 lines. Grouping, data selection and derived-lineage guidance, experimental-unit summaries,
+per-series styles, and violin/box distribution controls now have focused component boundaries.
+Their tests preserve condition and series identities, nested box compatibility layers, appearance
+state, and the distinction between displayed and canonical data. Spreadsheet ID/value editors now
+share one draft/commit hook, including external canonical-value synchronization. The project
+package also has a synthetic Public Alpha v0.2 migration test that verifies unit identities and
+measurements through migration and a current-format save/reopen without reading private research
+data. Graph inspector controls now have explicit English no-Japanese assertions for grouping,
+selection, series, distributions, raw points, error bars, connecting lines, legends, appearance,
+X/Y axes, and saved-result annotations. The current full UI suite passes with 169 files and 1,245
+tests; UI typecheck, full lint, production build, and the project package's 66 tests pass. The
+production build retains the existing large-chunk warning.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
@@ -197,12 +211,13 @@ warning, so route-level code splitting remains separate future work.
   the workbench further. Workspace state synchronization, adjusted-annotation application, analysis
   context fingerprinting, and varying-factor selection are also separated. Remaining Statistics
   intent state is now separated as well. Factor/facet/legend/readiness presentation projection and
-  localized data summaries are now separate tested boundaries. The remaining inspector and
-  data-selection sections are the next safe extraction boundaries.
+  localized data summaries, grouping, data selection, series presentation, and distribution
+  controls are now separate tested boundaries. Remaining orchestration and Statistics integration
+  are the next safe extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
-  focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, and proportion
-  display now use shared primitives. Draft/commit and the remaining cell-editor presentation are
-  the next safe commonization boundaries.
+  focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
+  display, and ID/scalar draft synchronization now use shared primitives. Remaining specialized
+  cell-editor presentation is the next safe commonization boundary.
 - Route-level code splitting remains a performance and maintainability follow-up.
 - English localization is covered for the production Public Alpha surfaces. Pre-workspace legacy
   D01-D05 editors use an explicit English compatibility stop rather than a partially translated

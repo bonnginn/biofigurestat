@@ -18,7 +18,7 @@
 | 順位 | 状態 | 作業                                         | ユーザー確認     | 完了条件                                                                                                                               |
 | ---- | ---- | -------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | 1    | ✅   | 日英統合Windows candidateの短い実機確認      | 完了             | `win-review3`で両言語、用語、見切れ、Graph-only保存再読込、タイトル保持がPASS                                                          |
-| 2    | ⬜   | 日英統合macOS candidateのbuildと限定実機確認 | 最終確認のみ必要 | native verifier、保存・再読込、書き出し、両言語表示がPASS                                                                              |
+| 2    | ⚠️   | 日英統合macOS candidateのbuildと限定実機確認 | 最終確認のみ必要 | `.app` build・bundle/release verifierはPASS。native harnessはAccessibility入力値を観測できない環境BLOCK。限定実機確認は保留            |
 | 3    | ⬜   | 日英統合Alpha更新の公開判断                  | 必要             | Windows/macOS証拠、checksum、release noteを揃え、同じBioFigureStatの次candidateとして公開可否を記録                                    |
 | 4    | ✅   | Windows native UI harnessの実機scenario      | 不要             | 最新packaged exeで入力、Statistics validation、native export、dirty Close / Cancel / DiscardがPASS                                     |
 | 5    | 🟡   | macOS native UI harness                      | 原則不要         | Accessibility adapterは実装済み。permission済みMac runnerで初回PASSを記録                                                              |
@@ -26,17 +26,17 @@
 
 ## 公開・運用
 
-| 状態 | 項目                                 | 証拠・残作業                                                                                               |
-| ---- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| ✅   | 日本語Public Alpha公開               | `v0.1.0-alpha.1`をGitHub Pre-releaseとして公開済み                                                         |
-| ✅   | MIT License                          | 公開sourceと配布物へ反映済み                                                                               |
-| ✅   | Windows日本語版                      | installer、engine、save/open/exportを検証済み                                                              |
-| ✅   | Apple Silicon macOS日本語版          | zip、署名整合、save/open/exportを検証済み                                                                  |
-| ✅   | GitHub release説明の日本語・英語併記 | release pageへ反映済み                                                                                     |
-| ⚠️   | READMEの日本語・英語案内             | ローカル`7f52c86`は日本語→英語で案内済み。公開`origin/main`の`38bd2d6`は英語中心のままで、push/mergeが必要 |
-| ✅   | opt-in利用情報収集                   | 研究データを含めない同意式送信、停止、診断書き出しを実装済み                                               |
-| ✅   | 不具合報告                           | 確認後送信、Worker/D1、rate limit、保持期限、report IDを実装済み                                           |
-| ✅   | 不具合報告の日次triage               | 別タスクで毎日1回のread-only分類・提案運用を設定済み                                                       |
+| 状態 | 項目                                 | 証拠・残作業                                                                              |
+| ---- | ------------------------------------ | ----------------------------------------------------------------------------------------- |
+| ✅   | 日本語Public Alpha公開               | `v0.1.0-alpha.1`をGitHub Pre-releaseとして公開済み                                        |
+| ✅   | MIT License                          | 公開sourceと配布物へ反映済み                                                              |
+| ✅   | Windows日本語版                      | installer、engine、save/open/exportを検証済み                                             |
+| ✅   | Apple Silicon macOS日本語版          | zip、署名整合、save/open/exportを検証済み                                                 |
+| ✅   | GitHub release説明の日本語・英語併記 | release pageへ反映済み                                                                    |
+| ✅   | READMEの日本語・英語案内             | `biofigurestat`のREADME先頭に日英説明、Download導線、両OSの直接asset link、checksumを掲載 |
+| ✅   | opt-in利用情報収集                   | 研究データを含めない同意式送信、停止、診断書き出しを実装済み                              |
+| ✅   | 不具合報告                           | 確認後送信、Worker/D1、rate limit、保持期限、report IDを実装済み                          |
+| ✅   | 不具合報告の日次triage               | 別タスクで毎日1回のread-only分類・提案運用を設定済み                                      |
 
 ## 日本語・英語の統合
 
@@ -44,16 +44,16 @@
 の中で表示言語だけを切り替えます。現在公開中の`0.1.0-alpha.1`は英語UI実装前のbuildで、
 次のnative candidateが日英統合buildになります。
 
-| 状態 | 項目                                 | 証拠・残作業                                                                                                   |
-| ---- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| ✅   | 日本語・英語切替                     | localeは`.lsa`外に保持し、科学的semantic keyを変更しない                                                       |
-| ✅   | Public Alpha主要画面の英語化         | Home、実験設定、Data、Graph、Statistics、Help、報告を対象化                                                    |
-| ✅   | 日本語表示漏れの自動検査             | visible text、aria-label、title、placeholder、altを検査                                                        |
-| ✅   | native自動検査で見つけた表示漏れ修正 | New Experiment wrapperとworkspace fallbackを修正                                                               |
-| ✅   | 自動回帰                             | UI 162ファイル、1,200テストPASS。共有package等278テスト、typecheck・lintもPASS                                 |
-| ✅   | 日英統合Windows build                | `4041e85-alpha.20260901.win-review3`はbundle/engine/release/native UI verifierと人間の両言語・layout確認がPASS |
-| ⬜   | 日英統合macOS build                  | candidate buildと限定確認が必要                                                                                |
-| ⬜   | 日英統合buildの配布                  | 両native gate後に、同じアプリの次Alpha assetとrelease noteを追加                                               |
+| 状態 | 項目                                 | 証拠・残作業                                                                                                               |
+| ---- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| ✅   | 日本語・英語切替                     | localeは`.lsa`外に保持し、科学的semantic keyを変更しない                                                                   |
+| ✅   | Public Alpha主要画面の英語化         | Home、実験設定、Data、Graph、Statistics、Help、報告を対象化                                                                |
+| ✅   | 日本語表示漏れの自動検査             | visible text、aria-label、title、placeholder、altを検査                                                                    |
+| ✅   | native自動検査で見つけた表示漏れ修正 | New Experiment wrapperとworkspace fallbackを修正                                                                           |
+| ✅   | 自動回帰                             | UI 162ファイル、1,200テストPASS。共有package等278テスト、typecheck・lintもPASS                                             |
+| ✅   | 日英統合Windows build                | `4041e85-alpha.20260901.win-review3`はbundle/engine/release/native UI verifierと人間の両言語・layout確認がPASS             |
+| ⚠️   | 日英統合macOS build                  | `14f62ac-alpha.20260901.mac-review2`のbuild・bundle/release verifierはPASS。Accessibility harness環境BLOCKと限定確認が残る |
+| ⬜   | 日英統合buildの配布                  | 両native gate後に、同じアプリの次Alpha assetとrelease noteを追加                                                           |
 
 ## Native不具合検出の自動化
 
@@ -94,18 +94,18 @@
 
 ## コード整理・堅牢化
 
-| 状態 | 項目                                  | 完了条件                                                                                                                                                                                                                                                                                                       |
-| ---- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 🟡   | Graph共通描画                         | 通常・Survival・非線形に加え旧Resultsの独自tickも`createNiceTicks`へ統合。1値rangeの重複tickも共通helperで解消。plot bounds等は継続                                                                                                                                                                            |
-| 🟡   | Spreadsheet共通primitive              | keyboard/paste/zoomに加え、旧2条件・多条件表のTab順、最小scroll focus、tablist移動、有限数値parse、割合表示を共通化。draft/commitとcell editor統合は継続                                                                                                                                                       |
-| 🟡   | `ExperimentGraphWorkbench`分割        | 各editor、3種renderer、series/lineage投影、factor/facet/legend/readiness投影、localized data summary、Statistics context/注釈/intent、workspace同期、instrumentation、benchmark capture、native export feedbackを分離済み。workbenchは約4,900行から2,614行へ縮小。残るinspector/data-selection部を段階的に分離 |
-| ✅   | 未使用prototypeの公開sourceからの分離 | private archiveへ保全し、public sourceには含めない                                                                                                                                                                                                                                                             |
-| ✅   | benchmark生成物の公開sourceからの除外 | evaluation/benchmark materialを通常product sourceから分離                                                                                                                                                                                                                                                      |
-| ⬜   | route-level code splitting            | 初期bundleと巨大routeの依存を縮小                                                                                                                                                                                                                                                                              |
-| ⬜   | 保存format migration fixture基盤      | Public Alphaの既知`.lsa`を将来版でも開ける回帰fixtureを整備                                                                                                                                                                                                                                                    |
-| 🟡   | エラー表示の構造化                    | 主要I/O errorは分類済み。内部codeや生traceの残存経路を継続監査                                                                                                                                                                                                                                                 |
-| ✅   | 解析timeoutとCancel                   | native engine processをtimeout/cancelできる実装とtestあり                                                                                                                                                                                                                                                      |
-| 🟡   | 数値warningの伝播                     | 捕捉済み経路あり。全methodでwarningが失われないか継続監査                                                                                                                                                                                                                                                      |
+| 状態 | 項目                                  | 完了条件                                                                                                                                                                                                                                                                            |
+| ---- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🟡   | Graph共通描画                         | 通常・Survival・非線形に加え旧Resultsの独自tickも`createNiceTicks`へ統合。1値rangeの重複tickも共通helperで解消。plot bounds等は継続                                                                                                                                                 |
+| 🟡   | Spreadsheet共通primitive              | keyboard/paste/zoomに加え、旧2条件・多条件表のTab順、最小scroll focus、tablist移動、有限数値parse、割合表示を共通化。draft/commitとcell editor統合は継続                                                                                                                            |
+| 🟡   | `ExperimentGraphWorkbench`分割        | 各editor、3種renderer、series/lineage投影、grouping/data selection/series/distribution、Statistics context/注釈/intent、workspace同期、instrumentation、benchmark capture、native export feedbackを分離済み。workbenchは約4,900行から1,888行へ縮小。残るorchestrationを段階的に分離 |
+| ✅   | 未使用prototypeの公開sourceからの分離 | private archiveへ保全し、public sourceには含めない                                                                                                                                                                                                                                  |
+| ✅   | benchmark生成物の公開sourceからの除外 | evaluation/benchmark materialを通常product sourceから分離                                                                                                                                                                                                                           |
+| ⬜   | route-level code splitting            | 初期bundleと巨大routeの依存を縮小                                                                                                                                                                                                                                                   |
+| 🟡   | 保存format migration fixture基盤      | 研究データを含まないsynthetic Public Alpha v0.2 packageについて、0.3 migration、unit identity・measurement保持、current save/reopenをpackage testで固定。代表的な公開Alpha workflowの追加を継続                                                                                     |
+| 🟡   | エラー表示の構造化                    | 主要I/O errorは分類済み。内部codeや生traceの残存経路を継続監査                                                                                                                                                                                                                      |
+| ✅   | 解析timeoutとCancel                   | native engine processをtimeout/cancelできる実装とtestあり                                                                                                                                                                                                                           |
+| 🟡   | 数値warningの伝播                     | 捕捉済み経路あり。全methodでwarningが失われないか継続監査                                                                                                                                                                                                                           |
 
 ## 完了判定の原則
 
