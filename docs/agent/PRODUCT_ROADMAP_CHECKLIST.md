@@ -86,6 +86,7 @@
 | ✅   | 実験metadataの再編集                   | 既存のstructure revision経路から実験名・条件・測定項目を安全に修正可能           |
 | 🟡   | Kaplan–Meier外観設定の共通化           | 系列色と保存互換なfont sizeを実装。軸・legend等のparityは継続                    |
 | ✅   | Statistics結果一覧の改善               | 対照群比較を選択でき、調整済み比較familyをStatistics上で展開可能                 |
+| 🟡   | 同等性／「意味のある差がない」解析     | 差の検定とは別の解析目的として保存し、通常NHSTへ誤誘導しないsafe-stopとn.s.警告を実装済み。事前規定margin、design別TOST/CI、positive/total outcomeは統計・科学レビュー後に実装 |
 | ⏸    | 独立性確認の質問を短くする             | 科学的安全性を保ちつつ、単純実験で過度に厳しく見えない                           |
 | ✅   | SpreadsheetのUndo/Redo                 | bounded canonical履歴を共通化し、Ctrl/Cmd+Z・redo・外部置換時clearを回帰test済み |
 | 🟡   | Graph-onlyの通常workspace統合          | 共通editorは利用可能。完成Graphとの表示差を継続解消                              |

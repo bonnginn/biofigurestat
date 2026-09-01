@@ -594,6 +594,15 @@ production build retains the 264.45 kB initial chunk, and the release verifier f
 
 ## Known bounded gaps
 
+Equivalence / “no meaningful difference” is now represented as a separate saved scientific goal,
+not as an ordinary contrast or an engine method. The Statistics UI safe-stops that goal, does not
+recommend or run NHST, never derives a margin from observed data, and warns that a non-significant
+difference test does not establish equivalence. The field is optional, so Public Alpha `.lsa`
+files retain their previous behavior. Formal margin-based CI/TOST support remains deferred pending
+design-specific statistical review, especially for matched/shared-source structures and typed
+positive/total outcomes. ADR 0059 records the boundary. Focused UI and project-schema tests cover
+goal transitions, engine non-execution, bilingual warnings, and save/reopen compatibility.
+
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
   integration, diagnostics, and benchmark capture. Native export and persisted-state projection
   have been separated, and X/Y-axis editing now sits behind component boundaries; rendering and
