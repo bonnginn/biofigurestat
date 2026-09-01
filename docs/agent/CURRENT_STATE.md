@@ -365,6 +365,15 @@ pass. The complete UI suite passes 192 files / 1,305 tests. Existing React `act(
 several older asynchronous suites remain test-quality debt; they are not product failures and
 should be removed before deleting contract coverage.
 
+The expanded adaptive scalar editor now uses the same Spreadsheet draft-text component as the
+identity editors. Blank/invalid/finite parsing and canonical observation updates remain in the
+numeric caller, while dirty retention, blur commit, accessible error rendering, and row-major
+keyboard movement come from one lifecycle. The change removes 22 production lines and passes the
+existing Adaptive Spreadsheet plus direct primitive suites (29 tests), UI typecheck, and focused
+lint. Separately, four locale-sensitive UI suites now settle their locale-store update inside
+React `act(...)`; their 40 existing tests pass without the warnings they previously emitted. No
+test cases or assertions were removed.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
