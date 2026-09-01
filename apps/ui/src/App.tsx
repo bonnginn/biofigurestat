@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   actionErrorMessage,
   type OpenedAnyProject,
@@ -14,8 +14,6 @@ import { CollectionPage } from "./pages/CollectionPage";
 import { HomePage } from "./pages/HomePage";
 import { NewExperimentPage } from "./pages/NewExperimentPage";
 import { OpenProjectPage } from "./pages/OpenProjectPage";
-import { SpecializedCorePage } from "./pages/SpecializedCorePage";
-import { CommonCoveragePage } from "./pages/CommonCoveragePage";
 import { defaultProjectActions } from "./app/desktopProjectActions";
 import { ProjectIoError } from "./app/desktopProjectPackage";
 import type { ProjectActions } from "./app/projectActions";
@@ -69,6 +67,14 @@ import type {
 import { recordUsageMilestone } from "./app/usageTelemetry";
 import { resolveAnalysisRouteSwitcherAccess } from "./app/analysisRouteSwitcherAccess";
 import { localizedText, useAppLocale } from "./app/appLocale";
+
+const CommonCoveragePage = lazy(() =>
+  import("./pages/CommonCoveragePage").then(({ CommonCoveragePage: Page }) => ({ default: Page })),
+);
+
+const SpecializedCorePage = lazy(() =>
+  import("./pages/SpecializedCorePage").then(({ SpecializedCorePage: Page }) => ({ default: Page })),
+);
 
 type AppProps = {
   projectActions?: ProjectActions;
@@ -1422,7 +1428,15 @@ export default function App({
             </button>
           </div>
         ) : null}
-        {page}
+        <Suspense
+          fallback={
+            <p className="app-route-loading" role="status">
+              {t("画面を読み込んでいます…", "Loading this workspace…")}
+            </p>
+          }
+        >
+          {page}
+        </Suspense>
       </AppShell>
       {pendingWorkspaceExit ? (
         <UnsavedChangesDialog

@@ -767,7 +767,7 @@ describe("ExperimentGraphWorkbench", () => {
     expect(screen.getByText("BioFigureStat 0.1.0")).toBeVisible();
     const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelector('[data-graph-layer="statistics-annotation"]')).toBeNull();
-    fireEvent.change(screen.getByRole("combobox", { name: "統計注釈の表示" }), {
+    fireEvent.change(await screen.findByRole("combobox", { name: "統計注釈の表示" }), {
       target: { value: "exact_p" },
     });
     expect(graph.querySelector('[data-graph-layer="statistics-annotation"]')).toHaveTextContent(
