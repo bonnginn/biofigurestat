@@ -1,10 +1,12 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import type { AnalysisEngineResult } from "@lsaa/analysis-contracts";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
 import type { ExperimentSetDraft } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
 import { ExperimentGraphAnnotationEditor } from "./ExperimentGraphAnnotationEditor";
 
 type StatisticsAnnotation = NonNullable<WorkspaceGraphState["statisticsAnnotation"]>;
@@ -51,7 +53,10 @@ const candidates: StatisticsAnnotationEntry[] = [
 ];
 
 function Harness({ onAddSelectedComparison = vi.fn() }) {
-  const [selection, setSelection] = useState<StatisticsAnnotation>({ mode: "symbol", testIndex: 0 });
+  const [selection, setSelection] = useState<StatisticsAnnotation>({
+    mode: "symbol",
+    testIndex: 0,
+  });
   const [annotations, setAnnotations] = useState<StatisticsAnnotationEntry[]>([candidates[0]!]);
   return (
     <ExperimentGraphAnnotationEditor
@@ -70,6 +75,8 @@ function Harness({ onAddSelectedComparison = vi.fn() }) {
 }
 
 describe("ExperimentGraphAnnotationEditor", () => {
+  beforeEach(() => resetAppLocaleForTests("ja"));
+
   it("toggles the complete adjusted family without recalculating", () => {
     render(<Harness />);
 
@@ -96,5 +103,13 @@ describe("ExperimentGraphAnnotationEditor", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "グラフから外す" }));
     expect(screen.queryByLabelText(`${firstTestName}の配置形式`)).not.toBeInTheDocument();
+  });
+
+  it("contains no fixed Japanese copy in English", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<Harness />);
+
+    expect(screen.getByRole("heading", { name: "Annotations on the Graph" })).toBeVisible();
+    expectNoJapaneseUi(view.container);
   });
 });

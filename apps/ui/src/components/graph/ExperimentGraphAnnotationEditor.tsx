@@ -39,17 +39,25 @@ export function ExperimentGraphAnnotationEditor({
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
 
   return (
-    <section className="experiment-graph-statistics-section" aria-label="統計注釈">
+    <section
+      className="experiment-graph-statistics-section"
+      aria-label={t("統計注釈", "Statistical annotations")}
+    >
       <h3>{t("グラフ上の注釈", "Annotations on the Graph")}</h3>
       <p className="experiment-graph-help">
-        Statisticsで保存した解析結果から表示します。まず全比較を一括表示し、不要な比較だけを下の一覧から外せます。ここでは再計算しません。
+        {t(
+          "Statisticsで保存した解析結果から表示します。まず全比較を一括表示し、不要な比較だけを下の一覧から外せます。ここでは再計算しません。",
+          "Annotations use the analysis result saved in Statistics. You can show all comparisons first and remove unneeded comparisons below. No analysis is recalculated here.",
+        )}
       </p>
       {adjustedComparisonAnnotations.length > 0 ? (
         <fieldset
           className="experiment-graph-condition-fieldset experiment-graph-comparison-visibility"
-          aria-label="調整済み比較の表示"
+          aria-label={t("調整済み比較の表示", "Adjusted-comparison visibility")}
         >
-          <legend>調整済み比較（最初はすべて表示）</legend>
+          <legend>
+            {t("調整済み比較（最初はすべて表示）", "Adjusted comparisons (initially all shown)")}
+          </legend>
           {adjustedComparisonAnnotations.map((candidate) => {
             const test = analysisResult.tests[candidate.testIndex]!;
             const checked = statisticsAnnotations.some(
@@ -64,9 +72,7 @@ export function ExperimentGraphAnnotationEditor({
                     setStatisticsAnnotations((current) =>
                       event.target.checked
                         ? [
-                            ...current.filter(
-                              ({ testIndex }) => testIndex !== candidate.testIndex,
-                            ),
+                            ...current.filter(({ testIndex }) => testIndex !== candidate.testIndex),
                             candidate,
                           ]
                         : current.filter(({ testIndex }) => testIndex !== candidate.testIndex),
@@ -81,9 +87,9 @@ export function ExperimentGraphAnnotationEditor({
       ) : null}
       {analysisResult.tests.length > 1 ? (
         <label className="experiment-graph-field">
-          <span>比較結果</span>
+          <span>{t("比較結果", "Comparison result")}</span>
           <select
-            aria-label="統計注釈の比較"
+            aria-label={t("統計注釈の比較", "Statistical-annotation comparison")}
             title={
               analysisResult.tests[statisticsAnnotation.testIndex]
                 ? analysisTestAnnotationLabel(
@@ -110,9 +116,9 @@ export function ExperimentGraphAnnotationEditor({
         </label>
       ) : null}
       <label className="experiment-graph-field">
-        <span>表示</span>
+        <span>{t("表示", "Display")}</span>
         <select
-          aria-label="統計注釈の表示"
+          aria-label={t("統計注釈の表示", "Statistical-annotation display")}
           value={statisticsAnnotation.mode}
           onChange={(event) =>
             setStatisticsAnnotation((current) => ({
@@ -121,15 +127,18 @@ export function ExperimentGraphAnnotationEditor({
             }))
           }
         >
-          <option value="hidden">表示しない</option>
-          <option value="exact_p">正確なp値</option>
-          <option value="symbol">有意差記号</option>
+          <option value="hidden">{t("表示しない", "Hidden")}</option>
+          <option value="exact_p">{t("正確なp値", "Exact p-value")}</option>
+          <option value="symbol">{t("有意差記号", "Significance symbol")}</option>
         </select>
       </label>
       {adjustedComparisonAnnotations.length > 0 ? (
         <button
           type="button"
-          aria-label="すべての比較をまとめて注釈へ追加"
+          aria-label={t(
+            "すべての比較をまとめて注釈へ追加",
+            "Add all comparisons to the annotations",
+          )}
           className="experiment-graph-primary-action"
           onClick={() => {
             const mode: StatisticsAnnotationEntry["mode"] =
@@ -139,11 +148,14 @@ export function ExperimentGraphAnnotationEditor({
             );
           }}
         >
-          調整済みの全比較をグラフにまとめて表示
+          {t(
+            "調整済みの全比較をグラフにまとめて表示",
+            "Show all adjusted comparisons on the graph",
+          )}
         </button>
       ) : null}
       <button type="button" onClick={onAddSelectedComparison}>
-        この比較を注釈へ追加
+        {t("この比較を注釈へ追加", "Add this comparison to the annotations")}
       </button>
       {statisticsAnnotations.length > 0 ? (
         <ul className="experiment-graph-annotation-list">
@@ -154,7 +166,7 @@ export function ExperimentGraphAnnotationEditor({
               <li key={annotation.id}>
                 <span>{analysisTestAnnotationLabel(test, draft, baseAnnotationContext)}</span>
                 <select
-                  aria-label={`${test.name}の表示形式`}
+                  aria-label={t(`${test.name}の表示形式`, `${test.name} display style`)}
                   value={annotation.mode}
                   onChange={(event) =>
                     setStatisticsAnnotations((current) =>
@@ -166,11 +178,11 @@ export function ExperimentGraphAnnotationEditor({
                     )
                   }
                 >
-                  <option value="exact_p">p値</option>
-                  <option value="symbol">記号</option>
+                  <option value="exact_p">{t("p値", "p-value")}</option>
+                  <option value="symbol">{t("記号", "Symbol")}</option>
                 </select>
                 <select
-                  aria-label={`${test.name}の配置形式`}
+                  aria-label={t(`${test.name}の配置形式`, `${test.name} placement style`)}
                   value={annotation.presentation ?? "bracket"}
                   onChange={(event) =>
                     setStatisticsAnnotations((current) =>
@@ -185,13 +197,18 @@ export function ExperimentGraphAnnotationEditor({
                     )
                   }
                 >
-                  <option value="bracket">比較線</option>
-                  <option value="symbol_only">対象群の上に記号のみ</option>
+                  <option value="bracket">{t("比較線", "Comparison bracket")}</option>
+                  <option value="symbol_only">
+                    {t("対象群の上に記号のみ", "Symbol above target group only")}
+                  </option>
                 </select>
                 {(annotation.presentation ?? "bracket") === "symbol_only" ? (
                   <input
-                    aria-label={`${test.name}の統計凡例`}
-                    placeholder="例：**** adjusted p < 0.0001 vs control"
+                    aria-label={t(`${test.name}の統計凡例`, `${test.name} statistical legend`)}
+                    placeholder={t(
+                      "例：**** adjusted p < 0.0001 vs control",
+                      "Example: **** adjusted p < 0.0001 vs control",
+                    )}
                     value={annotation.legendLabel ?? ""}
                     onChange={(event) =>
                       setStatisticsAnnotations((current) =>
@@ -218,7 +235,7 @@ export function ExperimentGraphAnnotationEditor({
                       )
                     }
                   />
-                  <span>n.s.表示</span>
+                  <span>{t("n.s.表示", "Show n.s.")}</span>
                 </label>
                 <button
                   type="button"
@@ -228,7 +245,7 @@ export function ExperimentGraphAnnotationEditor({
                     )
                   }
                 >
-                  グラフから外す
+                  {t("グラフから外す", "Remove from graph")}
                 </button>
               </li>
             );
@@ -236,8 +253,12 @@ export function ExperimentGraphAnnotationEditor({
         </ul>
       ) : null}
       <p className="experiment-graph-help">
-        表示内容：{annotationContext}
-        。保存済みのこのグラフの解析結果にだけリンクします。派生値の注釈はそのmetric/windowだけを表し、曲線全体の推論を意味しません。データや比較対象を変更すると注釈も外れます。
+        {t("表示内容：", "Displayed result: ")}
+        {annotationContext}
+        {t(
+          "。保存済みのこのグラフの解析結果にだけリンクします。派生値の注釈はそのmetric/windowだけを表し、曲線全体の推論を意味しません。データや比較対象を変更すると注釈も外れます。",
+          ". Annotations link only to the saved analysis result for this graph. An annotation for a derived value applies only to that metric and window; it does not imply inference over the whole curve. Changing the data or comparison target removes the annotation.",
+        )}
       </p>
     </section>
   );
