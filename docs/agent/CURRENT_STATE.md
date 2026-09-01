@@ -219,6 +219,14 @@ invalid nested values, unequal condition lists, rectangular paste, and expanded 
 remain covered. The full UI suite remains 169 files / 1,245 passing tests, with typecheck, lint, and
 production build passing.
 
+The Graph Statistics orchestration pass extracts the time-analysis editor, factor-by-time scope
+notice, and analysis-set editor, and reuses the annotation editor in a display-only variant for
+the Statistics workspace. The workbench is now 1,599 lines. Time-point identity, analysis windows,
+baseline selection, readout and condition IDs, statistical-unit interpretation, and the existing
+safe stop before an unsupported full factor-by-time model remain explicit. Each extracted surface
+has an English no-Japanese regression. The full UI suite now passes 172 files and 1,253 tests;
+typecheck, lint, and production build pass.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
@@ -237,8 +245,9 @@ production build passing.
   context fingerprinting, and varying-factor selection are also separated. Remaining Statistics
   intent state is now separated as well. Factor/facet/legend/readiness presentation projection and
   localized data summaries, grouping, data selection, series presentation, and distribution
-  controls are now separate tested boundaries. Remaining orchestration and Statistics integration
-  are the next safe extraction boundaries.
+  controls are now separate tested boundaries. Time-analysis selection, factor-by-time scope,
+  analysis-set selection, and Statistics annotation display are also separated. Remaining canvas
+  composition and top-level orchestration are the next safe extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
   display, and ID/scalar draft synchronization now use shared primitives. Remaining specialized
