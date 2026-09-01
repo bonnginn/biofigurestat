@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
 import { EquivalencePlanEditor } from "./EquivalencePlanEditor";
+import type { EquivalenceAnalysisPlan } from "@lsaa/analysis-contracts";
 
 afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
@@ -43,18 +45,24 @@ describe("EquivalencePlanEditor", () => {
   });
 
   it("records one explicitly selected primary comparison", () => {
-    const onPlanChange = vi.fn();
+    function ControlledEditor() {
+      const [plan, setPlan] = useState<EquivalenceAnalysisPlan | null>(null);
+      return (
+        <EquivalencePlanEditor
+          plan={plan}
+          scale="percentage_point_difference"
+          unit="percentage points"
+          comparisonCount={2}
+          comparisonOptions={[
+            { id: "parent:clone-2", label: "Parent vs clone #2" },
+            { id: "parent:clone-3", label: "Parent vs clone #3" },
+          ]}
+          onPlanChange={setPlan}
+        />
+      );
+    }
     render(
-      <EquivalencePlanEditor
-        scale="percentage_point_difference"
-        unit="percentage points"
-        comparisonCount={2}
-        comparisonOptions={[
-          { id: "parent:clone-2", label: "Parent vs clone #2" },
-          { id: "parent:clone-3", label: "Parent vs clone #3" },
-        ]}
-        onPlanChange={onPlanChange}
-      />,
+      <ControlledEditor />,
     );
 
     fireEvent.change(screen.getByLabelText("下限"), { target: { value: "-10" } });
@@ -71,11 +79,11 @@ describe("EquivalencePlanEditor", () => {
       }),
     );
 
-    expect(onPlanChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        claimMode: "single_primary_comparison",
-        primaryComparisonId: "parent:clone-3",
-      }),
+    expect(screen.getByLabelText("下限")).toHaveValue(-10);
+    expect(screen.getByLabelText("上限")).toHaveValue(10);
+    expect(screen.getByLabelText("主比較")).toHaveValue("parent:clone-3");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "同等性marginをこのGraphの解析計画として保存します",
     );
   });
 

@@ -52,6 +52,9 @@ export function EquivalencePlanEditor({
   const [validation, setValidation] = useState<string | null>(null);
 
   useEffect(() => {
+    // An incomplete edit deliberately clears the persisted plan, but must not erase the draft
+    // that the researcher is still completing. Non-null plans remain authoritative on reopen.
+    if (!plan) return;
     setDraft(initialDraft(plan));
     setValidation(null);
   }, [plan]);
