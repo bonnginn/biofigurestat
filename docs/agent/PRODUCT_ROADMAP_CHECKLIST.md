@@ -20,7 +20,7 @@
 | 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
 | ---- | ---- | ---- | ------------ | -------- |
 | 1 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
-| 2 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Open、Save As、PNG/SVG/CSVのCancelと保存先、および`.lsa`関連付けをpackaged appで再現 |
+| 2 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Windows SVG Save/Cancelは実装済み・packaged実証待ち。次にOpen、Save As、PNG/CSVと`.lsa`関連付けを再現 |
 | 3 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | Graph preview parity、Kaplan–Meierの軸・凡例設定、Graph-only表示差を実機で確認 |
 | 4 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
 
@@ -68,7 +68,7 @@
 | ✅   | 製品FAILとharness環境FAILの分離        | `PRODUCT_REGRESSION`と`HARNESS_INFRASTRUCTURE_BLOCKED`を区別                                   |
 | ✅   | Windows WebView2起動・接続             | transient blank targetを待機し、このhostの最新packaged exeでscenario全体がPASS                 |
 | ✅   | Graph-only Statistics validation       | 実表入力からGraph/Statisticsへ進み、未回答項目の英語alert表示とfocusをnativeで検査             |
-| ⬜   | native file dialog自動操作             | Open、Save、Save As、PNG/SVG/CSVのCancel/保存先を自動確認                                      |
+| 🟡   | native file dialog自動操作             | Windows SVGの実Save画面でCancel非作成と指定先保存を実装・自己test 10/10。packaged実証後、Open、Save As、PNG/CSVへ拡張 |
 | ⬜   | `.lsa` file association自動確認        | ダブルクリック起動と同名・別名projectの内容一致を検査                                          |
 | 🟡   | macOS adapter                          | Accessibilityで入力、Command+Q、Cancel保持、破棄終了を同じreport schemaへ実装。Mac実行証拠待ち |
 | ⏸    | 人間の見た目判断                       | graph品質、clipping、font、余白、高DPIは最終的に人間が確認                                     |

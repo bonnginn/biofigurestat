@@ -246,6 +246,15 @@ attaches to the packaged application, but the current managed runner cannot read
 value back. This remains `HARNESS_INFRASTRUCTURE_BLOCKED`; the corresponding macOS product path has
 passed manual review. See `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md`.
 
+The next native source increment extends that same exact-process Windows scenario through the real
+SVG Save dialog. It cancels once without creating the harness target, then selects an absolute
+evidence path and verifies the saved SVG contents. UI Automation is scoped to windows owned by the
+spawned BioFigureStat PID, target paths are encoded rather than interpolated, and missing-dialog
+product failures remain distinct from unavailable-automation environment blocks. The harness
+self-test passes 10/10; a newly packaged Windows run is still required before this step becomes
+release evidence. Project Open/Save As, PNG/CSV variants, and installed `.lsa` association remain
+the next bounded automation slices.
+
 Windows human review found that a Graph-only project whose sample-ID column had been explicitly
 accepted as one series per row reopened with its table intact but its Graph and Statistics tabs
 disabled. The saved `.lsa` still contained the mapping and active Graph. Revision `a6a186f`

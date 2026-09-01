@@ -17,6 +17,7 @@ The first Windows gate covers:
 - native architecture IPC;
 - visible and accessible application-copy scan for unexpected Japanese text;
 - native export command and exact byte verification;
+- the real Windows SVG Save dialog, including Cancel and an exact researcher-selected target;
 - actual Graph-only table entry, mapping, Graph creation, and Statistics handoff;
 - required biological-structure validation appearing inline and receiving focus;
 - retained Graph-only and biological-answer dirty-value retention;
@@ -60,6 +61,17 @@ locale, consent choice, recent projects, favorites, or project tabs. It starts a
 the exact process it created. Window-close checks send `WM_CLOSE` to that exact spawned process,
 rather than relying on a WebView IPC permission that may not be present in the least-privilege
 release capability set.
+
+After the Graph-only Graph is created, the Windows adapter now clicks the product's actual `SVG`
+control twice. The first native Save dialog is cancelled and must not create the evidence target.
+The second is driven to an absolute, harness-owned evidence path; the resulting file must contain
+valid SVG markup. Windows UI Automation is restricted to top-level windows owned by the exact
+spawned process, and non-ASCII target paths are passed as UTF-16/Base64 rather than interpolated
+into PowerShell source. A missing Save dialog is a `PRODUCT_REGRESSION`; an unavailable Windows UI
+Automation assembly is `HARNESS_INFRASTRUCTURE_BLOCKED`.
+
+This adapter and its failure classification have source-level self-tests. It must still pass once
+against a newly packaged Windows candidate before the dialog step is treated as release evidence.
 
 ## First implementation evidence
 
@@ -111,9 +123,10 @@ still be recorded on macOS before making it a mandatory release gate.
 
 ## Current boundary
 
-This is the first native automation layer, not a claim that human review is unnecessary. Native
-file-picker automation, installed-build file association, clipboard paste into third-party apps,
-and high-DPI layout judgment remain separate gates.
+This is the first native automation layer, not a claim that human review is unnecessary. Windows
+SVG Save/Cancel automation is implemented but awaits its first packaged-candidate run. Open/Save
+As project pickers, PNG/CSV dialog variants, installed-build file association, clipboard paste
+into third-party apps, and high-DPI layout judgment remain separate gates.
 
 Until the first packaged-app run of the adapter passes on a permissioned Mac runner,
 `pnpm native:verify:mac` plus the bounded manual handoff remains authoritative for macOS.
