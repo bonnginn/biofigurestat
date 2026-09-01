@@ -427,6 +427,13 @@ After the topology and Statistics view-model changes, the complete UI suite agai
 / 1,305 tests in 249 seconds. UI typecheck, full lint, and the production build also pass; the
 initial chunk remains 264.32 kB (gzip 81.16 kB) with no build advisory.
 
+Graph and Statistics data-selection changes now pass through one transition boundary. Readout,
+display-condition, analysis-condition, source-mode, displayed-time, analysis-time, and derived-time
+plan changes update their canonical selection state and invalidate stale analysis together. The
+transition retains the existing distinction between Graph display scope and Statistics scope, and
+does not infer condition identity or time semantics. The workbench is now 935 lines; its existing
+53 integration tests, UI typecheck, and focused lint pass without a new move-only test.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
