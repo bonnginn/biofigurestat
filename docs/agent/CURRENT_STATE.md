@@ -75,6 +75,12 @@ the populated Data workspace and guides the user through Graph, Statistics, and 
 changing analysis semantics or the `.lsa` schema. These changes are not yet part of a published
 binary.
 
+The import workflow also bundles a constrained bilingual Excel template with separate sheets for
+independent groups, paired/repeated observations, Survival, and ordered X/Y data. The in-app recipe
+links to that workbook and states that IDs/dates retain provenance but do not prove pairing or
+independence, blanks remain missing, and file count is not statistical `n`. The native workbook
+reader loads all five sheets, and the production Vite build retains the exact workbook bytes.
+
 The final source gate ran the 193-file / 1,304-test UI suite once. It produced 1,303 passes and one
 stale test expectation for the Japanese `概要` tab; the corrected focused workflow passes. Full
 workspace typecheck, UI lint, production UI build, the 9-test native-harness self-suite, and the
