@@ -346,6 +346,15 @@ the annotation-surface wiring reuses existing UI integration coverage. UI typech
 the production build pass. The initial chunk remains 264.32 kB (gzip 81.16 kB) with no build
 advisory.
 
+Matched, independent, and expanded Spreadsheet identity cells now share one draft-text lifecycle
+component. Dirty text survives unrelated canonical updates, blur commits once, invalid values keep
+their accessible error relationship, and row-major keyboard movement remains delegated to the
+existing navigation boundary. Stable unit identity, duplicate detection, and canonical observation
+updates stay with each scientific surface rather than being generalized into strings. The direct
+primitive test and the existing Canonical/Adaptive Spreadsheet suites pass together (56 tests),
+with UI typecheck and focused lint passing. This increment removes repeated lifecycle wiring; it
+does not change identity semantics or the persisted schema.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
