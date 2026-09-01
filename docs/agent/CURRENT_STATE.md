@@ -303,6 +303,14 @@ The full UI suite passes 190 files / 1,299 tests; the 82 App/open integration te
 focused lint, and the production build pass. This is a loading and dependency-boundary improvement,
 not a reduction in the application's total source lines.
 
+Selected-comparison annotation creation is now a pure tested boundary shared with automatic
+adjusted-comparison annotation lineage. Pairwise endpoints, adjusted/unadjusted status, hidden-to-
+symbol normalization, selected-time-point identity, and derived AUC/window lineage are fixed by
+direct tests rather than being assembled inside the React workbench. This removes a duplicated
+lineage path and reduces `ExperimentGraphWorkbench.tsx` to 1,086 lines. The relevant 55 Graph tests,
+UI typecheck, and focused lint pass. The purpose is single-source behavior and cheaper regression
+testing; file size reduction is only a secondary indicator.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
