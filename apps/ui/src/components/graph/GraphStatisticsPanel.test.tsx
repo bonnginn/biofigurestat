@@ -758,6 +758,39 @@ describe("GraphStatisticsPanel validation repair routes", () => {
 });
 
 describe("GraphStatisticsPanel pairwise result table", () => {
+  it("enables control-versus-many when the control condition is explicitly retained", () => {
+    const conditionOptions = [
+      { id: "group:control", label: "Control" },
+      { id: "group:drug", label: "Drug" },
+      { id: "group:rescue", label: "Rescue" },
+    ] as const;
+    const base = multiGroupAssessment(conditionOptions);
+    const assessment: DraftAnalysisAssessment = {
+      ...base,
+      request: AnalysisEngineRequestSchema.parse({
+        ...base.request,
+        controlConditionId: "group:control",
+      }),
+    };
+    const onContrastIntentChange = vi.fn();
+    render(
+      <GraphStatisticsPanel
+        assessment={assessment}
+        design={panelDesign(conditionOptions)}
+        outcomeId="outcome.value"
+        analysisRunner={vi.fn()}
+        conditionOptions={conditionOptions}
+        relationshipAlreadyDeclared
+        onContrastIntentChange={onContrastIntentChange}
+      />,
+    );
+
+    const choice = screen.getByRole("radio", { name: "各処置を対照群と比較" });
+    expect(choice).toBeEnabled();
+    fireEvent.click(choice);
+    expect(onContrastIntentChange).toHaveBeenCalledWith("control_vs_many");
+  });
+
   it("shows comparison labels and adjusted p-values without exposing condition IDs", async () => {
     const conditionOptions = [
       { id: "group:control", label: "Control" },
