@@ -1,13 +1,14 @@
 import { forwardRef } from "react";
 import type { NonlinearFitGraphModel } from "@lsaa/graph-spec";
 import { nonlinearModelLabel } from "../../app/nonlinearModelRegistry";
-import { createNiceTicks } from "./graphLayout";
+import { createNiceTicks, createPlotRectangle } from "./graphLayout";
 import { createMinorTicks } from "./graphSemantics";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 
 const WIDTH = 820;
 const HEIGHT = 500;
 const MARGIN = { top: 62, right: 34, bottom: 70, left: 82 };
+const PLOT = createPlotRectangle(WIDTH, HEIGHT, MARGIN);
 const COLORS = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00"];
 
 function linearScale(value: number, min: number, max: number, start: number, end: number) {
@@ -52,8 +53,8 @@ export const NonlinearFitGraph = forwardRef<
   const yMajorTicks = createNiceTicks(yMin, yMax, 5, null);
   const xMinorTicks = createMinorTicks(xMajorTicks, xMin, xMax, 5);
   const yMinorTicks = createMinorTicks(yMajorTicks, yMin, yMax, 5);
-  const x = (value: number) => linearScale(value, xMin, xMax, MARGIN.left, WIDTH - MARGIN.right);
-  const y = (value: number) => linearScale(value, yMin, yMax, HEIGHT - MARGIN.bottom, MARGIN.top);
+  const x = (value: number) => linearScale(value, xMin, xMax, PLOT.left, PLOT.right);
+  const y = (value: number) => linearScale(value, yMin, yMax, PLOT.bottom, PLOT.top);
 
   return (
     <svg
@@ -78,9 +79,9 @@ export const NonlinearFitGraph = forwardRef<
       {yMinorTicks.map((value) => (
         <line
           key={`y.minor.${value}`}
-          x1={MARGIN.left}
+          x1={PLOT.left}
           y1={y(value)}
-          x2={MARGIN.left - 3.5}
+          x2={PLOT.left - 3.5}
           y2={y(value)}
           stroke="#111"
           className="nonlinear-fit-axis-minor-tick"
@@ -92,9 +93,9 @@ export const NonlinearFitGraph = forwardRef<
         <line
           key={`x.minor.${value}`}
           x1={x(value)}
-          y1={HEIGHT - MARGIN.bottom}
+          y1={PLOT.bottom}
           x2={x(value)}
-          y2={HEIGHT - MARGIN.bottom + 3.5}
+          y2={PLOT.bottom + 3.5}
           stroke="#111"
           className="nonlinear-fit-axis-minor-tick"
           data-axis-tick="x-minor"
@@ -104,9 +105,9 @@ export const NonlinearFitGraph = forwardRef<
       {yMajorTicks.map((value) => (
         <g key={`y.${value}`}>
           <line
-            x1={MARGIN.left}
+            x1={PLOT.left}
             y1={y(value)}
-            x2={MARGIN.left - 6}
+            x2={PLOT.left - 6}
             y2={y(value)}
             stroke="#111"
             className="nonlinear-fit-axis-tick"
@@ -115,13 +116,13 @@ export const NonlinearFitGraph = forwardRef<
             data-tick-direction="outside"
           />
           <line
-            x1={MARGIN.left}
+            x1={PLOT.left}
             y1={y(value)}
-            x2={WIDTH - MARGIN.right}
+            x2={PLOT.right}
             y2={y(value)}
             stroke="#d8e0e8"
           />
-          <text x={MARGIN.left - 10} y={y(value) + 5} textAnchor="end" fontSize="13">
+          <text x={PLOT.left - 10} y={y(value) + 5} textAnchor="end" fontSize="13">
             {label(value)}
           </text>
         </g>
@@ -130,33 +131,33 @@ export const NonlinearFitGraph = forwardRef<
         <g key={`x.${value}`}>
           <line
             x1={x(value)}
-            y1={HEIGHT - MARGIN.bottom}
+            y1={PLOT.bottom}
             x2={x(value)}
-            y2={HEIGHT - MARGIN.bottom + 6}
+            y2={PLOT.bottom + 6}
             stroke="#111"
             className="nonlinear-fit-axis-tick"
             data-axis-tick="x"
             data-tick-value={value}
             data-tick-direction="outside"
           />
-          <text x={x(value)} y={HEIGHT - MARGIN.bottom + 24} textAnchor="middle" fontSize="13">
+          <text x={x(value)} y={PLOT.bottom + 24} textAnchor="middle" fontSize="13">
             {label(value)}
           </text>
         </g>
       ))}
       <line
-        x1={MARGIN.left}
-        y1={MARGIN.top}
-        x2={MARGIN.left}
-        y2={HEIGHT - MARGIN.bottom}
+        x1={PLOT.left}
+        y1={PLOT.top}
+        x2={PLOT.left}
+        y2={PLOT.bottom}
         stroke="#111"
         strokeWidth="1.4"
       />
       <line
-        x1={MARGIN.left}
-        y1={HEIGHT - MARGIN.bottom}
-        x2={WIDTH - MARGIN.right}
-        y2={HEIGHT - MARGIN.bottom}
+        x1={PLOT.left}
+        y1={PLOT.bottom}
+        x2={PLOT.right}
+        y2={PLOT.bottom}
         stroke="#111"
         strokeWidth="1.4"
       />
@@ -199,38 +200,38 @@ export const NonlinearFitGraph = forwardRef<
             >
               {displayMode === "fitted" ? (
                 <line
-                  x1={WIDTH - MARGIN.right - 150}
-                  y1={MARGIN.top + 12 + index * 24}
-                  x2={WIDTH - MARGIN.right - 124}
-                  y2={MARGIN.top + 12 + index * 24}
+                  x1={PLOT.right - 150}
+                  y1={PLOT.top + 12 + index * 24}
+                  x2={PLOT.right - 124}
+                  y2={PLOT.top + 12 + index * 24}
                   stroke={color}
                   strokeWidth="3"
                   data-legend-mark="fitted-curve"
                 />
               ) : null}
               <circle
-                cx={WIDTH - MARGIN.right - 137}
-                cy={MARGIN.top + 12 + index * 24}
+                cx={PLOT.right - 137}
+                cy={PLOT.top + 12 + index * 24}
                 r="4"
                 fill="#fff"
                 stroke={color}
                 strokeWidth="2"
                 data-legend-mark="observed-points"
               />
-              <text x={WIDTH - MARGIN.right - 116} y={MARGIN.top + 17 + index * 24} fontSize="13">
+              <text x={PLOT.right - 116} y={PLOT.top + 17 + index * 24} fontSize="13">
                 {seriesLabels[series.seriesId] ?? series.seriesId}
               </text>
             </g>
           </g>
         );
       })}
-      <text x={(MARGIN.left + WIDTH - MARGIN.right) / 2} y={HEIGHT - 18} textAnchor="middle">
+      <text x={PLOT.left + PLOT.width / 2} y={HEIGHT - 18} textAnchor="middle">
         {xLabel}
       </text>
       <text x="22" y={HEIGHT / 2} transform={`rotate(-90 22 ${HEIGHT / 2})`} textAnchor="middle">
         {yLabel}
       </text>
-      <text x={MARGIN.left} y={title ? 47 : 22} fontSize="12" fill="#536171">
+      <text x={PLOT.left} y={title ? 47 : 22} fontSize="12" fill="#536171">
         {displayMode === "fitted"
           ? locale === "ja"
             ? `観測点 + 保存済み${nonlinearModelLabel(model.modelId)} fit`
