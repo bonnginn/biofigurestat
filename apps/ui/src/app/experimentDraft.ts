@@ -658,11 +658,9 @@ export function expectedAnalysisLabel(draft: ExperimentSetDraft): string {
       : "時間点ごとに別サンプルとして扱う条件と時間の比較候補";
   }
   if (draft.conditionAssignment.kind === "matched") {
-    if (hasSharedSourceConditionUnits(draft)) {
-      const sourceLabel =
-        draft.conditionAssignment.matchedTopology?.kind === "distinct_condition_units_shared_source"
-          ? draft.conditionAssignment.matchedTopology.sourceUnitLabel
-          : "共通の由来";
+    const sharedSourceTopology = sharedSourceConditionTopology(draft);
+    if (sharedSourceTopology) {
+      const sourceLabel = sharedSourceTopology.sourceUnitLabel;
       return activeConditions(draft).length > 2
         ? `同じ${sourceLabel}に由来する条件別${draft.conditionAssignment.unitLabel}の複数条件比較`
         : `同じ${sourceLabel}に由来する条件別${draft.conditionAssignment.unitLabel}の2条件比較`;

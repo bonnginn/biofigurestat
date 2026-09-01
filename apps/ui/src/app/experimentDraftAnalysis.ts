@@ -9,9 +9,9 @@ import { resolveCanonicalReadoutValue } from "@lsaa/adaptive-input";
 import {
   continuousSummary,
   experimentCellKey,
-  hasSharedSourceConditionUnits,
   normalizeWithinExperiment,
   percentage,
+  sharedSourceConditionTopology,
   wbRatio,
   type ExperimentCellMap,
   type ExperimentSetDraft,
@@ -268,12 +268,9 @@ export function assessDraftGraphAnalysis(input: {
 }): DraftAnalysisAssessment {
   const selected = new Set(input.conditionIds);
   const conditions = input.draft.conditions.filter((condition) => selected.has(condition.id));
-  const sharedSource = hasSharedSourceConditionUnits(input.draft);
-  const sharedSourceLabel =
-    input.draft.conditionAssignment.matchedTopology?.kind ===
-    "distinct_condition_units_shared_source"
-      ? input.draft.conditionAssignment.matchedTopology.sourceUnitLabel
-      : "共有した由来";
+  const sharedSourceTopology = sharedSourceConditionTopology(input.draft);
+  const sharedSource = sharedSourceTopology !== null;
+  const sharedSourceLabel = sharedSourceTopology?.sourceUnitLabel ?? "共有した由来";
   const matchedSetDescription = sharedSource
     ? `同じ${sharedSourceLabel}に由来する条件別${input.draft.conditionAssignment.unitLabel}`
     : `同じ${input.draft.conditionAssignment.unitLabel}`;
