@@ -101,6 +101,12 @@ display names in metadata. Panel layout is export-only and does not change the `
 serializer, rendered-Graph collection, native-aware save boundary, button state, typecheck, lint, and
 production build are covered; final visual judgment remains a Beta manual-review item.
 
+The English-UI residue assertion now inspects current input/textarea values and
+`aria-description`, in addition to visible text, labels, titles, placeholders, and alt text. This
+closes the class of leak where a generated Japanese default remains only inside an editable field.
+All 34 suites that use the assertion pass (347 tests) with English fixtures; researcher-entered
+content remains data and is not translated.
+
 The final source gate ran the 193-file / 1,304-test UI suite once. It produced 1,303 passes and one
 stale test expectation for the Japanese `概要` tab; the corrected focused workflow passes. Full
 workspace typecheck, UI lint, production UI build, the 9-test native-harness self-suite, and the

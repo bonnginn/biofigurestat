@@ -50,7 +50,7 @@
 | ---- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
 | ✅   | 日本語・英語切替                     | localeは`.lsa`外に保持し、科学的semantic keyを変更しない                                                                   |
 | ✅   | Public Alpha主要画面の英語化         | Home、実験設定、Data、Graph、Statistics、Help、報告を対象化                                                                |
-| ✅   | 日本語表示漏れの自動検査             | visible text、aria-label、title、placeholder、altを検査                                                                    |
+| ✅   | 日本語表示漏れの自動検査             | visible text、aria-label/description、title、placeholder、altに加え編集欄の現在値も検査。34 files / 347 testsで英語fixtureの残存0件 |
 | ✅   | native自動検査で見つけた表示漏れ修正 | New Experiment wrapperとworkspace fallbackを修正                                                                           |
 | ✅   | 自動回帰                             | UI 162ファイル、1,200テストPASS。共有package等278テスト、typecheck・lintもPASS                                             |
 | ✅   | 日英統合Windows build                | `ab5b012-alpha.20260901.win-refactor2`はbuild/engine/bundle/releaseとexact-executable native harnessがPASS               |
