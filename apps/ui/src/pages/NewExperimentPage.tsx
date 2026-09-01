@@ -1,4 +1,12 @@
-import { useCallback, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 
 import type {
   ConditionAttributeDraft,
@@ -32,7 +40,7 @@ import type {
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
 import { ConditionTimePreview } from "../components/ConditionTimePreview";
 import { ExistingDataImport } from "../components/ExistingDataImport";
-import { ExperimentWorkspace } from "./ExperimentWorkspace";
+import type { ExperimentWorkspaceProps } from "./ExperimentWorkspace";
 import { recordBenchmarkEvent } from "../app/benchmarkEvaluation";
 import { evaluationMode, evaluationModeIsConfigured } from "../app/evaluationMode";
 import { syntheticFixtures, type SyntheticFixture } from "../app/syntheticFixtures";
@@ -66,6 +74,12 @@ import {
 import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import { recordUsageEntry, recordUsageMilestone } from "../app/usageTelemetry";
 
+const ExperimentWorkspace = lazy(() =>
+  import("./ExperimentWorkspace").then(({ ExperimentWorkspace: Workspace }) => ({
+    default: Workspace,
+  })),
+);
+
 type NewExperimentPageProps = {
   onNavigate: (route: AppRoute) => void;
   saveProject?: SaveProjectAction;
@@ -78,7 +92,7 @@ type NewExperimentPageProps = {
   analysisAvailable?: boolean;
   initialDraft?: ExperimentSetDraft | null;
   favoriteGraphDefaults?: readonly FavoriteGraphDefault[];
-  onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
+  onSaveFavorite?: ExperimentWorkspaceProps["onSaveFavorite"];
   onDirtyChange?: (dirty: boolean) => void;
   onOpenProject?: () => void;
   onRequestExit?: RequestWorkspaceExit;
@@ -2684,22 +2698,30 @@ export function NewExperimentPage({
 
   if (stage === "workspace" && draft) {
     return (
-      <ExperimentWorkspace
-        rootRef={pageRootRef}
-        initialDraft={withActiveConditions(draft)}
-        initialCells={fixtureCells}
-        initialGraphs={fixtureGraphs}
-        analysisRunner={analysisRunner}
-        analysisAvailable={analysisAvailable}
-        saveProject={saveProject}
-        favoriteGraphDefaults={favoriteGraphDefaults}
-        onSaveFavorite={onSaveFavorite}
-        onDirtyChange={onDirtyChange}
-        onOpenProject={onOpenProject}
-        onRequestExit={onRequestExit}
-        onRegisterSaveHandler={onRegisterSaveHandler}
-        onBack={() => (fixtureCells ? goBackToContext() : setStage("confirmation"))}
-      />
+      <Suspense
+        fallback={
+          <p className="app-route-loading" role="status">
+            {localizedText(locale, "実験ワークスペースを読み込んでいます…", "Loading experiment workspace…")}
+          </p>
+        }
+      >
+        <ExperimentWorkspace
+          rootRef={pageRootRef}
+          initialDraft={withActiveConditions(draft)}
+          initialCells={fixtureCells}
+          initialGraphs={fixtureGraphs}
+          analysisRunner={analysisRunner}
+          analysisAvailable={analysisAvailable}
+          saveProject={saveProject}
+          favoriteGraphDefaults={favoriteGraphDefaults}
+          onSaveFavorite={onSaveFavorite}
+          onDirtyChange={onDirtyChange}
+          onOpenProject={onOpenProject}
+          onRequestExit={onRequestExit}
+          onRegisterSaveHandler={onRegisterSaveHandler}
+          onBack={() => (fixtureCells ? goBackToContext() : setStage("confirmation"))}
+        />
+      </Suspense>
     );
   }
 

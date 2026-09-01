@@ -96,7 +96,7 @@ describe("New Experiment dedicated entry handoff", () => {
     expect(onNavigate).not.toHaveBeenCalled();
   });
 
-  it("単純な独立群は一般インタビューを開かず条件別シートへ進む", () => {
+  it("単純な独立群は一般インタビューを開かず条件別シートへ進む", async () => {
     window.localStorage.setItem(ADAPTIVE_INPUT_FEATURE_FLAG, "enabled");
     render(<NewExperimentPage onNavigate={vi.fn()} onDedicatedEntryReady={vi.fn()} />);
 
@@ -121,7 +121,7 @@ describe("New Experiment dedicated entry handoff", () => {
       screen.getByRole("button", { name: "条件別スプレッドシートを作る" }),
     );
 
-    expect(screen.getByText("実験ワークスペース")).toBeVisible();
+    expect(await screen.findByText("実験ワークスペース")).toBeVisible();
     expect(screen.getByText("Vehicle")).toBeVisible();
     expect(screen.getByText("Drug")).toBeVisible();
     expect(screen.queryByText("条件を受けたものと材料のつながり")).toBeNull();
@@ -193,7 +193,7 @@ describe("New Experiment dedicated entry handoff", () => {
     expect(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" })).toHaveFocus();
   });
 
-  it("keeps a Graph-only table while adding the biological facts needed for Statistics", () => {
+  it("keeps a Graph-only table while adding the biological facts needed for Statistics", async () => {
     window.localStorage.setItem(ADAPTIVE_INPUT_FEATURE_FLAG, "enabled");
     render(
       <NewExperimentPage browserPreview onNavigate={vi.fn()} onDedicatedEntryReady={vi.fn()} />,
@@ -237,7 +237,7 @@ describe("New Experiment dedicated entry handoff", () => {
     fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
     fireEvent.click(screen.getByRole("button", { name: "統計設定へ進む" }));
 
-    expect(screen.getByText("実験ワークスペース")).toBeVisible();
+    expect(await screen.findByText("実験ワークスペース")).toBeVisible();
     expect(screen.getByRole("button", { name: "グラフ (1)" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "対象・試料IDを表示／編集" }));
     expect(screen.getByDisplayValue("unit-001")).toBeVisible();
@@ -330,7 +330,7 @@ describe("New Experiment dedicated entry handoff", () => {
     fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
     fireEvent.click(screen.getByRole("button", { name: "統計設定へ進む" }));
 
-    expect(screen.getByText("実験ワークスペース")).toBeVisible();
+    expect(await screen.findByText("実験ワークスペース")).toBeVisible();
     expect(screen.getByRole("button", { name: "グラフ (1)" })).toBeEnabled();
     expect(screen.getByText("2件の測定値")).toBeVisible();
     expect(screen.getByDisplayValue("10")).toBeVisible();
@@ -403,7 +403,7 @@ describe("New Experiment dedicated entry handoff", () => {
     expect(screen.getByRole("button", { name: "実験から始めるを開く" })).toHaveFocus();
   });
 
-  it("hands a ready common biological plan to the existing experiment workspace", () => {
+  it("hands a ready common biological plan to the existing experiment workspace", async () => {
     window.localStorage.setItem(ADAPTIVE_INPUT_FEATURE_FLAG, "enabled");
     render(<NewExperimentPage onNavigate={vi.fn()} onDedicatedEntryReady={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "実験から始めるを開く" }));
@@ -426,7 +426,9 @@ describe("New Experiment dedicated entry handoff", () => {
     fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
     fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
 
-    expect(screen.getByRole("heading", { name: "細胞生存率の実験" })).toHaveFocus();
+    expect(
+      await screen.findByRole("heading", { name: "細胞生存率の実験" }),
+    ).toHaveFocus();
     expect(screen.getByText("実験ワークスペース")).toBeVisible();
   });
 
