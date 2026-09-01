@@ -372,7 +372,7 @@ describe("specialized Core entry pages", () => {
     expect(state.analysisRuns).toHaveLength(0);
     expect(state.adaptiveInput?.canonicalObservations).toHaveLength(4);
     expect(state.adaptiveInput?.contract.orderedAxes[0]?.sampling).toBe("event_follow_up");
-    expect(screen.getByText(/統計は必要になった時に実行できます/u)).toBeVisible();
+    expect(await screen.findByText(/統計は必要になった時に実行できます/u)).toBeVisible();
   });
 
   it("saves a one-group survival graph without fabricating a D11 analysis", async () => {
