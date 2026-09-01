@@ -652,7 +652,9 @@ with shared nice ticks and adaptive Y-title spacing on both numeric axes. The fo
 tests, UI typecheck, and focused lint pass. Composition previews now also retain a 0–100% axis,
 condition labels, category legend, and sufficient canvas width for all ten configured conditions;
 wide designs scroll rather than clip the last conditions or legend. Five focused preview tests,
-UI typecheck, and focused lint pass. Final visual judgment remains a human Beta review item.
+UI typecheck, focused lint, and the production build pass. The initial chunk remains bounded at
+265.53 kB (gzip 81.50 kB) with no build advisory. Final visual judgment remains a human Beta review
+item.
 
 The ordinary, scatter, and categorical Graph-creation previews now consume that same rectangle
 contract for axis endpoints, point scaling, bar baselines, and label anchors. Existing preview
