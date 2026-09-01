@@ -135,8 +135,9 @@ and image alternative text across the production surfaces. Typecheck, lint, and 
 build pass. Windows candidate `4041e85-alpha.20260901.win-review3` passes the Windows bundle verifier,
 release bundle verifier, packaged-engine smoke checks, and the exact-executable native UI scenario.
 Its installer SHA-256 is
-`4382BA7A7534D74270C7E362320CBF2102AC9AAE64B13FEB3CB6310BA01FE8E2`. Windows human language/layout
-review and the macOS native candidate remain outstanding.
+`4382BA7A7534D74270C7E362320CBF2102AC9AAE64B13FEB3CB6310BA01FE8E2`. Windows human language/layout,
+language switching, Graph-only save/reopen, and user-title preservation checks passed on
+2026-09-01. The macOS native candidate remains outstanding.
 
 Post-Alpha native regression automation now has a complete Windows packaged-app PASS. The
 dependency-free harness launches the exact Tauri executable with an isolated WebView2 profile and

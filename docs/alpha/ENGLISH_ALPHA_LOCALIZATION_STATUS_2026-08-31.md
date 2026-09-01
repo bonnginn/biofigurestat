@@ -82,14 +82,14 @@ reopen.
 Legacy projects whose title is one of the canonical app-generated Japanese/English defaults now
 display that default in the active UI language; user-authored titles remain unchanged.
 
-This candidate has not yet received a short human English-language review. A macOS candidate has
-not been built. Do not publish English assets until native lifecycle/export checks and human review
-for terminology, clipping, and layout pass on the relevant platform. The existing Japanese
+This candidate completed the short Windows human review on 2026-09-01. Language switching,
+fresh Graph-only entry, legacy save/reopen, enabled Graph/Statistics tabs, visible Save/Save As,
+localized app-generated defaults, preserved user-authored titles, and both-language terminology,
+clipping, and layout checks passed. A macOS candidate has not been built. Do not publish English
+assets until the corresponding macOS native and bounded human checks pass. The existing Japanese
 `v0.1.0-alpha.1` release is unaffected.
 
 ## Next gate
 
-1. Install the Windows candidate and exercise language switching, fresh entry, save/reopen, and
-   PNG/SVG/CSV export.
-2. Perform a short human Windows language review for terminology, clipping, and layout.
-3. Build and verify the macOS candidate, then repeat the same bounded review.
+1. Build and verify the macOS candidate.
+2. Repeat the same bounded save/reopen, language, and layout review on macOS.

@@ -17,7 +17,7 @@
 
 | 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
 | --- | --- | --- | --- | --- |
-| 1 | 🟡 | 日英統合Windows candidateの短い実機確認 | 必要 | 自動native gateはPASS。最新candidateで両言語の用語・見切れを人が最終確認 |
+| 1 | ✅ | 日英統合Windows candidateの短い実機確認 | 完了 | `win-review3`で両言語、用語、見切れ、Graph-only保存再読込、タイトル保持がPASS |
 | 2 | ⬜ | 日英統合macOS candidateのbuildと限定実機確認 | 最終確認のみ必要 | native verifier、保存・再読込、書き出し、両言語表示がPASS |
 | 3 | ⬜ | 日英統合Alpha更新の公開判断 | 必要 | Windows/macOS証拠、checksum、release noteを揃え、同じBioFigureStatの次candidateとして公開可否を記録 |
 | 4 | ✅ | Windows native UI harnessの実機scenario | 不要 | 最新packaged exeで入力、Statistics validation、native export、dirty Close / Cancel / DiscardがPASS |
@@ -51,7 +51,7 @@
 | ✅ | 日本語表示漏れの自動検査 | visible text、aria-label、title、placeholder、altを検査 |
 | ✅ | native自動検査で見つけた表示漏れ修正 | New Experiment wrapperとworkspace fallbackを修正 |
 | ✅ | 自動回帰 | UI 162ファイル、1,200テストPASS。共有package等278テスト、typecheck・lintもPASS |
-| 🟡 | 日英統合Windows build | `4041e85-alpha.20260901.win-review3`はbundle/engine/release/native UI verifierがPASS。短い人間の両言語・layout確認が残る |
+| ✅ | 日英統合Windows build | `4041e85-alpha.20260901.win-review3`はbundle/engine/release/native UI verifierと人間の両言語・layout確認がPASS |
 | ⬜ | 日英統合macOS build | candidate buildと限定確認が必要 |
 | ⬜ | 日英統合buildの配布 | 両native gate後に、同じアプリの次Alpha assetとrelease noteを追加 |
 
