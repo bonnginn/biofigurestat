@@ -48,6 +48,7 @@ import { CompositionGraphSvg } from "./CompositionGraphSvg";
 import { CorrelationGraphSvg } from "./CorrelationGraphSvg";
 import { ExperimentGraphSvg } from "./GeneralExperimentGraphSvg";
 import { ExperimentGraphAnnotationEditor } from "./ExperimentGraphAnnotationEditor";
+import { ExperimentGraphAnalysisScopeNotice } from "./ExperimentGraphAnalysisScopeNotice";
 import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
 import { ExperimentGraphConnectingLineEditor } from "./ExperimentGraphConnectingLineEditor";
 import { ExperimentGraphErrorBarEditor } from "./ExperimentGraphErrorBarEditor";
@@ -1619,39 +1620,23 @@ export function ExperimentGraphWorkbench({
               {draft.time.points.length > 1 &&
               timeAnalysis.kind === "selected_timepoint" &&
               !analysisTimePointId ? (
-                <section className="experiment-graph-statistics-section">
-                  {hasFactorByTimeStructure ? (
-                    <>
-                      <h3>複数の処置と時間が含まれる実験です</h3>
-                      <p>
-                        現在の構造：
-                        {varyingStatisticalAttributes.map(({ label }) => label).join("×")}
-                        ×時間。現在のCoreは、この全体の交互作用を一度に検定する因子×時間モデルに未対応です。
-                      </p>
-                      <p>
-                        時点を1つ選ぶと、その時点に限った処置因子の解析だけを実行します。これは実験全体の因子×時間交互作を検定するものではありません。
-                      </p>
-                    </>
-                  ) : (
-                    <p>
-                      解析する時点を選ぶと、現在のデータに合う方法を確認できます。複数時点をまとめた反復・因子モデルへは自動変換しません。
-                    </p>
-                  )}
-                </section>
+                <ExperimentGraphAnalysisScopeNotice
+                  time={draft.time}
+                  plan={timeAnalysis}
+                  analysisTimePointId={analysisTimePointId}
+                  hasFactorByTimeStructure={hasFactorByTimeStructure}
+                  varyingFactorLabels={varyingStatisticalAttributes.map(({ label }) => label)}
+                />
               ) : (
                 <>
                   {hasFactorByTimeStructure && analysisTimePointId ? (
-                    <section className="experiment-graph-statistics-section" role="note">
-                      <h3>今回に解析する範囲</h3>
-                      <p>
-                        因子候補：
-                        {varyingStatisticalAttributes.map(({ label }) => label).join("、")}
-                        。時間：
-                        {draft.time.points.find(({ id }) => id === analysisTimePointId)?.value}
-                        {draft.time.unit}
-                        のみ。この結果は因子×時間の全体モデルではありません。条件説明用の属性を自動的にプールしません。
-                      </p>
-                    </section>
+                    <ExperimentGraphAnalysisScopeNotice
+                      time={draft.time}
+                      plan={timeAnalysis}
+                      analysisTimePointId={analysisTimePointId}
+                      hasFactorByTimeStructure={hasFactorByTimeStructure}
+                      varyingFactorLabels={varyingStatisticalAttributes.map(({ label }) => label)}
+                    />
                   ) : null}
                   <GraphStatisticsPanel
                     assessment={analysisAssessment}
