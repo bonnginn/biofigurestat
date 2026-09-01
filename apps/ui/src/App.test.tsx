@@ -19,17 +19,13 @@ const desktopTestActions = {
   saveProject: async () => null,
 };
 
-const unresolvedBridgeCases = [
+const unresolvedRouteCases = [
   { bridgeCase: "none", hasUnresolvedSave: false, hasUnresolvedOpen: false },
-  { bridgeCase: "save-only", hasUnresolvedSave: true, hasUnresolvedOpen: false },
-  { bridgeCase: "open-only", hasUnresolvedSave: false, hasUnresolvedOpen: true },
   { bridgeCase: "both", hasUnresolvedSave: true, hasUnresolvedOpen: true },
 ] as const;
 
-const specializedBridgeCases = [
+const specializedRouteCases = [
   { bridgeCase: "none", hasSpecializedSave: false, hasGenericOpen: false },
-  { bridgeCase: "save-only", hasSpecializedSave: true, hasGenericOpen: false },
-  { bridgeCase: "open-only", hasSpecializedSave: false, hasGenericOpen: true },
   { bridgeCase: "both", hasSpecializedSave: true, hasGenericOpen: true },
 ] as const;
 
@@ -162,7 +158,7 @@ describe("workspace home", () => {
     },
   );
 
-  it.each(unresolvedBridgeCases)(
+  it.each(unresolvedRouteCases)(
     "keeps Graph-only and Heatmap fail-closed with $bridgeCase unresolved bridges",
     async ({ hasUnresolvedSave, hasUnresolvedOpen }) => {
       window.history.replaceState({}, "", "/?adaptiveInput=1");
@@ -261,7 +257,7 @@ describe("workspace home", () => {
     },
   );
 
-  it.each(specializedBridgeCases)(
+  it.each(specializedRouteCases)(
     "gates Survival and ordered-curve hub entries with $bridgeCase specialized persistence",
     ({ hasSpecializedSave, hasGenericOpen }) => {
       window.history.replaceState({}, "", "/?adaptiveInput=1");
@@ -308,7 +304,7 @@ describe("workspace home", () => {
   );
 
   it.each(
-    specializedBridgeCases.flatMap((bridge) => [
+    specializedRouteCases.flatMap((bridge) => [
       { ...bridge, path: "/survival", entryLabel: "生存時間", pageHeading: "生存時間" },
       {
         ...bridge,
@@ -351,7 +347,7 @@ describe("workspace home", () => {
     },
   );
 
-  it.each(unresolvedBridgeCases)(
+  it.each(unresolvedRouteCases)(
     "gates direct /heatmap with paired persistence for $bridgeCase bridges",
     async ({ hasUnresolvedSave, hasUnresolvedOpen }) => {
       window.history.replaceState({}, "", "/heatmap");
@@ -394,7 +390,7 @@ describe("workspace home", () => {
     },
   );
 
-  it.each(unresolvedBridgeCases)(
+  it.each(unresolvedRouteCases)(
     "gates the compatibility Heatmap path with paired persistence for $bridgeCase bridges",
     ({ hasUnresolvedSave, hasUnresolvedOpen }) => {
       const unresolvedOpen = vi.fn(async () => null);

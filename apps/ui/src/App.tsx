@@ -65,6 +65,7 @@ import type {
 import { recordUsageMilestone } from "./app/usageTelemetry";
 import { resolveAnalysisRouteSwitcherAccess } from "./app/analysisRouteSwitcherAccess";
 import { localizedText, useAppLocale } from "./app/appLocale";
+import { projectPersistenceCapabilities } from "./app/projectPersistenceCapabilities";
 
 const CommonCoveragePage = lazy(() =>
   import("./pages/CommonCoveragePage").then(({ CommonCoveragePage: Page }) => ({ default: Page })),
@@ -611,19 +612,16 @@ export default function App({
     [activeProjectActions.saveSpecializedEntryDraftProject, rememberProjectTab],
   );
 
+  const persistenceCapabilities = projectPersistenceCapabilities(activeProjectActions);
   const unresolvedVisualizationPersistence =
-    !browserPreview &&
-    activeProjectActions.saveUnresolvedVisualizationProject &&
-    activeProjectActions.openUnresolvedVisualizationProject
+    !browserPreview && persistenceCapabilities.unresolvedVisualization
       ? {
           save: saveUnresolvedVisualizationProject,
-          open: activeProjectActions.openUnresolvedVisualizationProject,
+          open: activeProjectActions.openUnresolvedVisualizationProject!,
         }
       : null;
   const specializedEntryDraftPersistence =
-    !browserPreview &&
-    activeProjectActions.saveSpecializedEntryDraftProject &&
-    activeProjectActions.openAnyProject
+    !browserPreview && persistenceCapabilities.specializedEntryDraft
       ? { save: saveSpecializedEntryDraftProject }
       : null;
   const specializedEntryAvailable = browserPreview || Boolean(specializedEntryDraftPersistence);
