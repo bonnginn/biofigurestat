@@ -13,8 +13,6 @@ import { ExperimentGraphCanvasToolbar } from "./ExperimentGraphCanvasToolbar";
 import { ExperimentGraphDataEditor } from "./ExperimentGraphDataEditor";
 import { ExperimentGraphDataSummary } from "./ExperimentGraphDataSummary";
 import { ExperimentGraphInspectorTarget } from "./ExperimentGraphInspectorTarget";
-import { ExperimentGraphDistributionEditor } from "./ExperimentGraphDistributionEditor";
-import { ExperimentGraphSeriesEditor } from "./ExperimentGraphSeriesEditor";
 import { ExperimentGraphCanvasRenderer } from "./ExperimentGraphCanvasRenderer";
 import { ExperimentGraphAnnotationEditor } from "./ExperimentGraphAnnotationEditor";
 import { ExperimentGraphAnalysisSetEditor } from "./ExperimentGraphAnalysisSetEditor";
@@ -25,12 +23,9 @@ import { describeActiveGraphLayers } from "./experimentGraphLayerDescription";
 import { experimentGraphTypeLabel } from "./experimentGraphTypeLabel";
 export { describeActiveGraphLayers } from "./experimentGraphLayerDescription";
 import { selectExperimentGraphActiveScope } from "./experimentGraphActiveScope";
-import { ExperimentGraphConnectingLineEditor } from "./ExperimentGraphConnectingLineEditor";
-import { ExperimentGraphErrorBarEditor } from "./ExperimentGraphErrorBarEditor";
-import { ExperimentGraphLegendEditor } from "./ExperimentGraphLegendEditor";
-import { ExperimentGraphRawDotsEditor } from "./ExperimentGraphRawDotsEditor";
 import { ExperimentGraphAxisInspector } from "./ExperimentGraphAxisInspector";
 import { ExperimentGraphStatisticsInspector } from "./ExperimentGraphStatisticsInspector";
+import { ExperimentGraphLayerInspector } from "./ExperimentGraphLayerInspector";
 import {
   createGraphStatisticsRelationshipContext,
   createExperimentGraphMethodsText,
@@ -734,59 +729,15 @@ export function ExperimentGraphWorkbench({
             />
           ) : null}
 
-          {inspectorTarget === "raw-dots" ? (
-            <ExperimentGraphRawDotsEditor
-              shape={shape}
-              layers={layers}
-              appearance={appearance}
-              setLayers={setLayers}
-              setAppearance={setAppearance}
-            />
-          ) : null}
-
-          {inspectorTarget === "experiment-summary" || inspectorTarget === "series-style" ? (
-            <ExperimentGraphSeriesEditor
-              mode={inspectorTarget}
-              layers={layers}
-              appearance={appearance}
-              visualSeriesOptions={visualSeriesOptions}
-              setLayers={setLayers}
-              setAppearance={setAppearance}
-            />
-          ) : null}
-
-          {inspectorTarget === "violin" || inspectorTarget === "box" ? (
-            <ExperimentGraphDistributionEditor
-              mode={inspectorTarget}
-              shape={shape}
-              layers={layers}
-              appearance={appearance}
-              setLayers={setLayers}
-              setAppearance={setAppearance}
-            />
-          ) : null}
-
-          {inspectorTarget === "error-bar" ? (
-            <ExperimentGraphErrorBarEditor
-              layers={layers}
-              appearance={appearance}
-              setLayers={setLayers}
-              setAppearance={setAppearance}
-            />
-          ) : null}
-
-          {inspectorTarget === "connecting-line" ? (
-            <ExperimentGraphConnectingLineEditor
-              layers={layers}
-              appearance={appearance}
-              setLayers={setLayers}
-              setAppearance={setAppearance}
-            />
-          ) : null}
-
-          {inspectorTarget === "legend" ? (
-            <ExperimentGraphLegendEditor appearance={appearance} setAppearance={setAppearance} />
-          ) : null}
+          <ExperimentGraphLayerInspector
+            target={inspectorTarget}
+            shape={shape}
+            layers={layers}
+            appearance={appearance}
+            visualSeriesOptions={visualSeriesOptions}
+            setLayers={setLayers}
+            setAppearance={setAppearance}
+          />
 
           {inspectorTarget === "annotation" && annotationEditorProps ? (
             <ExperimentGraphAnnotationEditor
