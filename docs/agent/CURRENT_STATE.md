@@ -211,6 +211,14 @@ Further eager-page splitting was investigated but deferred because New Experimen
 tests currently rely on synchronous route rendering; changing that contract is not required for
 the current performance gain.
 
+Spreadsheet draft/commit synchronization now also covers the standard experiment numeric editor
+and both compact and expanded nested-measurement editors. These surfaces share the same canonical
+value synchronization, dirty-text preservation, validation retention, blur commit, and paste reset
+boundary already used by the adaptive and canonical spreadsheets. Decimal intermediate text,
+invalid nested values, unequal condition lists, rectangular paste, and expanded child identity
+remain covered. The full UI suite remains 169 files / 1,245 passing tests, with typecheck, lint, and
+production build passing.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
