@@ -259,12 +259,12 @@ project-action, App, open/save, workspace, and locale tests pass.
 The persisted Graph snapshot and active-scope projections are now separately tested boundaries.
 They preserve stable readout/condition/time identities, keep the displayed set distinct from the
 Statistics analysis set, copy selection arrays before emission, and retain the exact public
-workspace schema. `ExperimentGraphWorkbench.tsx` is 1,075 lines, down from 6,922 at the Public
-Alpha tag (about 84%). This is architectural concentration reduction, not a claim that the whole
-application became smaller: since that tag, `apps/ui/src` production code is net +5,268 lines and
-tests are net +5,782 lines because bilingual UI, native automation, compatibility guards,
+workspace schema. `ExperimentGraphWorkbench.tsx` is now 1,046 lines, down from 6,922 at the Public
+Alpha tag (about 85%). This is architectural concentration reduction, not a claim that the whole
+application became smaller: since that tag, `apps/ui/src` production code is net +5,254 lines and
+tests are net +5,852 lines because bilingual UI, native automation, compatibility guards,
 extracted boundaries, and regression coverage were added. Graph-family production code is net
-+2,013 lines while Graph tests are net +4,144 lines. The next consolidation pass must therefore
++2,042 lines while Graph tests are net +4,174 lines. The next consolidation pass must therefore
 look for overlap among the extracted boundaries instead of judging progress only by the workbench
 file size.
 
