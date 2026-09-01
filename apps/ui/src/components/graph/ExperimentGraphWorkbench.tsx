@@ -40,6 +40,7 @@ import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { ExperimentGraphCanvasCaption } from "./ExperimentGraphCanvasCaption";
 import { ExperimentGraphCanvasToolbar } from "./ExperimentGraphCanvasToolbar";
 import { ExperimentGraphDataSummary } from "./ExperimentGraphDataSummary";
+import { ExperimentGraphInspectorTarget } from "./ExperimentGraphInspectorTarget";
 import { ExperimentGraphDistributionEditor } from "./ExperimentGraphDistributionEditor";
 import { ExperimentGraphGroupingEditor } from "./ExperimentGraphGroupingEditor";
 import { ExperimentGraphSelectionEditor } from "./ExperimentGraphSelectionEditor";
@@ -1053,78 +1054,16 @@ export function ExperimentGraphWorkbench({
           }
         >
           {workspaceMode !== "statistics" ? (
-            <div className="experiment-graph-inspector-target">
-              <label className="experiment-graph-field">
-                <span>{t("編集対象", "Edit")}</span>
-                <select
-                  aria-label={t("編集対象", "Edit target")}
-                  value={inspectorTarget}
-                  onChange={(event) => inspectGraphPart(event.target.value as InspectorTarget)}
-                >
-                  <option value="background">{t("グラフ全体", "Entire Graph")}</option>
-                  <option value="x-axis">{t("X軸", "X axis")}</option>
-                  <option value="y-axis">{t("Y軸", "Y axis")}</option>
-                  <option value="data">{t("データ", "Data")}</option>
-                  <option value="raw-dots">{t("生データの点", "Raw-data points")}</option>
-                  <option value="experiment-summary">
-                    {t("実験単位の要約", "Experimental-unit summary")}
-                  </option>
-                  <option value="series-style">
-                    {t("系列の色・線・点", "Series color, line, and symbol")}
-                  </option>
-                  <option value="violin">{t("バイオリン", "Violin")}</option>
-                  <option value="box">{t("箱ひげ", "Box plot")}</option>
-                  <option value="error-bar">{t("誤差線", "Error bars")}</option>
-                  <option value="connecting-line">{t("接続線", "Connecting lines")}</option>
-                  <option value="legend">{t("凡例", "Legend")}</option>
-                  {(workspaceMode === "graph" || workspaceMode === "combined") &&
-                  analysisResult?.status === "ok" ? (
-                    <option value="annotation">{t("統計注釈", "Statistical annotations")}</option>
-                  ) : null}
-                  {workspaceMode === "combined" ? (
-                    <option value="statistics">{t("統計解析", "Statistical analysis")}</option>
-                  ) : null}
-                </select>
-              </label>
-              <div
-                className="experiment-graph-layer-shortcuts"
-                aria-label={t("現在の表示レイヤー", "Visible layers")}
-              >
-                <span>{t("表示中", "Visible")}</span>
-                {shape === "nested_continuous" ? (
-                  <button
-                    type="button"
-                    aria-pressed={layers.raw}
-                    onClick={() => setLayers((current) => ({ ...current, raw: !current.raw }))}
-                  >
-                    {t("生データ", "Raw data")}
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  aria-pressed={layers.experiment}
-                  onClick={() =>
-                    setLayers((current) => ({ ...current, experiment: !current.experiment }))
-                  }
-                >
-                  {t("実験単位の点", "Experimental-unit points")}
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={layers.overall}
-                  onClick={() =>
-                    setLayers((current) => ({ ...current, overall: !current.overall }))
-                  }
-                >
-                  {t("要約", "Summary")}
-                </button>
-                {visualSeriesOptions.length > 1 ? (
-                  <button type="button" onClick={() => inspectGraphPart("series-style")}>
-                    {t("系列を編集", "Edit series")}
-                  </button>
-                ) : null}
-              </div>
-            </div>
+            <ExperimentGraphInspectorTarget
+              inspectorTarget={inspectorTarget}
+              layers={layers}
+              shape={shape}
+              visualSeriesCount={visualSeriesOptions.length}
+              allowAnnotation={analysisResult?.status === "ok"}
+              allowStatistics={workspaceMode === "combined"}
+              onInspect={inspectGraphPart}
+              onLayersChange={setLayers}
+            />
           ) : (
             <ExperimentGraphAnalysisSetEditor
               draft={draft}
