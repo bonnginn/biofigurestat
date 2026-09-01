@@ -1,10 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
 import { LocalizedFileInput } from "./LocalizedFileInput";
 
-afterEach(() => resetAppLocaleForTests("ja"));
+afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 it("keeps file-picker copy in the selected application language", () => {
   setAppLocale("en");

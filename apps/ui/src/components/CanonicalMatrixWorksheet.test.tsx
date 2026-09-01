@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState, type ComponentProps } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -21,7 +21,7 @@ import {
 import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
 import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 
-afterEach(() => resetAppLocaleForTests("ja"));
+afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 function makeContract(overrides: Partial<StructureContract> = {}): StructureContract {
   return StructureContractSchema.parse({

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -13,7 +13,7 @@ import { WorkspaceNestedMeasurementSheet } from "./WorkspaceNestedMeasurementShe
 import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
 import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 
-afterEach(() => resetAppLocaleForTests("ja"));
+afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 function fixture(): { draft: ExperimentSetDraft; cells: ExperimentCellMap; keys: string[] } {
   const base = createExperimentSetDraft("microscopy_imaging", "nested_continuous");

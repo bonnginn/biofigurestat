@@ -1,11 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 
 import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
 import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 import { ExistingDataImport } from "./ExistingDataImport";
 
-afterEach(() => resetAppLocaleForTests("ja"));
+afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 it("shows existing-data mapping without Japanese application copy in English mode", () => {
   setAppLocale("en");
