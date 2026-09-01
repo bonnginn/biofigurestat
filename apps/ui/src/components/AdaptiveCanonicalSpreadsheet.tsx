@@ -27,6 +27,7 @@ import {
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
 import { SPREADSHEET_ZOOM_LEVELS, useSpreadsheetZoom } from "./spreadsheetZoom";
 import { getAppLocale, localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
+import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
 import {
   CanonicalMatrixWorksheet,
   canEditCanonicalMatrix,
@@ -990,15 +991,7 @@ function ExpandedIdentityEditor({
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const initialText = observation.identities[identityKey] ?? "";
-  const [text, setText] = useState(initialText);
-  const [dirty, setDirty] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setText(initialText);
-    setDirty(false);
-    setError(null);
-  }, [initialText]);
+  const { text, dirty, error, edit, accept, reportError } = useSpreadsheetCellDraft(initialText);
 
   const commit = () => {
     if (!dirty) return;
@@ -1012,10 +1005,9 @@ function ExpandedIdentityEditor({
           observations,
         }),
       );
-      setDirty(false);
-      setError(null);
+      accept();
     } catch (cause) {
-      setError(
+      reportError(
         locale === "ja" && cause instanceof Error
           ? `${cause.message} 入力内容は消えていません。`
           : t(
@@ -1040,11 +1032,7 @@ function ExpandedIdentityEditor({
         data-expanded-field="identity"
         data-observation-id={observation.observationId}
         data-semantic-key={identityKey}
-        onChange={(event) => {
-          setText(event.currentTarget.value);
-          setDirty(true);
-          setError(null);
-        }}
+        onChange={(event) => edit(event.currentTarget.value)}
         onKeyDown={moveSpreadsheetFocus}
         onPaste={onPaste}
         onBlur={commit}
@@ -1082,22 +1070,14 @@ function ExpandedScalarValueEditor({
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const value = observation.values[valueKey];
   const initialText = value === null || value === undefined ? "" : String(value);
-  const [text, setText] = useState(initialText);
-  const [dirty, setDirty] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setText(initialText);
-    setDirty(false);
-    setError(null);
-  }, [initialText]);
+  const { text, dirty, error, edit, accept, reportError } = useSpreadsheetCellDraft(initialText);
 
   const commit = () => {
     if (!dirty) return;
     const trimmed = text.trim();
     const nextValue = trimmed === "" ? null : Number(trimmed);
     if (nextValue !== null && !Number.isFinite(nextValue)) {
-      setError(
+      reportError(
         t(
           "数値を入力してください。入力内容は消えていません。",
           "Enter a numeric value. Your input was retained.",
@@ -1113,7 +1093,7 @@ function ExpandedScalarValueEditor({
         observations,
       }),
     );
-    setError(null);
+    accept();
   };
 
   return (
@@ -1131,11 +1111,7 @@ function ExpandedScalarValueEditor({
         data-expanded-field="value"
         data-observation-id={observation.observationId}
         data-semantic-key={valueKey}
-        onChange={(event) => {
-          setText(event.currentTarget.value);
-          setDirty(true);
-          setError(null);
-        }}
+        onChange={(event) => edit(event.currentTarget.value)}
         onKeyDown={moveSpreadsheetFocus}
         onPaste={onPaste}
         onBlur={commit}

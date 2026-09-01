@@ -17,6 +17,7 @@ import {
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
 import { LocalizedFileInput } from "./LocalizedFileInput";
 import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
+import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
 
 export type CanonicalWorksheetRow = Readonly<{
   key: string;
@@ -128,8 +129,10 @@ function scalarValueKey(
 
 function componentLabel(componentKey: string, ordinal: number, locale: AppLocale = "ja"): string {
   const normalized = componentKey.toLowerCase();
-  if (["numerator", "positive", "success", "event"].includes(normalized)) return localizedText(locale, "該当数", "Positive count");
-  if (["denominator", "total", "eligible", "count"].includes(normalized)) return localizedText(locale, "総数", "Total count");
+  if (["numerator", "positive", "success", "event"].includes(normalized))
+    return localizedText(locale, "該当数", "Positive count");
+  if (["denominator", "total", "eligible", "count"].includes(normalized))
+    return localizedText(locale, "総数", "Total count");
   return componentKey || (locale === "ja" ? `値 ${ordinal + 1}` : `Value ${ordinal + 1}`);
 }
 
@@ -622,15 +625,8 @@ function MatchedRowIdentityEditor({
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const errorId = useId();
   const canonicalIdentity = matchedRowIdentities(contract, observations)[rowIndex] ?? "";
-  const [text, setText] = useState(canonicalIdentity);
-  const [dirty, setDirty] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setText(canonicalIdentity);
-    setDirty(false);
-    setError(null);
-  }, [canonicalIdentity]);
+  const { text, dirty, error, edit, accept, reportError } =
+    useSpreadsheetCellDraft(canonicalIdentity);
 
   const commit = () => {
     if (!dirty) return;
@@ -638,13 +634,15 @@ function MatchedRowIdentityEditor({
       onObservationsChange(
         renameMatchedRowIdentity({ contract, observations, rowIndex, identity: text }),
       );
-      setDirty(false);
-      setError(null);
+      accept();
     } catch (cause) {
-      setError(
+      reportError(
         locale === "ja"
           ? `${cause instanceof Error ? cause.message : "IDを変更できませんでした"}。入力内容は消えていません。`
-          : t("IDを変更できませんでした。入力内容は消えていません。", "The ID could not be changed. The entered content was retained."),
+          : t(
+              "IDを変更できませんでした。入力内容は消えていません。",
+              "The ID could not be changed. The entered content was retained.",
+            ),
       );
     }
   };
@@ -661,11 +659,7 @@ function MatchedRowIdentityEditor({
         data-spreadsheet-cell="true"
         data-spreadsheet-row={rowIndex}
         data-spreadsheet-column={-1}
-        onChange={(event) => {
-          setText(event.currentTarget.value);
-          setDirty(true);
-          setError(null);
-        }}
+        onChange={(event) => edit(event.currentTarget.value)}
         onKeyDown={moveSpreadsheetFocus}
         onBlur={commit}
       />
@@ -747,25 +741,21 @@ function IndependentRowIdentityEditor({
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const errorId = useId();
-  const [text, setText] = useState(initialIdentity);
-  const [dirty, setDirty] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (dirty) return;
-    setText(initialIdentity);
-    setError(null);
-  }, [dirty, initialIdentity]);
+  const { text, dirty, error, edit, accept, reportError } = useSpreadsheetCellDraft(
+    initialIdentity,
+    { preserveDirtyOnCanonicalChange: true },
+  );
 
   const commit = () => {
     if (!dirty) return;
     const problem = onCommit(text);
     if (problem) {
-      setError(locale === "ja" ? problem : t("IDを変更できませんでした", "The ID could not be changed"));
+      reportError(
+        locale === "ja" ? problem : t("IDを変更できませんでした", "The ID could not be changed"),
+      );
       return;
     }
-    setDirty(false);
-    setError(null);
+    accept();
   };
 
   return (
@@ -775,7 +765,11 @@ function IndependentRowIdentityEditor({
         aria-label={label}
         aria-describedby={error ? errorId : undefined}
         aria-invalid={error ? "true" : undefined}
-        placeholder={canonicalIdentity ? undefined : t("値の入力時に自動作成", "Created automatically when a value is entered")}
+        placeholder={
+          canonicalIdentity
+            ? undefined
+            : t("値の入力時に自動作成", "Created automatically when a value is entered")
+        }
         value={text}
         disabled={readOnly}
         data-spreadsheet-cell="true"
@@ -783,9 +777,7 @@ function IndependentRowIdentityEditor({
         data-spreadsheet-column={gridColumn}
         onChange={(event) => {
           const next = event.currentTarget.value;
-          setText(next);
-          setDirty(true);
-          setError(null);
+          edit(next);
           if (!canonicalIdentity) onDraftChange(next);
         }}
         onKeyDown={moveSpreadsheetFocus}
@@ -1064,7 +1056,11 @@ function MatrixCell({
       onObservationsChange(next);
       setError(null);
     } catch (cause) {
-      setError(locale === "ja" && cause instanceof Error ? cause.message : t("値を反映できませんでした", "The value could not be applied"));
+      setError(
+        locale === "ja" && cause instanceof Error
+          ? cause.message
+          : t("値を反映できませんでした", "The value could not be applied"),
+      );
     }
   };
   const factorLabel = contract.factors
@@ -1074,14 +1070,19 @@ function MatrixCell({
   const rowLabel =
     contract.matching.kind === "matched"
       ? generatedRowIdentity(contract, observations, rowIndex)
-      : locale === "ja" ? `入力行 ${rowIndex + 1}` : `Entry row ${rowIndex + 1}`;
+      : locale === "ja"
+        ? `入力行 ${rowIndex + 1}`
+        : `Entry row ${rowIndex + 1}`;
   const separator = locale === "ja" ? "・" : ", ";
   const inputLabel = `${rowLabel}${separator}${factorLabel || t("測定", "Measurement")}${separator}${column.readoutLabel}${
     column.componentLabel === column.readoutLabel ? "" : `${separator}${column.componentLabel}`
   }`;
 
   if (conditionStatus !== "performed") {
-    const statusLabel = conditionStatus === "not_performed" ? t("実施していない", "Not performed") : t("未確認", "Unconfirmed");
+    const statusLabel =
+      conditionStatus === "not_performed"
+        ? t("実施していない", "Not performed")
+        : t("未確認", "Unconfirmed");
     return (
       <span
         className={`canonical-matrix-worksheet__unavailable is-${conditionStatus}`}
@@ -1180,7 +1181,10 @@ export function CanonicalMatrixWorksheet({
 }: Props) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const columns = useMemo(() => matrixColumns(contract, observations, locale), [contract, observations, locale]);
+  const columns = useMemo(
+    () => matrixColumns(contract, observations, locale),
+    [contract, observations, locale],
+  );
   const [showIndependentIdentities, setShowIndependentIdentities] = useState(false);
   const displayColumns = useMemo(
     () => matrixDisplayColumns(contract, columns, showIndependentIdentities),
@@ -1193,7 +1197,9 @@ export function CanonicalMatrixWorksheet({
     ({ key }) => key === contract.matching.identityKey,
   );
   const rowHeaderLabel =
-    contract.matching.kind === "matched" ? (matchingIdentity?.label ?? t("対象ID", "Subject ID")) : t("行", "Row");
+    contract.matching.kind === "matched"
+      ? (matchingIdentity?.label ?? t("対象ID", "Subject ID"))
+      : t("行", "Row");
   const showDate =
     contract.matching.kind !== "independent" &&
     showExperimentDate &&
@@ -1223,14 +1229,22 @@ export function CanonicalMatrixWorksheet({
     rowIndex: number;
     identity: string;
   }>): string | null => {
-    if (!independentIdentityKey) return t("この実験では対象・試料を区別するIDを設定できません", "This experiment does not define an ID that distinguishes subjects or specimens");
+    if (!independentIdentityKey)
+      return t(
+        "この実験では対象・試料を区別するIDを設定できません",
+        "This experiment does not define an ID that distinguishes subjects or specimens",
+      );
     const draftKey = independentIdentityDraftKey(factors, rowIndex);
     const identity = rawIdentity.trim();
     const canonicalIdentity =
       independentUnitIdentities(contract, observations, factors)[rowIndex] ?? "";
     const reject = (message: string): string => message;
     if (!identity) {
-      if (canonicalIdentity) return t("値を入力した行のIDは空にできません", "The ID cannot be blank after values have been entered");
+      if (canonicalIdentity)
+        return t(
+          "値を入力した行のIDは空にできません",
+          "The ID cannot be blank after values have been entered",
+        );
       setIdentityDrafts((previous) => ({ ...previous, [draftKey]: "" }));
       return null;
     }
@@ -1241,7 +1255,12 @@ export function CanonicalMatrixWorksheet({
           key !== draftKey && Boolean(value.trim()) && normalizedLabel(value) === normalized,
       )
     ) {
-      return reject(t("同じIDがすでにあります。条件ごとに異なる対象・試料IDを入力してください", "This ID already exists. Enter a different subject or specimen ID for each condition"));
+      return reject(
+        t(
+          "同じIDがすでにあります。条件ごとに異なる対象・試料IDを入力してください",
+          "This ID already exists. Enter a different subject or specimen ID for each condition",
+        ),
+      );
     }
     const previousIdentity = canonicalIdentity;
     const relatedObservationIds = new Set(
@@ -1261,7 +1280,12 @@ export function CanonicalMatrixWorksheet({
           !relatedObservationIds.has(observation.observationId),
       )
     ) {
-      return reject(t("同じIDがすでにあります。条件ごとに異なる対象・試料IDを入力してください", "This ID already exists. Enter a different subject or specimen ID for each condition"));
+      return reject(
+        t(
+          "同じIDがすでにあります。条件ごとに異なる対象・試料IDを入力してください",
+          "This ID already exists. Enter a different subject or specimen ID for each condition",
+        ),
+      );
     }
     if (canonicalIdentity) {
       try {
@@ -1281,7 +1305,9 @@ export function CanonicalMatrixWorksheet({
         });
         return null;
       } catch (cause) {
-        return locale === "ja" && cause instanceof Error ? cause.message : t("IDを変更できませんでした", "The ID could not be changed");
+        return locale === "ja" && cause instanceof Error
+          ? cause.message
+          : t("IDを変更できませんでした", "The ID could not be changed");
       }
     }
     setIdentityDrafts((previous) => ({ ...previous, [draftKey]: identity }));
@@ -1584,7 +1610,11 @@ export function CanonicalMatrixWorksheet({
         });
       else onObservationsChange(next);
       datePatches.forEach(({ rowIndex, date }) => onRowChange?.(rowIndex, { date }));
-      setFileStatus(locale === "ja" ? `${file.name}を読み込みました。${importedValueCount}件の数値を現在の入力表へ反映しました。` : `Loaded ${file.name}. Applied ${importedValueCount} numeric values to the current data table.`);
+      setFileStatus(
+        locale === "ja"
+          ? `${file.name}を読み込みました。${importedValueCount}件の数値を現在の入力表へ反映しました。`
+          : `Loaded ${file.name}. Applied ${importedValueCount} numeric values to the current data table.`,
+      );
     } catch (cause) {
       setFileError(
         locale === "ja"
@@ -1600,7 +1630,10 @@ export function CanonicalMatrixWorksheet({
   if (!eligible) {
     return (
       <p className="adaptive-canonical-spreadsheet__mode-note" role="note">
-        {t("この構造は、対象ID・階層・時間の対応を隠さない1測定1行の表で表示します。", "This structure is shown as one measurement per row so subject IDs, hierarchy, and ordered-axis relationships remain explicit.")}
+        {t(
+          "この構造は、対象ID・階層・時間の対応を隠さない1測定1行の表で表示します。",
+          "This structure is shown as one measurement per row so subject IDs, hierarchy, and ordered-axis relationships remain explicit.",
+        )}
       </p>
     );
   }
@@ -1620,7 +1653,10 @@ export function CanonicalMatrixWorksheet({
           }}
         />
         <small>
-          {t("1行目はこの表の見出しです。現在の条件列だけに対応し、別の実験構造は作りません。", "The first row contains this table’s headings. Import maps only to the current condition columns and does not create another experiment structure.")}
+          {t(
+            "1行目はこの表の見出しです。現在の条件列だけに対応し、別の実験構造は作りません。",
+            "The first row contains this table’s headings. Import maps only to the current condition columns and does not create another experiment structure.",
+          )}
         </small>
         {contract.matching.kind !== "matched" && independentIdentityKey ? (
           <button
@@ -1628,12 +1664,21 @@ export function CanonicalMatrixWorksheet({
             aria-pressed={showIndependentIdentities}
             onClick={() => setShowIndependentIdentities((visible) => !visible)}
           >
-            {showIndependentIdentities ? t("対象・試料IDを隠す", "Hide subject/specimen IDs") : t("対象・試料IDを表示／編集", "Show/edit subject/specimen IDs")}
+            {showIndependentIdentities
+              ? t("対象・試料IDを隠す", "Hide subject/specimen IDs")
+              : t("対象・試料IDを表示／編集", "Show/edit subject/specimen IDs")}
           </button>
         ) : null}
       </div>
       <div className="adaptive-canonical-spreadsheet__table-wrap canonical-matrix-worksheet">
-        <table id={tableId} aria-label={editable ? t("条件別連続入力表", "Continuous data entry by condition") : t("条件別連続表示表", "Continuous data by condition")}>
+        <table
+          id={tableId}
+          aria-label={
+            editable
+              ? t("条件別連続入力表", "Continuous data entry by condition")
+              : t("条件別連続表示表", "Continuous data by condition")
+          }
+        >
           <caption>{t("条件別シート", "Sheet by condition")}</caption>
           <thead>
             {contract.factors.map((factor, factorIndex) => (
@@ -1648,7 +1693,12 @@ export function CanonicalMatrixWorksheet({
                     className="canonical-matrix-worksheet__date-heading"
                   >
                     {t(SHARED_EXPERIMENT_DATE_LABEL, "Experiment date shared by this row")}
-                    <small>{t(SHARED_EXPERIMENT_DATE_HELP, "Optional; use only when every condition in the row was run on the same date. Dates do not determine matching.")}</small>
+                    <small>
+                      {t(
+                        SHARED_EXPERIMENT_DATE_HELP,
+                        "Optional; use only when every condition in the row was run on the same date. Dates do not determine matching.",
+                      )}
+                    </small>
                   </th>
                 ) : null}
                 {headerRuns(
@@ -1675,14 +1725,21 @@ export function CanonicalMatrixWorksheet({
                 {contract.factors.length === 0 && showDate ? (
                   <th scope="col" rowSpan={2} className="canonical-matrix-worksheet__date-heading">
                     {t(SHARED_EXPERIMENT_DATE_LABEL, "Experiment date shared by this row")}
-                    <small>{t(SHARED_EXPERIMENT_DATE_HELP, "Optional; use only when every condition in the row was run on the same date. Dates do not determine matching.")}</small>
+                    <small>
+                      {t(
+                        SHARED_EXPERIMENT_DATE_HELP,
+                        "Optional; use only when every condition in the row was run on the same date. Dates do not determine matching.",
+                      )}
+                    </small>
                   </th>
                 ) : null}
                 {displayColumns.map((column) =>
                   column.role === "identity" ? (
                     <th scope="col" rowSpan={2} key={column.key}>
                       {column.readoutLabel}
-                      <small>{t("条件ごとの対象・試料ID", "Subject/specimen ID for each condition")}</small>
+                      <small>
+                        {t("条件ごとの対象・試料ID", "Subject/specimen ID for each condition")}
+                      </small>
                     </th>
                   ) : (
                     <th scope="col" key={column.key}>
@@ -1695,12 +1752,21 @@ export function CanonicalMatrixWorksheet({
             <tr>
               <th scope="col" className="canonical-matrix-worksheet__row-label-heading">
                 {rowHeaderLabel}
-                {contract.matching.kind === "matched" ? <small>{t("同じIDの条件は対応", "Conditions with the same ID are matched")}</small> : null}
+                {contract.matching.kind === "matched" ? (
+                  <small>
+                    {t("同じIDの条件は対応", "Conditions with the same ID are matched")}
+                  </small>
+                ) : null}
               </th>
               {contract.factors.length === 0 && !showComponentHeaders && showDate ? (
                 <th scope="col" className="canonical-matrix-worksheet__date-heading">
                   {t(SHARED_EXPERIMENT_DATE_LABEL, "Experiment date shared by this row")}
-                  <small>{t(SHARED_EXPERIMENT_DATE_HELP, "Optional; use only when every condition in the row was run on the same date. Dates do not determine matching.")}</small>
+                  <small>
+                    {t(
+                      SHARED_EXPERIMENT_DATE_HELP,
+                      "Optional; use only when every condition in the row was run on the same date. Dates do not determine matching.",
+                    )}
+                  </small>
                 </th>
               ) : null}
               {displayColumns.map((column) => {
@@ -1737,7 +1803,8 @@ export function CanonicalMatrixWorksheet({
               const rowIdentity =
                 contract.matching.kind === "matched"
                   ? generatedRowIdentity(contract, observations, rowIndex)
-                  : rows[rowIndex]?.label || (locale === "ja" ? `入力行 ${rowIndex + 1}` : `Entry row ${rowIndex + 1}`);
+                  : rows[rowIndex]?.label ||
+                    (locale === "ja" ? `入力行 ${rowIndex + 1}` : `Entry row ${rowIndex + 1}`);
               const visibleRowLabel =
                 contract.matching.kind === "matched" ? rowIdentity : String(rowIndex + 1);
               return (
@@ -1759,7 +1826,11 @@ export function CanonicalMatrixWorksheet({
                   {showDate ? (
                     <td className="canonical-matrix-worksheet__date">
                       <input
-                        aria-label={locale === "ja" ? `${rowIdentity}の${SHARED_EXPERIMENT_DATE_LABEL}` : `${rowIdentity} experiment date shared by this row`}
+                        aria-label={
+                          locale === "ja"
+                            ? `${rowIdentity}の${SHARED_EXPERIMENT_DATE_LABEL}`
+                            : `${rowIdentity} experiment date shared by this row`
+                        }
                         type="date"
                         value={rows[rowIndex]?.date ?? ""}
                         disabled={!rows[rowIndex] || !onRowChange}
@@ -1799,7 +1870,9 @@ export function CanonicalMatrixWorksheet({
                               className={`canonical-matrix-worksheet__unavailable is-${conditionStatus}`}
                               role="note"
                             >
-                              {conditionStatus === "not_performed" ? t("実施していない", "Not performed") : t("未確認", "Unconfirmed")}
+                              {conditionStatus === "not_performed"
+                                ? t("実施していない", "Not performed")
+                                : t("未確認", "Unconfirmed")}
                             </span>
                           </td>
                         );
@@ -1809,7 +1882,11 @@ export function CanonicalMatrixWorksheet({
                           <IndependentRowIdentityEditor
                             initialIdentity={identity}
                             canonicalIdentity={canonicalIdentity}
-                            label={locale === "ja" ? `${rowIdentity}・${column.coordinate.factors ? Object.values(column.coordinate.factors).join("・") : "測定"}・${column.readoutLabel}` : `${rowIdentity}, ${column.coordinate.factors ? Object.values(column.coordinate.factors).join(", ") : "Measurement"}, ${column.readoutLabel}`}
+                            label={
+                              locale === "ja"
+                                ? `${rowIdentity}・${column.coordinate.factors ? Object.values(column.coordinate.factors).join("・") : "測定"}・${column.readoutLabel}`
+                                : `${rowIdentity}, ${column.coordinate.factors ? Object.values(column.coordinate.factors).join(", ") : "Measurement"}, ${column.readoutLabel}`
+                            }
                             rowIndex={rowIndex}
                             gridColumn={displayColumnIndex + (showDate ? 1 : 0)}
                             readOnly={!editable}
@@ -1868,7 +1945,10 @@ export function CanonicalMatrixWorksheet({
       </div>
       {readOnly ? (
         <p className="adaptive-canonical-spreadsheet__mode-note" role="note">
-          {t("元の表との対応を保つため、この連続表は読み取り専用です。", "This continuous table is read-only to preserve its alignment with the source table.")}
+          {t(
+            "元の表との対応を保つため、この連続表は読み取り専用です。",
+            "This continuous table is read-only to preserve its alignment with the source table.",
+          )}
         </p>
       ) : null}
       {pasteError ? (
