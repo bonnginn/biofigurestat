@@ -14,6 +14,7 @@ import { defaultLayersForGraphType } from "../../app/graphDefaults";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import { violinDensityPath } from "./graphGeometry";
+import { createPlotRectangle } from "./graphLayout";
 
 import "./graph-creation-preview.css";
 
@@ -236,6 +237,12 @@ export function CurrentDataGraphPreview({
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const selectedReadout = draft.readouts.find(({ id }) => id === readoutId) ?? draft.readouts[0];
   if (type === "stacked" || type === "stacked_100" || type === "category_percentage") {
+    const previewPlot = createPlotRectangle(620, 300, {
+      top: 22,
+      right: 40,
+      bottom: 78,
+      left: 62,
+    });
     const readout = selectedReadout;
     const categories = readout?.categories ?? [];
     const groups = draft.conditions.map((condition) => {
@@ -281,8 +288,18 @@ export function CurrentDataGraphPreview({
           "Preview of the current category composition",
         )}
       >
-        <line x1="62" x2="62" y1="22" y2="222" />
-        <line x1="62" x2="580" y1="222" y2="222" />
+        <line
+          x1={previewPlot.left}
+          x2={previewPlot.left}
+          y1={previewPlot.top}
+          y2={previewPlot.bottom}
+        />
+        <line
+          x1={previewPlot.left}
+          x2={previewPlot.right}
+          y1={previewPlot.bottom}
+          y2={previewPlot.bottom}
+        />
         {groups.map(({ condition, percentages }, groupIndex) => {
           let cumulative = 0;
           return percentages.map((value, categoryIndex) => {
@@ -291,8 +308,8 @@ export function CurrentDataGraphPreview({
             return (
               <rect
                 key={`${condition.id}-${categories[categoryIndex]?.id}`}
-                x={85 + groupIndex * 72}
-                y={222 - cumulative}
+                x={previewPlot.left + 23 + groupIndex * 72}
+                y={previewPlot.bottom - cumulative}
                 width="38"
                 height={height}
                 className={`graph-current-preview__category graph-current-preview__category--${categoryIndex + 1}`}
@@ -321,6 +338,12 @@ export function CurrentDataGraphPreview({
     );
   }
   if (type === "scatter") {
+    const previewPlot = createPlotRectangle(620, 300, {
+      top: 22,
+      right: 58,
+      bottom: 78,
+      left: 62,
+    });
     const [xGroup, yGroup] = groups;
     const yByExperiment = new Map(
       yGroup?.experimentPoints.map((point) => [point.experimentId, point.value]) ?? [],
@@ -345,8 +368,10 @@ export function CurrentDataGraphPreview({
     const yMax = Math.max(...yValues);
     const xRange = Math.max(1, xMax - xMin);
     const yRange = Math.max(1, yMax - yMin);
-    const xForPair = (value: number) => 62 + ((value - xMin) / xRange) * 500;
-    const yForPair = (value: number) => 22 + ((yMax - value) / yRange) * 200;
+    const xForPair = (value: number) =>
+      previewPlot.left + ((value - xMin) / xRange) * previewPlot.width;
+    const yForPair = (value: number) =>
+      previewPlot.top + ((yMax - value) / yRange) * previewPlot.height;
     return (
       <svg
         className="graph-current-preview"
@@ -357,15 +382,30 @@ export function CurrentDataGraphPreview({
           `Scatter-plot preview of the current ${xGroup?.label ?? "X"} and ${yGroup?.label ?? "Y"} data`,
         )}
       >
-        <line x1="62" x2="62" y1="22" y2="222" />
-        <line x1="62" x2="562" y1="222" y2="222" />
+        <line
+          x1={previewPlot.left}
+          x2={previewPlot.left}
+          y1={previewPlot.top}
+          y2={previewPlot.bottom}
+        />
+        <line
+          x1={previewPlot.left}
+          x2={previewPlot.right}
+          y1={previewPlot.bottom}
+          y2={previewPlot.bottom}
+        />
         {pairs.map((pair) => (
           <circle key={pair.id} cx={xForPair(pair.x)} cy={yForPair(pair.y)} r="5" />
         ))}
-        <text x="312" y="275" textAnchor="middle">
+        <text x={previewPlot.left + previewPlot.width / 2} y="275" textAnchor="middle">
           {xGroup?.label ?? "X"}
         </text>
-        <text x="20" y="122" textAnchor="middle" transform="rotate(-90 20 122)">
+        <text
+          x="20"
+          y={previewPlot.top + previewPlot.height / 2}
+          textAnchor="middle"
+          transform={`rotate(-90 20 ${previewPlot.top + previewPlot.height / 2})`}
+        >
           {yGroup?.label ?? "Y"}
         </text>
       </svg>
@@ -375,9 +415,12 @@ export function CurrentDataGraphPreview({
   // still grow horizontally and remain scrollable instead of compressing labels.
   const width = Math.max(360, 100 + groups.length * 72);
   const height = 300;
-  const top = 22;
-  const bottom = 78;
-  const plotHeight = height - top - bottom;
+  const previewPlot = createPlotRectangle(width, height, {
+    top: 22,
+    right: 20,
+    bottom: 78,
+    left: 46,
+  });
   const observedMin = Math.min(...allValues);
   const observedMax = Math.max(...allValues);
   const observedRange = observedMax - observedMin;
@@ -396,8 +439,9 @@ export function CurrentDataGraphPreview({
         ? Math.max(0, observedMax + padding)
         : observedMax + padding;
   const yFor = (value: number) =>
-    top + ((domainMax - value) / (domainMax - domainMin)) * plotHeight;
-  const xFor = (index: number) => 62 + index * 72;
+    previewPlot.top +
+    ((domainMax - value) / (domainMax - domainMin)) * previewPlot.height;
+  const xFor = (index: number) => previewPlot.left + 16 + index * 72;
   const summaryLines = [...new Set(groups.map(({ conditionId }) => conditionId))].flatMap(
     (conditionId) => {
       const points = groups.flatMap((group, index) => {
@@ -457,17 +501,17 @@ export function CurrentDataGraphPreview({
       >
         <line
           className="graph-current-preview__axis"
-          x1="46"
-          x2="46"
-          y1={top}
-          y2={height - bottom}
+          x1={previewPlot.left}
+          x2={previewPlot.left}
+          y1={previewPlot.top}
+          y2={previewPlot.bottom}
         />
         <line
           className="graph-current-preview__axis"
-          x1="46"
-          x2={width - 20}
-          y1={height - bottom}
-          y2={height - bottom}
+          x1={previewPlot.left}
+          x2={previewPlot.right}
+          y1={previewPlot.bottom}
+          y2={previewPlot.bottom}
         />
         {type === "line"
           ? summaryLines.map(({ conditionId, points }) => (
@@ -503,7 +547,7 @@ export function CurrentDataGraphPreview({
                   x={x - 18}
                   y={yFor(average)}
                   width="36"
-                  height={height - bottom - yFor(average)}
+                  height={previewPlot.bottom - yFor(average)}
                 />
               ) : null}
               {type === "box" && q1 !== null && median !== null && q3 !== null ? (
@@ -571,7 +615,7 @@ export function CurrentDataGraphPreview({
                   y2={yFor(average - error)}
                 />
               ) : null}
-              <text x={x} y={height - bottom + 21} textAnchor="middle">
+              <text x={x} y={previewPlot.bottom + 21} textAnchor="middle">
                 <title>{group.label}</title>
                 {group.label.length > 12 ? `${group.label.slice(0, 11)}…` : group.label}
               </text>
