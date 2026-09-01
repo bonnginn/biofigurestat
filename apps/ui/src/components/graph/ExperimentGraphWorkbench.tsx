@@ -45,9 +45,7 @@ import { ExperimentGraphInspectorTarget } from "./ExperimentGraphInspectorTarget
 import { ExperimentGraphDistributionEditor } from "./ExperimentGraphDistributionEditor";
 import { ExperimentGraphSeriesEditor } from "./ExperimentGraphSeriesEditor";
 import { ExperimentGraphTimeAnalysisEditor } from "./ExperimentGraphTimeAnalysisEditor";
-import { CompositionGraphSvg } from "./CompositionGraphSvg";
-import { CorrelationGraphSvg } from "./CorrelationGraphSvg";
-import { ExperimentGraphSvg } from "./GeneralExperimentGraphSvg";
+import { ExperimentGraphCanvasRenderer } from "./ExperimentGraphCanvasRenderer";
 import { ExperimentGraphAnnotationEditor } from "./ExperimentGraphAnnotationEditor";
 import { ExperimentGraphAnalysisScopeNotice } from "./ExperimentGraphAnalysisScopeNotice";
 import { ExperimentGraphAnalysisSetEditor } from "./ExperimentGraphAnalysisSetEditor";
@@ -950,75 +948,30 @@ export function ExperimentGraphWorkbench({
               onFitOverviewChange={setFitOverview}
             />
             {hasData && readout ? (
-              <div
-                className={`experiment-graph-stage experiment-graph-stage--${appearance.legendPosition}`}
-              >
-                <div
-                  className={`experiment-graph-svg-scroll${fitOverview ? " is-fit-overview" : ""}`}
-                  data-view-mode={fitOverview ? "fit" : "readable"}
-                >
-                  {shape === "categorical_counts" &&
-                  (graphType === "stacked" ||
-                    graphType === "stacked_100" ||
-                    graphType === "category_percentage") ? (
-                    <CompositionGraphSvg
-                      draft={draft}
-                      cells={cells}
-                      readout={readout}
-                      conditionIds={selectedConditionIds}
-                      timePointIds={selectedTimePointIds}
-                      graphType={graphType}
-                      appearance={appearance}
-                      axes={axes}
-                      svgRef={svgRef}
-                    />
-                  ) : graphType === "scatter" && draft.analysisIntent.kind === "correlation" ? (
-                    <CorrelationGraphSvg
-                      series={series}
-                      appearance={appearance}
-                      axes={axes}
-                      svgRef={svgRef}
-                      analysisResult={analysisResult}
-                      statisticsAnnotation={statisticsAnnotation}
-                      onInspect={inspectGraphPart}
-                    />
-                  ) : (
-                    <div
-                      className={grouping.facet ? "experiment-graph-small-multiples" : undefined}
-                      data-facet-axis-policy={grouping.facet?.axisPolicy ?? "shared"}
-                    >
-                      {facetGroups.map((facet) => (
-                        <section className="experiment-graph-facet" key={facet.key}>
-                          {grouping.facet ? (
-                            <h3 className="experiment-graph-facet-title">{facet.label}</h3>
-                          ) : null}
-                          <ExperimentGraphSvg
-                            shape={shape === "proportion" ? "proportion" : "nested_continuous"}
-                            readoutLabel={readout.label}
-                            readoutUnit={readout.unit}
-                            timeSampling={draft.time.sampling}
-                            conditionAssignment={draft.conditionAssignment}
-                            axisLabels={facet.labels}
-                            series={facet.rows}
-                            layers={layers}
-                            appearance={appearance}
-                            graphType={graphType}
-                            axes={axes}
-                            svgRef={svgRef}
-                            analysisResult={analysisResult}
-                            statisticsAnnotation={statisticsAnnotation}
-                            statisticsAnnotations={statisticsAnnotations}
-                            annotationContext={annotationContext}
-                            layerDescription={activeLayerDescription}
-                            onInspect={inspectGraphPart}
-                            activeInspectorTarget={inspectorTarget}
-                          />
-                        </section>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <ExperimentGraphCanvasRenderer
+                draft={draft}
+                cells={cells}
+                readout={readout}
+                selectedConditionIds={selectedConditionIds}
+                selectedTimePointIds={selectedTimePointIds}
+                graphType={graphType}
+                appearance={appearance}
+                axes={axes}
+                svgRef={svgRef}
+                series={series}
+                analysisResult={analysisResult}
+                statisticsAnnotation={statisticsAnnotation}
+                statisticsAnnotations={statisticsAnnotations}
+                annotationContext={annotationContext}
+                activeLayerDescription={activeLayerDescription}
+                layers={layers}
+                shape={shape}
+                grouping={grouping}
+                facetGroups={facetGroups}
+                fitOverview={fitOverview}
+                onInspect={inspectGraphPart}
+                activeInspectorTarget={inspectorTarget}
+              />
             ) : (
               <div className="experiment-graph-empty" role="status">
                 {t(
