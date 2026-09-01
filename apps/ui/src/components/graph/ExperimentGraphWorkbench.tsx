@@ -39,6 +39,7 @@ import { useBenchmarkRun } from "../../app/benchmarkEvaluation";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { ExperimentGraphDataSummary } from "./ExperimentGraphDataSummary";
+import { ExperimentGraphDistributionEditor } from "./ExperimentGraphDistributionEditor";
 import { ExperimentGraphGroupingEditor } from "./ExperimentGraphGroupingEditor";
 import { ExperimentGraphSelectionEditor } from "./ExperimentGraphSelectionEditor";
 import { ExperimentGraphSeriesEditor } from "./ExperimentGraphSeriesEditor";
@@ -1467,146 +1468,15 @@ export function ExperimentGraphWorkbench({
             />
           ) : null}
 
-          {inspectorTarget === "violin" ? (
-            <section className="experiment-graph-inspector-section">
-              <h3>{t("バイオリン分布", "Violin distribution")}</h3>
-              <label className="experiment-graph-checkbox">
-                <input
-                  type="checkbox"
-                  checked={layers.violin}
-                  aria-label="バイオリンを表示"
-                  onChange={(event) =>
-                    setLayers((current) => ({ ...current, violin: event.target.checked }))
-                  }
-                />
-                <span>観測値の分布を表示</span>
-              </label>
-              <p className="experiment-graph-help">
-                バイオリンは細胞・ROIなど、十分な観測値がある場合の分布表示です。
-              </p>
-              <label className="experiment-graph-field">
-                <span>塗り</span>
-                <select
-                  value={appearance.distributionFill}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      distributionFill: event.target.value as GraphAppearance["distributionFill"],
-                    }))
-                  }
-                >
-                  <option value="none">透明</option>
-                  <option value="white">白</option>
-                  <option value="series">系列色</option>
-                  <option value="custom">指定色</option>
-                </select>
-              </label>
-              {appearance.distributionFill === "custom" ? (
-                <label className="experiment-graph-field">
-                  <span>塗り色</span>
-                  <input
-                    type="color"
-                    value={appearance.distributionFillColor}
-                    onChange={(event) =>
-                      setAppearance((current) => ({
-                        ...current,
-                        distributionFillColor: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-              ) : null}
-              <label className="experiment-graph-field">
-                <span>ひげの定義</span>
-                <select
-                  aria-label="箱ひげの定義"
-                  value={appearance.boxWhiskerMode ?? "tukey_1_5_iqr"}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      boxWhiskerMode: event.target.value as "tukey_1_5_iqr" | "min_max",
-                    }))
-                  }
-                >
-                  <option value="tukey_1_5_iqr">Tukey 1.5×IQR</option>
-                  <option value="min_max">最小–最大</option>
-                </select>
-              </label>
-              <label className="experiment-graph-field">
-                <span>輪郭線：{appearance.distributionLineWidth.toFixed(1)}px</span>
-                <input
-                  type="range"
-                  min="0.6"
-                  max="4"
-                  step="0.1"
-                  aria-label="分布輪郭線の太さ"
-                  value={appearance.distributionLineWidth}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      distributionLineWidth: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-            </section>
-          ) : null}
-
-          {inspectorTarget === "box" ? (
-            <section className="experiment-graph-inspector-section">
-              <h3>{t("箱ひげ", "Box plot")}</h3>
-              <label className="experiment-graph-checkbox">
-                <input
-                  type="checkbox"
-                  checked={
-                    shape === "nested_continuous" ? layers.distribution || layers.box : layers.box
-                  }
-                  aria-label="箱ひげを表示"
-                  onChange={(event) =>
-                    setLayers((current) => ({
-                      ...current,
-                      distribution: event.target.checked,
-                      box: event.target.checked,
-                    }))
-                  }
-                />
-                <span>中央値と四分位範囲を表示</span>
-              </label>
-              <label className="experiment-graph-field">
-                <span>塗り</span>
-                <select
-                  value={appearance.distributionFill}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      distributionFill: event.target.value as GraphAppearance["distributionFill"],
-                    }))
-                  }
-                >
-                  <option value="none">透明</option>
-                  <option value="white">白</option>
-                  <option value="series">系列色</option>
-                  <option value="custom">指定色</option>
-                </select>
-              </label>
-              <label className="experiment-graph-field">
-                <span>輪郭線：{appearance.distributionLineWidth.toFixed(1)}px</span>
-                <input
-                  type="range"
-                  min="0.6"
-                  max="4"
-                  step="0.1"
-                  aria-label="箱ひげ輪郭線の太さ"
-                  value={appearance.distributionLineWidth}
-                  onChange={(event) =>
-                    setAppearance((current) => ({
-                      ...current,
-                      distributionLineWidth: Number(event.target.value),
-                    }))
-                  }
-                />
-              </label>
-            </section>
+          {inspectorTarget === "violin" || inspectorTarget === "box" ? (
+            <ExperimentGraphDistributionEditor
+              mode={inspectorTarget}
+              shape={shape}
+              layers={layers}
+              appearance={appearance}
+              setLayers={setLayers}
+              setAppearance={setAppearance}
+            />
           ) : null}
 
           {inspectorTarget === "error-bar" ? (
