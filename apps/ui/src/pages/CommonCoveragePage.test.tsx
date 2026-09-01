@@ -9,12 +9,14 @@ import { ProjectStateSchema, type ProjectState } from "@lsaa/project";
 const graphExport = vi.hoisted(() => ({
   saveExportText: vi.fn(async () => "saved" as const),
   exportGraphPng: vi.fn(async () => ({ svgText: "<svg/>", width: 1, height: 1 })),
+  copyGraphToClipboard: vi.fn(async () => "svg" as const),
 }));
 
 vi.mock("../app/graphExport", async (importOriginal) => ({
   ...(await importOriginal<typeof GraphExportModule>()),
   saveExportText: graphExport.saveExportText,
   exportGraphPng: graphExport.exportGraphPng,
+  copyGraphToClipboard: graphExport.copyGraphToClipboard,
 }));
 
 import { CommonCoveragePage } from "./CommonCoveragePage";
@@ -229,6 +231,32 @@ describe("final common coverage workflows", () => {
     expect(screen.getByRole("button", { name: "Data" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Graph" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Statistics" })).toBeVisible();
+    expectNoJapaneseUi(view.container);
+  });
+
+  it("does not expose legacy Japanese export errors in English mode", async () => {
+    act(() => setAppLocale("en"));
+    graphExport.exportGraphPng.mockRejectedValueOnce(new Error("PNGを書き出せませんでした"));
+    graphExport.copyGraphToClipboard.mockRejectedValueOnce(
+      new Error("クリップボードへコピーできませんでした"),
+    );
+    const view = render(
+      <CommonCoveragePage
+        mode="nonlinear-fit"
+        onBack={vi.fn()}
+        entryIntent={adaptiveOrderedCurveIntent}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Nonlinear X/Y fitting data"), {
+      target: { value: "Unit ID\tSeries\tX\tY\np0\tA\t0\t1\np1\tA\t1\t2\np2\tA\t2\t3" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Export PNG" }));
+    expect(
+      await screen.findByText("The PNG could not be exported. The Graph and SVG export remain available."),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Copy Graph" }));
+    expect(await screen.findByText("The Graph could not be copied.")).toBeVisible();
     expectNoJapaneseUi(view.container);
   });
   it.each([

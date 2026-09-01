@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   appLocaleStorageKey,
   getAppLocale,
+  localizedFailureDetail,
   localizedFailureMessage,
   resetAppLocaleForTests,
   setAppLocale,
@@ -64,5 +65,9 @@ describe("application locale", () => {
         "The project could not be saved.",
       ),
     ).toBe("保存先へ書き込めません");
+    expect(localizedFailureDetail("en", new Error("保存先へ書き込めません"))).toBe("");
+    expect(localizedFailureDetail("ja", new Error("保存先へ書き込めません"))).toBe(
+      " 保存先へ書き込めません",
+    );
   });
 });

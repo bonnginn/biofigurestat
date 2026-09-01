@@ -49,7 +49,7 @@ import type {
   SaveProjectAction,
   SaveSpecializedEntryDraftProjectAction,
 } from "../app/projectActions";
-import { localizedText, useAppLocale } from "../app/appLocale";
+import { localizedFailureDetail, localizedText, useAppLocale } from "../app/appLocale";
 import {
   createSpecializedEntryDraft,
   specializedSafeStop,
@@ -2453,10 +2453,11 @@ export function CommonCoveragePage({
       );
     } catch (error) {
       if (error instanceof ExportCancelledError) return;
+      const detail = localizedFailureDetail(locale, error);
       setMessage(
         t(
-          `PNGを書き出せませんでした。GraphとSVG書き出しは利用できます。${error instanceof Error && error.message ? ` ${error.message}` : ""}`,
-          `The PNG could not be exported. The Graph and SVG export remain available.${error instanceof Error && error.message ? ` ${error.message}` : ""}`,
+          `PNGを書き出せませんでした。GraphとSVG書き出しは利用できます。${detail}`,
+          "The PNG could not be exported. The Graph and SVG export remain available.",
         ),
       );
     }
@@ -2473,10 +2474,11 @@ export function CommonCoveragePage({
         ),
       );
     } catch (error) {
+      const detail = localizedFailureDetail(locale, error);
       setMessage(
         t(
-          `Graphをコピーできませんでした。${error instanceof Error && error.message ? ` ${error.message}` : ""}`,
-          `The Graph could not be copied.${error instanceof Error && error.message ? ` ${error.message}` : ""}`,
+          `Graphをコピーできませんでした。${detail}`,
+          "The Graph could not be copied.",
         ),
       );
     }

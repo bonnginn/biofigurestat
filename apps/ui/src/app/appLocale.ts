@@ -70,6 +70,16 @@ export function localizedFailureMessage(
   return localizedText(locale, jaFallback, enFallback);
 }
 
+/**
+ * Diagnostic detail can help Japanese Alpha users, but legacy exception text
+ * is not trusted as translated application copy in English mode.
+ */
+export function localizedFailureDetail(locale: AppLocale, error: unknown): string {
+  if (locale !== "ja" || !(error instanceof Error)) return "";
+  const detail = error.message.trim();
+  return detail ? ` ${detail}` : "";
+}
+
 export const appLocaleStorageKey = STORAGE_KEY;
 
 export function resetAppLocaleForTests(locale: AppLocale = "ja") {
