@@ -39,6 +39,7 @@ import { createStatisticsConsultationPrompt } from "../../app/externalLlmConsult
 import { ExternalLlmConsultation } from "../ExternalLlmConsultation";
 import { localizedText, useAppLocale, type AppLocale } from "../../app/appLocale";
 import { EquivalencePlanEditor } from "./EquivalencePlanEditor";
+import { EquivalenceResultPanel } from "./EquivalenceResultPanel";
 import type { EquivalenceSupportKind } from "./equivalenceSupportPresentation";
 
 type MatchedRelationship =
@@ -1332,6 +1333,14 @@ export function GraphStatisticsPanel({
                 assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join("、")}
             </p>
           </div>
+          {result.equivalence ? (
+            <EquivalenceResultPanel
+              result={result.equivalence}
+              comparisonLabels={Object.fromEntries(
+                equivalenceComparisonOptions.map(({ id, label }) => [id, label]),
+              )}
+            />
+          ) : null}
           {result.estimates.length > 0 ? (
             <dl aria-label={t("主要な推定値", "Primary estimates")}>
               {result.estimates.map((estimate) => (
