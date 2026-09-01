@@ -19,7 +19,7 @@
 
 | 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
 | ---- | ---- | ---- | ------------ | -------- |
-| 1 | 🟡 | 正式な同等性解析の設計contract | marginを実験ごとに事前指定 | marginの尺度、CI/TOST判断、3状態結果、多重性、independent/matched/shared-run、positive/totalのsupported/unsupported境界を統計レビュー可能な仕様へ固定 |
+| 1 | 🟡 | 正式な同等性解析の実行method | 最初の連続量methodの科学レビュー | 事前指定marginと3状態結果のcontractを維持し、review済みのdesignだけengine executionを段階的に有効化 |
 | 2 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Open、Save As、PNG/SVG/CSVのCancelと保存先、および`.lsa`関連付けをpackaged appで再現 |
 | 3 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | Graph preview parity、Kaplan–Meierの軸・凡例設定、Graph-only表示差を実機で確認 |
 | 4 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
@@ -87,7 +87,7 @@
 | ✅   | 実験metadataの再編集                   | 既存のstructure revision経路から実験名・条件・測定項目を安全に修正可能           |
 | 🟡   | Kaplan–Meier外観設定の共通化           | 系列色と保存互換なfont sizeを実装。軸・legend等のparityは継続                    |
 | ✅   | Statistics結果一覧の改善               | 対照群比較を選択でき、調整済み比較familyをStatistics上で展開可能                 |
-| 🟡   | 同等性／「意味のある差がない」解析     | 要望Priority 1–3（独立goal、通常NHSTへの誤誘導防止、n.s.警告）は実装済み。Priority 4の事前規定margin、CI中心の3状態結果、design別TOST、多重性、positive/total outcomeは統計・科学レビュー後に実装 |
+| 🟡   | 同等性／「意味のある差がない」解析     | 独立goal、通常NHSTへの誤誘導防止、n.s.警告、事前規定marginの保存、90% CI中心の3状態contract、design/outcome別の禁止境界を実装・ADR 0061へ固定。engine executionはreview済みmethodごとに段階実装し、positive/total・shared-runは保留 |
 | ✅   | 途中行からの入力と実験回・日付の保持   | 空行を挟んだ入力を同じ行に保持し、canonical observationと実験回・日付を明示的に連結。保存・再読込・Graph・Statisticsで回帰確認済み。日付からpairingは推定しない |
 | ⏸    | 独立性確認の質問を短くする             | 科学的安全性を保ちつつ、単純実験で過度に厳しく見えない                           |
 | ✅   | SpreadsheetのUndo/Redo                 | bounded canonical履歴を共通化し、Ctrl/Cmd+Z・redo・外部置換時clearを回帰test済み |

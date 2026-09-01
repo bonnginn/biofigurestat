@@ -1,6 +1,6 @@
 # Current Working State
 
-Updated: 2026-09-01 (Public Alpha published; post-Alpha items 1–4 implementation complete)
+Updated: 2026-09-02 (Public Alpha published; formal equivalence foundation in progress)
 
 This is the short operational snapshot. Accepted ADRs, schemas, method references, and tests remain
 the authority for durable behavior.
@@ -603,14 +603,18 @@ Alpha `.lsa` observations without the field retain their dense-order fallback un
 0060 records this boundary. Focused worksheet, workspace, project round-trip, domain-schema, and
 Graph/Statistics production-path tests cover the change.
 
-Equivalence / “no meaningful difference” is now represented as a separate saved scientific goal,
-not as an ordinary contrast or an engine method. The Statistics UI safe-stops that goal, does not
-recommend or run NHST, never derives a margin from observed data, and warns that a non-significant
-difference test does not establish equivalence. The field is optional, so Public Alpha `.lsa`
-files retain their previous behavior. Formal margin-based CI/TOST support remains deferred pending
-design-specific statistical review, especially for matched/shared-source structures and typed
-positive/total outcomes. ADR 0059 records the boundary. Focused UI and project-schema tests cover
-goal transitions, engine non-execution, bilingual warnings, and save/reopen compatibility.
+Equivalence / “no meaningful difference” is represented as a separate saved scientific goal, not
+as an ordinary contrast or engine method. A Graph can now store a prespecified finite lower/upper
+margin, its scale/unit and rationale, alpha 0.05, and the intended claim across comparisons. The
+pure interval contract reports `equivalence_supported`, `meaningful_difference_supported`, or
+`inconclusive` from the corresponding equal-tail 90% confidence interval. The Statistics UI still
+safe-stops before engine execution, never derives a margin from observed data, and warns that a
+non-significant difference test does not establish equivalence. Public Alpha `.lsa` files remain
+valid because the plan is optional. ADR 0061 fixes the primary-source rationale and the executable
+support boundary: continuous independent and paired routes await method review; shared-run and
+typed positive/total routes cannot be coerced into naive continuous percentage TOST. Focused
+contract, UI, state-selector, and project-schema tests cover validation, goal transitions, engine
+non-execution, bilingual plan entry, stale-result clearing, and save/reopen compatibility.
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
   integration, diagnostics, and benchmark capture. Native export and persisted-state projection
