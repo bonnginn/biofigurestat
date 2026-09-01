@@ -10,7 +10,7 @@ import { localizedText, useAppLocale } from "../../app/appLocale";
 import { GRAPH_PALETTES } from "./graphAppearance";
 import { isPairwiseComparisonTest } from "./experimentGraphAnnotations";
 import type { ExperimentPoint, GraphSeries } from "./experimentGraphDataExport";
-import { createCategoryLayout, createNiceTicks } from "./graphLayout";
+import { createCategoryLayout, createNiceTicks, createPlotRectangle } from "./graphLayout";
 import {
   formatGraphNumber as formatNumber,
   formatGraphPercentage as formatPercentage,
@@ -389,7 +389,7 @@ export function ExperimentGraphSvg({
     xAxisTitleHeight +
     statisticsLegendHeight;
   margin.bottom = baseBottomMargin + extraLabelHeight + xAxisTitleHeight + statisticsLegendHeight;
-  const plotHeight = height - margin.top - margin.bottom;
+  const plotHeight = createPlotRectangle(width, height, margin).height;
   const baseColors = GRAPH_PALETTES[appearance.palette];
   const visualSeriesKeys = [...new Set(series.map((item) => item.visualSeriesKey))];
   const colors = visualSeriesKeys.map(

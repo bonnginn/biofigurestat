@@ -5,7 +5,7 @@ import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { formatExactPValue } from "../../app/statisticalFormat";
 import { GRAPH_PALETTES } from "./graphAppearance";
 import type { GraphSeries } from "./experimentGraphDataExport";
-import { createNiceTicks } from "./graphLayout";
+import { createNiceTicks, createPlotRectangle } from "./graphLayout";
 import { formatGraphNumber, graphSignificanceSymbol } from "./graphValueFormatting";
 
 type GraphAppearance = WorkspaceGraphState["appearance"];
@@ -58,10 +58,9 @@ export function CorrelationGraphSvg({
     axes.yMin < axes.yMax;
   const yMin = manualY ? axes.yMin! : automaticY[0];
   const yMax = manualY ? axes.yMax! : automaticY[1];
-  const plotWidth = width - margin.left - margin.right;
-  const plotHeight = height - margin.top - margin.bottom;
-  const xFor = (value: number) => margin.left + ((value - xMin) / (xMax - xMin)) * plotWidth;
-  const yFor = (value: number) => margin.top + ((yMax - value) / (yMax - yMin)) * plotHeight;
+  const plot = createPlotRectangle(width, height, margin);
+  const xFor = (value: number) => plot.left + ((value - xMin) / (xMax - xMin)) * plot.width;
+  const yFor = (value: number) => plot.top + ((yMax - value) / (yMax - yMin)) * plot.height;
   const xTicks = createNiceTicks(xMin, xMax, 5, null);
   const yTicks = createNiceTicks(
     yMin,
@@ -103,15 +102,15 @@ export function CorrelationGraphSvg({
           <line
             x1={xFor(tick)}
             x2={xFor(tick)}
-            y1={height - margin.bottom}
-            y2={height - margin.bottom + xTickDelta * 5}
+            y1={plot.bottom}
+            y2={plot.bottom + xTickDelta * 5}
             className="experiment-graph-tick"
             data-axis-tick="x"
             data-tick-direction={tickDirection}
           />
           <text
             x={xFor(tick)}
-            y={height - margin.bottom + 25}
+            y={plot.bottom + 25}
             textAnchor="middle"
             style={{ fontSize: appearance.tickFontSize, fill: "#000" }}
           >
@@ -122,8 +121,8 @@ export function CorrelationGraphSvg({
       {yTicks.map((tick) => (
         <g key={`y-${tick}`}>
           <line
-            x1={margin.left}
-            x2={margin.left + yTickDelta * 5}
+            x1={plot.left}
+            x2={plot.left + yTickDelta * 5}
             y1={yFor(tick)}
             y2={yFor(tick)}
             className="experiment-graph-tick"
@@ -131,7 +130,7 @@ export function CorrelationGraphSvg({
             data-tick-direction={tickDirection}
           />
           <text
-            x={margin.left - 10}
+            x={plot.left - 10}
             y={yFor(tick) + 5}
             textAnchor="end"
             style={{ fontSize: appearance.tickFontSize, fill: "#000" }}
@@ -141,25 +140,25 @@ export function CorrelationGraphSvg({
         </g>
       ))}
       <line
-        x1={margin.left}
-        x2={margin.left}
-        y1={margin.top}
-        y2={height - margin.bottom}
+        x1={plot.left}
+        x2={plot.left}
+        y1={plot.top}
+        y2={plot.bottom}
         className="experiment-graph-axis-line"
         style={{ strokeWidth: appearance.axisLineWidth }}
         onDoubleClick={() => onInspect("y-axis")}
       />
       <line
-        x1={margin.left}
-        x2={width - margin.right}
-        y1={height - margin.bottom}
-        y2={height - margin.bottom}
+        x1={plot.left}
+        x2={plot.right}
+        y1={plot.bottom}
+        y2={plot.bottom}
         className="experiment-graph-axis-line"
         style={{ strokeWidth: appearance.axisLineWidth }}
         onDoubleClick={() => onInspect("x-axis")}
       />
       <text
-        x={margin.left + plotWidth / 2}
+        x={plot.left + plot.width / 2}
         y={height - 22}
         textAnchor="middle"
         className="experiment-graph-axis-title"
@@ -169,9 +168,9 @@ export function CorrelationGraphSvg({
       </text>
       <text
         x={22}
-        y={margin.top + plotHeight / 2}
+        y={plot.top + plot.height / 2}
         textAnchor="middle"
-        transform={`rotate(-90 22 ${margin.top + plotHeight / 2})`}
+        transform={`rotate(-90 22 ${plot.top + plot.height / 2})`}
         className="experiment-graph-axis-title"
         style={{ fontSize: appearance.axisTitleFontSize, fill: "#000" }}
       >
@@ -190,8 +189,8 @@ export function CorrelationGraphSvg({
       ))}
       {statisticsAnnotation.mode !== "hidden" && annotationValue !== null ? (
         <text
-          x={width - margin.right}
-          y={margin.top}
+          x={plot.right}
+          y={plot.top}
           textAnchor="end"
           className="experiment-graph-stat-label"
           data-graph-layer="statistics-annotation"
@@ -204,4 +203,3 @@ export function CorrelationGraphSvg({
     </svg>
   );
 }
-

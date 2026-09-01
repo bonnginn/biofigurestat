@@ -1,5 +1,26 @@
 export type GraphCanvasPreset = "compact" | "standard" | "wide";
 
+export type GraphPlotMargin = Readonly<{
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}>;
+
+/** One coordinate contract for the drawable rectangle inside an SVG canvas. */
+export function createPlotRectangle(width: number, height: number, margin: GraphPlotMargin) {
+  const right = width - margin.right;
+  const bottom = height - margin.bottom;
+  return {
+    left: margin.left,
+    top: margin.top,
+    right,
+    bottom,
+    width: right - margin.left,
+    height: bottom - margin.top,
+  } as const;
+}
+
 export type CategoryLayoutInput = Readonly<{
   gapWeights: readonly number[];
   denseGaps?: readonly boolean[];

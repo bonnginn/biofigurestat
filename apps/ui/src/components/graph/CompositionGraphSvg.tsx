@@ -11,7 +11,7 @@ import {
 } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { GRAPH_PALETTES } from "./graphAppearance";
-import { createNiceTicks } from "./graphLayout";
+import { createNiceTicks, createPlotRectangle } from "./graphLayout";
 import { formatGraphNumber } from "./graphValueFormatting";
 
 type GraphAppearance = WorkspaceGraphState["appearance"];
@@ -84,12 +84,12 @@ export function CompositionGraphSvg({
   const width = Math.max(680, 150 + groups.length * 110);
   const height = 520;
   const margin = { top: 55, right: 190, bottom: 110, left: 88 };
-  const plotHeight = height - margin.top - margin.bottom;
+  const plot = createPlotRectangle(width, height, margin);
   const maximum =
     graphType === "stacked"
       ? Math.max(1, ...groups.map(({ values }) => values.reduce((sum, value) => sum + value, 0)))
       : 100;
-  const yFor = (value: number) => margin.top + ((maximum - value) / maximum) * plotHeight;
+  const yFor = (value: number) => plot.top + ((maximum - value) / maximum) * plot.height;
   const colors =
     appearance.palette === "single"
       ? GRAPH_PALETTES.colorblind
@@ -112,8 +112,8 @@ export function CompositionGraphSvg({
       {yTicks.map((tick) => (
         <g key={tick}>
           <line
-            x1={margin.left}
-            x2={margin.left + yTickDelta * 5}
+            x1={plot.left}
+            x2={plot.left + yTickDelta * 5}
             y1={yFor(tick)}
             y2={yFor(tick)}
             className="experiment-graph-tick"
@@ -131,25 +131,25 @@ export function CompositionGraphSvg({
         </g>
       ))}
       <line
-        x1={margin.left}
-        x2={margin.left}
-        y1={margin.top}
-        y2={height - margin.bottom}
+        x1={plot.left}
+        x2={plot.left}
+        y1={plot.top}
+        y2={plot.bottom}
         className="experiment-graph-axis-line"
         style={{ strokeWidth: appearance.axisLineWidth }}
       />
       <line
-        x1={margin.left}
-        x2={width - margin.right}
-        y1={height - margin.bottom}
-        y2={height - margin.bottom}
+        x1={plot.left}
+        x2={plot.right}
+        y1={plot.bottom}
+        y2={plot.bottom}
         className="experiment-graph-axis-line"
         style={{ strokeWidth: appearance.axisLineWidth }}
       />
       <text
         x="20"
-        y={margin.top + plotHeight / 2}
-        transform={`rotate(-90 20 ${margin.top + plotHeight / 2})`}
+        y={plot.top + plot.height / 2}
+        transform={`rotate(-90 20 ${plot.top + plot.height / 2})`}
         textAnchor="middle"
         className="experiment-graph-axis-title"
         style={{ fontSize: appearance.axisTitleFontSize, fill: "#000" }}
@@ -157,7 +157,7 @@ export function CompositionGraphSvg({
         {graphType === "stacked" ? "Count" : "Composition (%)"}
       </text>
       {groups.map((group, groupIndex) => {
-        const x = margin.left + 55 + groupIndex * 110;
+        const x = plot.left + 55 + groupIndex * 110;
         if (graphType === "category_percentage") {
           return (
             <g key={group.key}>
@@ -173,7 +173,7 @@ export function CompositionGraphSvg({
               ))}
               <text
                 x={x}
-                y={height - margin.bottom + 28}
+                y={plot.bottom + 28}
                 textAnchor="middle"
                 style={{ fontSize: appearance.hierarchyFontSize, fill: "#000" }}
               >
@@ -203,7 +203,7 @@ export function CompositionGraphSvg({
             })}
             <text
               x={x}
-              y={height - margin.bottom + 28}
+              y={plot.bottom + 28}
               textAnchor="middle"
               style={{ fontSize: appearance.hierarchyFontSize, fill: "#000" }}
             >
@@ -215,7 +215,7 @@ export function CompositionGraphSvg({
       {categories.map((category, index) => (
         <g
           key={category.id}
-          transform={`translate(${width - margin.right + 32} ${margin.top + index * 30})`}
+          transform={`translate(${plot.right + 32} ${plot.top + index * 30})`}
         >
           <rect width="14" height="14" fill={colors[index % colors.length]} />
           <text x="22" y="12" style={{ fontSize: appearance.legendFontSize, fill: "#000" }}>
@@ -226,5 +226,4 @@ export function CompositionGraphSvg({
     </svg>
   );
 }
-
 
