@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
+import { useMemo, useRef, useState, type ClipboardEvent } from "react";
 
 import type { CompactScalarObservationIdFactoryContext } from "@lsaa/data-sheet";
 import {
@@ -979,47 +979,6 @@ function MatrixCell({
     identityOverride,
   });
   const canonicalValue = displayColumnValue(contract, observation, column);
-  const [text, setText] = useState(canonicalValue);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setText(canonicalValue);
-    setError(null);
-  }, [canonicalValue]);
-
-  const commit = (draftText = text) => {
-    if (column.derived) return;
-    // Read the value visible in the input at blur time. This avoids a narrow
-    // React render-lag window where the DOM already shows the last keystroke
-    // but the prior render's local state would otherwise be committed.
-    const parsed = parseOptionalSpreadsheetNumber(draftText);
-    if (parsed.kind === "invalid") {
-      setError(t("数値を入力してください", "Enter a numeric value"));
-      return;
-    }
-    const value = parsed.kind === "value" ? parsed.value : null;
-    try {
-      const next = applyMatrixValue({
-        contract,
-        observations,
-        column,
-        rowIndex,
-        value,
-        identityOverride,
-        nextObservationId,
-        nextExperimentalUnitIdentity,
-      });
-      validateTypedValues(contract, next);
-      onObservationsChange(next);
-      setError(null);
-    } catch (cause) {
-      setError(
-        locale === "ja" && cause instanceof Error
-          ? cause.message
-          : t("値を反映できませんでした", "The value could not be applied"),
-      );
-    }
-  };
   const factorLabel = contract.factors
     .map((factor) => column.coordinate.factors[factor.key])
     .filter(Boolean)
@@ -1063,26 +1022,41 @@ function MatrixCell({
   }
 
   return (
-    <div className="canonical-matrix-worksheet__cell">
-      <input
-        aria-label={inputLabel}
-        aria-invalid={error ? "true" : undefined}
-        data-spreadsheet-cell="true"
-        data-spreadsheet-row={rowIndex}
-        data-spreadsheet-column={gridColumn}
-        disabled={readOnly}
-        inputMode="decimal"
-        value={text}
-        onBlur={(event) => commit(event.currentTarget.value)}
-        onChange={(event) => {
-          setText(event.currentTarget.value);
-          setError(null);
-        }}
-        onKeyDown={moveSpreadsheetFocus}
-        onPaste={(event) => onMatrixPaste(event, rowIndex, columnIndex)}
-      />
-      {error ? <small role="alert">{error}</small> : null}
-    </div>
+    <SpreadsheetDraftTextCell
+      wrapperClassName="canonical-matrix-worksheet__cell"
+      canonicalText={canonicalValue}
+      aria-label={inputLabel}
+      data-spreadsheet-row={rowIndex}
+      data-spreadsheet-column={gridColumn}
+      disabled={readOnly}
+      inputMode="decimal"
+      onPaste={(event) => onMatrixPaste(event, rowIndex, columnIndex)}
+      onCommit={(draftText) => {
+        const parsed = parseOptionalSpreadsheetNumber(draftText);
+        if (parsed.kind === "invalid") {
+          return t("数値を入力してください", "Enter a numeric value");
+        }
+        try {
+          const next = applyMatrixValue({
+            contract,
+            observations,
+            column,
+            rowIndex,
+            value: parsed.kind === "value" ? parsed.value : null,
+            identityOverride,
+            nextObservationId,
+            nextExperimentalUnitIdentity,
+          });
+          validateTypedValues(contract, next);
+          onObservationsChange(next);
+          return null;
+        } catch (cause) {
+          return locale === "ja" && cause instanceof Error
+            ? cause.message
+            : t("値を反映できませんでした", "The value could not be applied");
+        }
+      }}
+    />
   );
 }
 

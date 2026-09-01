@@ -34,14 +34,14 @@ export function SpreadsheetDraftTextCell({
     .filter(Boolean)
     .join(" ");
 
-  const commit = () => {
-    if (!dirty) return;
-    const problem = onCommit(text);
+  const commit = (visibleText: string) => {
+    if (!dirty && visibleText === canonicalText) return;
+    const problem = onCommit(visibleText);
     if (problem) {
       reportError(problem);
       return;
     }
-    accept();
+    accept(visibleText);
   };
 
   return (
@@ -62,7 +62,7 @@ export function SpreadsheetDraftTextCell({
           moveSpreadsheetFocus(event);
           onKeyDown?.(event);
         }}
-        onBlur={commit}
+        onBlur={(event) => commit(event.currentTarget.value)}
       />
       {error ? (
         <small id={errorId} role="alert">
