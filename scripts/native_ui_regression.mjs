@@ -156,6 +156,12 @@ export function classifyNativeRegressionFailure(error, steps) {
     return "HARNESS_INFRASTRUCTURE_BLOCKED";
   }
   if (
+    failedStep === "macos_dirty_entry" &&
+    /Accessibility element not found|not exposed through macOS Accessibility/i.test(message)
+  ) {
+    return "HARNESS_INFRASTRUCTURE_BLOCKED";
+  }
+  if (
     failedStep === "macos_accessibility_attach" &&
     /Accessibility|osascript|not allowed/i.test(message)
   ) {
@@ -222,7 +228,11 @@ if (action === "snapshot") {
   se.keystroke("q", { using: "command down" });
   JSON.stringify({ ok: true });
 } else {
-  const target = nodes.find(matches);
+  const matchingNodes = nodes.filter(matches);
+  const editableRoles = new Set(["AXTextField", "AXTextArea", "AXComboBox", "AXSearchField"]);
+  const target = (action === "set" || action === "type")
+    ? matchingNodes.find((node) => editableRoles.has(node.role)) || matchingNodes[0]
+    : matchingNodes[0];
   if (!target) throw new Error("Accessibility element not found: " + wanted.join(" / "));
   if (action === "click") {
     target.element.actions.byName("AXPress").perform();

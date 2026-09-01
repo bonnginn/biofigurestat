@@ -94,6 +94,8 @@ test("builds a bounded macOS Accessibility typing action without interpolating u
   assert.match(script, /processes\.byName\("BioFigureStat"\)/);
   assert.match(script, /nodes\.length < 5000/);
   assert.match(script, /quote \\" and 日本語/);
+  assert.match(script, /AXTextField/);
+  assert.match(script, /matchingNodes\.find\(\(node\) => editableRoles\.has\(node\.role\)\)/);
   assert.match(script, /keystroke\("a", \{ using: "command down" \}\)/);
   assert.match(script, /keystroke\(replacement\)/);
 });
@@ -141,6 +143,13 @@ test("separates a missing WebView inspection channel from a product regression",
     classifyNativeRegressionFailure(
       new Error("HARNESS_EXECUTABLE_RESOLUTION: CFBundleExecutable is missing from Info.plist"),
       [],
+    ),
+    "HARNESS_INFRASTRUCTURE_BLOCKED",
+  );
+  assert.equal(
+    classifyNativeRegressionFailure(
+      new Error("typed experiment title was not exposed through macOS Accessibility: timeout"),
+      [{ name: "macos_dirty_entry", status: "fail" }],
     ),
     "HARNESS_INFRASTRUCTURE_BLOCKED",
   );
