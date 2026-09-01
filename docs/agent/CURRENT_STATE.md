@@ -340,6 +340,12 @@ integration suites and apply one direct contract test plus only the route-level 
 to prove wiring, without weakening persistence, migration, biological-unit, pairing, censoring, or
 lineage coverage.
 
+After the annotation, layer-description, numeric-parser, and shared annotation-wiring increments,
+the full UI suite passes 191 files / 1,303 tests. Only four low-cost pure-function tests were added;
+the annotation-surface wiring reuses existing UI integration coverage. UI typecheck, full lint, and
+the production build pass. The initial chunk remains 264.32 kB (gzip 81.16 kB) with no build
+advisory.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
