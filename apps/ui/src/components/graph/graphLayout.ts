@@ -7,6 +7,36 @@ export type GraphPlotMargin = Readonly<{
   left: number;
 }>;
 
+export function estimateGraphTextWidth(text: string, fontSize: number): number {
+  return [...text].reduce(
+    (width, character) =>
+      width +
+      (/\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}/u.test(character)
+        ? fontSize
+        : fontSize * 0.58),
+    0,
+  );
+}
+
+/** Keeps a rotated Y title close to the axis without colliding with tick labels. */
+export function yAxisTitlePosition(input: Readonly<{
+  axisX: number;
+  tickLabels: readonly string[];
+  tickFontSize: number;
+  titleFontSize: number;
+  minimumX?: number;
+  gap?: number;
+}>): number {
+  const widestTickLabel = Math.max(
+    0,
+    ...input.tickLabels.map((label) => estimateGraphTextWidth(label, input.tickFontSize)),
+  );
+  return Math.max(
+    input.minimumX ?? 18,
+    input.axisX - 10 - widestTickLabel - input.titleFontSize / 2 - (input.gap ?? 8),
+  );
+}
+
 /** One coordinate contract for the drawable rectangle inside an SVG canvas. */
 export function createPlotRectangle(width: number, height: number, margin: GraphPlotMargin) {
   const right = width - margin.right;

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createCategoryLayout, createNiceTicks, createPlotRectangle } from "./graphLayout";
+import {
+  createCategoryLayout,
+  createNiceTicks,
+  createPlotRectangle,
+  yAxisTitlePosition,
+} from "./graphLayout";
 
 describe("graph layout", () => {
   it("derives one exact drawable rectangle from canvas margins", () => {
@@ -57,5 +62,25 @@ describe("graph layout", () => {
 
   it("emits one stable tick for a degenerate finite range", () => {
     expect(createNiceTicks(-5, -5)).toEqual([-5]);
+  });
+
+  it("keeps the Y title close while reserving space for the widest visible tick", () => {
+    const compact = yAxisTitlePosition({
+      axisX: 124,
+      tickLabels: ["0", "0.5", "1", "1.5"],
+      tickFontSize: 17,
+      titleFontSize: 19,
+    });
+    const wide = yAxisTitlePosition({
+      axisX: 124,
+      tickLabels: ["-1000.0", "0", "1000.0"],
+      tickFontSize: 17,
+      titleFontSize: 19,
+    });
+
+    expect(compact).toBeGreaterThan(42);
+    expect(compact).toBeLessThan(78);
+    expect(wide).toBeLessThan(compact);
+    expect(wide).toBeGreaterThanOrEqual(18);
   });
 });

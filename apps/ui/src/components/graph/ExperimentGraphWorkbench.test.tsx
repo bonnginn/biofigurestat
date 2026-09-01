@@ -505,12 +505,12 @@ describe("ExperimentGraphWorkbench", () => {
       ...svg.querySelectorAll<SVGTextElement>(".experiment-graph-axis-title"),
     ].find((node) => node.getAttribute("transform")?.startsWith("rotate(-90"));
     expect(Number(svg.dataset.leftMargin)).toBeGreaterThanOrEqual(124);
-    expect(Number(yAxisTitle?.getAttribute("x"))).toBe(
+    expect(Number(yAxisTitle?.getAttribute("x"))).toBeGreaterThan(
       Number(svg.dataset.leftMargin) - 82,
     );
-    expect(Number(yAxisTitle?.getAttribute("x"))).toBeGreaterThanOrEqual(24);
+    expect(Number(yAxisTitle?.getAttribute("x"))).toBeGreaterThanOrEqual(18);
     expect(Number(yAxisTitle?.getAttribute("x"))).toBeLessThanOrEqual(
-      Number(svg.dataset.leftMargin) - 72,
+      Number(svg.dataset.leftMargin) - 45,
     );
     const viewBoxHeight = Number(svg.getAttribute("viewBox")?.split(/\s+/u)[3]);
     expect(Number(xAxisTitle?.getAttribute("y"))).toBeLessThan(viewBoxHeight - 40);

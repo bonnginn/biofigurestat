@@ -10,7 +10,13 @@ import { localizedText, useAppLocale } from "../../app/appLocale";
 import { GRAPH_PALETTES } from "./graphAppearance";
 import { isPairwiseComparisonTest } from "./experimentGraphAnnotations";
 import type { ExperimentPoint, GraphSeries } from "./experimentGraphDataExport";
-import { createCategoryLayout, createNiceTicks, createPlotRectangle } from "./graphLayout";
+import {
+  createCategoryLayout,
+  createNiceTicks,
+  createPlotRectangle,
+  estimateGraphTextWidth,
+  yAxisTitlePosition,
+} from "./graphLayout";
 import {
   formatGraphNumber as formatNumber,
   formatGraphPercentage as formatPercentage,
@@ -56,17 +62,6 @@ type ConditionAxisLabel = Readonly<{
 const CHART_HEIGHT = 520;
 const CHART_MARGIN = { top: 38, right: 34, bottom: 96, left: 124 };
 const CATEGORY_LAYOUT_FONT_SIZE = 15;
-
-function estimatedRenderedTextWidth(text: string, fontSize: number): number {
-  return [...text].reduce(
-    (width, character) =>
-      width +
-      (/\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}/u.test(character)
-        ? fontSize
-        : fontSize * 0.58),
-    0,
-  );
-}
 
 function pointMarkPath(
   style: "circle" | "square" | "triangle" | "diamond",
@@ -216,11 +211,11 @@ export function ExperimentGraphSvg({
     .map((item, index) => item.xGroupKey === series[index]?.xGroupKey);
   const requiredSlotWidths = axisLabels.map((label) => {
     const labelWidth = Math.max(
-      estimatedRenderedTextWidth(label.timeLabel, CATEGORY_LAYOUT_FONT_SIZE),
+      estimateGraphTextWidth(label.timeLabel, CATEGORY_LAYOUT_FONT_SIZE),
       ...label.levels.map((level) =>
         Math.max(
           ...splitParentLabel(level.value).map((line) =>
-            estimatedRenderedTextWidth(line, CATEGORY_LAYOUT_FONT_SIZE),
+            estimateGraphTextWidth(line, CATEGORY_LAYOUT_FONT_SIZE),
           ),
         ),
       ),
@@ -332,7 +327,7 @@ export function ExperimentGraphSvg({
       label &&
       !(levelIndex === 0 && label === "条件") &&
       !(levelIndex === 0 && label === singleCategoricalFactorTitle)
-        ? [estimatedRenderedTextWidth(label, appearance.hierarchyFontSize)]
+        ? [estimateGraphTextWidth(label, appearance.hierarchyFontSize)]
         : [],
     ),
   );
@@ -346,7 +341,7 @@ export function ExperimentGraphSvg({
             return (
               Math.max(
                 ...splitParentLabel(`${label}${item.auxiliaryReference ? " (reference)" : ""}`).map(
-                  (line) => estimatedRenderedTextWidth(line, appearance.legendFontSize),
+                  (line) => estimateGraphTextWidth(line, appearance.legendFontSize),
                 ),
               ) + 54
             );
@@ -362,10 +357,6 @@ export function ExperimentGraphSvg({
   };
   const graphInnerWidth = continuousLine ? 720 : categoryLayout.innerWidth;
   const width = margin.left + margin.right + graphInnerWidth;
-  // Keep the Y title in its own band while following any extra left margin
-  // introduced by hierarchical labels. A fixed page-edge coordinate made the
-  // title look detached from otherwise compact Graphs.
-  const yAxisTitleX = Math.max(24, margin.left - 82);
   const extraLabelHeight = Math.max(0, hierarchyDepth - 1) * 27;
   const xAxisTitleHeight = renderedXAxisTitle ? 34 : 0;
   const statisticsLegendLabels = [
@@ -544,6 +535,14 @@ export function ExperimentGraphSvg({
           axes.yTickMode === "manual" ? axes.yTickInterval : null,
         );
   const yTickFractionDigits = domainRange < 1 ? 2 : 1;
+  const yTickLabels = yTicks.map((tick) => formatNumber(tick, yTickFractionDigits));
+  const yAxisTitleX = yAxisTitlePosition({
+    axisX: plot.left,
+    tickLabels: yTickLabels,
+    tickFontSize: appearance.tickFontSize,
+    titleFontSize: appearance.axisTitleFontSize,
+    minimumX: 18,
+  });
   const defaultYLabel = defaultGraphYTitle({
     id: "preview-readout",
     label: readoutLabel,
@@ -749,7 +748,7 @@ export function ExperimentGraphSvg({
               className="experiment-graph-axis-label"
               style={{ fontSize: appearance.tickFontSize, fill: "#000" }}
             >
-              {formatNumber(tick, yTickFractionDigits)}
+              {yTickLabels[index]}
             </text>
           </g>
         );
