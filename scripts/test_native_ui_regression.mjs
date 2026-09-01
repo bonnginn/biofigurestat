@@ -107,6 +107,11 @@ test("classifies Windows file-dialog failures from stderr rather than echoed com
     ]),
     "HARNESS_INFRASTRUCTURE_BLOCKED",
   );
+
+  const unsupportedControl = windowsFileDialogFailure({
+    stderr: "GetCurrentPattern: unsupported pattern\r\n",
+  });
+  assert.match(unsupportedControl.message, /^HARNESS_FILE_DIALOG_AUTOMATION:/);
 });
 
 test("accepts the fresh WebView2 page target before its initial URL is committed", () => {

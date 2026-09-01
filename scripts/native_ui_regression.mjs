@@ -321,15 +321,28 @@ if ($action -eq 'cancel') {
     [Windows.Automation.TreeScope]::Descendants,
     $fileNameId
   )
-  if ($null -eq $edit) {
-    $editType = [Windows.Automation.PropertyCondition]::new(
-      [Windows.Automation.AutomationElement]::ControlTypeProperty,
-      [Windows.Automation.ControlType]::Edit
-    )
-    $edit = $dialog.FindFirst([Windows.Automation.TreeScope]::Descendants, $editType)
+  $editType = [Windows.Automation.PropertyCondition]::new(
+    [Windows.Automation.AutomationElement]::ControlTypeProperty,
+    [Windows.Automation.ControlType]::Edit
+  )
+  $editCandidates = @()
+  if ($null -ne $edit) { $editCandidates += $edit }
+  $editCandidates += @($dialog.FindAll([Windows.Automation.TreeScope]::Descendants, $editType))
+  $editable = @()
+  foreach ($candidate in $editCandidates) {
+    $pattern = $null
+    if ($candidate.TryGetCurrentPattern([Windows.Automation.ValuePattern]::Pattern, [ref]$pattern)) {
+      $editable += @{
+        element = $candidate
+        pattern = $pattern
+        preferred = $candidate.Current.AutomationId -eq '1001' -or $candidate.Current.Name -match 'File name|ファイル名'
+      }
+    }
   }
-  if ($null -eq $edit) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: file name input' }
-  $edit.GetCurrentPattern([Windows.Automation.ValuePattern]::Pattern).SetValue($target)
+  $selectedEdit = @($editable | Where-Object { $_.preferred } | Select-Object -First 1)[0]
+  if ($null -eq $selectedEdit) { $selectedEdit = @($editable | Select-Object -Last 1)[0] }
+  if ($null -eq $selectedEdit) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: writable file name input' }
+  $selectedEdit.pattern.SetValue($target)
   $saveId = [Windows.Automation.PropertyCondition]::new(
     [Windows.Automation.AutomationElement]::AutomationIdProperty,
     '1'
@@ -361,7 +374,8 @@ export function windowsFileDialogFailure(error) {
     /(?:HARNESS_FILE_DIALOG_AUTOMATION|FILE_DIALOG_(?:NOT_FOUND|CONTROL_NOT_FOUND)):[^\r\n]*/i,
   )?.[0];
   if (marker) return new Error(marker);
-  return error instanceof Error ? error : new Error(String(error));
+  const detail = stderr.trim().split(/\r?\n/u).filter(Boolean).at(-1) ?? String(error);
+  return new Error(`HARNESS_FILE_DIALOG_AUTOMATION: Windows dialog control failed: ${detail}`);
 }
 
 export function macAccessibilityScript(action, names = [], value = "") {
