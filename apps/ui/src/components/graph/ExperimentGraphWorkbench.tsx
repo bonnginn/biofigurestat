@@ -3,7 +3,6 @@ import type { ChangeEvent } from "react";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
 
 import {
-  categoricalTotal,
   hasSharedSourceConditionUnits,
   orderedAxisSemantic,
   orderedAxisTitle,
@@ -13,10 +12,7 @@ import {
   type ReadoutDraft,
   type TimeAnalysisPlan,
 } from "../../app/experimentDraft";
-import {
-  assessDraftGraphAnalysis,
-  isDerivedTimeMetric,
-} from "../../app/experimentDraftAnalysis";
+import { assessDraftGraphAnalysis, isDerivedTimeMetric } from "../../app/experimentDraftAnalysis";
 import {
   nestedIndependentSourceContext,
   type DraftAnalysisCorrection,
@@ -97,13 +93,14 @@ import {
   type GraphSeries,
 } from "./experimentGraphDataExport";
 export { serializeVisibleGraphData } from "./experimentGraphDataExport";
+import { buildDerivedGraphLineageRows, buildExperimentGraphSeries } from "./experimentGraphSeries";
 import {
-  buildDerivedGraphLineageRows,
-  buildExperimentGraphSeries,
-} from "./experimentGraphSeries";
-import {
-  formatGraphNumber as formatNumber,
-} from "./graphValueFormatting";
+  buildConditionAxisLabels,
+  buildGraphFacetGroups,
+  hasVisibleGraphData,
+  uniqueVisualSeriesOptions,
+} from "./experimentGraphPresentation";
+import { formatGraphNumber as formatNumber } from "./graphValueFormatting";
 
 import "./graph-workbench.css";
 
@@ -115,12 +112,6 @@ type GraphType = WorkspaceGraphState["graphType"];
 type StatisticsAnnotation = NonNullable<WorkspaceGraphState["statisticsAnnotation"]>;
 type StatisticsAnnotationEntry = NonNullable<WorkspaceGraphState["statisticsAnnotations"]>[number];
 type GraphGrouping = NonNullable<WorkspaceGraphState["grouping"]>;
-
-type ConditionAxisLabel = Readonly<{
-  conditionId: string;
-  levels: readonly Readonly<{ id: string; label: string; value: string }>[];
-  timeLabel: string;
-}>;
 
 export type ExperimentGraphWorkbenchProps = Readonly<{
   draft: ExperimentSetDraft;
@@ -254,61 +245,14 @@ export function describeActiveGraphLayers(
   return parts.join(" + ") || "No data layers selected";
 }
 
-function buildConditionAxisLabels(
-  draft: ExperimentSetDraft,
-  series: readonly GraphSeries[],
-  hierarchyOrder: readonly string[],
-  grouping: GraphGrouping,
-): readonly ConditionAxisLabel[] {
-  const seriesFactorId = grouping.series.source === "factor" ? grouping.series.factorId : undefined;
-  const orderedAttributes = [
-    ...hierarchyOrder.flatMap((attributeId) => {
-      const attribute = draft.attributes.find(({ id }) => id === attributeId);
-      return attribute ? [attribute] : [];
-    }),
-    ...draft.attributes.filter(({ id }) => !hierarchyOrder.includes(id)),
-  ].filter(({ id }) => id !== seriesFactorId);
-  const normalizedGrouping = normalizeGraphGroupingChannels(grouping);
-  const xFactorIds =
-    normalizedGrouping.x.source === "factor"
-      ? normalizedGrouping.x.factorIds?.length
-        ? normalizedGrouping.x.factorIds
-        : normalizedGrouping.x.factorId
-          ? [normalizedGrouping.x.factorId]
-          : []
-      : [];
-  return series.map((item) => {
-    const condition = draft.conditions.find((candidate) => candidate.id === item.conditionId);
-    const levels = orderedAttributes.map((attribute) => ({
-      id: attribute.id,
-      label: attribute.label.trim() || "属性",
-      value: condition?.attributes[attribute.id]?.trim() || "—",
-    }));
-    return {
-      conditionId: item.conditionId,
-      levels:
-        normalizedGrouping.x.source === "factor" && xFactorIds.length > 0
-          ? xFactorIds.map((factorId) => {
-              const attribute = draft.attributes.find(({ id }) => id === factorId);
-              return {
-                id: factorId,
-                label: attribute?.label ?? "条件",
-                value: condition?.attributes[factorId]?.trim() || "—",
-              };
-            })
-          : levels.length > 0
-            ? levels
-            : [{ id: "condition", label: "条件", value: condition?.label || item.conditionLabel }],
-      timeLabel: grouping.series.source === "time" ? "" : (item.timeLabel ?? ""),
-    };
-  });
-}
-
 function ProportionSummary({ series }: { series: readonly GraphSeries[] }) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   return (
-    <div className="experiment-graph-data-summary" aria-label={t("割合データの要約", "Proportion-data summary")}>
+    <div
+      className="experiment-graph-data-summary"
+      aria-label={t("割合データの要約", "Proportion-data summary")}
+    >
       {series.map((item) => (
         <div className="experiment-graph-summary-row" key={item.seriesKey}>
           <strong>
@@ -334,7 +278,10 @@ function NestedSummary({ series }: { series: readonly GraphSeries[] }) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   return (
-    <div className="experiment-graph-data-summary" aria-label={t("階層データの要約", "Hierarchical-data summary")}>
+    <div
+      className="experiment-graph-data-summary"
+      aria-label={t("階層データの要約", "Hierarchical-data summary")}
+    >
       {series.map((item) => (
         <div className="experiment-graph-summary-row" key={item.seriesKey}>
           <strong>
@@ -634,7 +581,11 @@ export function ExperimentGraphWorkbench({
     statisticsAnnotation,
     statisticsAnnotations,
   });
-  useExperimentGraphDiagnosticEffects({ renderedState: benchmarkRenderedState, graphType, usageGraphState });
+  useExperimentGraphDiagnosticEffects({
+    renderedState: benchmarkRenderedState,
+    graphType,
+    usageGraphState,
+  });
 
   useBenchmarkGraphConfigurationEffects({
     identity: benchmarkRun.identity,
@@ -725,50 +676,28 @@ export function ExperimentGraphWorkbench({
       : (readout?.shape ?? "proportion");
   const axisLabels = useMemo(() => {
     if (appearance.hierarchicalLabels)
-      return buildConditionAxisLabels(draft, series, axes.hierarchyOrder, grouping);
+      return buildConditionAxisLabels({
+        draft,
+        series,
+        hierarchyOrder: axes.hierarchyOrder,
+        grouping,
+      });
     return series.map((item) => ({
       conditionId: item.conditionId,
       levels: [{ id: "condition", label: "条件", value: item.conditionLabel }],
       timeLabel: grouping.series.source === "time" ? "" : (item.timeLabel ?? ""),
     }));
   }, [appearance.hierarchicalLabels, axes.hierarchyOrder, draft, grouping, series]);
-  const facetGroups = useMemo(() => {
-    const grouped = new Map<
-      string,
-      { label: string; rows: GraphSeries[]; labels: ConditionAxisLabel[] }
-    >();
-    series.forEach((item, index) => {
-      const current = grouped.get(item.facetKey) ?? {
-        label: item.facetLabel,
-        rows: [],
-        labels: [],
-      };
-      current.rows.push(item);
-      const label = axisLabels[index];
-      if (label) current.labels.push(label);
-      grouped.set(item.facetKey, current);
-    });
-    const requestedOrder = grouping.facet?.levelOrder ?? [];
-    return [...grouped.entries()]
-      .map(([key, value]) => ({ key, ...value }))
-      .sort((first, second) => {
-        const firstOrder = requestedOrder.indexOf(first.label);
-        const secondOrder = requestedOrder.indexOf(second.label);
-        if (firstOrder < 0 && secondOrder < 0) return 0;
-        if (firstOrder < 0) return 1;
-        if (secondOrder < 0) return -1;
-        return firstOrder - secondOrder;
-      });
-  }, [axisLabels, grouping.facet?.levelOrder, series]);
-  const visualSeriesOptions = useMemo(
+  const facetGroups = useMemo(
     () =>
-      series.filter(
-        (item, index) =>
-          series.findIndex(({ visualSeriesKey }) => visualSeriesKey === item.visualSeriesKey) ===
-            index && item.visualSeriesLabel,
-      ),
-    [series],
+      buildGraphFacetGroups({
+        series,
+        axisLabels,
+        requestedOrder: grouping.facet?.levelOrder ?? [],
+      }),
+    [axisLabels, grouping.facet?.levelOrder, series],
   );
+  const visualSeriesOptions = useMemo(() => uniqueVisualSeriesOptions(series), [series]);
   const defaultPresentationAppearance: GraphAppearance = {
     ...DEFAULT_APPEARANCE,
     ...(visualSeriesOptions.length > 1 ? { legendPosition: "right", palette: "condition" } : {}),
@@ -789,22 +718,7 @@ export function ExperimentGraphWorkbench({
         baseAnnotationContext,
       )
     : baseAnnotationContext;
-  const compositionHasData =
-    shape === "categorical_counts" &&
-    Object.values(cells).some(
-      (cell) => cell?.kind === "categorical_counts" && categoricalTotal(cell) !== null,
-    );
-  const hasData =
-    compositionHasData ||
-    series.some((item) =>
-      sourceMode === "derived_metric"
-        ? item.experimentPoints.length > 0
-        : shape === "proportion"
-          ? item.proportionPoints.length > 0
-          : shape === "nested_continuous"
-            ? item.rawPoints.length > 0
-            : item.experimentPoints.length > 0,
-    );
+  const hasData = hasVisibleGraphData({ shape, sourceMode, series, cells });
   const analysisAssessment = useMemo(
     () =>
       assessDraftGraphAnalysis({
@@ -860,10 +774,7 @@ export function ExperimentGraphWorkbench({
     analysisState: benchmarkAnalysisState,
     setStatus: setBenchmarkCaptureStatus,
   });
-  const varyingStatisticalAttributes = varyingGraphAnalysisAttributes(
-    draft,
-    analysisConditionIds,
-  );
+  const varyingStatisticalAttributes = varyingGraphAnalysisAttributes(draft, analysisConditionIds);
   const hasFactorByTimeStructure =
     draft.time.points.length > 1 && varyingStatisticalAttributes.length > 1;
   const handleConditionChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -1051,16 +962,23 @@ export function ExperimentGraphWorkbench({
       <header className="experiment-graph-workbench-header">
         <div>
           <p className="experiment-graph-overline">
-            {workspaceMode === "statistics" ? t("統計", "Statistics") : t("グラフ作成", "Graph editor")}
+            {workspaceMode === "statistics"
+              ? t("統計", "Statistics")
+              : t("グラフ作成", "Graph editor")}
           </p>
           <h2>{readout?.label ?? t("測定項目を選択", "Select a readout")}</h2>
           <p className="experiment-graph-subtitle">
             {semanticReadiness === "unresolved_descriptive"
-              ? t("表の行を記述的に表示（実験単位と統計的なnは未確認）", "Descriptive display of table rows (experimental unit and statistical n not confirmed)")
+              ? t(
+                  "表の行を記述的に表示（実験単位と統計的なnは未確認）",
+                  "Descriptive display of table rows (experimental unit and statistical n not confirmed)",
+                )
               : timeLabel
                 ? t(`時点：${timeLabel}`, `Time point: ${timeLabel}`)
                 : t("実験単位ごとの値を比較", "Compare values by experimental unit")}
-            {workspaceMode !== "statistics" ? t(" · 図の要素をクリックして設定", " · Click a Graph element to edit it") : ""}
+            {workspaceMode !== "statistics"
+              ? t(" · 図の要素をクリックして設定", " · Click a Graph element to edit it")
+              : ""}
           </p>
         </div>
         <button type="button" className="experiment-graph-close" onClick={onClose}>
@@ -1070,7 +988,10 @@ export function ExperimentGraphWorkbench({
 
       <div className="experiment-graph-workbench-layout">
         {workspaceMode !== "statistics" ? (
-          <section className="experiment-graph-canvas-panel" aria-label={t("グラフプレビュー", "Graph preview")}>
+          <section
+            className="experiment-graph-canvas-panel"
+            aria-label={t("グラフプレビュー", "Graph preview")}
+          >
             <div className="experiment-graph-canvas-heading">
               <div>
                 <p className="experiment-graph-overline">{graphTypeLabel[graphType]}</p>
@@ -1078,7 +999,10 @@ export function ExperimentGraphWorkbench({
                   {activeLayerDescription}
                 </h3>
               </div>
-              <div className="experiment-graph-export-actions" aria-label={t("グラフの書き出し", "Graph export")}>
+              <div
+                className="experiment-graph-export-actions"
+                aria-label={t("グラフの書き出し", "Graph export")}
+              >
                 <button
                   type="button"
                   aria-label={t("グラフをコピー", "Copy Graph")}
@@ -1239,7 +1163,10 @@ export function ExperimentGraphWorkbench({
               </div>
             ) : (
               <div className="experiment-graph-empty" role="status">
-                {t("表示する条件と値を選択してください。", "Select the conditions and values to display.")}
+                {t(
+                  "表示する条件と値を選択してください。",
+                  "Select the conditions and values to display.",
+                )}
               </div>
             )}
             <p className="experiment-graph-caption">
@@ -1305,7 +1232,11 @@ export function ExperimentGraphWorkbench({
 
         <aside
           className="experiment-graph-inspector"
-          aria-label={workspaceMode === "statistics" ? t("統計設定", "Statistics settings") : t("グラフ設定", "Graph settings")}
+          aria-label={
+            workspaceMode === "statistics"
+              ? t("統計設定", "Statistics settings")
+              : t("グラフ設定", "Graph settings")
+          }
         >
           {workspaceMode !== "statistics" ? (
             <div className="experiment-graph-inspector-target">
@@ -1321,8 +1252,12 @@ export function ExperimentGraphWorkbench({
                   <option value="y-axis">{t("Y軸", "Y axis")}</option>
                   <option value="data">{t("データ", "Data")}</option>
                   <option value="raw-dots">{t("生データの点", "Raw-data points")}</option>
-                  <option value="experiment-summary">{t("実験単位の要約", "Experimental-unit summary")}</option>
-                  <option value="series-style">{t("系列の色・線・点", "Series color, line, and symbol")}</option>
+                  <option value="experiment-summary">
+                    {t("実験単位の要約", "Experimental-unit summary")}
+                  </option>
+                  <option value="series-style">
+                    {t("系列の色・線・点", "Series color, line, and symbol")}
+                  </option>
                   <option value="violin">{t("バイオリン", "Violin")}</option>
                   <option value="box">{t("箱ひげ", "Box plot")}</option>
                   <option value="error-bar">{t("誤差線", "Error bars")}</option>
@@ -1337,7 +1272,10 @@ export function ExperimentGraphWorkbench({
                   ) : null}
                 </select>
               </label>
-              <div className="experiment-graph-layer-shortcuts" aria-label={t("現在の表示レイヤー", "Visible layers")}>
+              <div
+                className="experiment-graph-layer-shortcuts"
+                aria-label={t("現在の表示レイヤー", "Visible layers")}
+              >
                 <span>{t("表示中", "Visible")}</span>
                 {shape === "nested_continuous" ? (
                   <button
@@ -1403,13 +1341,20 @@ export function ExperimentGraphWorkbench({
                       value={condition.id}
                       checked={activeAnalysisConditionIds.has(condition.id)}
                       disabled={draft.analysisIntent.kind === "correlation"}
-                      aria-label={t(`統計の条件：${condition.label}`, `Statistical condition: ${condition.label}`)}
+                      aria-label={t(
+                        `統計の条件：${condition.label}`,
+                        `Statistical condition: ${condition.label}`,
+                      )}
                       onChange={handleAnalysisConditionChange}
                     />
                     <span>
                       {condition.label}
-                      {condition.id === draft.controlConditionId ? t("（対照群）", " (control)") : ""}
-                      {condition.role === "auxiliary_reference" ? t("（図のみのreference）", " (Graph-only reference)") : ""}
+                      {condition.id === draft.controlConditionId
+                        ? t("（対照群）", " (control)")
+                        : ""}
+                      {condition.role === "auxiliary_reference"
+                        ? t("（図のみのreference）", " (Graph-only reference)")
+                        : ""}
                     </span>
                   </label>
                 ))}
@@ -1425,7 +1370,10 @@ export function ExperimentGraphWorkbench({
                   <dt>{t("統計上の単位", "Statistical unit")}</dt>
                   <dd>
                     {sharedSourceTopology
-                      ? t(`条件別${draft.conditionAssignment.unitLabel}`, `Condition-specific ${draft.conditionAssignment.unitLabel}`)
+                      ? t(
+                          `条件別${draft.conditionAssignment.unitLabel}`,
+                          `Condition-specific ${draft.conditionAssignment.unitLabel}`,
+                        )
                       : draft.conditionAssignment.unitLabel}
                   </dd>
                 </div>
@@ -1438,8 +1386,14 @@ export function ExperimentGraphWorkbench({
                           `Compare matched condition-specific ${draft.conditionAssignment.unitLabel}s from the same ${sharedSourceTopology.sourceUnitLabel}`,
                         )
                       : draft.conditionAssignment.kind === "matched"
-                        ? t("同じ実験単位を条件間で比較", "Compare the same experimental units across conditions")
-                        : t("条件ごとに別の実験単位", "Separate experimental units for each condition")}
+                        ? t(
+                            "同じ実験単位を条件間で比較",
+                            "Compare the same experimental units across conditions",
+                          )
+                        : t(
+                            "条件ごとに別の実験単位",
+                            "Separate experimental units for each condition",
+                          )}
                   </dd>
                 </div>
                 <div>
@@ -1448,7 +1402,10 @@ export function ExperimentGraphWorkbench({
                     {draft.controlConditionId
                       ? (draft.conditions.find(({ id }) => id === draft.controlConditionId)
                           ?.label ?? t("指定済み", "Specified"))
-                      : t("未指定（表示名からは推測しません）", "Not specified (not inferred from the display name)")}
+                      : t(
+                          "未指定（表示名からは推測しません）",
+                          "Not specified (not inferred from the display name)",
+                        )}
                   </dd>
                 </div>
               </dl>
@@ -1482,7 +1439,9 @@ export function ExperimentGraphWorkbench({
               </label>
               {draft.analysisIntent.kind !== "correlation" ? (
                 <fieldset className="experiment-graph-condition-fieldset">
-                  <legend>{t("実験要因の表示割り当て", "Map experimental factors to the display")}</legend>
+                  <legend>
+                    {t("実験要因の表示割り当て", "Map experimental factors to the display")}
+                  </legend>
                   <label className="experiment-graph-field">
                     <span>{t("X軸", "X axis")}</span>
                     <select
@@ -1511,12 +1470,14 @@ export function ExperimentGraphWorkbench({
                     >
                       {axes.xSemantic !== "categorical" || draft.time.points.length > 0 ? (
                         <option value="time">
-                            {axes.xSemantic === "numeric_covariate"
-                              ? axes.xTitle || t("数値X", "Numeric X")
-                              : t("時間", "Time")}
+                          {axes.xSemantic === "numeric_covariate"
+                            ? axes.xTitle || t("数値X", "Numeric X")
+                            : t("時間", "Time")}
                         </option>
                       ) : null}
-                      <option value="condition">{t("条件の組み合わせ", "Condition combination")}</option>
+                      <option value="condition">
+                        {t("条件の組み合わせ", "Condition combination")}
+                      </option>
                       {draft.attributes
                         .filter(
                           ({ id }) =>
@@ -1534,7 +1495,9 @@ export function ExperimentGraphWorkbench({
                   </label>
                   {grouping.x.source === "factor" && draft.attributes.length > 1 ? (
                     <label className="experiment-graph-field">
-                      <span>{t("X階層（複数選択可）", "X hierarchy (multiple selection allowed)")}</span>
+                      <span>
+                        {t("X階層（複数選択可）", "X hierarchy (multiple selection allowed)")}
+                      </span>
                       <select
                         multiple
                         aria-label="X hierarchy factors"
@@ -1620,7 +1583,9 @@ export function ExperimentGraphWorkbench({
                       }}
                     >
                       {axes.xSemantic !== "categorical" ? (
-                        <option value="condition">{t("条件の組み合わせ", "Condition combination")}</option>
+                        <option value="condition">
+                          {t("条件の組み合わせ", "Condition combination")}
+                        </option>
                       ) : null}
                       <option value="none">{t("なし", "None")}</option>
                       {draft.time.points.length > 0 ? (
@@ -1833,7 +1798,9 @@ export function ExperimentGraphWorkbench({
                 </fieldset>
               )}
               <fieldset className="experiment-graph-condition-fieldset">
-                <legend>{draft.analysisIntent.kind === "correlation" ? "X / Y" : t("条件", "Conditions")}</legend>
+                <legend>
+                  {draft.analysisIntent.kind === "correlation" ? "X / Y" : t("条件", "Conditions")}
+                </legend>
                 {draft.conditions.map((condition) => (
                   <label className="experiment-graph-checkbox" key={condition.id}>
                     <input
@@ -2304,10 +2271,7 @@ export function ExperimentGraphWorkbench({
           ) : null}
 
           {inspectorTarget === "legend" ? (
-            <ExperimentGraphLegendEditor
-              appearance={appearance}
-              setAppearance={setAppearance}
-            />
+            <ExperimentGraphLegendEditor appearance={appearance} setAppearance={setAppearance} />
           ) : null}
 
           {inspectorTarget === "annotation" && analysisResult?.status === "ok" ? (
