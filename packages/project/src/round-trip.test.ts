@@ -8,7 +8,12 @@ import {
   saveProjectStatePackage,
   type ProjectDatabaseCodec,
 } from "./round-trip";
-import type { AtomicProjectWrite, ProjectPackageStorage, Sha256Function } from "./package-io";
+import {
+  saveProjectPackage,
+  type AtomicProjectWrite,
+  type ProjectPackageStorage,
+  type Sha256Function,
+} from "./package-io";
 
 class MemoryStorage implements ProjectPackageStorage {
   packages = new Map<string, Map<string, Uint8Array>>();
@@ -177,6 +182,94 @@ describe("populated project round trip", () => {
     expect(reopened).toEqual(saved);
     expect(storage.packages.get("/projects/wb.lsa")?.has("project.sqlite")).toBe(true);
     expect(storage.packages.get("/projects/wb.lsa")?.has("raw/exports/canonical.csv")).toBe(true);
+  });
+
+  it("opens a Public Alpha v0.2 package and preserves it through current save/reopen", async () => {
+    const storage = new MemoryStorage();
+    const current = fixtureState();
+    const { experimentWorkspace: _currentWorkspace, ...withoutWorkspace } = current;
+    const alphaState = { ...withoutWorkspace, schemaVersion: "0.2.0" };
+    const database = new TextEncoder().encode(JSON.stringify(alphaState));
+    const rawExport = new TextEncoder().encode(
+      "unit_id,condition,outcome,value\nunit.dark.1,condition.dark,outcome.wb,1\nunit.light.1,condition.light,outcome.wb,1.4\n",
+    );
+    const databasePath = "project.sqlite";
+    const rawPath = "raw/exports/canonical.csv";
+
+    await saveProjectPackage(
+      storage,
+      "/projects/public-alpha-v0.2.lsa",
+      {
+        format: "life-science-analysis-project",
+        formatVersion: "0.2.0",
+        projectKind: "experiment",
+        projectId: alphaState.metadata.projectId,
+        metadata: alphaState.metadata,
+        appVersion: "0.1.0-alpha.1",
+        schemaVersions: {
+          design: "0.2.0",
+          data: "0.2.0",
+          analysis: "0.1.0",
+          graph: "0.1.0",
+        },
+        createdAt: alphaState.metadata.createdAt,
+        savedAt: alphaState.metadata.updatedAt,
+        files: [
+          {
+            path: databasePath,
+            role: "database",
+            sha256: await sha256(database),
+            sizeBytes: database.byteLength,
+          },
+          {
+            path: rawPath,
+            role: "raw_export",
+            sha256: await sha256(rawExport),
+            sizeBytes: rawExport.byteLength,
+          },
+        ],
+        recovery: {
+          canonicalRawExportPath: rawPath,
+          databasePath,
+        },
+      },
+      { [databasePath]: database, [rawPath]: rawExport },
+      sha256,
+    );
+
+    const opened = await openProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/public-alpha-v0.2.lsa",
+      sha256,
+    });
+
+    expect(opened.schemaVersion).toBe("0.3.0");
+    expect(opened.experimentWorkspace).toBeNull();
+    expect(opened.observations.map(({ measurement }) => measurement)).toEqual([
+      { kind: "scalar", value: 1 },
+      { kind: "scalar", value: 1.4 },
+    ]);
+
+    const resaved = await saveProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/public-alpha-v0.2-resaved.lsa",
+      state: opened,
+      sha256,
+      appVersion: "0.1.0-next",
+      savedAt: "2026-08-20T02:00:00Z",
+    });
+    const reopened = await openProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/public-alpha-v0.2-resaved.lsa",
+      sha256,
+    });
+
+    expect(reopened).toEqual(resaved);
+    expect(reopened.observations).toEqual(opened.observations);
+    expect(reopened.unitInstances).toEqual(opened.unitInstances);
   });
 
   it("reopens exact unresolved entry history without making it canonical data", async () => {
