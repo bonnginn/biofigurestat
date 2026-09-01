@@ -408,6 +408,14 @@ changes the readout through the Statistics route, verifies the persisted Y title
 that the Graph annotation is gone. The full 53-test workbench suite, UI typecheck, and focused lint
 pass. The workbench is 1,044 lines.
 
+Shared-source topology lookup now has one domain-level helper used by the standard workspace,
+Statistics analysis-set summary, and Graph Statistics relationship projection. The definition of
+“distinct condition-specific experimental units from one shared source” is no longer repeated in
+three UI modules. Presentation copy remains surface-specific, while source-unit label, identity
+label, and role come from the same typed topology. The existing experimental-unit-count assertion
+now also checks the returned source label; 124 focused draft/workspace/Graph tests, UI typecheck,
+and focused lint pass.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
