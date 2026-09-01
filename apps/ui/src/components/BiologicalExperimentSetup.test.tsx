@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { vi } from "vitest";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, vi } from "vitest";
 import { selectAdaptiveSurface } from "@lsaa/adaptive-input";
 
 import {
@@ -9,6 +9,10 @@ import {
   safelyBuildBiologicalSetup,
   type ConditionEntryBlock,
 } from "./BiologicalExperimentSetup";
+import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
+import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
+
+afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 const block = (id: string, name: string, values: string[]): ConditionEntryBlock => ({
   id,
@@ -427,6 +431,16 @@ describe("BiologicalExperimentSetup pure safety boundary", () => {
 });
 
 describe("BiologicalExperimentSetup researcher-facing UI", () => {
+  it("shows the experiment-structure interview without Japanese application copy in English", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<BiologicalExperimentSetup enabled onReady={vi.fn()} />);
+
+    expect(
+      screen.getByRole("heading", { name: "Experimental conditions and measurements" }),
+    ).toBeVisible();
+    expectNoJapaneseUi(view.container);
+  });
+
   it("is feature gated and starts with one ungrouped horizontal condition row", () => {
     const onReady = vi.fn();
     const { rerender } = render(<BiologicalExperimentSetup enabled={false} onReady={onReady} />);

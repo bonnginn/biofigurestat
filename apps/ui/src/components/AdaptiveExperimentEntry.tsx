@@ -136,7 +136,13 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
       setMessage(null);
       setStage("input");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Structure could not be created");
+      setMessage(
+        locale === "ja" && error instanceof Error
+          ? error.message
+          : locale === "ja"
+            ? "実験構造を作成できませんでした"
+            : "The experiment structure could not be created.",
+      );
     }
   };
 
@@ -169,9 +175,11 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
         observations: imported.observations,
         mapping: imported.mapping,
         lineage: imported.lineage,
-        confirmedTargetedConfirmations: [
-          ...new Set(requiredConfirmationKeys),
-        ].map((key) => ({ key, answer: "confirmed", confirmedAt })),
+        confirmedTargetedConfirmations: [...new Set(requiredConfirmationKeys)].map((key) => ({
+          key,
+          answer: "confirmed",
+          confirmedAt,
+        })),
       });
       if (workspace.status === "dedicated_route_required") {
         onSurvivalReady(adaptiveSurvivalPaste(workspace.snapshot), workspace.snapshot);
@@ -185,7 +193,13 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
       }
       onReady(workspace.draft, workspace.cells);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Input could not be mapped");
+      setMessage(
+        locale === "ja" && error instanceof Error
+          ? error.message
+          : locale === "ja"
+            ? "入力を対応づけられませんでした"
+            : "The input could not be mapped. Your pasted data were retained.",
+      );
     }
   };
 

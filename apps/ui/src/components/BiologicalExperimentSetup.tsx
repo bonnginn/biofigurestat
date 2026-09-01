@@ -119,7 +119,11 @@ const VALUE_FORM_OPTIONS = [
 const VALUE_FORM_OPTIONS_EN = [
   ["single", "One numeric value", "Intensity, length, viability, etc."],
   ["positive_total", "Positive count + total count", "Number positive and total counted"],
-  ["target_reference", "Target value + one reference value", "Two values used to normalize a ratio, such as a western blot"],
+  [
+    "target_reference",
+    "Target value + one reference value",
+    "Two values used to normalize a ratio, such as a western blot",
+  ],
   ["category_count", "Category + count", "Category name and its count"],
 ] as const satisfies readonly [OriginalValueForm, string, string][];
 
@@ -541,24 +545,55 @@ export type BiologicalExperimentSummaryInput = Readonly<{
 export function buildBiologicalExperimentSummary(input: BiologicalExperimentSummaryInput): string {
   if (input.locale === "en") {
     const receiver = input.receiverLabel.trim() || "experimental unit";
-    const factors = input.blocks.map((block) => {
-      const name = block.name.trim() || "Condition";
-      const levels = populatedCells(block).map(({ displayLabel }) => displayLabel).join(", ");
-      return `${name}: ${levels || "not entered"}`;
-    }).join("; ");
-    const readouts = input.readoutLabels.map((label) => label.trim()).filter(Boolean).join(", ");
-    const parts = [`${factors || "Condition: not entered"}.`, `Record ${readouts || "the measured value"} for each ${receiver}.`];
-    if (input.relationship === "same") parts.push(`The same ${receiver} is measured repeatedly across conditions.`);
-    else if (input.relationship === "shared_source") parts.push(`Separate ${receiver}s are assigned to conditions, while matched sets sharing the same ${input.sourceLabel.trim() || "source or experimental run"} are retained.`);
-    else if (input.relationship === "separate") parts.push(`Each condition uses separate ${receiver}s.`);
-    else parts.push(`Whether the same ${receiver} is used across conditions has not been confirmed.`);
-    if (input.childLabel.trim()) parts.push(`${input.childLabel.trim()} observations within each ${receiver} are retained individually but are not counted as independent biological n.`);
+    const factors = input.blocks
+      .map((block) => {
+        const name = block.name.trim() || "Condition";
+        const levels = populatedCells(block)
+          .map(({ displayLabel }) => displayLabel)
+          .join(", ");
+        return `${name}: ${levels || "not entered"}`;
+      })
+      .join("; ");
+    const readouts = input.readoutLabels
+      .map((label) => label.trim())
+      .filter(Boolean)
+      .join(", ");
+    const parts = [
+      `${factors || "Condition: not entered"}.`,
+      `Record ${readouts || "the measured value"} for each ${receiver}.`,
+    ];
+    if (input.relationship === "same")
+      parts.push(`The same ${receiver} is measured repeatedly across conditions.`);
+    else if (input.relationship === "shared_source")
+      parts.push(
+        `Separate ${receiver}s are assigned to conditions, while matched sets sharing the same ${input.sourceLabel.trim() || "source or experimental run"} are retained.`,
+      );
+    else if (input.relationship === "separate")
+      parts.push(`Each condition uses separate ${receiver}s.`);
+    else
+      parts.push(`Whether the same ${receiver} is used across conditions has not been confirmed.`);
+    if (input.childLabel.trim())
+      parts.push(
+        `${input.childLabel.trim()} observations within each ${receiver} are retained individually but are not counted as independent biological n.`,
+      );
     if (input.orderedAxis) {
       const axis = input.orderedAxis;
-      const levels = axis.levels.map((level) => `${String(level)}${axis.unit?.trim() ? ` ${axis.unit.trim()}` : ""}`).join(", ") || "values not entered";
-      if (axis.sameIdentity === true) parts.push(`The same ${receiver} is followed across ${axis.label.trim() || "the ordered axis"} (${levels}).`);
-      else if (axis.sameIdentity === false) parts.push(`Separate ${receiver}s are measured at each ${axis.label.trim() || "ordered-axis"} value (${levels}).`);
-      else parts.push(`Identity across ${axis.label.trim() || "the ordered axis"} (${levels}) has not been confirmed.`);
+      const levels =
+        axis.levels
+          .map((level) => `${String(level)}${axis.unit?.trim() ? ` ${axis.unit.trim()}` : ""}`)
+          .join(", ") || "values not entered";
+      if (axis.sameIdentity === true)
+        parts.push(
+          `The same ${receiver} is followed across ${axis.label.trim() || "the ordered axis"} (${levels}).`,
+        );
+      else if (axis.sameIdentity === false)
+        parts.push(
+          `Separate ${receiver}s are measured at each ${axis.label.trim() || "ordered-axis"} value (${levels}).`,
+        );
+      else
+        parts.push(
+          `Identity across ${axis.label.trim() || "the ordered axis"} (${levels}) has not been confirmed.`,
+        );
     }
     return parts.join(" ");
   }
@@ -983,9 +1018,12 @@ export function BiologicalExperimentSetup({
     });
     if (built.status === "stopped") {
       setMessagePlacement("summary");
-      setMessage(built.reason);
-    }
-    else {
+      setMessage(
+        locale === "ja"
+          ? built.reason
+          : "The experiment structure could not be confirmed. Review the highlighted answers; no data were discarded or reinterpreted.",
+      );
+    } else {
       const accepted = onReady(built.result);
       setMessagePlacement("summary");
       setMessage(
@@ -1077,9 +1115,15 @@ export function BiologicalExperimentSetup({
       relationship === "separate"
         ? t("条件ごとに別々のもの", "Separate experimental units for each condition")
         : relationship === "same"
-          ? t("同じ対象・試料を複数条件で測定", "The same unit was measured under multiple conditions")
+          ? t(
+              "同じ対象・試料を複数条件で測定",
+              "The same unit was measured under multiple conditions",
+            )
           : relationship === "shared_source"
-            ? t(`別々のものだが共通の${sourceLabel.trim() || "由来・実験回"}に属する`, `Separate units sharing the same ${sourceLabel.trim() || "source or experimental run"}`)
+            ? t(
+                `別々のものだが共通の${sourceLabel.trim() || "由来・実験回"}に属する`,
+                `Separate units sharing the same ${sourceLabel.trim() || "source or experimental run"}`,
+              )
             : relationship === "unknown_or_mixed"
               ? t("不明または混在", "Unknown or mixed")
               : "",
@@ -1112,15 +1156,27 @@ export function BiologicalExperimentSetup({
         </h1>
         <p>
           {initial?.revisionMode
-            ? t("入力済みの測定値は変更せず、実験の組み立てだけを確認します。安全に引き継げない変更は適用しません。", "Review only the experiment structure without changing entered measurements. Changes that cannot be carried forward safely will not be applied.")
+            ? t(
+                "入力済みの測定値は変更せず、実験の組み立てだけを確認します。安全に引き継げない変更は適用しません。",
+                "Review only the experiment structure without changing entered measurements. Changes that cannot be carried forward safely will not be applied.",
+              )
             : initial?.statisticsHandoff
-              ? t("表だけでは分からない、値を得た材料のつながりを確認します。", "Confirm how the measured materials are related when this cannot be determined from the table alone.")
-              : t("実際に行った処理と、値を得た材料のつながりを順に整理します。", "Describe the treatments you performed and how the measured materials are related.")}
+              ? t(
+                  "表だけでは分からない、値を得た材料のつながりを確認します。",
+                  "Confirm how the measured materials are related when this cannot be determined from the table alone.",
+                )
+              : t(
+                  "実際に行った処理と、値を得た材料のつながりを順に整理します。",
+                  "Describe the treatments you performed and how the measured materials are related.",
+                )}
         </p>
         <details className="biological-setup__help">
           <summary aria-label={t("この画面の詳しい説明", "More about this screen")}>?</summary>
           <p>
-            {t("小さな実験は少ない入力で完了します。必要な場合だけ処理や材料の情報を追加します。分からない関係を推測して解析へ進めることはありません。", "Simple experiments require only a few answers. Add treatment or material details only when needed. BioFigureStat will not guess an unknown relationship in order to proceed with analysis.")}
+            {t(
+              "小さな実験は少ない入力で完了します。必要な場合だけ処理や材料の情報を追加します。分からない関係を推測して解析へ進めることはありません。",
+              "Simple experiments require only a few answers. Add treatment or material details only when needed. BioFigureStat will not guess an unknown relationship in order to proceed with analysis.",
+            )}
           </p>
         </details>
         <ExternalLlmConsultation prompt={externalLlmPrompt} placement="experiment_setup" />
@@ -1154,7 +1210,9 @@ export function BiologicalExperimentSetup({
               aria-labelledby="inherited-facts-heading"
             >
               <div>
-                <h2 id="inherited-facts-heading">{t("表から引き継いだ内容", "Information carried over from the table")}</h2>
+                <h2 id="inherited-facts-heading">
+                  {t("表から引き継いだ内容", "Information carried over from the table")}
+                </h2>
                 <p>{inheritedFactsSummary}</p>
               </div>
               <button type="button" onClick={() => setEditingInheritedFacts(true)}>
@@ -1173,7 +1231,9 @@ export function BiologicalExperimentSetup({
                 <div className="biological-setup__section-heading">
                   <div>
                     <p>1</p>
-                    <h2 id="condition-plan-heading">{t("処理・群分け", "Treatments and groups")}</h2>
+                    <h2 id="condition-plan-heading">
+                      {t("処理・群分け", "Treatments and groups")}
+                    </h2>
                   </div>
                   <button
                     ref={addBlockControlRef}
@@ -1190,17 +1250,30 @@ export function BiologicalExperimentSetup({
                       })
                     }
                   >
-                    {t("＋ 別の種類の処理・群分けを追加", "+ Add another treatment or grouping factor")}
+                    {t(
+                      "＋ 別の種類の処理・群分けを追加",
+                      "+ Add another treatment or grouping factor",
+                    )}
                   </button>
                 </div>
                 <div className="biological-setup__section-intro">
                   <p>
-                    {t("条件として変えた項目を「名前」に、実際に比較する条件名を下の表へ横方向に入力します。", "Enter the factor you changed as the name, then enter the conditions you will compare across the table.")}
+                    {t(
+                      "条件として変えた項目を「名前」に、実際に比較する条件名を下の表へ横方向に入力します。",
+                      "Enter the factor you changed as the name, then enter the conditions you will compare across the table.",
+                    )}
                   </p>
                   <details className="biological-setup__inline-help">
-                    <summary aria-label={t("処理・群分けの入力方法", "How to enter treatments and groups")}>?</summary>
+                    <summary
+                      aria-label={t("処理・群分けの入力方法", "How to enter treatments and groups")}
+                    >
+                      ?
+                    </summary>
                     <p>
-                      {t("通常は1行のまま使います。たとえばVehicle、Drug A、Drug Bは同じ行へ入力します。Drugという親分類も図に残したい場合だけ「親グループも記録する」を使い、親分類と実際の条件を分けて入力します。", "Usually, keep a single row and enter Vehicle, Drug A, and Drug B across it. Use a parent group only when you need to preserve a higher-level category, such as Drug, separately from the actual conditions.")}
+                      {t(
+                        "通常は1行のまま使います。たとえばVehicle、Drug A、Drug Bは同じ行へ入力します。Drugという親分類も図に残したい場合だけ「親グループも記録する」を使い、親分類と実際の条件を分けて入力します。",
+                        "Usually, keep a single row and enter Vehicle, Drug A, and Drug B across it. Use a parent group only when you need to preserve a higher-level category, such as Drug, separately from the actual conditions.",
+                      )}
                     </p>
                   </details>
                 </div>
@@ -1210,7 +1283,10 @@ export function BiologicalExperimentSetup({
                       <label>
                         <span>{t("名前", "Name")}</span>
                         <input
-                          aria-label={t(`処理・群分け ${blockIndex + 1}の名前`, `Name of treatment or grouping factor ${blockIndex + 1}`)}
+                          aria-label={t(
+                            `処理・群分け ${blockIndex + 1}の名前`,
+                            `Name of treatment or grouping factor ${blockIndex + 1}`,
+                          )}
                           placeholder={t("例：薬剤濃度", "Example: drug concentration")}
                           value={block.name}
                           onChange={(event) => {
@@ -1238,7 +1314,12 @@ export function BiologicalExperimentSetup({
                             }));
                           }}
                         />
-                        <span>{t("親グループも記録する（必要な場合）", "Also record parent groups (if needed)")}</span>
+                        <span>
+                          {t(
+                            "親グループも記録する（必要な場合）",
+                            "Also record parent groups (if needed)",
+                          )}
+                        </span>
                       </label>
                       {blocks.length > 1 ? (
                         <button
@@ -1266,7 +1347,9 @@ export function BiologicalExperimentSetup({
                       >
                         <thead>
                           <tr>
-                            {block.showGroups ? <th scope="col">{t("親グループ", "Parent group")}</th> : null}
+                            {block.showGroups ? (
+                              <th scope="col">{t("親グループ", "Parent group")}</th>
+                            ) : null}
                             {block.values[0]?.map((_, column) => (
                               <th scope="col" key={column}>
                                 {t(`値 ${column + 1}`, `Value ${column + 1}`)}
@@ -1406,10 +1489,17 @@ export function BiologicalExperimentSetup({
                       value={measurementLabel}
                       onChange={(event) => setMeasurementLabel(event.currentTarget.value)}
                     />
-                    <small>{t("グラフの縦軸名の候補として使います。後から変更できます。", "This will be suggested as the Graph Y-axis title. You can change it later.")}</small>
+                    <small>
+                      {t(
+                        "グラフの縦軸名の候補として使います。後から変更できます。",
+                        "This will be suggested as the Graph Y-axis title. You can change it later.",
+                      )}
+                    </small>
                   </label>
                   <fieldset>
-                    <legend>{t("この測定値をどの形で記録しましたか？", "How was this readout recorded?")}</legend>
+                    <legend>
+                      {t("この測定値をどの形で記録しましたか？", "How was this readout recorded?")}
+                    </legend>
                     <div className="biological-setup__choices">
                       {valueFormOptions.map(([value, label, example]) => (
                         <label key={value}>
@@ -1433,9 +1523,17 @@ export function BiologicalExperimentSetup({
                   >
                     <div className="biological-setup__subsection-heading">
                       <div>
-                        <h3 id="additional-readouts-heading">{t("同じ条件で、ほかにも測りましたか？", "Did you measure any other readouts under the same conditions?")}</h3>
+                        <h3 id="additional-readouts-heading">
+                          {t(
+                            "同じ条件で、ほかにも測りましたか？",
+                            "Did you measure any other readouts under the same conditions?",
+                          )}
+                        </h3>
                         <small>
-                          {t("同じ対象・条件から得た別の測定値を追加できます。別の実験単位や条件をここへ追加する必要はありません。", "Add other readouts obtained from the same units and conditions. Do not add a different experimental unit or condition here.")}
+                          {t(
+                            "同じ対象・条件から得た別の測定値を追加できます。別の実験単位や条件をここへ追加する必要はありません。",
+                            "Add other readouts obtained from the same units and conditions. Do not add a different experimental unit or condition here.",
+                          )}
                         </small>
                       </div>
                       <button
@@ -1462,7 +1560,9 @@ export function BiologicalExperimentSetup({
                     </div>
                     {additionalReadouts.map((readout, index) => (
                       <fieldset className="biological-setup__additional-readout" key={readout.id}>
-                        <legend>{t(`追加の測定項目 ${index + 2}`, `Additional readout ${index + 2}`)}</legend>
+                        <legend>
+                          {t(`追加の測定項目 ${index + 2}`, `Additional readout ${index + 2}`)}
+                        </legend>
                         <div className="biological-setup__additional-readout-heading">
                           <label className="biological-setup__field">
                             <span>{t("測定項目の名前", "Readout name")}</span>
@@ -1471,7 +1571,10 @@ export function BiologicalExperimentSetup({
                                 `追加の測定項目 ${index + 2}の名前`,
                                 `Name of additional measured readout ${index + 2}`,
                               )}
-                              placeholder={t("例：細胞数、total protein", "Example: cell count, total protein")}
+                              placeholder={t(
+                                "例：細胞数、total protein",
+                                "Example: cell count, total protein",
+                              )}
                               value={readout.label}
                               onChange={(event) => {
                                 const label = event.currentTarget.value;
@@ -1534,7 +1637,9 @@ export function BiologicalExperimentSetup({
                   <div className="biological-setup__section-heading">
                     <div>
                       <p>3</p>
-                      <h2 id="combination-heading">{t("実施した組み合わせ", "Condition combinations performed")}</h2>
+                      <h2 id="combination-heading">
+                        {t("実施した組み合わせ", "Condition combinations performed")}
+                      </h2>
                     </div>
                   </div>
                   {combinations.length ? (
@@ -1549,7 +1654,12 @@ export function BiologicalExperimentSetup({
                             if (allPerformed) setStatuses({});
                           }}
                         />
-                        <span>{t("作った組み合わせはすべて実施した", "All listed combinations were performed")}</span>
+                        <span>
+                          {t(
+                            "作った組み合わせはすべて実施した",
+                            "All listed combinations were performed",
+                          )}
+                        </span>
                       </label>
                       {editCombinationExceptions ? (
                         <div className="biological-setup__combinations">
@@ -1569,7 +1679,9 @@ export function BiologicalExperimentSetup({
                                 }}
                               >
                                 <option value="performed">{t("実施した", "Performed")}</option>
-                                <option value="not_performed">{t("実施していない", "Not performed")}</option>
+                                <option value="not_performed">
+                                  {t("実施していない", "Not performed")}
+                                </option>
                                 <option value="unknown">{t("未確認", "Not confirmed")}</option>
                               </select>
                             </label>
@@ -1577,13 +1689,19 @@ export function BiologicalExperimentSetup({
                         </div>
                       ) : (
                         <small>
-                          {t(`${combinations.length}通りを実施する予定として扱います。実施しない組み合わせがある場合だけ、チェックを外してください。`, `All ${combinations.length} combinations will be treated as performed. Clear the checkbox only if some combinations were not performed.`)}
+                          {t(
+                            `${combinations.length}通りを実施する予定として扱います。実施しない組み合わせがある場合だけ、チェックを外してください。`,
+                            `All ${combinations.length} combinations will be treated as performed. Clear the checkbox only if some combinations were not performed.`,
+                          )}
                         </small>
                       )}
                     </>
                   ) : (
                     <p className="biological-setup__empty">
-                      {t("具体的な値を入力すると、組み合わせを確認できます。", "Enter condition values to review their combinations.")}
+                      {t(
+                        "具体的な値を入力すると、組み合わせを確認できます。",
+                        "Enter condition values to review their combinations.",
+                      )}
                     </p>
                   )}
                 </section>
@@ -1600,7 +1718,12 @@ export function BiologicalExperimentSetup({
               <div className="biological-setup__section-heading">
                 <div>
                   <p>{initial?.statisticsHandoff ? "1" : "4"}</p>
-                  <h2 id="material-heading">{t("条件を受けたものと材料のつながり", "Experimental units and their relationships")}</h2>
+                  <h2 id="material-heading">
+                    {t(
+                      "条件を受けたものと材料のつながり",
+                      "Experimental units and their relationships",
+                    )}
+                  </h2>
                 </div>
               </div>
               {message && messagePlacement === "material" ? (
@@ -1614,46 +1737,87 @@ export function BiologicalExperimentSetup({
                 </p>
               ) : null}
               <label className="biological-setup__field">
-                <span>{t("条件を直接受けた、または群として分けた対象・試料は？", "What unit directly received a condition or was assigned to a group?")}</span>
+                <span>
+                  {t(
+                    "条件を直接受けた、または群として分けた対象・試料は？",
+                    "What unit directly received a condition or was assigned to a group?",
+                  )}
+                </span>
                 <input
-                  placeholder={t("例：culture dish、mouse、donor由来試料", "Example: culture dish, mouse, donor-derived sample")}
+                  placeholder={t(
+                    "例：culture dish、mouse、donor由来試料",
+                    "Example: culture dish, mouse, donor-derived sample",
+                  )}
                   value={receiverLabel}
                   onChange={(event) => setReceiverLabel(event.currentTarget.value)}
                 />
               </label>
               <details className="biological-setup__inline-help">
-                <summary aria-label={t("対象・試料の入力について詳しく見る", "More about the experimental unit")}>?</summary>
+                <summary
+                  aria-label={t(
+                    "対象・試料の入力について詳しく見る",
+                    "More about the experimental unit",
+                  )}
+                >
+                  ?
+                </summary>
                 <p>
-                  {t("例はmouse、culture dish、well、donor由来試料などです。測定値そのものを得たCellや視野ではなく、処置や群分けを個別に割り当てたものを入力します。同じ対象を複数条件で測った場合も、その対象を入力します。", "Examples include a mouse, culture dish, well, or donor-derived sample. Enter the unit individually assigned to a treatment or group, not the Cell or field from which a measurement was read. If the same unit was measured under multiple conditions, enter that unit.")}
+                  {t(
+                    "例はmouse、culture dish、well、donor由来試料などです。測定値そのものを得たCellや視野ではなく、処置や群分けを個別に割り当てたものを入力します。同じ対象を複数条件で測った場合も、その対象を入力します。",
+                    "Examples include a mouse, culture dish, well, or donor-derived sample. Enter the unit individually assigned to a treatment or group, not the Cell or field from which a measurement was read. If the same unit was measured under multiple conditions, enter that unit.",
+                  )}
                 </p>
               </details>
               <fieldset>
-                <legend>{t("異なる条件の間で、これらはどのような関係ですか？", "How are these units related across conditions?")}</legend>
+                <legend>
+                  {t(
+                    "異なる条件の間で、これらはどのような関係ですか？",
+                    "How are these units related across conditions?",
+                  )}
+                </legend>
                 <div className="biological-setup__choices biological-setup__choices--relations">
                   {(
-                    (locale === "ja" ? [
-                      ["separate", "条件ごとに別々のもの", "別dishを各1条件に割り当てた"],
-                      [
-                        "same",
-                        "同じ試料・細胞を、処理前後または複数条件で繰り返し測定した",
-                        "同じanimalを処理前後で測定した",
-                      ],
-                      [
-                        "shared_source",
-                        "別々のものだが、同じ由来・実験回として対応する組がある",
-                        "同じdonor由来、または同じ実験run内のControl/Drugを別dishで行った",
-                      ],
-                      [
-                        "unknown_or_mixed",
-                        "分からない、または混在している",
-                        "関係が条件ごとに異なる場合を含む",
-                      ],
-                    ] : [
-                      ["separate", "Separate units for each condition", "A different dish was assigned to each condition"],
-                      ["same", "The same sample or cell was measured before/after treatment or under multiple conditions", "The same animal was measured before and after treatment"],
-                      ["shared_source", "Separate units form matched sets from the same source or experimental run", "Control and Drug used separate dishes from the same donor or experimental run"],
-                      ["unknown_or_mixed", "Unknown or mixed", "Includes relationships that differ between conditions"],
-                    ]) as readonly (readonly [ReceiverRelationship, string, string])[]
+                    (locale === "ja"
+                      ? [
+                          ["separate", "条件ごとに別々のもの", "別dishを各1条件に割り当てた"],
+                          [
+                            "same",
+                            "同じ試料・細胞を、処理前後または複数条件で繰り返し測定した",
+                            "同じanimalを処理前後で測定した",
+                          ],
+                          [
+                            "shared_source",
+                            "別々のものだが、同じ由来・実験回として対応する組がある",
+                            "同じdonor由来、または同じ実験run内のControl/Drugを別dishで行った",
+                          ],
+                          [
+                            "unknown_or_mixed",
+                            "分からない、または混在している",
+                            "関係が条件ごとに異なる場合を含む",
+                          ],
+                        ]
+                      : [
+                          [
+                            "separate",
+                            "Separate units for each condition",
+                            "A different dish was assigned to each condition",
+                          ],
+                          [
+                            "same",
+                            "The same sample or cell was measured before/after treatment or under multiple conditions",
+                            "The same animal was measured before and after treatment",
+                          ],
+                          [
+                            "shared_source",
+                            "Separate units form matched sets from the same source or experimental run",
+                            "Control and Drug used separate dishes from the same donor or experimental run",
+                          ],
+                          [
+                            "unknown_or_mixed",
+                            "Unknown or mixed",
+                            "Includes relationships that differ between conditions",
+                          ],
+                        ]) as readonly (readonly [ReceiverRelationship, string, string])[]
                   ).map(([value, label, example]) => (
                     <label key={value}>
                       <input
@@ -1677,16 +1841,29 @@ export function BiologicalExperimentSetup({
               {relationship === "shared_source" ? (
                 <>
                   <label className="biological-setup__field">
-                    <span>{t("別々の対象を対応づける、共通の由来・実験回は？", "What shared source or experimental run matches the separate units?")}</span>
+                    <span>
+                      {t(
+                        "別々の対象を対応づける、共通の由来・実験回は？",
+                        "What shared source or experimental run matches the separate units?",
+                      )}
+                    </span>
                     <input
-                      placeholder={t("例：donor、実験run、細胞調製batch", "Example: donor, experimental run, cell-preparation batch")}
+                      placeholder={t(
+                        "例：donor、実験run、細胞調製batch",
+                        "Example: donor, experimental run, cell-preparation batch",
+                      )}
                       value={sourceLabel}
                       onChange={(event) => setSourceLabel(event.currentTarget.value)}
                     />
                   </label>
                   {blocks.length > 1 ? (
                     <label className="biological-setup__field">
-                      <span>{t("その対応する組の中で変えた処理・群分けは？", "Which treatment or grouping factor varied within each matched set?")}</span>
+                      <span>
+                        {t(
+                          "その対応する組の中で変えた処理・群分けは？",
+                          "Which treatment or grouping factor varied within each matched set?",
+                        )}
+                      </span>
                       <select
                         aria-label="対応する組の中で変えた処理・群分け"
                         value={sharedSourcePairedBlockId}
@@ -1697,15 +1874,25 @@ export function BiologicalExperimentSetup({
                         <option value="">{t("選択してください", "Select one")}</option>
                         {blocks.map((block, index) => (
                           <option value={block.id} key={block.id}>
-                            {block.name.trim() || t(`${index + 1}つ目の処理・群分け`, `Treatment or grouping factor ${index + 1}`)}
+                            {block.name.trim() ||
+                              t(
+                                `${index + 1}つ目の処理・群分け`,
+                                `Treatment or grouping factor ${index + 1}`,
+                              )}
                           </option>
                         ))}
                         <option value="multiple_or_unknown">
-                          {t("2つ以上、または共通材料との対応が一部だけ", "More than one, or only partially matched by source")}
+                          {t(
+                            "2つ以上、または共通材料との対応が一部だけ",
+                            "More than one, or only partially matched by source",
+                          )}
                         </option>
                       </select>
                       <small>
-                        {t("例：各実験runでControl/Drugを行った場合は「Treatment」、siRNA処理後にdishへ分けてDoxを変えた場合は「Dox」です。", "Example: choose Treatment when each run includes Control and Drug; choose Dox when dishes were split after siRNA treatment and then assigned different Dox conditions.")}
+                        {t(
+                          "例：各実験runでControl/Drugを行った場合は「Treatment」、siRNA処理後にdishへ分けてDoxを変えた場合は「Dox」です。",
+                          "Example: choose Treatment when each run includes Control and Drug; choose Dox when dishes were split after siRNA treatment and then assigned different Dox conditions.",
+                        )}
                       </small>
                     </label>
                   ) : null}
@@ -1731,7 +1918,12 @@ export function BiologicalExperimentSetup({
                     setMessage(null);
                   }}
                 />
-                <span>{t("1つの対象・試料の中で、複数のCell・ROI・視野などを個別に測った", "Multiple Cells, ROIs, fields, or similar observations were measured within each experimental unit")}</span>
+                <span>
+                  {t(
+                    "1つの対象・試料の中で、複数のCell・ROI・視野などを個別に測った",
+                    "Multiple Cells, ROIs, fields, or similar observations were measured within each experimental unit",
+                  )}
+                </span>
               </label>
               {childObservationEnabled ? (
                 <label className="biological-setup__field">
@@ -1745,8 +1937,18 @@ export function BiologicalExperimentSetup({
               ) : null}
               {childObservationEnabled && childLabel.trim() && additionalReadouts.length > 0 ? (
                 <fieldset>
-                  <legend>{t(`${childLabel.trim()}ごとに測った項目`, `Readouts measured for each ${childLabel.trim()}`)}</legend>
-                  <small>{t(`dish全体の値と、個々の${childLabel.trim()}から得た値を区別します。`, `Distinguish values for the whole experimental unit from values obtained from each ${childLabel.trim()}.`)}</small>
+                  <legend>
+                    {t(
+                      `${childLabel.trim()}ごとに測った項目`,
+                      `Readouts measured for each ${childLabel.trim()}`,
+                    )}
+                  </legend>
+                  <small>
+                    {t(
+                      `dish全体の値と、個々の${childLabel.trim()}から得た値を区別します。`,
+                      `Distinguish values for the whole experimental unit from values obtained from each ${childLabel.trim()}.`,
+                    )}
+                  </small>
                   <div className="biological-setup__choices">
                     {valueForm === "single" ? (
                       <label>
@@ -1758,7 +1960,9 @@ export function BiologicalExperimentSetup({
                           }
                         />
                         <span>
-                          <strong>{measurementLabel.trim() || t("最初の測定項目", "First readout")}</strong>
+                          <strong>
+                            {measurementLabel.trim() || t("最初の測定項目", "First readout")}
+                          </strong>
                         </span>
                       </label>
                     ) : null}
@@ -1774,7 +1978,9 @@ export function BiologicalExperimentSetup({
                             }
                           />
                           <span>
-                            <strong>{readout.label.trim() || t("名前未入力の測定項目", "Unnamed readout")}</strong>
+                            <strong>
+                              {readout.label.trim() || t("名前未入力の測定項目", "Unnamed readout")}
+                            </strong>
                           </span>
                         </label>
                       ))}
@@ -1783,7 +1989,10 @@ export function BiologicalExperimentSetup({
                     (form) => form !== "single",
                   ) ? (
                     <small>
-                      {t(`陽性数＋全体数など、試料全体でまとめた値は${childLabel.trim()}ごとの測定にはしません。`, `Aggregate values for the whole unit, such as positive count plus total count, are not treated as measurements for each ${childLabel.trim()}.`)}
+                      {t(
+                        `陽性数＋全体数など、試料全体でまとめた値は${childLabel.trim()}ごとの測定にはしません。`,
+                        `Aggregate values for the whole unit, such as positive count plus total count, are not treated as measurements for each ${childLabel.trim()}.`,
+                      )}
                     </small>
                   ) : null}
                 </fieldset>
@@ -1800,7 +2009,12 @@ export function BiologicalExperimentSetup({
               <div className="biological-setup__section-heading">
                 <div>
                   <p>{initial?.statisticsHandoff ? "2" : "5"}</p>
-                  <h2 id="ordered-axis-heading">{t("時間などに沿った測定（必要な場合）", "Measurements along time or another ordered axis (if needed)")}</h2>
+                  <h2 id="ordered-axis-heading">
+                    {t(
+                      "時間などに沿った測定（必要な場合）",
+                      "Measurements along time or another ordered axis (if needed)",
+                    )}
+                  </h2>
                 </div>
               </div>
               <label className="biological-setup__all-combinations">
@@ -1809,13 +2023,20 @@ export function BiologicalExperimentSetup({
                   checked={orderedAxisEnabled}
                   onChange={(event) => setOrderedAxisEnabled(event.currentTarget.checked)}
                 />
-                <span>{t("同じ条件の中で、時間・距離などの順序に沿って測った", "Measurements were made along time, distance, or another ordered axis within the same condition")}</span>
+                <span>
+                  {t(
+                    "同じ条件の中で、時間・距離などの順序に沿って測った",
+                    "Measurements were made along time, distance, or another ordered axis within the same condition",
+                  )}
+                </span>
               </label>
               {orderedAxisEnabled ? (
                 <>
                   <div className="biological-setup__two-fields">
                     <label>
-                      <span>{t("何に沿って測りましたか？", "What ordered axis did you measure along?")}</span>
+                      <span>
+                        {t("何に沿って測りましたか？", "What ordered axis did you measure along?")}
+                      </span>
                       <input
                         placeholder={t("例：時間", "Example: time")}
                         value={orderedAxisLabel}
@@ -1902,7 +2123,10 @@ export function BiologicalExperimentSetup({
                   {additionalReadouts.length > 0 ? (
                     <fieldset>
                       <legend>
-                        {t(`この${orderedAxisLabel.trim() || "時間・距離の系列"}で測った項目`, `Readouts measured along this ${orderedAxisLabel.trim() || "time or distance series"}`)}
+                        {t(
+                          `この${orderedAxisLabel.trim() || "時間・距離の系列"}で測った項目`,
+                          `Readouts measured along this ${orderedAxisLabel.trim() || "time or distance series"}`,
+                        )}
                       </legend>
                       <div className="biological-setup__choices">
                         <label>
@@ -1914,7 +2138,9 @@ export function BiologicalExperimentSetup({
                             }
                           />
                           <span>
-                            <strong>{measurementLabel.trim() || t("最初の測定項目", "First readout")}</strong>
+                            <strong>
+                              {measurementLabel.trim() || t("最初の測定項目", "First readout")}
+                            </strong>
                           </span>
                         </label>
                         {additionalReadouts.map((readout) => (
@@ -1927,7 +2153,10 @@ export function BiologicalExperimentSetup({
                               }
                             />
                             <span>
-                              <strong>{readout.label.trim() || t("名前未入力の測定項目", "Unnamed readout")}</strong>
+                              <strong>
+                                {readout.label.trim() ||
+                                  t("名前未入力の測定項目", "Unnamed readout")}
+                              </strong>
                             </span>
                           </label>
                         ))}
@@ -1935,7 +2164,12 @@ export function BiologicalExperimentSetup({
                     </fieldset>
                   ) : null}
                   <fieldset>
-                    <legend>{t("各値で測った対象は同じですか？", "Was the same unit measured at each value?")}</legend>
+                    <legend>
+                      {t(
+                        "各値で測った対象は同じですか？",
+                        "Was the same unit measured at each value?",
+                      )}
+                    </legend>
                     <div className="biological-setup__choices biological-setup__choices--relations">
                       <label>
                         <input
@@ -1945,8 +2179,15 @@ export function BiologicalExperimentSetup({
                           onChange={() => setOrderedAxisSameIdentity(true)}
                         />
                         <span>
-                          <strong>{t("同じ対象を追って測った", "The same unit was followed")}</strong>
-                          <small>{t("同じCellやanimalを時点ごとに測定", "The same Cell or animal was measured at each time point")}</small>
+                          <strong>
+                            {t("同じ対象を追って測った", "The same unit was followed")}
+                          </strong>
+                          <small>
+                            {t(
+                              "同じCellやanimalを時点ごとに測定",
+                              "The same Cell or animal was measured at each time point",
+                            )}
+                          </small>
                         </span>
                       </label>
                       <label>
@@ -1957,8 +2198,18 @@ export function BiologicalExperimentSetup({
                           onChange={() => setOrderedAxisSameIdentity(false)}
                         />
                         <span>
-                          <strong>{t("各値で別の対象を測った", "A different unit was measured at each value")}</strong>
-                          <small>{t("時点ごとに別dishを回収", "A different dish was collected at each time point")}</small>
+                          <strong>
+                            {t(
+                              "各値で別の対象を測った",
+                              "A different unit was measured at each value",
+                            )}
+                          </strong>
+                          <small>
+                            {t(
+                              "時点ごとに別dishを回収",
+                              "A different dish was collected at each time point",
+                            )}
+                          </small>
                         </span>
                       </label>
                     </div>
@@ -1968,7 +2219,12 @@ export function BiologicalExperimentSetup({
             </section>
           ) : null}
           <div className="biological-setup__completion" data-usage-area="setup_summary">
-            <p>{t("入力内容を確認できたら、共通のデータ入力表へ進みます。", "After reviewing these answers, continue to the shared data-entry table.")}</p>
+            <p>
+              {t(
+                "入力内容を確認できたら、共通のデータ入力表へ進みます。",
+                "After reviewing these answers, continue to the shared data-entry table.",
+              )}
+            </p>
             <button
               type="button"
               className="biological-setup__submit"
@@ -1976,7 +2232,10 @@ export function BiologicalExperimentSetup({
                 initial?.revisionMode
                   ? t("変更を適用（入力内容の末尾）", "Apply changes (end of form)")
                   : initial?.statisticsHandoff
-                    ? t("統計設定へ進む（入力内容の末尾）", "Continue to statistics setup (end of form)")
+                    ? t(
+                        "統計設定へ進む（入力内容の末尾）",
+                        "Continue to statistics setup (end of form)",
+                      )
                     : t("入力表を作る（入力内容の末尾）", "Create data table (end of form)")
               }
               onClick={submit}
@@ -1995,12 +2254,7 @@ export function BiologicalExperimentSetup({
             <strong>{t("現在の実験", "Current experiment")}</strong>
             <p>{experimentSummary}</p>
             {message && messagePlacement === "summary" ? (
-              <p
-                ref={messageRef}
-                className="biological-setup__message"
-                role="alert"
-                tabIndex={-1}
-              >
+              <p ref={messageRef} className="biological-setup__message" role="alert" tabIndex={-1}>
                 {message}
               </p>
             ) : null}
@@ -2008,7 +2262,9 @@ export function BiologicalExperimentSetup({
           <div className="biological-setup__actions">
             {onCancel ? (
               <button type="button" onClick={onCancel}>
-                {initial?.revisionMode ? t("変更せず戻る", "Back without changes") : t("戻る", "Back")}
+                {initial?.revisionMode
+                  ? t("変更せず戻る", "Back without changes")
+                  : t("戻る", "Back")}
               </button>
             ) : null}
             <button type="button" className="biological-setup__submit" onClick={submit}>
