@@ -525,6 +525,13 @@ The legacy Results dot/grouped and correlation renderers now use the same plot r
 Their biological-unit points, pairing lines, factor-level grouping, error bars, and correlation
 pairs are unchanged. The focused Results/layout group passes 13 tests with UI typecheck and lint.
 
+The general SVG renderer now uses its derived plot rectangle consistently for value scaling,
+category and continuous positions, axes and hit targets, ticks, reference lines, annotations,
+legends, hierarchy labels, and axis-title centers. Only the pre-plot margin-sizing calculation
+remains local. The 60 focused layout/Workbench tests pass with UI typecheck and lint.
+The completed plot-boundary batch also passes full UI lint and the production build; the initial
+chunk remains 264.45 kB (gzip 81.19 kB) with no build advisory.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
