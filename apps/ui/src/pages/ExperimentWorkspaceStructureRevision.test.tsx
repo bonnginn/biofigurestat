@@ -355,6 +355,28 @@ function analyzedGraph(contract: StructureContract): WorkspaceGraphState {
 }
 
 describe("ExperimentWorkspace non-destructive structure revision", () => {
+  it("opens the safe structure editor from Overview for correcting names and labels", () => {
+    const { workspace } = fixture();
+    render(
+      <ExperimentWorkspace
+        initialDraft={workspace.draft!}
+        initialCells={workspace.cells}
+        onBack={vi.fn()}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: "実験名・条件・測定項目を修正" });
+    fireEvent.click(trigger);
+
+    expect(screen.getByRole("heading", { name: "実験の組み立てを修正" })).toBeVisible();
+    expect(screen.getByDisplayValue("Cell signal")).toBeVisible();
+    expect(screen.getByDisplayValue("Treatment")).toBeVisible();
+    expect(screen.getByDisplayValue("Signal")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "変更せず戻る" }));
+    expect(screen.getByRole("button", { name: "実験名・条件・測定項目を修正" })).toHaveFocus();
+  });
+
   it("moves focus into revision and restores it to the trigger on Cancel and no-op apply", () => {
     const { workspace } = fixture();
     render(

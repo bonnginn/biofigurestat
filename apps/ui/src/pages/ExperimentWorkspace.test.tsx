@@ -144,12 +144,12 @@ describe("ExperimentWorkspace", () => {
     render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
 
     expect(screen.getByRole("heading", { name: "測定値を入力" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "概要" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: "Exp 1" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Exp 2" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Exp 3" })).toBeInTheDocument();
 
-    fireEvent.keyDown(screen.getByRole("tab", { name: "Overview" }), { key: "ArrowRight" });
+    fireEvent.keyDown(screen.getByRole("tab", { name: "概要" }), { key: "ArrowRight" });
     expect(screen.getByRole("tab", { name: "Exp 1" })).toHaveAttribute("aria-selected", "true");
     fireEvent.change(screen.getByRole("spinbutton", { name: "Controlの陽性数" }), {
       target: { value: "5" },
@@ -745,7 +745,7 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("cell", { name: "+" })).toBeInTheDocument();
     expect(screen.queryByRole("rowheader", { name: "control / -" })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("tab", { name: "Overview" }));
+    fireEvent.click(screen.getByRole("tab", { name: "概要" }));
     const quickEntryTable = screen.getByRole("table", {
       name: "Marker X陽性率をまとめて入力",
     });
@@ -796,7 +796,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "＋ 実験" }));
 
     expect(screen.getByRole("tab", { name: "Exp 4" })).toHaveAttribute("aria-selected", "false");
-    expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "概要" })).toHaveAttribute("aria-selected", "true");
     expect(
       screen.getByText("未入力のセルが8件あります。途中の状態でもグラフを作成できます。"),
     ).toBeInTheDocument();

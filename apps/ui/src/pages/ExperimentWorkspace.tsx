@@ -840,6 +840,7 @@ function OverviewProportionMatrix({
 function OverviewPanel({
   draft,
   cells,
+  onReviseStructure,
   onProportionChange,
   onProportionPaste,
   onNestedScalarChange,
@@ -851,6 +852,7 @@ function OverviewPanel({
 }: {
   draft: ExperimentSetDraft;
   cells: ExperimentCellMap;
+  onReviseStructure?: (trigger: HTMLButtonElement) => void;
   onProportionChange: (key: string, field: "positive" | "eligible", value: number | null) => void;
   onProportionPaste: (request: OverviewProportionPasteRequest) => OverviewScalarPasteResult;
   onNestedScalarChange: (key: string, value: number | null) => void;
@@ -950,6 +952,16 @@ function OverviewPanel({
                 : t("入力状況", "Entry status")}
           </h2>
         </div>
+        {onReviseStructure ? (
+          <button
+            id="experiment-workspace-revise-overview"
+            className="experiment-workspace-secondary-button"
+            type="button"
+            onClick={(event) => onReviseStructure(event.currentTarget)}
+          >
+            {t("実験名・条件・測定項目を修正", "Edit experiment details")}
+          </button>
+        ) : null}
       </div>
 
       {canonicalSpreadsheet && draft.adaptiveInput ? (
@@ -2908,6 +2920,7 @@ export function ExperimentWorkspace({
     useState<AdaptiveStructureRevisionSession | null>(null);
   const [structureRevisionError, setStructureRevisionError] = useState<string | null>(null);
   const structureRevisionTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const structureRevisionReturnTargetRef = useRef<"navigation" | "overview">("navigation");
   const restoreStructureRevisionFocusRef = useRef(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -2927,7 +2940,12 @@ export function ExperimentWorkspace({
   useEffect(() => {
     if (structureRevisionSession || !restoreStructureRevisionFocusRef.current) return;
     restoreStructureRevisionFocusRef.current = false;
-    structureRevisionTriggerRef.current?.focus();
+    const returnTarget = document.getElementById(
+      structureRevisionReturnTargetRef.current === "overview"
+        ? "experiment-workspace-revise-overview"
+        : "experiment-workspace-revise-navigation",
+    );
+    returnTarget?.focus();
   }, [structureRevisionSession]);
 
   useEffect(() => {
@@ -3885,8 +3903,10 @@ export function ExperimentWorkspace({
     setStructureRevisionSession(null);
   };
 
-  const beginAdaptiveStructureRevision = () => {
+  const beginAdaptiveStructureRevision = (trigger?: HTMLButtonElement) => {
     if (!draft.adaptiveInput) return;
+    structureRevisionReturnTargetRef.current =
+      trigger?.id === "experiment-workspace-revise-overview" ? "overview" : "navigation";
     try {
       // Capture the live cell edits into a lossless canonical snapshot without
       // mutating the workspace that must remain recoverable on Cancel.
@@ -4247,9 +4267,10 @@ export function ExperimentWorkspace({
         </details>
         {draft.adaptiveInput ? (
           <button
+            id="experiment-workspace-revise-navigation"
             ref={structureRevisionTriggerRef}
             type="button"
-            onClick={beginAdaptiveStructureRevision}
+            onClick={(event) => beginAdaptiveStructureRevision(event.currentTarget)}
           >
             {t("実験の組み立てを修正", "Revise experiment structure")}
           </button>
@@ -4788,7 +4809,7 @@ export function ExperimentWorkspace({
               onKeyDown={(event) => handleWorkspaceTabKeyDown(event, 0)}
               onClick={() => setActiveTab("overview")}
             >
-              Overview
+              {t("概要", "Overview")}
             </button>
             {draft.experiments.map((experiment, index) => {
               const tabId: WorkspaceTab = `experiment:${experiment.id}`;
@@ -4929,6 +4950,11 @@ export function ExperimentWorkspace({
               <OverviewPanel
                 draft={draft}
                 cells={cells}
+                onReviseStructure={
+                  draft.adaptiveInput
+                    ? (trigger) => beginAdaptiveStructureRevision(trigger)
+                    : undefined
+                }
                 onProportionChange={updateProportion}
                 onProportionPaste={applyOverviewProportionPaste}
                 onNestedScalarChange={updateNestedScalar}
