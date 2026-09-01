@@ -81,6 +81,7 @@ import {
   type LegacyWorkflowTabId,
 } from "./legacyDataSheetShared";
 import { LegacyDataSheetWorkflowTabs } from "./LegacyDataSheetWorkflowTabs";
+import { LegacyProjectMetadataForm } from "./LegacyProjectMetadataForm";
 import {
   formatProportionPercentage,
   parseSpreadsheetNumber,
@@ -1380,62 +1381,7 @@ export function MultiConditionDataSheetPage({
         >
           <details className="metadata-disclosure" open>
             <summary>プロジェクト情報</summary>
-            <div className="metadata-form-grid">
-              <label className="field-label">
-                プロジェクト名 *
-                <input
-                  value={metadataDraft.projectName}
-                  onChange={(event) =>
-                    setMetadataDraft((previous) => ({
-                      ...previous,
-                      projectName: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="field-label">
-                最初の実験日 *
-                <input
-                  type="date"
-                  value={metadataDraft.experimentDate}
-                  onChange={(event) =>
-                    setMetadataDraft((previous) => ({
-                      ...previous,
-                      experimentDate: event.target.value,
-                    }))
-                  }
-                />
-                <small>各実験単位の日付は「データ入力」で個別に記録されています。</small>
-              </label>
-              <label className="field-label">
-                実施者（任意）
-                <input
-                  value={metadataDraft.operator ?? ""}
-                  onChange={(event) =>
-                    setMetadataDraft((previous) => ({ ...previous, operator: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field-label">
-                バッチ／ロット（任意）
-                <input
-                  value={metadataDraft.batch ?? ""}
-                  onChange={(event) =>
-                    setMetadataDraft((previous) => ({ ...previous, batch: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field-label metadata-note-field">
-                メモ（任意）
-                <textarea
-                  rows={2}
-                  value={metadataDraft.note ?? ""}
-                  onChange={(event) =>
-                    setMetadataDraft((previous) => ({ ...previous, note: event.target.value }))
-                  }
-                />
-              </label>
-            </div>
+            <LegacyProjectMetadataForm value={metadataDraft} onChange={setMetadataDraft} />
           </details>
           <section className="sheet-actions" aria-label="プロジェクトの保存">
             <div>
