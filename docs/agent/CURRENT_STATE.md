@@ -148,6 +148,9 @@ The reviewed application was packaged without rebuilding as
 `BioFigureStat-0.1.0-alpha.2-macOS-Apple-Silicon.zip`; archive integrity and the extracted
 application's strict code-signature verification pass. The zip is `47,883,673` bytes with SHA-256
 `4EE4734D57F703845C38EB00BB8A859D1CB54A2C019E7875F5841D5DFA888722`.
+The bilingual `v0.1.0-alpha.2` GitHub release is prepared as a Draft Pre-release. Both reviewed
+Windows and macOS assets are uploaded; the macOS GitHub digest matches the local SHA-256. Final
+publication remains an explicit user decision and does not replace `v0.1.0-alpha.1`.
 
 Windows candidate `ab5b012-alpha.20260901.win-refactor2` is built from the same application source
 tree and passes the production UI build, zero-marker release verification, packaged-engine smoke,

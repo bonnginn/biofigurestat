@@ -69,13 +69,19 @@ macOS release artifact:
 
 ## Remaining publication actions
 
-1. Decide whether to publish the update as `v0.1.0-alpha.2`.
-2. Create the public source tag from the final documentation HEAD without changing application
-   source.
-3. Create a Draft Pre-release targeting that tag.
-4. Upload both assets and verify GitHub-reported size/digest against the local records.
-5. Apply the bilingual release notes in
-   `docs/alpha/RELEASE_NOTES_0.1.0-alpha.2_DRAFT.md`.
-6. Publish only after explicit user authorization; do not replace or delete `alpha.1`.
+Completed on GitHub:
 
-Current readiness: `READY_FOR_PUBLICATION_DECISION`.
+- Public source tag `v0.1.0-alpha.2` points to documentation HEAD `4a259ab` without changing the
+  reviewed application source.
+- One Draft Pre-release targets that tag and remains `isDraft=true`, `isPrerelease=true`.
+- The Windows asset is uploaded with the expected name and local SHA-256 recorded above.
+- The macOS asset is `uploaded`, size `47,883,673 bytes`, with GitHub digest
+  `sha256:4ee4734d57f703845c38eb00bb8a859d1cb54a2c019e7875f5841d5dfa888722`.
+- The bilingual release notes are applied to the Draft.
+
+Remaining:
+
+1. Review the final public-facing title, bilingual notes, Pre-release label, and both asset names.
+2. Publish only after explicit user authorization; do not replace or delete `alpha.1`.
+
+Current readiness: `READY_FOR_FINAL_PUBLICATION_CONFIRMATION`.
