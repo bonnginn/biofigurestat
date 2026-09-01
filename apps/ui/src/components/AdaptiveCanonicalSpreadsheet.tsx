@@ -30,6 +30,7 @@ import { getAppLocale, localizedText, useAppLocale, type AppLocale } from "../ap
 import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
 import { SpreadsheetDraftTextCell } from "./SpreadsheetDraftTextCell";
 import { SpreadsheetDraftTextareaCell } from "./SpreadsheetDraftTextareaCell";
+import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
 import {
   CanonicalMatrixWorksheet,
   canEditCanonicalMatrix,
@@ -1075,15 +1076,14 @@ function ExpandedAppendValueEditor({
   const errorId = useId();
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const [text, setText] = useState("");
-  const [dirty, setDirty] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { text, dirty, error, edit, accept, reportError, clearError } =
+    useSpreadsheetCellDraft("");
 
   const commit = () => {
     if (!dirty) return;
     const parsed = parseOptionalSpreadsheetNumber(text);
     if (parsed.kind !== "value") {
-      setError(
+      reportError(
         t(
           "数値を入力してください。入力内容は消えていません。",
           "Enter a numeric value. Your input has not been discarded.",
@@ -1105,11 +1105,9 @@ function ExpandedAppendValueEditor({
         createExperimentalUnitIdentity: nextExperimentalUnitIdentity,
       });
       onObservationsChange(result.observations);
-      setText("");
-      setDirty(false);
-      setError(null);
+      accept("");
     } catch (cause) {
-      setError(
+      reportError(
         locale === "ja" && cause instanceof Error
           ? cause.message
           : t("新しい測定値を追加できませんでした。", "The new measured value could not be added."),
@@ -1131,16 +1129,16 @@ function ExpandedAppendValueEditor({
         data-spreadsheet-row={gridRow}
         data-spreadsheet-column={gridColumn}
         onChange={(event) => {
-          setText(event.currentTarget.value);
-          setDirty(true);
-          setError(null);
+          edit(event.currentTarget.value);
         }}
         onKeyDown={moveSpreadsheetFocus}
         onPaste={(event) => {
           const pasted = event.clipboardData.getData("text");
           if (!pasted.includes("\t") && !/[\r\n]/u.test(pasted)) return;
           event.preventDefault();
-          setError(onRectangularPaste(group, pasted));
+          const pasteProblem = onRectangularPaste(group, pasted);
+          if (pasteProblem) reportError(pasteProblem);
+          else clearError();
         }}
         onBlur={commit}
       />
