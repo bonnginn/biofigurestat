@@ -108,6 +108,51 @@ describe("specialized Core entry pages", () => {
     expectNoJapaneseUi(view.container);
   });
 
+  it("keeps Heatmap save failures in English even when an internal error is Japanese", async () => {
+    act(() => setAppLocale("en"));
+    const saveUnresolvedVisualizationProject = vi.fn<SaveUnresolvedVisualizationProjectAction>(
+      async () => {
+        throw new Error("保存先へ書き込めませんでした");
+      },
+    );
+    const view = render(
+      <SpecializedCorePage
+        mode="heatmap"
+        onBack={vi.fn()}
+        saveUnresolvedVisualizationProject={saveUnresolvedVisualizationProject}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Matrix data"), {
+      target: { value: "Feature\tSample A\nProtein A\t1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save project" }));
+
+    expect(
+      await screen.findByText(
+        "The project could not be saved. Your current entries were retained.",
+      ),
+    ).toBeVisible();
+    expectNoJapaneseUi(view.container);
+  });
+
+  it("provides English exit-guard action labels in English mode", () => {
+    act(() => setAppLocale("en"));
+    const requests: Parameters<RequestWorkspaceExit>[0][] = [];
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        onRequestExit={(request) => requests.push(request)}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Back/u }));
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0]?.actionLabel).toBe("Go back");
+  });
+
   it("生存時間はData・Graph・Statisticsを同じワークスペースの別面として切り替える", () => {
     render(
       <SpecializedCorePage
@@ -119,10 +164,7 @@ describe("specialized Core entry pages", () => {
     );
     const dataPanel = document.getElementById("survival-data")?.closest(".workspace-panel");
     const graphPanel = document.getElementById("survival-graph");
-    expect(screen.getByRole("button", { name: "データ" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: "データ" })).toHaveAttribute("aria-pressed", "true");
     expect(graphPanel).toHaveClass("workspace-tab-panel--inactive");
 
     fireEvent.click(screen.getByRole("button", { name: "グラフ" }));
@@ -130,10 +172,7 @@ describe("specialized Core entry pages", () => {
     expect(graphPanel).not.toHaveClass("workspace-tab-panel--inactive");
 
     fireEvent.click(screen.getByRole("button", { name: "統計" }));
-    expect(screen.getByRole("button", { name: "統計" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: "統計" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係")).toBeVisible();
   });
 
@@ -679,9 +718,7 @@ describe("specialized Core entry pages", () => {
       "aria-describedby",
       "survival-graph-setup-disabled-reason",
     );
-    expect(
-      screen.getByText("このevent経過は現在の専用入口では解析できません。"),
-    ).toBeVisible();
+    expect(screen.getByText("このevent経過は現在の専用入口では解析できません。")).toBeVisible();
     expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
   });
 

@@ -1213,7 +1213,12 @@ export function CommonCoveragePage({
           throw new Error(orderedCurveAnalysisReadiness.message[locale]);
         }
         if (!modelRationale.trim())
-          throw new Error(t("model selectionの科学的理由を記録してください", "Record the scientific reason for selecting this model."));
+          throw new Error(
+            t(
+              "model selectionの科学的理由を記録してください",
+              "Record the scientific reason for selecting this model.",
+            ),
+          );
         if (nonlinearDefinition.requiresAxisUnits && (!xUnit.trim() || !yUnit.trim())) {
           throw new Error(
             t(
@@ -1239,10 +1244,20 @@ export function CommonCoveragePage({
           const lower = finiteOptional(setting.lower, `${parameterLabel} lower bound`);
           const upper = finiteOptional(setting.upper, `${parameterLabel} upper bound`);
           if ((lower === undefined) !== (upper === undefined)) {
-            throw new Error(t(`${parameterLabel}のboundはlowerとupperを両方指定してください`, `Specify both lower and upper bounds for ${parameterLabel}.`));
+            throw new Error(
+              t(
+                `${parameterLabel}のboundはlowerとupperを両方指定してください`,
+                `Specify both lower and upper bounds for ${parameterLabel}.`,
+              ),
+            );
           }
           if (lower !== undefined && upper !== undefined && lower >= upper) {
-            throw new Error(t(`${parameterLabel}のboundはlower < upperにしてください`, `The lower bound for ${parameterLabel} must be less than its upper bound.`));
+            throw new Error(
+              t(
+                `${parameterLabel}のboundはlower < upperにしてください`,
+                `The lower bound for ${parameterLabel} must be less than its upper bound.`,
+              ),
+            );
           }
           if (
             nonlinearModel === "michaelis_menten" &&
@@ -1333,12 +1348,21 @@ export function CommonCoveragePage({
         protocolVersion: validated.protocolVersion,
         engineVersion: next.engine.version,
       });
-      setMessage(t("解析とprovenance記録が完了しました。", "Analysis and provenance recording are complete."));
+      setMessage(
+        t(
+          "解析とprovenance記録が完了しました。",
+          "Analysis and provenance recording are complete.",
+        ),
+      );
     } catch (error) {
       recordUsageMilestone(usageRoute, "safe_stop");
       setExecutedRequest(null);
       setResult(null);
-      setMessage(error instanceof Error ? error.message : t("解析できませんでした", "The analysis could not be completed"));
+      setMessage(
+        locale === "ja" && error instanceof Error
+          ? error.message
+          : t("解析できませんでした", "The analysis could not be completed."),
+      );
     }
   };
   let graph: React.ReactNode = null;
@@ -1622,16 +1646,31 @@ export function CommonCoveragePage({
           saveAs ? undefined : currentSpecializedEntryDraft?.target,
         );
         if (!saved) {
-          setMessage(t("保存をキャンセルしました。入力内容はこの画面に残っています。", "Saving was canceled. Your entries remain on this screen."));
+          setMessage(
+            t(
+              "保存をキャンセルしました。入力内容はこの画面に残っています。",
+              "Saving was canceled. Your entries remain on this screen.",
+            ),
+          );
           return;
         }
         setCurrentSpecializedEntryDraft(saved);
         lastSaveSucceededRef.current = true;
         adoptCurrentAsBaseline();
-        setMessage(t("入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。", "Saved the in-progress table and answers. Experiment structure, Graph, and Statistics remain unresolved."));
+        setMessage(
+          t(
+            "入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。",
+            "Saved the in-progress table and answers. Experiment structure, Graph, and Statistics remain unresolved.",
+          ),
+        );
       } catch (error) {
         setMessage(
-          error instanceof Error ? error.message : "入力途中のprojectを保存できませんでした",
+          locale === "ja" && error instanceof Error
+            ? error.message
+            : t(
+                "入力途中のprojectを保存できませんでした",
+                "The in-progress project could not be saved. Your current entries were retained.",
+              ),
         );
       }
       return;
@@ -1690,7 +1729,14 @@ export function CommonCoveragePage({
           ),
         );
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "プロジェクトを保存できませんでした");
+        setMessage(
+          locale === "ja" && error instanceof Error
+            ? error.message
+            : t(
+                "プロジェクトを保存できませんでした",
+                "The project could not be saved. Your current entries were retained.",
+              ),
+        );
       }
       return;
     }
@@ -1830,7 +1876,14 @@ export function CommonCoveragePage({
             ),
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "プロジェクトを保存できませんでした");
+      setMessage(
+        locale === "ja" && error instanceof Error
+          ? error.message
+          : t(
+              "プロジェクトを保存できませんでした",
+              "The project could not be saved. Your current entries were retained.",
+            ),
+      );
     }
   };
   const saveNonlinearProjectRef = useRef(saveNonlinearProject);
@@ -2080,9 +2133,15 @@ export function CommonCoveragePage({
     mode === "nonlinear-fit" ? (
       <div className="nonlinear-fit-axis-fields">
         <label>
-          {adaptiveOrderedCurveActive ? t("横軸に表示する量の名前", "Quantity shown on the X axis") : "X label"}
+          {adaptiveOrderedCurveActive
+            ? t("横軸に表示する量の名前", "Quantity shown on the X axis")
+            : "X label"}
           <input
-            aria-label={adaptiveOrderedCurveActive ? t("横軸に表示する量の名前", "Quantity shown on the X axis") : "X label"}
+            aria-label={
+              adaptiveOrderedCurveActive
+                ? t("横軸に表示する量の名前", "Quantity shown on the X axis")
+                : "X label"
+            }
             value={xLabel}
             placeholder={
               adaptiveOrderedCurveActive
@@ -2120,11 +2179,16 @@ export function CommonCoveragePage({
         <label>
           {adaptiveOrderedCurveActive ? t("測った値の名前", "Measured value name") : "Y label"}
           <input
-            aria-label={adaptiveOrderedCurveActive ? t("測った値の名前", "Measured value name") : "Y label"}
+            aria-label={
+              adaptiveOrderedCurveActive ? t("測った値の名前", "Measured value name") : "Y label"
+            }
             value={yLabel}
             placeholder={
               adaptiveOrderedCurveActive
-                ? t("例：反応初速度、蛍光強度", "Example: initial reaction rate or fluorescence intensity")
+                ? t(
+                    "例：反応初速度、蛍光強度",
+                    "Example: initial reaction rate or fluorescence intensity",
+                  )
                 : nonlinearDefinition.suggestedYLabel
             }
             onChange={(event) => {
@@ -2142,7 +2206,9 @@ export function CommonCoveragePage({
             ? t("測った値の単位（ない場合は空欄）", "Measured-value unit (leave blank if none)")
             : `Y unit${nonlinearDefinition.requiresAxisUnits ? "（必須）" : ""}`}
           <input
-            aria-label={adaptiveOrderedCurveActive ? t("測った値の単位", "Measured-value unit") : "Y unit"}
+            aria-label={
+              adaptiveOrderedCurveActive ? t("測った値の単位", "Measured-value unit") : "Y unit"
+            }
             value={yUnit}
             placeholder={nonlinearDefinition.yUnitExample}
             onChange={(event) => {
@@ -2341,7 +2407,10 @@ export function CommonCoveragePage({
   );
   const nonlinearSaveUnavailableNote = !saveProject ? (
     <p id="nonlinear-save-unavailable-note" className="specialized-engine-note" role="note">
-      {t("このブラウザレビューではプロジェクトを保存できません。デスクトップ版で利用できます。", "Projects cannot be saved in this browser preview. Use the desktop app.")}
+      {t(
+        "このブラウザレビューではプロジェクトを保存できません。デスクトップ版で利用できます。",
+        "Projects cannot be saved in this browser preview. Use the desktop app.",
+      )}
     </p>
   ) : null;
   const exportGraphSvg = async () => {
@@ -2354,11 +2423,21 @@ export function CommonCoveragePage({
         "image/svg+xml;charset=utf-8",
       );
       if (result === "saved") {
-        setMessage(t("表示中のGraphと同じ内容をSVGで書き出しました。", "Exported an SVG matching the displayed Graph."));
+        setMessage(
+          t(
+            "表示中のGraphと同じ内容をSVGで書き出しました。",
+            "Exported an SVG matching the displayed Graph.",
+          ),
+        );
       }
     } catch (error) {
       if (error instanceof ExportCancelledError) return;
-      setMessage(t("SVGを書き出せませんでした。Graphは画面に保持されています。", "The SVG could not be exported. The Graph remains on screen."));
+      setMessage(
+        t(
+          "SVGを書き出せませんでした。Graphは画面に保持されています。",
+          "The SVG could not be exported. The Graph remains on screen.",
+        ),
+      );
     }
   };
   const exportGraphPng = async () => {
@@ -2366,7 +2445,12 @@ export function CommonCoveragePage({
     if (!svg) return;
     try {
       await saveGraphPng(svg, `${mode}.png`);
-      setMessage(t("表示中のGraphと同じ内容をPNGで書き出しました。", "Exported a PNG matching the displayed Graph."));
+      setMessage(
+        t(
+          "表示中のGraphと同じ内容をPNGで書き出しました。",
+          "Exported a PNG matching the displayed Graph.",
+        ),
+      );
     } catch (error) {
       if (error instanceof ExportCancelledError) return;
       setMessage(
@@ -2382,7 +2466,12 @@ export function CommonCoveragePage({
     if (!svg) return;
     try {
       const format = await copyGraphToClipboard(svg);
-      setMessage(t(`表示中のGraphをクリップボードへコピーしました（${format.toUpperCase()}）。`, `Copied the displayed Graph to the clipboard (${format.toUpperCase()}).`));
+      setMessage(
+        t(
+          `表示中のGraphをクリップボードへコピーしました（${format.toUpperCase()}）。`,
+          `Copied the displayed Graph to the clipboard (${format.toUpperCase()}).`,
+        ),
+      );
     } catch (error) {
       setMessage(
         t(
@@ -2394,11 +2483,7 @@ export function CommonCoveragePage({
   };
   const graphExportButton = (
     <>
-      <button
-        type="button"
-        disabled={!graphExportAvailable}
-        onClick={() => void exportGraphSvg()}
-      >
+      <button type="button" disabled={!graphExportAvailable} onClick={() => void exportGraphSvg()}>
         {t("SVGを書き出す", "Export SVG")}
       </button>
       <button type="button" disabled={!graphExportAvailable} onClick={() => void exportGraphPng()}>
@@ -2414,8 +2499,13 @@ export function CommonCoveragePage({
     </>
   );
   const orderedCurveFactPanel = adaptiveOrderedCurveActive ? (
-    <section className="callout-info" aria-label={t("曲線データの測定方法", "How the curve data were measured")}>
-      <strong>{t("入力表を決めるための確認", "Confirm the facts needed to choose the data table")}</strong>
+    <section
+      className="callout-info"
+      aria-label={t("曲線データの測定方法", "How the curve data were measured")}
+    >
+      <strong>
+        {t("入力表を決めるための確認", "Confirm the facts needed to choose the data table")}
+      </strong>
       <p>{entryFactsView.summary}</p>
       {entryFactsView.questions.map((question) => (
         <label key={question.key}>
@@ -2495,7 +2585,10 @@ export function CommonCoveragePage({
         {t("← 戻る", "← Back")}
       </button>
       {adaptiveOrderedCurveActive ? (
-        <nav aria-label={t("プロジェクトワークスペース", "Project workspace")} className="workspace-mode-tabs">
+        <nav
+          aria-label={t("プロジェクトワークスペース", "Project workspace")}
+          className="workspace-mode-tabs"
+        >
           <button
             type="button"
             disabled={!onOpenProject}
@@ -2547,11 +2640,20 @@ export function CommonCoveragePage({
             }
             title={
               orderedCurveEntry?.status !== "surface_ready" && !saveSpecializedEntryDraftProject
-                ? t("入力途中のプロジェクト保存はデスクトップ版で利用できます", "Saving an in-progress project is available in the desktop app")
+                ? t(
+                    "入力途中のプロジェクト保存はデスクトップ版で利用できます",
+                    "Saving an in-progress project is available in the desktop app",
+                  )
                 : !saveProject
-                  ? t("プロジェクトの保存はデスクトップ版で利用できます", "Project saving is available in the desktop app")
+                  ? t(
+                      "プロジェクトの保存はデスクトップ版で利用できます",
+                      "Project saving is available in the desktop app",
+                    )
                   : orderedCurveEntry?.status !== "surface_ready"
-                    ? t("未確定の回答と入力表を、入力途中のプロジェクトとして保存します", "Save the unresolved answers and data table as an in-progress project")
+                    ? t(
+                        "未確定の回答と入力表を、入力途中のプロジェクトとして保存します",
+                        "Save the unresolved answers and data table as an in-progress project",
+                      )
                     : undefined
             }
             onClick={() => void saveNonlinearProject()}
@@ -2578,9 +2680,7 @@ export function CommonCoveragePage({
       )}
       <section
         id={adaptiveOrderedCurveActive ? "ordered-curve-data" : undefined}
-        inert={
-          adaptiveOrderedCurveActive && orderedCurveWorkspaceTab !== "data" ? true : undefined
-        }
+        inert={adaptiveOrderedCurveActive && orderedCurveWorkspaceTab !== "data" ? true : undefined}
         className={`workspace-panel specialized-workspace-panel${
           adaptiveOrderedCurveActive && orderedCurveWorkspaceTab !== "data"
             ? " workspace-tab-panel--inactive"
@@ -2660,7 +2760,9 @@ export function CommonCoveragePage({
               }}
             />
             <details>
-              <summary>{t("区切りテキストを直接編集（詳細）", "Edit delimited text directly (advanced)")}</summary>
+              <summary>
+                {t("区切りテキストを直接編集（詳細）", "Edit delimited text directly (advanced)")}
+              </summary>
               <textarea
                 aria-label={t(`${dataLabels[mode]} data`, "Nonlinear X/Y fitting data")}
                 rows={7}
@@ -2724,7 +2826,10 @@ export function CommonCoveragePage({
               setExecutedRequest(null);
             }}
           >
-            {t("入力形式の例を読み込む（合成値）", "Load an input-format example (synthetic values)")}
+            {t(
+              "入力形式の例を読み込む（合成値）",
+              "Load an input-format example (synthetic values)",
+            )}
           </button>
         ) : null}
         {mode === "nonlinear-fit" &&
@@ -2739,17 +2844,29 @@ export function CommonCoveragePage({
               setExecutedRequest(null);
             }}
           >
-            {t("入力形式の例を読み込む（合成値）", "Load an input-format example (synthetic values)")}
+            {t(
+              "入力形式の例を読み込む（合成値）",
+              "Load an input-format example (synthetic values)",
+            )}
           </button>
         ) : null}
         {adaptiveOrderedCurveActive ? (
           <small>
             {entryFactsState.facts.axisMaterialRelationship === "same_physical_material_across_axis"
-              ? t("同じ反応・対象の行では、Xが変わっても同じUnit IDを使います。", "Use the same Unit ID across X values for rows from the same reaction or subject.")
+              ? t(
+                  "同じ反応・対象の行では、Xが変わっても同じUnit IDを使います。",
+                  "Use the same Unit ID across X values for rows from the same reaction or subject.",
+                )
               : entryFactsState.facts.axisMaterialRelationship ===
                   "separate_material_per_axis_value"
-                ? t("X点ごとに別の反応・試料を用意した行には、それぞれのUnit IDを付けます。", "Assign a separate Unit ID to each row when each X value uses a separate reaction or specimen.")
-                : t("上の2項目を選ぶと、Unit IDの付け方を例に反映します。", "Answer the two questions above to reflect the appropriate Unit ID pattern in the example.")}
+                ? t(
+                    "X点ごとに別の反応・試料を用意した行には、それぞれのUnit IDを付けます。",
+                    "Assign a separate Unit ID to each row when each X value uses a separate reaction or specimen.",
+                  )
+                : t(
+                    "上の2項目を選ぶと、Unit IDの付け方を例に反映します。",
+                    "Answer the two questions above to reflect the appropriate Unit ID pattern in the example.",
+                  )}
           </small>
         ) : null}
         {mode === "contingency" ? (
@@ -2910,9 +3027,7 @@ export function CommonCoveragePage({
       </section>
       <section
         id={adaptiveOrderedCurveActive ? "ordered-curve-graph" : undefined}
-        inert={
-          adaptiveOrderedCurveActive && orderedCurveWorkspaceTab === "data" ? true : undefined
-        }
+        inert={adaptiveOrderedCurveActive && orderedCurveWorkspaceTab === "data" ? true : undefined}
         className={`workspace-panel specialized-workspace-panel${
           adaptiveOrderedCurveActive && orderedCurveWorkspaceTab === "data"
             ? " workspace-tab-panel--inactive"
@@ -2960,7 +3075,10 @@ export function CommonCoveragePage({
                     {nonlinearRunButton}
                     {!analysisAvailable ? (
                       <p className="specialized-engine-note" role="note">
-                        {t("このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。", "The analysis engine is unavailable in this browser preview. It is available in the desktop app.")}
+                        {t(
+                          "このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。",
+                          "The analysis engine is unavailable in this browser preview. It is available in the desktop app.",
+                        )}
                       </p>
                     ) : null}
                   </section>
@@ -2991,7 +3109,10 @@ export function CommonCoveragePage({
                       </small>
                     ) : orderedCurveAnalysisReadiness.status === "safe_stop" ? (
                       <small role="status">
-                        {t("この構造では解析を開始できません。上に表示された理由を確認してください。", "Analysis cannot start for this structure. Review the reason shown above.")}
+                        {t(
+                          "この構造では解析を開始できません。上に表示された理由を確認してください。",
+                          "Analysis cannot start for this structure. Review the reason shown above.",
+                        )}
                       </small>
                     ) : null}
                   </>
@@ -3005,9 +3126,15 @@ export function CommonCoveragePage({
           graph
         )}
         {result?.nonlinearFit ? (
-          <div className="nonlinear-fit-results" role="region" aria-label={t("非線形fit結果", "Nonlinear-fit results")}>
+          <div
+            className="nonlinear-fit-results"
+            role="region"
+            aria-label={t("非線形fit結果", "Nonlinear-fit results")}
+          >
             <header>
-              <p className="overline">{t("保存対象の解析結果", "Analysis result available to save")}</p>
+              <p className="overline">
+                {t("保存対象の解析結果", "Analysis result available to save")}
+              </p>
               <h2>Parameter estimates & fit diagnostics</h2>
               <p>
                 Model: <strong>{nonlinearModelLabel(result.nonlinearFit.modelId)}</strong> · ID{" "}

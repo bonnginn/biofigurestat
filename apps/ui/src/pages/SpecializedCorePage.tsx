@@ -479,9 +479,7 @@ export function SpecializedCorePage({
       initialSurvivalGraphSpec?.appearance.palette ??
       DEFAULT_SURVIVAL_COLORS,
   );
-  const [survivalWorkspaceTab, setSurvivalWorkspaceTab] = useState<
-    "data" | "graph" | "statistics"
-  >(
+  const [survivalWorkspaceTab, setSurvivalWorkspaceTab] = useState<"data" | "graph" | "statistics">(
     experimentFirstEntry ? "data" : "statistics",
   );
   const [numericStatusMapping, setNumericStatusMapping] = useState<NumericStatusMappingChoice>(
@@ -787,13 +785,23 @@ export function SpecializedCorePage({
 
   const openHeatmapProject = async () => {
     if (!openUnresolvedVisualizationProject) {
-      setMessage("ブラウザレビューではHeatmap projectを開けません。デスクトップ版で利用できます。");
+      setMessage(
+        t(
+          "ブラウザレビューではHeatmap projectを開けません。デスクトップ版で利用できます。",
+          "Heatmap projects cannot be opened in the browser preview. Use the desktop app.",
+        ),
+      );
       return;
     }
     try {
       const opened = await openUnresolvedVisualizationProject();
       if (!opened) {
-        setMessage("開くをキャンセルしました。入力内容はこの画面に残っています。");
+        setMessage(
+          t(
+            "開くをキャンセルしました。入力内容はこの画面に残っています。",
+            "Opening was canceled. Your entries remain on this screen.",
+          ),
+        );
         return;
       }
       if (opened.state.entryIntent !== "matrix_visualization") {
@@ -823,10 +831,22 @@ export function SpecializedCorePage({
         setMissingColor(graph.heatmap.missingColor);
         setShowCellValues(graph.heatmap.showCellValues);
       }
-      setMessage("保存済みHeatmap projectを開きました。行列とGraph設定を復元しました。");
+      setMessage(
+        t(
+          "保存済みHeatmap projectを開きました。行列とGraph設定を復元しました。",
+          "Opened the saved Heatmap project and restored its matrix and Graph settings.",
+        ),
+      );
       recordUsageMilestone(routeFromPath(window.location.pathname), "project_opened");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Heatmap projectを開けませんでした。");
+      setMessage(
+        locale === "ja" && error instanceof Error
+          ? error.message
+          : t(
+              "Heatmap projectを開けませんでした。",
+              "The Heatmap project could not be opened. Your current entries were retained.",
+            ),
+      );
     }
   };
   const requestOpenHeatmapProject = () => {
@@ -835,7 +855,7 @@ export function SpecializedCorePage({
       return;
     }
     onRequestExit({
-      actionLabel: "別のHeatmap projectを開く",
+      actionLabel: t("別のHeatmap projectを開く", "Open another Heatmap project"),
       proceed: openHeatmapProject,
     });
   };
@@ -1002,21 +1022,35 @@ export function SpecializedCorePage({
     recordUsageMilestone(usageRoute, "statistics_requested");
     try {
       if (statisticsReadiness.status !== "ready") {
-        setMessage(statisticsReadiness.researcherMessage);
+        setMessage(
+          locale === "ja"
+            ? statisticsReadiness.researcherMessage
+            : "Survival Statistics cannot run for the current declared structure and data. Review experimental units, groups, follow-up times, events, and censoring. Entered values are retained.",
+        );
         recordUsageMilestone(usageRoute, "safe_stop");
         return;
       }
-      setMessage("解析中…");
+      setMessage(t("解析中…", "Analyzing…"));
       const prepared = createSurvivalState();
       if (!prepared.request) {
-        setMessage("このデータでは現在のSurvival Statisticsを実行できません。");
+        setMessage(
+          t(
+            "このデータでは現在のSurvival Statisticsを実行できません。",
+            "Survival Statistics cannot run for the current data.",
+          ),
+        );
         recordUsageMilestone(usageRoute, "safe_stop");
         return;
       }
       const inputFingerprint = currentSurvivalInputFingerprint;
       const next = await analysisRunner(prepared.request);
       if (currentSurvivalInputFingerprintRef.current !== inputFingerprint) {
-        setMessage("解析中に入力が変わりました。結果は採用せず、現在の表で再実行してください。");
+        setMessage(
+          t(
+            "解析中に入力が変わりました。結果は採用せず、現在の表で再実行してください。",
+            "The input changed during analysis. The result was not applied; run it again using the current table.",
+          ),
+        );
         recordUsageMilestone(usageRoute, "safe_stop");
         return;
       }
@@ -1039,16 +1073,28 @@ export function SpecializedCorePage({
         protocolVersion: prepared.request.protocolVersion,
         engineVersion: next.engine.version,
       });
-      setMessage("Kaplan–Meier推定とlog-rank検定が完了しました。");
+      setMessage(
+        t(
+          "Kaplan–Meier推定とlog-rank検定が完了しました。",
+          "Kaplan–Meier estimation and the log-rank test are complete.",
+        ),
+      );
     } catch (error) {
       recordUsageMilestone(usageRoute, "safe_stop");
-      setMessage(error instanceof Error ? error.message : "解析できませんでした");
+      setMessage(
+        locale === "ja" && error instanceof Error
+          ? error.message
+          : t(
+              "解析できませんでした",
+              "The analysis could not be completed. Entered data is retained.",
+            ),
+      );
     }
   };
   const save = async (saveAs = false) => {
     lastSaveSucceededRef.current = false;
     if (mode === "survival" && !saveProject && !saveSpecializedEntryDraftProject) {
-      setMessage("デスクトップ版で保存できます。");
+      setMessage(t("デスクトップ版で保存できます。", "Saving is available in the desktop app."));
       return;
     }
     try {
@@ -1091,13 +1137,23 @@ export function SpecializedCorePage({
             saveAs ? undefined : currentSpecializedEntryDraft?.target,
           );
           if (!saved) {
-            setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
+            setMessage(
+              t(
+                "保存をキャンセルしました。入力内容はこの画面に残っています。",
+                "Saving was canceled. Your entries remain on this screen.",
+              ),
+            );
             return;
           }
           setCurrentSpecializedEntryDraft(saved);
           lastSaveSucceededRef.current = true;
           adoptCurrentAsBaseline();
-          setMessage("入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。");
+          setMessage(
+            t(
+              "入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。",
+              "Saved the in-progress table and answers. Experiment structure, Graph, and Statistics remain unresolved.",
+            ),
+          );
           return;
         }
         if (!saveProject) return;
@@ -1166,13 +1222,18 @@ export function SpecializedCorePage({
             saveAs ? undefined : currentProject?.target,
           );
           if (!saved) {
-            setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
+            setMessage(
+              t(
+                "保存をキャンセルしました。入力内容はこの画面に残っています。",
+                "Saving was canceled. Your entries remain on this screen.",
+              ),
+            );
             return;
           }
           setCurrentProject(saved);
           lastSaveSucceededRef.current = true;
           adoptCurrentAsBaseline();
-          setMessage("Survival projectを保存しました。");
+          setMessage(t("Survival projectを保存しました。", "Saved the Survival project."));
           return;
         }
         const preparedRequest = prepared.request;
@@ -1285,7 +1346,12 @@ export function SpecializedCorePage({
             });
         const saved = await saveProject(stateToSave, saveAs ? undefined : currentProject?.target);
         if (!saved) {
-          setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
+          setMessage(
+            t(
+              "保存をキャンセルしました。入力内容はこの画面に残っています。",
+              "Saving was canceled. Your entries remain on this screen.",
+            ),
+          );
           return;
         }
         setCurrentProject(saved);
@@ -1293,13 +1359,22 @@ export function SpecializedCorePage({
         adoptCurrentAsBaseline();
         setMessage(
           freshResult
-            ? "入力・実験構造・解析結果をプロジェクトへ保存しました。"
-            : "入力と実験構造を保存しました。統計は必要になった時に実行できます。",
+            ? t(
+                "入力・実験構造・解析結果をプロジェクトへ保存しました。",
+                "Saved the input, experimental structure, and analysis result to the project.",
+              )
+            : t(
+                "入力と実験構造を保存しました。統計は必要になった時に実行できます。",
+                "Saved the input and experimental structure. Statistics can be run when needed.",
+              ),
         );
       } else {
         if (!saveUnresolvedVisualizationProject) {
           setMessage(
-            "ブラウザレビューではHeatmap projectを保存できません。デスクトップ版で利用できます。",
+            t(
+              "ブラウザレビューではHeatmap projectを保存できません。デスクトップ版で利用できます。",
+              "Heatmap projects cannot be saved in the browser preview. Use the desktop app.",
+            ),
           );
           return;
         }
@@ -1452,17 +1527,34 @@ export function SpecializedCorePage({
           saveAs ? undefined : currentVisualizationProject?.target,
         );
         if (!saved) {
-          setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
+          setMessage(
+            t(
+              "保存をキャンセルしました。入力内容はこの画面に残っています。",
+              "Saving was canceled. Your entries remain on this screen.",
+            ),
+          );
           return;
         }
         setCurrentVisualizationProject(saved);
         lastSaveSucceededRef.current = true;
         adoptCurrentAsBaseline();
-        setMessage("Heatmap projectを保存しました。行列とGraph設定を保持しています。");
+        setMessage(
+          t(
+            "Heatmap projectを保存しました。行列とGraph設定を保持しています。",
+            "Saved the Heatmap project with its matrix and Graph settings.",
+          ),
+        );
         recordUsageMilestone(routeFromPath(window.location.pathname), "project_saved");
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "保存できませんでした");
+      setMessage(
+        locale === "ja" && error instanceof Error
+          ? error.message
+          : t(
+              "保存できませんでした",
+              "The project could not be saved. Your current entries were retained.",
+            ),
+      );
     }
   };
   const saveRef = useRef(save);
@@ -1502,7 +1594,7 @@ export function SpecializedCorePage({
   ]);
   const requestBack = () => {
     if (onRequestExit) {
-      onRequestExit({ actionLabel: "前の画面に戻る", proceed: onBack });
+      onRequestExit({ actionLabel: t("前の画面に戻る", "Go back"), proceed: onBack });
       return;
     }
     onBack();
@@ -1514,7 +1606,10 @@ export function SpecializedCorePage({
       onNavigate(nextRoute);
     };
     if (onRequestExit) {
-      onRequestExit({ actionLabel: "別の専門解析へ切り替える", proceed });
+      onRequestExit({
+        actionLabel: t("別の専門解析へ切り替える", "Switch to another specialist analysis"),
+        proceed,
+      });
       return;
     }
     proceed();
@@ -1937,7 +2032,12 @@ export function SpecializedCorePage({
                     );
                   }}
                 />
-                <span>{t("この保存済みlog-rank結果をGraphに表示", "Show this saved log-rank result on the Graph")}</span>
+                <span>
+                  {t(
+                    "この保存済みlog-rank結果をGraphに表示",
+                    "Show this saved log-rank result on the Graph",
+                  )}
+                </span>
               </label>
               <p className="specialized-engine-note">
                 {t(
@@ -2152,12 +2252,20 @@ export function SpecializedCorePage({
         />
       )}
       {mode === "survival" ? (
-        <nav aria-label={t("プロジェクトワークスペース", "Project workspace")} className="workspace-mode-tabs">
+        <nav
+          aria-label={t("プロジェクトワークスペース", "Project workspace")}
+          className="workspace-mode-tabs"
+        >
           <button
             type="button"
             disabled={!onOpenProject}
             title={
-              !onOpenProject ? t("プロジェクトを開く機能はデスクトップ版で利用できます", "Opening projects is available in the desktop app") : undefined
+              !onOpenProject
+                ? t(
+                    "プロジェクトを開く機能はデスクトップ版で利用できます",
+                    "Opening projects is available in the desktop app",
+                  )
+                : undefined
             }
             onClick={onOpenProject}
           >
@@ -2226,7 +2334,10 @@ export function SpecializedCorePage({
         </nav>
       ) : null}
       {mode === "heatmap" ? (
-        <nav aria-label={t("プロジェクトワークスペース", "Project workspace")} className="workspace-mode-tabs">
+        <nav
+          aria-label={t("プロジェクトワークスペース", "Project workspace")}
+          className="workspace-mode-tabs"
+        >
           <button
             type="button"
             disabled={!onOpenProject && !openUnresolvedVisualizationProject}
@@ -2267,7 +2378,10 @@ export function SpecializedCorePage({
             }
             title={
               !saveUnresolvedVisualizationProject
-                ? t("プロジェクトの保存はデスクトップ版で利用できます", "Project saving is available in the desktop app")
+                ? t(
+                    "プロジェクトの保存はデスクトップ版で利用できます",
+                    "Project saving is available in the desktop app",
+                  )
                 : !heatmapTableHasRows || !heatmap || "error" in heatmap
                   ? t("数値行列を入力すると保存できます", "Enter a numeric matrix to enable saving")
                   : undefined
@@ -2312,8 +2426,14 @@ export function SpecializedCorePage({
         </h1>
         <p>
           {mode === "survival"
-            ? t("対象ごとの生存時間（time-to-event）を、対象ID・群・観察期間・状態（event／打ち切り）として入力します。打ち切りは欠測に変換しません。", "Enter one time-to-event record per subject with subject ID, group, follow-up time, and status (event or censored). Censoring is not converted to missingness.")
-            : t("1列目をfeature名、1行目をsample名として表を貼り付けます。空欄とNAは欠損のまま保持します。", "Paste a table with feature names in the first column and sample names in the first row. Blank and NA cells remain missing.")}
+            ? t(
+                "対象ごとの生存時間（time-to-event）を、対象ID・群・観察期間・状態（event／打ち切り）として入力します。打ち切りは欠測に変換しません。",
+                "Enter one time-to-event record per subject with subject ID, group, follow-up time, and status (event or censored). Censoring is not converted to missingness.",
+              )
+            : t(
+                "1列目をfeature名、1行目をsample名として表を貼り付けます。空欄とNAは欠損のまま保持します。",
+                "Paste a table with feature names in the first column and sample names in the first row. Blank and NA cells remain missing.",
+              )}
         </p>
         {mode === "survival" && directTimeToEventEntry?.status === "safe_unsupported" ? (
           <section className="callout-warning" role="alert">
@@ -2340,8 +2460,16 @@ export function SpecializedCorePage({
         <section id={mode === "survival" ? "survival-data" : undefined}>
           <h2>{t("データ", "Data")}</h2>
           <DelimitedTextSpreadsheet
-            ariaLabel={mode === "survival" ? t("生存時間データ表", "Survival data table") : t("ヒートマップデータ表", "Heatmap data table")}
-            caption={mode === "survival" ? t("対象ごとの生存時間データ", "Time-to-event data by subject") : t("ヒートマップ行列", "Heatmap matrix")}
+            ariaLabel={
+              mode === "survival"
+                ? t("生存時間データ表", "Survival data table")
+                : t("ヒートマップデータ表", "Heatmap data table")
+            }
+            caption={
+              mode === "survival"
+                ? t("対象ごとの生存時間データ", "Time-to-event data by subject")
+                : t("ヒートマップ行列", "Heatmap matrix")
+            }
             minimumColumns={mode === "survival" ? 4 : 3}
             columnOptions={mode === "survival" ? { 3: ["Event", "Censored", "1", "0"] } : undefined}
             value={text}
@@ -2375,11 +2503,16 @@ export function SpecializedCorePage({
           />
           {mode === "survival" ? (
             <p className="specialized-data-entry-hint">
-              {t("Statusは Event / Censored で入力します。日本語の「死亡・イベント発生」「打ち切り・観察終了」も使えます。0/1の場合は、下でどちらがEventか確認します。", "Enter Status as Event or Censored. Japanese labels for event/death and censoring/end of observation are also accepted. For 0/1 values, confirm below which value means Event.")}
+              {t(
+                "Statusは Event / Censored で入力します。日本語の「死亡・イベント発生」「打ち切り・観察終了」も使えます。0/1の場合は、下でどちらがEventか確認します。",
+                "Enter Status as Event or Censored. Japanese labels for event/death and censoring/end of observation are also accepted. For 0/1 values, confirm below which value means Event.",
+              )}
             </p>
           ) : null}
           <details>
-            <summary>{t("区切りテキストを直接編集（詳細）", "Edit delimited text directly (advanced)")}</summary>
+            <summary>
+              {t("区切りテキストを直接編集（詳細）", "Edit delimited text directly (advanced)")}
+            </summary>
             <label>
               {t("区切りテキスト", "Delimited text")}
               <textarea
@@ -2435,7 +2568,12 @@ export function SpecializedCorePage({
                 setResultInputFingerprint(null);
               }}
             />
-            <small>{t("グラフと保存データの時間軸に使用します。数値だけから単位を推測しません。", "Used for the Graph and saved time axis. The unit is never inferred from numeric values alone.")}</small>
+            <small>
+              {t(
+                "グラフと保存データの時間軸に使用します。数値だけから単位を推測しません。",
+                "Used for the Graph and saved time axis. The unit is never inferred from numeric values alone.",
+              )}
+            </small>
           </label>
         ) : null}
         {mode === "survival" && !persistedAdaptiveInput && text.trim() === SURVIVAL_TABLE_HEADER ? (
@@ -2449,7 +2587,10 @@ export function SpecializedCorePage({
               setResultInputFingerprint(null);
             }}
           >
-            {t("入力形式の例を読み込む（合成値）", "Load an input-format example (synthetic values)")}
+            {t(
+              "入力形式の例を読み込む（合成値）",
+              "Load an input-format example (synthetic values)",
+            )}
           </button>
         ) : null}
         {mode === "heatmap" && text.trim() === HEATMAP_TABLE_HEADER ? (
@@ -2460,7 +2601,10 @@ export function SpecializedCorePage({
               setHeatmapInputSource({ kind: "tsv", label: "synthetic-example.tsv" });
             }}
           >
-            {t("入力形式の例を読み込む（合成値）", "Load an input-format example (synthetic values)")}
+            {t(
+              "入力形式の例を読み込む（合成値）",
+              "Load an input-format example (synthetic values)",
+            )}
           </button>
         ) : null}
         {mode === "survival" ? (
@@ -2490,7 +2634,11 @@ export function SpecializedCorePage({
                   setResultInputFingerprint(null);
                   setMessage(t(`${file.name} を読み込みました。`, `Loaded ${file.name}.`));
                 })
-                .catch(() => setMessage(t("ファイルを読み込めませんでした。", "The file could not be loaded.")));
+                .catch(() =>
+                  setMessage(
+                    t("ファイルを読み込めませんでした。", "The file could not be loaded."),
+                  ),
+                );
             }}
           />
         ) : null}
@@ -2518,14 +2666,25 @@ export function SpecializedCorePage({
                   });
                   setMessage(t(`${file.name} を読み込みました。`, `Loaded ${file.name}.`));
                 })
-                .catch(() => setMessage(t("ファイルを読み込めませんでした。", "The file could not be loaded.")));
+                .catch(() =>
+                  setMessage(
+                    t("ファイルを読み込めませんでした。", "The file could not be loaded."),
+                  ),
+                );
             }}
           />
         ) : null}
         {numericStatusMappingRequired ? (
           <section className="callout-info" aria-label="0/1 statusの意味">
-            <strong>{t("Status列の0と1は何を表しますか？", "What do 0 and 1 mean in the Status column?")}</strong>
-            <p>{t("数値だけではeventと打ち切りを判別できないため、推測せず確認します。", "Numeric values alone cannot distinguish events from censoring, so BioFigureStat asks instead of guessing.")}</p>
+            <strong>
+              {t("Status列の0と1は何を表しますか？", "What do 0 and 1 mean in the Status column?")}
+            </strong>
+            <p>
+              {t(
+                "数値だけではeventと打ち切りを判別できないため、推測せず確認します。",
+                "Numeric values alone cannot distinguish events from censoring, so BioFigureStat asks instead of guessing.",
+              )}
+            </p>
             <select
               aria-label="Status列の0/1 mapping"
               value={numericStatusMapping ?? ""}
@@ -2635,9 +2794,19 @@ export function SpecializedCorePage({
             }
             canvas={
               !survivalTableHasRows ? (
-                <p>{t("表に実測値を入力すると、event/censoringを保持したGraphをここに表示します。", "Enter measured values in the table to display a Graph that preserves event and censoring status.")}</p>
+                <p>
+                  {t(
+                    "表に実測値を入力すると、event/censoringを保持したGraphをここに表示します。",
+                    "Enter measured values in the table to display a Graph that preserves event and censoring status.",
+                  )}
+                </p>
               ) : numericStatusMappingRequired && numericStatusMapping === null ? (
-                <p>{t("Status列の0/1の意味を確認するとGraphを表示できます。", "Confirm the meaning of 0/1 in the Status column to display the Graph.")}</p>
+                <p>
+                  {t(
+                    "Status列の0/1の意味を確認するとGraphを表示できます。",
+                    "Confirm the meaning of 0/1 in the Status column to display the Graph.",
+                  )}
+                </p>
               ) : survival && "error" in survival ? (
                 <p role="alert">{survival.error}</p>
               ) : survival && !("error" in survival) ? (
@@ -2690,7 +2859,12 @@ export function SpecializedCorePage({
             }
             canvas={
               !heatmapTableHasRows ? (
-                <p>{t("数値行列を貼り付けると、欠損を保持したヒートマップをここに表示します。", "Paste a numeric matrix to display a heatmap while preserving missing values.")}</p>
+                <p>
+                  {t(
+                    "数値行列を貼り付けると、欠損を保持したヒートマップをここに表示します。",
+                    "Paste a numeric matrix to display a heatmap while preserving missing values.",
+                  )}
+                </p>
               ) : heatmap && "error" in heatmap ? (
                 <p role="alert">{heatmap.error}</p>
               ) : heatmap && !("error" in heatmap) ? (
