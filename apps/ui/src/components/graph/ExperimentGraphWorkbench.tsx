@@ -6,7 +6,7 @@ import {
   type ExperimentCellMap,
   type ExperimentSetDraft,
 } from "../../app/experimentDraft";
-import { assessDraftGraphAnalysis, isDerivedTimeMetric } from "../../app/experimentDraftAnalysis";
+import { isDerivedTimeMetric } from "../../app/experimentDraftAnalysis";
 import {
   nestedIndependentSourceContext,
   type DraftAnalysisCorrection,
@@ -68,6 +68,7 @@ import {
 } from "./useExperimentGraphWorkspaceEffects";
 import { useExperimentGraphStatisticsIntent } from "./useExperimentGraphStatisticsIntent";
 import { useExperimentGraphAnalysisState } from "./useExperimentGraphAnalysisState";
+import { useExperimentGraphAnalysisAssessment } from "./useExperimentGraphAnalysisAssessment";
 import { useExperimentGraphStateSnapshot } from "./useExperimentGraphStateSnapshot";
 import { useExperimentGraphPresentationState } from "./useExperimentGraphPresentationState";
 import { useExperimentGraphDataSelectionState } from "./useExperimentGraphDataSelectionState";
@@ -439,41 +440,23 @@ export function ExperimentGraphWorkbench({
       )
     : baseAnnotationContext;
   const hasData = hasVisibleGraphData({ shape, sourceMode, series, cells });
-  const analysisAssessment = useMemo(
-    () =>
-      assessDraftGraphAnalysis({
-        draft,
-        cells,
-        readoutId: activeReadoutId,
-        conditionIds: analysisConditionIds,
-        timePointId: analysisTimePointId ?? undefined,
-        timeAnalysis,
-        correlationMethod,
-        selectedMethod: selectedStatisticalMethod,
-        contrastIntent,
-        plannedContrastConditionIds,
-        withinFactor: {
-          role: axes.xSemantic,
-          title: axes.xTitle,
-          unit: axes.xUnit,
-        },
-      }),
-    [
-      activeReadoutId,
-      analysisTimePointId,
-      cells,
-      contrastIntent,
-      correlationMethod,
-      draft,
-      analysisConditionIds,
-      selectedStatisticalMethod,
-      plannedContrastConditionIds,
-      axes.xSemantic,
-      axes.xTitle,
-      axes.xUnit,
-      timeAnalysis,
-    ],
-  );
+  const analysisAssessment = useExperimentGraphAnalysisAssessment({
+    draft,
+    cells,
+    readoutId: activeReadoutId,
+    conditionIds: analysisConditionIds,
+    timePointId: analysisTimePointId ?? undefined,
+    timeAnalysis,
+    correlationMethod,
+    selectedMethod: selectedStatisticalMethod,
+    contrastIntent,
+    plannedContrastConditionIds,
+    withinFactor: {
+      role: axes.xSemantic,
+      title: axes.xTitle,
+      unit: axes.xUnit,
+    },
+  });
   const analysisContextKey = createGraphAnalysisContextKey({
     draft,
     readoutId: activeReadoutId,
