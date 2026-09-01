@@ -70,6 +70,7 @@ test("drives only the exact spawned process native Save dialog with encoded path
   assert.match(saveCommand.at(-1), /UIAutomationClient/);
   assert.match(saveCommand.at(-1), /BioFigureStatNativeWindowOwner/);
   assert.match(saveCommand.at(-1), /ownerProcessId -eq \$processId/);
+  assert.match(saveCommand.at(-1), /spawned BioFigureStat window is not visible/);
   assert.match(saveCommand.at(-1), /FromBase64String/);
   assert.doesNotMatch(saveCommand.at(-1), /日本語|quote/);
   assert.match(saveCommand.at(-1), /AutomationIdProperty,\s*\n\s*'1001'/);

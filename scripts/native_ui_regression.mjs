@@ -245,9 +245,19 @@ $windowTypeCondition = [Windows.Automation.PropertyCondition]::new(
 $deadline = [DateTime]::UtcNow.AddSeconds(20)
 $dialog = $null
 $observedCandidates = @()
+$observedWindows = @()
+$appWindowSeen = $false
 while ([DateTime]::UtcNow -lt $deadline -and $null -eq $dialog) {
   $windows = $desktop.FindAll([Windows.Automation.TreeScope]::Children, $windowTypeCondition)
   foreach ($window in $windows) {
+    if ($window.Current.ProcessId -eq $processId) { $appWindowSeen = $true }
+    if ($window.Current.ProcessId -eq $processId -or $window.Current.Name -match 'Save|保存|書き出し|BioFigureStat') {
+      $observedWindows += @{
+        name = $window.Current.Name
+        className = $window.Current.ClassName
+        processId = $window.Current.ProcessId
+      }
+    }
     $looksLikeDialog = $window.Current.ClassName -eq '#32770' -or $window.Current.Name -match 'Save|保存|書き出し'
     if (-not $looksLikeDialog) { continue }
     $ownerProcessId = 0
@@ -270,7 +280,10 @@ while ([DateTime]::UtcNow -lt $deadline -and $null -eq $dialog) {
   if ($null -eq $dialog) { Start-Sleep -Milliseconds 100 }
 }
 if ($null -eq $dialog) {
-  $summary = ConvertTo-Json @($observedCandidates | Select-Object -Last 12) -Compress
+  $summary = ConvertTo-Json @($observedWindows | Select-Object -Last 20) -Compress
+  if (-not $appWindowSeen) {
+    throw ('HARNESS_FILE_DIALOG_AUTOMATION: spawned BioFigureStat window is not visible to Windows UI Automation; windows=' + $summary)
+  }
   throw ('FILE_DIALOG_NOT_FOUND: native Save dialog did not appear; candidates=' + $summary)
 }
 if ($action -eq 'cancel') {
