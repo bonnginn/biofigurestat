@@ -4,7 +4,7 @@ import {
 } from "@lsaa/analysis-contracts";
 
 import {
-  hasSharedSourceConditionUnits,
+  sharedSourceConditionTopology,
   type ExperimentSetDraft,
   type TimeAnalysisPlan,
 } from "../../app/experimentDraft";
@@ -27,12 +27,7 @@ export function createGraphStatisticsRelationshipContext(
   draft: ExperimentSetDraft,
   readoutId: string,
 ) {
-  const sharedSourceTopology =
-    hasSharedSourceConditionUnits(draft) &&
-    draft.conditionAssignment.matchedTopology?.kind ===
-      "distinct_condition_units_shared_source"
-      ? draft.conditionAssignment.matchedTopology
-      : null;
+  const sharedSourceTopology = sharedSourceConditionTopology(draft);
   const independentNestedSource = nestedIndependentSourceContext({ draft, readoutId });
   const matchedRelationship =
     draft.conditionAssignment.kind !== "matched"

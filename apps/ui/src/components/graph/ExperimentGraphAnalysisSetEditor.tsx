@@ -1,4 +1,7 @@
-import { hasSharedSourceConditionUnits, type ExperimentSetDraft } from "../../app/experimentDraft";
+import {
+  sharedSourceConditionTopology,
+  type ExperimentSetDraft,
+} from "../../app/experimentDraft";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 
 type Props = Readonly<{
@@ -19,11 +22,7 @@ export function ExperimentGraphAnalysisSetEditor({
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const selected = new Set(selectedConditionIds);
-  const sharedSourceTopology =
-    hasSharedSourceConditionUnits(draft) &&
-    draft.conditionAssignment.matchedTopology?.kind === "distinct_condition_units_shared_source"
-      ? draft.conditionAssignment.matchedTopology
-      : null;
+  const sharedSourceTopology = sharedSourceConditionTopology(draft);
 
   return (
     <section className="experiment-graph-inspector-section experiment-statistics-source">

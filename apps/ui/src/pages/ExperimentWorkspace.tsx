@@ -26,6 +26,7 @@ import {
   orderedAxisUnit,
   parseNumericPaste,
   percentage,
+  sharedSourceConditionTopology,
   wbRatio,
   wbCorrectedBandValue,
   timePointLabel,
@@ -483,13 +484,8 @@ function ReadoutLabel({ readout }: { readout: ReadoutDraft }) {
   );
 }
 
-function sharedSourceTopology(draft: ExperimentSetDraft) {
-  const topology = draft.conditionAssignment.matchedTopology;
-  return topology?.kind === "distinct_condition_units_shared_source" ? topology : null;
-}
-
 function matrixRelationshipCopy(draft: ExperimentSetDraft): string {
-  const sharedSource = sharedSourceTopology(draft);
+  const sharedSource = sharedSourceConditionTopology(draft);
   if (sharedSource) {
     return `同じ行は同じ${sharedSource.sourceUnitLabel}に由来する組です。各条件の${draft.conditionAssignment.unitLabel}は別の実験単位として保持します。`;
   }
@@ -499,7 +495,7 @@ function matrixRelationshipCopy(draft: ExperimentSetDraft): string {
 }
 
 function matrixRowHeading(draft: ExperimentSetDraft): string {
-  const sharedSource = sharedSourceTopology(draft);
+  const sharedSource = sharedSourceConditionTopology(draft);
   if (sharedSource) return sharedSource.sourceIdentityLabel;
   return draft.conditionAssignment.kind === "matched"
     ? draft.conditionAssignment.unitLabel || "対象ID"
@@ -510,12 +506,12 @@ function independentAdaptiveInputRows(draft: ExperimentSetDraft): boolean {
   return Boolean(
     draft.adaptiveInput &&
     draft.conditionAssignment.kind === "independent" &&
-    !sharedSourceTopology(draft),
+    !sharedSourceConditionTopology(draft),
   );
 }
 
 function matchedSetLabel(draft: ExperimentSetDraft): string {
-  const sharedSource = sharedSourceTopology(draft);
+  const sharedSource = sharedSourceConditionTopology(draft);
   return sharedSource
     ? `${sharedSource.sourceUnitLabel}の組`
     : draft.conditionAssignment.unitLabel || "対応単位";
@@ -903,7 +899,7 @@ function OverviewPanel({
     (onlyReadout?.shape === "nested_continuous" && onlyReadout.nestedInputMode === "unit_summary")
       ? onlyReadout
       : null;
-  const sharedSource = sharedSourceTopology(draft);
+  const sharedSource = sharedSourceConditionTopology(draft);
   const canonicalConditionSummaries = (() => {
     const contract = draft.adaptiveInput?.contract;
     if (!contract || !canonicalSpreadsheet) return [];
@@ -1382,7 +1378,7 @@ function ExperimentMeta({
   experiment: ExperimentSessionDraft;
   onChange: (patch: Partial<ExperimentSessionDraft>) => void;
 }) {
-  const sharedSource = sharedSourceTopology(draft);
+  const sharedSource = sharedSourceConditionTopology(draft);
   return (
     <div className="experiment-workspace-meta">
       <label>
@@ -2537,7 +2533,7 @@ function ExperimentPanel({
   onRemove: () => void;
   canRemove: boolean;
 }) {
-  const sharedSource = sharedSourceTopology(draft);
+  const sharedSource = sharedSourceConditionTopology(draft);
   return (
     <section
       className="experiment-workspace-panel"
@@ -2681,7 +2677,7 @@ export function ExperimentWorkspace({
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [draft, setDraft] = useState<ExperimentSetDraft>(initialDraft);
-  const sharedSource = sharedSourceTopology(draft);
+  const sharedSource = sharedSourceConditionTopology(draft);
   const [cells, setCells] = useState<ExperimentCellMap>(() => ({
     ...createCellsForDraft(initialDraft),
     ...initialCells,

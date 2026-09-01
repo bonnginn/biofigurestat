@@ -362,9 +362,14 @@ export function plannedExperimentalUnitCount(draft: ExperimentSetDraft): number 
 }
 
 export function hasSharedSourceConditionUnits(draft: ExperimentSetDraft): boolean {
-  return (
-    draft.conditionAssignment.matchedTopology?.kind === "distinct_condition_units_shared_source"
-  );
+  return sharedSourceConditionTopology(draft) !== null;
+}
+
+export function sharedSourceConditionTopology(
+  draft: ExperimentSetDraft,
+): Extract<MatchedConditionTopology, { kind: "distinct_condition_units_shared_source" }> | null {
+  const topology = draft.conditionAssignment.matchedTopology;
+  return topology?.kind === "distinct_condition_units_shared_source" ? topology : null;
 }
 
 export function conditionDisplayLabel(
