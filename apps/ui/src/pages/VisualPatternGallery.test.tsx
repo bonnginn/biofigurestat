@@ -377,7 +377,7 @@ describe("新しい実験の入口", () => {
     expect(
       await screen.findByRole("heading", { name: "新しい実験" }, { timeout: 5_000 }),
     ).toBeVisible();
-    expect(screen.getByRole("tab", { name: "Overview" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "概要" })).toBeVisible();
   }, 20_000);
 
   it("ブラウザPhase AでsiRNA×Drug・2時点・別日3実験回を手動作成できる", async () => {
