@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  mergeImportedSpreadsheetWorkbooks,
   parseSpreadsheetA1Range,
   spreadsheetSheetDefaultRange,
   spreadsheetSheetSelectionToTsv,
@@ -19,6 +20,23 @@ const sheet: ImportedSpreadsheetSheet = {
 };
 
 describe("spreadsheet workbook range selection", () => {
+  it("combines multiple selected files while preserving file and worksheet provenance", () => {
+    expect(
+      mergeImportedSpreadsheetWorkbooks([
+        { fileName: "run-1.xlsx", sheets: [{ name: "Data", rows: [["ID", "Value"]] }] },
+        { fileName: "run-2.xlsx", sheets: [{ name: "Data", rows: [["ID", "Value"]] }] },
+      ]),
+    ).toEqual({
+      fileName: "run-1.xlsx +1",
+      sourceFiles: ["run-1.xlsx", "run-2.xlsx"],
+      sheets: [
+        { name: "run-1.xlsx / Data", rows: [["ID", "Value"]] },
+        { name: "run-2.xlsx / Data", rows: [["ID", "Value"]] },
+      ],
+    });
+    expect(mergeImportedSpreadsheetWorkbooks([])).toBeNull();
+  });
+
   it("uses familiar A1 notation and rejects reversed or out-of-sheet ranges", () => {
     expect(spreadsheetSheetDefaultRange(sheet)).toBe("A1:D5");
     expect(parseSpreadsheetA1Range("A1:D4", sheet, 2)).toEqual({

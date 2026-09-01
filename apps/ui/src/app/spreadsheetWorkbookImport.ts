@@ -10,6 +10,7 @@ export type ImportedSpreadsheetSheet = Readonly<{
 export type ImportedSpreadsheetWorkbook = Readonly<{
   fileName: string;
   sheets: readonly ImportedSpreadsheetSheet[];
+  sourceFiles?: readonly string[];
 }>;
 
 export type SpreadsheetWorkbookImporter = () => Promise<ImportedSpreadsheetWorkbook | null>;
@@ -28,15 +29,39 @@ export function spreadsheetWorkbookImportAvailable(): boolean {
 
 export const importLocalSpreadsheetWorkbook: SpreadsheetWorkbookImporter = async () => {
   if (!isTauri()) return null;
-  const target = await open({
+  const selected = await open({
     directory: false,
-    multiple: false,
+    multiple: true,
     title: "Excel workbookを読み込む",
     filters: [{ name: "Excel workbook", extensions: ["xls", "xlsx", "xlsm", "xlsb"] }],
   });
-  if (target === null) return null;
-  return invoke<ImportedSpreadsheetWorkbook>("read_spreadsheet_workbook", { target });
+  if (selected === null) return null;
+  const targets = Array.isArray(selected) ? selected : [selected];
+  const workbooks = await Promise.all(
+    targets.map((target) =>
+      invoke<ImportedSpreadsheetWorkbook>("read_spreadsheet_workbook", { target }),
+    ),
+  );
+  return mergeImportedSpreadsheetWorkbooks(workbooks);
 };
+
+/** Keeps each file/sheet source explicit; it does not infer biological replicates from files. */
+export function mergeImportedSpreadsheetWorkbooks(
+  workbooks: readonly ImportedSpreadsheetWorkbook[],
+): ImportedSpreadsheetWorkbook | null {
+  if (workbooks.length === 0) return null;
+  if (workbooks.length === 1) return workbooks[0]!;
+  return {
+    fileName: `${workbooks[0]!.fileName} +${workbooks.length - 1}`,
+    sourceFiles: workbooks.map(({ fileName }) => fileName),
+    sheets: workbooks.flatMap((workbook) =>
+      workbook.sheets.map((sheet) => ({
+        ...sheet,
+        name: `${workbook.fileName} / ${sheet.name}`,
+      })),
+    ),
+  };
+}
 
 export function spreadsheetRowsToTsv(rows: readonly (readonly string[])[]): string {
   return rows

@@ -360,6 +360,33 @@ describe("DelimitedTextSpreadsheet", () => {
     );
   });
 
+  it("shows multi-file provenance without treating file count as statistical n", async () => {
+    const workbookImporter = vi.fn(async () => ({
+      fileName: "run-1.xlsx +1",
+      sourceFiles: ["run-1.xlsx", "run-2.xlsx"],
+      sheets: [
+        { name: "run-1.xlsx / Data", rows: [["ID", "Value"], ["S01", "1"]] },
+        { name: "run-2.xlsx / Data", rows: [["ID", "Value"], ["S02", "2"]] },
+      ],
+    }));
+    render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Graph sheet"
+        value={"X\tY"}
+        onChange={vi.fn()}
+        workbookImporter={workbookImporter}
+        allowWorkbookSheetStacking
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "XLS / XLSXを直接読み込む" }));
+    await waitFor(() => expect(workbookImporter).toHaveBeenCalledOnce());
+
+    expect(screen.getByRole("status")).toHaveTextContent("2ファイル");
+    expect(screen.getByText(/ファイル数を統計上のnとはみなしません/)).toBeVisible();
+    expect(screen.getByRole("option", { name: "run-2.xlsx / Data" })).toBeVisible();
+  });
+
   it("keeps the existing grid when workbook selection is cancelled or fails", async () => {
     const onChange = vi.fn();
     const workbookImporter = vi

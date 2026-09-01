@@ -455,8 +455,22 @@ export function DelimitedTextSpreadsheet({
         {importedWorkbook ? (
           <>
             <span role="status">
-              {importedWorkbook.fileName} / {importedWorkbook.sheets[selectedSheetIndex]?.name}
+              {importedWorkbook.sourceFiles && importedWorkbook.sourceFiles.length > 1
+                ? t(
+                    `${importedWorkbook.sourceFiles.length}ファイル`,
+                    `${importedWorkbook.sourceFiles.length} files`,
+                  )
+                : importedWorkbook.fileName}{" "}
+              / {importedWorkbook.sheets[selectedSheetIndex]?.name}
             </span>
+            {importedWorkbook.sourceFiles && importedWorkbook.sourceFiles.length > 1 ? (
+              <p role="note">
+                {t(
+                  "複数ファイルを読み込みました。ファイル名とworksheet名は出典として保持しますが、ファイル数を統計上のnとはみなしません。",
+                  "Multiple files were loaded. File and worksheet names are retained as provenance; file count is not treated as statistical n.",
+                )}
+              </p>
+            ) : null}
             <label>
               {t("表範囲", "Table range")}
               <input
