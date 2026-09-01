@@ -202,6 +202,15 @@ workbench as a separate 185.62 kB chunk. The full UI suite remains at 169 files 
 tests; UI typecheck, full lint, and the production build pass. The shared graph-layout dependency
 is still a 569.34 kB chunk and is the next bounded bundle-analysis target.
 
+Common-coverage analyses and specialist Survival/Heatmap workspaces are now also loaded at their
+route boundaries. The initial JavaScript chunk is 812.86 kB (gzip 223.03 kB), down about 54% from
+the pre-splitting 1.77 MB build. Common coverage is 110.94 kB, specialist core is 78.00 kB, the
+Graph workbench is 185.61 kB, and the remaining shared graph-layout chunk is 392.98 kB. App route
+tests (82), the full UI suite (169 files / 1,245 tests), typecheck, lint, and production build pass.
+Further eager-page splitting was investigated but deferred because New Experiment and project-open
+tests currently rely on synchronous route rendering; changing that contract is not required for
+the current performance gain.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
