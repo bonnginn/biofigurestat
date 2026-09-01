@@ -448,7 +448,7 @@ Graph type changes and display-preset application now share one presentation-onl
 boundary. Changing Graph type still restores the shape-appropriate layer defaults, and a
 multi-condition time-series still restores a visible colorblind legend when line display requires
 it; presets retain their existing layer and appearance mapping. Data, condition identities, and
-analysis state are not inputs to this boundary. The workbench is 942 lines, versus 6,922 at the
+analysis state are not inputs to this boundary. The workbench is 941 lines, versus 6,922 at the
 Public Alpha tag. Its existing 57 focused Graph tests, UI typecheck, and focused lint pass without
 adding an implementation-move test.
 
@@ -458,6 +458,10 @@ invalid input and rectangular-paste problems remain visible without discarding t
 Observation construction, identity factories, numeric parsing, and canonical updates remain in
 the adaptive sheet. The existing Adaptive Spreadsheet and direct draft-lifecycle suites pass 32
 tests; no new test case was needed because the affected contracts were already exercised.
+
+After both increments, the complete UI gate passes 193 files / 1,295 tests in 248 seconds. UI
+typecheck, full lint, and the production build pass; the initial chunk remains 264.45 kB (gzip
+81.20 kB) with no build advisory.
 
 ## Known bounded gaps
 
