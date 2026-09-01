@@ -186,6 +186,7 @@ describe("ProgressiveSparseExperimentPage", () => {
     expect(screen.getByText("Graph: READY")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("保存しました。");
     expect(saveProject).toHaveBeenCalledTimes(1);
     const state = saved[0]!;
     const intensityRecords = state.progressiveEntry.stagedRecords.filter(
@@ -332,6 +333,7 @@ describe("ProgressiveSparseExperimentPage", () => {
     fireEvent.change(paste, { target: { value: "dish-9\t8\t10\ndish-10\t7\t9" } });
     fireEvent.click(within(paste.parentElement!).getByRole("button", { name: "貼り付けを反映" }));
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("保存しました。");
     expect(
       persisted!.progressiveEntry.stagedRecords.find(
         ({ observation }) => observation.readoutKey === "positive_rate",
@@ -370,6 +372,7 @@ describe("ProgressiveSparseExperimentPage", () => {
       target: { value: "9" },
     });
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("保存しました。");
     const resaved = reopenedSaves[0]!;
     expect(
       resaved.progressiveEntry.stagedRecords.find(
