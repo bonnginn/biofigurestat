@@ -628,6 +628,21 @@ async function waitFor(client, expression, label, timeoutMs) {
   throw new Error(`Timed out waiting for ${label}`);
 }
 
+async function waitForReadableFile(target, label, timeoutMs, encoding) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError;
+  while (Date.now() < deadline) {
+    try {
+      return await readFile(target, encoding);
+    } catch (error) {
+      lastError = error;
+      if (!error || typeof error !== "object" || error.code !== "ENOENT") throw error;
+    }
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+  }
+  throw new Error(`Timed out waiting for ${label}: ${String(lastError)}`);
+}
+
 async function captureScreenshot(client, target) {
   const response = await client.call("Page.captureScreenshot", {
     format: "png",
@@ -908,14 +923,23 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
       await runStep("native_svg_save_dialog_writes_selected_target", async () => {
         await client.evaluate(pageAction(clickByText, "SVG"));
         const detail = await driveFileDialog("save", dialogExportTarget);
-        const written = await readFile(dialogExportTarget, "utf8");
+        const written = await waitForReadableFile(
+          dialogExportTarget,
+          "SVG selected in the native Save dialog",
+          timeoutMs,
+          "utf8",
+        );
         if (!written.includes("<svg")) throw new Error("Native Save dialog wrote invalid SVG");
         return { ...detail, target: dialogExportTarget, bytes: Buffer.byteLength(written) };
       });
       await runStep("native_project_save_dialog_writes_lsa", async () => {
         await client.evaluate(pageAction(clickByText, "Save"));
         const detail = await driveFileDialog("save", associationProjectTarget);
-        const written = await readFile(associationProjectTarget);
+        const written = await waitForReadableFile(
+          associationProjectTarget,
+          ".lsa selected in the native Save dialog",
+          timeoutMs,
+        );
         if (written.byteLength < 1_024) {
           throw new Error("Native project Save dialog wrote an unexpectedly small .lsa package");
         }
