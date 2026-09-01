@@ -17,12 +17,10 @@
 
 | 順位 | 状態 | 作業                                         | ユーザー確認     | 完了条件                                                                                                                               |
 | ---- | ---- | -------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | ✅   | 日英統合Windows candidateの短い実機確認      | 完了             | `win-review3`で両言語、用語、見切れ、Graph-only保存再読込、タイトル保持がPASS                                                          |
-| 2    | ⚠️   | 日英統合macOS candidateのbuildと限定実機確認 | 最終確認のみ必要 | `.app` build・bundle/release verifierはPASS。native harnessはAccessibility入力値を観測できない環境BLOCK。限定実機確認は保留            |
-| 3    | ⬜   | 日英統合Alpha更新の公開判断                  | 必要             | Windows/macOS証拠、checksum、release noteを揃え、同じBioFigureStatの次candidateとして公開可否を記録                                    |
-| 4    | ✅   | Windows native UI harnessの実機scenario      | 不要             | 最新packaged exeで入力、Statistics validation、native export、dirty Close / Cancel / DiscardがPASS                                     |
-| 5    | 🟡   | macOS native UI harness                      | 原則不要         | Accessibility adapterは実装済み。permission済みMac runnerで初回PASSを記録                                                              |
-| 6    | 🟡   | GraphとSpreadsheetの共通化を再開             | 不要             | tick・zoom・native export controller・Graph state selectorを共通化済み。画面ごとの修正漏れをさらに減らし、既存`.lsa`と科学的意味を維持 |
+| 1    | ⚠️   | 日英統合macOS candidateのbuildと限定実機確認 | 最終確認のみ必要 | `.app` build・bundle/release verifierはPASS。native harnessはAccessibility入力値を観測できない環境BLOCK。限定実機確認は保留            |
+| 2    | ⬜   | 日英統合Alpha更新の公開判断                  | 必要             | Windows/macOS証拠、checksum、release noteを揃え、同じBioFigureStatの次candidateとして公開可否を記録                                    |
+| 3    | 🟡   | macOS native UI harness                      | 原則不要         | Accessibility adapterは実装済み。permission済みMac runnerで初回PASSを記録                                                              |
+| 4    | 🟡   | GraphとSpreadsheetの共通化                   | 不要             | tick・zoom・native export controller・Graph state selectorを共通化済み。画面ごとの修正漏れをさらに減らし、既存`.lsa`と科学的意味を維持 |
 
 ## 公開・運用
 
