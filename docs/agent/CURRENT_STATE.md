@@ -254,8 +254,12 @@ passes against `707d613-beta.20260902.win-native1`; evidence is under
 save-target selection plus project Save and command-line `.lsa` reopen are implemented behind the
 explicit `--native-file-dialog-save-targets` flag. This managed Windows host exposes its modern
 filename field without a native handle and blocks synchronous provider calls, so that experimental
-slice remains `HARNESS_INFRASTRUCTURE_BLOCKED` rather than weakening the stable gate. Save As,
-PNG/CSV variants, and installed `.lsa` double-click remain the next bounded automation slices.
+slice remains `HARNESS_INFRASTRUCTURE_BLOCKED` rather than weakening the stable gate. Save As and
+installed `.lsa` double-click remain the next bounded automation slices. The same exact-process
+gate now also opens and cancels the native PNG and CSV Save dialogs after confirming that all three
+Graph export controls are enabled. SVG/PNG/CSV Cancel and the remainder of the lifecycle scenario
+pass against the packaged `707d613-beta.20260902.win-native1` application; current JSON evidence is
+under `.tmp/native-ui-regression/win-export-cancel-expansion/`.
 
 Windows human review found that a Graph-only project whose sample-ID column had been explicitly
 accepted as one series per row reopened with its table intact but its Graph and Statistics tabs

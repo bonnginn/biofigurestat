@@ -17,7 +17,7 @@ The first Windows gate covers:
 - native architecture IPC;
 - visible and accessible application-copy scan for unexpected Japanese text;
 - native export command and exact byte verification;
-- the real Windows project Open and SVG Save dialogs, including Cancel without losing the app;
+- the real Windows project Open plus SVG, PNG, and CSV Save dialogs, including Cancel without losing the app;
 - actual Graph-only table entry, mapping, Graph creation, and Statistics handoff;
 - required biological-structure validation appearing inline and receiving focus;
 - retained Graph-only and biological-answer dirty-value retention;
@@ -62,12 +62,13 @@ the exact process it created. Window-close checks send `WM_CLOSE` to that exact 
 rather than relying on a WebView IPC permission that may not be present in the least-privilege
 release capability set.
 
-The Windows adapter now opens the product's actual project Open dialog and clicks the actual `SVG`
-control after the Graph-only Graph loads. It identifies dialogs belonging to the exact spawned
+The Windows adapter now opens the product's actual project Open dialog and clicks the actual `SVG`,
+`PNG`, and `CSV` controls after the Graph-only Graph loads. It identifies dialogs belonging to the exact spawned
 process, including modal descendants and separately hosted windows whose owner is that process.
-Both dialogs receive an asynchronous Escape at their owned native handle; the application must
-remain usable after each Cancel. Revision `707d613-beta.20260902.win-native1` passed the extended
-normal scenario, with evidence in `.tmp/native-ui-regression/win-native-dialog-stable2/`.
+Each dialog receives an asynchronous Escape at its owned native handle; the application must
+remain usable after every Cancel. Revision `707d613-beta.20260902.win-native1` passed the expanded
+normal scenario, with current evidence in
+`.tmp/native-ui-regression/win-export-cancel-expansion/`.
 
 An explicit `--native-file-dialog-save-targets` experimental flag also contains bounded logic for
 an absolute SVG target, project Save, and command-line `.lsa` reopen. It is not part of the normal
@@ -127,8 +128,8 @@ still be recorded on macOS before making it a mandatory release gate.
 ## Current boundary
 
 This is the first native automation layer, not a claim that human review is unnecessary. Windows
-project Open Cancel and SVG Save Cancel are now part of the passing normal gate. Automated target
-selection, Save As, PNG/CSV dialog variants, installed-build file association, clipboard paste
+project Open Cancel and SVG/PNG/CSV Save Cancel are now part of the passing normal gate. Automated target
+selection, Save As, installed-build file association, clipboard paste
 into third-party apps, and high-DPI layout judgment remain separate gates.
 
 Until the first packaged-app run of the adapter passes on a permissioned Mac runner,

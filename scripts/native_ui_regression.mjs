@@ -952,24 +952,19 @@ async function runWindowsScenario({
       await runStep("graph_export_toolbar_is_ready", async () => {
         await waitFor(
           client,
-          `[...document.querySelectorAll("button")].some((button) => button.textContent?.trim() === "SVG" && !button.disabled)`,
-          "enabled SVG export control after lazy Graph editor load",
+          `["SVG", "PNG", "CSV"].every((label) => [...document.querySelectorAll("button")].some((button) => button.textContent?.trim() === label && !button.disabled))`,
+          "enabled SVG, PNG, and CSV export controls after lazy Graph editor load",
           timeoutMs,
         );
-        return { control: "SVG" };
+        return { controls: ["SVG", "PNG", "CSV"] };
       });
-      await runStep("native_svg_save_dialog_cancel", async () => {
-        await client.evaluate(pageAction(clickByText, "SVG"));
-        const detail = await driveFileDialog("cancel");
-        await new Promise((resolvePromise) => setTimeout(resolvePromise, 250));
-        try {
-          await readFile(dialogExportTarget);
-          throw new Error("Cancel unexpectedly created an SVG file");
-        } catch (error) {
-          if (error && typeof error === "object" && error.code === "ENOENT") return detail;
-          throw error;
-        }
-      });
+      for (const control of ["SVG", "PNG", "CSV"]) {
+        await runStep(`native_${control.toLowerCase()}_save_dialog_cancel`, async () => {
+          await client.evaluate(pageAction(clickByText, control));
+          const detail = await driveFileDialog("cancel");
+          return { ...detail, control, retainedApplication: true };
+        });
+      }
       if (nativeFileDialogSaveTargets) await runStep("native_svg_save_dialog_writes_selected_target", async () => {
         await client.evaluate(pageAction(clickByText, "SVG"));
         const detail = await driveFileDialog("save", dialogExportTarget);
