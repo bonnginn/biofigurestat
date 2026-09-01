@@ -50,6 +50,7 @@ export function SpreadsheetDraftTextareaCell({
         aria-invalid={error ? "true" : textareaProps["aria-invalid"]}
         value={text}
         data-spreadsheet-cell="true"
+        data-spreadsheet-dirty={dirty ? "true" : "false"}
         onChange={(event) => edit(event.currentTarget.value)}
         onKeyDown={(event) => {
           moveSpreadsheetFocus(event);

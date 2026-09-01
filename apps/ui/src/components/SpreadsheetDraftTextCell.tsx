@@ -53,6 +53,7 @@ export function SpreadsheetDraftTextCell({
         aria-invalid={error ? "true" : inputProps["aria-invalid"]}
         value={text}
         data-spreadsheet-cell="true"
+        data-spreadsheet-dirty={dirty ? "true" : "false"}
         onChange={(event) => {
           const next = event.currentTarget.value;
           edit(next);

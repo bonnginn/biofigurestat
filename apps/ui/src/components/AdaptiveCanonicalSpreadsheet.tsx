@@ -7,6 +7,7 @@ import {
   useState,
   type ClipboardEvent,
   type CSSProperties,
+  type KeyboardEvent,
 } from "react";
 
 import {
@@ -31,6 +32,7 @@ import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
 import { SpreadsheetDraftTextCell } from "./SpreadsheetDraftTextCell";
 import { SpreadsheetDraftTextareaCell } from "./SpreadsheetDraftTextareaCell";
 import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
+import { useControlledSpreadsheetHistory } from "./useControlledSpreadsheetHistory";
 import {
   CanonicalMatrixWorksheet,
   canEditCanonicalMatrix,
@@ -1126,6 +1128,7 @@ function ExpandedAppendValueEditor({
         placeholder={t("新しい値", "New value")}
         value={text}
         data-spreadsheet-cell="true"
+        data-spreadsheet-dirty={dirty ? "true" : "false"}
         data-spreadsheet-row={gridRow}
         data-spreadsheet-column={gridColumn}
         onChange={(event) => {
@@ -1506,6 +1509,7 @@ export function AdaptiveCanonicalSpreadsheet({
   const compactModeControlRef = useRef<HTMLButtonElement | null>(null);
   const expandedDeleteControlRefs = useRef(new Map<string, HTMLButtonElement>());
   const pendingExpandedDeletionFocusRef = useRef<readonly string[] | null>(null);
+  const [historyMessage, setHistoryMessage] = useState("");
   const {
     zoom: worksheetZoom,
     setZoom: setWorksheetZoom,
@@ -1557,6 +1561,31 @@ export function AdaptiveCanonicalSpreadsheet({
     ? t("測定値を入力", "Enter measurements")
     : t("測定値を確認", "Review measurements");
 
+  const observationHistory = useControlledSpreadsheetHistory({
+    value: observations,
+    publish: (next) => onObservationsChange(next),
+  });
+  const commitObservations = (next: readonly CanonicalAdaptiveObservation[]) => {
+    if (observationHistory.commit(next, undefined)) setHistoryMessage("");
+  };
+
+  const handleHistoryShortcut = (event: KeyboardEvent<HTMLElement>) => {
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+    const key = event.key.toLocaleLowerCase("en-US");
+    const redoRequested = key === "y" || (key === "z" && event.shiftKey);
+    if (key !== "z" && key !== "y") return;
+    const target = event.target as HTMLElement;
+    if (target.dataset.spreadsheetDirty === "true") return;
+    const changed = redoRequested ? observationHistory.redo() : observationHistory.undo();
+    if (!changed) return;
+    event.preventDefault();
+    setHistoryMessage(
+      redoRequested
+        ? t("表編集をやり直しました。", "Redid the worksheet edit.")
+        : t("直前の表編集を元に戻しました。", "Undid the last worksheet edit."),
+    );
+  };
+
   useEffect(() => {
     if (continuousWorksheet && !matrixEligible && mode === "compact") {
       onModeChange("expanded");
@@ -1586,7 +1615,7 @@ export function AdaptiveCanonicalSpreadsheet({
       model.expanded.rows[rowIndex + 1]?.observationId,
       model.expanded.rows[rowIndex - 1]?.observationId,
     ].filter((candidate): candidate is string => Boolean(candidate));
-    onObservationsChange(
+    commitObservations(
       observations.filter((observation) => observation.observationId !== observationId),
     );
   };
@@ -1597,6 +1626,7 @@ export function AdaptiveCanonicalSpreadsheet({
       aria-labelledby={embedded ? undefined : headingId}
       aria-label={embedded ? interactionLabel : undefined}
       aria-describedby={modeNoteId}
+      onKeyDownCapture={handleHistoryShortcut}
     >
       <div className="adaptive-canonical-spreadsheet__heading">
         {!embedded ? (
@@ -1758,6 +1788,11 @@ export function AdaptiveCanonicalSpreadsheet({
                   "Edit IDs and values with one measurement per row. Switching views does not change values or IDs.",
                 )}
       </p>
+      {historyMessage ? (
+        <span className="sr-only" role="status" aria-live="polite">
+          {historyMessage}
+        </span>
+      ) : null}
 
       <div
         className="adaptive-canonical-spreadsheet__zoom-surface"
@@ -1773,7 +1808,7 @@ export function AdaptiveCanonicalSpreadsheet({
             observations={observations}
             conditionCombinations={conditionCombinations}
             nextObservationId={nextObservationId}
-            onObservationsChange={onObservationsChange}
+            onObservationsChange={commitObservations}
           />
         ) : null}
         {effectiveMode === "compact" ? (
@@ -1786,7 +1821,7 @@ export function AdaptiveCanonicalSpreadsheet({
               conditionCombinations={conditionCombinations}
               showExperimentDate={showExperimentDate}
               onRowChange={onWorksheetRowChange}
-              onObservationsChange={onObservationsChange}
+              onObservationsChange={commitObservations}
               onFileImport={onFileImport}
               nextObservationId={nextObservationId}
               nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
@@ -1799,7 +1834,7 @@ export function AdaptiveCanonicalSpreadsheet({
               observations={observations}
               model={model}
               columns={displayColumns}
-              onObservationsChange={onObservationsChange}
+              onObservationsChange={commitObservations}
               nextObservationId={nextObservationId}
               nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
               editable={compactEditable}
@@ -1811,7 +1846,7 @@ export function AdaptiveCanonicalSpreadsheet({
               observations={observations}
               model={model}
               columns={displayColumns}
-              onObservationsChange={onObservationsChange}
+              onObservationsChange={commitObservations}
               nextObservationId={nextObservationId}
               nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
               editable={compactEditable}
@@ -1825,7 +1860,7 @@ export function AdaptiveCanonicalSpreadsheet({
             contract={contract}
             columns={displayColumns}
             embedded={embedded}
-            onObservationsChange={onObservationsChange}
+            onObservationsChange={commitObservations}
             onDeleteObservation={deleteExpandedObservation}
             registerDeleteControl={registerExpandedDeleteControl}
             editable={editable}

@@ -106,6 +106,7 @@ function Harness({
   nextExperimentalUnitIdentity,
   embedded = false,
   readOnly = false,
+  exposeExternalReset = false,
 }: Readonly<{
   initialObservations?: readonly CanonicalAdaptiveObservation[];
   contract?: StructureContract;
@@ -119,21 +120,29 @@ function Harness({
   >;
   embedded?: boolean;
   readOnly?: boolean;
+  exposeExternalReset?: boolean;
 }>) {
   const [observations, setObservations] = useState(initialObservations);
   const [mode, setMode] = useState<"compact" | "expanded">("compact");
   return (
-    <AdaptiveCanonicalSpreadsheet
-      contract={contract}
-      observations={observations}
-      mode={mode}
-      onModeChange={setMode}
-      onObservationsChange={setObservations}
-      nextObservationId={nextObservationId}
-      nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
-      embedded={embedded}
-      readOnly={readOnly}
-    />
+    <>
+      {exposeExternalReset ? (
+        <button type="button" onClick={() => setObservations([...scalarObservations])}>
+          Replace from external source
+        </button>
+      ) : null}
+      <AdaptiveCanonicalSpreadsheet
+        contract={contract}
+        observations={observations}
+        mode={mode}
+        onModeChange={setMode}
+        onObservationsChange={setObservations}
+        nextObservationId={nextObservationId}
+        nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
+        embedded={embedded}
+        readOnly={readOnly}
+      />
+    </>
   );
 }
 
@@ -177,6 +186,51 @@ function ContinuousHarness({
 }
 
 describe("AdaptiveCanonicalSpreadsheet", () => {
+  it("undoes and redoes committed canonical cell edits with Ctrl+Z and Ctrl+Y", () => {
+    render(<Harness />);
+    const control = screen.getAllByRole("textbox", {
+      name: /Response・Condition=controlの測定値/,
+    })[0]!;
+
+    fireEvent.change(control, { target: { value: "10\n20" } });
+    fireEvent.blur(control);
+    expect(control).toHaveValue("10\n20");
+    expect(control).toHaveAttribute("data-spreadsheet-dirty", "false");
+
+    expect(fireEvent.keyDown(control, { key: "z", ctrlKey: true })).toBe(false);
+    expect(control).toHaveValue("1\n2");
+    expect(screen.getByText("直前の表編集を元に戻しました。")).toBeInTheDocument();
+
+    expect(fireEvent.keyDown(control, { key: "y", ctrlKey: true })).toBe(false);
+    expect(control).toHaveValue("10\n20");
+  });
+
+  it("leaves Ctrl+Z to the active editor while its visible draft is uncommitted", () => {
+    render(<Harness />);
+    const control = screen.getAllByRole("textbox", {
+      name: /Response・Condition=controlの測定値/,
+    })[0]!;
+
+    fireEvent.change(control, { target: { value: "10\n20" } });
+    expect(control).toHaveAttribute("data-spreadsheet-dirty", "true");
+    expect(fireEvent.keyDown(control, { key: "z", ctrlKey: true })).toBe(true);
+  });
+
+  it("clears worksheet undo history when observations are replaced by an external source", () => {
+    render(<Harness exposeExternalReset />);
+    const control = screen.getAllByRole("textbox", {
+      name: /Response・Condition=controlの測定値/,
+    })[0]!;
+
+    fireEvent.change(control, { target: { value: "10\n20" } });
+    fireEvent.blur(control);
+    fireEvent.click(screen.getByRole("button", { name: "Replace from external source" }));
+    expect(control).toHaveValue("1\n2");
+
+    expect(fireEvent.keyDown(control, { key: "z", ctrlKey: true })).toBe(true);
+    expect(control).toHaveValue("1\n2");
+  });
+
   it("switches worksheet controls to English without changing canonical observations", () => {
     act(() => setAppLocale("en"));
     const view = render(<ContinuousHarness />);

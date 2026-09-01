@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DelimitedTextSpreadsheet } from "./DelimitedTextSpreadsheet";
@@ -8,6 +9,28 @@ import { DelimitedTextSpreadsheet } from "./DelimitedTextSpreadsheet";
 describe("DelimitedTextSpreadsheet", () => {
   beforeEach(() => {
     window.localStorage.removeItem("lsaa.delimited-spreadsheet.zoom.v1");
+  });
+
+  it("undoes and redoes ordered-curve cell edits through the shared spreadsheet history", () => {
+    function Harness() {
+      const [value, setValue] = useState("Unit ID\tSeries\tX\tY\nr1\tA\t0\t0.5");
+      return (
+        <DelimitedTextSpreadsheet
+          ariaLabel="Curve sheet"
+          value={value}
+          onChange={(next) => setValue(next)}
+        />
+      );
+    }
+    render(<Harness />);
+    const yCell = screen.getByLabelText("Curve sheet 行2 列4");
+
+    fireEvent.change(yCell, { target: { value: "0.75" } });
+    expect(yCell).toHaveValue("0.75");
+    expect(fireEvent.keyDown(yCell, { key: "z", ctrlKey: true })).toBe(false);
+    expect(yCell).toHaveValue("0.5");
+    expect(fireEvent.keyDown(yCell, { key: "y", ctrlKey: true })).toBe(false);
+    expect(yCell).toHaveValue("0.75");
   });
 
   it("edits a cell while retaining the delimited table", () => {

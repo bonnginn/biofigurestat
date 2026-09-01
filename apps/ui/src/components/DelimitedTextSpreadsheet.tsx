@@ -16,6 +16,7 @@ import {
 } from "../app/spreadsheetWorkbookImport";
 import { localizedFailureMessage, localizedText, useAppLocale } from "../app/appLocale";
 import { SPREADSHEET_ZOOM_LEVELS, useSpreadsheetZoom } from "./spreadsheetZoom";
+import { useControlledSpreadsheetHistory } from "./useControlledSpreadsheetHistory";
 import "./DelimitedTextSpreadsheet.css";
 
 type ChangeSource = "cell_edit" | "clipboard" | "workbook_import";
@@ -159,11 +160,16 @@ export function DelimitedTextSpreadsheet({
   const rowCount = Math.max(minimumRows, parsed.rows.length + 1);
   const columnCount = Math.max(minimumColumns, contentColumns);
   const rows = rectangularRows(parsed.rows, rowCount, columnCount);
+  const valueHistory = useControlledSpreadsheetHistory<string, ChangeSource>({
+    value,
+    publish: (next, publication) =>
+      onChange(next, publication.kind === "commit" ? publication.metadata : "cell_edit"),
+  });
 
   const updateCell = (row: number, column: number, nextValue: string) => {
     const next = rows.map((candidate) => [...candidate]);
     next[row]![column] = nextValue;
-    onChange(serializeGrid(next, parsed.delimiter), "cell_edit");
+    valueHistory.commit(serializeGrid(next, parsed.delimiter), "cell_edit");
   };
 
   const pasteCells = (
@@ -191,22 +197,33 @@ export function DelimitedTextSpreadsheet({
         next[startRow + rowOffset]![startColumn + columnOffset] = cell;
       });
     });
-    onChange(serializeGrid(next, "\t"), "clipboard");
+    valueHistory.commit(serializeGrid(next, "\t"), "clipboard");
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if ((event.ctrlKey || event.metaKey) && !event.altKey) {
+      const key = event.key.toLocaleLowerCase("en-US");
+      const redoRequested = key === "y" || (key === "z" && event.shiftKey);
+      if (key === "z" || key === "y") {
+        const changed = redoRequested ? valueHistory.redo() : valueHistory.undo();
+        if (changed) {
+          event.preventDefault();
+          return;
+        }
+      }
+    }
     moveSpreadsheetFocus(event);
   };
 
   const applyImportedSheet = (workbook: ImportedSpreadsheetWorkbook, sheetIndex: number) => {
     const sheet = workbook.sheets[sheetIndex];
     if (!sheet) return;
-    onChange(spreadsheetRowsToTsv(sheet.rows), "workbook_import");
+    valueHistory.commit(spreadsheetRowsToTsv(sheet.rows), "workbook_import");
   };
 
   const applyAllSheetsAsExperiments = (workbook: ImportedSpreadsheetWorkbook) => {
     try {
-      onChange(spreadsheetWorkbookToStackedTsv(workbook), "workbook_import");
+      valueHistory.commit(spreadsheetWorkbookToStackedTsv(workbook), "workbook_import");
       setWorkbookImportError(null);
     } catch (error) {
       setWorkbookImportError(
