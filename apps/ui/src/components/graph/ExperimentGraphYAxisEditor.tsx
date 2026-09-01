@@ -30,21 +30,22 @@ export function ExperimentGraphYAxisEditor({
       <label className="experiment-graph-field">
         <span>{t("軸タイトル", "Axis title")}</span>
         <input
-          aria-label="Y軸タイトル"
+          aria-label={t("Y軸タイトル", "Y-axis title")}
           type="text"
           value={axes.yTitle}
-          onChange={(event) =>
-            setAxes((current) => ({ ...current, yTitle: event.target.value }))
-          }
+          onChange={(event) => setAxes((current) => ({ ...current, yTitle: event.target.value }))}
         />
       </label>
       <label className="experiment-graph-field">
-        <span>軸タイトル文字：{appearance.axisTitleFontSize}px</span>
+        <span>
+          {t("軸タイトル文字：", "Axis-title text: ")}
+          {appearance.axisTitleFontSize}px
+        </span>
         <input
           type="range"
           min="10"
           max="28"
-          aria-label="軸タイトルの文字サイズ"
+          aria-label={t("軸タイトルの文字サイズ", "Axis-title font size")}
           value={appearance.axisTitleFontSize}
           onChange={(event) =>
             setAppearance((current) => ({
@@ -55,12 +56,15 @@ export function ExperimentGraphYAxisEditor({
         />
       </label>
       <label className="experiment-graph-field">
-        <span>目盛文字：{appearance.tickFontSize}px</span>
+        <span>
+          {t("目盛文字：", "Tick text: ")}
+          {appearance.tickFontSize}px
+        </span>
         <input
           type="range"
           min="9"
           max="24"
-          aria-label="目盛ラベルの文字サイズ"
+          aria-label={t("目盛ラベルの文字サイズ", "Tick-label font size")}
           value={appearance.tickFontSize}
           onChange={(event) =>
             setAppearance((current) => ({
@@ -71,9 +75,9 @@ export function ExperimentGraphYAxisEditor({
         />
       </label>
       <label className="experiment-graph-field">
-        <span>範囲</span>
+        <span>{t("範囲", "Range")}</span>
         <select
-          aria-label="Y軸の範囲"
+          aria-label={t("Y軸の範囲", "Y-axis range")}
           value={axes.yRangeMode}
           onChange={(event) =>
             setAxes((current) => ({
@@ -82,16 +86,16 @@ export function ExperimentGraphYAxisEditor({
             }))
           }
         >
-          <option value="auto">自動</option>
-          <option value="manual">手動</option>
+          <option value="auto">{t("自動", "Automatic")}</option>
+          <option value="manual">{t("手動", "Manual")}</option>
         </select>
       </label>
       {axes.yRangeMode === "manual" ? (
         <div className="experiment-graph-range-grid">
           <label className="experiment-graph-field">
-            <span>最小</span>
+            <span>{t("最小", "Minimum")}</span>
             <input
-              aria-label="Y軸の最小値"
+              aria-label={t("Y軸の最小値", "Y-axis minimum")}
               type="number"
               value={axes.yMin ?? ""}
               onChange={(event) =>
@@ -103,9 +107,9 @@ export function ExperimentGraphYAxisEditor({
             />
           </label>
           <label className="experiment-graph-field">
-            <span>最大</span>
+            <span>{t("最大", "Maximum")}</span>
             <input
-              aria-label="Y軸の最大値"
+              aria-label={t("Y軸の最大値", "Y-axis maximum")}
               type="number"
               value={axes.yMax ?? ""}
               onChange={(event) =>
@@ -119,9 +123,9 @@ export function ExperimentGraphYAxisEditor({
         </div>
       ) : null}
       <label className="experiment-graph-field">
-        <span>スケール</span>
+        <span>{t("スケール", "Scale")}</span>
         <select
-          aria-label="Y軸スケール"
+          aria-label={t("Y軸スケール", "Y-axis scale")}
           value={axes.yScale}
           disabled={readoutShape === "proportion"}
           onChange={(event) =>
@@ -136,9 +140,9 @@ export function ExperimentGraphYAxisEditor({
         </select>
       </label>
       <label className="experiment-graph-field">
-        <span>目盛間隔</span>
+        <span>{t("目盛間隔", "Tick interval")}</span>
         <select
-          aria-label="Y軸の目盛間隔"
+          aria-label={t("Y軸の目盛間隔", "Y-axis tick interval")}
           value={axes.yTickMode}
           disabled={axes.yScale === "log10"}
           onChange={(event) =>
@@ -148,18 +152,18 @@ export function ExperimentGraphYAxisEditor({
             }))
           }
         >
-          <option value="auto">自動（丸い数値）</option>
-          <option value="manual">手動</option>
+          <option value="auto">{t("自動（丸い数値）", "Automatic (rounded values)")}</option>
+          <option value="manual">{t("手動", "Manual")}</option>
         </select>
       </label>
       {axes.yTickMode === "manual" && axes.yScale === "linear" ? (
         <label className="experiment-graph-field">
-          <span>目盛間隔の値</span>
+          <span>{t("目盛間隔の値", "Tick-interval value")}</span>
           <input
             type="number"
             min="0"
             step="any"
-            aria-label="Y軸目盛の間隔値"
+            aria-label={t("Y軸目盛の間隔値", "Y-axis tick-interval value")}
             value={axes.yTickInterval ?? ""}
             onChange={(event) =>
               setAxes((current) => ({
