@@ -511,6 +511,12 @@ and legend anchors therefore use the same left/top/right/bottom contract instead
 canvas with different semantics. The helper has a direct exact-bounds test, and the 62 focused
 layout/renderer/Workbench tests, UI typecheck, and focused lint pass.
 
+The ordinary, scatter, and categorical Graph-creation previews now consume that same rectangle
+contract for axis endpoints, point scaling, bar baselines, and label anchors. Existing preview
+dimensions and data domains are unchanged; future margin changes no longer require several
+independent coordinate edits in one preview. The focused preview/layout group passes 9 tests with
+UI typecheck and focused lint.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
