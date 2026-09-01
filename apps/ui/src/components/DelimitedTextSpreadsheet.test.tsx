@@ -317,6 +317,49 @@ describe("DelimitedTextSpreadsheet", () => {
     expect(screen.getByRole("note")).toHaveTextContent("統計的なnであることは自動判定しません");
   });
 
+  it("imports a selected A1 range and flattens two header rows", async () => {
+    const onChange = vi.fn();
+    const workbookImporter = vi.fn(async () => ({
+      fileName: "layout.xlsx",
+      sheets: [
+        {
+          name: "Plate export",
+          rows: [
+            ["notes", "Metadata", "", "Treatment", ""],
+            ["ignore", "Sample ID", "Date", "Vehicle", "Drug A"],
+            ["outside", "S01", "2026-09-01", "1.0", "1.5"],
+            ["outside", "S02", "2026-09-02", "1.1", "1.6"],
+          ],
+        },
+      ],
+    }));
+    render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Graph sheet"
+        value={"X\tY"}
+        onChange={onChange}
+        workbookImporter={workbookImporter}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "XLS / XLSXを直接読み込む" }));
+    await waitFor(() => expect(workbookImporter).toHaveBeenCalledOnce());
+    fireEvent.change(screen.getByLabelText("読み込む表範囲"), {
+      target: { value: "B1:E4" },
+    });
+    fireEvent.change(screen.getByLabelText("見出し行の数"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: "この範囲を読み込む" }));
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      [
+        "Metadata / Sample ID\tMetadata / Date\tTreatment / Vehicle\tTreatment / Drug A",
+        "S01\t2026-09-01\t1.0\t1.5",
+        "S02\t2026-09-02\t1.1\t1.6",
+      ].join("\n"),
+      "workbook_import",
+    );
+  });
+
   it("keeps the existing grid when workbook selection is cancelled or fails", async () => {
     const onChange = vi.fn();
     const workbookImporter = vi

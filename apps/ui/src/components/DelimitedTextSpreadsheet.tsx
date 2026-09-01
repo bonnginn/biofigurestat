@@ -10,6 +10,9 @@ import {
   importLocalSpreadsheetWorkbook,
   spreadsheetWorkbookImportAvailable,
   spreadsheetRowsToTsv,
+  parseSpreadsheetA1Range,
+  spreadsheetSheetDefaultRange,
+  spreadsheetSheetSelectionToTsv,
   spreadsheetWorkbookToStackedTsv,
   type ImportedSpreadsheetWorkbook,
   type SpreadsheetWorkbookImporter,
@@ -151,6 +154,8 @@ export function DelimitedTextSpreadsheet({
     null,
   );
   const [selectedSheetIndex, setSelectedSheetIndex] = useState(0);
+  const [workbookRange, setWorkbookRange] = useState("");
+  const [workbookHeaderRowCount, setWorkbookHeaderRowCount] = useState<1 | 2 | 3>(1);
   const [workbookImportError, setWorkbookImportError] = useState<string | null>(null);
   const [workbookImporting, setWorkbookImporting] = useState(false);
   const workbookImportEnabled =
@@ -218,7 +223,36 @@ export function DelimitedTextSpreadsheet({
   const applyImportedSheet = (workbook: ImportedSpreadsheetWorkbook, sheetIndex: number) => {
     const sheet = workbook.sheets[sheetIndex];
     if (!sheet) return;
+    const range = spreadsheetSheetDefaultRange(sheet);
+    setWorkbookRange(range);
+    setWorkbookHeaderRowCount(1);
     valueHistory.commit(spreadsheetRowsToTsv(sheet.rows), "workbook_import");
+    setWorkbookImportError(null);
+  };
+
+  const applyImportedRange = () => {
+    const sheet = importedWorkbook?.sheets[selectedSheetIndex];
+    if (!sheet) return;
+    try {
+      const selection = parseSpreadsheetA1Range(
+        workbookRange,
+        sheet,
+        workbookHeaderRowCount,
+      );
+      valueHistory.commit(
+        spreadsheetSheetSelectionToTsv(sheet, selection),
+        "workbook_import",
+      );
+      setWorkbookImportError(null);
+    } catch (error) {
+      setWorkbookImportError(
+        failure(
+          error,
+          "指定した表範囲を読み込めませんでした。",
+          "The selected worksheet range could not be imported.",
+        ),
+      );
+    }
   };
 
   const applyAllSheetsAsExperiments = (workbook: ImportedSpreadsheetWorkbook) => {
@@ -419,9 +453,37 @@ export function DelimitedTextSpreadsheet({
           </>
         ) : null}
         {importedWorkbook ? (
-          <span role="status">
-            {importedWorkbook.fileName} / {importedWorkbook.sheets[selectedSheetIndex]?.name}
-          </span>
+          <>
+            <span role="status">
+              {importedWorkbook.fileName} / {importedWorkbook.sheets[selectedSheetIndex]?.name}
+            </span>
+            <label>
+              {t("表範囲", "Table range")}
+              <input
+                aria-label={t("読み込む表範囲", "Worksheet range to import")}
+                value={workbookRange}
+                placeholder="A1:D20"
+                onChange={(event) => setWorkbookRange(event.currentTarget.value)}
+              />
+            </label>
+            <label>
+              {t("見出し行", "Header rows")}
+              <select
+                aria-label={t("見出し行の数", "Number of header rows")}
+                value={workbookHeaderRowCount}
+                onChange={(event) =>
+                  setWorkbookHeaderRowCount(Number(event.currentTarget.value) as 1 | 2 | 3)
+                }
+              >
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+              </select>
+            </label>
+            <button type="button" onClick={applyImportedRange}>
+              {t("この範囲を読み込む", "Import this range")}
+            </button>
+          </>
         ) : null}
         {(importedWorkbook?.sheets[selectedSheetIndex]?.formulaCellCount ?? 0) > 0 ? (
           <p role="note">
