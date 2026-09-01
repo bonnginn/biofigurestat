@@ -57,6 +57,12 @@ safe experiment-detail revision, canonical worksheet undo/redo, retained control
 comparison access, Kaplan–Meier font sizing, and adaptive Y-axis title spacing. These source changes
 have not replaced the published Alpha binaries.
 
+The final source gate ran the 193-file / 1,304-test UI suite once. It produced 1,303 passes and one
+stale test expectation for the Japanese `概要` tab; the corrected focused workflow passes. Full
+workspace typecheck, UI lint, production UI build, the 9-test native-harness self-suite, and the
+release bundle verifier pass. The expensive full UI suite was intentionally not repeated after a
+one-line locale-only test correction.
+
 ## Product invariants
 
 - The product is experiment-first; method selection follows declared experimental structure.

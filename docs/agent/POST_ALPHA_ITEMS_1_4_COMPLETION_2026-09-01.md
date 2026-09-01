@@ -45,7 +45,10 @@
 - 各commitでfocused UI testsとUI typecheckを実行。
 - Graph layout / Workbench対象test、legacy Japanese diagnostic localization、新規測定フォーム英語表示はPASS。
 - Workbench全体61件の実行では60件PASS、今回と無関係な非同期engine mock 1件が結果待ちで失敗し、同対象レイアウトtestは単独PASSした。製品回帰とは分類しない。
-- 最終full gateは本記録更新後に一度だけ実行し、結果を追記する。
+- 最終full UI gateは193 files / 1,304 testsを一度だけ実行し、1,303 testsがPASSした。唯一の失敗は日本語タブ名を`Overview`から`概要`へ直した後に残った旧期待値で、期待値修正後の対象workflowはPASSした。6分のfull suiteは重複実行していない。
+- 全workspace typecheck、full UI lint、production UI buildはPASS。
+- native harness自己テストは9/9 PASS。release bundle verifierもPASS。
+- Reactの既存非同期テストに`act(...)` warningが残るが、assertion failureや製品挙動の失敗ではない。別のtest-maintenance debtとして扱う。
 
 ## 次の開発範囲
 
