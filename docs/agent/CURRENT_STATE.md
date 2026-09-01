@@ -444,6 +444,21 @@ scientific-data, save/open-content, or route-family assertion. UI typecheck, ful
 production build pass; the initial chunk is 264.45 kB (gzip 81.20 kB) with no build advisory.
 The project package migration/round-trip suite also passes 9 files / 66 tests.
 
+Graph type changes and display-preset application now share one presentation-only transition
+boundary. Changing Graph type still restores the shape-appropriate layer defaults, and a
+multi-condition time-series still restores a visible colorblind legend when line display requires
+it; presets retain their existing layer and appearance mapping. Data, condition identities, and
+analysis state are not inputs to this boundary. The workbench is 942 lines, versus 6,922 at the
+Public Alpha tag. Its existing 57 focused Graph tests, UI typecheck, and focused lint pass without
+adding an implementation-move test.
+
+The adaptive expanded-sheet append cell now uses the same draft lifecycle as the other canonical
+Spreadsheet cells. A valid blur appends exactly one observation and clears the entry draft;
+invalid input and rectangular-paste problems remain visible without discarding the typed value.
+Observation construction, identity factories, numeric parsing, and canonical updates remain in
+the adaptive sheet. The existing Adaptive Spreadsheet and direct draft-lifecycle suites pass 32
+tests; no new test case was needed because the affected contracts were already exercised.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
@@ -465,13 +480,15 @@ The project package migration/round-trip suite also passes 9 files / 66 tests.
   controls are now separate tested boundaries. Time-analysis selection, factor-by-time scope,
   analysis-set selection, Statistics annotation display, canvas toolbar/export controls, semantic
   captions, inspector target/layer shortcuts, data-editor composition, renderer selection,
-  presentation state, data-selection state, analysis/annotation state, display presets, active
+  presentation state, data-selection state, analysis/annotation state, display-preset/type
+  transitions, active
   layer descriptions, active scope, and persisted-snapshot projection are also separated.
-  Remaining analysis-assessment/view-model orchestration is the next safe extraction boundary.
+  Remaining user export/copy action composition and benchmark finalization are the next bounded
+  orchestration candidates; they must retain native cancellation and evidence semantics.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
-  display, and ID/scalar draft synchronization now use shared primitives. Remaining specialized
-  cell-editor presentation is the next safe commonization boundary.
+  display, and ID/scalar/append-value draft synchronization now use shared primitives. Remaining
+  specialized cell-editor presentation is the next safe commonization boundary.
 - Route-level code splitting now defers the Graph workbench from Data and Statistics entry paths.
   The remaining large initial and shared graph-layout chunks require bounded dependency analysis;
   further splitting must preserve renderer and export parity.
