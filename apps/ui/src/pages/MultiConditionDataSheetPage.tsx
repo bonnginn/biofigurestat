@@ -81,7 +81,7 @@ import {
   type LegacyWorkflowTabId,
 } from "./legacyDataSheetShared";
 import { LegacyDataSheetWorkflowTabs } from "./LegacyDataSheetWorkflowTabs";
-import { LegacyProjectMetadataForm } from "./LegacyProjectMetadataForm";
+import { LegacyProjectSavePanel } from "./LegacyProjectSavePanel";
 import {
   formatProportionPercentage,
   parseSpreadsheetNumber,
@@ -1373,49 +1373,17 @@ export function MultiConditionDataSheetPage({
         </div>
       )}
       {activeTab === "save" && (
-        <div
-          id="multi-workflow-panel-save"
-          className="workflow-panel-stack"
-          role="tabpanel"
-          aria-labelledby="multi-workflow-tab-save"
-        >
-          <details className="metadata-disclosure" open>
-            <summary>プロジェクト情報</summary>
-            <LegacyProjectMetadataForm value={metadataDraft} onChange={setMetadataDraft} />
-          </details>
-          <section className="sheet-actions" aria-label="プロジェクトの保存">
-            <div>
-              <strong>プロジェクトを保存</strong>
-              <p>検証済みデータと実行済み解析を保存し、後から編集できます。</p>
-              <p className="project-action-note">
-                保存後の入力編集は新しいデータ履歴として記録され、以前の解析は再計算が必要になります。
-              </p>
-            </div>
-            <button
-              className="save-project-button"
-              type="button"
-              disabled={
-                !saveProject ||
-                !validated ||
-                !metadataDraftIsComplete(metadataDraft) ||
-                saveStatus === "saving"
-              }
-              onClick={saveCurrentProject}
-            >
-              {saveStatus === "saving" ? "保存中…" : "プロジェクトを保存"}
-            </button>
-          </section>
-          {saveStatus === "success" && (
-            <p className="project-action-message project-action-message--success" role="status">
-              プロジェクトを保存しました。
-            </p>
-          )}
-          {saveError && (
-            <p className="project-action-message project-action-message--error" role="alert">
-              {saveError}
-            </p>
-          )}
-        </div>
+        <LegacyProjectSavePanel
+          idPrefix="multi-workflow"
+          metadata={metadataDraft}
+          onMetadataChange={setMetadataDraft}
+          canSave={Boolean(saveProject)}
+          validated={Boolean(validated)}
+          saveStatus={saveStatus}
+          saveError={saveError}
+          onSave={saveCurrentProject}
+          mode="multi-condition"
+        />
       )}
     </div>
   );

@@ -78,7 +78,7 @@ import {
   type LegacyWorkflowTabId,
 } from "./legacyDataSheetShared";
 import { LegacyDataSheetWorkflowTabs } from "./LegacyDataSheetWorkflowTabs";
-import { LegacyProjectMetadataForm } from "./LegacyProjectMetadataForm";
+import { LegacyProjectSavePanel } from "./LegacyProjectSavePanel";
 import {
   formatProportionPercentage,
   parseSpreadsheetNumber,
@@ -1781,57 +1781,18 @@ export function DataSheetPage({
       )}
 
       {activeTab === "save" && (
-        <div
-          id="workflow-panel-save"
-          className="workflow-panel-stack"
-          role="tabpanel"
-          aria-labelledby="workflow-tab-save"
-        >
-          <details className="metadata-disclosure" open>
-            <summary>プロジェクト情報</summary>
-            <LegacyProjectMetadataForm value={metadataDraft} onChange={setMetadataDraft} />
-          </details>
-          <section className="sheet-actions" aria-label="プロジェクトの保存">
-            <div>
-              <strong>プロジェクトを保存</strong>
-              <p>検証済みデータと実行済み解析を、再現可能なプロジェクトとして保存します。</p>
-            </div>
-            <button
-              className="save-project-button"
-              type="button"
-              disabled={
-                !saveProject ||
-                !validated ||
-                !metadataDraftIsComplete(metadataDraft) ||
-                saveStatus === "saving"
-              }
-              onClick={saveCurrentProject}
-            >
-              {saveStatus === "saving" ? "プロジェクトを保存中…" : "プロジェクトを保存"}
-            </button>
-          </section>
-          {!saveProject && (
-            <p className="project-action-note" role="status">
-              デスクトップのプロジェクト保存機能が未接続のため、保存できません。入力シートはメモリ上に保持されています。
-            </p>
-          )}
-          {saveStatus === "success" && (
-            <p className="project-action-message project-action-message--success" role="status">
-              プロジェクトを保存しました。
-            </p>
-          )}
-          {saveStatus === "error" && saveError && (
-            <p className="project-action-message project-action-message--error" role="alert">
-              {saveError} 入力したデータは保持されています。
-            </p>
-          )}
-          {lastSavedState && (
-            <p className="project-action-note" role="note">
-              保存履歴：現在の生データ改訂 {lastSavedState.activeRawRevisionId}
-              。入力を編集すると、既存の解析とグラフは再計算が必要になります。
-            </p>
-          )}
-        </div>
+        <LegacyProjectSavePanel
+          idPrefix="workflow"
+          metadata={metadataDraft}
+          onMetadataChange={setMetadataDraft}
+          canSave={Boolean(saveProject)}
+          validated={Boolean(validated)}
+          saveStatus={saveStatus}
+          saveError={saveError}
+          onSave={saveCurrentProject}
+          mode="two-condition"
+          activeRawRevisionId={lastSavedState?.activeRawRevisionId}
+        />
       )}
     </div>
   );
