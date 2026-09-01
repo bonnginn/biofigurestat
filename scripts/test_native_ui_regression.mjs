@@ -69,11 +69,11 @@ test("drives only the exact spawned process native Save dialog with encoded path
   assert.match(saveCommand.at(-1), /UIAutomationClient/);
   assert.match(saveCommand.at(-1), /FromBase64String/);
   assert.doesNotMatch(saveCommand.at(-1), /日本語|quote/);
-  assert.match(saveCommand.at(-1), /AutomationIdProperty, '1001'/);
-  assert.match(saveCommand.at(-1), /AutomationIdProperty, '1'/);
+  assert.match(saveCommand.at(-1), /AutomationIdProperty,\s*\n\s*'1001'/);
+  assert.match(saveCommand.at(-1), /AutomationIdProperty,\s*\n\s*'1'/);
 
   const cancelCommand = windowsFileDialogCommand(4242, "cancel");
-  assert.match(cancelCommand.at(-1), /AutomationIdProperty, '2'/);
+  assert.match(cancelCommand.at(-1), /AutomationIdProperty,\s*\n\s*'2'/);
   assert.throws(() => windowsFileDialogCommand(0, "cancel"), /positive integer/);
   assert.throws(() => windowsFileDialogCommand(4242, "save", "figure.svg"), /must be absolute/);
   assert.throws(() => windowsFileDialogCommand(4242, "overwrite"), /Unsupported/);
@@ -177,6 +177,20 @@ test("separates a missing WebView inspection channel from a product regression",
     classifyNativeRegressionFailure(
       new Error("FILE_DIALOG_NOT_FOUND: native Save dialog did not appear"),
       [{ name: "native_svg_save_dialog_cancel", status: "fail" }],
+    ),
+    "PRODUCT_REGRESSION",
+  );
+  assert.equal(
+    classifyNativeRegressionFailure(
+      new Error("Native WebView did not expose a CDP target"),
+      [{ name: "windows_lsa_command_line_open", status: "fail" }],
+    ),
+    "HARNESS_INFRASTRUCTURE_BLOCKED",
+  );
+  assert.equal(
+    classifyNativeRegressionFailure(
+      new Error("Timed out waiting for .lsa command-line open with editable data"),
+      [{ name: "windows_lsa_command_line_open", status: "fail" }],
     ),
     "PRODUCT_REGRESSION",
   );

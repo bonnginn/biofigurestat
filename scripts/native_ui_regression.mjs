@@ -179,6 +179,12 @@ export function classifyNativeRegressionFailure(error, steps) {
     return "HARNESS_INFRASTRUCTURE_BLOCKED";
   }
   if (
+    failedStep === "windows_lsa_command_line_open" &&
+    /CDP|inspection|exited before WebView/i.test(message)
+  ) {
+    return "HARNESS_INFRASTRUCTURE_BLOCKED";
+  }
+  if (
     failedStep === "isolated_english_session" &&
     /localStorage.*Access is denied|about:blank|opaque origin/i.test(message)
   ) {
@@ -658,6 +664,10 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
     outputDirectory,
     `native-save-dialog-export-${Date.now()}.svg`,
   );
+  const associationProjectTarget = join(
+    outputDirectory,
+    `native-file-association-${Date.now()}.lsa`,
+  );
   const nativeOutput = [];
   const child = spawn(executable, [], {
     cwd: ROOT,
@@ -826,6 +836,15 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         if (!written.includes("<svg")) throw new Error("Native Save dialog wrote invalid SVG");
         return { ...detail, target: dialogExportTarget, bytes: Buffer.byteLength(written) };
       });
+      await runStep("native_project_save_dialog_writes_lsa", async () => {
+        await client.evaluate(pageAction(clickByText, "Save"));
+        const detail = await driveFileDialog("save", associationProjectTarget);
+        const written = await readFile(associationProjectTarget);
+        if (written.byteLength < 1_024) {
+          throw new Error("Native project Save dialog wrote an unexpectedly small .lsa package");
+        }
+        return { ...detail, target: associationProjectTarget, bytes: written.byteLength };
+      });
       await client.evaluate(pageAction(clickByText, "Review statistics"));
       await waitFor(
         client,
@@ -927,6 +946,57 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
       });
       return { exited: true };
     });
+    await runStep("windows_lsa_command_line_open", async () => {
+      const associationPort = await reservePort();
+      const associationOutput = [];
+      const associationChild = spawn(executable, [associationProjectTarget], {
+        cwd: ROOT,
+        env: {
+          ...process.env,
+          WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${associationPort} --remote-allow-origins=*`,
+          WEBVIEW2_USER_DATA_FOLDER: profileDirectory,
+        },
+        windowsHide: true,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      const collectAssociationOutput = (chunk) => associationOutput.push(String(chunk));
+      associationChild.stdout?.on("data", collectAssociationOutput);
+      associationChild.stderr?.on("data", collectAssociationOutput);
+      let associationClient;
+      try {
+        const target = await waitForTarget(associationPort, timeoutMs, associationChild);
+        const connection = await connectToStableWebview(
+          associationPort,
+          target,
+          timeoutMs,
+          associationChild,
+        );
+        associationClient = connection.client;
+        await waitFor(
+          associationClient,
+          `(() => {
+            const value = document.querySelector('[data-testid="graph-only-cell-1-0"]')?.value;
+            const tabs = [...document.querySelectorAll('[role="tab"]')];
+            const enabled = (name) => tabs.some((tab) => tab.textContent?.trim() === name && !tab.disabled);
+            return value === "Vehicle" && enabled("Graph") && enabled("Statistics");
+          })()`,
+          ".lsa command-line open with editable data and enabled Graph/Statistics",
+          timeoutMs,
+        );
+        await captureScreenshot(
+          associationClient,
+          join(outputDirectory, "lsa-command-line-open.png"),
+        );
+        return { target: associationProjectTarget, restoredValue: "Vehicle" };
+      } finally {
+        associationClient?.close();
+        if (associationChild.exitCode === null && !associationChild.killed) associationChild.kill();
+        const output = associationOutput.join("");
+        if (output) {
+          await writeFile(join(outputDirectory, "lsa-command-line-open-output.txt"), output, "utf8");
+        }
+      }
+    });
   } catch (error) {
     const output = nativeOutput.join("");
     if (output) await writeFile(join(outputDirectory, "native-output.txt"), output, "utf8");
@@ -945,7 +1015,7 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
     client?.close();
     if (child.exitCode === null && !child.killed) child.kill();
   }
-  return { steps, profileDirectory, exportTarget };
+  return { steps, profileDirectory, exportTarget, dialogExportTarget, associationProjectTarget };
 }
 
 async function runMacAccessibility(action, names = [], value = "") {
