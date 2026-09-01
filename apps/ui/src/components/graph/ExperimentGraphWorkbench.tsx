@@ -48,11 +48,8 @@ import { useExperimentGraphStateSnapshot } from "./useExperimentGraphStateSnapsh
 import { useExperimentGraphPresentationState } from "./useExperimentGraphPresentationState";
 import { useExperimentGraphDataSelectionState } from "./useExperimentGraphDataSelectionState";
 import { useExperimentGraphDerivedData } from "./useExperimentGraphDerivedData";
+import { useExperimentGraphUserActions } from "./useExperimentGraphUserActions";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
-import {
-  type GraphExportFeedback,
-} from "./experimentGraphUserExports";
-import { createExperimentGraphUserActions } from "./experimentGraphUserActions";
 import {
   analysisTestAnnotationLabel,
   graphAnnotationContext,
@@ -166,8 +163,6 @@ export function ExperimentGraphWorkbench({
     initialAnalysis: initialState?.analysis,
     clearAnalysis: () => setAnalysis(null),
   });
-  const [copyStatus, setCopyStatus] = useState<string | null>(null);
-  const [pngExportFeedback, setPngExportFeedback] = useState<GraphExportFeedback | null>(null);
   const [benchmarkCaptureStatus, setBenchmarkCaptureStatus] = useState<string | null>(null);
   const benchmarkRun = useBenchmarkRun();
   const methodsText = useMemo(
@@ -423,7 +418,11 @@ export function ExperimentGraphWorkbench({
     matched: draft.conditionAssignment.kind === "matched",
     semanticReadiness,
   }, locale);
-  const userActions = createExperimentGraphUserActions({
+  const {
+    copyStatus,
+    exportFeedback: pngExportFeedback,
+    actions: userActions,
+  } = useExperimentGraphUserActions({
     getSvg: () => svgRef.current,
     readout,
     draft,
@@ -432,8 +431,6 @@ export function ExperimentGraphWorkbench({
     selectedTimePointIds,
     series,
     locale,
-    setCopyStatus,
-    setExportFeedback: setPngExportFeedback,
   });
   const descriptiveBenchmarkRun = draft.analysisIntent.kind === "single_cohort";
   const descriptiveMethodsText = [
