@@ -8,7 +8,6 @@ import { type WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import { useBenchmarkRun } from "../../app/benchmarkEvaluation";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
-import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { ExperimentGraphCanvasCaption } from "./ExperimentGraphCanvasCaption";
 import { ExperimentGraphCanvasToolbar } from "./ExperimentGraphCanvasToolbar";
 import { ExperimentGraphDataEditor } from "./ExperimentGraphDataEditor";
@@ -16,12 +15,8 @@ import { ExperimentGraphDataSummary } from "./ExperimentGraphDataSummary";
 import { ExperimentGraphInspectorTarget } from "./ExperimentGraphInspectorTarget";
 import { ExperimentGraphDistributionEditor } from "./ExperimentGraphDistributionEditor";
 import { ExperimentGraphSeriesEditor } from "./ExperimentGraphSeriesEditor";
-import { ExperimentGraphTimeAnalysisEditor } from "./ExperimentGraphTimeAnalysisEditor";
 import { ExperimentGraphCanvasRenderer } from "./ExperimentGraphCanvasRenderer";
 import { ExperimentGraphAnnotationEditor } from "./ExperimentGraphAnnotationEditor";
-import {
-  ExperimentGraphAnalysisScopeNotice,
-} from "./ExperimentGraphAnalysisScopeNotice";
 import { ExperimentGraphAnalysisSetEditor } from "./ExperimentGraphAnalysisSetEditor";
 import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
 import { createExperimentGraphDataTransitions } from "./experimentGraphDataTransitions";
@@ -35,6 +30,7 @@ import { ExperimentGraphErrorBarEditor } from "./ExperimentGraphErrorBarEditor";
 import { ExperimentGraphLegendEditor } from "./ExperimentGraphLegendEditor";
 import { ExperimentGraphRawDotsEditor } from "./ExperimentGraphRawDotsEditor";
 import { ExperimentGraphAxisInspector } from "./ExperimentGraphAxisInspector";
+import { ExperimentGraphStatisticsInspector } from "./ExperimentGraphStatisticsInspector";
 import {
   createGraphStatisticsRelationshipContext,
   createExperimentGraphMethodsText,
@@ -823,69 +819,71 @@ export function ExperimentGraphWorkbench({
           ) : null}
 
           {inspectorTarget === "statistics" ? (
-            <>
-              {draft.time.points.length > 1 ? (
-                <ExperimentGraphTimeAnalysisEditor
-                  time={draft.time}
-                  plan={timeAnalysis}
-                  analysisTimePointId={analysisTimePointId}
-                  onKindChange={dataTransitions.changeTimeAnalysisKind}
-                  onPlanChange={dataTransitions.changeTimeAnalysisPlan}
-                  onAnalysisTimePointChange={dataTransitions.changeAnalysisTimePoint}
-                />
-              ) : null}
-              {analysisScopePresentation.showNotice ? (
-                <ExperimentGraphAnalysisScopeNotice
-                  time={draft.time}
-                  plan={timeAnalysis}
-                  analysisTimePointId={analysisTimePointId}
-                  hasFactorByTimeStructure={hasFactorByTimeStructure}
-                  varyingFactorLabels={varyingStatisticalAttributes.map(({ label }) => label)}
-                />
-              ) : null}
-              {!analysisScopePresentation.blockStatistics ? (
-                <GraphStatisticsPanel
-                    assessment={analysisAssessment}
-                    design={recommendationDesign}
-                    outcomeId={selectedReadoutId}
-                    relationshipAlreadyDeclared={relationshipAlreadyDeclared}
-                    independentNestedSourceContext={independentNestedSource}
-                    onCorrectionRequested={onAnalysisCorrection}
-                    matchedRelationship={matchedRelationship}
-                    analysisRunner={analysisRunner}
-                    analysisAvailable={analysisAvailable}
-                    initialAnalysis={initialState?.analysis}
-                    onAnalysisChange={setAnalysis}
-                    methodsText={methodsText}
-                    correlationMethod={correlationMethod}
-                    onCorrelationMethodChange={(method) =>
-                      changeCorrelationMethod(
-                        method,
-                        analysisAssessment.recommendedMethod ?? method,
-                      )
+            <ExperimentGraphStatisticsInspector
+              timeAnalysis={
+                draft.time.points.length > 1
+                  ? {
+                      time: draft.time,
+                      plan: timeAnalysis,
+                      analysisTimePointId,
+                      onKindChange: dataTransitions.changeTimeAnalysisKind,
+                      onPlanChange: dataTransitions.changeTimeAnalysisPlan,
+                      onAnalysisTimePointChange: dataTransitions.changeAnalysisTimePoint,
                     }
-                    selectedMethod={selectedStatisticalMethod}
-                    onSelectedMethodChange={(method) =>
-                      changeSelectedMethod(method, analysisAssessment.recommendedMethod ?? method)
+                  : null
+              }
+              scopeNotice={
+                analysisScopePresentation.showNotice
+                  ? {
+                      time: draft.time,
+                      plan: timeAnalysis,
+                      analysisTimePointId,
+                      hasFactorByTimeStructure,
+                      varyingFactorLabels: varyingStatisticalAttributes.map(({ label }) => label),
                     }
-                    contrastIntent={contrastIntent}
-                    conditionOptions={activeAnalysisConditions.map(({ id, label }) => ({
-                      id,
-                      label,
-                    }))}
-                    plannedContrastConditionIds={plannedContrastConditionIds}
-                    onPlannedContrastConditionIdsChange={changePlannedContrastConditionIds}
-                    onContrastIntentChange={changeContrastIntent}
-                    analysisContextKey={analysisContextKey}
-                />
-              ) : null}
-              {annotationEditorProps ? (
-                <ExperimentGraphAnnotationEditor
-                  {...annotationEditorProps}
-                  variant="display-only"
-                />
-              ) : null}
-            </>
+                  : null
+              }
+              statisticsPanel={
+                analysisScopePresentation.blockStatistics
+                  ? null
+                  : {
+                      assessment: analysisAssessment,
+                      design: recommendationDesign,
+                      outcomeId: selectedReadoutId,
+                      relationshipAlreadyDeclared,
+                      independentNestedSourceContext: independentNestedSource,
+                      onCorrectionRequested: onAnalysisCorrection,
+                      matchedRelationship,
+                      analysisRunner,
+                      analysisAvailable,
+                      initialAnalysis: initialState?.analysis,
+                      onAnalysisChange: setAnalysis,
+                      methodsText,
+                      correlationMethod,
+                      onCorrelationMethodChange: (method) =>
+                        changeCorrelationMethod(
+                          method,
+                          analysisAssessment.recommendedMethod ?? method,
+                        ),
+                      selectedMethod: selectedStatisticalMethod,
+                      onSelectedMethodChange: (method) =>
+                        changeSelectedMethod(
+                          method,
+                          analysisAssessment.recommendedMethod ?? method,
+                        ),
+                      contrastIntent,
+                      conditionOptions: activeAnalysisConditions.map(({ id, label }) => ({
+                        id,
+                        label,
+                      })),
+                      plannedContrastConditionIds,
+                      onPlannedContrastConditionIdsChange: changePlannedContrastConditionIds,
+                      onContrastIntentChange: changeContrastIntent,
+                      analysisContextKey,
+                    }
+              }
+              annotation={annotationEditorProps}
+            />
           ) : null}
         </aside>
       </div>
