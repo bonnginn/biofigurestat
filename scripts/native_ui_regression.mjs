@@ -334,7 +334,7 @@ if ($action -eq 'cancel') {
   for ($candidateIndex = 0; $candidateIndex -lt $editCandidates.Count; $candidateIndex += 1) {
     $candidate = $editCandidates[$candidateIndex]
     $pattern = $null
-    if ($candidate.TryGetCurrentPattern([Windows.Automation.ValuePattern]::Pattern, [ref]$pattern)) {
+    if ($candidate.TryGetCurrentPattern([Windows.Automation.ValuePattern]::Pattern, [ref]$pattern) -and -not $pattern.Current.IsReadOnly) {
       $isSearch = $candidate.Current.AutomationId -match 'Search' -or $candidate.Current.Name -match 'Search|検索'
       $editable += @{
         element = $candidate
@@ -349,28 +349,33 @@ if ($action -eq 'cancel') {
     $selectedEdit = @($editable | Where-Object { -not $_.isSearch } | Select-Object -Last 1)[0]
   }
   if ($null -eq $selectedEdit) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: writable file name input' }
-  $selectedEdit.pattern.SetValue($target)
   $selectedEditName = $selectedEdit.element.Current.Name
   $selectedEditId = $selectedEdit.element.Current.AutomationId
-  $saveId = [Windows.Automation.PropertyCondition]::new(
-    [Windows.Automation.AutomationElement]::AutomationIdProperty,
-    '1'
-  )
-  $save = $dialog.FindFirst(
-    [Windows.Automation.TreeScope]::Descendants,
-    $saveId
-  )
-  if ($null -eq $save) {
-    $saveNames = [Windows.Automation.OrCondition]::new(
-      [Windows.Automation.Condition[]]@(
-        [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, 'Save'),
-        [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, '保存')
-      )
-    )
-    $save = $dialog.FindFirst([Windows.Automation.TreeScope]::Descendants, $saveNames)
+  try {
+    $selectedEdit.pattern.SetValue($target)
+  } catch {
+    throw ('FILE_DIALOG_CONTROL_NOT_FOUND: SetValue failed for ' + $selectedEditId + ': ' + $_.Exception.Message)
   }
-  if ($null -eq $save) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: Save button' }
-  $save.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
+  $buttonType = [Windows.Automation.PropertyCondition]::new(
+    [Windows.Automation.AutomationElement]::ControlTypeProperty,
+    [Windows.Automation.ControlType]::Button
+  )
+  $saveButtons = @($dialog.FindAll([Windows.Automation.TreeScope]::Descendants, $buttonType))
+  $saveAction = $null
+  foreach ($candidate in $saveButtons) {
+    if ($candidate.Current.AutomationId -ne '1' -and $candidate.Current.Name -notmatch 'Save|保存') { continue }
+    $pattern = $null
+    if ($candidate.TryGetCurrentPattern([Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) {
+      $saveAction = $pattern
+      break
+    }
+  }
+  if ($null -eq $saveAction) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: invokable Save button' }
+  try {
+    $saveAction.Invoke()
+  } catch {
+    throw ('FILE_DIALOG_CONTROL_NOT_FOUND: Save invoke failed: ' + $_.Exception.Message)
+  }
 }
 $result = @{ ok = $true; action = $action; dialog = $dialog.Current.Name }
 if ($action -eq 'save') {
