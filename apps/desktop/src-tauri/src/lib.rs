@@ -69,15 +69,39 @@ pub fn run() {
             let save_as = MenuItemBuilder::with_id("project-save-as", "Save As…")
                 .accelerator("CmdOrCtrl+Shift+S")
                 .build(app)?;
+            #[cfg(target_os = "macos")]
+            let exit = MenuItemBuilder::with_id("app-exit", "Quit BioFigureStat")
+                .accelerator("Cmd+Q")
+                .build(app)?;
+            #[cfg(not(target_os = "macos"))]
             let exit = MenuItemBuilder::with_id("app-exit", "終了").build(app)?;
             let file_menu_builder = SubmenuBuilder::new(app, "File")
                 .item(&open)
                 .item(&save)
-                .item(&save_as)
-                .separator()
-                .item(&exit);
+                .item(&save_as);
+            #[cfg(not(target_os = "macos"))]
+            let file_menu_builder = file_menu_builder.separator().item(&exit);
             let file_menu = file_menu_builder.build()?;
             let menu = Menu::default(app.handle())?;
+            // The predefined macOS Quit item invokes NSApplication termination directly.
+            // Replace it with our own Cmd+Q item so every quit request takes the same
+            // window-close -> UI Save / Cancel / discard lifecycle as the title-bar close.
+            #[cfg(target_os = "macos")]
+            {
+                let app_menu = SubmenuBuilder::new(app, "BioFigureStat")
+                    .about(None)
+                    .separator()
+                    .services()
+                    .separator()
+                    .hide()
+                    .hide_others()
+                    .show_all()
+                    .separator()
+                    .item(&exit)
+                    .build()?;
+                menu.remove_at(0)?;
+                menu.insert(&app_menu, 0)?;
+            }
             // Replace Tauri's default File menu instead of prepending a second File menu.
             // macOS has an application menu before File; Windows does not.
             #[cfg(target_os = "macos")]

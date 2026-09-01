@@ -1,9 +1,26 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 
 import { SimpleGroupExperimentEntry } from "./SimpleGroupExperimentEntry";
 
 describe("SimpleGroupExperimentEntry", () => {
+  it("reports a manually edited experiment title as unsaved work", async () => {
+    const onDirtyChange = vi.fn();
+    render(
+      <SimpleGroupExperimentEntry
+        onBack={vi.fn()}
+        onReady={vi.fn()}
+        onDirtyChange={onDirtyChange}
+      />,
+    );
+
+    fireEvent.change(screen.getByRole("textbox", { name: "実験タイトル（任意）" }), {
+      target: { value: "手入力した実験" },
+    });
+
+    await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(true));
+  });
+
   it("creates a bounded independent scalar worksheet without the general interview", () => {
     const onReady = vi.fn();
     render(<SimpleGroupExperimentEntry onBack={vi.fn()} onReady={onReady} />);
