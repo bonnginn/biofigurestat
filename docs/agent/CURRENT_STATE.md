@@ -312,6 +312,12 @@ the full UI suite (191 files / 1,301 tests), UI typecheck, focused lint, and the
 pass. The purpose is single-source behavior and cheaper regression testing; file size reduction is
 only a secondary indicator.
 
+Unresolved descriptive Graph captions now receive semantic readiness as a typed input to the
+shared layer-description function. They no longer depend on post-processing localized sentences
+with `replaceAll`, and equivalent unresolved raw/summary labels are emitted once instead of as
+duplicate “Table rows” / “元表の行” layers. Internal layer state and resolved experiment-unit
+wording are unchanged. The workbench is 1,075 lines; 58 focused tests, typecheck, and lint pass.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
