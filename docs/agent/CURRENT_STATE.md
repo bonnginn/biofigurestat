@@ -318,6 +318,13 @@ with `replaceAll`, and equivalent unresolved raw/summary labels are emitted once
 duplicate “Table rows” / “元表の行” layers. Internal layer state and resolved experiment-unit
 wording are unchanged. The workbench is 1,075 lines; 58 focused tests, typecheck, and lint pass.
 
+Optional numeric cells now use one discriminated parser that distinguishes blank, invalid, and
+finite values. The standard experiment workspace, canonical matrix, adaptive compact/expanded
+sheet, and nested compact/expanded sheet no longer maintain separate trim/`Number`/finite checks.
+Their existing empty-as-missing behavior, invalid-text retention, rectangular-paste atomicity,
+unit identities, and canonical observations are preserved. The 122 focused spreadsheet/workspace
+tests, typecheck, and lint pass.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
