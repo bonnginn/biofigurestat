@@ -81,6 +81,13 @@ links to that workbook and states that IDs/dates retain provenance but do not pr
 independence, blanks remain missing, and file count is not statistical `n`. The native workbook
 reader loads all five sheets, and the production Vite build retains the exact workbook bytes.
 
+An executed Graph analysis can now be exported as one self-contained, read-only collaborator review
+HTML. It keeps the serialized Graph, distinct experimental-unit `n` by condition, estimates and
+confidence intervals, tests and adjusted p-values, warnings/diagnostics, Methods, displayed-data CSV,
+and analysis run identity together. Japanese and English output share the same scientific values and
+the export uses the existing native-aware Save boundary. The original `.lsa` remains authoritative
+for editing and complete provenance. This source change is not yet part of a published binary.
+
 The final source gate ran the 193-file / 1,304-test UI suite once. It produced 1,303 passes and one
 stale test expectation for the Japanese `概要` tab; the corrected focused workflow passes. Full
 workspace typecheck, UI lint, production UI build, the 9-test native-harness self-suite, and the
