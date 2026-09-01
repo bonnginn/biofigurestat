@@ -4,7 +4,7 @@ import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisCl
 import { type ExperimentCellMap, type ExperimentSetDraft } from "../../app/experimentDraft";
 import { isDerivedTimeMetric } from "../../app/experimentDraftAnalysis";
 import { type DraftAnalysisCorrection } from "../../app/draftAnalysisDiagnostics";
-import { defaultGraphYTitle, defaultLayersForGraphType } from "../../app/graphDefaults";
+import { defaultLayersForGraphType } from "../../app/graphDefaults";
 import { type WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { copyGraphToClipboard } from "../../app/graphExport";
 import {
@@ -32,6 +32,7 @@ import {
 import { ExperimentGraphAnalysisSetEditor } from "./ExperimentGraphAnalysisSetEditor";
 import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
 import { graphPresentationForPreset } from "./experimentGraphPresets";
+import { createExperimentGraphDataTransitions } from "./experimentGraphDataTransitions";
 import { describeActiveGraphLayers } from "./experimentGraphLayerDescription";
 import { experimentGraphTypeLabel } from "./experimentGraphTypeLabel";
 export { describeActiveGraphLayers } from "./experimentGraphLayerDescription";
@@ -74,7 +75,6 @@ import {
   analysisTestAnnotationLabel,
   createSelectedComparisonAnnotation,
   graphAnnotationContext,
-  timeMetricLabel,
 } from "./experimentGraphAnnotations";
 export {
   analysisTestAnnotationLabel,
@@ -465,24 +465,25 @@ export function ExperimentGraphWorkbench({
     analysisState: benchmarkAnalysisState,
     setStatus: setBenchmarkCaptureStatus,
   });
-  const handleAnalysisConditionChange = (conditionId: string, checked: boolean) => {
-    setAnalysisConditionIds((current) =>
-      checked
-        ? [...current, conditionId]
-        : current.filter((selectedId) => selectedId !== conditionId),
-    );
-    removeConditionFromPlannedContrasts(conditionId);
-    setAnalysis(null);
-  };
-  const handleReadoutChange = (readoutId: string) => {
-    const nextReadout = draft.readouts.find(({ id }) => id === readoutId);
-    setSelectedReadoutId(readoutId);
-    setAxes((current) => ({
-      ...current,
-      yTitle: defaultGraphYTitle(nextReadout),
-    }));
-    setAnalysis(null);
-  };
+  const dataTransitions = createExperimentGraphDataTransitions({
+    draft,
+    locale,
+    selectedReadoutId,
+    sourceMode,
+    timeAnalysis,
+    setSelectedReadoutId,
+    setSelectedConditionIds,
+    setAnalysisConditionIds,
+    setSelectedTimePointIds,
+    setAnalysisTimePointId,
+    setSourceMode,
+    setTimeAnalysis,
+    setGraphType,
+    setLayers,
+    setAxes,
+    setAnalysis,
+    removeConditionFromPlannedContrasts,
+  });
   const applyPreset = (preset: "simple" | "publication" | "presentation" | "raw" | "replicate") => {
     const next = graphPresentationForPreset({
       preset,
@@ -738,8 +739,8 @@ export function ExperimentGraphWorkbench({
               draft={draft}
               selectedReadoutId={activeReadoutId}
               selectedConditionIds={analysisConditionIds}
-              onReadoutChange={handleReadoutChange}
-              onConditionChange={handleAnalysisConditionChange}
+              onReadoutChange={dataTransitions.changeReadout}
+              onConditionChange={dataTransitions.changeAnalysisCondition}
             />
           )}
           {inspectorTarget === "data" ? (
@@ -757,53 +758,11 @@ export function ExperimentGraphWorkbench({
               derivedLineageRows={derivedLineageRows}
               selectedTimePointIds={selectedTimePointIds}
               activeConditionIds={activeConditionIds}
-              onReadoutChange={handleReadoutChange}
-              onSourceModeChange={(mode) => {
-                setSourceMode(mode);
-                if (mode === "derived_metric") {
-                  const nextType =
-                    draft.conditionAssignment.kind === "matched" ? "paired_dot" : "dot";
-                  if (timeAnalysis.kind === "selected_timepoint") {
-                    setTimeAnalysis({ kind: "auc" });
-                  }
-                  setGraphType(nextType);
-                  setLayers(defaultLayersForGraphType(nextType, "nested_continuous"));
-                }
-                setAxes((current) => ({
-                  ...current,
-                  yTitle:
-                    mode === "derived_metric"
-                      ? `${readout?.label ?? t("測定値", "Measured value")} — ${timeMetricLabel(
-                          timeAnalysis.kind === "selected_timepoint"
-                            ? { kind: "auc" }
-                            : timeAnalysis,
-                          locale,
-                        )}`
-                      : defaultGraphYTitle(readout),
-                }));
-                setAnalysis(null);
-              }}
-              onAllTimePointsChange={(checked) => {
-                setSelectedTimePointIds(
-                  checked ? draft.time.points.map((point) => point.id) : [],
-                );
-                setAnalysis(null);
-              }}
-              onTimePointChange={(timePointId, checked) => {
-                setSelectedTimePointIds((current) =>
-                  checked
-                    ? [...current, timePointId]
-                    : current.filter((selectedId) => selectedId !== timePointId),
-                );
-                setAnalysis(null);
-              }}
-              onConditionChange={(conditionId, checked) =>
-                setSelectedConditionIds((current) =>
-                  checked
-                    ? [...current, conditionId]
-                    : current.filter((selectedId) => selectedId !== conditionId),
-                )
-              }
+              onReadoutChange={dataTransitions.changeReadout}
+              onSourceModeChange={dataTransitions.changeSourceMode}
+              onAllTimePointsChange={dataTransitions.changeAllTimePoints}
+              onTimePointChange={dataTransitions.changeTimePoint}
+              onConditionChange={dataTransitions.changeDisplayedCondition}
               onEditSeriesStyles={() => inspectGraphPart("series-style")}
             />
           ) : null}
@@ -933,26 +892,9 @@ export function ExperimentGraphWorkbench({
                   time={draft.time}
                   plan={timeAnalysis}
                   analysisTimePointId={analysisTimePointId}
-                  onKindChange={(kind) => {
-                    const nextPlan = { kind };
-                    setTimeAnalysis(nextPlan);
-                    if (kind === "full_time_course") setSourceMode("raw_readout");
-                    if (sourceMode === "derived_metric") {
-                      setAxes((current) => ({
-                        ...current,
-                        yTitle: `${readout?.label ?? t("測定値", "Measured value")} — ${timeMetricLabel(nextPlan, locale)}`,
-                      }));
-                    }
-                    setAnalysis(null);
-                  }}
-                  onPlanChange={(nextPlan) => {
-                    setTimeAnalysis(nextPlan);
-                    setAnalysis(null);
-                  }}
-                  onAnalysisTimePointChange={(timePointId) => {
-                    setAnalysisTimePointId(timePointId);
-                    setAnalysis(null);
-                  }}
+                  onKindChange={dataTransitions.changeTimeAnalysisKind}
+                  onPlanChange={dataTransitions.changeTimeAnalysisPlan}
+                  onAnalysisTimePointChange={dataTransitions.changeAnalysisTimePoint}
                 />
               ) : null}
               {analysisScopePresentation.showNotice ? (
