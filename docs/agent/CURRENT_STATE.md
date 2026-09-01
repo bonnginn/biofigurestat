@@ -649,8 +649,10 @@ shared adaptive Y-title spacing rule. The preview's scientific layers, domains, 
 selection are unchanged. A direct coordinate regression proves the title remains left of the
 plot. Scatter preview points also receive bounded domain padding instead of landing on the axes,
 with shared nice ticks and adaptive Y-title spacing on both numeric axes. The four focused preview
-tests, UI typecheck, and focused lint pass. Final visual judgment for composition variants remains
-a human Beta review item.
+tests, UI typecheck, and focused lint pass. Composition previews now also retain a 0–100% axis,
+condition labels, category legend, and sufficient canvas width for all ten configured conditions;
+wide designs scroll rather than clip the last conditions or legend. Five focused preview tests,
+UI typecheck, and focused lint pass. Final visual judgment remains a human Beta review item.
 
 The ordinary, scatter, and categorical Graph-creation previews now consume that same rectangle
 contract for axis endpoints, point scaling, bar baselines, and label anchors. Existing preview

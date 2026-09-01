@@ -34,6 +34,36 @@ function previewFixture() {
   return { draft, cells: mutableCells as ExperimentCellMap };
 }
 
+function compositionFixture() {
+  const base = createExperimentSetDraft("cell_culture", "categorical_counts");
+  const draft = {
+    ...base,
+    conditions: base.conditions.map((condition, index) => ({
+      ...condition,
+      label: `Condition ${index + 1}`,
+      attributes: { "attribute.1": `Condition ${index + 1}` },
+    })),
+  };
+  const mutableCells: Record<string, ExperimentCellMap[string]> = {};
+  draft.conditions.forEach((condition, conditionIndex) => {
+    mutableCells[
+      experimentCellKey({
+        experimentId: draft.experiments[0]!.id,
+        conditionId: condition.id,
+        readoutId: draft.readouts[0]!.id,
+      })
+    ] = {
+      kind: "categorical_counts",
+      counts: {
+        "category.1": 5 + conditionIndex,
+        "category.2": 3,
+        "category.3": 2,
+      },
+    };
+  });
+  return { draft, cells: mutableCells as ExperimentCellMap };
+}
+
 describe("CurrentDataGraphPreview scientific integrity", () => {
   it("anchors bar previews to a zero-containing domain", () => {
     const { draft, cells } = previewFixture();
@@ -104,5 +134,18 @@ describe("CurrentDataGraphPreview scientific integrity", () => {
     expect(Number(graph.getAttribute("data-domain-y-max"))).toBeGreaterThan(1.62);
     expect(graph.querySelectorAll("[data-preview-x-tick]").length).toBeGreaterThanOrEqual(2);
     expect(graph.querySelectorAll("[data-preview-y-tick]").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("keeps wide composition previews scrollable with axes, labels, and legend", () => {
+    const { draft, cells } = compositionFixture();
+    render(<CurrentDataGraphPreview type="stacked_100" draft={draft} cells={cells} />);
+
+    const graph = screen.getByRole("img", { name: /カテゴリ構成/ });
+    const viewBoxWidth = Number(graph.getAttribute("viewBox")?.split(" ")[2]);
+    expect(viewBoxWidth).toBeGreaterThan(620);
+    expect(graph.querySelectorAll("[data-preview-y-tick]")).toHaveLength(5);
+    expect(screen.getAllByText("Condition 10")[0]).toBeVisible();
+    expect(screen.getByText("Category A")).toBeVisible();
+    expect(screen.getByText("カテゴリ構成 (%)")).toBeVisible();
   });
 });

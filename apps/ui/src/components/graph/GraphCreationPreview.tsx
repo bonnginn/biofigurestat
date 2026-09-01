@@ -238,9 +238,10 @@ export function CurrentDataGraphPreview({
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const selectedReadout = draft.readouts.find(({ id }) => id === readoutId) ?? draft.readouts[0];
   if (type === "stacked" || type === "stacked_100" || type === "category_percentage") {
-    const previewPlot = createPlotRectangle(620, 300, {
+    const width = Math.max(620, 273 + Math.max(0, draft.conditions.length - 1) * 72);
+    const previewPlot = createPlotRectangle(width, 300, {
       top: 22,
-      right: 40,
+      right: 150,
       bottom: 78,
       left: 62,
     });
@@ -282,7 +283,8 @@ export function CurrentDataGraphPreview({
     return (
       <svg
         className="graph-current-preview"
-        viewBox="0 0 620 300"
+        width={width}
+        viewBox={`0 0 ${width} 300`}
         role="img"
         aria-label={t(
           "現在のカテゴリ構成を表示したpreview",
@@ -301,23 +303,88 @@ export function CurrentDataGraphPreview({
           y1={previewPlot.bottom}
           y2={previewPlot.bottom}
         />
+        {[0, 25, 50, 75, 100].map((tick) => {
+          const y = previewPlot.bottom - (tick / 100) * previewPlot.height;
+          return (
+            <g key={`category-y-${tick}`} data-preview-y-tick={tick}>
+              <line
+                className="graph-current-preview__tick"
+                x1={previewPlot.left - 5}
+                x2={previewPlot.left}
+                y1={y}
+                y2={y}
+              />
+              <text
+                className="graph-current-preview__tick-label"
+                x={previewPlot.left - 9}
+                y={y + 4}
+                textAnchor="end"
+              >
+                {tick}
+              </text>
+            </g>
+          );
+        })}
         {groups.map(({ condition, percentages }, groupIndex) => {
           let cumulative = 0;
-          return percentages.map((value, categoryIndex) => {
-            const height = value * 2;
-            cumulative += height;
-            return (
-              <rect
-                key={`${condition.id}-${categories[categoryIndex]?.id}`}
-                x={previewPlot.left + 23 + groupIndex * 72}
-                y={previewPlot.bottom - cumulative}
-                width="38"
-                height={height}
-                className={`graph-current-preview__category graph-current-preview__category--${categoryIndex + 1}`}
-              />
-            );
-          });
+          const x = previewPlot.left + 23 + groupIndex * 72;
+          return (
+            <g key={condition.id}>
+              {percentages.map((value, categoryIndex) => {
+                const height = (value / 100) * previewPlot.height;
+                cumulative += height;
+                return (
+                  <rect
+                    key={`${condition.id}-${categories[categoryIndex]?.id}`}
+                    x={x}
+                    y={previewPlot.bottom - cumulative}
+                    width="38"
+                    height={height}
+                    className={`graph-current-preview__category graph-current-preview__category--${categoryIndex + 1}`}
+                  />
+                );
+              })}
+              <text x={x + 19} y={previewPlot.bottom + 21} textAnchor="middle">
+                <title>{condition.label}</title>
+                {condition.label.length > 12
+                  ? `${condition.label.slice(0, 11)}…`
+                  : condition.label}
+              </text>
+            </g>
+          );
         })}
+        <text
+          className="graph-current-preview__axis-title"
+          x={previewPlot.left + previewPlot.width / 2}
+          y={previewPlot.bottom + 58}
+          textAnchor="middle"
+        >
+          {draft.attributes[0]?.label || t("条件", "Condition")}
+        </text>
+        <text
+          className="graph-current-preview__axis-title"
+          x="17"
+          y={previewPlot.top + previewPlot.height / 2}
+          textAnchor="middle"
+          transform={`rotate(-90 17 ${previewPlot.top + previewPlot.height / 2})`}
+        >
+          {readout?.label ? `${readout.label} (%)` : t("割合 (%)", "Percentage (%)")}
+        </text>
+        {categories.map((category, categoryIndex) => (
+          <g
+            key={category.id}
+            transform={`translate(${previewPlot.right + 20} ${previewPlot.top + categoryIndex * 24})`}
+          >
+            <rect
+              width="13"
+              height="13"
+              className={`graph-current-preview__category graph-current-preview__category--${categoryIndex + 1}`}
+            />
+            <text x="19" y="11">
+              {category.label}
+            </text>
+          </g>
+        ))}
       </svg>
     );
   }
