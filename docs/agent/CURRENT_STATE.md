@@ -194,6 +194,14 @@ X/Y axes, and saved-result annotations. The current full UI suite passes with 16
 tests; UI typecheck, full lint, production build, and the project package's 66 tests pass. The
 production build retains the existing large-chunk warning.
 
+The Graph workbench is now loaded only when a workspace enters Graph editing. Both the general
+experiment workspace and Graph-only workflow use the same localized Suspense boundary, while
+their Data and Statistics entry paths no longer load the workbench eagerly. The production build
+reduces the initial JavaScript chunk from about 1.77 MB to 1.02 MB (about 42%) and emits the
+workbench as a separate 185.62 kB chunk. The full UI suite remains at 169 files and 1,245 passing
+tests; UI typecheck, full lint, and the production build pass. The shared graph-layout dependency
+is still a 569.34 kB chunk and is the next bounded bundle-analysis target.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
@@ -218,7 +226,9 @@ production build retains the existing large-chunk warning.
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
   display, and ID/scalar draft synchronization now use shared primitives. Remaining specialized
   cell-editor presentation is the next safe commonization boundary.
-- Route-level code splitting remains a performance and maintainability follow-up.
+- Route-level code splitting now defers the Graph workbench from Data and Statistics entry paths.
+  The remaining large initial and shared graph-layout chunks require bounded dependency analysis;
+  further splitting must preserve renderer and export parity.
 - English localization is covered for the production Public Alpha surfaces. Pre-workspace legacy
   D01-D05 editors use an explicit English compatibility stop rather than a partially translated
   editor; no English native release has been declared ready.
