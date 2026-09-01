@@ -532,6 +532,11 @@ remains local. The 60 focused layout/Workbench tests pass with UI typecheck and 
 The completed plot-boundary batch also passes full UI lint and the production build; the initial
 chunk remains 264.45 kB (gzip 81.19 kB) with no build advisory.
 
+Clipboard and SVG/PNG/CSV action feedback now lives with the existing user-action controller hook;
+the outer workbench retains only benchmark-capture status. Native Save-dialog cancellation and
+localized export diagnostics are unchanged. The existing 53 Workbench and 4 export-feedback tests
+pass with UI typecheck and lint. The workbench is now 764 lines.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
