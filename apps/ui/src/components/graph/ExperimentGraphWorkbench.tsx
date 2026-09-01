@@ -4,7 +4,6 @@ import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisCl
 import { type ExperimentCellMap, type ExperimentSetDraft } from "../../app/experimentDraft";
 import { isDerivedTimeMetric } from "../../app/experimentDraftAnalysis";
 import { type DraftAnalysisCorrection } from "../../app/draftAnalysisDiagnostics";
-import { defaultLayersForGraphType } from "../../app/graphDefaults";
 import { type WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { copyGraphToClipboard } from "../../app/graphExport";
 import {
@@ -31,8 +30,8 @@ import {
 } from "./ExperimentGraphAnalysisScopeNotice";
 import { ExperimentGraphAnalysisSetEditor } from "./ExperimentGraphAnalysisSetEditor";
 import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
-import { graphPresentationForPreset } from "./experimentGraphPresets";
 import { createExperimentGraphDataTransitions } from "./experimentGraphDataTransitions";
+import { createExperimentGraphPresentationTransitions } from "./experimentGraphPresentationTransitions";
 import { describeActiveGraphLayers } from "./experimentGraphLayerDescription";
 import { experimentGraphTypeLabel } from "./experimentGraphTypeLabel";
 export { describeActiveGraphLayers } from "./experimentGraphLayerDescription";
@@ -484,17 +483,17 @@ export function ExperimentGraphWorkbench({
     setAnalysis,
     removeConditionFromPlannedContrasts,
   });
-  const applyPreset = (preset: "simple" | "publication" | "presentation" | "raw" | "replicate") => {
-    const next = graphPresentationForPreset({
-      preset,
-      graphType,
-      shape,
-      visualSeriesCount: visualSeriesOptions.length,
-      currentAppearance: appearance,
-    });
-    setLayers(next.layers);
-    setAppearance(next.appearance);
-  };
+  const presentationTransitions = createExperimentGraphPresentationTransitions({
+    graphType,
+    shape,
+    visualSeriesCount: visualSeriesOptions.length,
+    appearance,
+    timePointCount: draft.time.points.length,
+    activeConditionCount: activeConditions.length,
+    setGraphType,
+    setLayers,
+    setAppearance,
+  });
   const activeLayerDescription = describeActiveGraphLayers({
     graphType,
     shape,
@@ -776,23 +775,8 @@ export function ExperimentGraphWorkbench({
               conditionAssignmentKind={draft.conditionAssignment.kind}
               timeSampling={draft.time.sampling}
               activeConditions={activeConditions}
-              onGraphTypeChange={(nextType) => {
-                setGraphType(nextType);
-                setLayers(defaultLayersForGraphType(nextType, shape));
-                if (
-                  nextType === "line" &&
-                  draft.time.points.length > 1 &&
-                  activeConditions.length > 1
-                ) {
-                  setAppearance((current) => ({
-                    ...current,
-                    palette: current.palette === "single" ? "colorblind" : current.palette,
-                    legendPosition:
-                      current.legendPosition === "hidden" ? "right" : current.legendPosition,
-                  }));
-                }
-              }}
-              onApplyPreset={applyPreset}
+              onGraphTypeChange={presentationTransitions.changeGraphType}
+              onApplyPreset={presentationTransitions.applyPreset}
               setAxes={setAxes}
               setAppearance={setAppearance}
             />
