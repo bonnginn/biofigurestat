@@ -227,6 +227,16 @@ safe stop before an unsupported full factor-by-time model remain explicit. Each 
 has an English no-Japanese regression. The full UI suite now passes 172 files and 1,253 tests;
 typecheck, lint, and production build pass.
 
+The next canvas/inspector pass extracts the Graph title/export/view-size toolbar, the semantic
+canvas caption, and the inspector target plus visible-layer shortcuts. Clipboard and SVG/PNG/CSV
+actions remain delegated to the existing controllers. The extracted caption has direct regression
+coverage for unresolved descriptive rows, shared-source matching versus condition-specific
+experimental units, and the rule that showing Cell/ROI observations does not change statistical
+`n`. Inspector tests preserve immutable layer updates and English localization. The workbench is
+now 1,441 lines, down from about 4,900 before the staged split. The full UI suite passes 175 files
+and 1,261 tests; typecheck, lint, and production build pass. The initial production chunk remains
+812.87 kB (gzip 223.01 kB), with the existing large-chunk warning.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
@@ -246,7 +256,8 @@ typecheck, lint, and production build pass.
   intent state is now separated as well. Factor/facet/legend/readiness presentation projection and
   localized data summaries, grouping, data selection, series presentation, and distribution
   controls are now separate tested boundaries. Time-analysis selection, factor-by-time scope,
-  analysis-set selection, and Statistics annotation display are also separated. Remaining canvas
+  analysis-set selection, Statistics annotation display, canvas toolbar/export controls, semantic
+  captions, and the inspector target/layer shortcuts are also separated. Remaining renderer
   composition and top-level orchestration are the next safe extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
