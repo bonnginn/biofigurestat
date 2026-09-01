@@ -1,9 +1,24 @@
-export function parseSpreadsheetNumber(value: string, integer = false): number | null {
+export type SpreadsheetNumberParseResult =
+  | Readonly<{ kind: "empty" }>
+  | Readonly<{ kind: "invalid" }>
+  | Readonly<{ kind: "value"; value: number }>;
+
+export function parseOptionalSpreadsheetNumber(
+  value: string,
+  integer = false,
+): SpreadsheetNumberParseResult {
   const trimmed = value.trim();
-  if (trimmed === "") return null;
+  if (trimmed === "") return { kind: "empty" };
   const parsed = Number(trimmed);
-  if (!Number.isFinite(parsed) || (integer && !Number.isInteger(parsed))) return null;
-  return parsed;
+  if (!Number.isFinite(parsed) || (integer && !Number.isInteger(parsed))) {
+    return { kind: "invalid" };
+  }
+  return { kind: "value", value: parsed };
+}
+
+export function parseSpreadsheetNumber(value: string, integer = false): number | null {
+  const result = parseOptionalSpreadsheetNumber(value, integer);
+  return result.kind === "value" ? result.value : null;
 }
 
 export function formatProportionPercentage(input: {

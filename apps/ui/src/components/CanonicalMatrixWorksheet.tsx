@@ -18,6 +18,7 @@ import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
 import { LocalizedFileInput } from "./LocalizedFileInput";
 import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
+import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
 
 export type CanonicalWorksheetRow = Readonly<{
   key: string;
@@ -1035,12 +1036,12 @@ function MatrixCell({
     // Read the value visible in the input at blur time. This avoids a narrow
     // React render-lag window where the DOM already shows the last keystroke
     // but the prior render's local state would otherwise be committed.
-    const trimmed = draftText.trim();
-    const value = trimmed === "" ? null : Number(trimmed);
-    if (value !== null && !Number.isFinite(value)) {
+    const parsed = parseOptionalSpreadsheetNumber(draftText);
+    if (parsed.kind === "invalid") {
       setError(t("数値を入力してください", "Enter a numeric value"));
       return;
     }
+    const value = parsed.kind === "value" ? parsed.value : null;
     try {
       const next = applyMatrixValue({
         contract,
@@ -1351,10 +1352,11 @@ export function CanonicalMatrixWorksheet({
             }
             return;
           }
-          const value = trimmed === "" ? null : Number(trimmed);
-          if (value !== null && !Number.isFinite(value)) {
+          const parsedValue = parseOptionalSpreadsheetNumber(trimmed);
+          if (parsedValue.kind === "invalid") {
             throw new Error(`数値として読めない値「${trimmed}」があります`);
           }
+          const value = parsedValue.kind === "value" ? parsedValue.value : null;
           const identityOverride =
             contract.matching.kind === "matched"
               ? undefined
@@ -1562,12 +1564,13 @@ export function CanonicalMatrixWorksheet({
                 : "実施したか未確認の条件に値があります。実験の組み立てを確認してから読み込んでください。",
             );
           }
-          const value = token === "" ? null : Number(token);
-          if (value !== null && !Number.isFinite(value)) {
+          const parsedValue = parseOptionalSpreadsheetNumber(token);
+          if (parsedValue.kind === "invalid") {
             throw new Error(
               `データ行${fileRowIndex + 2}に数値として読めない値「${token}」があります。`,
             );
           }
+          const value = parsedValue.kind === "value" ? parsedValue.value : null;
           const identityOverride =
             matched && identity
               ? identity

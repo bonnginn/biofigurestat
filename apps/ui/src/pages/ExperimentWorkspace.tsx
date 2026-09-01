@@ -89,6 +89,10 @@ import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usag
 import { recordDiagnosticError, recordDiagnosticEvent } from "../app/diagnostics";
 import { localizedText, useAppLocale } from "../app/appLocale";
 import { useSpreadsheetCellDraft } from "../components/useSpreadsheetCellDraft";
+import {
+  parseOptionalSpreadsheetNumber,
+  parseSpreadsheetNumber,
+} from "../components/spreadsheetValues";
 import { experimentGraphTypeLabel } from "../components/graph/experimentGraphTypeLabel";
 
 const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
@@ -367,15 +371,8 @@ function findCellDescriptor(draft: ExperimentSetDraft, key: string): CellDescrip
   return null;
 }
 
-function nullableNumber(value: string): number | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
 function countValue(value: string): number | null {
-  const parsed = nullableNumber(value);
+  const parsed = parseSpreadsheetNumber(value);
   if (parsed === null || parsed < 0 || !Number.isInteger(parsed)) return null;
   return parsed;
 }
@@ -1815,7 +1812,7 @@ function DecimalValueInput({
         commitIfComplete(text);
       }}
       onBlur={() => {
-        const parsed = nullableNumber(draftValue);
+        const parsed = parseSpreadsheetNumber(draftValue);
         accept(parsed === null ? "" : String(parsed));
         onChange(parsed);
       }}
@@ -1965,7 +1962,9 @@ function CorrelationTable({
       .replace(/\r\n?/g, "\n")
       .split(/[\t\n]/)
       .filter((token) => token.trim());
-    tokens.slice(0, 2).forEach((token, index) => onChange(keys[index], nullableNumber(token)));
+    tokens.slice(0, 2).forEach((token, index) =>
+      onChange(keys[index], parseSpreadsheetNumber(token)),
+    );
   };
   return (
     <div className="experiment-workspace-table-wrap">
@@ -1996,7 +1995,7 @@ function CorrelationTable({
                   onFocus={(event) => event.currentTarget.select()}
                   onWheel={(event) => event.currentTarget.blur()}
                   onChange={(event) =>
-                    onChange(keys[index], nullableNumber(event.currentTarget.value))
+                    onChange(keys[index], parseSpreadsheetNumber(event.currentTarget.value))
                   }
                   onKeyDown={(event) => {
                     const offset =
@@ -2268,7 +2267,7 @@ function WbRatioTable({
       tokens.forEach((token, columnOffset) => {
         const field = editableFields[startColumn + columnOffset];
         if (!field || !token.trim()) return;
-        const value = nullableNumber(token);
+        const value = parseSpreadsheetNumber(token);
         if (value === null || value < 0) return;
         onChange(key, field, value);
       });
@@ -2385,7 +2384,7 @@ function WbRatioTable({
                       onWheel={(event) => event.currentTarget.blur()}
                       onKeyDown={(event) => move(event, rowIndex, columnIndex)}
                       onChange={(event) => {
-                        const value = nullableNumber(event.currentTarget.value);
+                        const value = parseSpreadsheetNumber(event.currentTarget.value);
                         onChange(key, field, value !== null && value >= 0 ? value : null);
                       }}
                       onPaste={(event) => {
@@ -3257,13 +3256,14 @@ export function ExperimentWorkspace({
           };
         }
         const trimmed = token.trim();
-        const value = trimmed === "" ? null : Number(trimmed);
-        if (value !== null && !Number.isFinite(value)) {
+        const parsed = parseOptionalSpreadsheetNumber(trimmed);
+        if (parsed.kind === "invalid") {
           return {
             accepted: false,
             message: `数値として読めない値「${trimmed}」があります。既存の値は変更していません。`,
           };
         }
+        const value = parsed.kind === "value" ? parsed.value : null;
         const key = experimentCellKey({
           experimentId: experiment.id,
           conditionId: condition.id,

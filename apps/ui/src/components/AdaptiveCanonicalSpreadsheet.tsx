@@ -28,6 +28,7 @@ import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
 import { SPREADSHEET_ZOOM_LEVELS, useSpreadsheetZoom } from "./spreadsheetZoom";
 import { getAppLocale, localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
+import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
 import {
   CanonicalMatrixWorksheet,
   canEditCanonicalMatrix,
@@ -105,10 +106,8 @@ function parseCompactScalarText(text: string): readonly (number | null)[] | null
   if (!normalized.trim()) return [];
   const tokens = normalized.split(/[\n\t]/u);
   const values = tokens.map((token) => {
-    const trimmed = token.trim();
-    if (!trimmed) return null;
-    const parsed = Number(trimmed);
-    return Number.isFinite(parsed) ? parsed : null;
+    const parsed = parseOptionalSpreadsheetNumber(token);
+    return parsed.kind === "value" ? parsed.value : null;
   });
   return values.some((value, index) => value === null && tokens[index]!.trim() !== "")
     ? null
@@ -486,8 +485,8 @@ function CompactTable({
           const token = row[columnOffset] ?? "";
           const trimmed = token.trim();
           if (!trimmed) return null;
-          const value = Number(trimmed);
-          if (!Number.isFinite(value)) {
+          const parsed = parseOptionalSpreadsheetNumber(trimmed);
+          if (parsed.kind !== "value") {
             throw new Error(
               localizedText(
                 locale,
@@ -496,7 +495,7 @@ function CompactTable({
               ),
             );
           }
-          return value;
+          return parsed.value;
         });
         const valueKey = scalarReadoutValueKey(contract, target);
         if (!valueKey)
@@ -660,8 +659,8 @@ function ExpandedTable({
         const appended = matrix.map((row) => {
           const trimmed = (row[columnOffset] ?? "").trim();
           if (!trimmed) return null;
-          const value = Number(trimmed);
-          if (!Number.isFinite(value)) {
+          const parsed = parseOptionalSpreadsheetNumber(trimmed);
+          if (parsed.kind !== "value") {
             throw new Error(
               textForLocale(
                 `数値として読めない値「${trimmed}」があります。`,
@@ -669,7 +668,7 @@ function ExpandedTable({
               ),
             );
           }
-          return value;
+          return parsed.value;
         });
         const currentGroup = buildAdaptiveSpreadsheetViewModel(contract, next)
           .compact.rows.flatMap((row) => row.readoutGroups)
@@ -760,8 +759,8 @@ function ExpandedTable({
             });
           } else {
             const trimmed = token.trim();
-            const value = trimmed === "" ? null : Number(trimmed);
-            if (value !== null && !Number.isFinite(value)) {
+            const parsed = parseOptionalSpreadsheetNumber(trimmed);
+            if (parsed.kind === "invalid") {
               throw new Error(
                 textForLocale(
                   `数値として読めない値「${trimmed}」があります。`,
@@ -769,6 +768,7 @@ function ExpandedTable({
                 ),
               );
             }
+            const value = parsed.kind === "value" ? parsed.value : null;
             next = updateExpandedValue({
               observationId,
               valueKey: semanticKey,
@@ -1074,9 +1074,8 @@ function ExpandedScalarValueEditor({
 
   const commit = () => {
     if (!dirty) return;
-    const trimmed = text.trim();
-    const nextValue = trimmed === "" ? null : Number(trimmed);
-    if (nextValue !== null && !Number.isFinite(nextValue)) {
+    const parsed = parseOptionalSpreadsheetNumber(text);
+    if (parsed.kind === "invalid") {
       reportError(
         t(
           "数値を入力してください。入力内容は消えていません。",
@@ -1085,6 +1084,7 @@ function ExpandedScalarValueEditor({
       );
       return;
     }
+    const nextValue = parsed.kind === "value" ? parsed.value : null;
     onObservationsChange(
       updateExpandedValue({
         observationId: observation.observationId,
@@ -1159,8 +1159,8 @@ function ExpandedAppendValueEditor({
 
   const commit = () => {
     if (!dirty) return;
-    const value = Number(text.trim());
-    if (!text.trim() || !Number.isFinite(value)) {
+    const parsed = parseOptionalSpreadsheetNumber(text);
+    if (parsed.kind !== "value") {
       setError(
         t(
           "数値を入力してください。入力内容は消えていません。",
@@ -1169,6 +1169,7 @@ function ExpandedAppendValueEditor({
       );
       return;
     }
+    const value = parsed.value;
     try {
       const currentValues = group.observations.map((observation) => {
         const current = observation.values[valueKey];

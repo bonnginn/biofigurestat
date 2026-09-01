@@ -14,6 +14,7 @@ import {
 
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
 import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
+import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
 import "./WorkspaceNestedMeasurementSheet.css";
 import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 
@@ -98,8 +99,13 @@ function parseValues(text: string): readonly number[] | null {
   const normalized = text.replace(/\r\n?/g, "\n").replace(/\n+$/u, "");
   if (!normalized.trim()) return [];
   const tokens = normalized.split(/[\n\t,、]/).map((token) => token.trim());
-  if (tokens.some((token) => !token || !Number.isFinite(Number(token)))) return null;
-  return tokens.map(Number);
+  const values: number[] = [];
+  for (const token of tokens) {
+    const parsed = parseOptionalSpreadsheetNumber(token);
+    if (parsed.kind !== "value") return null;
+    values.push(parsed.value);
+  }
+  return values;
 }
 
 function readoutTitle(readout: ReadoutDraft): string {
@@ -252,13 +258,13 @@ function ExpandedValueInput({
         data-value-index={valueIndex}
         onBlur={() => {
           if (!text.trim() && value === null) return;
-          const number = Number(text);
-          if (!text.trim() || !Number.isFinite(number)) {
+          const parsed = parseOptionalSpreadsheetNumber(text);
+          if (parsed.kind !== "value") {
             reportError(t("数値を入力してください。入力内容は消していません。", "Enter a numeric value. The entered content was retained."));
             return;
           }
-          onCommit(number);
-          accept(String(number));
+          onCommit(parsed.value);
+          accept(String(parsed.value));
         }}
         onChange={(event) => {
           edit(event.currentTarget.value);
@@ -347,11 +353,11 @@ export function WorkspaceNestedMeasurementSheet({
       const values: number[] = [];
       for (const row of matrix) {
         const token = (row[columnOffset] ?? "").trim();
-        const value = Number(token);
-        if (!token || !Number.isFinite(value)) {
+        const parsed = parseOptionalSpreadsheetNumber(token);
+        if (parsed.kind !== "value") {
           return locale === "ja" ? `数値として読めない${token ? `値「${token}」` : "空欄"}があります。既存の値は変更していません。` : `A ${token ? `value (“${token}”)` : "blank cell"} could not be read as a number. Existing values were not changed.`;
         }
-        values.push(value);
+        values.push(parsed.value);
       }
       updates.push({ coordinate, values });
     }
@@ -406,13 +412,13 @@ export function WorkspaceNestedMeasurementSheet({
           const field = target.dataset.expandedField;
           if (field === "value") {
             const trimmed = token.trim();
-            const value = Number(trimmed);
-            if (!trimmed || !Number.isFinite(value)) {
+            const parsed = parseOptionalSpreadsheetNumber(trimmed);
+            if (parsed.kind !== "value") {
               throw new Error(
                 locale === "ja" ? `数値として読めない${trimmed ? `値「${trimmed}」` : "空欄"}があります。` : `A ${trimmed ? `value (“${trimmed}”)` : "blank cell"} could not be read as a number.`,
               );
             }
-            cell = updateValue(cell, valueIndex, value, locale);
+            cell = updateValue(cell, valueIndex, parsed.value, locale);
           } else if (field === "identity") {
             cell = {
               ...cell,

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { formatProportionPercentage, parseSpreadsheetNumber } from "./spreadsheetValues";
+import {
+  formatProportionPercentage,
+  parseOptionalSpreadsheetNumber,
+  parseSpreadsheetNumber,
+} from "./spreadsheetValues";
 
 describe("spreadsheet values", () => {
   it("parses finite decimal and integer cell values consistently", () => {
@@ -8,6 +12,13 @@ describe("spreadsheet values", () => {
     expect(parseSpreadsheetNumber("4.2", true)).toBeNull();
     expect(parseSpreadsheetNumber("")).toBeNull();
     expect(parseSpreadsheetNumber("Infinity")).toBeNull();
+  });
+
+  it("distinguishes an empty optional cell from invalid numeric text", () => {
+    expect(parseOptionalSpreadsheetNumber("  ")).toEqual({ kind: "empty" });
+    expect(parseOptionalSpreadsheetNumber("1.25")).toEqual({ kind: "value", value: 1.25 });
+    expect(parseOptionalSpreadsheetNumber("Infinity")).toEqual({ kind: "invalid" });
+    expect(parseOptionalSpreadsheetNumber("4.2", true)).toEqual({ kind: "invalid" });
   });
 
   it("formats only complete valid proportion counts", () => {
