@@ -6,6 +6,7 @@ type Props = Readonly<{
   layerDescription: string;
   graphTitleFontSize: number;
   hasData: boolean;
+  reviewSetAvailable: boolean;
   copyStatus: string | null;
   exportFeedback: GraphExportFeedback | null;
   evaluationStatus: string | null;
@@ -16,6 +17,7 @@ type Props = Readonly<{
   onExportSvg: () => void;
   onExportPng: () => void;
   onExportCsv: () => void;
+  onExportReviewSet: () => void;
   onFinalizeEvaluation: () => void;
   onFitOverviewChange: (fit: boolean) => void;
 }>;
@@ -25,6 +27,7 @@ export function ExperimentGraphCanvasToolbar({
   layerDescription,
   graphTitleFontSize,
   hasData,
+  reviewSetAvailable,
   copyStatus,
   exportFeedback,
   evaluationStatus,
@@ -35,6 +38,7 @@ export function ExperimentGraphCanvasToolbar({
   onExportSvg,
   onExportPng,
   onExportCsv,
+  onExportReviewSet,
   onFinalizeEvaluation,
   onFitOverviewChange,
 }: Props) {
@@ -82,6 +86,22 @@ export function ExperimentGraphCanvasToolbar({
             onClick={onExportCsv}
           >
             CSV
+          </button>
+          <button
+            type="button"
+            aria-label={t("解析レビューセットを書き出す", "Export analysis review set")}
+            disabled={!hasData || !reviewSetAvailable}
+            onClick={onExportReviewSet}
+            title={
+              reviewSetAvailable
+                ? undefined
+                : t(
+                    "解析を実行すると、Graph・結果・Methods・データを1つのHTMLにまとめられます",
+                    "Run the analysis to combine the Graph, results, Methods, and data in one HTML file",
+                  )
+            }
+          >
+            {t("レビュー", "Review")}
           </button>
           {evaluationActionLabel ? (
             <button

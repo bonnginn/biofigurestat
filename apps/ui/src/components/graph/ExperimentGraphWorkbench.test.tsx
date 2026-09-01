@@ -162,6 +162,24 @@ describe("visible Graph data CSV", () => {
     expect(csv).toContain("実験単位平均");
     expect(csv.split("\n").filter(Boolean)).toHaveLength(3);
   });
+
+  it("uses English headings and layer names in an English review export", () => {
+    const csv = serializeVisibleGraphData(
+      series,
+      {
+        id: "readout.1",
+        label: "Cell circularity",
+        shape: "nested_continuous",
+        nestedInputMode: "nested_observations",
+      },
+      "en",
+    );
+
+    expect(csv).toContain("Condition");
+    expect(csv).toContain("Raw Cell/ROI value");
+    expect(csv).toContain("Experimental-unit mean");
+    expect(csv).not.toContain("実験単位平均");
+  });
 });
 
 const analysisResult: AnalysisEngineResult = {
@@ -615,7 +633,7 @@ describe("ExperimentGraphWorkbench", () => {
       within(exportActions)
         .getAllByRole("button")
         .map((button) => button.textContent),
-    ).toEqual(["コピー", "SVG", "PNG", "CSV"]);
+    ).toEqual(["コピー", "SVG", "PNG", "CSV", "レビュー"]);
     within(exportActions)
       .getAllByRole("button")
       .forEach((button) => expect(getComputedStyle(button).whiteSpace).toBe("nowrap"));
@@ -1021,7 +1039,7 @@ describe("ExperimentGraphWorkbench", () => {
       options: { multiplicityMethod: "holm_planned_comparisons" },
     });
     expect(
-      within(screen.getByRole("group", { name: "統計解析結果" })).getByText(
+      within(await screen.findByRole("group", { name: "統計解析結果" })).getByText(
         "Control vs Treatment B",
       ),
     ).toBeVisible();

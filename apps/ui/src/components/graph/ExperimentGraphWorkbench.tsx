@@ -429,6 +429,8 @@ export function ExperimentGraphWorkbench({
     selectedConditionIds,
     selectedTimePointIds,
     series,
+    analysis,
+    methodsText,
     locale,
   });
   const inspectGraphPart = (target: InspectorTarget) => {
@@ -484,6 +486,7 @@ export function ExperimentGraphWorkbench({
               layerDescription={activeLayerDescription}
               graphTitleFontSize={appearance.graphTitleFontSize}
               hasData={hasData}
+              reviewSetAvailable={analysisResult?.status === "ok" && Boolean(methodsText)}
               copyStatus={copyStatus}
               exportFeedback={pngExportFeedback}
               evaluationStatus={evaluationController.status}
@@ -494,6 +497,7 @@ export function ExperimentGraphWorkbench({
               onExportSvg={() => void userActions.exportSvg()}
               onExportPng={() => void userActions.exportPng()}
               onExportCsv={() => void userActions.exportCsv()}
+              onExportReviewSet={() => void userActions.exportReviewSet()}
               onFinalizeEvaluation={() => void evaluationController.finalize()}
               onFitOverviewChange={setFitOverview}
             />

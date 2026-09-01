@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ExportCancelledError } from "./graphExport";
 import {
+  saveAnalysisReviewSetExport,
   saveGraphCsvExport,
   saveGraphPngExport,
   saveGraphSvgExport,
@@ -46,6 +47,18 @@ describe("graph export controller", () => {
     await expect(saveGraphCsvExport("x,y\n1,2\n", "figure.csv", deps)).resolves.toEqual({
       status: "cancelled",
     });
+  });
+
+  it("saves the self-contained review set through the same native-aware text boundary", async () => {
+    const deps = dependencies();
+    await expect(
+      saveAnalysisReviewSetExport("<!doctype html><title>Review</title>", "review.html", deps),
+    ).resolves.toEqual({ status: "saved" });
+    expect(deps.saveText).toHaveBeenCalledWith(
+      "<!doctype html><title>Review</title>",
+      "review.html",
+      "text/html;charset=utf-8",
+    );
   });
 
   it("normalizes PNG cancellation raised after rasterization", async () => {

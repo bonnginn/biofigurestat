@@ -66,3 +66,11 @@ export function saveGraphCsvExport(
 ): Promise<ControlledGraphExportResult> {
   return controlExport(() => dependencies.saveText(csv, filename, "text/csv;charset=utf-8"));
 }
+
+export function saveAnalysisReviewSetExport(
+  html: string,
+  filename: string,
+  dependencies: GraphExportControllerDependencies = DEFAULT_DEPENDENCIES,
+): Promise<ControlledGraphExportResult> {
+  return controlExport(() => dependencies.saveText(html, filename, "text/html;charset=utf-8"));
+}

@@ -7,7 +7,7 @@ export type GraphExportFeedback = Readonly<{
   text: string;
 }>;
 
-type GraphExportKind = "svg" | "png" | "csv";
+type GraphExportKind = "svg" | "png" | "csv" | "review";
 
 const SAVED_TEXT: Record<GraphExportKind, Readonly<{ ja: string; en: string }>> = {
   svg: { ja: "SVGを保存しました。", en: "Saved the SVG." },
@@ -16,6 +16,10 @@ const SAVED_TEXT: Record<GraphExportKind, Readonly<{ ja: string; en: string }>> 
     en: "Exported the current Graph as a white-background PNG.",
   },
   csv: { ja: "表示中のデータをCSVで保存しました。", en: "Saved the displayed data as CSV." },
+  review: {
+    ja: "解析レビューセットを保存しました。",
+    en: "Saved the analysis review set.",
+  },
 };
 
 const FAILED_TEXT: Record<GraphExportKind, Readonly<{ ja: string; en: string }>> = {
@@ -30,6 +34,10 @@ const FAILED_TEXT: Record<GraphExportKind, Readonly<{ ja: string; en: string }>>
   csv: {
     ja: "CSVを保存できませんでした。グラフとデータは保持されています。",
     en: "Could not save the CSV. The Graph and data are unchanged.",
+  },
+  review: {
+    ja: "解析レビューセットを保存できませんでした。グラフ・解析結果・データは保持されています。",
+    en: "Could not save the analysis review set. The Graph, analysis result, and data are unchanged.",
   },
 };
 

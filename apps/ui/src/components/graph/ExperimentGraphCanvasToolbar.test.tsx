@@ -15,6 +15,7 @@ function renderToolbar(
     layerDescription: "Raw data + Mean ± SD",
     graphTitleFontSize: 20,
     hasData: true,
+    reviewSetAvailable: true,
     copyStatus: null,
     exportFeedback: null,
     evaluationStatus: null,
@@ -25,6 +26,7 @@ function renderToolbar(
     onExportSvg: vi.fn(),
     onExportPng: vi.fn(),
     onExportCsv: vi.fn(),
+    onExportReviewSet: vi.fn(),
     onFinalizeEvaluation: vi.fn(),
     onFitOverviewChange: vi.fn(),
     ...overrides,
@@ -39,11 +41,13 @@ describe("ExperimentGraphCanvasToolbar", () => {
     fireEvent.click(screen.getByRole("button", { name: "SVGを書き出す" }));
     fireEvent.click(screen.getByRole("button", { name: "PNGを書き出す" }));
     fireEvent.click(screen.getByRole("button", { name: "表示データCSV" }));
+    fireEvent.click(screen.getByRole("button", { name: "解析レビューセットを書き出す" }));
     fireEvent.click(screen.getByRole("button", { name: "画面に全体を収める" }));
     expect(props.onCopy).toHaveBeenCalledOnce();
     expect(props.onExportSvg).toHaveBeenCalledOnce();
     expect(props.onExportPng).toHaveBeenCalledOnce();
     expect(props.onExportCsv).toHaveBeenCalledOnce();
+    expect(props.onExportReviewSet).toHaveBeenCalledOnce();
     expect(props.onFitOverviewChange).toHaveBeenCalledWith(true);
   });
 
@@ -52,6 +56,7 @@ describe("ExperimentGraphCanvasToolbar", () => {
     const view = renderToolbar({ hasData: false });
     expect(screen.getByRole("button", { name: "Copy Graph" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Export SVG" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Export analysis review set" })).toBeDisabled();
     expect(screen.queryByRole("group", { name: "Graph display size" })).toBeNull();
     expectNoJapaneseUi(view.container);
   });
@@ -59,6 +64,11 @@ describe("ExperimentGraphCanvasToolbar", () => {
   it("keeps export failure feedback as an alert", () => {
     renderToolbar({ exportFeedback: { kind: "error", text: "PNG export failed" } });
     expect(screen.getByRole("alert")).toHaveTextContent("PNG export failed");
+  });
+
+  it("requires a successful linked analysis before enabling the review set", () => {
+    renderToolbar({ reviewSetAvailable: false });
+    expect(screen.getByRole("button", { name: "解析レビューセットを書き出す" })).toBeDisabled();
   });
 
   it("renders a development-only action only when the controller supplies its label", () => {

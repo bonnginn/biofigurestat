@@ -7,6 +7,7 @@ import {
   type ExperimentSetDraft,
   type ReadoutDraft,
 } from "../../app/experimentDraft";
+import type { AppLocale } from "../../app/appLocale";
 
 export type ProportionPoint = Readonly<{
   experimentId: string;
@@ -56,10 +57,20 @@ function csvField(value: string | number): string {
 export function serializeVisibleGraphData(
   series: readonly GraphSeries[],
   readout: ReadoutDraft,
+  locale: AppLocale = "ja",
 ): string {
   const shape = readout.shape;
+  const t = (ja: string, en: string) => (locale === "ja" ? ja : en);
   const rows: Array<Array<string | number>> = [
-    ["条件", "時点", "実験回", "データ層", "値", "陽性数", "対象数"],
+    [
+      t("条件", "Condition"),
+      t("時点", "Time point"),
+      t("実験回", "Experiment"),
+      t("データ層", "Data layer"),
+      t("値", "Value"),
+      t("陽性数", "Positive count"),
+      t("対象数", "Eligible count"),
+    ],
   ];
   series.forEach((item) => {
     if (shape === "proportion") {
@@ -68,7 +79,7 @@ export function serializeVisibleGraphData(
           item.conditionLabel,
           item.timeLabel ?? "",
           point.experimentLabel,
-          "実験単位の割合",
+          t("実験単位の割合", "Experimental-unit proportion"),
           point.value,
           point.positive,
           point.eligible,
@@ -82,7 +93,7 @@ export function serializeVisibleGraphData(
           item.conditionLabel,
           item.timeLabel ?? "",
           point.experimentLabel,
-          "細胞・ROI生データ",
+          t("細胞・ROI生データ", "Raw Cell/ROI value"),
           point.value,
           "",
           "",
@@ -95,10 +106,10 @@ export function serializeVisibleGraphData(
         item.timeLabel ?? "",
         point.experimentLabel,
         shape === "wb_ratio"
-          ? "標的/reference比"
+          ? t("標的/reference比", "Target/reference ratio")
           : readout.nestedInputMode === "unit_summary"
-            ? "実験単位の値"
-            : "実験単位平均",
+            ? t("実験単位の値", "Experimental-unit value")
+            : t("実験単位平均", "Experimental-unit mean"),
         point.value,
         "",
         "",
@@ -114,13 +125,15 @@ export function serializeCompositionData(
   readout: ReadoutDraft,
   conditionIds: readonly string[],
   timePointIds: readonly string[],
+  locale: AppLocale = "ja",
 ): string {
   const categories = readout.categories ?? [];
+  const t = (ja: string, en: string) => (locale === "ja" ? ja : en);
   const rows: Array<Array<string | number>> = [
     [
-      "条件",
-      "時点",
-      "実験回",
+      t("条件", "Condition"),
+      t("時点", "Time point"),
+      t("実験回", "Experiment"),
       ...categories.map(({ label }) => `${label} count`),
       ...categories.map(({ label }) => `${label} %`),
     ],

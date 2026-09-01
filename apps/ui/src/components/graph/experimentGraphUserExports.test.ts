@@ -17,6 +17,12 @@ describe("Graph user export feedback", () => {
     expect(setFeedback).toHaveBeenCalledOnce();
     expect(setFeedback).toHaveBeenCalledWith(null);
     expect(diagnostic).not.toHaveBeenCalled();
+
+    await runGraphUserExport("review", "en", async () => ({ status: "saved" }), setFeedback);
+    expect(setFeedback).toHaveBeenLastCalledWith({
+      kind: "success",
+      text: "Saved the analysis review set.",
+    });
   });
 
   it("records export and clipboard failures without throwing into the workspace", async () => {
