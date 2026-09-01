@@ -256,6 +256,24 @@ English action-specific fallback; the same boundary now protects Graph-only and 
 save/analysis failures. It does not rewrite project contents or researcher-authored labels. Focused
 project-action, App, open/save, workspace, and locale tests pass.
 
+The persisted Graph snapshot and active-scope projections are now separately tested boundaries.
+They preserve stable readout/condition/time identities, keep the displayed set distinct from the
+Statistics analysis set, copy selection arrays before emission, and retain the exact public
+workspace schema. `ExperimentGraphWorkbench.tsx` is 1,116 lines, down from 6,854 at the Public
+Alpha tag (about 84%). This is architectural concentration reduction, not a claim that the whole
+application became smaller: since that tag, `apps/ui/src` production code is net +5,135 lines and
+tests are net +5,351 lines because bilingual UI, native automation, compatibility guards,
+extracted boundaries, and regression coverage were added. Graph-family production code is net
++1,920 lines while Graph tests are net +3,976 lines. The next consolidation pass must therefore
+look for overlap among the extracted boundaries instead of judging progress only by the workbench
+file size.
+
+Specialist and standard Graph export/copy feedback now respects the active locale and never
+exposes a legacy Japanese exception in English mode. The formerly timing-sensitive Survival save
+test now awaits its asynchronous success feedback and passes repeatedly in isolation. Focused
+export, locale, Workbench, snapshot, and Survival tests plus UI typecheck and lint pass; the next
+full-suite/build checkpoint will cover the combined increment.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
@@ -277,9 +295,9 @@ project-action, App, open/save, workspace, and locale tests pass.
   controls are now separate tested boundaries. Time-analysis selection, factor-by-time scope,
   analysis-set selection, Statistics annotation display, canvas toolbar/export controls, semantic
   captions, inspector target/layer shortcuts, data-editor composition, renderer selection,
-  presentation state, data-selection state, analysis/annotation state, display presets, and active
-  layer descriptions are also separated. Remaining persisted-snapshot/view-model orchestration is
-  the next safe extraction boundary.
+  presentation state, data-selection state, analysis/annotation state, display presets, active
+  layer descriptions, active scope, and persisted-snapshot projection are also separated.
+  Remaining analysis-assessment/view-model orchestration is the next safe extraction boundary.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
   display, and ID/scalar draft synchronization now use shared primitives. Remaining specialized

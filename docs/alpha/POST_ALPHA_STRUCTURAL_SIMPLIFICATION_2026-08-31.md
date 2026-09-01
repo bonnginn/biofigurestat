@@ -143,3 +143,19 @@ verification, and execute the planned native UI regression harness.
    tests before sharing more spreadsheet code.
 4. Introduce route-level code splitting after native harness coverage exists.
 5. Centralize reviewed researcher terminology before starting English localization.
+
+## Continuation status — 2026-09-01
+
+The staged work continued after the original report without changing the saved project schema or
+scientific interpretation. `ExperimentGraphWorkbench.tsx` is now 1,116 lines versus 6,854 at the
+Public Alpha tag (about 84% smaller). Active scope and persisted snapshot projection are now tested
+boundaries; displayed conditions remain separate from the Statistics analysis set and emitted
+selection arrays cannot be mutated by later editor changes.
+
+The reduction is primarily a reduction in concentration and coupling, not in total source volume.
+Against the Public Alpha tag, `apps/ui/src` production code is net +5,135 lines and tests are net
++5,351 lines. The additions include the unified Japanese/English UI, native regression harnesses,
+compatibility protection, extracted components/helpers, and direct regression coverage. Within
+the Graph component family, production code is net +1,920 lines and tests are net +3,976 lines.
+Future simplification should compare extracted boundaries for genuine overlap and delete only
+semantically identical code; moving code into more files is not by itself a completion criterion.
