@@ -5,7 +5,10 @@ import type {
   WorkspaceGraphAnalysis,
   WorkspaceGraphState,
 } from "../../app/experimentWorkspaceProject";
-import { createAdjustedComparisonAnnotation } from "./experimentGraphAnnotations";
+import {
+  createAdjustedComparisonAnnotation,
+  createSelectedComparisonAnnotation,
+} from "./experimentGraphAnnotations";
 import { useAdjustedStatisticsAnnotations } from "./useAdjustedStatisticsAnnotations";
 
 type StatisticsAnnotation = NonNullable<WorkspaceGraphState["statisticsAnnotation"]>;
@@ -52,6 +55,25 @@ export function useExperimentGraphAnalysisState(input: Readonly<{
     setStatisticsAnnotations,
   });
 
+  const addSelectedComparisonAnnotation = () => {
+    if (analysisResult?.status !== "ok") return;
+    const test = analysisResult.tests[statisticsAnnotation.testIndex];
+    if (!test) return;
+    const next = createSelectedComparisonAnnotation({
+      test,
+      testIndex: statisticsAnnotation.testIndex,
+      requestId: analysisResult.requestId,
+      mode: statisticsAnnotation.mode,
+      sourceMode: input.sourceMode,
+      timeAnalysis: input.timeAnalysis,
+      analysisTimePointId: input.analysisTimePointId,
+    });
+    setStatisticsAnnotations((current) => [
+      ...current.filter(({ testIndex }) => testIndex !== next.testIndex),
+      next,
+    ]);
+  };
+
   return {
     analysis,
     setAnalysis,
@@ -61,5 +83,6 @@ export function useExperimentGraphAnalysisState(input: Readonly<{
     statisticsAnnotations,
     setStatisticsAnnotations,
     adjustedComparisonAnnotations,
+    addSelectedComparisonAnnotation,
   };
 }

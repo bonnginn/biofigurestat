@@ -55,7 +55,6 @@ import {
 import { createExperimentGraphUserActions } from "./experimentGraphUserActions";
 import {
   analysisTestAnnotationLabel,
-  createSelectedComparisonAnnotation,
   graphAnnotationContext,
 } from "./experimentGraphAnnotations";
 export {
@@ -153,6 +152,7 @@ export function ExperimentGraphWorkbench({
     statisticsAnnotations,
     setStatisticsAnnotations,
     adjustedComparisonAnnotations,
+    addSelectedComparisonAnnotation,
   } = useExperimentGraphAnalysisState({
     initialState,
     sourceMode,
@@ -522,24 +522,6 @@ export function ExperimentGraphWorkbench({
   const inspectGraphPart = (target: InspectorTarget) => {
     if (workspaceMode === "graph" && target === "statistics") return;
     setInspectorTarget(target);
-  };
-  const addSelectedComparisonAnnotation = () => {
-    if (!annotationEditorProps) return;
-    const test = annotationEditorProps.analysisResult.tests[statisticsAnnotation.testIndex];
-    if (!test) return;
-    const next = createSelectedComparisonAnnotation({
-      test,
-      testIndex: statisticsAnnotation.testIndex,
-      requestId: annotationEditorProps.analysisResult.requestId,
-      mode: statisticsAnnotation.mode,
-      sourceMode,
-      timeAnalysis,
-      analysisTimePointId,
-    });
-    setStatisticsAnnotations((current) => [
-      ...current.filter(({ testIndex }) => testIndex !== next.testIndex),
-      next,
-    ]);
   };
   return (
     <section
