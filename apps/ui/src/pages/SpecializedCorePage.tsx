@@ -479,6 +479,9 @@ export function SpecializedCorePage({
       initialSurvivalGraphSpec?.appearance.palette ??
       DEFAULT_SURVIVAL_COLORS,
   );
+  const [survivalFontSize, setSurvivalFontSize] = useState(
+    initialDraft?.survivalFontSize ?? initialSurvivalGraphSpec?.appearance.fontSize ?? 12,
+  );
   const [survivalWorkspaceTab, setSurvivalWorkspaceTab] = useState<"data" | "graph" | "statistics">(
     experimentFirstEntry ? "data" : "statistics",
   );
@@ -587,6 +590,7 @@ export function SpecializedCorePage({
       survivalXAxisLabel,
       survivalYAxisLabel,
       survivalPalette,
+      survivalFontSize,
       entryIntent: effectiveEntryIntent,
     }),
     [
@@ -603,6 +607,7 @@ export function SpecializedCorePage({
       survivalXAxisLabel,
       survivalYAxisLabel,
       survivalPalette,
+      survivalFontSize,
       text,
       transform,
       effectiveEntryIntent,
@@ -1191,6 +1196,7 @@ export function SpecializedCorePage({
                   timeLabel: survivalXAxisLabel,
                   probabilityLabel: survivalYAxisLabel,
                   palette: survivalPalette,
+                  fontSize: survivalFontSize,
                 })
               : null;
           const survivalState = createInitialProjectState({
@@ -1256,6 +1262,7 @@ export function SpecializedCorePage({
                 timeLabel: survivalXAxisLabel,
                 probabilityLabel: survivalYAxisLabel,
                 palette: survivalPalette,
+                fontSize: survivalFontSize,
               })
             : null;
         const updatedAdaptiveInput = activeAdaptiveInput
@@ -2129,6 +2136,23 @@ export function SpecializedCorePage({
           </small>
         </fieldset>
       ) : null}
+      <label>
+        <span>
+          {t("Graphの文字サイズ", "Graph font size")}: {survivalFontSize}px
+        </span>
+        <input
+          type="range"
+          min="9"
+          max="24"
+          step="1"
+          aria-label="Survival font size"
+          value={survivalFontSize}
+          onChange={(event) => {
+            setSurvivalFontSize(Number(event.target.value));
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+          }}
+        />
+      </label>
       <p className="specialized-engine-note">
         {t(
           "Graphの見た目を変更しても、Kaplan–Meier推定やlog-rank検定は再計算しません。",
@@ -2816,6 +2840,7 @@ export function SpecializedCorePage({
                   timeLabel={survivalXAxisLabel}
                   probabilityLabel={survivalYAxisLabel}
                   palette={survivalPalette}
+                  fontSize={survivalFontSize}
                   annotation={showLogRankAnnotation ? (logRankDisplay ?? undefined) : undefined}
                   countSemantics={
                     !experimentFirstEntry || activeAdaptiveInput ? "biological_n" : "records"

@@ -238,6 +238,7 @@ export const GraphSpecSchema = z
     appearance: z.object({
       palette: z.array(z.string()).min(1),
       pointSize: z.number().positive(),
+      fontSize: z.number().min(9).max(24).optional(),
       opacity: z.number().min(0).max(1),
       showRawPoints: z.boolean(),
       showPairedLines: z.boolean(),
@@ -470,6 +471,7 @@ export function createSurvivalGraphSpec(
     timeLabel: string;
     probabilityLabel?: string;
     palette?: readonly string[];
+    fontSize?: number;
   }>,
 ): GraphSpec {
   return GraphSpecSchema.parse({
@@ -483,6 +485,7 @@ export function createSurvivalGraphSpec(
     appearance: {
       palette: [...(input.palette ?? ["#4477AA", "#CC6677", "#228833"])],
       pointSize: 5,
+      fontSize: input.fontSize ?? 12,
       opacity: 1,
       showRawPoints: false,
       showPairedLines: false,

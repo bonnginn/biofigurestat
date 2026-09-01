@@ -51,6 +51,7 @@ export type SpecializedCoreDraft = Readonly<{
   survivalXAxisLabel?: string;
   survivalYAxisLabel?: string;
   survivalPalette?: readonly string[];
+  survivalFontSize?: number;
   /** Preserves unsupported/deferred module facts when the researcher revisits this route. */
   entryIntent?: DedicatedEntryIntent;
 }>;

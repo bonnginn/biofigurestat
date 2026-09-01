@@ -16,6 +16,7 @@ describe("Core D01/D02 graph specifications", () => {
       timeLabel: "Days after treatment",
       probabilityLabel: "Tumor-free probability",
       palette: ["#123456", "#abcdef"],
+      fontSize: 16,
     });
 
     expect(spec.axes).toMatchObject({
@@ -23,6 +24,7 @@ describe("Core D01/D02 graph specifications", () => {
       yLabel: "Tumor-free probability",
     });
     expect(spec.appearance.palette).toEqual(["#123456", "#abcdef"]);
+    expect(spec.appearance.fontSize).toBe(16);
   });
 
   it("round-trips grouped categories with independent color and shape channels", () => {

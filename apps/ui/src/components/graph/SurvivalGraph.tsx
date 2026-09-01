@@ -18,6 +18,7 @@ export const SurvivalGraph = forwardRef<
     timeLabel?: string;
     probabilityLabel?: string;
     palette?: readonly string[];
+    fontSize?: number;
     annotation?: string;
     countSemantics?: "biological_n" | "records";
   }
@@ -27,6 +28,7 @@ export const SurvivalGraph = forwardRef<
     timeLabel = "Follow-up time",
     probabilityLabel = "Survival probability",
     palette = DEFAULT_SURVIVAL_COLORS,
+    fontSize = 12,
     annotation,
     countSemantics = "biological_n",
   },
@@ -120,7 +122,7 @@ export const SurvivalGraph = forwardRef<
             x={left - 10}
             y={y(tick) + 4}
             textAnchor="end"
-            fontSize="12"
+            fontSize={fontSize}
             data-axis-tick-label="y"
             data-tick-value={tick}
           >
@@ -144,7 +146,7 @@ export const SurvivalGraph = forwardRef<
             x={x(tick)}
             y={axisY + 22}
             textAnchor="middle"
-            fontSize="12"
+            fontSize={fontSize}
             data-axis-tick-label="x"
             data-tick-value={tick}
           >
@@ -157,17 +159,23 @@ export const SurvivalGraph = forwardRef<
         y={plotHeight / 2}
         transform={`rotate(-90 18 ${plotHeight / 2})`}
         textAnchor="middle"
+        fontSize={fontSize + 2}
       >
         {probabilityLabel}
       </text>
-      <text x={(left + width - right) / 2} y={plotHeight + 48} textAnchor="middle">
+      <text
+        x={(left + width - right) / 2}
+        y={plotHeight + 48}
+        textAnchor="middle"
+        fontSize={fontSize + 2}
+      >
         {timeLabel}
       </text>
       {annotation ? (
         <text
           x={left + 8}
           y={18}
-          fontSize="13"
+          fontSize={fontSize + 1}
           fontWeight="600"
           data-graph-layer="statistics-annotation"
         >
@@ -213,13 +221,19 @@ export const SurvivalGraph = forwardRef<
               stroke={colors[index % colors.length] ?? DEFAULT_SURVIVAL_COLORS[0]}
               strokeWidth="3"
             />
-            <text x={width - 172} y={50 + index * 22} fontSize="13">
+            <text x={width - 172} y={50 + index * 22} fontSize={fontSize + 1}>
               {group.label} ({countSemantics === "biological_n" ? "n" : "records"}={group.n})
             </text>
           </g>
         </g>
       ))}
-      <text x={left} y={riskHeadingY} fontWeight="600" data-graph-layer="risk-table-title">
+      <text
+        x={left}
+        y={riskHeadingY}
+        fontSize={fontSize + 1}
+        fontWeight="600"
+        data-graph-layer="risk-table-title"
+      >
         {countSemantics === "biological_n"
           ? "Number at risk"
           : "Records at risk (not biological n)"}
@@ -230,7 +244,7 @@ export const SurvivalGraph = forwardRef<
           x={x(time)}
           y={riskTimeHeaderY}
           textAnchor="middle"
-          fontSize="11"
+          fontSize={Math.max(9, fontSize - 1)}
           data-graph-layer="risk-time-header"
           data-risk-time={time}
         >
@@ -243,7 +257,7 @@ export const SurvivalGraph = forwardRef<
             x={left - 8}
             y={riskGroupStartY + index * 24}
             textAnchor="end"
-            fontSize="12"
+            fontSize={fontSize}
             data-graph-layer="risk-group-label"
             data-series-id={group.conditionId}
           >
@@ -255,7 +269,7 @@ export const SurvivalGraph = forwardRef<
               x={x(time)}
               y={riskGroupStartY + index * 24}
               textAnchor="middle"
-              fontSize="12"
+              fontSize={fontSize}
               data-graph-layer="risk-count"
               data-series-id={group.conditionId}
               data-risk-time={time}

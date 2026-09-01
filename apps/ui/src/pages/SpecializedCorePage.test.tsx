@@ -800,6 +800,9 @@ describe("specialized Core entry pages", () => {
     fireEvent.change(screen.getByLabelText("ControlのSurvival曲線色"), {
       target: { value: "#123456" },
     });
+    fireEvent.change(screen.getByLabelText("Survival font size"), {
+      target: { value: "16" },
+    });
     expect(
       screen
         .getByRole("img", { name: "Kaplan–Meier survival graph" })
@@ -858,6 +861,7 @@ describe("specialized Core entry pages", () => {
       yLabel: "Tumor-free probability",
     });
     expect(savedGraphSpec.appearance.palette[0]).toBe("#123456");
+    expect(savedGraphSpec.appearance.fontSize).toBe(16);
 
     rendered.unmount();
     render(
@@ -872,6 +876,7 @@ describe("specialized Core entry pages", () => {
     expect(screen.getByLabelText("Survival Graph title")).toHaveValue("Tumor-free survival");
     expect(screen.getByLabelText("Survival X axis title")).toHaveValue("Days after treatment");
     expect(screen.getByLabelText("Survival Y axis title")).toHaveValue("Tumor-free probability");
+    expect(screen.getByLabelText("Survival font size")).toHaveValue("16");
     fireEvent.click(screen.getByRole("button", { name: "グラフ" }));
     expect(screen.getByLabelText("ControlのSurvival曲線色")).toHaveValue("#123456");
   });

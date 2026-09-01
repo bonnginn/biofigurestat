@@ -26,6 +26,7 @@ describe("SurvivalGraph", () => {
         timeLabel="Days after treatment"
         probabilityLabel="Tumor-free probability"
         palette={["#123456"]}
+        fontSize={16}
       />,
     );
 
@@ -37,6 +38,11 @@ describe("SurvivalGraph", () => {
     expect(svg.querySelector('[data-graph-layer="survival-curve"]')).toHaveAttribute(
       "stroke",
       "#123456",
+    );
+    expect(svg.querySelector('[data-axis-tick-label="y"]')).toHaveAttribute("font-size", "16");
+    expect(svg.querySelector('[data-graph-layer="series-legend"] text')).toHaveAttribute(
+      "font-size",
+      "17",
     );
     expect(model.groups[0]?.steps).toEqual(originalSteps);
   });
