@@ -248,7 +248,13 @@ $observedCandidates = @()
 $observedWindows = @()
 $appWindowSeen = $false
 while ([DateTime]::UtcNow -lt $deadline -and $null -eq $dialog) {
-  $windows = $desktop.FindAll([Windows.Automation.TreeScope]::Children, $windowTypeCondition)
+  $topLevelWindows = $desktop.FindAll([Windows.Automation.TreeScope]::Children, $windowTypeCondition)
+  $windows = @($topLevelWindows)
+  foreach ($appRoot in $topLevelWindows) {
+    if ($appRoot.Current.ProcessId -ne $processId) { continue }
+    $appWindowSeen = $true
+    $windows += @($appRoot.FindAll([Windows.Automation.TreeScope]::Descendants, $windowTypeCondition))
+  }
   foreach ($window in $windows) {
     if ($window.Current.ProcessId -eq $processId) { $appWindowSeen = $true }
     if ($window.Current.ProcessId -eq $processId -or $window.Current.Name -match 'Save|保存|書き出し|BioFigureStat') {
