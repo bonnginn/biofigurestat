@@ -897,17 +897,22 @@ async function runMacScenario({ executable, outputDirectory, timeoutMs }) {
         timeoutMs,
         child,
       );
-      await runMacAccessibility(
+      const typingTarget = await runMacAccessibility(
         "type",
         ["Experiment title", "実験タイトル", "実験タイトル（任意）"],
         "Native macOS regression experiment",
       );
-      return waitForMacSnapshot(
-        (snapshot) => macSnapshotContains(snapshot, ["Native macOS regression experiment"]),
-        "typed experiment title",
-        timeoutMs,
-        child,
-      );
+      try {
+        await waitForMacSnapshot(
+          (snapshot) => macSnapshotContains(snapshot, ["Native macOS regression experiment"]),
+          "typed experiment title",
+          timeoutMs,
+          child,
+        );
+        return { typingTarget, confirmedValue: "Native macOS regression experiment" };
+      } catch (error) {
+        throw new Error(`${error}; typing target: ${JSON.stringify(typingTarget)}`);
+      }
     });
     await runStep("macos_quit_guard_cancel_retains_work", async () => {
       await runMacAccessibility("quit");
