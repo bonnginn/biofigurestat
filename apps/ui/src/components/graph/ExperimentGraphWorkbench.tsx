@@ -39,11 +39,10 @@ import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluation
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { ExperimentGraphCanvasCaption } from "./ExperimentGraphCanvasCaption";
 import { ExperimentGraphCanvasToolbar } from "./ExperimentGraphCanvasToolbar";
+import { ExperimentGraphDataEditor } from "./ExperimentGraphDataEditor";
 import { ExperimentGraphDataSummary } from "./ExperimentGraphDataSummary";
 import { ExperimentGraphInspectorTarget } from "./ExperimentGraphInspectorTarget";
 import { ExperimentGraphDistributionEditor } from "./ExperimentGraphDistributionEditor";
-import { ExperimentGraphGroupingEditor } from "./ExperimentGraphGroupingEditor";
-import { ExperimentGraphSelectionEditor } from "./ExperimentGraphSelectionEditor";
 import { ExperimentGraphSeriesEditor } from "./ExperimentGraphSeriesEditor";
 import { ExperimentGraphTimeAnalysisEditor } from "./ExperimentGraphTimeAnalysisEditor";
 import { CompositionGraphSvg } from "./CompositionGraphSvg";
@@ -1077,98 +1076,77 @@ export function ExperimentGraphWorkbench({
             />
           )}
           {inspectorTarget === "data" ? (
-            <section className="experiment-graph-inspector-section">
-              <h3>{t("表示するデータ", "Data to display")}</h3>
-              <label className="experiment-graph-field">
-                <span>{t("測定項目", "Measured readout")}</span>
-                <select
-                  value={activeReadoutId}
-                  disabled={draft.readouts.length <= 1}
-                  aria-label={t("測定項目", "Measured readout")}
-                  onChange={(event) => {
-                    const nextReadout = draft.readouts.find(({ id }) => id === event.target.value);
-                    setSelectedReadoutId(event.target.value);
-                    setAxes((current) => ({
-                      ...current,
-                      yTitle: defaultGraphYTitle(nextReadout),
-                    }));
-                    setAnalysis(null);
-                  }}
-                >
-                  {draft.readouts.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {draft.analysisIntent.kind !== "correlation" ? (
-                <ExperimentGraphGroupingEditor
-                  draft={draft}
-                  axes={axes}
-                  grouping={grouping}
-                  setGrouping={setGrouping}
-                  setAppearance={setAppearance}
-                  visualSeriesCount={visualSeriesOptions.length}
-                  onEditSeriesStyles={() => inspectGraphPart("series-style")}
-                />
-              ) : null}
-              <ExperimentGraphSelectionEditor
-                draft={draft}
-                sourceMode={sourceMode}
-                timeAnalysis={timeAnalysis}
-                readoutLabel={readout.label}
-                derivedLineageRows={derivedLineageRows}
-                selectedTimePointIds={selectedTimePointIds}
-                activeConditionIds={activeConditionIds}
-                onSourceModeChange={(mode) => {
-                  setSourceMode(mode);
-                  if (mode === "derived_metric") {
-                    const nextType =
-                      draft.conditionAssignment.kind === "matched" ? "paired_dot" : "dot";
-                    if (timeAnalysis.kind === "selected_timepoint") {
-                      setTimeAnalysis({ kind: "auc" });
-                    }
-                    setGraphType(nextType);
-                    setLayers(defaultLayersForGraphType(nextType, "nested_continuous"));
+            <ExperimentGraphDataEditor
+              draft={draft}
+              activeReadoutId={activeReadoutId}
+              axes={axes}
+              grouping={grouping}
+              setGrouping={setGrouping}
+              setAppearance={setAppearance}
+              visualSeriesCount={visualSeriesOptions.length}
+              sourceMode={sourceMode}
+              timeAnalysis={timeAnalysis}
+              readoutLabel={readout.label}
+              derivedLineageRows={derivedLineageRows}
+              selectedTimePointIds={selectedTimePointIds}
+              activeConditionIds={activeConditionIds}
+              onReadoutChange={(readoutId) => {
+                const nextReadout = draft.readouts.find(({ id }) => id === readoutId);
+                setSelectedReadoutId(readoutId);
+                setAxes((current) => ({
+                  ...current,
+                  yTitle: defaultGraphYTitle(nextReadout),
+                }));
+                setAnalysis(null);
+              }}
+              onSourceModeChange={(mode) => {
+                setSourceMode(mode);
+                if (mode === "derived_metric") {
+                  const nextType =
+                    draft.conditionAssignment.kind === "matched" ? "paired_dot" : "dot";
+                  if (timeAnalysis.kind === "selected_timepoint") {
+                    setTimeAnalysis({ kind: "auc" });
                   }
-                  setAxes((current) => ({
-                    ...current,
-                    yTitle:
-                      mode === "derived_metric"
-                        ? `${readout?.label ?? t("測定値", "Measured value")} — ${timeMetricLabel(
-                            timeAnalysis.kind === "selected_timepoint"
-                              ? { kind: "auc" }
-                              : timeAnalysis,
-                            locale,
-                          )}`
-                        : defaultGraphYTitle(readout),
-                  }));
-                  setAnalysis(null);
-                }}
-                onAllTimePointsChange={(checked) => {
-                  setSelectedTimePointIds(
-                    checked ? draft.time.points.map((point) => point.id) : [],
-                  );
-                  setAnalysis(null);
-                }}
-                onTimePointChange={(timePointId, checked) => {
-                  setSelectedTimePointIds((current) =>
-                    checked
-                      ? [...current, timePointId]
-                      : current.filter((selectedId) => selectedId !== timePointId),
-                  );
-                  setAnalysis(null);
-                }}
-                onConditionChange={(conditionId, checked) =>
-                  setSelectedConditionIds((current) =>
-                    checked
-                      ? [...current, conditionId]
-                      : current.filter((selectedId) => selectedId !== conditionId),
-                  )
+                  setGraphType(nextType);
+                  setLayers(defaultLayersForGraphType(nextType, "nested_continuous"));
                 }
-              />
-            </section>
+                setAxes((current) => ({
+                  ...current,
+                  yTitle:
+                    mode === "derived_metric"
+                      ? `${readout?.label ?? t("測定値", "Measured value")} — ${timeMetricLabel(
+                          timeAnalysis.kind === "selected_timepoint"
+                            ? { kind: "auc" }
+                            : timeAnalysis,
+                          locale,
+                        )}`
+                      : defaultGraphYTitle(readout),
+                }));
+                setAnalysis(null);
+              }}
+              onAllTimePointsChange={(checked) => {
+                setSelectedTimePointIds(
+                  checked ? draft.time.points.map((point) => point.id) : [],
+                );
+                setAnalysis(null);
+              }}
+              onTimePointChange={(timePointId, checked) => {
+                setSelectedTimePointIds((current) =>
+                  checked
+                    ? [...current, timePointId]
+                    : current.filter((selectedId) => selectedId !== timePointId),
+                );
+                setAnalysis(null);
+              }}
+              onConditionChange={(conditionId, checked) =>
+                setSelectedConditionIds((current) =>
+                  checked
+                    ? [...current, conditionId]
+                    : current.filter((selectedId) => selectedId !== conditionId),
+                )
+              }
+              onEditSeriesStyles={() => inspectGraphPart("series-style")}
+            />
           ) : null}
 
           {inspectorTarget === "background" ? (

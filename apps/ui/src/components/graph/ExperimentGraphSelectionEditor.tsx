@@ -3,9 +3,9 @@ import type { ExperimentSetDraft, TimeAnalysisPlan } from "../../app/experimentD
 import { timeMetricLabel } from "./experimentGraphAnnotations";
 import { formatGraphNumber } from "./graphValueFormatting";
 
-type SourceMode = "raw_readout" | "derived_metric";
+export type GraphSourceMode = "raw_readout" | "derived_metric";
 
-type DerivedLineageRow = Readonly<{
+export type DerivedGraphLineageRow = Readonly<{
   id: string;
   unit: string;
   condition: string;
@@ -15,13 +15,13 @@ type DerivedLineageRow = Readonly<{
 
 type ExperimentGraphSelectionEditorProps = Readonly<{
   draft: ExperimentSetDraft;
-  sourceMode: SourceMode;
+  sourceMode: GraphSourceMode;
   timeAnalysis: TimeAnalysisPlan;
   readoutLabel: string;
-  derivedLineageRows: readonly DerivedLineageRow[];
+  derivedLineageRows: readonly DerivedGraphLineageRow[];
   selectedTimePointIds: readonly string[];
   activeConditionIds: ReadonlySet<string>;
-  onSourceModeChange: (mode: SourceMode) => void;
+  onSourceModeChange: (mode: GraphSourceMode) => void;
   onAllTimePointsChange: (checked: boolean) => void;
   onTimePointChange: (timePointId: string, checked: boolean) => void;
   onConditionChange: (conditionId: string, checked: boolean) => void;
@@ -53,7 +53,7 @@ export function ExperimentGraphSelectionEditor({
             <select
               aria-label={t("グラフのデータソース", "Graph data source")}
               value={sourceMode}
-              onChange={(event) => onSourceModeChange(event.currentTarget.value as SourceMode)}
+              onChange={(event) => onSourceModeChange(event.currentTarget.value as GraphSourceMode)}
             >
               <option value="raw_readout">{t("元の時系列", "Original time series")}</option>
               <option value="derived_metric">
