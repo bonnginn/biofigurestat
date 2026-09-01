@@ -12,6 +12,7 @@ import {
   selectWebviewTarget,
   windowsCloseCommand,
   windowsFileDialogCommand,
+  windowsFileDialogFailure,
 } from "./native_ui_regression.mjs";
 
 test("parses a bounded Windows native regression invocation", () => {
@@ -67,6 +68,8 @@ test("drives only the exact spawned process native Save dialog with encoded path
   assert.deepEqual(saveCommand.slice(0, 2), ["-NoProfile", "-NonInteractive"]);
   assert.match(saveCommand.at(-1), /\$processId = 4242/);
   assert.match(saveCommand.at(-1), /UIAutomationClient/);
+  assert.match(saveCommand.at(-1), /BioFigureStatNativeWindowOwner/);
+  assert.match(saveCommand.at(-1), /ownerProcessId -eq \$processId/);
   assert.match(saveCommand.at(-1), /FromBase64String/);
   assert.doesNotMatch(saveCommand.at(-1), /日本語|quote/);
   assert.match(saveCommand.at(-1), /AutomationIdProperty,\s*\n\s*'1001'/);
@@ -77,6 +80,32 @@ test("drives only the exact spawned process native Save dialog with encoded path
   assert.throws(() => windowsFileDialogCommand(0, "cancel"), /positive integer/);
   assert.throws(() => windowsFileDialogCommand(4242, "save", "figure.svg"), /must be absolute/);
   assert.throws(() => windowsFileDialogCommand(4242, "overwrite"), /Unsupported/);
+});
+
+test("classifies Windows file-dialog failures from stderr rather than echoed command source", () => {
+  const missing = windowsFileDialogFailure({
+    stderr:
+      "FILE_DIALOG_NOT_FOUND: native Save dialog did not appear; candidates=[]\r\n" +
+      "command text HARNESS_FILE_DIALOG_AUTOMATION: not an actual failure",
+  });
+  assert.match(missing.message, /^FILE_DIALOG_NOT_FOUND:/);
+  assert.equal(
+    classifyNativeRegressionFailure(missing, [
+      { name: "native_svg_save_dialog_cancel", status: "fail" },
+    ]),
+    "PRODUCT_REGRESSION",
+  );
+
+  const unavailable = windowsFileDialogFailure({
+    stderr: "HARNESS_FILE_DIALOG_AUTOMATION: Windows UI Automation is unavailable\r\n",
+  });
+  assert.match(unavailable.message, /^HARNESS_FILE_DIALOG_AUTOMATION:/);
+  assert.equal(
+    classifyNativeRegressionFailure(unavailable, [
+      { name: "native_svg_save_dialog_cancel", status: "fail" },
+    ]),
+    "HARNESS_INFRASTRUCTURE_BLOCKED",
+  );
 });
 
 test("accepts the fresh WebView2 page target before its initial URL is committed", () => {

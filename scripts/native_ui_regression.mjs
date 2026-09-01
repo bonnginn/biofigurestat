@@ -221,6 +221,16 @@ $ErrorActionPreference = 'Stop'
 try {
   Add-Type -AssemblyName UIAutomationClient
   Add-Type -AssemblyName UIAutomationTypes
+  Add-Type @'
+using System;
+using System.Runtime.InteropServices;
+public static class BioFigureStatNativeWindowOwner {
+  [DllImport("user32.dll")]
+  public static extern IntPtr GetWindow(IntPtr window, uint command);
+  [DllImport("user32.dll")]
+  public static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+}
+'@
 } catch {
   throw 'HARNESS_FILE_DIALOG_AUTOMATION: Windows UI Automation is unavailable: ' + $_.Exception.Message
 }
@@ -228,30 +238,41 @@ $processId = ${processId}
 $action = '${action}'
 $target = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${encodedTarget}'))
 $desktop = [Windows.Automation.AutomationElement]::RootElement
-$processCondition = [Windows.Automation.PropertyCondition]::new(
-  [Windows.Automation.AutomationElement]::ProcessIdProperty,
-  $processId
-)
 $windowTypeCondition = [Windows.Automation.PropertyCondition]::new(
   [Windows.Automation.AutomationElement]::ControlTypeProperty,
   [Windows.Automation.ControlType]::Window
 )
-$windowCondition = [Windows.Automation.AndCondition]::new(
-  [Windows.Automation.Condition[]]@($processCondition, $windowTypeCondition)
-)
 $deadline = [DateTime]::UtcNow.AddSeconds(20)
 $dialog = $null
+$observedCandidates = @()
 while ([DateTime]::UtcNow -lt $deadline -and $null -eq $dialog) {
-  $windows = $desktop.FindAll([Windows.Automation.TreeScope]::Children, $windowCondition)
+  $windows = $desktop.FindAll([Windows.Automation.TreeScope]::Children, $windowTypeCondition)
   foreach ($window in $windows) {
-    if ($window.Current.ClassName -eq '#32770' -or $window.Current.Name -match 'Save|保存') {
+    $looksLikeDialog = $window.Current.ClassName -eq '#32770' -or $window.Current.Name -match 'Save|保存|書き出し'
+    if (-not $looksLikeDialog) { continue }
+    $ownerProcessId = 0
+    $nativeHandle = [IntPtr]$window.Current.NativeWindowHandle
+    $ownerHandle = [BioFigureStatNativeWindowOwner]::GetWindow($nativeHandle, 4)
+    if ($ownerHandle -ne [IntPtr]::Zero) {
+      [void][BioFigureStatNativeWindowOwner]::GetWindowThreadProcessId($ownerHandle, [ref]$ownerProcessId)
+    }
+    $observedCandidates += @{
+      name = $window.Current.Name
+      className = $window.Current.ClassName
+      processId = $window.Current.ProcessId
+      ownerProcessId = $ownerProcessId
+    }
+    if ($window.Current.ProcessId -eq $processId -or $ownerProcessId -eq $processId) {
       $dialog = $window
       break
     }
   }
   if ($null -eq $dialog) { Start-Sleep -Milliseconds 100 }
 }
-if ($null -eq $dialog) { throw 'FILE_DIALOG_NOT_FOUND: native Save dialog did not appear' }
+if ($null -eq $dialog) {
+  $summary = ConvertTo-Json @($observedCandidates | Select-Object -Last 12) -Compress
+  throw ('FILE_DIALOG_NOT_FOUND: native Save dialog did not appear; candidates=' + $summary)
+}
 if ($action -eq 'cancel') {
   $cancelId = [Windows.Automation.PropertyCondition]::new(
     [Windows.Automation.AutomationElement]::AutomationIdProperty,
@@ -313,6 +334,15 @@ if ($action -eq 'cancel') {
 [Console]::Out.Write((ConvertTo-Json @{ ok = $true; action = $action; dialog = $dialog.Current.Name } -Compress))
 `;
   return ["-NoProfile", "-NonInteractive", "-Command", script];
+}
+
+export function windowsFileDialogFailure(error) {
+  const stderr = typeof error?.stderr === "string" ? error.stderr : "";
+  const marker = stderr.match(
+    /(?:HARNESS_FILE_DIALOG_AUTOMATION|FILE_DIALOG_(?:NOT_FOUND|CONTROL_NOT_FOUND)):[^\r\n]*/i,
+  )?.[0];
+  if (marker) return new Error(marker);
+  return error instanceof Error ? error : new Error(String(error));
 }
 
 export function macAccessibilityScript(action, names = [], value = "") {
@@ -710,15 +740,19 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
     });
   };
   const driveFileDialog = async (action, target = "") => {
-    const { stdout } = await execFileAsync(
-      "powershell.exe",
-      windowsFileDialogCommand(child.pid, action, target),
-      {
-        timeout: Math.max(25_000, Math.min(timeoutMs + 5_000, 120_000)),
-        windowsHide: true,
-      },
-    );
-    return stdout.trim() ? JSON.parse(stdout.trim()) : { ok: true, action };
+    try {
+      const { stdout } = await execFileAsync(
+        "powershell.exe",
+        windowsFileDialogCommand(child.pid, action, target),
+        {
+          timeout: Math.max(25_000, Math.min(timeoutMs + 5_000, 120_000)),
+          windowsHide: true,
+        },
+      );
+      return stdout.trim() ? JSON.parse(stdout.trim()) : { ok: true, action };
+    } catch (error) {
+      throw windowsFileDialogFailure(error);
+    }
   };
 
   try {
