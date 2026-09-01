@@ -43,6 +43,7 @@ import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEdit
 import { graphPresentationForPreset } from "./experimentGraphPresets";
 import { describeActiveGraphLayers } from "./experimentGraphLayerDescription";
 export { describeActiveGraphLayers } from "./experimentGraphLayerDescription";
+import { selectExperimentGraphActiveScope } from "./experimentGraphActiveScope";
 import { ExperimentGraphConnectingLineEditor } from "./ExperimentGraphConnectingLineEditor";
 import { ExperimentGraphErrorBarEditor } from "./ExperimentGraphErrorBarEditor";
 import { ExperimentGraphLegendEditor } from "./ExperimentGraphLegendEditor";
@@ -355,27 +356,24 @@ export function ExperimentGraphWorkbench({
     },
   });
 
-  const readout = draft.readouts.find((item) => item.id === selectedReadoutId) ?? draft.readouts[0];
-  const activeReadoutId = readout?.id ?? "";
-  const activeConditionIds = new Set(selectedConditionIds);
-  const activeConditions = draft.conditions.filter((condition) =>
-    activeConditionIds.has(condition.id),
-  );
-  const activeAnalysisConditionIds = new Set(analysisConditionIds);
-  const activeAnalysisConditions = draft.conditions.filter((condition) =>
-    activeAnalysisConditionIds.has(condition.id),
-  );
-  const activeTimePoints = draft.time.points.filter((point) =>
-    selectedTimePointIds.includes(point.id),
-  );
-  const timeLabel =
-    sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis)
-      ? t("派生値：", "Derived value: ") + timeMetricLabel(timeAnalysis, locale)
-      : activeTimePoints.length
-        ? activeTimePoints.map((point) => `${point.value} ${draft.time.unit}`).join("、")
-        : draft.time.sampling === "none"
-          ? undefined
-          : "時点未選択";
+  const {
+    readout,
+    activeReadoutId,
+    activeConditionIds,
+    activeConditions,
+    activeAnalysisConditions,
+    activeTimePoints,
+    timeLabel,
+  } = selectExperimentGraphActiveScope({
+    draft,
+    selectedReadoutId,
+    selectedConditionIds,
+    analysisConditionIds,
+    selectedTimePointIds,
+    sourceMode,
+    timeAnalysis,
+    locale,
+  });
 
   const series = useMemo(
     () =>
