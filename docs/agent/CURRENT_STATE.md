@@ -496,6 +496,14 @@ typecheck, full lint, and the production build; the initial chunk remains 264.45
 with no build advisory. The expanded Public Alpha migration fixture passes the complete project
 package suite (9 files / 66 tests) and project typecheck.
 
+The selected Graph scope now feeds one derived-data projection for series, derived lineage rows,
+readout shape, hierarchical/category axis labels, facets, visual-series options, and the final
+visible-data gate. The projection composes the existing tested scientific builders; condition,
+time, source-mode, nested/raw-point, and lineage semantics are unchanged. This reduces the outer
+workbench to 768 lines. The 60 existing Workbench/series/presentation tests, UI typecheck, full
+lint, and the production build pass. The initial chunk remains 264.45 kB (gzip 81.20 kB) with no
+build advisory; no move-only test was added.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
@@ -527,7 +535,10 @@ package suite (9 files / 66 tests) and project typecheck.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
   display, and ID/scalar/append-value draft synchronization now use shared primitives. Remaining
-  specialized cell-editor presentation is the next safe commonization boundary.
+  input controls were audited after this consolidation. Their remaining commit rules are specific
+  to dates, proportions, loading-control ratios, missingness, identity conflicts, or nested
+  structure; they should not be forced through one generic string commit boundary. Further
+  commonization should follow a concrete duplicated behavior, not file-count reduction.
 - Route-level code splitting now defers the Graph workbench from Data and Statistics entry paths.
   The remaining large initial and shared graph-layout chunks require bounded dependency analysis;
   further splitting must preserve renderer and export parity.
