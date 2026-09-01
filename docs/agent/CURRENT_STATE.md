@@ -463,6 +463,13 @@ After both increments, the complete UI gate passes 193 files / 1,295 tests in 24
 typecheck, full lint, and the production build pass; the initial chunk remains 264.45 kB (gzip
 81.20 kB) with no build advisory.
 
+Graph SVG, PNG, CSV, and clipboard actions now use one user-action controller. It reads the current
+SVG and selected Graph scope, delegates native Save-dialog behavior and cancellation to the
+existing export controller, and delegates localized success/failure diagnostics to the existing
+feedback boundary. CSV composition and visible-series serialization are unchanged. This reduces
+the orchestration workbench to 898 lines; the 57 focused Workbench/export tests, UI typecheck, and
+focused lint pass.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
@@ -487,8 +494,8 @@ typecheck, full lint, and the production build pass; the initial chunk remains 2
   presentation state, data-selection state, analysis/annotation state, display-preset/type
   transitions, active
   layer descriptions, active scope, and persisted-snapshot projection are also separated.
-  Remaining user export/copy action composition and benchmark finalization are the next bounded
-  orchestration candidates; they must retain native cancellation and evidence semantics.
+  Remaining benchmark finalization is the next bounded orchestration candidate; it must retain
+  evidence semantics and stay isolated from ordinary product state.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
   display, and ID/scalar/append-value draft synchronization now use shared primitives. Remaining
