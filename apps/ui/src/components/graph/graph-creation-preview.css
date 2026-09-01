@@ -37,12 +37,24 @@
 }
 
 .graph-current-preview__axis,
+.graph-current-preview__tick,
 .graph-current-preview__summary,
 .graph-current-preview__error,
 .graph-current-preview__line {
   fill: none;
   stroke: #2f4052;
   stroke-width: 1.4;
+}
+
+.graph-current-preview__tick-label {
+  fill: #2f4052;
+  font-size: 11px;
+}
+
+.graph-current-preview__axis-title {
+  fill: #17293b;
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .graph-current-preview__line {

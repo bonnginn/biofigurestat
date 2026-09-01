@@ -44,6 +44,28 @@ describe("CurrentDataGraphPreview scientific integrity", () => {
     expect(Number(graph.getAttribute("data-domain-max"))).toBeGreaterThan(0);
   });
 
+  it("uses shared plot bounds and renders non-overlapping axis context", () => {
+    const { draft, cells } = previewFixture();
+    render(<CurrentDataGraphPreview type="dot" draft={draft} cells={cells} />);
+
+    const graph = screen.getByRole("img", { name: /dotで現在のデータ/ });
+    const plotLeft = Number(graph.getAttribute("data-plot-left"));
+    const plotRight = Number(graph.getAttribute("data-plot-right"));
+    const plotTop = Number(graph.getAttribute("data-plot-top"));
+    const plotBottom = Number(graph.getAttribute("data-plot-bottom"));
+    const yTitle = screen.getByText("細胞強度 (a.u.)");
+
+    expect({ plotLeft, plotRight, plotTop, plotBottom }).toEqual({
+      plotLeft: 70,
+      plotRight: 340,
+      plotTop: 22,
+      plotBottom: 222,
+    });
+    expect(graph.querySelectorAll("[data-preview-y-tick]").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("条件")).toBeVisible();
+    expect(Number(yTitle.getAttribute("x"))).toBeLessThan(plotLeft);
+  });
+
   it("uses a sampled density outline instead of a min-max silhouette for violin previews", () => {
     const { draft, cells } = previewFixture();
     render(

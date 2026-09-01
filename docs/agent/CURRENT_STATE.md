@@ -643,6 +643,13 @@ array. The Public Alpha migration fixture now also proves that warning code and 
 legacy open and current save/reopen. This adds persistence evidence without adding another heavy UI
 route test.
 
+The ordinary current-data Graph preview now exposes the same minimum axis context expected from a
+finished Graph: a shared plot rectangle, nice-number Y ticks, tick labels, and X/Y titles with the
+shared adaptive Y-title spacing rule. The preview's scientific layers, domains, values, and graph
+selection are unchanged. A direct coordinate regression proves the title remains left of the
+plot, and the focused preview tests, UI typecheck, and focused lint pass. Final visual judgment for
+scatter/composition variants remains a human Beta review item.
+
 The ordinary, scatter, and categorical Graph-creation previews now consume that same rectangle
 contract for axis endpoints, point scaling, bar baselines, and label anchors. Existing preview
 dimensions and data domains are unchanged; future margin changes no longer require several

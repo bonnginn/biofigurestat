@@ -3,6 +3,7 @@ import {
   experimentCellKey,
   percentage,
   timePointLabel,
+  orderedAxisTitle,
   orderedAxisUnit,
   wbRatio,
   type ExperimentCellMap,
@@ -14,7 +15,7 @@ import { defaultLayersForGraphType } from "../../app/graphDefaults";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import { violinDensityPath } from "./graphGeometry";
-import { createPlotRectangle } from "./graphLayout";
+import { createNiceTicks, createPlotRectangle, yAxisTitlePosition } from "./graphLayout";
 
 import "./graph-creation-preview.css";
 
@@ -419,7 +420,7 @@ export function CurrentDataGraphPreview({
     top: 22,
     right: 20,
     bottom: 78,
-    left: 46,
+    left: 70,
   });
   const observedMin = Math.min(...allValues);
   const observedMax = Math.max(...allValues);
@@ -441,6 +442,24 @@ export function CurrentDataGraphPreview({
   const yFor = (value: number) =>
     previewPlot.top + ((domainMax - value) / (domainMax - domainMin)) * previewPlot.height;
   const xFor = (index: number) => previewPlot.left + 16 + index * 72;
+  const yTicks = createNiceTicks(domainMin, domainMax, 5, null);
+  const tickFormatter = new Intl.NumberFormat(locale, { maximumSignificantDigits: 4 });
+  const yTickLabels = yTicks.map((tick) => tickFormatter.format(tick));
+  const yAxisTitle = selectedReadout
+    ? `${selectedReadout.label}${selectedReadout.unit ? ` (${selectedReadout.unit})` : ""}`
+    : t("測定値", "Measurement");
+  const xAxisTitle =
+    draft.time.points.length > 0
+      ? `${draft.attributes[0]?.label || t("条件", "Condition")} × ${orderedAxisTitle(draft.time)}`
+      : draft.attributes[0]?.label || t("条件", "Condition");
+  const yTitleX = yAxisTitlePosition({
+    axisX: previewPlot.left,
+    tickLabels: yTickLabels,
+    tickFontSize: 11,
+    titleFontSize: 12,
+    minimumX: 14,
+    gap: 4,
+  });
   const summaryLines = [...new Set(groups.map(({ conditionId }) => conditionId))].flatMap(
     (conditionId) => {
       const points = groups.flatMap((group, index) => {
@@ -497,6 +516,10 @@ export function CurrentDataGraphPreview({
         )}
         data-domain-min={domainMin}
         data-domain-max={domainMax}
+        data-plot-left={previewPlot.left}
+        data-plot-right={previewPlot.right}
+        data-plot-top={previewPlot.top}
+        data-plot-bottom={previewPlot.bottom}
       >
         <line
           className="graph-current-preview__axis"
@@ -505,6 +528,28 @@ export function CurrentDataGraphPreview({
           y1={previewPlot.top}
           y2={previewPlot.bottom}
         />
+        {yTicks.map((tick, index) => {
+          const y = yFor(tick);
+          return (
+            <g key={`y-tick-${tick}`} data-preview-y-tick={tick}>
+              <line
+                className="graph-current-preview__tick"
+                x1={previewPlot.left - 5}
+                x2={previewPlot.left}
+                y1={y}
+                y2={y}
+              />
+              <text
+                className="graph-current-preview__tick-label"
+                x={previewPlot.left - 9}
+                y={y + 4}
+                textAnchor="end"
+              >
+                {yTickLabels[index]}
+              </text>
+            </g>
+          );
+        })}
         <line
           className="graph-current-preview__axis"
           x1={previewPlot.left}
@@ -621,6 +666,23 @@ export function CurrentDataGraphPreview({
             </g>
           );
         })}
+        <text
+          className="graph-current-preview__axis-title"
+          x={previewPlot.left + previewPlot.width / 2}
+          y={previewPlot.bottom + 58}
+          textAnchor="middle"
+        >
+          {xAxisTitle}
+        </text>
+        <text
+          className="graph-current-preview__axis-title"
+          x={yTitleX}
+          y={previewPlot.top + previewPlot.height / 2}
+          textAnchor="middle"
+          transform={`rotate(-90 ${yTitleX} ${previewPlot.top + previewPlot.height / 2})`}
+        >
+          {yAxisTitle}
+        </text>
       </svg>
     </div>
   );

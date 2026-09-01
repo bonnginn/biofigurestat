@@ -21,7 +21,7 @@
 | ---- | ---- | ---- | ------------ | -------- |
 | 1 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
 | 2 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Windows OpenとSVG/PNG/CSV Export Cancelはpackaged PASS。次に保存先指定、Save Asと`.lsa`関連付けを再現 |
-| 3 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | Graph preview parity、Kaplan–Meierの軸・凡例設定、Graph-only表示差を実機で確認 |
+| 3 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | 通常Graph previewの軸contextは実装済み。Kaplan–Meierの軸・凡例設定、Graph-only表示差と最終的な見た目を実機で確認 |
 | 4 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
 
 ## 公開・運用
@@ -82,7 +82,7 @@
 
 | 状態 | 項目                                   | 完了条件                                                                         |
 | ---- | -------------------------------------- | -------------------------------------------------------------------------------- |
-| ⏸    | Graph preview品質を完成Graphへ近づける | previewでも軸、font、余白、点、誤差線が実用的に見える                            |
+| 🟡   | Graph preview品質を完成Graphへ近づける | 通常previewへ共有plot bounds、nice Y ticks、軸title、tick余白を実装し、点・誤差線と合わせて座標回帰を固定。scatter/category構成を含む最終的な見た目は実機確認待ち |
 | ✅   | workspace上部をcompact化               | compact headerと安全な概要導線を実装・回帰test済み                               |
 | ✅   | 実験metadataの再編集                   | 既存のstructure revision経路から実験名・条件・測定項目を安全に修正可能           |
 | 🟡   | Kaplan–Meier外観設定の共通化           | 系列色と保存互換なfont sizeを実装。軸・legend等のparityは継続                    |
