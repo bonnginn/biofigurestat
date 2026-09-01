@@ -67,6 +67,14 @@ safe experiment-detail revision, canonical worksheet undo/redo, retained control
 comparison access, Kaplan–Meier font sizing, and adaptive Y-axis title spacing. These source changes
 have not replaced the published Alpha binaries.
 
+The next Beta usability batch now includes two completed source-only improvements. Excel workbook
+import accepts an explicit A1 range, one to three header rows, and multiple source workbooks while
+retaining file provenance; workbook count is never interpreted as statistical `n`. Home also has
+one bilingual five-minute guide backed by artificial independent-group data. It opens directly in
+the populated Data workspace and guides the user through Graph, Statistics, and Methods without
+changing analysis semantics or the `.lsa` schema. These changes are not yet part of a published
+binary.
+
 The final source gate ran the 193-file / 1,304-test UI suite once. It produced 1,303 passes and one
 stale test expectation for the Japanese `概要` tab; the corrected focused workflow passes. Full
 workspace typecheck, UI lint, production UI build, the 9-test native-harness self-suite, and the

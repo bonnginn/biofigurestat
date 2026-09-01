@@ -19,10 +19,13 @@
 
 | 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
 | ---- | ---- | ---- | ------------ | -------- |
-| 1 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
-| 2 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Open、Save As、PNG/SVG/CSVのCancelと保存先、および`.lsa`関連付けをpackaged appで再現 |
-| 3 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | Graph preview parity、Kaplan–Meierの軸・凡例設定、Graph-only表示差を実機で確認 |
-| 4 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
+| 1 | ⬜ | 制約付きExcelテンプレート＋取込レシピ | 不要 | 条件名、ID、実験回・日付、測定値の揺れを防ぐtemplateと、現在のrange/header/multi-file取込に対応した短い手順を提供 |
+| 2 | ⬜ | 共同研究者向け解析レビューセット | 出力内容の最終判断のみ | Graph、群別n、推定値・CI、警告、Methods、対応するデータ版をrun ID付きで一括出力 |
+| 3 | ⬜ | IT・データ取扱い概要 | 組織固有要件のみ | 通信、保存場所、権限、署名、利用情報送信を日英1文書に整理 |
+| 4 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
+| 5 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Open、Save As、PNG/SVG/CSVのCancelと保存先、および`.lsa`関連付けをpackaged appで再現 |
+| 6 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | Graph preview parity、Kaplan–Meierの軸・凡例設定、Graph-only表示差を実機で確認 |
+| 7 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
 
 ## 公開・運用
 
@@ -93,7 +96,8 @@
 | ✅   | SpreadsheetのUndo/Redo                 | bounded canonical履歴を共通化し、Ctrl/Cmd+Z・redo・外部置換時clearを回帰test済み |
 | 🟡   | Graph-onlyの通常workspace統合          | 共通editorは利用可能。完成Graphとの表示差を継続解消                              |
 | ✅   | 複数projectのタブ管理                  | 同一windowで保持、再Open、dirty checkpointを回帰test済み                         |
-| ✅   | Excel workbook取込                     | `.xls/.xlsx/.xlsm/.xlsb`、sheet選択、Expとしてstackを実装済み                    |
+| ✅   | 現実的なExcel workbook取込             | `.xls/.xlsx/.xlsm/.xlsb`、複数file、sheet、A1範囲、1–3段見出し、Expとしてstack、source file provenanceを実装・回帰test済み。file数を統計上の`n`にはしない |
+| ✅   | Homeから始まる5分ガイド                | 1つの合成デモでData→Graph→Statistics→Methodsを順に案内し、日英表示と遷移を回帰test済み |
 
 ## コード整理・堅牢化
 
