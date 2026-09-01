@@ -63,7 +63,7 @@ Methods text, and failure behavior.
 
 | Design / outcome | Current execution status | Required before enabling |
 | --- | --- | --- |
-| Two independent groups, continuous outcome | Not yet executable | Reviewed Welch-compatible TOST/CI implementation, asymmetric-margin tests, simulation/reference vectors, Methods text |
+| Two independent groups, continuous outcome; one primary raw-difference comparison | Executable (`0.15.0`, Welch TOST) | Implemented with unequal-variance SE/df, two one-sided p values, equal-tail 90% CI, asymmetric-margin reference vectors, three-state result, Methods, and `.lsa` round trip |
 | Matched pairs, continuous outcome | Not yet executable | Difference-score TOST/CI review, complete-pair policy, missing-pair diagnostics, reference vectors |
 | More than one selected comparison | Not yet executable | Explicit claim family and reviewed multiplicity/ordering rule; no silent reuse of ordinary post-hoc correction |
 | Shared experimental run/source with condition-specific units | Unsupported pending review | Explicit fixed/random block model and degrees-of-freedom policy; shared provenance must not be treated as pairing |
@@ -93,7 +93,8 @@ or Games–Howell difference-testing correction into an equivalence procedure.
 
 ## Consequences
 
-- A researcher can record and reopen the scientific margin before executable support is added.
+- A researcher can record and reopen the scientific margin before executable support is added for
+  a design, and can execute the reviewed independent-continuous single-primary route.
 - Public Alpha `.lsa` files without an equivalence plan remain valid.
 - A non-significant ordinary test never becomes evidence of equivalence.
 - A statistically significant ordinary difference and an equivalence conclusion are not treated

@@ -1,6 +1,6 @@
 # Current Working State
 
-Updated: 2026-09-02 (Public Alpha published; formal equivalence foundation in progress)
+Updated: 2026-09-02 (Public Alpha published; first formal equivalence route implemented)
 
 This is the short operational snapshot. Accepted ADRs, schemas, method references, and tests remain
 the authority for durable behavior.
@@ -48,6 +48,16 @@ English UI. Switching to Japanese opens the unchanged legacy editor; no project 
 
 Structural simplification is proceeding as small behavior-preserving commits. It does not change
 the published Alpha artifacts, scientific semantics, or the project schema.
+
+Formal equivalence support now has its first executable route: one prespecified primary comparison
+between two independent groups with a continuous outcome and a raw-difference margin. Protocol
+`0.15.0` runs unequal-variance Welch TOST, records both one-sided p values and the corresponding
+90% confidence interval, emits the three ADR 0061 conclusions, generates Methods text, and
+round-trips the request/result through the existing `.lsa` analysis-run container. Its asymmetric
+reference fixture agrees with Statsmodels' unequal-variance TOST and confidence interval.
+Matched, shared-run, positive/total, multiple-claim, and specialist routes continue to stop safely;
+in particular, the user's positive/total shared-run multi-clone example is not reinterpreted as
+independent continuous percentages.
 
 The bounded post-Alpha items 1–4 are now implemented and recorded in
 `docs/agent/POST_ALPHA_ITEMS_1_4_COMPLETION_2026-09-01.md`. This includes public alpha.2 guidance
