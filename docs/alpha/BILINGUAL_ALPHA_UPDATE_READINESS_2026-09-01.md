@@ -26,7 +26,7 @@ source.
 | Platform | Build revision | Gate | Distribution artifact |
 | --- | --- | --- | --- |
 | Windows 11 x64 | `ab5b012-alpha.20260901.win-refactor2` | PASS | Installer ready |
-| Apple Silicon macOS | `15aabd0-alpha.20260901.mac-refactor2` | PASS with Accessibility infrastructure note | `.app` ready; release zip pending |
+| Apple Silicon macOS | `15aabd0-alpha.20260901.mac-refactor2` | PASS with Accessibility infrastructure note | Release zip ready |
 
 Windows installer:
 
@@ -35,12 +35,17 @@ Windows installer:
 - SHA-256: `F7064981BE4A36EB809C6B6C6F18C974E974771BBE001BEB5D37410C3EF85747`
 - Proposed release asset name: `BioFigureStat-0.1.0-alpha.2-Windows-x64-setup.exe`
 
-macOS release artifact still required:
+macOS release artifact:
 
-- Zip the already reviewed `BioFigureStat.app` without rebuilding it.
-- Record absolute zip path, byte size, and SHA-256.
-- Proposed release asset name: `BioFigureStat-0.1.0-alpha.2-macOS-Apple-Silicon.zip`
-- Verify the extracted `.app` before upload.
+- Source branch: `codex/mac-refactor-review-20260901`
+- Source HEAD: `15aabd06c76a85c3e6be43a6bd4a31e43560db09`
+- Path: `/tmp/biofigurestat-release-alpha2.TA73nD/BioFigureStat-0.1.0-alpha.2-macOS-Apple-Silicon.zip`
+- Release asset name: `BioFigureStat-0.1.0-alpha.2-macOS-Apple-Silicon.zip`
+- Size: `47,883,673 bytes`
+- SHA-256: `4EE4734D57F703845C38EB00BB8A859D1CB54A2C019E7875F5841D5DFA888722`
+- `unzip -t`: PASS
+- Extracted `.app` `codesign --verify --deep --strict`: PASS
+- The reviewed `.app` was zipped without rebuilding or changing its source.
 
 ## Completed evidence
 
@@ -64,14 +69,13 @@ macOS release artifact still required:
 
 ## Remaining publication actions
 
-1. Produce and hash the reviewed macOS zip.
-2. Decide whether to publish the update as `v0.1.0-alpha.2`.
-3. Create the public source tag from the final documentation HEAD without changing application
+1. Decide whether to publish the update as `v0.1.0-alpha.2`.
+2. Create the public source tag from the final documentation HEAD without changing application
    source.
-4. Create a Draft Pre-release targeting that tag.
-5. Upload both assets and verify GitHub-reported size/digest against the local records.
-6. Apply the bilingual release notes in
+3. Create a Draft Pre-release targeting that tag.
+4. Upload both assets and verify GitHub-reported size/digest against the local records.
+5. Apply the bilingual release notes in
    `docs/alpha/RELEASE_NOTES_0.1.0-alpha.2_DRAFT.md`.
-7. Publish only after explicit user authorization; do not replace or delete `alpha.1`.
+6. Publish only after explicit user authorization; do not replace or delete `alpha.1`.
 
-Current readiness: `BLOCKED_ON_MAC_ZIP_AND_PUBLICATION_DECISION`.
+Current readiness: `READY_FOR_PUBLICATION_DECISION`.

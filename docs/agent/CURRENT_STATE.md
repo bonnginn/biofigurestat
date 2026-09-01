@@ -144,6 +144,10 @@ PNG/SVG Save-dialog checks. Its release bundle contains zero forbidden `benchmar
 Accessibility harness remains environment-blocked when reading a typed field value back, but the
 same product path passed bounded human review. See
 `docs/alpha/MACOS_BILINGUAL_REFACTOR_GATE_2026-09-01.md`.
+The reviewed application was packaged without rebuilding as
+`BioFigureStat-0.1.0-alpha.2-macOS-Apple-Silicon.zip`; archive integrity and the extracted
+application's strict code-signature verification pass. The zip is `47,883,673` bytes with SHA-256
+`4EE4734D57F703845C38EB00BB8A859D1CB54A2C019E7875F5841D5DFA888722`.
 
 Windows candidate `ab5b012-alpha.20260901.win-refactor2` is built from the same application source
 tree and passes the production UI build, zero-marker release verification, packaged-engine smoke,
