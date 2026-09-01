@@ -67,6 +67,76 @@ function quantile(values: readonly number[], fraction: number): number | null {
   );
 }
 
+function PreviewYTicks({
+  ticks,
+  axisX,
+  yFor,
+  format,
+}: Readonly<{
+  ticks: readonly number[];
+  axisX: number;
+  yFor: (tick: number) => number;
+  format: (tick: number) => string;
+}>) {
+  return ticks.map((tick) => {
+    const y = yFor(tick);
+    return (
+      <g key={`y-tick-${tick}`} data-preview-y-tick={tick}>
+        <line
+          className="graph-current-preview__tick"
+          x1={axisX - 5}
+          x2={axisX}
+          y1={y}
+          y2={y}
+        />
+        <text
+          className="graph-current-preview__tick-label"
+          x={axisX - 9}
+          y={y + 4}
+          textAnchor="end"
+        >
+          {format(tick)}
+        </text>
+      </g>
+    );
+  });
+}
+
+function PreviewXTicks({
+  ticks,
+  axisY,
+  xFor,
+  format,
+}: Readonly<{
+  ticks: readonly number[];
+  axisY: number;
+  xFor: (tick: number) => number;
+  format: (tick: number) => string;
+}>) {
+  return ticks.map((tick) => {
+    const x = xFor(tick);
+    return (
+      <g key={`x-tick-${tick}`} data-preview-x-tick={tick}>
+        <line
+          className="graph-current-preview__tick"
+          x1={x}
+          x2={x}
+          y1={axisY}
+          y2={axisY + 5}
+        />
+        <text
+          className="graph-current-preview__tick-label"
+          x={x}
+          y={axisY + 19}
+          textAnchor="middle"
+        >
+          {format(tick)}
+        </text>
+      </g>
+    );
+  });
+}
+
 function previewGroups(
   draft: ExperimentSetDraft,
   cells: ExperimentCellMap,
@@ -303,28 +373,12 @@ export function CurrentDataGraphPreview({
           y1={previewPlot.bottom}
           y2={previewPlot.bottom}
         />
-        {[0, 25, 50, 75, 100].map((tick) => {
-          const y = previewPlot.bottom - (tick / 100) * previewPlot.height;
-          return (
-            <g key={`category-y-${tick}`} data-preview-y-tick={tick}>
-              <line
-                className="graph-current-preview__tick"
-                x1={previewPlot.left - 5}
-                x2={previewPlot.left}
-                y1={y}
-                y2={y}
-              />
-              <text
-                className="graph-current-preview__tick-label"
-                x={previewPlot.left - 9}
-                y={y + 4}
-                textAnchor="end"
-              >
-                {tick}
-              </text>
-            </g>
-          );
-        })}
+        <PreviewYTicks
+          ticks={[0, 25, 50, 75, 100]}
+          axisX={previewPlot.left}
+          yFor={(tick) => previewPlot.bottom - (tick / 100) * previewPlot.height}
+          format={String}
+        />
         {groups.map(({ condition, percentages }, groupIndex) => {
           let cumulative = 0;
           const x = previewPlot.left + 23 + groupIndex * 72;
@@ -484,50 +538,18 @@ export function CurrentDataGraphPreview({
           y1={previewPlot.top}
           y2={previewPlot.bottom}
         />
-        {xTicks.map((tick) => {
-          const x = xForPair(tick);
-          return (
-            <g key={`x-tick-${tick}`} data-preview-x-tick={tick}>
-              <line
-                className="graph-current-preview__tick"
-                x1={x}
-                x2={x}
-                y1={previewPlot.bottom}
-                y2={previewPlot.bottom + 5}
-              />
-              <text
-                className="graph-current-preview__tick-label"
-                x={x}
-                y={previewPlot.bottom + 19}
-                textAnchor="middle"
-              >
-                {tickFormatter.format(tick)}
-              </text>
-            </g>
-          );
-        })}
-        {yTicks.map((tick, index) => {
-          const y = yForPair(tick);
-          return (
-            <g key={`y-tick-${tick}`} data-preview-y-tick={tick}>
-              <line
-                className="graph-current-preview__tick"
-                x1={previewPlot.left - 5}
-                x2={previewPlot.left}
-                y1={y}
-                y2={y}
-              />
-              <text
-                className="graph-current-preview__tick-label"
-                x={previewPlot.left - 9}
-                y={y + 4}
-                textAnchor="end"
-              >
-                {yTickLabels[index]}
-              </text>
-            </g>
-          );
-        })}
+        <PreviewXTicks
+          ticks={xTicks}
+          axisY={previewPlot.bottom}
+          xFor={xForPair}
+          format={(tick) => tickFormatter.format(tick)}
+        />
+        <PreviewYTicks
+          ticks={yTicks}
+          axisX={previewPlot.left}
+          yFor={yForPair}
+          format={(tick) => tickFormatter.format(tick)}
+        />
         <line
           x1={previewPlot.left}
           x2={previewPlot.right}
@@ -673,28 +695,12 @@ export function CurrentDataGraphPreview({
           y1={previewPlot.top}
           y2={previewPlot.bottom}
         />
-        {yTicks.map((tick, index) => {
-          const y = yFor(tick);
-          return (
-            <g key={`y-tick-${tick}`} data-preview-y-tick={tick}>
-              <line
-                className="graph-current-preview__tick"
-                x1={previewPlot.left - 5}
-                x2={previewPlot.left}
-                y1={y}
-                y2={y}
-              />
-              <text
-                className="graph-current-preview__tick-label"
-                x={previewPlot.left - 9}
-                y={y + 4}
-                textAnchor="end"
-              >
-                {yTickLabels[index]}
-              </text>
-            </g>
-          );
-        })}
+        <PreviewYTicks
+          ticks={yTicks}
+          axisX={previewPlot.left}
+          yFor={yFor}
+          format={(tick) => tickFormatter.format(tick)}
+        />
         <line
           className="graph-current-preview__axis"
           x1={previewPlot.left}
