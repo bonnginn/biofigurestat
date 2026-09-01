@@ -74,8 +74,9 @@ test("drives only the exact spawned process native Save dialog with encoded path
   assert.match(saveCommand.at(-1), /FromBase64String/);
   assert.doesNotMatch(saveCommand.at(-1), /日本語|quote/);
   assert.match(saveCommand.at(-1), /AutomationIdProperty,\s*\n\s*'1001'/);
-  assert.match(saveCommand.at(-1), /System\.Windows\.Forms/);
-  assert.match(saveCommand.at(-1), /Send\('\{ENTER\}'\)/);
+  assert.match(saveCommand.at(-1), /PostMessage/);
+  assert.match(saveCommand.at(-1), /0x0100/);
+  assert.match(saveCommand.at(-1), /\[IntPtr\]13/);
 
   const cancelCommand = windowsFileDialogCommand(4242, "cancel");
   assert.match(cancelCommand.at(-1), /AutomationIdProperty,\s*\n\s*'2'/);

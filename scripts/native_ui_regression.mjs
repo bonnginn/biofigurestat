@@ -221,7 +221,6 @@ $ErrorActionPreference = 'Stop'
 try {
   Add-Type -AssemblyName UIAutomationClient
   Add-Type -AssemblyName UIAutomationTypes
-  Add-Type -AssemblyName System.Windows.Forms
   Add-Type @'
 using System;
 using System.Runtime.InteropServices;
@@ -230,6 +229,8 @@ public static class BioFigureStatNativeWindowOwner {
   public static extern IntPtr GetWindow(IntPtr window, uint command);
   [DllImport("user32.dll")]
   public static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+  [DllImport("user32.dll")]
+  public static extern bool PostMessage(IntPtr window, uint message, IntPtr word, IntPtr data);
 }
 '@
 } catch {
@@ -359,7 +360,18 @@ if ($action -eq 'cancel') {
   }
   try {
     $selectedEdit.element.SetFocus()
-    [Windows.Forms.SendKeys]::Send('{ENTER}')
+    [void][BioFigureStatNativeWindowOwner]::PostMessage(
+      [IntPtr]$dialog.Current.NativeWindowHandle,
+      0x0100,
+      [IntPtr]13,
+      [IntPtr]0
+    )
+    [void][BioFigureStatNativeWindowOwner]::PostMessage(
+      [IntPtr]$dialog.Current.NativeWindowHandle,
+      0x0101,
+      [IntPtr]13,
+      [IntPtr]0
+    )
     Start-Sleep -Milliseconds 250
   } catch {
     throw ('FILE_DIALOG_CONTROL_NOT_FOUND: Save Enter failed: ' + $_.Exception.Message)
