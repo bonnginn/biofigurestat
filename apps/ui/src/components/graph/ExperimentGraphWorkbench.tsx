@@ -36,7 +36,10 @@ import { ExperimentGraphSeriesEditor } from "./ExperimentGraphSeriesEditor";
 import { ExperimentGraphTimeAnalysisEditor } from "./ExperimentGraphTimeAnalysisEditor";
 import { ExperimentGraphCanvasRenderer } from "./ExperimentGraphCanvasRenderer";
 import { ExperimentGraphAnnotationEditor } from "./ExperimentGraphAnnotationEditor";
-import { ExperimentGraphAnalysisScopeNotice } from "./ExperimentGraphAnalysisScopeNotice";
+import {
+  ExperimentGraphAnalysisScopeNotice,
+  selectGraphAnalysisScopePresentation,
+} from "./ExperimentGraphAnalysisScopeNotice";
 import { ExperimentGraphAnalysisSetEditor } from "./ExperimentGraphAnalysisSetEditor";
 import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
 import { graphPresentationForPreset } from "./experimentGraphPresets";
@@ -494,6 +497,12 @@ export function ExperimentGraphWorkbench({
   const varyingStatisticalAttributes = varyingGraphAnalysisAttributes(draft, analysisConditionIds);
   const hasFactorByTimeStructure =
     draft.time.points.length > 1 && varyingStatisticalAttributes.length > 1;
+  const analysisScopePresentation = selectGraphAnalysisScopePresentation({
+    timePointCount: draft.time.points.length,
+    plan: timeAnalysis,
+    analysisTimePointId,
+    hasFactorByTimeStructure,
+  });
   const handleAnalysisConditionChange = (conditionId: string, checked: boolean) => {
     setAnalysisConditionIds((current) =>
       checked
@@ -986,9 +995,7 @@ export function ExperimentGraphWorkbench({
                   }}
                 />
               ) : null}
-              {draft.time.points.length > 1 &&
-              timeAnalysis.kind === "selected_timepoint" &&
-              !analysisTimePointId ? (
+              {analysisScopePresentation.showNotice ? (
                 <ExperimentGraphAnalysisScopeNotice
                   time={draft.time}
                   plan={timeAnalysis}
@@ -996,18 +1003,9 @@ export function ExperimentGraphWorkbench({
                   hasFactorByTimeStructure={hasFactorByTimeStructure}
                   varyingFactorLabels={varyingStatisticalAttributes.map(({ label }) => label)}
                 />
-              ) : (
-                <>
-                  {hasFactorByTimeStructure && analysisTimePointId ? (
-                    <ExperimentGraphAnalysisScopeNotice
-                      time={draft.time}
-                      plan={timeAnalysis}
-                      analysisTimePointId={analysisTimePointId}
-                      hasFactorByTimeStructure={hasFactorByTimeStructure}
-                      varyingFactorLabels={varyingStatisticalAttributes.map(({ label }) => label)}
-                    />
-                  ) : null}
-                  <GraphStatisticsPanel
+              ) : null}
+              {!analysisScopePresentation.blockStatistics ? (
+                <GraphStatisticsPanel
                     assessment={analysisAssessment}
                     design={recommendationDesign}
                     outcomeId={selectedReadoutId}
@@ -1057,9 +1055,8 @@ export function ExperimentGraphWorkbench({
                     onPlannedContrastConditionIdsChange={changePlannedContrastConditionIds}
                     onContrastIntentChange={changeContrastIntent}
                     analysisContextKey={analysisContextKey}
-                  />
-                </>
-              )}
+                />
+              ) : null}
               {annotationEditorProps ? (
                 <ExperimentGraphAnnotationEditor
                   {...annotationEditorProps}

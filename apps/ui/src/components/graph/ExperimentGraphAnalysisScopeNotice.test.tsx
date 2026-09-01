@@ -4,11 +4,41 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
 import { createLongitudinalFixture } from "../../app/syntheticFixtures";
 import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
-import { ExperimentGraphAnalysisScopeNotice } from "./ExperimentGraphAnalysisScopeNotice";
+import {
+  ExperimentGraphAnalysisScopeNotice,
+  selectGraphAnalysisScopePresentation,
+} from "./ExperimentGraphAnalysisScopeNotice";
 
 afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 describe("ExperimentGraphAnalysisScopeNotice", () => {
+  it("defines one presentation decision for the notice and Statistics panel", () => {
+    expect(
+      selectGraphAnalysisScopePresentation({
+        timePointCount: 3,
+        plan: { kind: "selected_timepoint" },
+        analysisTimePointId: null,
+        hasFactorByTimeStructure: false,
+      }),
+    ).toEqual({ showNotice: true, blockStatistics: true });
+    expect(
+      selectGraphAnalysisScopePresentation({
+        timePointCount: 3,
+        plan: { kind: "selected_timepoint" },
+        analysisTimePointId: "time.24",
+        hasFactorByTimeStructure: true,
+      }),
+    ).toEqual({ showNotice: true, blockStatistics: false });
+    expect(
+      selectGraphAnalysisScopePresentation({
+        timePointCount: 3,
+        plan: { kind: "selected_timepoint" },
+        analysisTimePointId: "time.24",
+        hasFactorByTimeStructure: false,
+      }),
+    ).toEqual({ showNotice: false, blockStatistics: false });
+  });
+
   it("does not imply a full factor-by-time model when one time point is selected", () => {
     const { draft } = createLongitudinalFixture();
     render(

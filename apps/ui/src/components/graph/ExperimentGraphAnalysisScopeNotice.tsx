@@ -9,6 +9,25 @@ type Props = Readonly<{
   varyingFactorLabels: readonly string[];
 }>;
 
+export function selectGraphAnalysisScopePresentation(input: Readonly<{
+  timePointCount: number;
+  plan: TimeAnalysisPlan;
+  analysisTimePointId: string | null;
+  hasFactorByTimeStructure: boolean;
+}>): Readonly<{ showNotice: boolean; blockStatistics: boolean }> {
+  const selectingOneOfMultipleTimePoints =
+    input.timePointCount > 1 && input.plan.kind === "selected_timepoint";
+  const blockStatistics = selectingOneOfMultipleTimePoints && !input.analysisTimePointId;
+  return {
+    showNotice:
+      blockStatistics ||
+      (selectingOneOfMultipleTimePoints &&
+        input.hasFactorByTimeStructure &&
+        Boolean(input.analysisTimePointId)),
+    blockStatistics,
+  };
+}
+
 export function ExperimentGraphAnalysisScopeNotice({
   time,
   plan,
