@@ -1,12 +1,10 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
 
 import { type ExperimentCellMap, type ExperimentSetDraft } from "../../app/experimentDraft";
 import { type DraftAnalysisCorrection } from "../../app/draftAnalysisDiagnostics";
 import { type WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { localizedText, useAppLocale } from "../../app/appLocale";
-import { useBenchmarkRun } from "../../app/benchmarkEvaluation";
-import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
 import { ExperimentGraphCanvasCaption } from "./ExperimentGraphCanvasCaption";
 import { ExperimentGraphCanvasToolbar } from "./ExperimentGraphCanvasToolbar";
 import { ExperimentGraphDataEditor } from "./ExperimentGraphDataEditor";
@@ -35,8 +33,6 @@ import {
   createGraphUsageState,
 } from "./experimentGraphInstrumentation";
 import { useExperimentGraphDiagnosticEffects } from "./useExperimentGraphDiagnosticEffects";
-import { useBenchmarkGraphConfigurationEffects } from "./useBenchmarkGraphConfigurationEffects";
-import { useDefaultBenchmarkGraphCapture } from "./useDefaultBenchmarkGraphCapture";
 import {
   useExperimentGraphWorkspaceEffects,
   type GraphInspectorTarget as InspectorTarget,
@@ -49,7 +45,7 @@ import { useExperimentGraphPresentationState } from "./useExperimentGraphPresent
 import { useExperimentGraphDataSelectionState } from "./useExperimentGraphDataSelectionState";
 import { useExperimentGraphDerivedData } from "./useExperimentGraphDerivedData";
 import { useExperimentGraphUserActions } from "./useExperimentGraphUserActions";
-import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
+import { useExperimentGraphEvaluationController } from "./useExperimentGraphEvaluationController";
 import { analysisTestAnnotationLabel, graphAnnotationContext } from "./experimentGraphAnnotations";
 export {
   analysisTestAnnotationLabel,
@@ -160,8 +156,6 @@ export function ExperimentGraphWorkbench({
     initialAnalysis: initialState?.analysis,
     clearAnalysis: () => setAnalysis(null),
   });
-  const [benchmarkCaptureStatus, setBenchmarkCaptureStatus] = useState<string | null>(null);
-  const benchmarkRun = useBenchmarkRun();
   const methodsText = useMemo(
     () =>
       createExperimentGraphMethodsText({
@@ -196,7 +190,7 @@ export function ExperimentGraphWorkbench({
     initialAnalysisRunId: initialState?.analysisRunId,
     analysis,
   });
-  const benchmarkRenderedState = createBenchmarkRenderedState({
+  const renderedState = createBenchmarkRenderedState({
     selectedReadoutId,
     sourceMode,
     selectedConditionIds,
@@ -211,7 +205,7 @@ export function ExperimentGraphWorkbench({
     statisticsAnnotations,
     timeAnalysis,
   });
-  const benchmarkAnalysisState = createBenchmarkAnalysisState({
+  const evaluationAnalysisState = createBenchmarkAnalysisState({
     selectedReadoutId,
     sourceMode,
     selectedConditionIds,
@@ -251,29 +245,9 @@ export function ExperimentGraphWorkbench({
     statisticsAnnotations,
   });
   useExperimentGraphDiagnosticEffects({
-    renderedState: benchmarkRenderedState,
+    renderedState,
     graphType,
     usageGraphState,
-  });
-
-  useBenchmarkGraphConfigurationEffects({
-    identity: benchmarkRun.identity,
-    renderedState: benchmarkRenderedState,
-    analysisState: benchmarkAnalysisState,
-    configuration: {
-      graphType,
-      selectedReadoutId,
-      sourceMode,
-      selectedConditionIds,
-      analysisConditionIds,
-      selectedTimePointIds,
-      timeAnalysis,
-      selectedStatisticalMethod,
-      statisticsAnnotation,
-      appearance,
-      axes,
-      layers,
-    },
   });
 
   const {
@@ -360,15 +334,37 @@ export function ExperimentGraphWorkbench({
     plannedContrastConditionIds,
     axes,
   });
-  useDefaultBenchmarkGraphCapture({
+  const evaluationController = useExperimentGraphEvaluationController({
     svgRef,
-    identity: benchmarkRun.identity,
-    defaultGraphCapture: benchmarkRun.defaultGraphCapture,
-    eventCount: benchmarkRun.events.length,
+    draft,
+    analysis,
+    analysisAssessment,
+    methodsText,
+    renderedState,
+    analysisState: evaluationAnalysisState,
+    configuration: {
+      graphType,
+      selectedReadoutId,
+      sourceMode,
+      selectedConditionIds,
+      analysisConditionIds,
+      selectedTimePointIds,
+      timeAnalysis,
+      selectedStatisticalMethod,
+      statisticsAnnotation,
+      appearance,
+      axes,
+      layers,
+    },
+    graphType,
+    selectedReadoutId,
+    selectedConditionIds,
+    analysisConditionIds,
+    graphState: graphStateSnapshot,
     hasData,
     workspaceMode,
-    analysisState: benchmarkAnalysisState,
-    setStatus: setBenchmarkCaptureStatus,
+    readoutLabel: readout?.label ?? activeReadoutId,
+    activeConditionLabels: activeConditions.map(({ label }) => label),
   });
   const dataTransitions = createExperimentGraphDataTransitions({
     draft,
@@ -426,32 +422,6 @@ export function ExperimentGraphWorkbench({
     series,
     locale,
   });
-  const descriptiveBenchmarkRun = draft.analysisIntent.kind === "single_cohort";
-  const descriptiveMethodsText = [
-    "Descriptive Figure workflow (no inferential test).",
-    `Readout: ${readout?.label ?? activeReadoutId}.`,
-    `Displayed conditions: ${activeConditions.map(({ label }) => label).join(", ")}.`,
-    `Statistical unit retained as: ${draft.conditionAssignment.unitLabel}.`,
-    "Reason: the approved Gold brief specifies a descriptive panel and does not define an inferential comparator or null hypothesis.",
-  ].join("\n");
-  const finalizeBenchmarkRun = async () => {
-    await finalizeBenchmarkGraphCapture({
-      svg: svgRef.current,
-      draft,
-      analysis,
-      analysisAssessment,
-      descriptiveBenchmarkRun,
-      methodsText,
-      descriptiveMethodsText,
-      benchmarkAnalysisState,
-      graphType,
-      selectedReadoutId,
-      selectedConditionIds,
-      analysisConditionIds,
-      graphState: graphStateSnapshot,
-      setStatus: setBenchmarkCaptureStatus,
-    });
-  };
   const inspectGraphPart = (target: InspectorTarget) => {
     if (workspaceMode === "graph" && target === "statistics") return;
     setInspectorTarget(target);
@@ -507,23 +477,15 @@ export function ExperimentGraphWorkbench({
               hasData={hasData}
               copyStatus={copyStatus}
               exportFeedback={pngExportFeedback}
-              benchmarkCaptureStatus={benchmarkCaptureStatus}
+              evaluationStatus={evaluationController.status}
               fitOverview={fitOverview}
-              showBenchmarkAction={
-                import.meta.env.DEV && evaluationModeIsConfigured(evaluationMode)
-              }
-              benchmarkActionDisabled={
-                !hasData ||
-                !benchmarkRun.identity ||
-                !benchmarkRun.supportStatus ||
-                !benchmarkRun.defaultGraphCaptured ||
-                (!analysis && !descriptiveBenchmarkRun)
-              }
+              evaluationActionLabel={evaluationController.actionLabel}
+              evaluationActionDisabled={evaluationController.actionDisabled}
               onCopy={() => void userActions.copyGraph()}
               onExportSvg={() => void userActions.exportSvg()}
               onExportPng={() => void userActions.exportPng()}
               onExportCsv={() => void userActions.exportCsv()}
-              onFinalizeBenchmark={() => void finalizeBenchmarkRun()}
+              onFinalizeEvaluation={() => void evaluationController.finalize()}
               onFitOverviewChange={setFitOverview}
             />
             {hasData && readout ? (

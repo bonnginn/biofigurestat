@@ -30,8 +30,14 @@ export function createEvaluationProxy(environment: NodeJS.ProcessEnv): ProxyOpti
 export default defineConfig(({ command }) => {
   const evaluationProxy = createEvaluationProxy(process.env);
   const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
-  const productionBenchmarkRuntime = path
-    .join(repositoryRoot, "apps/ui/src/app/productionBenchmarkRuntime.ts")
+  const productionEvaluationRuntime = path
+    .join(repositoryRoot, "apps/ui/src/app/productionEvaluationRuntime.ts")
+    .replaceAll("\\", "/");
+  const productionGraphEvaluationController = path
+    .join(
+      repositoryRoot,
+      "apps/ui/src/components/graph/productionExperimentGraphEvaluationController.ts",
+    )
     .replaceAll("\\", "/");
   return {
     base: "./",
@@ -42,7 +48,11 @@ export default defineConfig(({ command }) => {
             alias: [
               {
                 find: /^.*\/benchmarkEvaluation$/,
-                replacement: productionBenchmarkRuntime,
+                replacement: productionEvaluationRuntime,
+              },
+              {
+                find: /^.*\/useExperimentGraphEvaluationController$/,
+                replacement: productionGraphEvaluationController,
               },
             ],
           }

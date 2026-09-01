@@ -17,15 +17,15 @@ function renderToolbar(
     hasData: true,
     copyStatus: null,
     exportFeedback: null,
-    benchmarkCaptureStatus: null,
+    evaluationStatus: null,
     fitOverview: false,
-    showBenchmarkAction: false,
-    benchmarkActionDisabled: true,
+    evaluationActionLabel: null,
+    evaluationActionDisabled: true,
     onCopy: vi.fn(),
     onExportSvg: vi.fn(),
     onExportPng: vi.fn(),
     onExportCsv: vi.fn(),
-    onFinalizeBenchmark: vi.fn(),
+    onFinalizeEvaluation: vi.fn(),
     onFitOverviewChange: vi.fn(),
     ...overrides,
   };
@@ -59,5 +59,16 @@ describe("ExperimentGraphCanvasToolbar", () => {
   it("keeps export failure feedback as an alert", () => {
     renderToolbar({ exportFeedback: { kind: "error", text: "PNG export failed" } });
     expect(screen.getByRole("alert")).toHaveTextContent("PNG export failed");
+  });
+
+  it("renders a development-only action only when the controller supplies its label", () => {
+    const onFinalizeEvaluation = vi.fn();
+    renderToolbar({
+      evaluationActionLabel: "Complete evaluation",
+      evaluationActionDisabled: false,
+      onFinalizeEvaluation,
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Complete evaluation" }));
+    expect(onFinalizeEvaluation).toHaveBeenCalledOnce();
   });
 });

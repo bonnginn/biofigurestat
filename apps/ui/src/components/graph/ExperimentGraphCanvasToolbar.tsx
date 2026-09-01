@@ -8,15 +8,15 @@ type Props = Readonly<{
   hasData: boolean;
   copyStatus: string | null;
   exportFeedback: GraphExportFeedback | null;
-  benchmarkCaptureStatus: string | null;
+  evaluationStatus: string | null;
   fitOverview: boolean;
-  showBenchmarkAction: boolean;
-  benchmarkActionDisabled: boolean;
+  evaluationActionLabel: string | null;
+  evaluationActionDisabled: boolean;
   onCopy: () => void;
   onExportSvg: () => void;
   onExportPng: () => void;
   onExportCsv: () => void;
-  onFinalizeBenchmark: () => void;
+  onFinalizeEvaluation: () => void;
   onFitOverviewChange: (fit: boolean) => void;
 }>;
 
@@ -27,15 +27,15 @@ export function ExperimentGraphCanvasToolbar({
   hasData,
   copyStatus,
   exportFeedback,
-  benchmarkCaptureStatus,
+  evaluationStatus,
   fitOverview,
-  showBenchmarkAction,
-  benchmarkActionDisabled,
+  evaluationActionLabel,
+  evaluationActionDisabled,
   onCopy,
   onExportSvg,
   onExportPng,
   onExportCsv,
-  onFinalizeBenchmark,
+  onFinalizeEvaluation,
   onFitOverviewChange,
 }: Props) {
   const locale = useAppLocale();
@@ -83,14 +83,14 @@ export function ExperimentGraphCanvasToolbar({
           >
             CSV
           </button>
-          {showBenchmarkAction ? (
+          {evaluationActionLabel ? (
             <button
               type="button"
-              aria-label="Benchmark runを完了"
-              disabled={benchmarkActionDisabled}
-              onClick={onFinalizeBenchmark}
+              aria-label={evaluationActionLabel}
+              disabled={evaluationActionDisabled}
+              onClick={onFinalizeEvaluation}
             >
-              Benchmark完了
+              {evaluationActionLabel}
             </button>
           ) : null}
         </div>
@@ -108,7 +108,7 @@ export function ExperimentGraphCanvasToolbar({
           {exportFeedback.text}
         </p>
       ) : null}
-      {benchmarkCaptureStatus ? <p role="status">{benchmarkCaptureStatus}</p> : null}
+      {evaluationStatus ? <p role="status">{evaluationStatus}</p> : null}
       {hasData ? (
         <div
           className="experiment-graph-view-controls"
