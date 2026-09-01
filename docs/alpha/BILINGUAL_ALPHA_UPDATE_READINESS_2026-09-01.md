@@ -1,15 +1,16 @@
-# Bilingual Public Alpha update readiness — 2026-09-01
+# Bilingual Public Alpha update publication record — 2026-09-01
 
-## Proposed release
+## Published release
 
-- Proposed tag: `v0.1.0-alpha.2`
+- Tag: `v0.1.0-alpha.2`
 - Channel: GitHub Pre-release
+- Public URL: `https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.2`
 - Product: the same BioFigureStat application, with Japanese and English selected in-app
 - License: MIT
 - Platforms: Windows 11 x64 and Apple Silicon macOS
 
-This is a preparation record, not publication authorization. The existing
-`v0.1.0-alpha.1` release and assets remain unchanged.
+The release was published after explicit user authorization. The existing `v0.1.0-alpha.1`
+release and assets remain unchanged.
 
 ## Source authority
 
@@ -67,21 +68,19 @@ macOS release artifact:
 - The macOS Accessibility harness cannot read a typed field value in the current managed runner;
   the same product path passed human review and this remains an infrastructure limitation.
 
-## Remaining publication actions
+## Publication result
 
 Completed on GitHub:
 
 - Public source tag `v0.1.0-alpha.2` points to documentation HEAD `4a259ab` without changing the
   reviewed application source.
-- One Draft Pre-release targets that tag and remains `isDraft=true`, `isPrerelease=true`.
+- The release targets that tag and is published with the `Pre-release` label.
 - The Windows asset is uploaded with the expected name and local SHA-256 recorded above.
 - The macOS asset is `uploaded`, size `47,883,673 bytes`, with GitHub digest
   `sha256:4ee4734d57f703845c38eb00bb8a859d1cb54a2c019e7875f5841d5dfa888722`.
-- The bilingual release notes are applied to the Draft.
+- The bilingual release notes were reviewed, internal Draft/candidate wording was removed, and the
+  final Japanese and English notes are visible on the public release page.
+- Both distribution assets are listed on the release; GitHub also exposes its automatic source
+  archives.
 
-Remaining:
-
-1. Review the final public-facing title, bilingual notes, Pre-release label, and both asset names.
-2. Publish only after explicit user authorization; do not replace or delete `alpha.1`.
-
-Current readiness: `READY_FOR_FINAL_PUBLICATION_CONFIRMATION`.
+Current status: `PUBLISHED_PRE_RELEASE`.

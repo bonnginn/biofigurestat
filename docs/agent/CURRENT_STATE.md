@@ -7,9 +7,16 @@ the authority for durable behavior.
 
 ## Product phase
 
-BioFigureStat `0.1.0-alpha.1` is publicly available under the MIT License at
-`https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.1`.
-The repository and release are anonymously accessible. The release contains:
+BioFigureStat `0.1.0-alpha.2` is publicly available as a GitHub Pre-release under the MIT License at
+`https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.2`.
+The repository and release are anonymously accessible. The bilingual release contains:
+
+- Windows 11 x64 installer, SHA-256
+  `F7064981BE4A36EB809C6B6C6F18C974E974771BBE001BEB5D37410C3EF85747`;
+- Apple Silicon macOS zip, SHA-256
+  `4EE4734D57F703845C38EB00BB8A859D1CB54A2C019E7875F5841D5DFA888722`.
+
+The earlier `0.1.0-alpha.1` Pre-release remains available and unchanged with:
 
 - Windows 11 x64 installer, SHA-256
   `74D0C98124DE7319EAC623EADD99392E198E5128B4DDFF730F62015D0B615100`;
