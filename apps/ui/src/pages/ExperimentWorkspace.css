@@ -466,6 +466,40 @@
   flex: 0 0 auto;
 }
 
+.experiment-workspace-five-minute-guide {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(18rem, 2fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.75rem 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #9bc8bc;
+  border-radius: 0.8rem;
+  background: #f2fbf8;
+}
+
+.experiment-workspace-five-minute-guide p {
+  margin: 0.25rem 0 0;
+}
+
+.experiment-workspace-five-minute-guide ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.experiment-workspace-five-minute-guide li[data-complete="true"] {
+  color: #277263;
+}
+
+@media (max-width: 900px) {
+  .experiment-workspace-five-minute-guide {
+    grid-template-columns: 1fr;
+  }
+}
+
 .experiment-workspace-tab {
   flex: 0 0 auto;
   min-height: 47px;

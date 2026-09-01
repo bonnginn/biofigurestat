@@ -66,6 +66,10 @@ import { recordUsageMilestone } from "./app/usageTelemetry";
 import { resolveAnalysisRouteSwitcherAccess } from "./app/analysisRouteSwitcherAccess";
 import { localizedText, useAppLocale } from "./app/appLocale";
 import { projectPersistenceCapabilities } from "./app/projectPersistenceCapabilities";
+import {
+  createIndependentTwoGroupFixture,
+  type SyntheticFixture,
+} from "./app/syntheticFixtures";
 
 const CommonCoveragePage = lazy(() =>
   import("./pages/CommonCoveragePage").then(({ CommonCoveragePage: Page }) => ({ default: Page })),
@@ -328,6 +332,8 @@ export default function App({
   const [workspaceExitError, setWorkspaceExitError] = useState<string | null>(null);
   const specializedDrafts = useRef<SpecializedDraftStore>({});
   const [newExperimentSession, setNewExperimentSession] = useState(0);
+  const [fiveMinuteGuideFixture, setFiveMinuteGuideFixture] =
+    useState<SyntheticFixture | null>(null);
   const [adaptiveSurvivalHandoff, setAdaptiveSurvivalHandoff] = useState<{
     text: string;
     snapshot: AdaptiveInputSnapshot;
@@ -798,6 +804,7 @@ export default function App({
             setDedicatedEntryIntent(null);
             setNewExperimentSession((session) => session + 1);
           }
+          if (nextRoute === "home") setFiveMinuteGuideFixture(null);
           navigate(nextRoute);
         },
       };
@@ -1312,7 +1319,7 @@ export default function App({
       case "new-experiment":
         return (
           <NewExperimentPage
-            key={`${reusedDraft ? `reuse:${reusedDraft.name}` : "new"}:${newExperimentSession}:${activeVisualizationProject?.project.target ?? "none"}`}
+            key={`${reusedDraft ? `reuse:${reusedDraft.name}` : fiveMinuteGuideFixture ? `guide:${fiveMinuteGuideFixture.id}` : "new"}:${newExperimentSession}:${activeVisualizationProject?.project.target ?? "none"}`}
             onNavigate={navigate}
             saveProject={browserPreview ? undefined : saveProject}
             saveUnresolvedVisualizationProject={unresolvedVisualizationPersistence?.save}
@@ -1331,6 +1338,7 @@ export default function App({
             browserPreview={browserPreview}
             analysisAvailable={analysisAvailable}
             initialDraft={reusedDraft}
+            initialFixture={fiveMinuteGuideFixture}
             favoriteGraphDefaults={favoriteDefaults}
             onSaveFavorite={(draft, graphs) => {
               saveFavoriteDesign(draft, graphs);
@@ -1420,7 +1428,15 @@ export default function App({
         );
       case "home":
       default:
-        return <HomePage onNavigate={navigateAsFreshStart} />;
+        return (
+          <HomePage
+            onNavigate={navigateAsFreshStart}
+            onStartFiveMinuteGuide={() => {
+              setFiveMinuteGuideFixture(createIndependentTwoGroupFixture());
+              navigateAsFreshStart("new-experiment");
+            }}
+          />
+        );
     }
   })();
 

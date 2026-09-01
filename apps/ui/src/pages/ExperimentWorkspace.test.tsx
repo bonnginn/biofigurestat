@@ -11,6 +11,7 @@ import {
 import {
   createComplexProportionFixture,
   createCategoricalCompositionFixture,
+  createIndependentTwoGroupFixture,
   createLongitudinalFixture,
   createMultipleReadoutFixture,
   createNestedContinuousFixture,
@@ -35,6 +36,27 @@ function chooseAndCreateGraph(name: RegExp) {
 }
 
 describe("ExperimentWorkspace", () => {
+  it("guides a first-time user from prefilled Data to Graph and Statistics", async () => {
+    const fixture = createIndependentTwoGroupFixture();
+    render(
+      <ExperimentWorkspace
+        initialDraft={fixture.draft}
+        initialCells={fixture.cells}
+        fiveMinuteGuide
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("complementary", { name: "5分ガイド" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "次へ：グラフを作成" }));
+    expect(screen.getByRole("dialog", { name: "グラフの基本形を選ぶ" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
+
+    expect(await screen.findByRole("button", { name: "次へ：Statisticsを開く" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "次へ：Statisticsを開く" }));
+    expect(screen.getByRole("button", { name: "統計" })).toHaveAttribute("aria-current", "page");
+  });
+
   it("records Graph creation as one typed workflow milestone", () => {
     recordUsageMilestone.mockClear();
     recordUsageGraphConfiguration.mockClear();

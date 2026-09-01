@@ -23,7 +23,7 @@ describe("English Public Alpha workflow", () => {
   it("switches Home and the task-oriented entry hub without changing route IDs", () => {
     act(() => setAppLocale("en"));
     const navigate = vi.fn();
-    const view = render(<HomePage onNavigate={navigate} />);
+    const view = render(<HomePage onNavigate={navigate} onStartFiveMinuteGuide={vi.fn()} />);
 
     expect(
       screen.getByRole("heading", { name: "Which experiment are you working on?" }),

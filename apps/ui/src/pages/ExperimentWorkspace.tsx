@@ -128,6 +128,7 @@ export type ExperimentWorkspaceProps = {
   onRequestExit?: RequestWorkspaceExit;
   onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
   rootRef?: Ref<HTMLDivElement>;
+  fiveMinuteGuide?: boolean;
 };
 
 type WorkspaceTab = "overview" | `experiment:${string}`;
@@ -2685,6 +2686,7 @@ export function ExperimentWorkspace({
   onRequestExit,
   onRegisterSaveHandler,
   rootRef,
+  fiveMinuteGuide = false,
 }: ExperimentWorkspaceProps) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
@@ -4191,6 +4193,9 @@ export function ExperimentWorkspace({
     "overview",
     ...draft.experiments.map(({ id }) => `experiment:${id}` as WorkspaceTab),
   ];
+  const guideAnalysisComplete = graphs.some(
+    ({ analysis }) => analysis?.result.status === "ok",
+  );
   const handleWorkspaceTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     if (!(["ArrowLeft", "ArrowRight", "Home", "End"] as string[]).includes(event.key)) return;
     event.preventDefault();
@@ -4242,6 +4247,51 @@ export function ExperimentWorkspace({
             )}
           </span>
         </div>
+      ) : null}
+
+      {fiveMinuteGuide ? (
+        <aside className="experiment-workspace-five-minute-guide" aria-label={t("5分ガイド", "Five-minute guide")}>
+          <div>
+            <strong>{t("5分ガイド：基本の1往復", "Five-minute guide: one complete workflow")}</strong>
+            <p>
+              {t(
+                "合成データだけを使います。順番にData、Graph、Statistics、Methodsを確認してください。",
+                "This guide uses artificial data only. Review Data, Graph, Statistics, and Methods in order.",
+              )}
+            </p>
+          </div>
+          <ol>
+            <li data-complete="true">{t("Data：入力済みの値と実験単位を確認", "Data: review the values and experimental units")}</li>
+            <li data-complete={graphs.length > 0}>{t("Graph：グラフを1つ作成", "Graph: create one Graph")}</li>
+            <li data-complete={guideAnalysisComplete}>{t("Statistics：推奨法を実行", "Statistics: run the recommended method")}</li>
+            <li data-complete={guideAnalysisComplete}>{t("Methods：再現用の文章を確認・コピー", "Methods: review and copy the reproducibility text")}</li>
+          </ol>
+          {graphs.length === 0 ? (
+            <button type="button" onClick={openGraph}>
+              {t("次へ：グラフを作成", "Next: create a Graph")}
+            </button>
+          ) : !showGraph ? (
+            <button type="button" onClick={openExistingGraphs}>
+              {t("次へ：Graphを確認", "Next: review the Graph")}
+            </button>
+          ) : graphWorkspaceMode === "graph" ? (
+            <button type="button" onClick={openStatistics}>
+              {t("次へ：Statisticsを開く", "Next: open Statistics")}
+            </button>
+          ) : (
+            <p role="note">
+              {guideAnalysisComplete
+                ? t(
+                    "完了です。Statistics内のMethodsと再現記録を確認できます。",
+                    "Complete. Methods and the reproducibility record are now available in Statistics.",
+                  )
+                : t(
+                    "実験単位の独立性を確認し、推奨された解析を実行してください。結果の下にMethodsが表示されます。",
+                    "Confirm experimental-unit independence and run the recommendation. Methods will appear below the result.",
+                  )}
+            </p>
+          )}
+        </aside>
       ) : null}
 
       {DevelopmentEvaluationWorkspaceLoader ? (

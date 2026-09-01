@@ -96,6 +96,7 @@ type NewExperimentPageProps = {
   browserPreview?: boolean;
   analysisAvailable?: boolean;
   initialDraft?: ExperimentSetDraft | null;
+  initialFixture?: SyntheticFixture | null;
   favoriteGraphDefaults?: readonly FavoriteGraphDefault[];
   onSaveFavorite?: ExperimentWorkspaceProps["onSaveFavorite"];
   onDirtyChange?: (dirty: boolean) => void;
@@ -2387,6 +2388,7 @@ export function NewExperimentPage({
   browserPreview = false,
   analysisAvailable = true,
   initialDraft = null,
+  initialFixture = null,
   favoriteGraphDefaults,
   onSaveFavorite,
   onDirtyChange,
@@ -2402,14 +2404,26 @@ export function NewExperimentPage({
   const evaluationPreview =
     import.meta.env.DEV && browserPreview && evaluationModeIsConfigured(evaluationMode);
   const [stage, setStage] = useState<FlowStage>(
-    initialGraphOnlyState ? "graph-only" : initialDraft ? "confirmation" : "context",
+    initialGraphOnlyState
+      ? "graph-only"
+      : initialFixture
+        ? "workspace"
+        : initialDraft
+          ? "confirmation"
+          : "context",
   );
   const [designStep, setDesignStep] = useState<DesignStep>(0);
-  const [furthestStep, setFurthestStep] = useState<FlowStep>(initialDraft ? 4 : 0);
-  const [draft, setDraft] = useState<ExperimentSetDraft | null>(initialDraft);
+  const [furthestStep, setFurthestStep] = useState<FlowStep>(initialDraft || initialFixture ? 4 : 0);
+  const [draft, setDraft] = useState<ExperimentSetDraft | null>(
+    initialFixture?.draft ?? initialDraft,
+  );
   const [explicitStructureAnswers, setExplicitStructureAnswers] =
-    useState<ExplicitStructureAnswers>(initialDraft ? CONFIRMED_STRUCTURE : UNANSWERED_STRUCTURE);
-  const [fixtureCells, setFixtureCells] = useState<ExperimentCellMap | undefined>();
+    useState<ExplicitStructureAnswers>(
+      initialDraft || initialFixture ? CONFIRMED_STRUCTURE : UNANSWERED_STRUCTURE,
+    );
+  const [fixtureCells, setFixtureCells] = useState<ExperimentCellMap | undefined>(
+    initialFixture?.cells,
+  );
   const [fixtureGraphs, setFixtureGraphs] = useState<readonly WorkspaceGraphState[] | undefined>();
   const [selectedContext, setSelectedContext] = useState<Exclude<
     ExperimentContext,
@@ -2734,6 +2748,7 @@ export function NewExperimentPage({
           onOpenProject={onOpenProject}
           onRequestExit={onRequestExit}
           onRegisterSaveHandler={onRegisterSaveHandler}
+          fiveMinuteGuide={Boolean(initialFixture)}
           onBack={() => (fixtureCells ? goBackToContext() : setStage("confirmation"))}
         />
       </Suspense>

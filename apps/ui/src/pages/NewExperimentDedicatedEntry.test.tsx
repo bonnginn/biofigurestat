@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ADAPTIVE_INPUT_FEATURE_FLAG } from "../app/adaptiveInputFeature";
 import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
+import { createIndependentTwoGroupFixture } from "../app/syntheticFixtures";
 import type { ProjectState } from "@lsaa/project";
 import { NewExperimentPage } from "./NewExperimentPage";
 
@@ -52,6 +53,22 @@ describe("New Experiment dedicated entry handoff", () => {
   afterEach(() => {
     window.localStorage.clear();
     vi.unstubAllEnvs();
+  });
+
+  it("opens a supplied five-minute guide fixture directly in the populated workspace", async () => {
+    const fixture = createIndependentTwoGroupFixture();
+    render(
+      <NewExperimentPage
+        initialFixture={fixture}
+        onNavigate={vi.fn()}
+      />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: fixture.draft.name }, { timeout: 10_000 }),
+    ).toBeVisible();
+    expect(screen.getByRole("complementary", { name: "5分ガイド" })).toBeVisible();
+    expect(screen.getByText("合成デモデータ")).toBeVisible();
   });
 
   it("keeps the legacy destination available when the adaptive feature flag is off", () => {

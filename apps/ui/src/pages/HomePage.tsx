@@ -4,9 +4,10 @@ import { useAppLocale } from "../app/appLocale";
 
 type HomePageProps = {
   onNavigate: (route: AppRoute) => void;
+  onStartFiveMinuteGuide: () => void;
 };
 
-export function HomePage({ onNavigate }: HomePageProps) {
+export function HomePage({ onNavigate, onStartFiveMinuteGuide }: HomePageProps) {
   const locale = useAppLocale();
   const text = locale === "ja";
   return (
@@ -43,6 +44,21 @@ export function HomePage({ onNavigate }: HomePageProps) {
           ))}
         </div>
       </section>
+
+      <aside className="principle-callout" aria-label={text ? "5分ガイド" : "Five-minute guide"}>
+        <span className="callout-mark" aria-hidden="true">5</span>
+        <div>
+          <strong>{text ? "初めての方：5分で一連の流れを試す" : "New here? Try the complete workflow in five minutes"}</strong>
+          <p>
+            {text
+              ? "人工データを使い、Data → Graph → Statistics → Methodsを1本の案内で確認します。実測データやファイルは使いません。"
+              : "Use artificial data to follow one guided Data → Graph → Statistics → Methods workflow. No measured data or files are used."}
+          </p>
+          <button type="button" onClick={onStartFiveMinuteGuide}>
+            {text ? "5分ガイドを開始" : "Start the five-minute guide"}
+          </button>
+        </div>
+      </aside>
 
       <aside
         className="principle-callout"
