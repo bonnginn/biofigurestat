@@ -270,9 +270,11 @@ file size.
 
 Specialist and standard Graph export/copy feedback now respects the active locale and never
 exposes a legacy Japanese exception in English mode. The formerly timing-sensitive Survival save
-test now awaits its asynchronous success feedback and passes repeatedly in isolation. Focused
-export, locale, Workbench, snapshot, and Survival tests plus UI typecheck and lint pass; the next
-full-suite/build checkpoint will cover the combined increment.
+test now awaits its asynchronous success feedback and passes repeatedly in isolation and in the
+full run. Focused export, locale, Workbench, snapshot, and Survival tests pass. The combined full UI
+suite passes 184 files / 1,287 tests; UI typecheck, full lint, and production build pass. The initial
+production chunk is 814.26 kB (gzip 223.54 kB), the Graph workbench chunk is 199.78 kB, and the
+existing greater-than-500-kB advisory remains.
 
 ## Known bounded gaps
 
