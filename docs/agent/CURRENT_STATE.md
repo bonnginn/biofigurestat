@@ -236,9 +236,17 @@ experimental units, and the rule that showing Cell/ROI observations does not cha
 `n`. Inspector tests preserve immutable layer updates and English localization. Renderer selection
 is a pure tested decision among composition, correlation, and general Graphs, while stable readout,
 condition, and time-point IDs remain callback inputs to the parent state owner. The workbench is
-now 1,372 lines, down from about 4,900 before the staged split. The full UI suite passes 177 files
-and 1,265 tests; typecheck, lint, and production build pass. The initial production chunk remains
-812.87 kB (gzip 223.01 kB), with the existing large-chunk warning.
+now 1,268 lines, down from about 4,900 before the staged split. Presentation-only state and Graph
+data-selection state now also use separately tested hooks. The latter preserves the distinction
+between displayed conditions and the Statistics analysis set, keeps auxiliary reference conditions
+visible without silently adding them to analysis, and retains stable condition/readout identities.
+The full UI suite passes 179 files and 1,269 tests; typecheck, lint, and production build pass. The
+initial production chunk remains 812.87 kB (gzip 223.01 kB), with the existing large-chunk warning.
+
+Project open/save error presentation is now locale-aware at the shared boundary. English mode
+localizes schema compatibility failures and replaces Japanese internal exception text with a safe
+English action-specific fallback; it does not rewrite project contents or researcher-authored
+labels. Focused project-action, App, open/save, and workspace tests pass.
 
 ## Known bounded gaps
 
@@ -260,8 +268,9 @@ and 1,265 tests; typecheck, lint, and production build pass. The initial product
   localized data summaries, grouping, data selection, series presentation, and distribution
   controls are now separate tested boundaries. Time-analysis selection, factor-by-time scope,
   analysis-set selection, Statistics annotation display, canvas toolbar/export controls, semantic
-  captions, inspector target/layer shortcuts, data-editor composition, and renderer selection are
-  also separated. Remaining top-level state orchestration is the next safe extraction boundary.
+  captions, inspector target/layer shortcuts, data-editor composition, renderer selection,
+  presentation state, and data-selection state are also separated. Remaining analysis-result and
+  persisted-snapshot orchestration is the next safe extraction boundary.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
   display, and ID/scalar draft synchronization now use shared primitives. Remaining specialized
