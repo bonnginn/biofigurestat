@@ -10,11 +10,30 @@ export function describeActiveGraphLayers(
     errorBar: WorkspaceGraphState["appearance"]["errorBar"];
     timeSampling: ExperimentSetDraft["time"]["sampling"];
     matched: boolean;
+    semanticReadiness?: "resolved" | "unresolved_descriptive";
   }>,
   locale: AppLocale = "en",
 ): string {
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const { graphType, shape, layers, errorBar, timeSampling, matched } = input;
+  const {
+    graphType,
+    shape,
+    layers,
+    errorBar,
+    timeSampling,
+    matched,
+    semanticReadiness = "resolved",
+  } = input;
+  const rawObservationLabel =
+    semanticReadiness === "unresolved_descriptive"
+      ? t("元表の行", "Table rows")
+      : t("生の観測値", "Raw observations");
+  const experimentSummaryLabel =
+    semanticReadiness === "unresolved_descriptive"
+      ? t("元表の行", "Table rows")
+      : shape === "nested_continuous"
+        ? t("実験単位の要約", "Experiment summaries")
+        : t("生物学的反復", "Biological replicates");
   if (shape === "categorical_counts") {
     if (graphType === "stacked") return t("カテゴリ数の積み上げ", "Stacked category counts");
     if (graphType === "category_percentage") return t("カテゴリの割合", "Category percentages");
@@ -28,11 +47,7 @@ export function describeActiveGraphLayers(
         : []),
       t("要約トレンド", "Summary trend"),
       ...(layers.experiment
-        ? [
-            shape === "nested_continuous"
-              ? t("実験単位の要約", "Experiment summaries")
-              : t("生物学的反復", "Biological replicates"),
-          ]
+        ? [experimentSummaryLabel]
         : []),
       ...(layers.overall && layers.errorBar && errorBar !== "none"
         ? [t(`${errorBar.toUpperCase()}エラーバー`, `${errorBar.toUpperCase()} error bars`)]
@@ -57,19 +72,18 @@ export function describeActiveGraphLayers(
   }
 
   const parts: string[] = [];
+  const pushUnique = (label: string) => {
+    if (!parts.includes(label)) parts.push(label);
+  };
   if (graphType === "bar") parts.push(t("棒（平均）", "Bars (Mean)"));
   if (layers.violin) parts.push(t("分布", "Distribution"));
   if (layers.box || (shape === "nested_continuous" && layers.distribution)) {
     parts.push(t("箱ひげ図", "Box plot"));
   }
   if (shape === "nested_continuous" && layers.raw)
-    parts.push(t("生の観測値", "Raw observations"));
+    pushUnique(rawObservationLabel);
   if (layers.experiment) {
-    parts.push(
-      shape === "nested_continuous"
-        ? t("実験単位の要約", "Experiment summaries")
-        : t("生物学的反復", "Biological replicates"),
-    );
+    pushUnique(experimentSummaryLabel);
   }
   if (layers.overall && graphType !== "bar") {
     if (layers.errorBar && errorBar !== "none") {

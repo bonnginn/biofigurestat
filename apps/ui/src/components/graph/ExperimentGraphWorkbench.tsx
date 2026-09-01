@@ -500,26 +500,15 @@ export function ExperimentGraphWorkbench({
     setLayers(next.layers);
     setAppearance(next.appearance);
   };
-  const resolvedLayerDescription = describeActiveGraphLayers({
+  const activeLayerDescription = describeActiveGraphLayers({
     graphType,
     shape,
     layers,
     errorBar: appearance.errorBar,
     timeSampling: draft.time.sampling,
     matched: draft.conditionAssignment.kind === "matched",
+    semanticReadiness,
   }, locale);
-  const activeLayerDescription =
-    semanticReadiness === "unresolved_descriptive"
-      ? locale === "ja"
-        ? resolvedLayerDescription
-            .replaceAll("生の観測値", "元表の行")
-            .replaceAll("実験単位の要約", "元表の行")
-            .replaceAll("生物学的反復", "元表の行")
-        : resolvedLayerDescription
-            .replaceAll("Raw observations", "Table rows")
-            .replaceAll("Experiment summaries", "Table rows")
-            .replaceAll("Biological replicates", "Table rows")
-      : resolvedLayerDescription;
   const exportSvg = async () => {
     if (!svgRef.current || !readout) return;
     await runGraphUserExport(

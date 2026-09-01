@@ -66,4 +66,21 @@ describe("describeActiveGraphLayers", () => {
       ),
     ).toBe("個体ごとの軌跡 + 要約トレンド + 実験単位の要約 + SDエラーバー");
   });
+
+  it("names unresolved rows directly without rewriting a localized sentence", () => {
+    const input = {
+      graphType: "violin" as const,
+      shape: "nested_continuous" as const,
+      layers: DEFAULT_GRAPH_LAYERS,
+      errorBar: "sd" as const,
+      timeSampling: "none" as const,
+      matched: false,
+      semanticReadiness: "unresolved_descriptive" as const,
+    };
+
+    expect(describeActiveGraphLayers(input)).toContain("Table rows + SD error bars");
+    expect(describeActiveGraphLayers(input)).not.toContain("Table rows + Table rows");
+    expect(describeActiveGraphLayers(input, "ja")).toContain("元表の行 + SDエラーバー");
+    expect(describeActiveGraphLayers(input, "ja")).not.toContain("元表の行 + 元表の行");
+  });
 });
