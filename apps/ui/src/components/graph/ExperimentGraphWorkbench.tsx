@@ -439,6 +439,20 @@ export function ExperimentGraphWorkbench({
         baseAnnotationContext,
       )
     : baseAnnotationContext;
+  const annotationEditorProps =
+    analysisResult?.status === "ok"
+      ? {
+          analysisResult,
+          draft,
+          baseAnnotationContext,
+          annotationContext,
+          adjustedComparisonAnnotations,
+          statisticsAnnotation,
+          statisticsAnnotations,
+          setStatisticsAnnotation,
+          setStatisticsAnnotations,
+        }
+      : null;
   const hasData = hasVisibleGraphData({ shape, sourceMode, series, cells });
   const analysisAssessment = useExperimentGraphAnalysisAssessment({
     draft,
@@ -581,6 +595,24 @@ export function ExperimentGraphWorkbench({
   const inspectGraphPart = (target: InspectorTarget) => {
     if (workspaceMode === "graph" && target === "statistics") return;
     setInspectorTarget(target);
+  };
+  const addSelectedComparisonAnnotation = () => {
+    if (!annotationEditorProps) return;
+    const test = annotationEditorProps.analysisResult.tests[statisticsAnnotation.testIndex];
+    if (!test) return;
+    const next = createSelectedComparisonAnnotation({
+      test,
+      testIndex: statisticsAnnotation.testIndex,
+      requestId: annotationEditorProps.analysisResult.requestId,
+      mode: statisticsAnnotation.mode,
+      sourceMode,
+      timeAnalysis,
+      analysisTimePointId,
+    });
+    setStatisticsAnnotations((current) => [
+      ...current.filter(({ testIndex }) => testIndex !== next.testIndex),
+      next,
+    ]);
   };
   return (
     <section
@@ -892,34 +924,10 @@ export function ExperimentGraphWorkbench({
             <ExperimentGraphLegendEditor appearance={appearance} setAppearance={setAppearance} />
           ) : null}
 
-          {inspectorTarget === "annotation" && analysisResult?.status === "ok" ? (
+          {inspectorTarget === "annotation" && annotationEditorProps ? (
             <ExperimentGraphAnnotationEditor
-              analysisResult={analysisResult}
-              draft={draft}
-              baseAnnotationContext={baseAnnotationContext}
-              annotationContext={annotationContext}
-              adjustedComparisonAnnotations={adjustedComparisonAnnotations}
-              statisticsAnnotation={statisticsAnnotation}
-              statisticsAnnotations={statisticsAnnotations}
-              setStatisticsAnnotation={setStatisticsAnnotation}
-              setStatisticsAnnotations={setStatisticsAnnotations}
-              onAddSelectedComparison={() => {
-                const test = analysisResult.tests[statisticsAnnotation.testIndex];
-                if (!test) return;
-                const next = createSelectedComparisonAnnotation({
-                  test,
-                  testIndex: statisticsAnnotation.testIndex,
-                  requestId: analysisResult.requestId,
-                  mode: statisticsAnnotation.mode,
-                  sourceMode,
-                  timeAnalysis,
-                  analysisTimePointId,
-                });
-                setStatisticsAnnotations((current) => [
-                  ...current.filter(({ testIndex }) => testIndex !== next.testIndex),
-                  next,
-                ]);
-              }}
+              {...annotationEditorProps}
+              onAddSelectedComparison={addSelectedComparisonAnnotation}
             />
           ) : null}
 
@@ -1052,18 +1060,10 @@ export function ExperimentGraphWorkbench({
                   />
                 </>
               )}
-              {analysisResult?.status === "ok" ? (
+              {annotationEditorProps ? (
                 <ExperimentGraphAnnotationEditor
+                  {...annotationEditorProps}
                   variant="display-only"
-                  analysisResult={analysisResult}
-                  draft={draft}
-                  baseAnnotationContext={baseAnnotationContext}
-                  annotationContext={annotationContext}
-                  adjustedComparisonAnnotations={adjustedComparisonAnnotations}
-                  statisticsAnnotation={statisticsAnnotation}
-                  statisticsAnnotations={statisticsAnnotations}
-                  setStatisticsAnnotation={setStatisticsAnnotation}
-                  setStatisticsAnnotations={setStatisticsAnnotations}
                 />
               ) : null}
             </>
