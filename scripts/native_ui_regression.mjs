@@ -817,6 +817,15 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         "Graph workspace",
         timeoutMs,
       );
+      await runStep("graph_export_toolbar_is_ready", async () => {
+        await waitFor(
+          client,
+          `[...document.querySelectorAll("button")].some((button) => button.textContent?.trim() === "SVG" && !button.disabled)`,
+          "enabled SVG export control after lazy Graph editor load",
+          timeoutMs,
+        );
+        return { control: "SVG" };
+      });
       await runStep("native_svg_save_dialog_cancel", async () => {
         await client.evaluate(pageAction(clickByText, "SVG"));
         const detail = await driveFileDialog("cancel");
