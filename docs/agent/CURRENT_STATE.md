@@ -399,6 +399,15 @@ The remaining React scheduling warnings are isolated to the broad adaptive produ
 and the evaluation-only run bar. They are retained as explicit test-harness debt rather than being
 silenced globally or used as a reason to remove persistence, lineage, or Statistics coverage.
 
+Graph and Statistics readout selection now use one state transition. Previously the Graph data
+editor updated the default Y-axis title while the Statistics analysis-set editor changed the
+readout and invalidated the analysis without updating that title. A readout selected from either
+route now updates the stable readout ID, resets the Y title from the selected readout, and removes
+the stale result/annotation/Methods together. The existing stale-analysis integration test now
+changes the readout through the Statistics route, verifies the persisted Y title, and then verifies
+that the Graph annotation is gone. The full 53-test workbench suite, UI typecheck, and focused lint
+pass. The workbench is 1,044 lines.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
