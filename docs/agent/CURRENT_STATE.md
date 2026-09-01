@@ -538,6 +538,14 @@ localized export diagnostics are unchanged. The existing 53 Workbench and 4 expo
 pass with UI typecheck, lint, and the production build. The workbench is now 758 lines; the initial
 chunk remains 264.45 kB (gzip 81.19 kB) with no build advisory.
 
+The remaining development-evaluation finalization composition now sits behind one Graph controller.
+Production builds replace that controller and its event runtime with neutral no-op modules, so
+development-only artifact capture, labels, and module names are absent rather than merely hidden
+behind a false UI condition. This reduces the workbench to 720 lines. The focused Workbench,
+toolbar, and Vite configuration group passes 59 tests with UI typecheck and focused lint. The
+production build retains the 264.45 kB initial chunk, and the release verifier finds zero forbidden
+`benchmark` markers in the generated bundle.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
@@ -562,10 +570,10 @@ chunk remains 264.45 kB (gzip 81.19 kB) with no build advisory.
   presentation state, data-selection state, analysis/annotation state, display-preset/type
   transitions, active
   layer descriptions, active scope, and persisted-snapshot projection are also separated.
-  Axis, Statistics, and layer inspector composition are now separate as well, and annotation
-  insertion is colocated with the analysis-state boundary. Remaining benchmark
-  finalization is the next bounded orchestration candidate; it must retain evidence semantics and
-  stay isolated from ordinary product state.
+  Axis, Statistics, and layer inspector composition are now separate as well, annotation insertion
+  is colocated with the analysis-state boundary, and development-evaluation finalization is behind
+  a controller that is replaced in production. Remaining work should follow a concrete product
+  responsibility rather than further file-count reduction.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
   display, and ID/scalar/append-value draft synchronization now use shared primitives. Remaining
