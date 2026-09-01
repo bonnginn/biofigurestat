@@ -159,6 +159,17 @@ regression now passes without changing the schema or stored measurements. Revisi
 also localizes legacy app-generated default titles to the active UI language while preserving
 arbitrary user-authored titles.
 
+The post-review localization pass now reconstructs legacy matched-analysis diagnostics from
+language-independent counts at render time. In English mode, an older Japanese-authored `.lsa`
+therefore shows English Analysis-set, incomplete-pair, save, analysis, and validation messages
+without rewriting the file or translating researcher-authored project, condition, readout, or
+axis labels. The generic new-measurement form, specialist Survival/Heatmap/ordered-X/Y status and
+save paths, exit-guard actions, adaptive structure input, and the Biological Interview safe-stop
+also stay in the selected application language even when an internal exception originated with
+Japanese detail. The full UI suite passes with 162 files and 1,213 tests; UI typecheck, lint, and
+the production build pass. A new native candidate has not yet been built from this revision, and
+no additional human Mac interaction is required until that candidate exists.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis

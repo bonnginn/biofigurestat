@@ -31,6 +31,9 @@ Reviewed English copy is implemented for the main Public Alpha path:
 - one shared localized file-input control across canonical matrices, existing-data import,
   Graph-only, ordered X/Y, Survival, and Heatmap;
 - ordered X/Y analysis, save, export, diagnostic, and nonlinear-result action messages;
+- legacy matched-analysis runtime diagnostics and incomplete-pair notices;
+- the generic new-measurement record form and dynamic save/analysis/validation failures;
+- specialist save, open, analysis, and workspace-exit status messages;
 - Help, About, external-LLM consultation, and problem reporting.
 
 Scientific semantic keys, analysis request IDs, biological-unit identity, pairing, nesting,
@@ -46,7 +49,7 @@ the application does not convert, discard, or overwrite the project.
 
 ## Verification
 
-- UI full test: 162 files, 1,200 tests passed.
+- UI full test: 162 files, 1,213 tests passed.
 - Shared packages and telemetry worker: 278 tests passed.
 - English localization focused tests cover Home, entry hub, simple entry, Biological Interview,
   project discovery, Help/About/reporting, Graph-only safe handoff, common Graph creation,
@@ -57,6 +60,13 @@ the application does not convert, discard, or overwrite the project.
 - production UI build: pass.
 - Locale/project boundary test confirms that switching language does not add locale data to the
   serialized project object.
+
+The 2026-09-01 post-review pass also tests the state-dependent paths that a static screen audit can
+miss. Legacy Japanese runtime messages are reconstructed from semantic counts, and Japanese
+internal exception text is not surfaced in an English save, analysis, validation, or experiment-
+structure failure. Researcher-authored Japanese labels remain verbatim. No project schema,
+scientific role, identity, pairing, nesting, censoring, ordered-axis meaning, or raw lineage was
+changed.
 
 ## Windows native candidate
 
@@ -91,5 +101,8 @@ assets until the corresponding macOS native and bounded human checks pass. The e
 
 ## Next gate
 
-1. Build and verify the macOS candidate.
-2. Repeat the same bounded save/reopen, language, and layout review on macOS.
+1. Build a macOS candidate from the latest localization revision and run non-interactive bundle,
+   release, and engine verification.
+2. When convenient, perform one bounded human review: open an older Japanese-authored `.lsa` in
+   English and confirm that Analysis set, incomplete matched-set diagnostics, and New measurement
+   record are English while researcher-authored Japanese labels remain unchanged.
