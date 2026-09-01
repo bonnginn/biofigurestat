@@ -335,15 +335,19 @@ if ($action -eq 'cancel') {
     $candidate = $editCandidates[$candidateIndex]
     $pattern = $null
     if ($candidate.TryGetCurrentPattern([Windows.Automation.ValuePattern]::Pattern, [ref]$pattern)) {
+      $isSearch = $candidate.Current.AutomationId -match 'Search' -or $candidate.Current.Name -match 'Search|検索'
       $editable += @{
         element = $candidate
         pattern = $pattern
-        preferred = $candidateIndex -eq 0 -or $candidate.Current.AutomationId -eq '1001' -or $candidate.Current.Name -match 'File name|ファイル名'
+        isSearch = $isSearch
+        preferred = -not $isSearch -and ($candidate.Current.AutomationId -eq '1001' -or $candidate.Current.Name -match 'File name|ファイル名')
       }
     }
   }
   $selectedEdit = @($editable | Where-Object { $_.preferred } | Select-Object -First 1)[0]
-  if ($null -eq $selectedEdit) { $selectedEdit = @($editable | Select-Object -Last 1)[0] }
+  if ($null -eq $selectedEdit) {
+    $selectedEdit = @($editable | Where-Object { -not $_.isSearch } | Select-Object -Last 1)[0]
+  }
   if ($null -eq $selectedEdit) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: writable file name input' }
   $selectedEdit.pattern.SetValue($target)
   $selectedEditName = $selectedEdit.element.Current.Name
