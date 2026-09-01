@@ -34,8 +34,7 @@ import { ExperimentGraphConnectingLineEditor } from "./ExperimentGraphConnecting
 import { ExperimentGraphErrorBarEditor } from "./ExperimentGraphErrorBarEditor";
 import { ExperimentGraphLegendEditor } from "./ExperimentGraphLegendEditor";
 import { ExperimentGraphRawDotsEditor } from "./ExperimentGraphRawDotsEditor";
-import { ExperimentGraphXAxisEditor } from "./ExperimentGraphXAxisEditor";
-import { ExperimentGraphYAxisEditor } from "./ExperimentGraphYAxisEditor";
+import { ExperimentGraphAxisInspector } from "./ExperimentGraphAxisInspector";
 import {
   createGraphStatisticsRelationshipContext,
   createExperimentGraphMethodsText,
@@ -801,29 +800,26 @@ export function ExperimentGraphWorkbench({
           ) : null}
 
           {inspectorTarget === "x-axis" || inspectorTarget === "y-axis" ? (
-            <section className="experiment-graph-inspector-section">
-              <h3>{inspectorTarget === "y-axis" ? t("Y軸", "Y axis") : t("X軸", "X axis")}</h3>
-              {inspectorTarget === "y-axis" ? (
-                <ExperimentGraphYAxisEditor
-                  axes={axes}
-                  appearance={appearance}
-                  readoutShape={shape}
-                  setAxes={setAxes}
-                  setAppearance={setAppearance}
-                />
-              ) : (
-                <ExperimentGraphXAxisEditor
-                  axes={axes}
-                  appearance={appearance}
-                  attributes={draft.attributes}
-                  hasOrderedAxis={draft.time.points.length > 0}
-                  groupingXSource={grouping.x.source}
-                  graphType={graphType}
-                  setAxes={setAxes}
-                  setAppearance={setAppearance}
-                />
-              )}
-            </section>
+            <ExperimentGraphAxisInspector
+              target={inspectorTarget}
+              xAxis={{
+                axes,
+                appearance,
+                attributes: draft.attributes,
+                hasOrderedAxis: draft.time.points.length > 0,
+                groupingXSource: grouping.x.source,
+                graphType,
+                setAxes,
+                setAppearance,
+              }}
+              yAxis={{
+                axes,
+                appearance,
+                readoutShape: shape,
+                setAxes,
+                setAppearance,
+              }}
+            />
           ) : null}
 
           {inspectorTarget === "statistics" ? (
