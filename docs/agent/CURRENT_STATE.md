@@ -423,6 +423,9 @@ model locally, and is 993 lines versus 6,922 at the Public Alpha tag. The existi
 tests passed without adding a move-only regression case. Regression-test retention is now governed
 by `docs/agent/REGRESSION_TEST_POLICY.md`: distinct scientific, persistence, route-wiring, and
 native contracts remain layered, while duplicated implementation-level assertions should not grow.
+After the topology and Statistics view-model changes, the complete UI suite again passes 192 files
+/ 1,305 tests in 249 seconds. UI typecheck, full lint, and the production build also pass; the
+initial chunk remains 264.32 kB (gzip 81.16 kB) with no build advisory.
 
 ## Known bounded gaps
 
