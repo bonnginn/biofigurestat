@@ -331,6 +331,15 @@ can no longer drift because a new prop was wired to only one of the two surfaces
 selected-comparison action and Statistics remains display-only. The 57 focused tests, typecheck,
 and lint pass; this change intentionally improves one-source wiring without changing line count.
 
+A regression-suite audit records 190 test files / 42,125 lines: 98 jsdom UI files (25,595 lines,
+623 `render` and 186 `waitFor` calls) and 92 non-UI files (16,530 lines). Exact duplicate test titles
+are limited to per-editor English no-Japanese contracts, not broad copied scenarios. The current
+pure annotation, layer-description, and numeric-parser tests are retained because they directly
+fix semantic contracts at low cost. Rationalization should instead start with the largest
+integration suites and apply one direct contract test plus only the route-level integrations needed
+to prove wiring, without weakening persistence, migration, biological-unit, pairing, censoring, or
+lineage coverage.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
