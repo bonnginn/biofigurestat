@@ -41,6 +41,7 @@ import { ExperimentGraphAnalysisSetEditor } from "./ExperimentGraphAnalysisSetEd
 import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
 import { graphPresentationForPreset } from "./experimentGraphPresets";
 import { describeActiveGraphLayers } from "./experimentGraphLayerDescription";
+import { experimentGraphTypeLabel } from "./experimentGraphTypeLabel";
 export { describeActiveGraphLayers } from "./experimentGraphLayerDescription";
 import { selectExperimentGraphActiveScope } from "./experimentGraphActiveScope";
 import { ExperimentGraphConnectingLineEditor } from "./ExperimentGraphConnectingLineEditor";
@@ -102,7 +103,6 @@ import {
 } from "./experimentGraphPresentation";
 import "./graph-workbench.css";
 
-type GraphType = WorkspaceGraphState["graphType"];
 type StatisticsAnnotationEntry = NonNullable<WorkspaceGraphState["statisticsAnnotations"]>[number];
 export type ExperimentGraphWorkbenchProps = Readonly<{
   draft: ExperimentSetDraft;
@@ -500,18 +500,6 @@ export function ExperimentGraphWorkbench({
     setLayers(next.layers);
     setAppearance(next.appearance);
   };
-  const graphTypeLabel: Record<GraphType, string> = {
-    dot: "Dot",
-    paired_dot: "Paired / matched dot",
-    box: "Box",
-    violin: "Violin",
-    bar: "Bar",
-    line: "Line / Time course",
-    scatter: "Scatter",
-    stacked: "Stacked count",
-    stacked_100: "100% stacked",
-    category_percentage: "Category percentage",
-  };
   const resolvedLayerDescription = describeActiveGraphLayers({
     graphType,
     shape,
@@ -650,7 +638,7 @@ export function ExperimentGraphWorkbench({
             aria-label={t("グラフプレビュー", "Graph preview")}
           >
             <ExperimentGraphCanvasToolbar
-              graphTypeLabel={graphTypeLabel[graphType]}
+              graphTypeLabel={experimentGraphTypeLabel(graphType, locale)}
               layerDescription={activeLayerDescription}
               graphTitleFontSize={appearance.graphTitleFontSize}
               hasData={hasData}

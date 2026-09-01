@@ -67,6 +67,9 @@ describe("ExperimentGraphAppearanceEditor", () => {
     const onApplyPreset = vi.fn();
     render(<Harness onGraphTypeChange={onGraphTypeChange} onApplyPreset={onApplyPreset} />);
 
+    expect(screen.getByRole("option", { name: "ドット" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "折れ線／経時変化" })).toBeInTheDocument();
+
     fireEvent.change(screen.getByLabelText("グラフの基本形"), { target: { value: "bar" } });
     fireEvent.change(screen.getByLabelText("表示プリセット"), {
       target: { value: "publication" },

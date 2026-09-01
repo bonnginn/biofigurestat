@@ -4,6 +4,7 @@ import { localizedText, useAppLocale } from "../../app/appLocale";
 import type { ExperimentSetDraft, ReadoutDraft } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { GRAPH_PALETTES, type GraphPaletteMode } from "./graphAppearance";
+import { experimentGraphTypeLabel } from "./experimentGraphTypeLabel";
 
 type AxisSettings = WorkspaceGraphState["axes"];
 type GraphAppearance = WorkspaceGraphState["appearance"];
@@ -53,24 +54,26 @@ export function ExperimentGraphAppearanceEditor({
         >
           {readoutShape === "categorical_counts" ? (
             <>
-              <option value="stacked">Stacked count</option>
-              <option value="stacked_100">100% stacked</option>
-              <option value="category_percentage">Category percentage</option>
+              <option value="stacked">{experimentGraphTypeLabel("stacked", locale)}</option>
+              <option value="stacked_100">{experimentGraphTypeLabel("stacked_100", locale)}</option>
+              <option value="category_percentage">
+                {experimentGraphTypeLabel("category_percentage", locale)}
+              </option>
             </>
           ) : analysisIntentKind === "correlation" ? (
-            <option value="scatter">Scatter</option>
+            <option value="scatter">{experimentGraphTypeLabel("scatter", locale)}</option>
           ) : (
             <>
-              <option value="dot">Dot</option>
-              <option value="box">Box</option>
-              <option value="violin">Violin</option>
-              <option value="bar">Bar</option>
-              <option value="line">Line / Time course</option>
+              <option value="dot">{experimentGraphTypeLabel("dot", locale)}</option>
+              <option value="box">{experimentGraphTypeLabel("box", locale)}</option>
+              <option value="violin">{experimentGraphTypeLabel("violin", locale)}</option>
+              <option value="bar">{experimentGraphTypeLabel("bar", locale)}</option>
+              <option value="line">{experimentGraphTypeLabel("line", locale)}</option>
               <option
                 value="paired_dot"
                 disabled={conditionAssignmentKind !== "matched" && timeSampling !== "longitudinal"}
               >
-                {t("対応を線で結ぶ", "Connect matched observations")}
+                {experimentGraphTypeLabel("paired_dot", locale)}
               </option>
             </>
           )}
