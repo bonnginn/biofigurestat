@@ -3,9 +3,6 @@ import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisCl
 
 import {
   hasSharedSourceConditionUnits,
-  orderedAxisSemantic,
-  orderedAxisTitle,
-  orderedAxisUnit,
   type ExperimentCellMap,
   type ExperimentSetDraft,
   type ReadoutDraft,
@@ -17,10 +14,6 @@ import {
   type DraftAnalysisCorrection,
 } from "../../app/draftAnalysisDiagnostics";
 import { defaultGraphYTitle, defaultLayersForGraphType } from "../../app/graphDefaults";
-import {
-  createInitialGraphGrouping,
-  normalizeGraphGroupingChannels,
-} from "../../app/graphGrouping";
 import {
   createExperimentWorkspaceDesign,
   type WorkspaceGraphAnalysis,
@@ -75,6 +68,11 @@ import {
 } from "./useExperimentGraphWorkspaceEffects";
 import { useAdjustedStatisticsAnnotations } from "./useAdjustedStatisticsAnnotations";
 import { useExperimentGraphStatisticsIntent } from "./useExperimentGraphStatisticsIntent";
+import {
+  DEFAULT_GRAPH_APPEARANCE,
+  DEFAULT_GRAPH_LAYERS,
+  useExperimentGraphPresentationState,
+} from "./useExperimentGraphPresentationState";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
 import {
   runGraphClipboardCopy,
@@ -109,11 +107,9 @@ import "./graph-workbench.css";
 type LayerState = WorkspaceGraphState["layers"];
 
 type GraphAppearance = WorkspaceGraphState["appearance"];
-type AxisSettings = WorkspaceGraphState["axes"];
 type GraphType = WorkspaceGraphState["graphType"];
 type StatisticsAnnotation = NonNullable<WorkspaceGraphState["statisticsAnnotation"]>;
 type StatisticsAnnotationEntry = NonNullable<WorkspaceGraphState["statisticsAnnotations"]>[number];
-type GraphGrouping = NonNullable<WorkspaceGraphState["grouping"]>;
 
 export type ExperimentGraphWorkbenchProps = Readonly<{
   draft: ExperimentSetDraft;
@@ -130,55 +126,6 @@ export type ExperimentGraphWorkbenchProps = Readonly<{
   onAnalysisCorrection?: (correction: DraftAnalysisCorrection) => void;
 }>;
 
-const DEFAULT_LAYERS: LayerState = {
-  raw: true,
-  distribution: true,
-  experiment: true,
-  overall: true,
-  violin: false,
-  box: false,
-  errorBar: true,
-  connectingLine: false,
-};
-const DEFAULT_APPEARANCE: GraphAppearance = {
-  errorBar: "sd",
-  palette: "single",
-  pointSize: 6,
-  pointOpacity: 0.9,
-  axisLineWidth: 1.4,
-  hierarchicalLabels: true,
-  jitter: 12,
-  fontFamily: "arial",
-  graphTitleFontSize: 20,
-  axisTitleFontSize: 19,
-  tickFontSize: 17,
-  hierarchyFontSize: 17,
-  legendFontSize: 16,
-  legendPosition: "hidden",
-  seriesColors: {},
-  seriesStyles: {},
-  distributionFill: "white",
-  distributionFillColor: "#ffffff",
-  distributionOutlineColor: "#111111",
-  barWidth: 0.72,
-  withinGroupSpacing: 0.72,
-  betweenGroupSpacing: 1.35,
-  barOutline: true,
-  barMeanMarker: false,
-  boxWhiskerMode: "tukey_1_5_iqr",
-  uncertaintyStyle: "error_bars",
-  ribbonOpacity: 0.18,
-  rawPointColor: "#8a96a3",
-  summaryColor: "#111111",
-  errorBarColor: "#111111",
-  connectingLineColor: "#4b5563",
-  summaryLineWidth: 2,
-  errorBarLineWidth: 1.5,
-  connectingLineWidth: 1.5,
-  distributionLineWidth: 1.2,
-  canvasPreset: "standard",
-  sidePadding: 72,
-};
 export function describeActiveGraphLayers(
   input: Readonly<{
     graphType: GraphType;
@@ -317,52 +264,27 @@ export function ExperimentGraphWorkbench({
   const [sourceMode, setSourceMode] = useState<"raw_readout" | "derived_metric">(
     initialState?.sourceMode ?? "raw_readout",
   );
-  const [layers, setLayers] = useState<LayerState>(() => {
-    if (initialState?.layers) return initialState.layers;
-    if (semanticReadiness !== "unresolved_descriptive") return DEFAULT_LAYERS;
-    return {
-      ...defaultLayersForGraphType("dot", draft.readouts[0]?.shape ?? "proportion"),
-      // Summarizing unresolved rows can silently imply a statistical unit.
-      // Start with the source rows only; the researcher may opt into a visual
-      // summary without that changing Statistics readiness.
-      overall: false,
-      errorBar: false,
-    };
+  const {
+    layers,
+    setLayers,
+    appearance,
+    setAppearance,
+    graphType,
+    setGraphType,
+    grouping,
+    setGrouping,
+    axes,
+    setAxes,
+    inspectorTarget,
+    setInspectorTarget,
+    fitOverview,
+    setFitOverview,
+  } = useExperimentGraphPresentationState({
+    draft,
+    initialState,
+    semanticReadiness,
+    workspaceMode,
   });
-  const proposedInitialGrouping = useMemo(
-    () =>
-      normalizeGraphGroupingChannels(initialState?.grouping ?? createInitialGraphGrouping(draft)),
-    [draft, initialState?.grouping],
-  );
-  const [appearance, setAppearance] = useState<GraphAppearance>({
-    ...DEFAULT_APPEARANCE,
-    ...(proposedInitialGrouping.series.source !== "none"
-      ? { legendPosition: "right" as const, palette: "condition" as const }
-      : {}),
-    ...initialState?.appearance,
-  });
-  const [graphType, setGraphType] = useState<GraphType>(initialState?.graphType ?? "dot");
-  const [grouping, setGrouping] = useState<GraphGrouping>(proposedInitialGrouping);
-  const [axes, setAxes] = useState<AxisSettings>(
-    initialState?.axes ?? {
-      xSemantic: draft.time.points.length > 0 ? orderedAxisSemantic(draft.time) : "categorical",
-      xTitle: draft.time.points.length > 0 ? orderedAxisTitle(draft.time) : "",
-      xUnit: draft.time.points.length > 0 ? orderedAxisUnit(draft.time) : "",
-      yTitle: defaultGraphYTitle(draft.readouts[0]),
-      yRangeMode: "auto",
-      yMin: null,
-      yMax: null,
-      yScale: "linear",
-      showCategoryLabels: true,
-      hierarchyOrder: draft.attributes.map(({ id }) => id),
-      spacing: 1,
-      yTickMode: "auto",
-      yTickInterval: null,
-      showMinorTicks: true,
-      tickDirection: "outside",
-      showCategoryGroupSeparators: false,
-    },
-  );
   const [analysis, setAnalysis] = useState<WorkspaceGraphAnalysis | null>(
     initialState?.analysis ?? null,
   );
@@ -386,10 +308,6 @@ export function ExperimentGraphWorkbench({
   const [statisticsAnnotations, setStatisticsAnnotations] = useState<StatisticsAnnotationEntry[]>(
     () => [...(initialState?.statisticsAnnotations ?? [])],
   );
-  const [inspectorTarget, setInspectorTarget] = useState<InspectorTarget>(
-    workspaceMode === "statistics" ? "statistics" : "data",
-  );
-  const [fitOverview, setFitOverview] = useState(false);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [pngExportFeedback, setPngExportFeedback] = useState<GraphExportFeedback | null>(null);
   const [benchmarkCaptureStatus, setBenchmarkCaptureStatus] = useState<string | null>(null);
@@ -646,7 +564,7 @@ export function ExperimentGraphWorkbench({
   );
   const visualSeriesOptions = useMemo(() => uniqueVisualSeriesOptions(series), [series]);
   const defaultPresentationAppearance: GraphAppearance = {
-    ...DEFAULT_APPEARANCE,
+    ...DEFAULT_GRAPH_APPEARANCE,
     ...(visualSeriesOptions.length > 1 ? { legendPosition: "right", palette: "condition" } : {}),
   };
   const baseAnnotationContext = analysis
@@ -737,7 +655,7 @@ export function ExperimentGraphWorkbench({
     const restrainedLayers = defaultLayersForGraphType(graphType, shape);
     if (preset === "raw") {
       setLayers({
-        ...DEFAULT_LAYERS,
+        ...DEFAULT_GRAPH_LAYERS,
         raw: true,
         distribution: true,
         experiment: true,
@@ -748,7 +666,7 @@ export function ExperimentGraphWorkbench({
     }
     if (preset === "replicate") {
       setLayers({
-        ...DEFAULT_LAYERS,
+        ...DEFAULT_GRAPH_LAYERS,
         raw: false,
         distribution: false,
         box: false,
