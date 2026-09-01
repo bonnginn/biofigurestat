@@ -259,12 +259,12 @@ project-action, App, open/save, workspace, and locale tests pass.
 The persisted Graph snapshot and active-scope projections are now separately tested boundaries.
 They preserve stable readout/condition/time identities, keep the displayed set distinct from the
 Statistics analysis set, copy selection arrays before emission, and retain the exact public
-workspace schema. `ExperimentGraphWorkbench.tsx` is 1,116 lines, down from 6,854 at the Public
+workspace schema. `ExperimentGraphWorkbench.tsx` is 1,114 lines, down from 6,922 at the Public
 Alpha tag (about 84%). This is architectural concentration reduction, not a claim that the whole
-application became smaller: since that tag, `apps/ui/src` production code is net +5,121 lines and
-tests are net +5,606 lines because bilingual UI, native automation, compatibility guards,
+application became smaller: since that tag, `apps/ui/src` production code is net +5,161 lines and
+tests are net +5,680 lines because bilingual UI, native automation, compatibility guards,
 extracted boundaries, and regression coverage were added. Graph-family production code is net
-+1,920 lines while Graph tests are net +3,976 lines. The next consolidation pass must therefore
++1,995 lines while Graph tests are net +4,066 lines. The next consolidation pass must therefore
 look for overlap among the extracted boundaries instead of judging progress only by the workbench
 file size.
 
@@ -285,6 +285,12 @@ commits, production code is net -27 lines while 226 direct regression-test lines
 DataSheet/MultiCondition focused tests, typecheck, and lint pass. Spreadsheet Undo/Redo remains an
 explicit Beta item because it must coordinate canonical values, Graph invalidation, dirty state,
 and persistence rather than only reverting visible text.
+
+Graph analysis readiness is now memoized behind its own semantic-input boundary. Graph-type labels
+are defined once and reused by both the creation dialog and appearance inspector, and active-layer
+descriptions now follow the selected application language without changing layer identity or SVG
+content semantics. Workbench, creation-dialog, appearance-editor, label, and assessment focused
+tests pass together with typecheck and lint.
 
 ## Known bounded gaps
 
