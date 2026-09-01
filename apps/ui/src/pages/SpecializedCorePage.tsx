@@ -1892,7 +1892,9 @@ export function SpecializedCorePage({
   const numericStatusMappingRequired =
     experimentFirstEntry &&
     mode === "survival" &&
-    ((survival && "error" in survival && /numeric mapping/iu.test(survival.internalError)) ||
+    ((survival &&
+      "error" in survival &&
+      /numeric mapping/iu.test(survival.internalError ?? "")) ||
       numericStatusMapping !== null);
   const survivalStatisticsSetupBlockedReason =
     directTimeToEventEntry?.status === "safe_unsupported"
