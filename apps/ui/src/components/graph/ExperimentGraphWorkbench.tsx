@@ -5,12 +5,6 @@ import { type ExperimentCellMap, type ExperimentSetDraft } from "../../app/exper
 import { isDerivedTimeMetric } from "../../app/experimentDraftAnalysis";
 import { type DraftAnalysisCorrection } from "../../app/draftAnalysisDiagnostics";
 import { type WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
-import { copyGraphToClipboard } from "../../app/graphExport";
-import {
-  saveGraphCsvExport,
-  saveGraphPngExport,
-  saveGraphSvgExport,
-} from "../../app/graphExportController";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import { useBenchmarkRun } from "../../app/benchmarkEvaluation";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
@@ -66,10 +60,9 @@ import { useExperimentGraphPresentationState } from "./useExperimentGraphPresent
 import { useExperimentGraphDataSelectionState } from "./useExperimentGraphDataSelectionState";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
 import {
-  runGraphClipboardCopy,
-  runGraphUserExport,
   type GraphExportFeedback,
 } from "./experimentGraphUserExports";
+import { createExperimentGraphUserActions } from "./experimentGraphUserActions";
 import {
   analysisTestAnnotationLabel,
   createSelectedComparisonAnnotation,
@@ -79,11 +72,6 @@ export {
   analysisTestAnnotationLabel,
   repeatedAxisAnnotationLabel,
 } from "./experimentGraphAnnotations";
-import {
-  safeGraphFileStem,
-  serializeCompositionData,
-  serializeVisibleGraphData,
-} from "./experimentGraphDataExport";
 export { serializeVisibleGraphData } from "./experimentGraphDataExport";
 import { buildDerivedGraphLineageRows, buildExperimentGraphSeries } from "./experimentGraphSeries";
 import {
@@ -503,45 +491,18 @@ export function ExperimentGraphWorkbench({
     matched: draft.conditionAssignment.kind === "matched",
     semanticReadiness,
   }, locale);
-  const exportSvg = async () => {
-    if (!svgRef.current || !readout) return;
-    await runGraphUserExport(
-      "svg",
-      locale,
-      () => saveGraphSvgExport(svgRef.current!, `${safeGraphFileStem(readout.label)}.svg`),
-      setPngExportFeedback,
-    );
-  };
-  const exportPng = async () => {
-    if (!svgRef.current || !readout) return;
-    await runGraphUserExport(
-      "png",
-      locale,
-      () => saveGraphPngExport(svgRef.current!, `${safeGraphFileStem(readout.label)}.png`),
-      setPngExportFeedback,
-    );
-  };
-  const exportCsv = async () => {
-    if (!readout) return;
-    await runGraphUserExport(
-      "csv",
-      locale,
-      () =>
-        saveGraphCsvExport(
-          readout.shape === "categorical_counts"
-            ? serializeCompositionData(
-                draft,
-                cells,
-                readout,
-                selectedConditionIds,
-                selectedTimePointIds,
-              )
-            : serializeVisibleGraphData(series, readout),
-          `${safeGraphFileStem(readout.label)}-graph-data.csv`,
-        ),
-      setPngExportFeedback,
-    );
-  };
+  const userActions = createExperimentGraphUserActions({
+    getSvg: () => svgRef.current,
+    readout,
+    draft,
+    cells,
+    selectedConditionIds,
+    selectedTimePointIds,
+    series,
+    locale,
+    setCopyStatus,
+    setExportFeedback: setPngExportFeedback,
+  });
   const descriptiveBenchmarkRun = draft.analysisIntent.kind === "single_cohort";
   const descriptiveMethodsText = [
     "Descriptive Figure workflow (no inferential test).",
@@ -567,10 +528,6 @@ export function ExperimentGraphWorkbench({
       graphState: graphStateSnapshot,
       setStatus: setBenchmarkCaptureStatus,
     });
-  };
-  const copyGraph = async () => {
-    if (!svgRef.current) return;
-    await runGraphClipboardCopy(locale, () => copyGraphToClipboard(svgRef.current!), setCopyStatus);
   };
   const inspectGraphPart = (target: InspectorTarget) => {
     if (workspaceMode === "graph" && target === "statistics") return;
@@ -657,10 +614,10 @@ export function ExperimentGraphWorkbench({
                 !benchmarkRun.defaultGraphCaptured ||
                 (!analysis && !descriptiveBenchmarkRun)
               }
-              onCopy={() => void copyGraph()}
-              onExportSvg={() => void exportSvg()}
-              onExportPng={() => void exportPng()}
-              onExportCsv={() => void exportCsv()}
+              onCopy={() => void userActions.copyGraph()}
+              onExportSvg={() => void userActions.exportSvg()}
+              onExportPng={() => void userActions.exportPng()}
+              onExportCsv={() => void userActions.exportCsv()}
               onFinalizeBenchmark={() => void finalizeBenchmarkRun()}
               onFitOverviewChange={setFitOverview}
             />
