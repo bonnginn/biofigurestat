@@ -152,6 +152,7 @@ it("safe-stops an equivalence goal without recommending or running ordinary NHST
       design={panelDesign()}
       analysisRunner={analysisRunner}
       comparisonGoal="equivalence"
+      equivalenceSupportKind="positive_total_shared_source"
       onComparisonGoalChange={onComparisonGoalChange}
       relationshipAlreadyDeclared
     />,
@@ -160,6 +161,8 @@ it("safe-stops an equivalence goal without recommending or running ordinary NHST
   expect(screen.getByText("同等性解析は現在未サポートです")).toBeVisible();
   expect(screen.getByText(/通常のANOVAやt検定でp > 0.05となっても/)).toBeVisible();
   expect(screen.getByText(/観測データから自動生成しません/)).toBeVisible();
+  expect(screen.getByText(/陽性数／総数と実験回内の依存/)).toBeVisible();
+  expect(screen.getByText(/割合を独立な連続量としてTOSTへ渡しません/)).toBeVisible();
   expect(screen.getByText("同等性解析の事前計画")).toBeVisible();
   expect(screen.getByLabelText("下限")).toBeVisible();
   expect(screen.getByLabelText("上限")).toBeVisible();

@@ -47,6 +47,7 @@ import { useExperimentGraphDerivedData } from "./useExperimentGraphDerivedData";
 import { useExperimentGraphUserActions } from "./useExperimentGraphUserActions";
 import { useExperimentGraphEvaluationController } from "./useExperimentGraphEvaluationController";
 import { analysisTestAnnotationLabel, graphAnnotationContext } from "./experimentGraphAnnotations";
+import { classifyEquivalenceSupport } from "./equivalenceSupportPresentation";
 export {
   analysisTestAnnotationLabel,
   repeatedAxisAnnotationLabel,
@@ -714,6 +715,10 @@ export function ExperimentGraphWorkbench({
                           ? t("パーセントポイント", "percentage points")
                           : readout?.unit?.trim() || readout?.label || t("測定単位", "readout units"),
                       onEquivalencePlanChange: changeEquivalencePlan,
+                      equivalenceSupportKind: classifyEquivalenceSupport({
+                        readoutShape: readout?.shape,
+                        relationshipKind: matchedRelationship?.kind,
+                      }),
                       onSelectedMethodChange: (method) =>
                         changeSelectedMethod(
                           method,

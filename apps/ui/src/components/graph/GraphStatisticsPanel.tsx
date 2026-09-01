@@ -39,6 +39,7 @@ import { createStatisticsConsultationPrompt } from "../../app/externalLlmConsult
 import { ExternalLlmConsultation } from "../ExternalLlmConsultation";
 import { localizedText, useAppLocale, type AppLocale } from "../../app/appLocale";
 import { EquivalencePlanEditor } from "./EquivalencePlanEditor";
+import type { EquivalenceSupportKind } from "./equivalenceSupportPresentation";
 
 type MatchedRelationship =
   | Readonly<{ kind: "same_entity"; unitLabel: string }>
@@ -65,6 +66,7 @@ type GraphStatisticsPanelProps = Readonly<{
   equivalenceMarginScale?: EquivalenceMargin["scale"];
   equivalenceMarginUnit?: string;
   onEquivalencePlanChange?: (plan: EquivalenceAnalysisPlan | null) => void;
+  equivalenceSupportKind?: EquivalenceSupportKind;
   contrastIntent?: ContrastIntent;
   onContrastIntentChange?: (intent: ContrastIntent) => void;
   conditionOptions?: readonly ConditionOption[];
@@ -256,6 +258,7 @@ export function GraphStatisticsPanel({
   equivalenceMarginScale = "raw_difference",
   equivalenceMarginUnit = "readout units",
   onEquivalencePlanChange,
+  equivalenceSupportKind = "specialist_outcome",
   contrastIntent,
   onContrastIntentChange,
   conditionOptions = [],
@@ -642,6 +645,36 @@ export function GraphStatisticsPanel({
     "この目的には、データを見る前に科学的に定めた許容差と、実験構造に対応したequivalence analysisが必要です。通常のANOVAやt検定でp > 0.05となっても、同等性や影響がないことを示したことにはなりません。入力データと記述的グラフは保持します。",
     "This objective requires a scientifically predefined margin and an equivalence analysis appropriate for the experimental structure. A standard ANOVA or t-test with p > 0.05 does not demonstrate equivalence or absence of an effect. Entered data and the descriptive Graph are retained.",
   );
+  const equivalenceDesignReason: Readonly<Record<EquivalenceSupportKind, string>> = {
+    continuous_independent: t(
+      "独立2群の連続量については、Welch互換のTOST／信頼区間methodと検証用reference値がまだ未実装です。",
+      "For two independent continuous groups, a Welch-compatible TOST/confidence-interval method and reviewed reference values are not yet implemented.",
+    ),
+    continuous_matched: t(
+      "対応差に対するTOST／信頼区間methodと、不完全な対応組の扱いがまだ未実装です。",
+      "TOST/confidence-interval analysis of paired differences and the incomplete-pair policy are not yet implemented.",
+    ),
+    continuous_shared_source: t(
+      "同じ実験回・由来は対応測定とはみなしません。runを扱うblock modelと自由度の方針が未確定です。",
+      "A shared run or source is not treated as pairing. The block model and degrees-of-freedom policy for run effects are not yet defined.",
+    ),
+    positive_total_independent: t(
+      "陽性数／総数を保持したbinomial methodが必要です。割合だけを連続量としてTOSTへ渡しません。",
+      "A binomial method retaining positive and total counts is required. Percentages will not be sent to continuous-outcome TOST.",
+    ),
+    positive_total_matched: t(
+      "陽性数／総数と対応identityを同時に扱うbinomial methodが必要です。対応割合を連続量としてTOSTへ渡しません。",
+      "A binomial method that retains both positive/total counts and matched identity is required. Paired percentages will not be sent to continuous-outcome TOST.",
+    ),
+    positive_total_shared_source: t(
+      "陽性数／総数と実験回内の依存を同時に扱うmodelが必要です。割合を独立な連続量としてTOSTへ渡しません。",
+      "A model retaining positive/total counts and within-run dependence is required. Percentages will not be treated as independent continuous values for TOST.",
+    ),
+    specialist_outcome: t(
+      "この測定形式には、estimandと信頼区間を含む専用の同等性method contractがまだありません。",
+      "This outcome shape does not yet have a dedicated equivalence-method contract covering its estimand and confidence interval.",
+    ),
+  };
   const recommendationReason =
     locale === "en"
       ? `The design contains ${assessment.nByCondition.length} ${matchedAnalysis ? "matched" : "independent"} conditions (${assessment.nByCondition.map(({ label, n }) => `${label}: n=${n}`).join(", ")}). The recommendation follows the declared experimental-unit relationship and comparison objective; multiplicity is handled when condition comparisons are requested.`
@@ -771,6 +804,7 @@ export function GraphStatisticsPanel({
           <>
             <strong>{equivalenceUnsupportedTitle}</strong>
             <p>{equivalenceUnsupportedReason}</p>
+            <p role="note">{equivalenceDesignReason[equivalenceSupportKind]}</p>
             <p>
               {t(
                 "Equivalence marginはBioFigureStatが観測データから自動生成しません。ここで事前計画を保存できますが、正式な解析は対応法の検証後にのみ実行可能になります。",
