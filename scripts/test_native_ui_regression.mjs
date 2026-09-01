@@ -90,7 +90,7 @@ test("drives only the exact spawned process native Save dialog with encoded path
   assert.match(saveCommand.at(-1), /\[IntPtr\]13/);
 
   const cancelCommand = windowsFileDialogCommand(4242, "cancel");
-  assert.match(cancelCommand.at(-1), /AutomationIdProperty,\s*\n\s*'2'/);
+  assert.match(cancelCommand.at(-1), /\[IntPtr\]27/);
   assert.throws(() => windowsFileDialogCommand(0, "cancel"), /positive integer/);
   assert.throws(() => windowsFileDialogCommand(4242, "save", "figure.svg"), /must be absolute/);
   assert.throws(() => windowsFileDialogCommand(4242, "overwrite"), /Unsupported/);

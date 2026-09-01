@@ -308,25 +308,19 @@ if ($null -eq $dialog) {
   throw ('FILE_DIALOG_NOT_FOUND: native Save dialog did not appear; candidates=' + $summary)
 }
 if ($action -eq 'cancel') {
-  $cancelId = [Windows.Automation.PropertyCondition]::new(
-    [Windows.Automation.AutomationElement]::AutomationIdProperty,
-    '2'
+  [void][BioFigureStatNativeWindowOwner]::PostMessage(
+    [IntPtr]$dialog.Current.NativeWindowHandle,
+    0x0100,
+    [IntPtr]27,
+    [IntPtr]0
   )
-  $cancel = $dialog.FindFirst(
-    [Windows.Automation.TreeScope]::Descendants,
-    $cancelId
+  [void][BioFigureStatNativeWindowOwner]::PostMessage(
+    [IntPtr]$dialog.Current.NativeWindowHandle,
+    0x0101,
+    [IntPtr]27,
+    [IntPtr]0
   )
-  if ($null -eq $cancel) {
-    $cancelNames = [Windows.Automation.OrCondition]::new(
-      [Windows.Automation.Condition[]]@(
-        [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, 'Cancel'),
-        [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, 'キャンセル')
-      )
-    )
-    $cancel = $dialog.FindFirst([Windows.Automation.TreeScope]::Descendants, $cancelNames)
-  }
-  if ($null -eq $cancel) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: Cancel button' }
-  $cancel.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
+  Start-Sleep -Milliseconds 250
 } else {
   $fileNameId = [Windows.Automation.PropertyCondition]::new(
     [Windows.Automation.AutomationElement]::AutomationIdProperty,
