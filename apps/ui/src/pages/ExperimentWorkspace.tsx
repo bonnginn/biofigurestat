@@ -89,6 +89,7 @@ import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usag
 import { recordDiagnosticError, recordDiagnosticEvent } from "../app/diagnostics";
 import { localizedText, useAppLocale } from "../app/appLocale";
 import { useSpreadsheetCellDraft } from "../components/useSpreadsheetCellDraft";
+import { experimentGraphTypeLabel } from "../components/graph/experimentGraphTypeLabel";
 
 const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
   ? lazy(() =>
@@ -384,19 +385,6 @@ type ProportionPasteUpdate = Readonly<{
   field: "positive" | "eligible";
   value: number;
 }>;
-
-function graphTypeChoiceLabel(graphType: CreatableGraphType): string {
-  if (graphType === "stacked") return "Stacked count";
-  if (graphType === "stacked_100") return "100% stacked";
-  if (graphType === "category_percentage") return "Category percentage";
-  if (graphType === "scatter") return "Scatter";
-  if (graphType === "line") return "Line / Time course";
-  if (graphType === "violin") return "Violin";
-  if (graphType === "paired_dot") return "対応を線で結ぶ";
-  if (graphType === "box") return "Box";
-  if (graphType === "bar") return "Bar";
-  return "Dot";
-}
 
 type ProportionPasteRequest = Readonly<{
   experimentId: string;
@@ -4520,8 +4508,8 @@ export function ExperimentWorkspace({
                   aria-pressed={graphTypeSelectionActive && selectedGraphType === graphType}
                   aria-label={
                     locale === "ja"
-                      ? `${graphTypeChoiceLabel(graphType)}を選択（おすすめ）`
-                      : `Select ${graphType === "paired_dot" ? "Connected matched points" : graphTypeChoiceLabel(graphType)} (recommended)`
+                      ? `${experimentGraphTypeLabel(graphType, locale)}を選択（おすすめ）`
+                      : `Select ${graphType === "paired_dot" ? "Connected matched points" : experimentGraphTypeLabel(graphType, locale)} (recommended)`
                   }
                   onClick={() => selectGraphType(graphType)}
                 >
@@ -4618,19 +4606,19 @@ export function ExperimentWorkspace({
             >
               {(
                 [
-                  ["dot", "Dot"],
-                  ["box", "Box"],
-                  ["violin", "Violin"],
-                  ["bar", "Bar"],
-                  ["line", "Line / Time course"],
-                  ["paired_dot", "対応を線で結ぶ"],
-                  ["scatter", "Scatter"],
-                  ["stacked", "Stacked count"],
-                  ["stacked_100", "100% stacked"],
-                  ["category_percentage", "Category percentage"],
+                  "dot",
+                  "box",
+                  "violin",
+                  "bar",
+                  "line",
+                  "paired_dot",
+                  "scatter",
+                  "stacked",
+                  "stacked_100",
+                  "category_percentage",
                 ] as const
               )
-                .filter(([value]) => {
+                .filter((value) => {
                   if (recommendedGraphTypes.includes(value)) return false;
                   if (selectedSourceReadout?.shape === "categorical_counts") {
                     return (
@@ -4651,7 +4639,9 @@ export function ExperimentWorkspace({
                     value !== "category_percentage"
                   );
                 })
-                .map(([value, label]) => (
+                .map((value) => {
+                  const label = experimentGraphTypeLabel(value, locale);
+                  return (
                   <button
                     className={
                       graphTypeSelectionActive && selectedGraphType === value ? "is-selected" : ""
@@ -4678,7 +4668,8 @@ export function ExperimentWorkspace({
                         : label}
                     </strong>
                   </button>
-                ))}
+                  );
+                })}
               {draft.analysisIntent.kind !== "correlation" ? (
                 <small id="scatter-disabled-reason">
                   {t(

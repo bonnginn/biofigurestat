@@ -592,7 +592,7 @@ describe("ExperimentWorkspace", () => {
     ).toHaveValue(25);
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    expect(screen.getByRole("button", { name: "Scatterを選択（おすすめ）" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "散布図を選択（おすすめ）" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     const graph = await screen.findByRole("img", { name: /散布図/ }, { timeout: 5_000 });
     expect(graph).toHaveAttribute("data-graph-type", "scatter");
@@ -615,10 +615,10 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByText("追加正規化：なし（Target/reference比まで）")).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    const dot = screen.getByRole("button", { name: "Dotを選択（おすすめ）" });
+    const dot = screen.getByRole("button", { name: "ドットを選択（おすすめ）" });
     expect(dot).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("img", { name: /dotで現在のデータを表示したpreview/ })).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Violinを選択" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "バイオリンを選択" })).toBeNull();
     fireEvent.click(dot);
     expect(dot).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(dot);
@@ -700,9 +700,9 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("spinbutton", { name: "ControlのOther数" })).toHaveValue(5);
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    expect(screen.getByRole("button", { name: "100% stackedを選択（おすすめ）" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "100%積み上げを選択（おすすめ）" })).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Category percentageを選択（おすすめ）" }),
+      screen.getByRole("button", { name: "カテゴリの割合を選択（おすすめ）" }),
     ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     const graph = await screen.findByRole("img", { name: /カテゴリ構成グラフ/ });
@@ -1036,7 +1036,7 @@ describe("ExperimentWorkspace", () => {
     expect(
       screen.getByText("Scatterは「同じ試料のXとYの関係を見る」設計で利用できます"),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: /Dotを選択（おすすめ）/ }));
+    fireEvent.click(screen.getByRole("button", { name: /ドットを選択（おすすめ）/ }));
     expect(screen.getByText("作成後の初期表示")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     expect(document.querySelector(".experiment-workspace-body")).toHaveAttribute("hidden");
@@ -1059,7 +1059,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "グラフ (1)" }));
     expect(screen.getByRole("region", { name: "実験からグラフを作成" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    fireEvent.click(screen.getByRole("button", { name: /Dotを選択（おすすめ）/ }));
+    fireEvent.click(screen.getByRole("button", { name: /ドットを選択（おすすめ）/ }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     expect(screen.getByRole("button", { name: "グラフ (2)" })).toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: "グラフ名" })).not.toBeInTheDocument();
@@ -1095,7 +1095,7 @@ describe("ExperimentWorkspace", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    chooseAndCreateGraph(/Violinを選択/);
+    chooseAndCreateGraph(/バイオリンを選択/);
     const graph = await screen.findByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="violin"]')).not.toHaveLength(0);
     expect(graph.querySelectorAll('[data-graph-layer="nested-raw"]')).not.toHaveLength(0);
@@ -1115,9 +1115,9 @@ describe("ExperimentWorkspace", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     expect(
-      screen.getByRole("button", { name: "Line / Time courseを選択（おすすめ）" }),
+      screen.getByRole("button", { name: "折れ線／経時変化を選択（おすすめ）" }),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Violinを選択（おすすめ）" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "バイオリンを選択（おすすめ）" })).toBeVisible();
     fireEvent.click(
       screen.getByRole("button", { name: "＋ カスタムグラフ（レイヤーから組み立てる）" }),
     );
@@ -1206,7 +1206,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "表示する測定項目" }), {
       target: { value: "readout.multi.intensity" },
     });
-    expect(screen.getByRole("button", { name: /Violinを選択（おすすめ）/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /バイオリンを選択（おすすめ）/ })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     expect(await screen.findByRole("img", { name: /蛍光強度/ })).toBeVisible();
     expect(screen.getByRole("combobox", { name: "測定項目" })).toHaveValue(
@@ -1332,7 +1332,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     const dialog = screen.getByRole("dialog", { name: "グラフの基本形を選ぶ" });
     expect(within(dialog).getAllByRole("img", { name: /の模式図/ })).toHaveLength(7);
-    fireEvent.click(within(dialog).getByRole("button", { name: "Boxを選択" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "箱ひげを選択" }));
     expect(
       within(dialog).getByRole("img", { name: /boxで現在のデータを表示したpreview/ }),
     ).toBeVisible();
@@ -1351,7 +1351,7 @@ describe("ExperimentWorkspace", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    chooseAndCreateGraph(/Dotを選択/);
+    chooseAndCreateGraph(/ドットを選択/);
     const graph = await screen.findByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="proportion-experiment"]')).not.toHaveLength(
       0,
@@ -1373,7 +1373,7 @@ describe("ExperimentWorkspace", () => {
         />,
       );
       fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-      chooseAndCreateGraph(/Dotを選択/);
+      chooseAndCreateGraph(/ドットを選択/);
       expect(screen.getByText("グラフ 1を作成しました。")).toBeVisible();
       act(() => vi.advanceTimersByTime(2700));
       expect(screen.queryByText("グラフ 1を作成しました。")).not.toBeInTheDocument();
