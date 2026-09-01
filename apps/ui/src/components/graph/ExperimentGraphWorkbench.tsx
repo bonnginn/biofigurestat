@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from "react";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
 
 import { type ExperimentCellMap, type ExperimentSetDraft } from "../../app/experimentDraft";
-import { isDerivedTimeMetric } from "../../app/experimentDraftAnalysis";
 import { type DraftAnalysisCorrection } from "../../app/draftAnalysisDiagnostics";
 import { type WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { localizedText, useAppLocale } from "../../app/appLocale";
@@ -48,6 +47,7 @@ import { useExperimentGraphStatisticsViewModel } from "./useExperimentGraphStati
 import { useExperimentGraphStateSnapshot } from "./useExperimentGraphStateSnapshot";
 import { useExperimentGraphPresentationState } from "./useExperimentGraphPresentationState";
 import { useExperimentGraphDataSelectionState } from "./useExperimentGraphDataSelectionState";
+import { useExperimentGraphDerivedData } from "./useExperimentGraphDerivedData";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
 import {
   type GraphExportFeedback,
@@ -62,13 +62,6 @@ export {
   repeatedAxisAnnotationLabel,
 } from "./experimentGraphAnnotations";
 export { serializeVisibleGraphData } from "./experimentGraphDataExport";
-import { buildDerivedGraphLineageRows, buildExperimentGraphSeries } from "./experimentGraphSeries";
-import {
-  buildConditionAxisLabels,
-  buildGraphFacetGroups,
-  hasVisibleGraphData,
-  uniqueVisualSeriesOptions,
-} from "./experimentGraphPresentation";
 import "./graph-workbench.css";
 
 export type ExperimentGraphWorkbenchProps = Readonly<{
@@ -310,75 +303,25 @@ export function ExperimentGraphWorkbench({
     locale,
   });
 
-  const series = useMemo(
-    () =>
-      buildExperimentGraphSeries({
-        draft,
-        cells,
-        readout,
-        activeConditions,
-        activeTimePoints,
-        axes,
-        appearance,
-        grouping,
-        sourceMode,
-        timeAnalysis,
-      }),
-    [
-      activeConditions,
-      activeTimePoints,
-      cells,
-      draft.experiments,
-      draft.attributes,
-      draft.time.points.length,
-      draft.time.unit,
-      axes.xUnit,
-      appearance.seriesStyles,
-      graphType,
-      grouping,
-      readout,
-      sourceMode,
-      timeAnalysis,
-    ],
-  );
-
-  const derivedLineageRows = buildDerivedGraphLineageRows({
+  const {
+    series,
+    derivedLineageRows,
+    shape,
+    facetGroups,
+    visualSeriesOptions,
+    hasData,
+  } = useExperimentGraphDerivedData({
     draft,
     cells,
     readout,
     activeConditions,
+    activeTimePoints,
+    axes,
+    appearance,
+    grouping,
     sourceMode,
     timeAnalysis,
   });
-
-  const shape =
-    sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis)
-      ? "nested_continuous"
-      : (readout?.shape ?? "proportion");
-  const axisLabels = useMemo(() => {
-    if (appearance.hierarchicalLabels)
-      return buildConditionAxisLabels({
-        draft,
-        series,
-        hierarchyOrder: axes.hierarchyOrder,
-        grouping,
-      });
-    return series.map((item) => ({
-      conditionId: item.conditionId,
-      levels: [{ id: "condition", label: "条件", value: item.conditionLabel }],
-      timeLabel: grouping.series.source === "time" ? "" : (item.timeLabel ?? ""),
-    }));
-  }, [appearance.hierarchicalLabels, axes.hierarchyOrder, draft, grouping, series]);
-  const facetGroups = useMemo(
-    () =>
-      buildGraphFacetGroups({
-        series,
-        axisLabels,
-        requestedOrder: grouping.facet?.levelOrder ?? [],
-      }),
-    [axisLabels, grouping.facet?.levelOrder, series],
-  );
-  const visualSeriesOptions = useMemo(() => uniqueVisualSeriesOptions(series), [series]);
   const baseAnnotationContext = analysis
     ? graphAnnotationContext({
         request: analysis.request,
@@ -409,7 +352,6 @@ export function ExperimentGraphWorkbench({
           setStatisticsAnnotations,
         }
       : null;
-  const hasData = hasVisibleGraphData({ shape, sourceMode, series, cells });
   const {
     recommendationDesign,
     analysisAssessment,
