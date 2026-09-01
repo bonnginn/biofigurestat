@@ -11,6 +11,7 @@ import {
   resolveNativeExecutable,
   selectWebviewTarget,
   windowsCloseCommand,
+  windowsFileDialogCommand,
 } from "./native_ui_regression.mjs";
 
 test("parses a bounded Windows native regression invocation", () => {
@@ -58,6 +59,24 @@ test("requests an actual bounded Windows WM_CLOSE for the exact spawned process"
   assert.match(command.at(-1), /Get-Process -Id 4242/);
   assert.match(command.at(-1), /CloseMainWindow/);
   assert.throws(() => windowsCloseCommand(0), /positive integer/);
+});
+
+test("drives only the exact spawned process native Save dialog with encoded paths", () => {
+  const target = "C:\\evidence\\日本語 ' quote\\figure.svg";
+  const saveCommand = windowsFileDialogCommand(4242, "save", target);
+  assert.deepEqual(saveCommand.slice(0, 2), ["-NoProfile", "-NonInteractive"]);
+  assert.match(saveCommand.at(-1), /\$processId = 4242/);
+  assert.match(saveCommand.at(-1), /UIAutomationClient/);
+  assert.match(saveCommand.at(-1), /FromBase64String/);
+  assert.doesNotMatch(saveCommand.at(-1), /日本語|quote/);
+  assert.match(saveCommand.at(-1), /AutomationIdProperty, '1001'/);
+  assert.match(saveCommand.at(-1), /AutomationIdProperty, '1'/);
+
+  const cancelCommand = windowsFileDialogCommand(4242, "cancel");
+  assert.match(cancelCommand.at(-1), /AutomationIdProperty, '2'/);
+  assert.throws(() => windowsFileDialogCommand(0, "cancel"), /positive integer/);
+  assert.throws(() => windowsFileDialogCommand(4242, "save", "figure.svg"), /must be absolute/);
+  assert.throws(() => windowsFileDialogCommand(4242, "overwrite"), /Unsupported/);
 });
 
 test("accepts the fresh WebView2 page target before its initial URL is committed", () => {
@@ -146,6 +165,20 @@ test("separates a missing WebView inspection channel from a product regression",
       [],
     ),
     "HARNESS_INFRASTRUCTURE_BLOCKED",
+  );
+  assert.equal(
+    classifyNativeRegressionFailure(
+      new Error("HARNESS_FILE_DIALOG_AUTOMATION: Windows UI Automation is unavailable"),
+      [{ name: "native_svg_save_dialog_cancel", status: "fail" }],
+    ),
+    "HARNESS_INFRASTRUCTURE_BLOCKED",
+  );
+  assert.equal(
+    classifyNativeRegressionFailure(
+      new Error("FILE_DIALOG_NOT_FOUND: native Save dialog did not appear"),
+      [{ name: "native_svg_save_dialog_cancel", status: "fail" }],
+    ),
+    "PRODUCT_REGRESSION",
   );
   assert.equal(
     classifyNativeRegressionFailure(

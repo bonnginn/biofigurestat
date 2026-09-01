@@ -152,6 +152,9 @@ export function classifyNativeRegressionFailure(error, steps) {
   if (/HARNESS_EXECUTABLE_RESOLUTION/i.test(message)) {
     return "HARNESS_INFRASTRUCTURE_BLOCKED";
   }
+  if (/HARNESS_FILE_DIALOG_AUTOMATION/i.test(message)) {
+    return "HARNESS_INFRASTRUCTURE_BLOCKED";
+  }
   if (failedStep === "macos_accessibility_attach" && /code -2|ENOENT|spawn/i.test(message)) {
     return "HARNESS_INFRASTRUCTURE_BLOCKED";
   }
@@ -194,6 +197,116 @@ export function windowsCloseCommand(processId) {
     "-Command",
     `if (-not (Get-Process -Id ${processId} -ErrorAction Stop).CloseMainWindow()) { throw 'Native window did not accept WM_CLOSE' }`,
   ];
+}
+
+export function windowsFileDialogCommand(processId, action, target = "") {
+  if (!Number.isSafeInteger(processId) || processId <= 0) {
+    throw new Error("Windows file-dialog process ID must be a positive integer");
+  }
+  if (!new Set(["cancel", "save"]).has(action)) {
+    throw new Error(`Unsupported Windows file-dialog action: ${action}`);
+  }
+  if (action === "save" && !isAbsolute(target)) {
+    throw new Error("Windows file-dialog save target must be absolute");
+  }
+  const encodedTarget = Buffer.from(target, "utf16le").toString("base64");
+  const script = String.raw`
+$ErrorActionPreference = 'Stop'
+try {
+  Add-Type -AssemblyName UIAutomationClient
+  Add-Type -AssemblyName UIAutomationTypes
+} catch {
+  throw 'HARNESS_FILE_DIALOG_AUTOMATION: Windows UI Automation is unavailable: ' + $_.Exception.Message
+}
+$processId = ${processId}
+$action = '${action}'
+$target = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('${encodedTarget}'))
+$desktop = [Windows.Automation.AutomationElement]::RootElement
+$processCondition = [Windows.Automation.PropertyCondition]::new(
+  [Windows.Automation.AutomationElement]::ProcessIdProperty,
+  $processId
+)
+$windowTypeCondition = [Windows.Automation.PropertyCondition]::new(
+  [Windows.Automation.AutomationElement]::ControlTypeProperty,
+  [Windows.Automation.ControlType]::Window
+)
+$windowCondition = [Windows.Automation.AndCondition]::new(
+  [Windows.Automation.Condition[]]@($processCondition, $windowTypeCondition)
+)
+$deadline = [DateTime]::UtcNow.AddSeconds(20)
+$dialog = $null
+while ([DateTime]::UtcNow -lt $deadline -and $null -eq $dialog) {
+  $windows = $desktop.FindAll([Windows.Automation.TreeScope]::Children, $windowCondition)
+  foreach ($window in $windows) {
+    if ($window.Current.ClassName -eq '#32770' -or $window.Current.Name -match 'Save|保存') {
+      $dialog = $window
+      break
+    }
+  }
+  if ($null -eq $dialog) { Start-Sleep -Milliseconds 100 }
+}
+if ($null -eq $dialog) { throw 'FILE_DIALOG_NOT_FOUND: native Save dialog did not appear' }
+if ($action -eq 'cancel') {
+  $cancelId = [Windows.Automation.PropertyCondition]::new(
+    [Windows.Automation.AutomationElement]::AutomationIdProperty,
+    '2'
+  )
+  $cancel = $dialog.FindFirst(
+    [Windows.Automation.TreeScope]::Descendants,
+    $cancelId
+  )
+  if ($null -eq $cancel) {
+    $cancelNames = [Windows.Automation.OrCondition]::new(
+      [Windows.Automation.Condition[]]@(
+        [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, 'Cancel'),
+        [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, 'キャンセル')
+      )
+    )
+    $cancel = $dialog.FindFirst([Windows.Automation.TreeScope]::Descendants, $cancelNames)
+  }
+  if ($null -eq $cancel) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: Cancel button' }
+  $cancel.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
+} else {
+  $fileNameId = [Windows.Automation.PropertyCondition]::new(
+    [Windows.Automation.AutomationElement]::AutomationIdProperty,
+    '1001'
+  )
+  $edit = $dialog.FindFirst(
+    [Windows.Automation.TreeScope]::Descendants,
+    $fileNameId
+  )
+  if ($null -eq $edit) {
+    $editType = [Windows.Automation.PropertyCondition]::new(
+      [Windows.Automation.AutomationElement]::ControlTypeProperty,
+      [Windows.Automation.ControlType]::Edit
+    )
+    $edit = $dialog.FindFirst([Windows.Automation.TreeScope]::Descendants, $editType)
+  }
+  if ($null -eq $edit) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: file name input' }
+  $edit.GetCurrentPattern([Windows.Automation.ValuePattern]::Pattern).SetValue($target)
+  $saveId = [Windows.Automation.PropertyCondition]::new(
+    [Windows.Automation.AutomationElement]::AutomationIdProperty,
+    '1'
+  )
+  $save = $dialog.FindFirst(
+    [Windows.Automation.TreeScope]::Descendants,
+    $saveId
+  )
+  if ($null -eq $save) {
+    $saveNames = [Windows.Automation.OrCondition]::new(
+      [Windows.Automation.Condition[]]@(
+        [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, 'Save'),
+        [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, '保存')
+      )
+    )
+    $save = $dialog.FindFirst([Windows.Automation.TreeScope]::Descendants, $saveNames)
+  }
+  if ($null -eq $save) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: Save button' }
+  $save.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
+}
+[Console]::Out.Write((ConvertTo-Json @{ ok = $true; action = $action; dialog = $dialog.Current.Name } -Compress))
+`;
+  return ["-NoProfile", "-NonInteractive", "-Command", script];
 }
 
 export function macAccessibilityScript(action, names = [], value = "") {
@@ -541,6 +654,10 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
     join(tmpdir(), "biofigurestat-native-regression-profile-"),
   );
   const exportTarget = join(outputDirectory, "native-command-export.svg");
+  const dialogExportTarget = join(
+    outputDirectory,
+    `native-save-dialog-export-${Date.now()}.svg`,
+  );
   const nativeOutput = [];
   const child = spawn(executable, [], {
     cwd: ROOT,
@@ -581,6 +698,17 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
       timeout: Math.min(timeoutMs, 20_000),
       windowsHide: true,
     });
+  };
+  const driveFileDialog = async (action, target = "") => {
+    const { stdout } = await execFileAsync(
+      "powershell.exe",
+      windowsFileDialogCommand(child.pid, action, target),
+      {
+        timeout: Math.max(25_000, Math.min(timeoutMs + 5_000, 120_000)),
+        windowsHide: true,
+      },
+    );
+    return stdout.trim() ? JSON.parse(stdout.trim()) : { ok: true, action };
   };
 
   try {
@@ -679,6 +807,25 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         "Graph workspace",
         timeoutMs,
       );
+      await runStep("native_svg_save_dialog_cancel", async () => {
+        await client.evaluate(pageAction(clickByText, "SVG"));
+        const detail = await driveFileDialog("cancel");
+        await new Promise((resolvePromise) => setTimeout(resolvePromise, 250));
+        try {
+          await readFile(dialogExportTarget);
+          throw new Error("Cancel unexpectedly created an SVG file");
+        } catch (error) {
+          if (error && typeof error === "object" && error.code === "ENOENT") return detail;
+          throw error;
+        }
+      });
+      await runStep("native_svg_save_dialog_writes_selected_target", async () => {
+        await client.evaluate(pageAction(clickByText, "SVG"));
+        const detail = await driveFileDialog("save", dialogExportTarget);
+        const written = await readFile(dialogExportTarget, "utf8");
+        if (!written.includes("<svg")) throw new Error("Native Save dialog wrote invalid SVG");
+        return { ...detail, target: dialogExportTarget, bytes: Buffer.byteLength(written) };
+      });
       await client.evaluate(pageAction(clickByText, "Review statistics"));
       await waitFor(
         client,
