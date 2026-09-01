@@ -5,10 +5,7 @@ import { type ExperimentCellMap, type ExperimentSetDraft } from "../../app/exper
 import { isDerivedTimeMetric } from "../../app/experimentDraftAnalysis";
 import { type DraftAnalysisCorrection } from "../../app/draftAnalysisDiagnostics";
 import { defaultGraphYTitle, defaultLayersForGraphType } from "../../app/graphDefaults";
-import {
-  createExperimentWorkspaceDesign,
-  type WorkspaceGraphState,
-} from "../../app/experimentWorkspaceProject";
+import { type WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { copyGraphToClipboard } from "../../app/graphExport";
 import {
   saveGraphCsvExport,
@@ -31,7 +28,6 @@ import { ExperimentGraphCanvasRenderer } from "./ExperimentGraphCanvasRenderer";
 import { ExperimentGraphAnnotationEditor } from "./ExperimentGraphAnnotationEditor";
 import {
   ExperimentGraphAnalysisScopeNotice,
-  selectGraphAnalysisScopePresentation,
 } from "./ExperimentGraphAnalysisScopeNotice";
 import { ExperimentGraphAnalysisSetEditor } from "./ExperimentGraphAnalysisSetEditor";
 import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
@@ -47,10 +43,8 @@ import { ExperimentGraphRawDotsEditor } from "./ExperimentGraphRawDotsEditor";
 import { ExperimentGraphXAxisEditor } from "./ExperimentGraphXAxisEditor";
 import { ExperimentGraphYAxisEditor } from "./ExperimentGraphYAxisEditor";
 import {
-  createGraphAnalysisContextKey,
   createGraphStatisticsRelationshipContext,
   createExperimentGraphMethodsText,
-  varyingGraphAnalysisAttributes,
 } from "./experimentGraphStatistics";
 import {
   createBenchmarkAnalysisState,
@@ -66,7 +60,7 @@ import {
 } from "./useExperimentGraphWorkspaceEffects";
 import { useExperimentGraphStatisticsIntent } from "./useExperimentGraphStatisticsIntent";
 import { useExperimentGraphAnalysisState } from "./useExperimentGraphAnalysisState";
-import { useExperimentGraphAnalysisAssessment } from "./useExperimentGraphAnalysisAssessment";
+import { useExperimentGraphStatisticsViewModel } from "./useExperimentGraphStatisticsViewModel";
 import { useExperimentGraphStateSnapshot } from "./useExperimentGraphStateSnapshot";
 import { useExperimentGraphPresentationState } from "./useExperimentGraphPresentationState";
 import { useExperimentGraphDataSelectionState } from "./useExperimentGraphDataSelectionState";
@@ -130,15 +124,6 @@ export function ExperimentGraphWorkbench({
 }: ExperimentGraphWorkbenchProps) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const recommendationDesign = useMemo(() => {
-    try {
-      return createExperimentWorkspaceDesign(draft, "1970-01-01T00:00:00.000Z");
-    } catch {
-      // Legacy shared-source drafts can still be inspected and corrected, but
-      // may not execute statistics until their adaptive contract is available.
-      return null;
-    }
-  }, [draft]);
   const {
     selectedReadoutId,
     setSelectedReadoutId,
@@ -448,32 +433,27 @@ export function ExperimentGraphWorkbench({
         }
       : null;
   const hasData = hasVisibleGraphData({ shape, sourceMode, series, cells });
-  const analysisAssessment = useExperimentGraphAnalysisAssessment({
+  const {
+    recommendationDesign,
+    analysisAssessment,
+    analysisContextKey,
+    varyingStatisticalAttributes,
+    hasFactorByTimeStructure,
+    analysisScopePresentation,
+  } = useExperimentGraphStatisticsViewModel({
     draft,
     cells,
-    readoutId: activeReadoutId,
-    conditionIds: analysisConditionIds,
-    timePointId: analysisTimePointId ?? undefined,
+    activeReadoutId,
+    sourceMode,
+    analysisConditionIds,
+    selectedTimePointIds,
+    analysisTimePointId,
     timeAnalysis,
     correlationMethod,
     selectedMethod: selectedStatisticalMethod,
     contrastIntent,
     plannedContrastConditionIds,
-    withinFactor: {
-      role: axes.xSemantic,
-      title: axes.xTitle,
-      unit: axes.xUnit,
-    },
-  });
-  const analysisContextKey = createGraphAnalysisContextKey({
-    draft,
-    readoutId: activeReadoutId,
-    sourceMode,
-    conditionIds: analysisConditionIds,
-    displayedTimePointIds: selectedTimePointIds,
-    analysisTimePointId,
-    plannedContrastConditionIds,
-    timeAnalysis,
+    axes,
   });
   useDefaultBenchmarkGraphCapture({
     svgRef,
@@ -484,15 +464,6 @@ export function ExperimentGraphWorkbench({
     workspaceMode,
     analysisState: benchmarkAnalysisState,
     setStatus: setBenchmarkCaptureStatus,
-  });
-  const varyingStatisticalAttributes = varyingGraphAnalysisAttributes(draft, analysisConditionIds);
-  const hasFactorByTimeStructure =
-    draft.time.points.length > 1 && varyingStatisticalAttributes.length > 1;
-  const analysisScopePresentation = selectGraphAnalysisScopePresentation({
-    timePointCount: draft.time.points.length,
-    plan: timeAnalysis,
-    analysisTimePointId,
-    hasFactorByTimeStructure,
   });
   const handleAnalysisConditionChange = (conditionId: string, checked: boolean) => {
     setAnalysisConditionIds((current) =>
