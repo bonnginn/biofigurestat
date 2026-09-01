@@ -170,6 +170,16 @@ Japanese detail. The full UI suite passes with 162 files and 1,213 tests; UI typ
 the production build pass. A new native candidate has not yet been built from this revision, and
 no additional human Mac interaction is required until that candidate exists.
 
+The next source-only Graph refactor extracts presentation projection and data-summary rendering
+from `ExperimentGraphWorkbench`. Pure tested projection now owns factor-derived X-axis labels,
+facet row/label alignment, legend-series deduplication, and visible-layer data readiness without
+changing condition identity or canonical values. Proportion, hierarchical, WB-ratio, and
+categorical data summaries now use one tested component boundary; it preserves experimental-unit
+and raw-child counts while removing fixed Japanese copy from English WB/categorical summaries.
+The workbench is now 2,614 lines. The full UI suite passes with 164 files and 1,222 tests; UI
+typecheck, full lint, and the production build pass. The build retains the existing large-chunk
+warning, so route-level code splitting remains separate future work.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
@@ -186,8 +196,9 @@ no additional human Mac interaction is required until that candidate exists.
   separate tested boundary. Cancellation stays silent and does not mutate Graph state. This reduces
   the workbench further. Workspace state synchronization, adjusted-annotation application, analysis
   context fingerprinting, and varying-factor selection are also separated. Remaining Statistics
-  intent state is now separated as well. Large presentation/data-selection sections are the next
-  safe extraction boundaries.
+  intent state is now separated as well. Factor/facet/legend/readiness presentation projection and
+  localized data summaries are now separate tested boundaries. The remaining inspector and
+  data-selection sections are the next safe extraction boundaries.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, and proportion
   display now use shared primitives. Draft/commit and the remaining cell-editor presentation are
