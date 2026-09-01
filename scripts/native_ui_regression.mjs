@@ -231,6 +231,16 @@ public static class BioFigureStatNativeWindowOwner {
   public static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
   [DllImport("user32.dll")]
   public static extern bool PostMessage(IntPtr window, uint message, IntPtr word, IntPtr data);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+  public static extern IntPtr SendMessageTimeout(
+    IntPtr window,
+    uint message,
+    IntPtr word,
+    string data,
+    uint flags,
+    uint timeout,
+    out IntPtr result
+  );
 }
 '@
 } catch {
@@ -353,10 +363,24 @@ if ($action -eq 'cancel') {
   if ($null -eq $selectedEdit) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: writable file name input' }
   $selectedEditName = $selectedEdit.element.Current.Name
   $selectedEditId = $selectedEdit.element.Current.AutomationId
+  $selectedEditHandle = [IntPtr]$selectedEdit.element.Current.NativeWindowHandle
+  if ($selectedEditHandle -eq [IntPtr]::Zero) {
+    throw ('HARNESS_FILE_DIALOG_AUTOMATION: writable file name input has no native handle: ' + $selectedEditId)
+  }
   try {
-    $selectedEdit.pattern.SetValue($target)
+    $messageResult = [IntPtr]::Zero
+    $sent = [BioFigureStatNativeWindowOwner]::SendMessageTimeout(
+      $selectedEditHandle,
+      0x000C,
+      [IntPtr]::Zero,
+      $target,
+      0x0002,
+      2000,
+      [ref]$messageResult
+    )
+    if ($sent -eq [IntPtr]::Zero) { throw 'WM_SETTEXT timed out or failed' }
   } catch {
-    throw ('FILE_DIALOG_CONTROL_NOT_FOUND: SetValue failed for ' + $selectedEditId + ': ' + $_.Exception.Message)
+    throw ('HARNESS_FILE_DIALOG_AUTOMATION: WM_SETTEXT failed for ' + $selectedEditId + ': ' + $_.Exception.Message)
   }
   try {
     $selectedEdit.element.SetFocus()
