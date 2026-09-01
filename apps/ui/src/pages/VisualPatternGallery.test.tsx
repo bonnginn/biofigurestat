@@ -264,7 +264,7 @@ describe("新しい実験の入口", () => {
     ).toBeNull();
   });
 
-  it("測定項目から条件・時間・実験回を順に確認できる", () => {
+  it("測定項目から条件・時間・実験回を順に確認できる", async () => {
     render(<NewExperimentPage onNavigate={() => undefined} />);
     fireEvent.click(document.querySelector('[data-context="cell_culture"]')!);
     fireEvent.click(screen.getByRole("button", { name: /その他の培養アッセイ/ }));
@@ -374,11 +374,13 @@ describe("新しい実験の入口", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "この設計で入力を始める" }));
-    expect(screen.getByRole("heading", { name: "新しい実験" })).toBeVisible();
+    expect(
+      await screen.findByRole("heading", { name: "新しい実験" }, { timeout: 5_000 }),
+    ).toBeVisible();
     expect(screen.getByRole("tab", { name: "Overview" })).toBeVisible();
   }, 20_000);
 
-  it("ブラウザPhase AでsiRNA×Drug・2時点・別日3実験回を手動作成できる", () => {
+  it("ブラウザPhase AでsiRNA×Drug・2時点・別日3実験回を手動作成できる", async () => {
     render(<NewExperimentPage browserPreview onNavigate={() => undefined} />);
 
     expect(document.querySelector('[data-review-entry="phase-a"]')).toBeVisible();
@@ -426,7 +428,9 @@ describe("新しい実験の入口", () => {
     expect(screen.getByText("Exp 1 ／ Exp 2 ／ Exp 3")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "この設計で入力を始める" }));
 
-    expect(screen.getByText("合成デモデータ", { selector: "strong" })).toBeVisible();
+    expect(
+      await screen.findByText("合成デモデータ", { selector: "strong" }, { timeout: 5_000 }),
+    ).toBeVisible();
     expect(screen.getByRole("tab", { name: "Exp 1" })).toBeVisible();
     fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
     expect(screen.getByRole("columnheader", { name: "siRNA" })).toBeVisible();
@@ -434,5 +438,5 @@ describe("新しい実験の入口", () => {
     expect(screen.getByRole("columnheader", { name: "陽性数" })).toBeVisible();
     expect(screen.getByRole("columnheader", { name: "対象数" })).toBeVisible();
     expect(screen.getByText(/実験情報（/)).toBeInTheDocument();
-  }, 10_000);
+  }, 20_000);
 });

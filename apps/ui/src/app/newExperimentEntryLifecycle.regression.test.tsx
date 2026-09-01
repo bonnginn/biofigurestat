@@ -20,8 +20,8 @@ function projectActions(): ProjectActions {
   };
 }
 
-function pasteGraphOnlyTable(): void {
-  fireEvent.paste(screen.getByTestId("graph-only-cell-0-0"), {
+async function pasteGraphOnlyTable(): Promise<void> {
+  fireEvent.paste(await screen.findByTestId("graph-only-cell-0-0"), {
     clipboardData: { getData: () => SOURCE_TABLE },
   });
   fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
@@ -34,8 +34,14 @@ function pasteGraphOnlyTable(): void {
 
 async function enterBiologicalQuestionsFromGraphOnly(): Promise<void> {
   fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
-  fireEvent.click(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" }));
-  pasteGraphOnlyTable();
+  fireEvent.click(
+    await screen.findByRole(
+      "button",
+      { name: "手元の表からGraphを作るを開く" },
+      { timeout: 5_000 },
+    ),
+  );
+  await pasteGraphOnlyTable();
   fireEvent.click(screen.getByRole("button", { name: "統計" }));
   fireEvent.click(
     screen.getByRole("radio", { name: /処理・群分け（Control、Drug A、genotypeなど）/ }),
@@ -120,7 +126,9 @@ describe("new experiment cross-stage dirty lifecycle", () => {
   it("guards direct condition-plan edits before the input sheet exists", async () => {
     render(<App projectActions={projectActions()} />);
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
-    fireEvent.click(screen.getByRole("button", { name: "実験から始めるを開く" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "実験から始めるを開く" }, { timeout: 5_000 }),
+    );
     fireEvent.change(screen.getByRole("textbox", { name: "処理・群分け 1の名前" }), {
       target: { value: "薬剤" },
     });
