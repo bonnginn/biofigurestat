@@ -1,6 +1,6 @@
 # Current Working State
 
-Updated: 2026-09-01 (Public Alpha published; post-Alpha hardening in progress)
+Updated: 2026-09-01 (Public Alpha published; post-Alpha items 1–4 implementation complete)
 
 This is the short operational snapshot. Accepted ADRs, schemas, method references, and tests remain
 the authority for durable behavior.
@@ -48,6 +48,14 @@ English UI. Switching to Japanese opens the unchanged legacy editor; no project 
 
 Structural simplification is proceeding as small behavior-preserving commits. It does not change
 the published Alpha artifacts, scientific semantics, or the project schema.
+
+The bounded post-Alpha items 1–4 are now implemented and recorded in
+`docs/agent/POST_ALPHA_ITEMS_1_4_COMPLETION_2026-09-01.md`. This includes public alpha.2 guidance
+alignment, the macOS quit-guard harness correction, completion of the current Graph/Spreadsheet/
+workbench consolidation, and the first prioritized Beta usability batch: compact workspace chrome,
+safe experiment-detail revision, canonical worksheet undo/redo, retained control and adjusted
+comparison access, Kaplan–Meier font sizing, and adaptive Y-axis title spacing. These source changes
+have not replaced the published Alpha binaries.
 
 ## Product invariants
 
