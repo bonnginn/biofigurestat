@@ -15,3 +15,4 @@ export * from "./d12-request-builder";
 export * from "./d13-request-builder";
 export * from "./request-builder";
 export * from "./recommendation";
+export * from "./equivalence";

@@ -125,6 +125,40 @@ describe("experiment-workspace graph channel persistence", () => {
 
     expect(roundTrip.graphs[0]?.comparisonGoal).toBe("equivalence");
   });
+
+  it("round-trips a prespecified equivalence plan without changing legacy Graphs", () => {
+    const legacy = ExperimentWorkspaceStateSchema.parse(workspace);
+    expect(legacy.graphs[0]?.equivalencePlan).toBeUndefined();
+    const withPlan = ExperimentWorkspaceStateSchema.parse({
+      ...legacy,
+      graphs: legacy.graphs.map((graph, index) =>
+        index === 0
+          ? {
+              ...graph,
+              comparisonGoal: "equivalence" as const,
+              equivalencePlan: {
+                schemaVersion: "0.1.0",
+                margin: {
+                  scale: "percentage_point_difference" as const,
+                  lowerBound: -10,
+                  upperBound: 10,
+                  unit: "percentage points",
+                  rationale: "Declared from the biological acceptance criterion.",
+                  declaredAsPrespecified: true as const,
+                },
+                alpha: 0.05 as const,
+                claimMode: "all_selected_comparisons" as const,
+              },
+            }
+          : graph,
+      ),
+    });
+    const reopened = ExperimentWorkspaceStateSchema.parse(JSON.parse(JSON.stringify(withPlan)));
+    expect(reopened.graphs[0]?.equivalencePlan).toMatchObject({
+      margin: { lowerBound: -10, upperBound: 10 },
+      claimMode: "all_selected_comparisons",
+    });
+  });
 });
 
 const design = {

@@ -5,6 +5,7 @@ import {
   AnalysisEngineRequestSchema,
   AnalysisEngineResultSchema,
   AnalysisRecommendationSchema,
+  EquivalenceAnalysisPlanSchema,
 } from "@lsaa/analysis-contracts";
 import {
   EntityIdSchema,
@@ -260,6 +261,8 @@ export const ExperimentWorkspaceStateSchema = z
           .optional(),
         /** Scientific question only; it never changes or substitutes an engine method. */
         comparisonGoal: z.enum(["difference", "equivalence"]).optional(),
+        /** Researcher-declared equivalence bounds; presence never makes a method executable. */
+        equivalencePlan: EquivalenceAnalysisPlanSchema.optional(),
         graphType: z
           .enum([
             "dot",
