@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState } from "react";
-import type { ChangeEvent } from "react";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
 
 import {
@@ -49,6 +48,7 @@ import { CorrelationGraphSvg } from "./CorrelationGraphSvg";
 import { ExperimentGraphSvg } from "./GeneralExperimentGraphSvg";
 import { ExperimentGraphAnnotationEditor } from "./ExperimentGraphAnnotationEditor";
 import { ExperimentGraphAnalysisScopeNotice } from "./ExperimentGraphAnalysisScopeNotice";
+import { ExperimentGraphAnalysisSetEditor } from "./ExperimentGraphAnalysisSetEditor";
 import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
 import { ExperimentGraphConnectingLineEditor } from "./ExperimentGraphConnectingLineEditor";
 import { ExperimentGraphErrorBarEditor } from "./ExperimentGraphErrorBarEditor";
@@ -724,10 +724,9 @@ export function ExperimentGraphWorkbench({
   const varyingStatisticalAttributes = varyingGraphAnalysisAttributes(draft, analysisConditionIds);
   const hasFactorByTimeStructure =
     draft.time.points.length > 1 && varyingStatisticalAttributes.length > 1;
-  const handleAnalysisConditionChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const conditionId = event.target.value;
+  const handleAnalysisConditionChange = (conditionId: string, checked: boolean) => {
     setAnalysisConditionIds((current) =>
-      event.target.checked
+      checked
         ? [...current, conditionId]
         : current.filter((selectedId) => selectedId !== conditionId),
     );
@@ -1224,104 +1223,16 @@ export function ExperimentGraphWorkbench({
               </div>
             </div>
           ) : (
-            <section className="experiment-graph-inspector-section experiment-statistics-source">
-              <h3>{t("解析対象", "Analysis set")}</h3>
-              <label className="experiment-graph-field">
-                <span>{t("測定項目", "Measured readout")}</span>
-                <select
-                  value={activeReadoutId}
-                  disabled={draft.readouts.length <= 1}
-                  aria-label={t("統計の測定項目", "Measured readout for statistics")}
-                  onChange={(event) => {
-                    setSelectedReadoutId(event.target.value);
-                    setAnalysis(null);
-                  }}
-                >
-                  {draft.readouts.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <fieldset className="experiment-graph-condition-fieldset">
-                <legend>{t("統計に含める条件", "Conditions included in statistics")}</legend>
-                {draft.conditions.map((condition) => (
-                  <label className="experiment-graph-checkbox" key={condition.id}>
-                    <input
-                      type="checkbox"
-                      value={condition.id}
-                      checked={activeAnalysisConditionIds.has(condition.id)}
-                      disabled={draft.analysisIntent.kind === "correlation"}
-                      aria-label={t(
-                        `統計の条件：${condition.label}`,
-                        `Statistical condition: ${condition.label}`,
-                      )}
-                      onChange={handleAnalysisConditionChange}
-                    />
-                    <span>
-                      {condition.label}
-                      {condition.id === draft.controlConditionId
-                        ? t("（対照群）", " (control)")
-                        : ""}
-                      {condition.role === "auxiliary_reference"
-                        ? t("（図のみのreference）", " (Graph-only reference)")
-                        : ""}
-                    </span>
-                  </label>
-                ))}
-              </fieldset>
-              <p className="experiment-graph-help">
-                {t(
-                  "図に表示する条件とは独立して選べます。referenceを図に残したまま、事前に決めた比較だけを解析できます。",
-                  "Choose these independently from the conditions shown in the Graph. You can retain a reference in the Graph while analyzing only prespecified comparisons.",
-                )}
-              </p>
-              <dl className="experiment-statistics-design-summary">
-                <div>
-                  <dt>{t("統計上の単位", "Statistical unit")}</dt>
-                  <dd>
-                    {sharedSourceTopology
-                      ? t(
-                          `条件別${draft.conditionAssignment.unitLabel}`,
-                          `Condition-specific ${draft.conditionAssignment.unitLabel}`,
-                        )
-                      : draft.conditionAssignment.unitLabel}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{t("設計の解釈", "Design interpretation")}</dt>
-                  <dd>
-                    {sharedSourceTopology
-                      ? t(
-                          `同じ${sharedSourceTopology.sourceUnitLabel}に由来する条件別${draft.conditionAssignment.unitLabel}を対応づけて比較`,
-                          `Compare matched condition-specific ${draft.conditionAssignment.unitLabel}s from the same ${sharedSourceTopology.sourceUnitLabel}`,
-                        )
-                      : draft.conditionAssignment.kind === "matched"
-                        ? t(
-                            "同じ実験単位を条件間で比較",
-                            "Compare the same experimental units across conditions",
-                          )
-                        : t(
-                            "条件ごとに別の実験単位",
-                            "Separate experimental units for each condition",
-                          )}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{t("対照群", "Control condition")}</dt>
-                  <dd>
-                    {draft.controlConditionId
-                      ? (draft.conditions.find(({ id }) => id === draft.controlConditionId)
-                          ?.label ?? t("指定済み", "Specified"))
-                      : t(
-                          "未指定（表示名からは推測しません）",
-                          "Not specified (not inferred from the display name)",
-                        )}
-                  </dd>
-                </div>
-              </dl>
-            </section>
+            <ExperimentGraphAnalysisSetEditor
+              draft={draft}
+              selectedReadoutId={activeReadoutId}
+              selectedConditionIds={analysisConditionIds}
+              onReadoutChange={(readoutId) => {
+                setSelectedReadoutId(readoutId);
+                setAnalysis(null);
+              }}
+              onConditionChange={handleAnalysisConditionChange}
+            />
           )}
           {inspectorTarget === "data" ? (
             <section className="experiment-graph-inspector-section">
