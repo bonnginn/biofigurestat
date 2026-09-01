@@ -1,19 +1,23 @@
 import type { AnalysisEngineRequest, AnalysisEngineResult } from "@lsaa/analysis-contracts";
 import type { ExperimentSetDraft, TimeAnalysisPlan } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { localizedText, type AppLocale } from "../../app/appLocale";
 
 type AxisSettings = WorkspaceGraphState["axes"];
 type StatisticsAnnotationEntry = NonNullable<WorkspaceGraphState["statisticsAnnotations"]>[number];
 
-export function timeMetricLabel(plan: TimeAnalysisPlan): string {
-  if (plan.kind === "full_time_course") return "条件×時間の全体モデル";
-  if (plan.kind === "endpoint") return "最後の時点（endpoint）";
-  if (plan.kind === "maximum") return "最大値";
-  if (plan.kind === "minimum") return "最小値";
-  if (plan.kind === "auc") return "AUC（台形法）";
-  if (plan.kind === "change_from_baseline") return "baselineからの変化量";
+export function timeMetricLabel(plan: TimeAnalysisPlan, locale: AppLocale = "ja"): string {
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
+  if (plan.kind === "full_time_course")
+    return t("条件×時間の全体モデル", "Overall condition × time model");
+  if (plan.kind === "endpoint") return t("最後の時点（endpoint）", "Last time point (endpoint)");
+  if (plan.kind === "maximum") return t("最大値", "Maximum");
+  if (plan.kind === "minimum") return t("最小値", "Minimum");
+  if (plan.kind === "auc") return t("AUC（台形法）", "AUC (trapezoidal rule)");
+  if (plan.kind === "change_from_baseline")
+    return t("baselineからの変化量", "Change from baseline");
   if (plan.kind === "f_over_f0") return "F/F0";
-  return "選んだ時点の値";
+  return t("選んだ時点の値", "Value at the selected time point");
 }
 
 function methodShortLabel(method: AnalysisEngineRequest["method"]): string {

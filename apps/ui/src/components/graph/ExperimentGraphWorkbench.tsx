@@ -40,6 +40,7 @@ import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluation
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { ExperimentGraphDataSummary } from "./ExperimentGraphDataSummary";
 import { ExperimentGraphGroupingEditor } from "./ExperimentGraphGroupingEditor";
+import { ExperimentGraphSelectionEditor } from "./ExperimentGraphSelectionEditor";
 import { CompositionGraphSvg } from "./CompositionGraphSvg";
 import { CorrelationGraphSvg } from "./CorrelationGraphSvg";
 import { ExperimentGraphSvg } from "./GeneralExperimentGraphSvg";
@@ -100,8 +101,6 @@ import {
   hasVisibleGraphData,
   uniqueVisualSeriesOptions,
 } from "./experimentGraphPresentation";
-import { formatGraphNumber as formatNumber } from "./graphValueFormatting";
-
 import "./graph-workbench.css";
 
 type LayerState = WorkspaceGraphState["layers"];
@@ -567,7 +566,7 @@ export function ExperimentGraphWorkbench({
   );
   const timeLabel =
     sourceMode === "derived_metric" && isDerivedTimeMetric(timeAnalysis)
-      ? `派生値：${timeMetricLabel(timeAnalysis)}`
+      ? t("派生値：", "Derived value: ") + timeMetricLabel(timeAnalysis, locale)
       : activeTimePoints.length
         ? activeTimePoints.map((point) => `${point.value} ${draft.time.unit}`).join("、")
         : draft.time.sampling === "none"
@@ -722,14 +721,6 @@ export function ExperimentGraphWorkbench({
   const varyingStatisticalAttributes = varyingGraphAnalysisAttributes(draft, analysisConditionIds);
   const hasFactorByTimeStructure =
     draft.time.points.length > 1 && varyingStatisticalAttributes.length > 1;
-  const handleConditionChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const conditionId = event.target.value;
-    setSelectedConditionIds((current) =>
-      event.target.checked
-        ? [...current, conditionId]
-        : current.filter((selectedId) => selectedId !== conditionId),
-    );
-  };
   const handleAnalysisConditionChange = (event: ChangeEvent<HTMLInputElement>) => {
     const conditionId = event.target.value;
     setAnalysisConditionIds((current) =>
@@ -738,15 +729,6 @@ export function ExperimentGraphWorkbench({
         : current.filter((selectedId) => selectedId !== conditionId),
     );
     removeConditionFromPlannedContrasts(conditionId);
-    setAnalysis(null);
-  };
-  const handleTimePointChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const timePointId = event.target.value;
-    setSelectedTimePointIds((current) =>
-      event.target.checked
-        ? [...current, timePointId]
-        : current.filter((selectedId) => selectedId !== timePointId),
-    );
     setAnalysis(null);
   };
   const applyPreset = (preset: "simple" | "publication" | "presentation" | "raw" | "replicate") => {
@@ -1375,136 +1357,61 @@ export function ExperimentGraphWorkbench({
                   onEditSeriesStyles={() => inspectGraphPart("series-style")}
                 />
               ) : null}
-              {draft.time.sampling === "longitudinal" && draft.time.points.length > 1 ? (
-                <>
-                  <label className="experiment-graph-field">
-                    <span>グラフのデータソース</span>
-                    <select
-                      aria-label="グラフのデータソース"
-                      value={sourceMode}
-                      onChange={(event) => {
-                        const mode = event.currentTarget.value as "raw_readout" | "derived_metric";
-                        setSourceMode(mode);
-                        if (mode === "derived_metric") {
-                          const nextType =
-                            draft.conditionAssignment.kind === "matched" ? "paired_dot" : "dot";
-                          if (timeAnalysis.kind === "selected_timepoint") {
-                            setTimeAnalysis({ kind: "auc" });
-                          }
-                          setGraphType(nextType);
-                          setLayers(defaultLayersForGraphType(nextType, "nested_continuous"));
-                        }
-                        setAxes((current) => ({
-                          ...current,
-                          yTitle:
-                            mode === "derived_metric"
-                              ? `${readout?.label ?? "測定値"} — ${timeMetricLabel(
-                                  timeAnalysis.kind === "selected_timepoint"
-                                    ? { kind: "auc" }
-                                    : timeAnalysis,
-                                )}`
-                              : defaultGraphYTitle(readout),
-                        }));
-                        setAnalysis(null);
-                      }}
-                    >
-                      <option value="raw_readout">元の時系列</option>
-                      <option value="derived_metric">各単位から求めた派生値</option>
-                    </select>
-                  </label>
-                  {sourceMode === "derived_metric" ? (
-                    <details>
-                      <summary>派生値の計算根拠を確認</summary>
-                      <p>
-                        元の測定項目：{readout.label}。指標：{timeMetricLabel(timeAnalysis)}
-                        。window：
-                        {timeAnalysis.windowStart ?? "最初"}–{timeAnalysis.windowEnd ?? "最後"}
-                        。時間単位：
-                        {draft.time.unit}。
-                        {timeAnalysis.kind === "auc"
-                          ? "台形法で計算。"
-                          : "元の時系列から単位ごとに計算。"}
-                      </p>
-                      <table aria-label="派生値のラインネージ">
-                        <thead>
-                          <tr>
-                            <th scope="col">生物学的単位</th>
-                            <th scope="col">条件</th>
-                            <th scope="col">元のトレース（時間: 値）</th>
-                            <th scope="col">派生値</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {derivedLineageRows.map((row) => (
-                            <tr key={row.id}>
-                              <th scope="row">{row.unit}</th>
-                              <td>{row.condition}</td>
-                              <td>{row.sourceTrace.join("、")}</td>
-                              <td>{formatNumber(row.value)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </details>
-                  ) : null}
-                </>
-              ) : null}
-              {draft.time.points.length > 0 && (
-                <fieldset className="experiment-graph-condition-fieldset">
-                  <legend>時点（複数選択可）</legend>
-                  <label className="experiment-graph-checkbox">
-                    <input
-                      type="checkbox"
-                      aria-label="すべての時点"
-                      checked={selectedTimePointIds.length === draft.time.points.length}
-                      onChange={(event) => {
-                        setSelectedTimePointIds(
-                          event.target.checked ? draft.time.points.map((point) => point.id) : [],
-                        );
-                        setAnalysis(null);
-                      }}
-                    />
-                    <span>すべて</span>
-                  </label>
-                  <div className="experiment-graph-time-grid">
-                    {draft.time.points.map((point) => (
-                      <label className="experiment-graph-checkbox" key={point.id}>
-                        <input
-                          type="checkbox"
-                          value={point.id}
-                          checked={selectedTimePointIds.includes(point.id)}
-                          aria-label={`${point.value} ${draft.time.unit}`}
-                          onChange={handleTimePointChange}
-                        />
-                        <span>
-                          {point.value} {draft.time.unit}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              )}
-              <fieldset className="experiment-graph-condition-fieldset">
-                <legend>
-                  {draft.analysisIntent.kind === "correlation" ? "X / Y" : t("条件", "Conditions")}
-                </legend>
-                {draft.conditions.map((condition) => (
-                  <label className="experiment-graph-checkbox" key={condition.id}>
-                    <input
-                      type="checkbox"
-                      value={condition.id}
-                      checked={activeConditionIds.has(condition.id)}
-                      disabled={draft.analysisIntent.kind === "correlation"}
-                      aria-label={condition.label}
-                      onChange={handleConditionChange}
-                    />
-                    <span>
-                      {condition.label}
-                      {condition.role === "auxiliary_reference" ? "（reference）" : ""}
-                    </span>
-                  </label>
-                ))}
-              </fieldset>
+              <ExperimentGraphSelectionEditor
+                draft={draft}
+                sourceMode={sourceMode}
+                timeAnalysis={timeAnalysis}
+                readoutLabel={readout.label}
+                derivedLineageRows={derivedLineageRows}
+                selectedTimePointIds={selectedTimePointIds}
+                activeConditionIds={activeConditionIds}
+                onSourceModeChange={(mode) => {
+                  setSourceMode(mode);
+                  if (mode === "derived_metric") {
+                    const nextType =
+                      draft.conditionAssignment.kind === "matched" ? "paired_dot" : "dot";
+                    if (timeAnalysis.kind === "selected_timepoint") {
+                      setTimeAnalysis({ kind: "auc" });
+                    }
+                    setGraphType(nextType);
+                    setLayers(defaultLayersForGraphType(nextType, "nested_continuous"));
+                  }
+                  setAxes((current) => ({
+                    ...current,
+                    yTitle:
+                      mode === "derived_metric"
+                        ? `${readout?.label ?? t("測定値", "Measured value")} — ${timeMetricLabel(
+                            timeAnalysis.kind === "selected_timepoint"
+                              ? { kind: "auc" }
+                              : timeAnalysis,
+                            locale,
+                          )}`
+                        : defaultGraphYTitle(readout),
+                  }));
+                  setAnalysis(null);
+                }}
+                onAllTimePointsChange={(checked) => {
+                  setSelectedTimePointIds(
+                    checked ? draft.time.points.map((point) => point.id) : [],
+                  );
+                  setAnalysis(null);
+                }}
+                onTimePointChange={(timePointId, checked) => {
+                  setSelectedTimePointIds((current) =>
+                    checked
+                      ? [...current, timePointId]
+                      : current.filter((selectedId) => selectedId !== timePointId),
+                  );
+                  setAnalysis(null);
+                }}
+                onConditionChange={(conditionId, checked) =>
+                  setSelectedConditionIds((current) =>
+                    checked
+                      ? [...current, conditionId]
+                      : current.filter((selectedId) => selectedId !== conditionId),
+                  )
+                }
+              />
             </section>
           ) : null}
 
@@ -2065,7 +1972,7 @@ export function ExperimentGraphWorkbench({
                         if (sourceMode === "derived_metric") {
                           setAxes((current) => ({
                             ...current,
-                            yTitle: `${readout?.label ?? "測定値"} — ${timeMetricLabel(nextPlan)}`,
+                            yTitle: `${readout?.label ?? t("測定値", "Measured value")} — ${timeMetricLabel(nextPlan, locale)}`,
                           }));
                         }
                         setAnalysis(null);
