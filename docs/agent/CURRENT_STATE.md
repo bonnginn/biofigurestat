@@ -355,6 +355,16 @@ primitive test and the existing Canonical/Adaptive Spreadsheet suites pass toget
 with UI typecheck and focused lint passing. This increment removes repeated lifecycle wiring; it
 does not change identity semantics or the persisted schema.
 
+Graph Statistics now derives its time-scope notice and execution gate from one presentation
+decision. A missing selected time point still stops Statistics safely; a selected point in a
+factor-by-time structure shows the limited-scope warning while allowing the existing point-specific
+analysis; a non-factorial selected point shows neither warning nor stop. The notice props are no
+longer duplicated across two JSX branches, reducing the chance that only one route is updated.
+The direct scope test, the 53-test workbench suite, UI typecheck, full lint, and production build
+pass. The complete UI suite passes 192 files / 1,305 tests. Existing React `act(...)` warnings in
+several older asynchronous suites remain test-quality debt; they are not product failures and
+should be removed before deleting contract coverage.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
