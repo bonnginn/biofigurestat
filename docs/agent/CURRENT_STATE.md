@@ -228,13 +228,16 @@ has an English no-Japanese regression. The full UI suite now passes 172 files an
 typecheck, lint, and production build pass.
 
 The next canvas/inspector pass extracts the Graph title/export/view-size toolbar, the semantic
-canvas caption, and the inspector target plus visible-layer shortcuts. Clipboard and SVG/PNG/CSV
+canvas caption, the inspector target plus visible-layer shortcuts, the composed data-selection
+editor, and renderer selection/composition. Clipboard and SVG/PNG/CSV
 actions remain delegated to the existing controllers. The extracted caption has direct regression
 coverage for unresolved descriptive rows, shared-source matching versus condition-specific
 experimental units, and the rule that showing Cell/ROI observations does not change statistical
-`n`. Inspector tests preserve immutable layer updates and English localization. The workbench is
-now 1,441 lines, down from about 4,900 before the staged split. The full UI suite passes 175 files
-and 1,261 tests; typecheck, lint, and production build pass. The initial production chunk remains
+`n`. Inspector tests preserve immutable layer updates and English localization. Renderer selection
+is a pure tested decision among composition, correlation, and general Graphs, while stable readout,
+condition, and time-point IDs remain callback inputs to the parent state owner. The workbench is
+now 1,372 lines, down from about 4,900 before the staged split. The full UI suite passes 177 files
+and 1,265 tests; typecheck, lint, and production build pass. The initial production chunk remains
 812.87 kB (gzip 223.01 kB), with the existing large-chunk warning.
 
 ## Known bounded gaps
@@ -257,8 +260,8 @@ and 1,261 tests; typecheck, lint, and production build pass. The initial product
   localized data summaries, grouping, data selection, series presentation, and distribution
   controls are now separate tested boundaries. Time-analysis selection, factor-by-time scope,
   analysis-set selection, Statistics annotation display, canvas toolbar/export controls, semantic
-  captions, and the inspector target/layer shortcuts are also separated. Remaining renderer
-  composition and top-level orchestration are the next safe extraction boundaries.
+  captions, inspector target/layer shortcuts, data-editor composition, and renderer selection are
+  also separated. Remaining top-level state orchestration is the next safe extraction boundary.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
   display, and ID/scalar draft synchronization now use shared primitives. Remaining specialized
