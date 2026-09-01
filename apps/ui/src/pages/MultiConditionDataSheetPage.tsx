@@ -49,7 +49,7 @@ import {
   defaultAnalysisRunner,
   type AnalysisRunner,
 } from "../app/analysisClient";
-import { localizedText, useAppLocale } from "../app/appLocale";
+import { localizedFailureMessage, localizedText, useAppLocale } from "../app/appLocale";
 import { updateNestedPayloadExperimentDate } from "../app/nestedPayloadDates";
 import {
   actionErrorMessage,
@@ -694,7 +694,12 @@ export function MultiConditionDataSheetPage({
         {
           code: "missing_value",
           path: "nested-observations",
-          message: error instanceof Error ? error.message : "D10の要約を作成できませんでした。",
+          message: localizedFailureMessage(
+            locale,
+            error,
+            "D10の要約を作成できませんでした。",
+            "The nested-observation summary could not be created.",
+          ),
         },
       ]);
     }
@@ -794,7 +799,12 @@ export function MultiConditionDataSheetPage({
     } catch (error) {
       setAnalysisStatus("error");
       setAnalysisError(
-        error instanceof Error ? error.message : "ローカル解析を実行できませんでした。",
+        localizedFailureMessage(
+          locale,
+          error,
+          "ローカル解析を実行できませんでした。",
+          "The local analysis could not be completed.",
+        ),
       );
     } finally {
       setRunningRequestId(null);
@@ -831,7 +841,12 @@ export function MultiConditionDataSheetPage({
       setSaveStatus("idle");
     } catch (error) {
       setAnalysisError(
-        error instanceof Error ? error.message : "グラフ設定を更新できませんでした。",
+        localizedFailureMessage(
+          locale,
+          error,
+          "グラフ設定を更新できませんでした。",
+          "The Graph settings could not be updated.",
+        ),
       );
     }
   };

@@ -54,6 +54,22 @@ export function localizedText(locale: AppLocale, ja: string, en: string): string
   return locale === "ja" ? ja : en;
 }
 
+/**
+ * Internal exceptions may still contain legacy Japanese detail. English UI
+ * uses a reviewed action-specific fallback instead of exposing that detail.
+ */
+export function localizedFailureMessage(
+  locale: AppLocale,
+  error: unknown,
+  jaFallback: string,
+  enFallback: string,
+): string {
+  if (locale === "ja" && error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+  return localizedText(locale, jaFallback, enFallback);
+}
+
 export const appLocaleStorageKey = STORAGE_KEY;
 
 export function resetAppLocaleForTests(locale: AppLocale = "ja") {

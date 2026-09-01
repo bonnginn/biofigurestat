@@ -33,7 +33,12 @@ import {
 import { createGraphOnlyWorkbenchModel } from "../app/graphOnlyWorkbenchAdapter";
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
-import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
+import {
+  localizedFailureMessage,
+  localizedText,
+  useAppLocale,
+  type AppLocale,
+} from "../app/appLocale";
 import "./GraphOnlyVisualizationPage.css";
 
 const ExperimentGraphWorkbench = lazy(() =>
@@ -816,9 +821,12 @@ export function GraphOnlyVisualizationPage({
       return true;
     } catch (reason) {
       setError(
-        reason instanceof Error
-          ? reason.message
-          : t("Graph用データを保存できませんでした。", "The Graph data could not be saved."),
+        localizedFailureMessage(
+          locale,
+          reason,
+          "Graph用データを保存できませんでした。",
+          "The Graph data could not be saved.",
+        ),
       );
       return false;
     }
@@ -985,12 +993,12 @@ export function GraphOnlyVisualizationPage({
                           })
                           .catch((reason: unknown) =>
                             setError(
-                              reason instanceof Error
-                                ? reason.message
-                                : t(
-                                    "保存したGraph用データを開けませんでした。",
-                                    "The saved Graph data could not be opened.",
-                                  ),
+                              localizedFailureMessage(
+                                locale,
+                                reason,
+                                "保存したGraph用データを開けませんでした。",
+                                "The saved Graph data could not be opened.",
+                              ),
                             ),
                           );
                       },

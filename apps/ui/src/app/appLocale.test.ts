@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   appLocaleStorageKey,
   getAppLocale,
+  localizedFailureMessage,
   resetAppLocaleForTests,
   setAppLocale,
 } from "./appLocale";
@@ -44,5 +45,24 @@ describe("application locale", () => {
     expect(serializedAfterEnglish).toBe(serializedBefore);
     expect(JSON.parse(serializedAfterEnglish)).not.toHaveProperty("locale");
     expect(window.localStorage.getItem(appLocaleStorageKey)).toBe("ja");
+  });
+
+  it("keeps legacy Japanese exception detail out of English UI", () => {
+    expect(
+      localizedFailureMessage(
+        "en",
+        new Error("保存できませんでした"),
+        "保存できませんでした。",
+        "The project could not be saved.",
+      ),
+    ).toBe("The project could not be saved.");
+    expect(
+      localizedFailureMessage(
+        "ja",
+        new Error("保存先へ書き込めません"),
+        "保存できませんでした。",
+        "The project could not be saved.",
+      ),
+    ).toBe("保存先へ書き込めません");
   });
 });

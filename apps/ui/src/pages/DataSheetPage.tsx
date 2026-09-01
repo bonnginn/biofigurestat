@@ -46,7 +46,7 @@ import {
   defaultAnalysisRunner,
   type AnalysisRunner,
 } from "../app/analysisClient";
-import { localizedText, useAppLocale } from "../app/appLocale";
+import { localizedFailureMessage, localizedText, useAppLocale } from "../app/appLocale";
 import { updateNestedPayloadExperimentDate } from "../app/nestedPayloadDates";
 import {
   actionErrorMessage,
@@ -1523,7 +1523,12 @@ export function DataSheetPage({
       setSaveError(null);
     } catch (error) {
       setAnalysisError(
-        error instanceof Error ? error.message : "グラフ設定を更新できませんでした。",
+        localizedFailureMessage(
+          locale,
+          error,
+          "グラフ設定を更新できませんでした。",
+          "The Graph settings could not be updated.",
+        ),
       );
     }
   };
