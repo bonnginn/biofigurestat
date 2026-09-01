@@ -626,6 +626,12 @@ legacy shapes do not duplicate manifest/checksum plumbing. The complete project 
 passes 9 files / 71 tests together with project typecheck; no production schema or migration logic
 changed.
 
+Specialist parse failures now use the same locale-safe error boundary as project and Graph export
+failures. Invalid Survival and Heatmap data no longer expose legacy Japanese exception text in the
+English UI, and the Survival 0/1 mapping gate uses retained internal evidence rather than matching
+the translated display message. The 31-test specialist page suite, UI typecheck, and focused lint
+pass; scientific validation and stored data are unchanged.
+
 The ordinary, scatter, and categorical Graph-creation previews now consume that same rectangle
 contract for axis endpoints, point scaling, bar baselines, and label anchors. Existing preview
 dimensions and data domains are unchanged; future margin changes no longer require several

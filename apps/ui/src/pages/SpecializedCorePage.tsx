@@ -79,7 +79,7 @@ import {
 import type { SpecializedCoreDraft } from "../app/specializedAnalysisDrafts";
 import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
 import { createTimeToEventEntry, parseTimeToEventTable } from "../app/timeToEventEntry";
-import { localizedText, useAppLocale } from "../app/appLocale";
+import { localizedFailureMessage, localizedText, useAppLocale } from "../app/appLocale";
 import { createTimeToEventContractProjection } from "../app/timeToEventProjection";
 import {
   survivalStatisticsReadiness,
@@ -727,9 +727,17 @@ export function SpecializedCorePage({
         ),
       };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : "入力を確認してください" } as const;
+      return {
+        error: localizedFailureMessage(
+          locale,
+          error,
+          "入力を確認してください。",
+          "Check the time-to-event data and required columns.",
+        ),
+        internalError: error instanceof Error ? error.message : "",
+      } as const;
     }
-  }, [activeAdaptiveInput, experimentFirstEntry, mode, numericStatusMapping, text]);
+  }, [activeAdaptiveInput, experimentFirstEntry, locale, mode, numericStatusMapping, text]);
   const statisticsReadiness = useMemo<SurvivalStatisticsReadiness>(() => {
     if (mode !== "survival" || !survival || "error" in survival) {
       return survivalStatisticsReadiness({
@@ -757,9 +765,16 @@ export function SpecializedCorePage({
       const raw = parseMatrixPaste(text);
       return { raw, model: createHeatmapModel(raw, transform) };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : "入力を確認してください" } as const;
+      return {
+        error: localizedFailureMessage(
+          locale,
+          error,
+          "入力を確認してください。",
+          "Check the matrix data and numeric cells.",
+        ),
+      } as const;
     }
-  }, [mode, text, transform]);
+  }, [locale, mode, text, transform]);
   const initialUsageDataPresentRef = useRef(
     initialEditorText.split(/\r?\n/u).some((line, index) => index > 0 && line.trim()),
   );
@@ -1877,17 +1892,29 @@ export function SpecializedCorePage({
   const numericStatusMappingRequired =
     experimentFirstEntry &&
     mode === "survival" &&
-    ((survival && "error" in survival && /numeric mapping/iu.test(survival.error ?? "")) ||
+    ((survival && "error" in survival && /numeric mapping/iu.test(survival.internalError)) ||
       numericStatusMapping !== null);
   const survivalStatisticsSetupBlockedReason =
     directTimeToEventEntry?.status === "safe_unsupported"
-      ? "このevent経過は現在の専用入口では解析できません。"
+      ? t(
+          "このevent経過は現在の専用入口では解析できません。",
+          "This event process is not supported by the current dedicated workflow.",
+        )
       : !survivalTableHasRows
-        ? "あと1項目：対象ID・群・観察期間・Statusを入力してください。"
+        ? t(
+            "あと1項目：対象ID・群・観察期間・Statusを入力してください。",
+            "Enter subject ID, group, follow-up time, and status to continue.",
+          )
         : numericStatusMappingRequired && numericStatusMapping === null
-          ? "あと1項目：Status列の0/1の意味を選んでください。"
+          ? t(
+              "あと1項目：Status列の0/1の意味を選んでください。",
+              "Confirm whether 0 or 1 means Event in the Status column.",
+            )
           : !survival || "error" in survival
-            ? "入力表のエラーを修正すると、統計解析を設定できます。"
+            ? t(
+                "入力表のエラーを修正すると、統計解析を設定できます。",
+                "Correct the data-table error to configure the statistical analysis.",
+              )
             : null;
   const timeToEventUnitPanel =
     experimentFirstEntry &&

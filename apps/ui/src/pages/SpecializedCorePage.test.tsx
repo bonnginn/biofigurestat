@@ -108,6 +108,35 @@ describe("specialized Core entry pages", () => {
     expectNoJapaneseUi(view.container);
   });
 
+  it("keeps invalid specialist data errors in English", () => {
+    act(() => setAppLocale("en"));
+    const survivalView = render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        entryIntent={cellTimeToEventIntent}
+        initialText={
+          "Unit ID\tGroup\tFollow-up time\tStatus\nmouse-1\tControl\tnot-a-number\tEvent"
+        }
+      />,
+    );
+
+    expect(screen.getByText("Check the time-to-event data and required columns.")).toBeVisible();
+    expectNoJapaneseUi(survivalView.container);
+    survivalView.unmount();
+
+    const heatmapView = render(
+      <SpecializedCorePage
+        mode="heatmap"
+        onBack={vi.fn()}
+        initialText={"Feature\tSample A\nProtein A\tnot-a-number"}
+      />,
+    );
+
+    expect(screen.getByText("Check the matrix data and numeric cells.")).toBeVisible();
+    expectNoJapaneseUi(heatmapView.container);
+  });
+
   it("keeps Heatmap save failures in English even when an internal error is Japanese", async () => {
     act(() => setAppLocale("en"));
     const saveUnresolvedVisualizationProject = vi.fn<SaveUnresolvedVisualizationProjectAction>(
