@@ -90,11 +90,17 @@ export function createBenchmarkStatisticsArtifact(
     };
   }
 
-  const recommendation = requireAnalysisRequestRecommendation(
-    createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
-    analysis.request,
-    { outcomeId: selectedReadoutId },
-  );
+  const recommendation =
+    analysis.request.protocolVersion === "0.15.0"
+      ? analysis.recommendation
+      : requireAnalysisRequestRecommendation(
+          createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
+          analysis.request,
+          { outcomeId: selectedReadoutId },
+        );
+  if (!recommendation) {
+    throw new Error("EXECUTED_EQUIVALENCE_RECOMMENDATION_REQUIRED");
+  }
   return {
     selectedReadoutId,
     selectedConditionIds: analysisConditionIds,

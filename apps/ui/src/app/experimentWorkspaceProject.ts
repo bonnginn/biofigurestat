@@ -1409,9 +1409,15 @@ function prepareWorkspaceAnalyses(input: {
           }
         : {}),
     });
-    const canonicalRecommendation = requireAnalysisRequestRecommendation(input.design, request, {
-      outcomeId: graph.selectedReadoutId,
-    });
+    const canonicalRecommendation =
+      request.protocolVersion === "0.15.0"
+        ? graph.analysis?.recommendation
+        : requireAnalysisRequestRecommendation(input.design, request, {
+            outcomeId: graph.selectedReadoutId,
+          });
+    if (!canonicalRecommendation) {
+      throw new Error("EXECUTED_EQUIVALENCE_RECOMMENDATION_REQUIRED");
+    }
     analyses.push({
       graphId: graph.id,
       request,

@@ -117,9 +117,13 @@ export function createExperimentGraphMethodsText(input: Readonly<{
   if (!analysis || analysis.result.status !== "ok") return null;
 
   const design = createExperimentWorkspaceDesign(draft, analysis.result.completedAt);
-  const canonicalRecommendation = requireAnalysisRequestRecommendation(design, analysis.request, {
-    outcomeId: selectedReadoutId,
-  });
+  const canonicalRecommendation =
+    analysis.request.protocolVersion === "0.15.0"
+      ? analysis.recommendation
+      : requireAnalysisRequestRecommendation(design, analysis.request, {
+          outcomeId: selectedReadoutId,
+        });
+  if (!canonicalRecommendation) return null;
   const recommendation = {
     ...canonicalRecommendation,
     ...(analysis.recommendation?.decision ? { decision: analysis.recommendation.decision } : {}),
