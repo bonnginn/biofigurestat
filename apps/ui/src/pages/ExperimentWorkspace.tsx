@@ -2804,6 +2804,7 @@ export function ExperimentWorkspace({
           rebuilt.diagnostics.join(" / ") || "入力した値を実験ワークスペースへ反映できません。",
         );
       }
+      const rebuiltDraft = rebuilt.draft;
       const previousSessions = draft.experiments;
       const previousSessionsByIdentity = new Map(
         previousSessions.map((experiment) => [experiment.label, experiment] as const),
@@ -2826,7 +2827,7 @@ export function ExperimentWorkspace({
           }
         });
       }
-      const rebuiltExperiments = rebuilt.draft.experiments.map((experiment) => ({
+      const rebuiltExperiments = rebuiltDraft.experiments.map((experiment) => ({
         experiment,
         previous:
           snapshot.contract.matching.kind === "matched"
@@ -2836,9 +2837,12 @@ export function ExperimentWorkspace({
             : undefined,
       }));
       const reservedStableUnitIds = new Set(
-        rebuiltExperiments.flatMap(({ experiment, previous }) =>
-          previous ? [previous.stableUnitId ?? experiment.stableUnitId] : [],
-        ),
+        [
+          ...previousSessions.map(({ stableUnitId, id }) => stableUnitId ?? id),
+          ...rebuiltExperiments.flatMap(({ experiment, previous }) =>
+            previous ? [previous.stableUnitId ?? experiment.stableUnitId] : [],
+          ),
+        ],
       );
       let nextStableUnitOrdinal = 1;
       const nextAvailableStableUnitId = (preferred?: string) => {
@@ -2855,26 +2859,71 @@ export function ExperimentWorkspace({
         nextStableUnitOrdinal += 1;
         return candidate;
       };
+      const preservesExplicitIndependentSessions =
+        ["independent", "none"].includes(snapshot.contract.matching.kind) &&
+        observations.some(({ experimentSessionId }) => Boolean(experimentSessionId));
+      const observedExplicitSessionIds = [
+        ...new Set(
+          observations.flatMap(({ experimentSessionId }) =>
+            experimentSessionId ? [experimentSessionId] : [],
+          ),
+        ),
+      ];
+      const furthestWorksheetRow = observedExplicitSessionIds.reduce((furthest, id) => {
+        const match = /^experiment\.worksheet\.(\d+)$/.exec(id);
+        return Math.max(furthest, match ? Number(match[1]) : 0);
+      }, 0);
+      const worksheetSessionIds = Array.from({ length: furthestWorksheetRow }, (_, index) =>
+        previousSessions[index]?.id ?? `experiment.worksheet.${index + 1}`,
+      );
+      const explicitSessionIds = [
+        ...new Set([...worksheetSessionIds, ...observedExplicitSessionIds]),
+      ];
+      const previousSessionIds = new Set(previousSessions.map(({ id }) => id));
+      const addedExplicitSessions = explicitSessionIds
+        .filter((id) => !previousSessionIds.has(id))
+        .map((id) => {
+          const worksheetRowIndex = explicitSessionIds.indexOf(id);
+          const template = rebuiltDraft.experiments.find((experiment) => experiment.id === id) ?? {
+            id,
+            label: `入力行 ${worksheetRowIndex + 1}`,
+            date: "",
+            note: "",
+            stableUnitId: id,
+          };
+          return {
+            ...template,
+            id,
+            label: /^experiment\.worksheet\.\d+$/.test(id)
+              ? `入力行 ${worksheetRowIndex + 1}`
+              : template.label,
+            sessionId: id,
+            stableUnitId: nextAvailableStableUnitId(template.stableUnitId),
+          };
+        });
+      const nextExperiments = preservesExplicitIndependentSessions
+        ? [...previousSessions, ...addedExplicitSessions]
+        : rebuiltExperiments.map(({ experiment, previous }) => {
+            return previous
+              ? {
+                  ...experiment,
+                  // Researcher-facing matching identities live in canonical observations
+                  // and labels. The internal stable ID remains opaque and unchanged when
+                  // the researcher corrects that label.
+                  label: experiment.label,
+                  stableUnitId: previous.stableUnitId ?? experiment.stableUnitId,
+                  sessionId: previous.sessionId,
+                  date: previous.date,
+                  note: previous.note,
+                }
+              : {
+                  ...experiment,
+                  stableUnitId: nextAvailableStableUnitId(experiment.stableUnitId),
+                };
+          });
       setDraft({
-        ...rebuilt.draft,
-        experiments: rebuiltExperiments.map(({ experiment, previous }) => {
-          return previous
-            ? {
-                ...experiment,
-                // Researcher-facing matching identities live in canonical observations
-                // and labels. The internal stable ID remains opaque and unchanged when
-                // the researcher corrects that label.
-                label: experiment.label,
-                stableUnitId: previous.stableUnitId ?? experiment.stableUnitId,
-                sessionId: previous.sessionId,
-                date: previous.date,
-                note: previous.note,
-              }
-            : {
-                ...experiment,
-                stableUnitId: nextAvailableStableUnitId(experiment.stableUnitId),
-              };
-        }),
+        ...rebuiltDraft,
+        experiments: nextExperiments,
         entrySourceHistory: draft.entrySourceHistory,
       });
       setCells(rebuilt.cells);
@@ -4969,9 +5018,9 @@ export function ExperimentWorkspace({
                     ? {
                         observations: draft.adaptiveInput.canonicalObservations,
                         readOnly: canonicalSpreadsheetPresentation.readOnly,
-                        showExperimentDate: draft.adaptiveInput.contract.unitLevels.some(
-                          ({ role }) => role === "block",
-                        ),
+                        // The date belongs to the explicit experiment session.
+                        // Showing it never changes independent/matched semantics.
+                        showExperimentDate: true,
                         onObservationsChange: replaceAdaptiveObservations,
                         onFileImport: replaceAdaptiveFileImport,
                         nextObservationId: nextAdaptiveObservationId,

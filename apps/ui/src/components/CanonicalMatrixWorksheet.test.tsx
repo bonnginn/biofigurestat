@@ -480,6 +480,61 @@ describe("CanonicalMatrixWorksheet", () => {
     );
   });
 
+  it("keeps an out-of-order independent entry on its experiment-session row", () => {
+    const rows: readonly CanonicalWorksheetRow[] = Array.from({ length: 4 }, (_, index) => ({
+      key: `experiment.${index + 1}`,
+      label: `Run ${index + 1}`,
+      date: "",
+    }));
+    render(<WorksheetHarness initialObservations={[]} rows={rows} />);
+
+    const thirdRow = screen.getByRole("textbox", { name: "入力行 3・control・Response" });
+    fireEvent.change(thirdRow, { target: { value: "30" } });
+    fireEvent.blur(thirdRow);
+
+    expect(screen.getByRole("textbox", { name: "入力行 1・control・Response" })).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "入力行 3・control・Response" })).toHaveValue("30");
+    expect(currentObservations()).toEqual([
+      expect.objectContaining({
+        experimentSessionId: "experiment.3",
+        identities: { unit_id: "unit.control.3" },
+        values: { value: 30 },
+      }),
+    ]);
+
+    const firstRow = screen.getByRole("textbox", { name: "入力行 1・control・Response" });
+    fireEvent.change(firstRow, { target: { value: "10" } });
+    fireEvent.blur(firstRow);
+    expect(screen.getByRole("textbox", { name: "入力行 1・control・Response" })).toHaveValue("10");
+    expect(screen.getByRole("textbox", { name: "入力行 3・control・Response" })).toHaveValue("30");
+  });
+
+  it("edits an independent experiment-session date without treating the row as matched", () => {
+    const onRowChange = vi.fn();
+    const rows: readonly CanonicalWorksheetRow[] = [
+      { key: "experiment.1", label: "Run Alpha", date: "2026-09-01" },
+    ];
+    render(
+      <CanonicalMatrixWorksheet
+        tableId="independent-session-date"
+        contract={makeContract()}
+        observations={[]}
+        rows={rows}
+        showExperimentDate
+        onRowChange={onRowChange}
+        onObservationsChange={vi.fn()}
+        nextObservationId={nextObservationId}
+        nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
+      />,
+    );
+
+    const date = screen.getByLabelText("Run Alphaのこの組に共通する実験日");
+    expect(date).toHaveValue("2026-09-01");
+    fireEvent.change(date, { target: { value: "2026-09-02" } });
+    expect(onRowChange).toHaveBeenCalledWith(0, { date: "2026-09-02" });
+    expect(screen.queryByText("同じIDの条件は対応")).toBeNull();
+  });
+
   it("imports a CSV against the generated headers and keeps source lineage in the commit", async () => {
     const onFileImport = vi.fn();
     function FileHarness() {

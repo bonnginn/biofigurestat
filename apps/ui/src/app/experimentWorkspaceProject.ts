@@ -222,9 +222,13 @@ function createAdaptiveCanonicalRecords(
   const sharedSourceConditionUnits = hasSharedSourceConditionUnits(draft);
   const sessionIdentityKey = contract.matching.identityKey ?? experimentalIdentityKey;
   const experimentSessionFor = (row: (typeof snapshot.canonicalObservations)[number]) => {
-    // A row's ordinal position within an independent condition is presentation state,
-    // not evidence that it belongs to the same experimental session as the nth row
-    // in another condition. Only an explicit matched identity may create this link.
+    // An explicit worksheet session is provenance/block metadata only. It does
+    // not establish pairing; the declared matching structure remains authoritative.
+    if (row.experimentSessionId) {
+      return draft.experiments.some(({ id }) => id === row.experimentSessionId)
+        ? row.experimentSessionId
+        : undefined;
+    }
     if (draft.conditionAssignment.kind !== "matched") return undefined;
     const semanticIdentity = row.identities[sessionIdentityKey];
     if (!semanticIdentity) return undefined;
@@ -951,11 +955,11 @@ function prepareWorkspaceAnalyses(input: {
       if (sourceKeys.has(observation.sourceLocation.replace(/^workspace:/, ""))) return true;
       if (!observation.sourceLocation.startsWith("adaptive:")) return false;
 
-      // Independent adaptive rows intentionally have no experimentSessionId:
-      // their display ordinal must never manufacture run/pair linkage. The
-      // active raw revision already scopes them to this workspace, so factor
-      // and time selection are sufficient. Matched designs retain their
-      // explicit session identity and continue to validate it here.
+      // An independent adaptive row may carry an explicit experiment-session
+      // provenance link, but that link never manufactures pairing. The active
+      // raw revision already scopes independent rows to this workspace, so
+      // factor and time selection remain sufficient. Matched designs retain
+      // their declared matching identity and continue to validate it here.
       const belongsToSelectedExperiment =
         input.draft.conditionAssignment.kind === "independent" ||
         selectedExperimentIds.has(sourceExperimentId(observation.unitInstanceId) ?? "");

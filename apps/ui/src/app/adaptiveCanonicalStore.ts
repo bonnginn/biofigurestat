@@ -169,7 +169,9 @@ function coordinateForPriorRow(input: {
   const semanticIdentity = row.identities[sessionIdentityKey];
   if (!semanticIdentity) return null;
   const experimentIndex =
-    draft.conditionAssignment.kind === "matched"
+    row.experimentSessionId
+      ? draft.experiments.findIndex(({ id }) => id === row.experimentSessionId)
+      : draft.conditionAssignment.kind === "matched"
       ? draft.experiments.findIndex(
           ({ stableUnitId, label }) =>
             stableUnitId === semanticIdentity || label === semanticIdentity,
@@ -306,6 +308,8 @@ function rowWithValues(input: {
     );
   return CanonicalAdaptiveObservationSchema.parse({
     observationId: base?.observationId ?? nextObservationId(),
+    experimentSessionId:
+      base?.experimentSessionId ?? draft.experiments[coordinate.experimentIndex]?.id,
     readoutKey: coordinate.readout.key,
     identities: base?.identities ?? generated.identities,
     factors: base?.factors ?? factors,

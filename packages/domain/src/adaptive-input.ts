@@ -235,6 +235,8 @@ export const StructureContractSchema = z
 
 export const CanonicalAdaptiveObservationSchema = z.object({
   observationId: SemanticKeySchema,
+  /** Optional workspace run/session provenance; it never establishes pairing by itself. */
+  experimentSessionId: SemanticKeySchema.optional(),
   readoutKey: SemanticKeySchema,
   identities: z.record(SemanticKeySchema, z.string().min(1)),
   factors: z.record(SemanticKeySchema, z.string()),

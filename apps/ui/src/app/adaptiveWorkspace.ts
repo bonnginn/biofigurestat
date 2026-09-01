@@ -262,11 +262,19 @@ export function createAdaptiveWorkspace(input: {
   const conditionIdentityValues = observationsByCondition.map((rows) => [
     ...new Set(rows.map((row) => row.identities[experimentalUnitIdentityKey]).filter(Boolean)),
   ]);
+  const explicitExperimentSessionIds = [
+    ...new Set(
+      input.observations.flatMap(({ experimentSessionId }) =>
+        experimentSessionId ? [experimentSessionId] : [],
+      ),
+    ),
+  ];
   const sessionCount =
     contract.matching.kind === "matched"
       ? Math.max(1, matchedIdentities.length)
       : Math.max(
           1,
+          explicitExperimentSessionIds.length,
           ...observationsByCondition.map(
             (rows) =>
               new Set(
@@ -278,7 +286,10 @@ export function createAdaptiveWorkspace(input: {
     contract.unitLevels.find(({ key }) => key === contract.experimentalUnitLevelKey)?.label ??
     "Experimental unit";
   const experiments = Array.from({ length: sessionCount }, (_, index) => ({
-    id: `adaptive-session.${index + 1}`,
+    id:
+      contract.matching.kind === "matched"
+        ? `adaptive-session.${index + 1}`
+        : (explicitExperimentSessionIds[index] ?? `adaptive-session.${index + 1}`),
     label:
       contract.matching.kind === "matched"
         ? (matchedIdentities[index] ?? `${experimentalUnitLabel} ${index + 1}`)
@@ -446,10 +457,10 @@ export function createAdaptiveWorkspace(input: {
         const selectedRows =
           draftBase.conditionAssignment.kind === "matched"
             ? rows
-            : rows.filter(
-                (row) =>
-                  row.identities[experimentalUnitIdentityKey] === identityValues[sessionIndex],
-              );
+            : rows.filter((row) => {
+                if (row.experimentSessionId) return row.experimentSessionId === experiment.id;
+                return row.identities[experimentalUnitIdentityKey] === identityValues[sessionIndex];
+              });
         const timePoints = draftBase.time.points.length
           ? draftBase.time.points
           : [{ id: undefined, value: undefined }];

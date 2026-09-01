@@ -26,6 +26,13 @@ export type CanonicalWorksheetRow = Readonly<{
   date: string;
 }>;
 
+function worksheetExperimentSessionId(
+  rows: readonly CanonicalWorksheetRow[],
+  rowIndex: number,
+): string {
+  return rows[rowIndex]?.key ?? `experiment.worksheet.${rowIndex + 1}`;
+}
+
 export type CanonicalMatrixConditionCombination = Readonly<{
   labels: readonly string[];
   displayLabel: string;
@@ -478,17 +485,51 @@ function independentUnitIdentities(
   );
 }
 
+function independentUnitIdentityAt(
+  contract: StructureContract,
+  observations: readonly CanonicalAdaptiveObservation[],
+  factors: Readonly<Record<string, string>>,
+  rowIndex: number,
+  experimentSessionId?: string,
+): string | undefined {
+  const identityKey = experimentalIdentityKey(contract);
+  if (experimentSessionId) {
+    const candidates = observations.filter((candidate) => recordsMatch(candidate.factors, factors));
+    const observation = candidates.find(
+      (candidate) =>
+        candidate.experimentSessionId === experimentSessionId,
+    );
+    if (observation) {
+      return identityKey
+        ? (observation.identities[identityKey] ?? observation.observationId)
+        : observation.observationId;
+    }
+    if (candidates.some(({ experimentSessionId: linkedSessionId }) => linkedSessionId)) {
+      return undefined;
+    }
+  }
+  return independentUnitIdentities(contract, observations, factors)[rowIndex];
+}
+
 function observationAt(input: {
   contract: StructureContract;
   observations: readonly CanonicalAdaptiveObservation[];
   column: MatrixColumn;
   rowIndex: number;
   identityOverride?: string;
+  experimentSessionId?: string;
 }): CanonicalAdaptiveObservation | null {
   const { contract, observations, column, rowIndex } = input;
   const candidates = observationsForColumn(observations, column);
   const matchingIdentityKey = contract.matching.identityKey;
   const identityOverride = normalizedLabel(input.identityOverride ?? "");
+  if (input.experimentSessionId) {
+    const sessionObservation = candidates.find(
+      ({ experimentSessionId }) => experimentSessionId === input.experimentSessionId,
+    );
+    if (sessionObservation) return sessionObservation;
+    if (candidates.some(({ experimentSessionId }) => experimentSessionId)) return null;
+  }
   if (["matched", "blocked"].includes(contract.matching.kind) && matchingIdentityKey) {
     if (identityOverride) {
       return (
@@ -515,9 +556,13 @@ function observationAt(input: {
       ) ?? null
     );
   }
-  const unitIdentity = independentUnitIdentities(contract, observations, column.coordinate.factors)[
-    rowIndex
-  ];
+  const unitIdentity = independentUnitIdentityAt(
+    contract,
+    observations,
+    column.coordinate.factors,
+    rowIndex,
+    input.experimentSessionId,
+  );
   if (!unitIdentity) return candidates[rowIndex] ?? null;
   return (
     candidates.find(
@@ -658,15 +703,18 @@ function renameIndependentRowIdentity(input: {
   observations: readonly CanonicalAdaptiveObservation[];
   factors: Readonly<Record<string, string>>;
   rowIndex: number;
+  experimentSessionId?: string;
   identity: string;
 }): readonly CanonicalAdaptiveObservation[] {
   const identityKey = experimentalIdentityKey(input.contract);
   if (!identityKey) throw new Error("この実験では対象・試料を区別するIDを設定できません");
-  const previousIdentity = independentUnitIdentities(
+  const previousIdentity = independentUnitIdentityAt(
     input.contract,
     input.observations,
     input.factors,
-  )[input.rowIndex];
+    input.rowIndex,
+    input.experimentSessionId,
+  );
   const identity = input.identity.trim();
   if (!identity) throw new Error("値を入力した行のIDは空にできません");
   if (identity === previousIdentity) return input.observations;
@@ -676,6 +724,8 @@ function renameIndependentRowIdentity(input: {
       .filter(
         (observation) =>
           recordsMatch(observation.factors, input.factors) &&
+          (!input.experimentSessionId ||
+            observation.experimentSessionId === input.experimentSessionId) &&
           normalizedLabel(observation.identities[identityKey] ?? "") ===
             normalizedLabel(previousIdentity ?? ""),
       )
@@ -754,12 +804,14 @@ function updateValue(
   valueKey: string,
   value: number | null,
   sourceRow?: number | null,
+  experimentSessionId?: string,
 ): CanonicalAdaptiveObservation {
   const missingness = { ...observation.missingness };
   if (value === null) missingness[valueKey] ??= "unknown";
   else delete missingness[valueKey];
   return CanonicalAdaptiveObservationSchema.parse({
     ...observation,
+    ...(experimentSessionId ? { experimentSessionId } : {}),
     values: { ...observation.values, [valueKey]: value },
     missingness,
     ...(sourceRow === undefined ? {} : { sourceRow }),
@@ -803,6 +855,7 @@ function applyMatrixValue(input: {
   value: number | null;
   sourceRow?: number | null;
   identityOverride?: string;
+  experimentSessionId?: string;
   nextObservationId: Props["nextObservationId"];
   nextExperimentalUnitIdentity: Props["nextExperimentalUnitIdentity"];
 }): readonly CanonicalAdaptiveObservation[] {
@@ -817,7 +870,13 @@ function applyMatrixValue(input: {
     }
     return input.observations.map((observation) =>
       observation.observationId === existing.observationId
-        ? updateValue(observation, valueKey, input.value, input.sourceRow)
+        ? updateValue(
+            observation,
+            valueKey,
+            input.value,
+            input.sourceRow,
+            input.experimentSessionId,
+          )
         : observation,
     );
   }
@@ -856,11 +915,13 @@ function applyMatrixValue(input: {
   if (unitIdentityKey && unitIdentityKey !== matchingIdentityKey) {
     identities[unitIdentityKey] =
       input.identityOverride?.trim() ??
-      independentUnitIdentities(
+      independentUnitIdentityAt(
         input.contract,
         input.observations,
         input.column.coordinate.factors,
-      )[input.rowIndex] ??
+        input.rowIndex,
+        input.experimentSessionId,
+      ) ??
       input.nextExperimentalUnitIdentity?.({ ...context, observationId }) ??
       observationId;
   } else if (unitIdentityKey && !identities[unitIdentityKey]) {
@@ -900,6 +961,7 @@ function applyMatrixValue(input: {
         );
   const created = CanonicalAdaptiveObservationSchema.parse({
     observationId,
+    ...(input.experimentSessionId ? { experimentSessionId: input.experimentSessionId } : {}),
     readoutKey: input.column.coordinate.readoutKey,
     identities,
     factors: input.column.coordinate.factors,
@@ -951,6 +1013,7 @@ function MatrixCell({
   nextObservationId,
   nextExperimentalUnitIdentity,
   identityOverride,
+  experimentSessionId,
   onObservationsChange,
   onMatrixPaste,
   conditionStatus,
@@ -965,6 +1028,7 @@ function MatrixCell({
   nextObservationId: Props["nextObservationId"];
   nextExperimentalUnitIdentity: Props["nextExperimentalUnitIdentity"];
   identityOverride?: string;
+  experimentSessionId?: string;
   onObservationsChange: Props["onObservationsChange"];
   onMatrixPaste: (event: ClipboardEvent<HTMLInputElement>, row: number, column: number) => void;
   conditionStatus: CanonicalMatrixConditionCombination["status"];
@@ -977,6 +1041,7 @@ function MatrixCell({
     column,
     rowIndex,
     identityOverride,
+    experimentSessionId,
   });
   const canonicalValue = displayColumnValue(contract, observation, column);
   const factorLabel = contract.factors
@@ -1044,6 +1109,7 @@ function MatrixCell({
             rowIndex,
             value: parsed.kind === "value" ? parsed.value : null,
             identityOverride,
+            experimentSessionId,
             nextObservationId,
             nextExperimentalUnitIdentity,
           });
@@ -1089,9 +1155,16 @@ function independentIdentityOverride(
   drafts: Readonly<Record<string, string>>,
   factors: Readonly<Record<string, string>>,
   rowIndex: number,
+  experimentSessionId?: string,
 ): string | undefined {
   const draft = drafts[independentIdentityDraftKey(factors, rowIndex)];
-  const canonical = independentUnitIdentities(contract, observations, factors)[rowIndex];
+  const canonical = independentUnitIdentityAt(
+    contract,
+    observations,
+    factors,
+    rowIndex,
+    experimentSessionId,
+  );
   const identity = (canonical ?? draft ?? "").trim();
   return identity || undefined;
 }
@@ -1131,10 +1204,7 @@ export function CanonicalMatrixWorksheet({
     contract.matching.kind === "matched"
       ? (matchingIdentity?.label ?? t("対象ID", "Subject ID"))
       : t("行", "Row");
-  const showDate =
-    contract.matching.kind !== "independent" &&
-    showExperimentDate &&
-    Boolean(rows.length || onRowChange);
+  const showDate = showExperimentDate && Boolean(rows.length || onRowChange);
   const showComponentHeaders = columns.some(
     ({ componentLabel: component, readoutLabel }) => component !== readoutLabel,
   );
@@ -1154,10 +1224,12 @@ export function CanonicalMatrixWorksheet({
   const commitIndependentIdentity = ({
     factors,
     rowIndex,
+    experimentSessionId,
     identity: rawIdentity,
   }: Readonly<{
     factors: Readonly<Record<string, string>>;
     rowIndex: number;
+    experimentSessionId?: string;
     identity: string;
   }>): string | null => {
     if (!independentIdentityKey)
@@ -1168,7 +1240,13 @@ export function CanonicalMatrixWorksheet({
     const draftKey = independentIdentityDraftKey(factors, rowIndex);
     const identity = rawIdentity.trim();
     const canonicalIdentity =
-      independentUnitIdentities(contract, observations, factors)[rowIndex] ?? "";
+      independentUnitIdentityAt(
+        contract,
+        observations,
+        factors,
+        rowIndex,
+        experimentSessionId,
+      ) ?? "";
     const reject = (message: string): string => message;
     if (!identity) {
       if (canonicalIdentity)
@@ -1199,6 +1277,8 @@ export function CanonicalMatrixWorksheet({
         .filter(
           (observation) =>
             recordsMatch(observation.factors, factors) &&
+            (!experimentSessionId ||
+              observation.experimentSessionId === experimentSessionId) &&
             normalizedLabel(observation.identities[independentIdentityKey] ?? "") ===
               normalizedLabel(previousIdentity),
         )
@@ -1226,6 +1306,7 @@ export function CanonicalMatrixWorksheet({
             observations,
             factors,
             rowIndex,
+            experimentSessionId,
             identity,
           }),
         );
@@ -1296,6 +1377,7 @@ export function CanonicalMatrixWorksheet({
                   identityDrafts,
                   target.column.coordinate.factors,
                   startRow + rowOffset,
+                  worksheetExperimentSessionId(rows, startRow + rowOffset),
                 );
           next = applyMatrixValue({
             contract,
@@ -1304,6 +1386,7 @@ export function CanonicalMatrixWorksheet({
             rowIndex: startRow + rowOffset,
             value,
             identityOverride,
+            experimentSessionId: worksheetExperimentSessionId(rows, startRow + rowOffset),
             nextObservationId,
             nextExperimentalUnitIdentity,
           });
@@ -1789,11 +1872,13 @@ export function CanonicalMatrixWorksheet({
                         rowIndex,
                       );
                       const canonicalIdentity =
-                        independentUnitIdentities(
+                        independentUnitIdentityAt(
                           contract,
                           observations,
                           column.coordinate.factors,
-                        )[rowIndex] ?? "";
+                          rowIndex,
+                          worksheetExperimentSessionId(rows, rowIndex),
+                        ) ?? "";
                       const draftIdentity = identityDrafts[draftKey];
                       const identity = canonicalIdentity || draftIdentity || "";
                       if (conditionStatus !== "performed") {
@@ -1833,6 +1918,7 @@ export function CanonicalMatrixWorksheet({
                               commitIndependentIdentity({
                                 factors: column.coordinate.factors,
                                 rowIndex,
+                                experimentSessionId: worksheetExperimentSessionId(rows, rowIndex),
                                 identity: nextIdentity,
                               })
                             }
@@ -1859,10 +1945,12 @@ export function CanonicalMatrixWorksheet({
                                   identityDrafts,
                                   column.coordinate.factors,
                                   rowIndex,
+                                  worksheetExperimentSessionId(rows, rowIndex),
                                 )
                           }
                           nextObservationId={nextObservationId}
                           nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
+                          experimentSessionId={worksheetExperimentSessionId(rows, rowIndex)}
                           onObservationsChange={onObservationsChange}
                           onMatrixPaste={pasteMatrix}
                           conditionStatus={conditionStatus}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { StructureContractSchema } from "./adaptive-input";
+import { CanonicalAdaptiveObservationSchema, StructureContractSchema } from "./adaptive-input";
 import { ExperimentDesignSchema } from "./design";
 
 const baseContract = {
@@ -59,6 +59,28 @@ const baseContract = {
 };
 
 describe("adaptive semantic invariants", () => {
+  it("keeps experiment-session provenance optional and separate from observation identity", () => {
+    const legacy = CanonicalAdaptiveObservationSchema.parse({
+      observationId: "observation.legacy",
+      readoutKey: "signal",
+      identities: { sample_id: "sample.1" },
+      factors: { treatment: "Control" },
+      axes: {},
+      hierarchy: {},
+      values: { signal: 1 },
+      missingness: {},
+      sourceRow: null,
+    });
+    expect(legacy.experimentSessionId).toBeUndefined();
+
+    const linked = CanonicalAdaptiveObservationSchema.parse({
+      ...legacy,
+      experimentSessionId: "experiment.3",
+    });
+    expect(linked.experimentSessionId).toBe("experiment.3");
+    expect(linked.identities).toEqual(legacy.identities);
+  });
+
   it("rejects factor levels that collide after string normalization", () => {
     expect(() =>
       StructureContractSchema.parse({

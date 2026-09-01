@@ -1757,10 +1757,15 @@ export function AdaptiveCanonicalSpreadsheet({
                   )
                 : effectiveMode === "compact"
                   ? contract.matching.kind === "independent"
-                    ? t(
-                        "1セルに1つの値を入力します。横一行は条件ごとの値を見やすく並べる表示位置で、同じ実験日・実験回・pairを意味しません。この表示では条件ごとの実験日は入力できません。",
-                        "Enter one value per cell. A horizontal row is only a convenient alignment across conditions; it does not imply the same date, run, or pair. Condition-specific experiment dates cannot be entered in this view.",
-                      )
+                    ? showExperimentDate
+                      ? t(
+                          "1セルに1つの値を入力します。左の実験日は、その行に明示した実験回のmetadataとして保存します。同じ日付・実験回でも、条件ごとの実験単位は別々であり、対応関係を作りません。",
+                          "Enter one value per cell. The date at left is saved as metadata for the explicit experiment session on that row. Even with the same date or session, condition-specific experimental units remain distinct and are not treated as matched.",
+                        )
+                      : t(
+                          "1セルに1つの値を入力します。横一行は条件ごとの値を見やすく並べる表示位置で、同じ実験日・実験回・pairを意味しません。この表示では条件ごとの実験日は入力できません。",
+                          "Enter one value per cell. A horizontal row is only a convenient alignment across conditions; it does not imply the same date, run, or pair. Condition-specific experiment dates cannot be entered in this view.",
+                        )
                     : t(
                         "1セルに1つの値を入力します。行の対応は、先に確認した実験構造を保持します。",
                         "Enter one value per cell. Row matching preserves the experiment structure confirmed earlier.",

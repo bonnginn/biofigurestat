@@ -171,6 +171,11 @@ describe("adaptive production path regressions", () => {
     });
     fireEvent.change(overwrittenCell, { target: { value: "101" } });
     fireEvent.blur(overwrittenCell);
+    expect(
+      screen.getByRole("textbox", {
+        name: "入力行 2・Control・Fluorescence intensity",
+      }),
+    ).toHaveValue("101");
     expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("5件の測定値");
     expect(screen.queryByRole("navigation", { name: "実験の表示切り替え" })).toBeNull();
     expect(screen.queryByRole("button", { name: /＋ 入力行/ })).toBeNull();
@@ -194,6 +199,31 @@ describe("adaptive production path regressions", () => {
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
     await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const beforeIdentityEdit = saveProject.mock.calls[0]![0];
+    const savedSessionIds = beforeIdentityEdit.experimentWorkspace!.experimentSessions.map(
+      ({ id }) => id,
+    );
+    expect(
+      beforeIdentityEdit.adaptiveInput!.canonicalObservations.map(
+        ({ experimentSessionId }) => experimentSessionId,
+      ),
+    ).toEqual([
+      savedSessionIds[0],
+      savedSessionIds[0],
+      savedSessionIds[1],
+      savedSessionIds[1],
+      savedSessionIds[2],
+    ]);
+    expect(
+      new Set(
+        beforeIdentityEdit.adaptiveInput!.canonicalObservations.map(
+          ({ experimentSessionId }) => experimentSessionId,
+        ),
+      ),
+    ).toEqual(
+      new Set(
+        beforeIdentityEdit.experimentWorkspace!.experimentSessions.map(({ id }) => id),
+      ),
+    );
     const beforeCanonicalIds = beforeIdentityEdit.adaptiveInput!.canonicalObservations.map(
       ({ observationId }) => observationId,
     );
@@ -318,6 +348,48 @@ describe("adaptive production path regressions", () => {
     expect(await screen.findByRole("group", { name: "統計解析結果" })).toHaveTextContent(
       "p = 0.12",
     );
+  });
+
+  it("keeps a first value entered below blank rows on that experiment row", () => {
+    const contract = biologicalContract({
+      title: "Sparse independent entry",
+      measurement: "Fluorescence intensity",
+      form: "single",
+      blocks: [block("treatment", "Treatment", ["Control", "Drug"])],
+      receiver: "culture dish",
+    });
+    const workspace = createAdaptiveWorkspace({
+      contract,
+      observations: [],
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    if (!workspace.draft) throw new Error("Expected an editable adaptive workspace");
+
+    render(
+      <ExperimentWorkspace
+        initialDraft={workspace.draft}
+        initialCells={workspace.cells}
+        onBack={vi.fn()}
+      />,
+    );
+    const thirdControlCell = screen.getByRole("textbox", {
+      name: "入力行 3・Control・Fluorescence intensity",
+    });
+    fireEvent.change(thirdControlCell, { target: { value: "999" } });
+    fireEvent.blur(thirdControlCell);
+
+    expect(
+      screen.getByRole("textbox", {
+        name: "入力行 1・Control・Fluorescence intensity",
+      }),
+    ).toHaveValue("");
+    expect(
+      screen.getByRole("textbox", {
+        name: "入力行 3・Control・Fluorescence intensity",
+      }),
+    ).toHaveValue("999");
   });
 
   it("distinguishes an explicitly retained missing unit from unequal-n projection padding", () => {

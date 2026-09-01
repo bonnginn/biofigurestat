@@ -1360,6 +1360,49 @@ describe("experiment workspace project adapter", () => {
       true,
     );
     expect(reopened?.draft.experiments.every(({ date }) => date === "")).toBe(true);
+
+    const sessionIds = workspace.draft.experiments.map(({ id }) => id);
+    expect(sessionIds.length).toBeGreaterThan(0);
+    const conditionOrdinals = new Map<string, number>();
+    const linkedObservations = workspace.draft.adaptiveInput!.canonicalObservations.map(
+      (observation) => {
+        const condition = JSON.stringify(observation.factors);
+        const ordinal = conditionOrdinals.get(condition) ?? 0;
+        conditionOrdinals.set(condition, ordinal + 1);
+        return CanonicalAdaptiveObservationSchema.parse({
+          ...observation,
+          experimentSessionId: sessionIds[ordinal],
+        });
+      },
+    );
+    const linkedState = createExperimentWorkspaceProject({
+      draft: {
+        ...workspace.draft,
+        adaptiveInput: {
+          ...workspace.draft.adaptiveInput!,
+          canonicalObservations: linkedObservations,
+        },
+      },
+      cells: workspace.cells,
+      graphs: [],
+      now,
+    });
+    expect(
+      new Set(
+        linkedState.unitInstances
+          .filter(
+            ({ levelId }) => levelId === `unit-level.${contract.experimentalUnitLevelKey}`,
+          )
+          .map(({ metadata }) => metadata.experimentSessionId),
+      ),
+    ).toEqual(new Set(sessionIds));
+    expect(
+      rehydrateExperimentWorkspace(
+        ProjectStateSchema.parse(JSON.parse(JSON.stringify(linkedState))),
+      )?.draft.adaptiveInput?.canonicalObservations.map(
+        ({ experimentSessionId }) => experimentSessionId,
+      ),
+    ).toEqual([sessionIds[0], sessionIds[1], sessionIds[0], sessionIds[1]]);
   });
 
   it("D09 scatter解析とX-Y対応を保存し同じworkspaceへ戻せる", () => {
