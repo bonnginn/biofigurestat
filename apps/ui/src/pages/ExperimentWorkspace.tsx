@@ -88,6 +88,7 @@ import { routeFromPath } from "../app/routes";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 import { recordDiagnosticError, recordDiagnosticEvent } from "../app/diagnostics";
 import { localizedText, useAppLocale } from "../app/appLocale";
+import { useSpreadsheetCellDraft } from "../components/useSpreadsheetCellDraft";
 
 const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
   ? lazy(() =>
@@ -1793,14 +1794,10 @@ function DecimalValueInput({
 }) {
   const locale = useAppLocale();
   const inputRef = useRef<HTMLInputElement>(null);
-  const focusedRef = useRef(false);
-  const [draftValue, setDraftValue] = useState(value === null ? "" : String(value));
-
-  useEffect(() => {
-    if (!focusedRef.current) {
-      setDraftValue(value === null ? "" : String(value));
-    }
-  }, [value]);
+  const { text: draftValue, edit, accept } = useSpreadsheetCellDraft(
+    value === null ? "" : String(value),
+    { preserveDirtyOnCanonicalChange: true },
+  );
 
   const commitIfComplete = (text: string) => {
     if (text.trim() === "") {
@@ -1822,18 +1819,16 @@ function DecimalValueInput({
       type="text"
       value={draftValue}
       onFocus={(event) => {
-        focusedRef.current = true;
         event.currentTarget.select();
       }}
       onChange={(event) => {
         const text = event.currentTarget.value;
-        setDraftValue(text);
+        edit(text);
         commitIfComplete(text);
       }}
       onBlur={() => {
-        focusedRef.current = false;
         const parsed = nullableNumber(draftValue);
-        setDraftValue(parsed === null ? "" : String(parsed));
+        accept(parsed === null ? "" : String(parsed));
         onChange(parsed);
       }}
       onPaste={(event) => {
@@ -1845,7 +1840,7 @@ function DecimalValueInput({
             const accepted = onMatrixPaste(text);
             if (accepted) {
               const firstToken = proportionPasteRows(text)[0]?.[0]?.trim() ?? "";
-              setDraftValue(firstToken === "" ? "" : String(Number(firstToken)));
+              edit(firstToken === "" ? "" : String(Number(firstToken)));
             }
           } else onRejectedPaste();
         }
