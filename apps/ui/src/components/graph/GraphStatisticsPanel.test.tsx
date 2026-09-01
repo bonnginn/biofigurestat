@@ -160,6 +160,9 @@ it("safe-stops an equivalence goal without recommending or running ordinary NHST
   expect(screen.getByText("同等性解析は現在未サポートです")).toBeVisible();
   expect(screen.getByText(/通常のANOVAやt検定でp > 0.05となっても/)).toBeVisible();
   expect(screen.getByText(/観測データから自動生成しません/)).toBeVisible();
+  expect(screen.getByText("同等性解析の事前計画")).toBeVisible();
+  expect(screen.getByLabelText("下限")).toBeVisible();
+  expect(screen.getByLabelText("上限")).toBeVisible();
   expect(screen.queryByText("推奨: Welchの2標本t検定")).toBeNull();
   expect(screen.queryByRole("button", { name: "選択した解析を実行" })).toBeNull();
   expect(analysisRunner).not.toHaveBeenCalled();

@@ -20,6 +20,7 @@ export function useExperimentGraphStateSnapshot(input: WorkspaceGraphStateSnapsh
       input.initialAnalysisRunId,
       input.layers,
       input.comparisonGoal,
+      input.equivalencePlan,
       input.plannedContrastConditionIds,
       input.selectedConditionIds,
       input.selectedReadoutId,

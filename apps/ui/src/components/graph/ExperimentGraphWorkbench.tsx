@@ -146,17 +146,20 @@ export function ExperimentGraphWorkbench({
     correlationMethod,
     selectedMethod: selectedStatisticalMethod,
     comparisonGoal,
+    equivalencePlan,
     contrastIntent,
     plannedContrastConditionIds,
     changeCorrelationMethod,
     changeSelectedMethod,
     changeComparisonGoal,
+    changeEquivalencePlan,
     changePlannedContrastConditionIds,
     removeConditionFromPlannedContrasts,
     changeContrastIntent,
   } = useExperimentGraphStatisticsIntent({
     initialAnalysis: initialState?.analysis,
     initialComparisonGoal: initialState?.comparisonGoal,
+    initialEquivalencePlan: initialState?.equivalencePlan,
     clearAnalysis: () => setAnalysis(null),
   });
   const methodsText = useMemo(
@@ -183,6 +186,7 @@ export function ExperimentGraphWorkbench({
     analysisTimePointId,
     analysisMetric: timeAnalysis,
     comparisonGoal,
+    equivalencePlan,
     plannedContrastConditionIds,
     graphType,
     grouping,
@@ -700,6 +704,16 @@ export function ExperimentGraphWorkbench({
                       selectedMethod: selectedStatisticalMethod,
                       comparisonGoal,
                       onComparisonGoalChange: changeComparisonGoal,
+                      equivalencePlan,
+                      equivalenceMarginScale:
+                        readout?.shape === "proportion"
+                          ? "percentage_point_difference"
+                          : "raw_difference",
+                      equivalenceMarginUnit:
+                        readout?.shape === "proportion"
+                          ? t("パーセントポイント", "percentage points")
+                          : readout?.unit?.trim() || readout?.label || t("測定単位", "readout units"),
+                      onEquivalencePlanChange: changeEquivalencePlan,
                       onSelectedMethodChange: (method) =>
                         changeSelectedMethod(
                           method,

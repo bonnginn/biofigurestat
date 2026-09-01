@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { AnalysisRecommendation } from "@lsaa/analysis-contracts";
+import type { AnalysisRecommendation, EquivalenceAnalysisPlan } from "@lsaa/analysis-contracts";
 
 import {
   recordBenchmarkEvent,
@@ -22,6 +22,7 @@ type RecordEvent = (
 export function useExperimentGraphStatisticsIntent(input: Readonly<{
   initialAnalysis?: WorkspaceGraphAnalysis | null;
   initialComparisonGoal?: ScientificComparisonGoal;
+  initialEquivalencePlan?: EquivalenceAnalysisPlan;
   clearAnalysis: () => void;
   recordEvent?: RecordEvent;
 }>) {
@@ -49,6 +50,9 @@ export function useExperimentGraphStatisticsIntent(input: Readonly<{
   const [comparisonGoal, setComparisonGoal] = useState<ScientificComparisonGoal>(
     input.initialComparisonGoal ?? "difference",
   );
+  const [equivalencePlan, setEquivalencePlan] = useState<EquivalenceAnalysisPlan | null>(
+    input.initialEquivalencePlan ?? null,
+  );
 
   const recordMethod = (method: StatisticalMethod, recommended: StatisticalMethod = method) => {
     recordEvent(
@@ -63,6 +67,7 @@ export function useExperimentGraphStatisticsIntent(input: Readonly<{
     correlationMethod,
     selectedMethod,
     comparisonGoal,
+    equivalencePlan,
     contrastIntent,
     plannedContrastConditionIds,
     changeCorrelationMethod(method: "pearson" | "spearman", recommended?: StatisticalMethod) {
@@ -77,6 +82,19 @@ export function useExperimentGraphStatisticsIntent(input: Readonly<{
     changeComparisonGoal(goal: ScientificComparisonGoal) {
       setComparisonGoal(goal);
       recordEvent("statistics_comparison_goal_selected", { goal }, "analysis_only");
+      input.clearAnalysis();
+    },
+    changeEquivalencePlan(plan: EquivalenceAnalysisPlan | null) {
+      setEquivalencePlan(plan);
+      recordEvent(
+        "statistics_equivalence_plan_changed",
+        {
+          complete: Boolean(plan),
+          scale: plan?.margin.scale ?? null,
+          claimMode: plan?.claimMode ?? null,
+        },
+        "analysis_only",
+      );
       input.clearAnalysis();
     },
     changePlannedContrastConditionIds(pairs: readonly (readonly [string, string])[]) {

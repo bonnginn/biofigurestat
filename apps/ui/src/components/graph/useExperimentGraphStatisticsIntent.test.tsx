@@ -3,6 +3,20 @@ import { describe, expect, it, vi } from "vitest";
 import { useExperimentGraphStatisticsIntent } from "./useExperimentGraphStatisticsIntent";
 
 describe("useExperimentGraphStatisticsIntent", () => {
+  const equivalencePlan = {
+    schemaVersion: "0.1.0" as const,
+    margin: {
+      scale: "raw_difference" as const,
+      lowerBound: -0.2,
+      upperBound: 0.2,
+      unit: "AU",
+      declaredAsPrespecified: true as const,
+    },
+    alpha: 0.05 as const,
+    claimMode: "single_primary_comparison" as const,
+    primaryComparisonId: "vehicle:drug-a",
+  };
+
   it("owns method selection, benchmark reporting, and stale-analysis clearing", () => {
     const clearAnalysis = vi.fn();
     const recordEvent = vi.fn();
@@ -85,6 +99,28 @@ describe("useExperimentGraphStatisticsIntent", () => {
     expect(recordEvent).toHaveBeenCalledWith(
       "statistics_comparison_goal_selected",
       { goal: "equivalence" },
+      "analysis_only",
+    );
+    expect(clearAnalysis).toHaveBeenCalledOnce();
+  });
+
+  it("owns a prespecified equivalence plan and invalidates stale results when it changes", () => {
+    const clearAnalysis = vi.fn();
+    const recordEvent = vi.fn();
+    const { result } = renderHook(() =>
+      useExperimentGraphStatisticsIntent({ clearAnalysis, recordEvent }),
+    );
+
+    act(() => result.current.changeEquivalencePlan(equivalencePlan));
+
+    expect(result.current.equivalencePlan).toEqual(equivalencePlan);
+    expect(recordEvent).toHaveBeenCalledWith(
+      "statistics_equivalence_plan_changed",
+      {
+        complete: true,
+        scale: "raw_difference",
+        claimMode: "single_primary_comparison",
+      },
       "analysis_only",
     );
     expect(clearAnalysis).toHaveBeenCalledOnce();

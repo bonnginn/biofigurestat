@@ -3,6 +3,8 @@ import type {
   AnalysisEngineRequest,
   AnalysisEngineResult,
   AnalysisRecommendation,
+  EquivalenceAnalysisPlan,
+  EquivalenceMargin,
 } from "@lsaa/analysis-contracts";
 import {
   CORE_WORKSPACE_RECOMMENDATION_TEMPLATES,
@@ -36,6 +38,7 @@ import { recordUsageMilestone } from "../../app/usageTelemetry";
 import { createStatisticsConsultationPrompt } from "../../app/externalLlmConsultation";
 import { ExternalLlmConsultation } from "../ExternalLlmConsultation";
 import { localizedText, useAppLocale, type AppLocale } from "../../app/appLocale";
+import { EquivalencePlanEditor } from "./EquivalencePlanEditor";
 
 type MatchedRelationship =
   | Readonly<{ kind: "same_entity"; unitLabel: string }>
@@ -58,6 +61,10 @@ type GraphStatisticsPanelProps = Readonly<{
   onSelectedMethodChange?: (method: AnalysisRecommendation["recommendedMethod"]) => void;
   comparisonGoal?: ScientificComparisonGoal;
   onComparisonGoalChange?: (goal: ScientificComparisonGoal) => void;
+  equivalencePlan?: EquivalenceAnalysisPlan | null;
+  equivalenceMarginScale?: EquivalenceMargin["scale"];
+  equivalenceMarginUnit?: string;
+  onEquivalencePlanChange?: (plan: EquivalenceAnalysisPlan | null) => void;
   contrastIntent?: ContrastIntent;
   onContrastIntentChange?: (intent: ContrastIntent) => void;
   conditionOptions?: readonly ConditionOption[];
@@ -245,6 +252,10 @@ export function GraphStatisticsPanel({
   onSelectedMethodChange,
   comparisonGoal = "difference",
   onComparisonGoalChange,
+  equivalencePlan,
+  equivalenceMarginScale = "raw_difference",
+  equivalenceMarginUnit = "readout units",
+  onEquivalencePlanChange,
   contrastIntent,
   onContrastIntentChange,
   conditionOptions = [],
@@ -298,6 +309,12 @@ export function GraphStatisticsPanel({
     assessment.request?.protocolVersion === "0.2.0"
       ? (assessment.request.plannedContrastConditionIds?.length ?? 0)
       : 0;
+  const equivalenceComparisonCount =
+    plannedContrastConditionIds.length > 0
+      ? plannedContrastConditionIds.length
+      : effectiveContrastIntent === "control_vs_many"
+        ? Math.max(1, conditionOptions.length - 1)
+        : Math.max(1, plannedPairChoices.length);
   const plannedComparisonsMissing =
     effectiveContrastIntent === "planned_comparisons" && executablePlannedPairCount === 0;
   const executedRef = useRef(Boolean(initialAnalysis));
@@ -756,10 +773,17 @@ export function GraphStatisticsPanel({
             <p>{equivalenceUnsupportedReason}</p>
             <p>
               {t(
-                "Equivalence marginはBioFigureStatが観測データから自動生成しません。正式実装では事前指定を必須にします。",
-                "BioFigureStat will not derive an equivalence margin from the observed data. A future supported workflow will require a prespecified margin.",
+                "Equivalence marginはBioFigureStatが観測データから自動生成しません。ここで事前計画を保存できますが、正式な解析は対応法の検証後にのみ実行可能になります。",
+                "BioFigureStat will not derive an equivalence margin from the observed data. You can save the prespecified plan here, but formal analysis will remain unavailable until a supported method has been validated.",
               )}
             </p>
+            <EquivalencePlanEditor
+              plan={equivalencePlan}
+              scale={equivalenceMarginScale}
+              unit={equivalenceMarginUnit}
+              comparisonCount={equivalenceComparisonCount}
+              onPlanChange={onEquivalencePlanChange}
+            />
           </>
         ) : assessment.state === "ready" ? (
           <>

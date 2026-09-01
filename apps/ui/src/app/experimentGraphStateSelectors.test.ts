@@ -90,6 +90,20 @@ const baseInput = (): WorkspaceGraphStateSnapshotInput => ({
 });
 
 describe("workspace Graph state selector", () => {
+  const equivalencePlan = {
+    schemaVersion: "0.1.0" as const,
+    margin: {
+      scale: "raw_difference" as const,
+      lowerBound: -0.2,
+      upperBound: 0.2,
+      unit: "AU",
+      declaredAsPrespecified: true as const,
+    },
+    alpha: 0.05 as const,
+    claimMode: "single_primary_comparison" as const,
+    primaryComparisonId: "condition.vehicle:condition.drug",
+  };
+
   it("keeps display and analysis selections distinct without inferring scientific structure", () => {
     const input = baseInput();
     const snapshot = createWorkspaceGraphStateSnapshot({
@@ -159,11 +173,23 @@ describe("workspace Graph state selector", () => {
     const snapshot = createWorkspaceGraphStateSnapshot({
       ...baseInput(),
       comparisonGoal: "equivalence",
+      equivalencePlan,
     });
 
     expect(snapshot.comparisonGoal).toBe("equivalence");
+    expect(snapshot.equivalencePlan).toEqual(equivalencePlan);
     expect(snapshot.analysis).toBeNull();
     expect(snapshot.analysisRunId).toBeNull();
+  });
+
+  it("does not persist an equivalence plan under an ordinary difference goal", () => {
+    const snapshot = createWorkspaceGraphStateSnapshot({
+      ...baseInput(),
+      comparisonGoal: "difference",
+      equivalencePlan,
+    });
+
+    expect(snapshot.equivalencePlan).toBeUndefined();
   });
 
   it("retains an existing analysis-run reference only while analysis remains attached", () => {

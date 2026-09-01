@@ -80,4 +80,42 @@ describe("useExperimentGraphStateSnapshot", () => {
     expect(result.current).not.toBe(initialSnapshot);
     expect(result.current.graphType).toBe("bar");
   });
+
+  it("recomputes when the prespecified equivalence plan changes", () => {
+    const first = {
+      ...input(),
+      comparisonGoal: "equivalence" as const,
+      equivalencePlan: {
+        schemaVersion: "0.1.0" as const,
+        margin: {
+          scale: "raw_difference" as const,
+          lowerBound: -0.2,
+          upperBound: 0.2,
+          unit: "AU",
+          declaredAsPrespecified: true as const,
+        },
+        alpha: 0.05 as const,
+        claimMode: "single_primary_comparison" as const,
+        primaryComparisonId: "condition.vehicle:condition.drug",
+      },
+    };
+    const { result, rerender } = renderHook(
+      ({ value }: { value: WorkspaceGraphStateSnapshotInput }) =>
+        useExperimentGraphStateSnapshot(value),
+      { initialProps: { value: first } },
+    );
+    const initialSnapshot = result.current;
+    rerender({
+      value: {
+        ...first,
+        equivalencePlan: {
+          ...first.equivalencePlan,
+          margin: { ...first.equivalencePlan.margin, upperBound: 0.3 },
+        },
+      },
+    });
+
+    expect(result.current).not.toBe(initialSnapshot);
+    expect(result.current.equivalencePlan?.margin.upperBound).toBe(0.3);
+  });
 });

@@ -15,6 +15,7 @@ export type WorkspaceGraphStateSnapshotInput = Readonly<{
   analysisTimePointId: string | null;
   analysisMetric: TimeAnalysisPlan;
   comparisonGoal: NonNullable<WorkspaceGraphState["comparisonGoal"]>;
+  equivalencePlan?: WorkspaceGraphState["equivalencePlan"] | null;
   plannedContrastConditionIds: ReadonlyArray<readonly [string, string]>;
   graphType: WorkspaceGraphState["graphType"];
   grouping: NonNullable<WorkspaceGraphState["grouping"]>;
@@ -71,6 +72,7 @@ export function createWorkspaceGraphStateSnapshot(
     analysisTimePointId,
     analysisMetric,
     comparisonGoal,
+    equivalencePlan,
     plannedContrastConditionIds,
     graphType,
     grouping,
@@ -109,6 +111,7 @@ export function createWorkspaceGraphStateSnapshot(
     analysisTimePointId,
     analysisMetric,
     comparisonGoal,
+    ...(comparisonGoal === "equivalence" && equivalencePlan ? { equivalencePlan } : {}),
     graphType,
     grouping,
     layers,
