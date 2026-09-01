@@ -17,7 +17,7 @@
 
 | 順位 | 状態 | 作業                                         | ユーザー確認     | 完了条件                                                                                                                               |
 | ---- | ---- | -------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | ⬜   | 日英統合Alpha更新の公開判断 | 必要     | Windows/macOS証拠、checksum、release noteを揃え、同じBioFigureStatの次candidateとして公開可否を記録                                    |
+| 1    | 🟡   | 日英統合Alpha更新の公開判断 | 必要     | 両OS gate、Windows checksum、日英release note案は完了。macOS zip/checksum後、`v0.1.0-alpha.2`として公開するか判断                       |
 | 2    | 🟡   | macOS native UI harness     | 原則不要 | 製品経路は限定実機PASS。Accessibilityで入力値を取得できるrunnerで自動scenarioの初回PASSを記録                                         |
 | 3    | 🟡   | GraphとSpreadsheetの共通化  | 不要     | tick・zoom・native export controller・Graph state selectorを共通化済み。画面ごとの修正漏れをさらに減らし、既存`.lsa`と科学的意味を維持 |
 
