@@ -15,6 +15,7 @@ import {
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
 import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
 import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
+import { SpreadsheetDraftTextCell } from "./SpreadsheetDraftTextCell";
 import "./WorkspaceNestedMeasurementSheet.css";
 import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 
@@ -233,51 +234,33 @@ function ExpandedValueInput({
 }>) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const errorId = useId();
-  const { text, error, edit, accept, reportError } = useSpreadsheetCellDraft(
-    value === null ? "" : String(value),
-    { preserveDirtyOnCanonicalChange: true },
-  );
-  const invalid = error !== null;
   return (
-    <div className="nested-measurement-sheet__expanded-value">
-      <input
-        aria-label={label}
-        aria-describedby={
-          [describedBy, invalid ? errorId : null].filter(Boolean).join(" ") || undefined
+    <SpreadsheetDraftTextCell
+      wrapperClassName="nested-measurement-sheet__expanded-value"
+      canonicalText={value === null ? "" : String(value)}
+      preserveDirtyOnCanonicalChange
+      aria-label={label}
+      aria-describedby={describedBy}
+      disabled={disabled}
+      inputMode="decimal"
+      data-spreadsheet-row={gridRow}
+      data-spreadsheet-column={gridColumn}
+      data-expanded-field="value"
+      data-cell-key={cellKey}
+      data-value-index={valueIndex}
+      onPaste={onPaste}
+      onCommit={(text) => {
+        const parsed = parseOptionalSpreadsheetNumber(text);
+        if (parsed.kind !== "value") {
+          return t(
+            "数値を入力してください。入力内容は消していません。",
+            "Enter a numeric value. The entered content was retained.",
+          );
         }
-        aria-invalid={invalid || undefined}
-        disabled={disabled}
-        inputMode="decimal"
-        value={text}
-        data-spreadsheet-cell="true"
-        data-spreadsheet-row={gridRow}
-        data-spreadsheet-column={gridColumn}
-        data-expanded-field="value"
-        data-cell-key={cellKey}
-        data-value-index={valueIndex}
-        onBlur={() => {
-          if (!text.trim() && value === null) return;
-          const parsed = parseOptionalSpreadsheetNumber(text);
-          if (parsed.kind !== "value") {
-            reportError(t("数値を入力してください。入力内容は消していません。", "Enter a numeric value. The entered content was retained."));
-            return;
-          }
-          onCommit(parsed.value);
-          accept(String(parsed.value));
-        }}
-        onChange={(event) => {
-          edit(event.currentTarget.value);
-        }}
-        onKeyDown={moveSpreadsheetFocus}
-        onPaste={onPaste}
-      />
-      {invalid ? (
-        <small id={errorId} role="alert">
-          {error}
-        </small>
-      ) : null}
-    </div>
+        onCommit(parsed.value);
+        return null;
+      }}
+    />
   );
 }
 
