@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ExportCancelledError } from "./graphExport";
 import {
   saveAnalysisReviewSetExport,
+  saveGraphPanelSvgExport,
   saveGraphCsvExport,
   saveGraphPngExport,
   saveGraphSvgExport,
@@ -47,6 +48,21 @@ describe("graph export controller", () => {
     await expect(saveGraphCsvExport("x,y\n1,2\n", "figure.csv", deps)).resolves.toEqual({
       status: "cancelled",
     });
+  });
+
+  it("saves a precomposed Graph panel without reserializing its source Graphs", async () => {
+    const deps = dependencies();
+    const panel = '<svg data-panel="true"/>';
+
+    await expect(saveGraphPanelSvgExport(panel, "panel.svg", deps)).resolves.toEqual({
+      status: "saved",
+    });
+    expect(deps.saveText).toHaveBeenCalledWith(
+      panel,
+      "panel.svg",
+      "image/svg+xml;charset=utf-8",
+    );
+    expect(deps.serializeSvg).not.toHaveBeenCalled();
   });
 
   it("saves the self-contained review set through the same native-aware text boundary", async () => {

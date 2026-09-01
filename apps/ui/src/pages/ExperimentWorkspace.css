@@ -1150,6 +1150,12 @@
   font-weight: 700;
 }
 
+.experiment-workspace-graph-created.is-error {
+  border-left-color: #b64b4b;
+  color: #7f2929;
+  background: #fff4f4;
+}
+
 .experiment-workspace-table tbody th {
   color: #293648;
   font-weight: 740;
@@ -1334,6 +1340,26 @@
 .experiment-workspace-graph-tab.is-active {
   border-bottom-color: #4779e8;
   color: #315fab;
+}
+
+.experiment-workspace-graph-panel-export {
+  flex: 0 0 auto;
+  min-height: 36px;
+  margin: 2px 4px 2px auto;
+  padding: 5px 11px;
+  border: 1px solid #9eb3cf;
+  border-radius: 6px;
+  color: #315fab;
+  background: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.experiment-workspace-graph-panel-export:disabled {
+  color: #8793a3;
+  background: #f3f5f7;
+  cursor: not-allowed;
 }
 
 @media (max-width: 760px) {

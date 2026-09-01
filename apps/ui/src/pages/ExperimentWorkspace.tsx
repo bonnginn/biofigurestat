@@ -95,6 +95,7 @@ import {
   parseSpreadsheetNumber,
 } from "../components/spreadsheetValues";
 import { experimentGraphTypeLabel } from "../components/graph/experimentGraphTypeLabel";
+import { exportWorkspaceGraphPanel } from "../components/graph/workspaceGraphPanelExport";
 
 const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
   ? lazy(() =>
@@ -2962,6 +2963,10 @@ export function ExperimentWorkspace({
   );
   const [showLayerBuilder, setShowLayerBuilder] = useState(false);
   const [graphCreateMessage, setGraphCreateMessage] = useState<string | null>(null);
+  const [panelExportFeedback, setPanelExportFeedback] = useState<Readonly<{
+    kind: "success" | "error";
+    text: string;
+  }> | null>(null);
   const [graphs, setGraphs] = useState<WorkspaceGraphState[]>(() => [...initialGraphs]);
   const [activeGraphId, setActiveGraphId] = useState<string | null>(null);
   const [renamingGraphId, setRenamingGraphId] = useState<string | null>(null);
@@ -3948,6 +3953,45 @@ export function ExperimentWorkspace({
     setGraphRenameDraft("");
   };
 
+  const exportGraphPanel = async () => {
+    if (graphs.length < 2 || !graphWorkspaceRef.current) return;
+    setPanelExportFeedback(null);
+    try {
+      const result = await exportWorkspaceGraphPanel({
+        root: graphWorkspaceRef.current,
+        graphs,
+        projectTitle: draft.name,
+      });
+      if (result.status === "saved") {
+        setPanelExportFeedback({
+          kind: "success",
+          text: t(
+            "保存済みGraphを2列のパネルSVGにまとめました。",
+            "Saved the Graphs as a two-column panel SVG.",
+          ),
+        });
+      } else if (result.status === "failed") {
+        recordDiagnosticError("GRAPH_EXPORT_FAILED", result.error);
+        setPanelExportFeedback({
+          kind: "error",
+          text: t(
+            "パネルSVGを保存できませんでした。元のGraphは変更されていません。",
+            "Could not save the panel SVG. The source Graphs are unchanged.",
+          ),
+        });
+      }
+    } catch (error) {
+      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
+      setPanelExportFeedback({
+        kind: "error",
+        text: t(
+          "すべてのGraphの表示が完了してから、もう一度パネルを書き出してください。",
+          "Wait for every Graph to finish rendering, then export the panel again.",
+        ),
+      });
+    }
+  };
+
   const closeAdaptiveStructureRevision = () => {
     setStructureRevisionError(null);
     restoreStructureRevisionFocusRef.current = true;
@@ -4440,6 +4484,15 @@ export function ExperimentWorkspace({
       {graphCreateMessage ? (
         <p className="experiment-workspace-graph-created" role="status" aria-live="polite">
           {graphCreateMessage}
+        </p>
+      ) : null}
+      {panelExportFeedback ? (
+        <p
+          className={`experiment-workspace-graph-created${panelExportFeedback.kind === "error" ? " is-error" : ""}`}
+          role={panelExportFeedback.kind === "error" ? "alert" : "status"}
+          aria-live="polite"
+        >
+          {panelExportFeedback.text}
         </p>
       ) : null}
       {analysisInvalidationMessage ? (
@@ -5010,9 +5063,25 @@ export function ExperimentWorkspace({
                 </div>
               );
             })}
+            <button
+              className="experiment-workspace-graph-panel-export"
+              type="button"
+              disabled={graphs.length < 2}
+              onClick={() => void exportGraphPanel()}
+              title={t(
+                "保存済みGraphを再解析せず2列に並べます",
+                "Arrange saved Graphs in two columns without rerunning analysis",
+              )}
+            >
+              {t("パネルSVG", "Panel SVG")}
+            </button>
           </nav>
           {graphs.map((graph) => (
-            <div key={graph.id} hidden={graph.id !== activeGraphId}>
+            <div
+              key={graph.id}
+              hidden={graph.id !== activeGraphId}
+              data-workspace-graph-id={graph.id}
+            >
               <Suspense
                 fallback={
                   <p className="experiment-graph-help" role="status">

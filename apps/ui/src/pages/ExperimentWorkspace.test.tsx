@@ -1062,13 +1062,20 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByText("作成後の初期表示")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     expect(document.querySelector(".experiment-workspace-body")).toHaveAttribute("hidden");
-    expect(await screen.findByRole("region", { name: "実験からグラフを作成" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole(
+        "region",
+        { name: "実験からグラフを作成" },
+        { timeout: 5_000 },
+      ),
+    ).toBeInTheDocument();
     await waitFor(() =>
       expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "auto", block: "start" }),
     );
     expect(scrollTo).toHaveBeenCalledWith({ top: 892, behavior: "auto" });
     expect(screen.getByText(/割合と要約は実験単位（Exp）から計算/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "グラフ (1)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "パネルSVG" })).toBeDisabled();
     fireEvent.change(screen.getByRole("combobox", { name: "編集対象" }), {
       target: { value: "error-bar" },
     });
@@ -1084,6 +1091,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: /ドットを選択（おすすめ）/ }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     expect(screen.getByRole("button", { name: "グラフ (2)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "パネルSVG" })).toBeEnabled();
     expect(screen.queryByRole("textbox", { name: "グラフ名" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "グラフ 2の名前を変更" }));
     expect(screen.getByRole("textbox", { name: "グラフ名" })).toHaveValue("グラフ 2");

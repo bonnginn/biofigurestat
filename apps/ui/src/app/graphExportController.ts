@@ -49,6 +49,16 @@ export function saveGraphSvgExport(
   );
 }
 
+export function saveGraphPanelSvgExport(
+  svgText: string,
+  filename: string,
+  dependencies: GraphExportControllerDependencies = DEFAULT_DEPENDENCIES,
+): Promise<ControlledGraphExportResult> {
+  return controlExport(() =>
+    dependencies.saveText(svgText, filename, "image/svg+xml;charset=utf-8"),
+  );
+}
+
 export function saveGraphPngExport(
   svg: SVGSVGElement,
   filename: string,
