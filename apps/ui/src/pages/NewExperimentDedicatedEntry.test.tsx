@@ -6,8 +6,8 @@ import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
 import type { ProjectState } from "@lsaa/project";
 import { NewExperimentPage } from "./NewExperimentPage";
 
-function pasteGraphOnlyTable(value: string): void {
-  fireEvent.paste(screen.getByTestId("graph-only-cell-0-0"), {
+async function pasteGraphOnlyTable(value: string): Promise<void> {
+  fireEvent.paste(await screen.findByTestId("graph-only-cell-0-0"), {
     clipboardData: { getData: () => value },
   });
 }
@@ -170,7 +170,7 @@ describe("New Experiment dedicated entry handoff", () => {
     expect(onNavigate).not.toHaveBeenCalled();
   });
 
-  it("keeps Graph-only input and descriptive Graph available without persistence handlers", () => {
+  it("keeps Graph-only input and descriptive Graph available without persistence handlers", async () => {
     window.localStorage.setItem(ADAPTIVE_INPUT_FEATURE_FLAG, "enabled");
     const onNavigate = vi.fn();
     render(
@@ -180,7 +180,9 @@ describe("New Experiment dedicated entry handoff", () => {
     const graphOnly = screen.getByRole("button", { name: "手元の表からGraphを作るを開く" });
     expect(graphOnly).toBeEnabled();
     fireEvent.click(graphOnly);
-    expect(screen.getByRole("heading", { name: "手元の表からGraphを作る" })).toHaveFocus();
+    expect(
+      await screen.findByRole("heading", { name: "手元の表からGraphを作る" }),
+    ).toHaveFocus();
     expect(screen.getByRole("region", { name: "Graph用データシート" })).toBeVisible();
     expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("X / condition");
     expect(screen.getByTestId("graph-only-cell-1-0")).toBeEnabled();
@@ -199,7 +201,7 @@ describe("New Experiment dedicated entry handoff", () => {
       <NewExperimentPage browserPreview onNavigate={vi.fn()} onDedicatedEntryReady={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" }));
-    pasteGraphOnlyTable("Condition\tValue\nControl\t10\nDrug\t14");
+    await pasteGraphOnlyTable("Condition\tValue\nControl\t10\nDrug\t14");
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
       target: { value: "0" },
     });
@@ -244,7 +246,7 @@ describe("New Experiment dedicated entry handoff", () => {
     expect(screen.getByDisplayValue("unit-002")).toBeVisible();
   });
 
-  it("keeps explicit X/Y/ID mapping and raw rows when Statistics setup is canceled", () => {
+  it("keeps explicit X/Y/ID mapping and raw rows when Statistics setup is canceled", async () => {
     window.localStorage.setItem(ADAPTIVE_INPUT_FEATURE_FLAG, "enabled");
     const source = ["Condition\tValue\tDishID", "Control\t10\tdish-c1", "Drug\t14\tdish-d1"].join(
       "\n",
@@ -253,7 +255,7 @@ describe("New Experiment dedicated entry handoff", () => {
       <NewExperimentPage browserPreview onNavigate={vi.fn()} onDedicatedEntryReady={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" }));
-    pasteGraphOnlyTable(source);
+    await pasteGraphOnlyTable(source);
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
       target: { value: "0" },
     });
@@ -309,7 +311,7 @@ describe("New Experiment dedicated entry handoff", () => {
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" }));
-    pasteGraphOnlyTable(source);
+    await pasteGraphOnlyTable(source);
     fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
       target: { value: "0" },
     });

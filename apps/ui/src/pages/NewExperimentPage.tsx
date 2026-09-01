@@ -65,7 +65,6 @@ import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 import { bridgeGraphOnlyTableToStatistics } from "../app/graphOnlyStatisticsBridge";
 import { rebindGraphOnlyGraphsToWorkspace } from "../app/graphOnlyWorkspaceGraph";
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
-import { GraphOnlyVisualizationPage } from "./GraphOnlyVisualizationPage";
 import {
   createDedicatedEntryIntent,
   type DedicatedEntryIntent,
@@ -77,6 +76,12 @@ import { recordUsageEntry, recordUsageMilestone } from "../app/usageTelemetry";
 const ExperimentWorkspace = lazy(() =>
   import("./ExperimentWorkspace").then(({ ExperimentWorkspace: Workspace }) => ({
     default: Workspace,
+  })),
+);
+
+const GraphOnlyVisualizationPage = lazy(() =>
+  import("./GraphOnlyVisualizationPage").then(({ GraphOnlyVisualizationPage: Page }) => ({
+    default: Page,
   })),
 );
 
@@ -2476,10 +2481,20 @@ export function NewExperimentPage({
         return;
       }
     }
-    const heading = root.querySelector<HTMLElement>("h1");
-    if (!heading) return;
-    heading.tabIndex = -1;
-    heading.focus({ preventScroll: true });
+    const focusHeading = (): boolean => {
+      const heading = root.querySelector<HTMLElement>("h1");
+      if (!heading) return false;
+      heading.tabIndex = -1;
+      heading.focus({ preventScroll: true });
+      return true;
+    };
+    if (focusHeading()) return;
+
+    const observer = new MutationObserver(() => {
+      if (focusHeading()) observer.disconnect();
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, [stage]);
 
   const enterStageFromHub = (entryId: NewExperimentEntryId, nextStage: FlowStage) => {
@@ -3043,26 +3058,34 @@ export function NewExperimentPage({
       ) : null}
 
       {stage === "graph-only" ? (
-        <GraphOnlyVisualizationPage
-          onNavigate={onNavigate}
-          onBack={() => {
-            clearEntryDirtyLifecycle();
-            setStage("context");
-          }}
-          saveProject={saveUnresolvedVisualizationProject}
-          openProject={openUnresolvedVisualizationProject}
-          initialState={pendingGraphOnlyState}
-          initialTarget={initialGraphOnlyTarget}
-          initialDirty={entryDirtySourcesRef.current.graphOnly}
-          onDirtyChange={updateGraphOnlyDirty}
-          onRequestExit={onRequestExit}
-          onRegisterSaveHandler={onRegisterSaveHandler}
-          onStatisticsStructureRequested={(state) => {
-            setPendingGraphOnlyState(state);
-            setBiologicalHandoffError(null);
-            setStage("biological");
-          }}
-        />
+        <Suspense
+          fallback={
+            <p className="app-route-loading" role="status">
+              {localizedText(locale, "Graph入力画面を読み込んでいます…", "Loading Graph input…")}
+            </p>
+          }
+        >
+          <GraphOnlyVisualizationPage
+            onNavigate={onNavigate}
+            onBack={() => {
+              clearEntryDirtyLifecycle();
+              setStage("context");
+            }}
+            saveProject={saveUnresolvedVisualizationProject}
+            openProject={openUnresolvedVisualizationProject}
+            initialState={pendingGraphOnlyState}
+            initialTarget={initialGraphOnlyTarget}
+            initialDirty={entryDirtySourcesRef.current.graphOnly}
+            onDirtyChange={updateGraphOnlyDirty}
+            onRequestExit={onRequestExit}
+            onRegisterSaveHandler={onRegisterSaveHandler}
+            onStatisticsStructureRequested={(state) => {
+              setPendingGraphOnlyState(state);
+              setBiologicalHandoffError(null);
+              setStage("biological");
+            }}
+          />
+        </Suspense>
       ) : null}
 
       {stage === "design" && draft && (
