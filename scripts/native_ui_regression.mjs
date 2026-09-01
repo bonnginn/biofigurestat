@@ -234,19 +234,30 @@ if (action === "snapshot") {
     ? matchingNodes.find((node) => editableRoles.has(node.role)) || matchingNodes[0]
     : matchingNodes[0];
   if (!target) throw new Error("Accessibility element not found: " + wanted.join(" / "));
+  let typingPoint = null;
   if (action === "click") {
     target.element.actions.byName("AXPress").perform();
   } else if (action === "set") {
     target.element.value = replacement;
   } else if (action === "type") {
-    try { target.element.actions.byName("AXPress").perform(); } catch (_) {}
+    try {
+      const position = target.element.position();
+      const size = target.element.size();
+      typingPoint = [
+        Math.round(Number(position[0]) + Number(size[0]) / 2),
+        Math.round(Number(position[1]) + Number(size[1]) / 2),
+      ];
+      se.click({ at: typingPoint });
+    } catch (_) {
+      try { target.element.actions.byName("AXPress").perform(); } catch (_) {}
+    }
     try { target.element.focused = true; } catch (_) {}
     se.keystroke("a", { using: "command down" });
     se.keystroke(replacement);
   } else {
     throw new Error("Unsupported accessibility action: " + action);
   }
-  JSON.stringify({ ok: true, role: target.role, name: target.name });
+  JSON.stringify({ ok: true, role: target.role, name: target.name, typingPoint });
 }`;
 }
 

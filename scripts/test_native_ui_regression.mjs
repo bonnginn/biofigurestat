@@ -96,6 +96,7 @@ test("builds a bounded macOS Accessibility typing action without interpolating u
   assert.match(script, /quote \\" and 日本語/);
   assert.match(script, /AXTextField/);
   assert.match(script, /matchingNodes\.find\(\(node\) => editableRoles\.has\(node\.role\)\)/);
+  assert.match(script, /se\.click\(\{ at: typingPoint \}\)/);
   assert.match(script, /keystroke\("a", \{ using: "command down" \}\)/);
   assert.match(script, /keystroke\(replacement\)/);
 });
