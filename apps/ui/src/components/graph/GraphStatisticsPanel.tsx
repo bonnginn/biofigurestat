@@ -318,6 +318,20 @@ export function GraphStatisticsPanel({
       : effectiveContrastIntent === "control_vs_many"
         ? Math.max(1, conditionOptions.length - 1)
         : Math.max(1, plannedPairChoices.length);
+  const equivalenceComparisonOptions = (
+    plannedContrastConditionIds.length > 0
+      ? plannedContrastConditionIds
+          .map(([firstId, secondId]) => {
+            const first = conditionOptions.find(({ id }) => id === firstId);
+            const second = conditionOptions.find(({ id }) => id === secondId);
+            return first && second ? ({ first, second } as const) : null;
+          })
+          .filter((pair): pair is NonNullable<typeof pair> => pair !== null)
+      : plannedPairChoices
+  ).map(({ first, second }) => ({
+    id: `equivalence:${encodeURIComponent(first.id)}:${encodeURIComponent(second.id)}`,
+    label: `${first.label} vs ${second.label}`,
+  }));
   const plannedComparisonsMissing =
     effectiveContrastIntent === "planned_comparisons" && executablePlannedPairCount === 0;
   const executedRef = useRef(Boolean(initialAnalysis));
@@ -816,6 +830,7 @@ export function GraphStatisticsPanel({
               scale={equivalenceMarginScale}
               unit={equivalenceMarginUnit}
               comparisonCount={equivalenceComparisonCount}
+              comparisonOptions={equivalenceComparisonOptions}
               onPlanChange={onEquivalencePlanChange}
             />
           </>

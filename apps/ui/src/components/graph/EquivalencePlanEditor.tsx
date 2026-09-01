@@ -13,13 +13,17 @@ type Draft = Readonly<{
   rationale: string;
   declaredAsPrespecified: boolean;
   claimMode: EquivalenceAnalysisPlan["claimMode"];
+  primaryComparisonId: string;
 }>;
+
+type ComparisonOption = Readonly<{ id: string; label: string }>;
 
 type Props = Readonly<{
   plan?: EquivalenceAnalysisPlan | null;
   scale: EquivalenceMargin["scale"];
   unit: string;
   comparisonCount: number;
+  comparisonOptions?: readonly ComparisonOption[];
   onPlanChange?: (plan: EquivalenceAnalysisPlan | null) => void;
 }>;
 
@@ -30,6 +34,7 @@ function initialDraft(plan?: EquivalenceAnalysisPlan | null): Draft {
     rationale: plan?.margin.rationale ?? "",
     declaredAsPrespecified: Boolean(plan),
     claimMode: plan?.claimMode ?? "all_selected_comparisons",
+    primaryComparisonId: plan?.primaryComparisonId ?? "",
   };
 }
 
@@ -38,6 +43,7 @@ export function EquivalencePlanEditor({
   scale,
   unit,
   comparisonCount,
+  comparisonOptions = [],
   onPlanChange,
 }: Props) {
   const locale = useAppLocale();
@@ -68,6 +74,9 @@ export function EquivalencePlanEditor({
       },
       alpha: 0.05,
       claimMode: candidate.claimMode,
+      ...(candidate.claimMode === "single_primary_comparison"
+        ? { primaryComparisonId: candidate.primaryComparisonId }
+        : {}),
     });
     if (!parsed.success) {
       setValidation(
@@ -149,12 +158,33 @@ export function EquivalencePlanEditor({
                 "All selected comparisons must be equivalent",
               )}
             </option>
+            <option value="single_primary_comparison">
+              {t("事前に決めた1つの主比較", "One prespecified primary comparison")}
+            </option>
             <option value="individual_comparison_claims">
               {t(
                 "各比較について個別に結論を示す",
                 "Make an individual claim for each comparison",
               )}
             </option>
+          </select>
+        </label>
+      ) : null}
+      {comparisonCount > 1 && draft.claimMode === "single_primary_comparison" ? (
+        <label>
+          <span>{t("主比較", "Primary comparison")}</span>
+          <select
+            value={draft.primaryComparisonId}
+            onChange={(event) =>
+              update({ primaryComparisonId: event.currentTarget.value }, true)
+            }
+          >
+            <option value="">{t("選択してください", "Select a comparison")}</option>
+            {comparisonOptions.map((comparison) => (
+              <option key={comparison.id} value={comparison.id}>
+                {comparison.label}
+              </option>
+            ))}
           </select>
         </label>
       ) : null}
@@ -185,4 +215,3 @@ export function EquivalencePlanEditor({
     </fieldset>
   );
 }
-
