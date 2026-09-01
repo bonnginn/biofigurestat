@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appendMatrixView, createInitialProjectState, ProjectStateSchema } from "./state";
 import { createUnresolvedVisualizationProjectState } from "./unresolved-visualization";
 import { createUnresolvedVisualizationPromotionHistory } from "./entry-source-history";
-import { createHeatmapGraphSpec } from "@lsaa/graph-spec";
+import { createCoreTwoConditionGraphSpec, createHeatmapGraphSpec } from "@lsaa/graph-spec";
 import {
   openProjectStatePackage,
   saveProjectStatePackage,
@@ -160,6 +160,89 @@ function fixtureState() {
   });
 }
 
+function analyzedFixtureState() {
+  const base = fixtureState();
+  const request = {
+    protocolVersion: "0.1.0" as const,
+    requestId: "request.roundtrip.1",
+    projectId: base.metadata.projectId,
+    analysisId: "analysis.roundtrip.1",
+    templateId: "D01" as const,
+    templateVersion: "0.1.0",
+    method: "welch_t" as const,
+    contrastConditionIds: ["condition.dark", "condition.light"] as [string, string],
+    observations: base.observations.map((item) => {
+      if (item.measurement.kind !== "scalar") {
+        throw new Error("The analyzed Public Alpha fixture requires scalar observations.");
+      }
+      return {
+        observationId: item.id,
+        conditionId: item.conditionId,
+        value: item.measurement.value,
+        experimentalUnitId: item.unitInstanceId,
+      };
+    }),
+    options: {
+      alternative: "two_sided" as const,
+      confidenceLevel: 0.95,
+      multiplicityMethod: null,
+    },
+  };
+  const result = {
+    protocolVersion: "0.1.0" as const,
+    requestId: request.requestId,
+    status: "ok" as const,
+    engine: { name: "fixture", version: "0.1.0", packages: {} },
+    estimates: [],
+    tests: [
+      {
+        name: "welch_two_sample_t_test",
+        statisticName: "t",
+        statistic: -2,
+        degreesOfFreedom: [1.8],
+        pValue: 0.2,
+        adjustedPValue: null,
+        effectSizeName: "hedges_g",
+        effectSize: -1,
+      },
+    ],
+    diagnostics: [],
+    warnings: [],
+    completedAt: "2026-08-20T00:30:00Z",
+  };
+  const recommendation = {
+    templateId: "D01" as const,
+    templateVersion: "0.1.0",
+    recommendedMethod: "welch_t" as const,
+    alternativeMethods: ["student_t" as const, "mann_whitney" as const],
+    reasonCode: "two_independent_condition_groups",
+    explanation: "Separate experimental units.",
+    statisticalNDefinition: "Independent dishes",
+  };
+  const graphSpec = createCoreTwoConditionGraphSpec({
+    graphId: "graph.roundtrip.1",
+    templateId: "D01",
+    dataSource: {
+      kind: "analysis_result",
+      id: request.analysisId,
+      revision: request.requestId,
+    },
+    analysisResultId: request.requestId,
+    yLabel: "Normalized WB intensity",
+    yStartAtZero: true,
+  });
+
+  return createInitialProjectState({
+    metadata: base.metadata,
+    design: base.designRevisions.at(-1)!.design,
+    rawRevision: base.rawRevisions.at(-1)!,
+    unitInstances: base.unitInstances,
+    observations: base.observations,
+    actor: "researcher",
+    analysis: { recommendation, request, result, graphSpec },
+  });
+}
+
 describe("populated project round trip", () => {
   it("saves atomically and reopens the same validated canonical state", async () => {
     const storage = new MemoryStorage();
@@ -186,7 +269,7 @@ describe("populated project round trip", () => {
 
   it("opens a Public Alpha v0.2 package and preserves it through current save/reopen", async () => {
     const storage = new MemoryStorage();
-    const current = fixtureState();
+    const current = analyzedFixtureState();
     const { experimentWorkspace: _currentWorkspace, ...withoutWorkspace } = current;
     const alphaState = { ...withoutWorkspace, schemaVersion: "0.2.0" };
     const database = new TextEncoder().encode(JSON.stringify(alphaState));
@@ -250,6 +333,10 @@ describe("populated project round trip", () => {
       { kind: "scalar", value: 1 },
       { kind: "scalar", value: 1.4 },
     ]);
+    expect(opened.analysisRuns).toHaveLength(1);
+    expect(opened.analysisRuns[0]?.request.requestId).toBe("request.roundtrip.1");
+    expect(opened.graphs).toHaveLength(1);
+    expect(opened.graphs[0]?.spec.analysisResultId).toBe("request.roundtrip.1");
 
     const resaved = await saveProjectStatePackage({
       storage,
@@ -270,6 +357,8 @@ describe("populated project round trip", () => {
     expect(reopened).toEqual(resaved);
     expect(reopened.observations).toEqual(opened.observations);
     expect(reopened.unitInstances).toEqual(opened.unitInstances);
+    expect(reopened.analysisRuns).toEqual(opened.analysisRuns);
+    expect(reopened.graphs).toEqual(opened.graphs);
   });
 
   it("reopens exact unresolved entry history without making it canonical data", async () => {
