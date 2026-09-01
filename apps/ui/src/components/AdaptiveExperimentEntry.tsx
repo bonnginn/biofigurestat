@@ -10,6 +10,7 @@ import {
   type AdaptiveLocale,
 } from "@lsaa/adaptive-input";
 import { adaptiveSurvivalPaste, createAdaptiveWorkspace } from "../app/adaptiveWorkspace";
+import { localizedFailureMessage } from "../app/appLocale";
 import type { ExperimentCellMap, ExperimentSetDraft } from "../app/experimentDraft";
 import "./AdaptiveExperimentEntry.css";
 
@@ -57,6 +58,8 @@ const keyHeaders = (contract: StructureContract): string[] => {
 };
 
 export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalReady }: Props) {
+  const failure = (error: unknown, ja: string, en: string) =>
+    localizedFailureMessage(locale, error, ja, en);
   const [stage, setStage] = useState<"questions" | "input">("questions");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -137,11 +140,11 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
       setStage("input");
     } catch (error) {
       setMessage(
-        locale === "ja" && error instanceof Error
-          ? error.message
-          : locale === "ja"
-            ? "実験構造を作成できませんでした"
-            : "The experiment structure could not be created.",
+        failure(
+          error,
+          "実験構造を作成できませんでした",
+          "The experiment structure could not be created.",
+        ),
       );
     }
   };
@@ -194,11 +197,11 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
       onReady(workspace.draft, workspace.cells);
     } catch (error) {
       setMessage(
-        locale === "ja" && error instanceof Error
-          ? error.message
-          : locale === "ja"
-            ? "入力を対応づけられませんでした"
-            : "The input could not be mapped. Your pasted data were retained.",
+        failure(
+          error,
+          "入力を対応づけられませんでした",
+          "The input could not be mapped. Your pasted data were retained.",
+        ),
       );
     }
   };

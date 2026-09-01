@@ -49,7 +49,12 @@ import type {
   SaveProjectAction,
   SaveSpecializedEntryDraftProjectAction,
 } from "../app/projectActions";
-import { localizedFailureDetail, localizedText, useAppLocale } from "../app/appLocale";
+import {
+  localizedFailureDetail,
+  localizedFailureMessage,
+  localizedText,
+  useAppLocale,
+} from "../app/appLocale";
 import {
   createSpecializedEntryDraft,
   specializedSafeStop,
@@ -586,6 +591,8 @@ export function CommonCoveragePage({
 }: Props) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
+  const failure = (error: unknown, ja: string, en: string) =>
+    localizedFailureMessage(locale, error, ja, en);
   const entryIntent = inputEntryIntent ?? initialSpecializedEntryDraft?.state.entryIntent;
   const [currentSpecializedEntryDraft, setCurrentSpecializedEntryDraft] = useState(
     initialSpecializedEntryDraft,
@@ -1358,11 +1365,7 @@ export function CommonCoveragePage({
       recordUsageMilestone(usageRoute, "safe_stop");
       setExecutedRequest(null);
       setResult(null);
-      setMessage(
-        locale === "ja" && error instanceof Error
-          ? error.message
-          : t("解析できませんでした", "The analysis could not be completed."),
-      );
+      setMessage(failure(error, "解析できませんでした", "The analysis could not be completed."));
     }
   };
   let graph: React.ReactNode = null;
@@ -1473,11 +1476,11 @@ export function CommonCoveragePage({
   } catch (error) {
     graph = (
       <p role="alert">
-        {locale === "ja"
-          ? error instanceof Error
-            ? error.message
-            : "Graphを表示できません"
-          : "Check the data table before displaying the Graph."}
+        {failure(
+          error,
+          "Graphを表示できません",
+          "Check the data table before displaying the Graph.",
+        )}
       </p>
     );
   }
@@ -1665,12 +1668,11 @@ export function CommonCoveragePage({
         );
       } catch (error) {
         setMessage(
-          locale === "ja" && error instanceof Error
-            ? error.message
-            : t(
-                "入力途中のprojectを保存できませんでした",
-                "The in-progress project could not be saved. Your current entries were retained.",
-              ),
+          failure(
+            error,
+            "入力途中のprojectを保存できませんでした",
+            "The in-progress project could not be saved. Your current entries were retained.",
+          ),
         );
       }
       return;
@@ -1730,12 +1732,11 @@ export function CommonCoveragePage({
         );
       } catch (error) {
         setMessage(
-          locale === "ja" && error instanceof Error
-            ? error.message
-            : t(
-                "プロジェクトを保存できませんでした",
-                "The project could not be saved. Your current entries were retained.",
-              ),
+          failure(
+            error,
+            "プロジェクトを保存できませんでした",
+            "The project could not be saved. Your current entries were retained.",
+          ),
         );
       }
       return;
@@ -1877,12 +1878,11 @@ export function CommonCoveragePage({
       );
     } catch (error) {
       setMessage(
-        locale === "ja" && error instanceof Error
-          ? error.message
-          : t(
-              "プロジェクトを保存できませんでした",
-              "The project could not be saved. Your current entries were retained.",
-            ),
+        failure(
+          error,
+          "プロジェクトを保存できませんでした",
+          "The project could not be saved. Your current entries were retained.",
+        ),
       );
     }
   };

@@ -14,7 +14,7 @@ import {
   type ImportedSpreadsheetWorkbook,
   type SpreadsheetWorkbookImporter,
 } from "../app/spreadsheetWorkbookImport";
-import { localizedText, useAppLocale } from "../app/appLocale";
+import { localizedFailureMessage, localizedText, useAppLocale } from "../app/appLocale";
 import { SPREADSHEET_ZOOM_LEVELS, useSpreadsheetZoom } from "./spreadsheetZoom";
 import "./DelimitedTextSpreadsheet.css";
 
@@ -139,6 +139,8 @@ export function DelimitedTextSpreadsheet({
 }: Props) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
+  const failure = (error: unknown, ja: string, en: string) =>
+    localizedFailureMessage(locale, error, ja, en);
   const effectiveCaption = caption ?? t("データ表", "Data table");
   const {
     zoom: spreadsheetZoom,
@@ -208,12 +210,11 @@ export function DelimitedTextSpreadsheet({
       setWorkbookImportError(null);
     } catch (error) {
       setWorkbookImportError(
-        locale === "ja" && error instanceof Error
-          ? error.message
-          : t(
-              "worksheetをExpとしてまとめられませんでした。",
-              "The worksheets could not be combined as experiments.",
-            ),
+        failure(
+          error,
+          "worksheetをExpとしてまとめられませんでした。",
+          "The worksheets could not be combined as experiments.",
+        ),
       );
     }
   };
@@ -231,12 +232,11 @@ export function DelimitedTextSpreadsheet({
       applyImportedSheet(workbook, initialSheet);
     } catch (error) {
       setWorkbookImportError(
-        locale === "ja" && error instanceof Error && error.message.trim()
-          ? error.message
-          : t(
-              "Excel workbookを読み込めませんでした。",
-              "The Excel workbook could not be loaded.",
-            ),
+        failure(
+          error,
+          "Excel workbookを読み込めませんでした。",
+          "The Excel workbook could not be loaded.",
+        ),
       );
     } finally {
       setWorkbookImporting(false);
