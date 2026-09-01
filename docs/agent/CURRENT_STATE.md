@@ -517,6 +517,10 @@ dimensions and data domains are unchanged; future margin changes no longer requi
 independent coordinate edits in one preview. The focused preview/layout group passes 9 tests with
 UI typecheck and focused lint.
 
+The nonlinear-fit/observed-X/Y renderer also uses the shared plot rectangle for scaling, axes,
+ticks, legend anchors, and the X-title center. Its authoritative fitted curves and raw XY points
+are unchanged. The focused nonlinear/layout group passes 11 tests with UI typecheck and lint.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
