@@ -2197,12 +2197,14 @@ describe("ExperimentGraphWorkbench", () => {
       });
     });
     const runner = vi.fn<AnalysisRunner>(async () => analysisResult);
-    render(
+    const onStateChange = vi.fn();
+    const view = render(
       <ExperimentGraphWorkbench
         draft={draft}
         cells={cells}
         analysisRunner={runner}
         onClose={vi.fn()}
+        onStateChange={onStateChange}
       />,
     );
 
@@ -2217,14 +2219,39 @@ describe("ExperimentGraphWorkbench", () => {
     fireEvent.click(screen.getByText("Methodsと再現記録"));
     expect(screen.getByText(/解析した測定項目/)).toBeVisible();
 
-    selectInspectorTarget("data");
-    fireEvent.change(screen.getByRole("combobox", { name: "測定項目" }), {
+    view.rerender(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={cells}
+        analysisRunner={runner}
+        workspaceMode="statistics"
+        onClose={vi.fn()}
+        onStateChange={onStateChange}
+      />,
+    );
+    fireEvent.change(screen.getByRole("combobox", { name: "統計の測定項目" }), {
       target: { value: secondReadout.id },
     });
-    selectInspectorTarget("statistics");
+    expect(screen.getByRole("heading", { name: "Intensity" })).toBeVisible();
+    await waitFor(() =>
+      expect(onStateChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          axes: expect.objectContaining({ yTitle: "Intensity (a.u.)" }),
+        }),
+      ),
+    );
 
     expect(screen.queryByRole("group", { name: "統計解析結果" })).toBeNull();
     expect(screen.queryByText("Methodsと再現記録")).toBeNull();
+    view.rerender(
+      <ExperimentGraphWorkbench
+        draft={draft}
+        cells={cells}
+        analysisRunner={runner}
+        onClose={vi.fn()}
+        onStateChange={onStateChange}
+      />,
+    );
     expect(
       screen
         .getByRole("img", { name: /実験単位ごとのグラフ/ })

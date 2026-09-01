@@ -503,6 +503,15 @@ export function ExperimentGraphWorkbench({
     removeConditionFromPlannedContrasts(conditionId);
     setAnalysis(null);
   };
+  const handleReadoutChange = (readoutId: string) => {
+    const nextReadout = draft.readouts.find(({ id }) => id === readoutId);
+    setSelectedReadoutId(readoutId);
+    setAxes((current) => ({
+      ...current,
+      yTitle: defaultGraphYTitle(nextReadout),
+    }));
+    setAnalysis(null);
+  };
   const applyPreset = (preset: "simple" | "publication" | "presentation" | "raw" | "replicate") => {
     const next = graphPresentationForPreset({
       preset,
@@ -758,10 +767,7 @@ export function ExperimentGraphWorkbench({
               draft={draft}
               selectedReadoutId={activeReadoutId}
               selectedConditionIds={analysisConditionIds}
-              onReadoutChange={(readoutId) => {
-                setSelectedReadoutId(readoutId);
-                setAnalysis(null);
-              }}
+              onReadoutChange={handleReadoutChange}
               onConditionChange={handleAnalysisConditionChange}
             />
           )}
@@ -780,15 +786,7 @@ export function ExperimentGraphWorkbench({
               derivedLineageRows={derivedLineageRows}
               selectedTimePointIds={selectedTimePointIds}
               activeConditionIds={activeConditionIds}
-              onReadoutChange={(readoutId) => {
-                const nextReadout = draft.readouts.find(({ id }) => id === readoutId);
-                setSelectedReadoutId(readoutId);
-                setAxes((current) => ({
-                  ...current,
-                  yTitle: defaultGraphYTitle(nextReadout),
-                }));
-                setAnalysis(null);
-              }}
+              onReadoutChange={handleReadoutChange}
               onSourceModeChange={(mode) => {
                 setSourceMode(mode);
                 if (mode === "derived_metric") {
