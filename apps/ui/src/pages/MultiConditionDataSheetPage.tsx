@@ -76,11 +76,11 @@ import {
 import { nextRovingTabIndex } from "../components/rovingTab";
 import {
   createLegacyWorkspaceToken,
-  LEGACY_WORKFLOW_TABS,
   numericEngineObservations,
   type LegacyDataSheetAnalysisRun,
   type LegacyWorkflowTabId,
 } from "./legacyDataSheetShared";
+import { LegacyDataSheetWorkflowTabs } from "./LegacyDataSheetWorkflowTabs";
 import {
   formatProportionPercentage,
   parseSpreadsheetNumber,
@@ -983,35 +983,6 @@ export function MultiConditionDataSheetPage({
     onBack();
   };
 
-  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const next = nextRovingTabIndex(event.key, index, LEGACY_WORKFLOW_TABS.length);
-    if (next === null) return;
-    event.preventDefault();
-    setActiveTab(LEGACY_WORKFLOW_TABS[next].id);
-    document.getElementById(`multi-workflow-tab-${LEGACY_WORKFLOW_TABS[next].id}`)?.focus();
-  };
-
-  const statusFor = (tab: LegacyWorkflowTabId) =>
-    tab === "input"
-      ? validated
-        ? "検証済み"
-        : "未入力"
-      : tab === "analysis"
-        ? analysisRun
-          ? "解析済み"
-          : validated
-            ? "検証済み"
-            : "未入力"
-        : tab === "graph"
-          ? analysisRun?.graphModel
-            ? "解析済み"
-            : "未入力"
-          : saveStatus === "success"
-            ? "保存済み"
-            : validated
-              ? "検証済み"
-              : "未入力";
-
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={requestBack}>
@@ -1035,25 +1006,15 @@ export function MultiConditionDataSheetPage({
         </div>
         <span className="wizard-purpose-chip">{outcomeLabel}</span>
       </section>
-      <nav className="workflow-tabs" aria-label="解析ワークフロー" role="tablist">
-        {LEGACY_WORKFLOW_TABS.map(({ id, label }, index) => (
-          <button
-            key={id}
-            id={`multi-workflow-tab-${id}`}
-            className={`workflow-tab ${activeTab === id ? "is-active" : ""}`}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === id}
-            aria-controls={`multi-workflow-panel-${id}`}
-            tabIndex={activeTab === id ? 0 : -1}
-            onClick={() => setActiveTab(id)}
-            onKeyDown={(event) => onTabKeyDown(event, index)}
-          >
-            <span>{label}</span>
-            <small>{statusFor(id)}</small>
-          </button>
-        ))}
-      </nav>
+      <LegacyDataSheetWorkflowTabs
+        idPrefix="multi-workflow"
+        activeTab={activeTab}
+        validated={Boolean(validated)}
+        analysisComplete={Boolean(analysisRun)}
+        graphComplete={Boolean(analysisRun?.graphModel)}
+        saved={saveStatus === "success"}
+        onSelect={setActiveTab}
+      />
 
       {activeTab === "input" && (
         <div

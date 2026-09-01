@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   AnalysisEngineResultSchema,
@@ -73,11 +73,11 @@ import {
 import { nextRovingTabIndex } from "../components/rovingTab";
 import {
   createLegacyWorkspaceToken,
-  LEGACY_WORKFLOW_TABS,
   numericEngineObservations,
   type LegacyDataSheetAnalysisRun,
   type LegacyWorkflowTabId,
 } from "./legacyDataSheetShared";
+import { LegacyDataSheetWorkflowTabs } from "./LegacyDataSheetWorkflowTabs";
 import {
   formatProportionPercentage,
   parseSpreadsheetNumber,
@@ -1502,70 +1502,21 @@ export function DataSheetPage({
     }
   };
 
-  const handleWorkflowTabKeyDown = (
-    event: KeyboardEvent<HTMLButtonElement>,
-    currentIndex: number,
-  ) => {
-    const nextIndex = nextRovingTabIndex(event.key, currentIndex, LEGACY_WORKFLOW_TABS.length);
-    if (nextIndex === null) return;
-    event.preventDefault();
-    const nextTab = LEGACY_WORKFLOW_TABS[nextIndex].id;
-    setActiveTab(nextTab);
-    document.getElementById(`workflow-tab-${nextTab}`)?.focus();
-  };
-
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={requestBack}>
         <span aria-hidden="true">←</span> デザイン確認に戻る
       </button>
 
-      <nav className="workflow-tabs" aria-label="解析ワークフロー" role="tablist">
-        {LEGACY_WORKFLOW_TABS.map(({ id: tab, label }) => {
-          const status =
-            tab === "input"
-              ? validated
-                ? "検証済み"
-                : "未入力"
-              : tab === "analysis"
-                ? analysisRun
-                  ? "解析済み"
-                  : validated
-                    ? "検証済み"
-                    : "未入力"
-                : tab === "graph"
-                  ? analysisRun?.graphModel
-                    ? "解析済み"
-                    : "未入力"
-                  : saveStatus === "success"
-                    ? "保存済み"
-                    : validated
-                      ? "検証済み"
-                      : "未入力";
-          return (
-            <button
-              key={tab}
-              id={`workflow-tab-${tab}`}
-              className={`workflow-tab ${activeTab === tab ? "is-active" : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab}
-              aria-controls={`workflow-panel-${tab}`}
-              tabIndex={activeTab === tab ? 0 : -1}
-              onClick={() => setActiveTab(tab)}
-              onKeyDown={(event) =>
-                handleWorkflowTabKeyDown(
-                  event,
-                  LEGACY_WORKFLOW_TABS.findIndex(({ id }) => id === tab),
-                )
-              }
-            >
-              <span>{label}</span>
-              <small>{status}</small>
-            </button>
-          );
-        })}
-      </nav>
+      <LegacyDataSheetWorkflowTabs
+        idPrefix="workflow"
+        activeTab={activeTab}
+        validated={Boolean(validated)}
+        analysisComplete={Boolean(analysisRun)}
+        graphComplete={Boolean(analysisRun?.graphModel)}
+        saved={saveStatus === "success"}
+        onSelect={setActiveTab}
+      />
 
       {
         <div className="workflow-panel-intro" role="presentation" hidden={activeTab !== "input"}>
