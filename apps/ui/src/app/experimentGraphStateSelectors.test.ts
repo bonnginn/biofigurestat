@@ -14,6 +14,7 @@ const baseInput = (): WorkspaceGraphStateSnapshotInput => ({
   selectedTimePointIds: ["time.0", "time.24"],
   analysisTimePointId: null,
   analysisMetric: { kind: "selected_timepoint" },
+  comparisonGoal: "difference",
   plannedContrastConditionIds: [],
   graphType: "dot",
   grouping: {
@@ -152,6 +153,17 @@ describe("workspace Graph state selector", () => {
     expect(snapshot.dataSets?.annotationSet).toEqual([
       { comparisonId: "comparison.result" },
     ]);
+  });
+
+  it("persists the scientific comparison goal without manufacturing an analysis", () => {
+    const snapshot = createWorkspaceGraphStateSnapshot({
+      ...baseInput(),
+      comparisonGoal: "equivalence",
+    });
+
+    expect(snapshot.comparisonGoal).toBe("equivalence");
+    expect(snapshot.analysis).toBeNull();
+    expect(snapshot.analysisRunId).toBeNull();
   });
 
   it("retains an existing analysis-run reference only while analysis remains attached", () => {

@@ -258,6 +258,8 @@ export const ExperimentWorkspaceStateSchema = z
             baselineTime: z.number().finite().optional(),
           })
           .optional(),
+        /** Scientific question only; it never changes or substitutes an engine method. */
+        comparisonGoal: z.enum(["difference", "equivalence"]).optional(),
         graphType: z
           .enum([
             "dot",

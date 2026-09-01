@@ -29,6 +29,7 @@ import {
 type StatisticalMethod = AnalysisRecommendation["recommendedMethod"];
 export type ContrastIntent =
   "all_pairs" | "control_vs_many" | "omnibus_only" | "planned_comparisons";
+export type ScientificComparisonGoal = "difference" | "equivalence";
 
 export type StatisticalMethodChoice = Readonly<{
   method: StatisticalMethod;

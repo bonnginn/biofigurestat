@@ -108,6 +108,23 @@ describe("experiment-workspace graph channel persistence", () => {
     expect(parsed.graphs[0]?.axes.tickDirection).toBeUndefined();
     expect(parsed.graphs[0]?.axes.showCategoryGroupSeparators).toBeUndefined();
   });
+
+  it("keeps the scientific comparison goal optional for legacy projects and round-trips equivalence", () => {
+    const legacy = ExperimentWorkspaceStateSchema.parse(workspace);
+    expect(legacy.graphs[0]?.comparisonGoal).toBeUndefined();
+
+    const withEquivalence = {
+      ...structuredClone(workspace),
+      graphs: workspace.graphs.map((graph, index) =>
+        index === 0 ? { ...graph, comparisonGoal: "equivalence" as const } : graph,
+      ),
+    };
+    const roundTrip = ExperimentWorkspaceStateSchema.parse(
+      JSON.parse(JSON.stringify(ExperimentWorkspaceStateSchema.parse(withEquivalence))),
+    );
+
+    expect(roundTrip.graphs[0]?.comparisonGoal).toBe("equivalence");
+  });
 });
 
 const design = {

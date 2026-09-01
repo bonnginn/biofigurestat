@@ -69,6 +69,27 @@ describe("useExperimentGraphStatisticsIntent", () => {
     expect(clearAnalysis).toHaveBeenCalledOnce();
   });
 
+  it("keeps equivalence separate from contrast intent and does not select an NHST method", () => {
+    const clearAnalysis = vi.fn();
+    const recordEvent = vi.fn();
+    const { result } = renderHook(() =>
+      useExperimentGraphStatisticsIntent({ clearAnalysis, recordEvent }),
+    );
+    const initialMethod = result.current.selectedMethod;
+
+    act(() => result.current.changeComparisonGoal("equivalence"));
+
+    expect(result.current.comparisonGoal).toBe("equivalence");
+    expect(result.current.contrastIntent).toBe("all_pairs");
+    expect(result.current.selectedMethod).toBe(initialMethod);
+    expect(recordEvent).toHaveBeenCalledWith(
+      "statistics_comparison_goal_selected",
+      { goal: "equivalence" },
+      "analysis_only",
+    );
+    expect(clearAnalysis).toHaveBeenCalledOnce();
+  });
+
   it("keeps correlation choice synchronized with the selected method", () => {
     const clearAnalysis = vi.fn();
     const { result } = renderHook(() =>

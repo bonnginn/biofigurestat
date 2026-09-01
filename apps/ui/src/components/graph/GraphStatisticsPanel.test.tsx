@@ -143,6 +143,73 @@ it("shows the recommendation and analysis action in English without changing the
   expectNoJapaneseUi(view.container);
 });
 
+it("safe-stops an equivalence goal without recommending or running ordinary NHST", () => {
+  const analysisRunner = vi.fn();
+  const onComparisonGoalChange = vi.fn();
+  render(
+    <GraphStatisticsPanel
+      assessment={readyAssessment}
+      design={panelDesign()}
+      analysisRunner={analysisRunner}
+      comparisonGoal="equivalence"
+      onComparisonGoalChange={onComparisonGoalChange}
+      relationshipAlreadyDeclared
+    />,
+  );
+
+  expect(screen.getByText("同等性解析は現在未サポートです")).toBeVisible();
+  expect(screen.getByText(/通常のANOVAやt検定でp > 0.05となっても/)).toBeVisible();
+  expect(screen.getByText(/観測データから自動生成しません/)).toBeVisible();
+  expect(screen.queryByText("推奨: Welchの2標本t検定")).toBeNull();
+  expect(screen.queryByRole("button", { name: "選択した解析を実行" })).toBeNull();
+  expect(analysisRunner).not.toHaveBeenCalled();
+
+  fireEvent.click(screen.getByRole("radio", { name: "差があるか調べる" }));
+  expect(onComparisonGoalChange).toHaveBeenCalledWith("difference");
+});
+
+it("states that a non-significant difference test does not establish equivalence", () => {
+  act(() => setAppLocale("en"));
+  const result = AnalysisEngineResultSchema.parse({
+    protocolVersion: "0.1.0",
+    requestId: request.requestId,
+    status: "ok",
+    engine: { name: "lsaa-python", version: "test", packages: {} },
+    estimates: [],
+    tests: [
+      {
+        name: "welch_t",
+        statisticName: "t",
+        statistic: 0.4,
+        degreesOfFreedom: [2],
+        pValue: 0.72,
+        adjustedPValue: null,
+        effectSizeName: "hedges_g",
+        effectSize: 0.1,
+      },
+    ],
+    diagnostics: [],
+    warnings: [],
+    completedAt: "2026-09-01T00:00:00.000Z",
+  });
+  const view = render(
+    <GraphStatisticsPanel
+      assessment={readyAssessment}
+      design={panelDesign()}
+      analysisRunner={vi.fn()}
+      initialAnalysis={{ request, result }}
+      relationshipAlreadyDeclared
+    />,
+  );
+
+  expect(
+    screen.getByText(
+      "No statistically significant difference was detected. This result does not demonstrate equivalence or absence of an effect.",
+    ),
+  ).toBeVisible();
+  expectNoJapaneseUi(view.container);
+});
+
 const defaultConditionOptions = [
   { id: "condition.vehicle", label: "Vehicle" },
   { id: "condition.drug", label: "Drug" },

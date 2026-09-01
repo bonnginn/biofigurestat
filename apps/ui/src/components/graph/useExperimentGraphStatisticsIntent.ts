@@ -5,7 +5,10 @@ import {
   recordBenchmarkEvent,
   type BenchmarkEventEffect,
 } from "../../app/benchmarkEvaluation";
-import type { ContrastIntent } from "../../app/experimentDraftAnalysis";
+import type {
+  ContrastIntent,
+  ScientificComparisonGoal,
+} from "../../app/experimentDraftAnalysis";
 import type { WorkspaceGraphAnalysis } from "../../app/experimentWorkspaceProject";
 import { statisticalMethodForContrastIntent } from "./experimentGraphStatistics";
 
@@ -18,6 +21,7 @@ type RecordEvent = (
 
 export function useExperimentGraphStatisticsIntent(input: Readonly<{
   initialAnalysis?: WorkspaceGraphAnalysis | null;
+  initialComparisonGoal?: ScientificComparisonGoal;
   clearAnalysis: () => void;
   recordEvent?: RecordEvent;
 }>) {
@@ -42,6 +46,9 @@ export function useExperimentGraphStatisticsIntent(input: Readonly<{
         ])
       : [],
   );
+  const [comparisonGoal, setComparisonGoal] = useState<ScientificComparisonGoal>(
+    input.initialComparisonGoal ?? "difference",
+  );
 
   const recordMethod = (method: StatisticalMethod, recommended: StatisticalMethod = method) => {
     recordEvent(
@@ -55,6 +62,7 @@ export function useExperimentGraphStatisticsIntent(input: Readonly<{
   return {
     correlationMethod,
     selectedMethod,
+    comparisonGoal,
     contrastIntent,
     plannedContrastConditionIds,
     changeCorrelationMethod(method: "pearson" | "spearman", recommended?: StatisticalMethod) {
@@ -65,6 +73,11 @@ export function useExperimentGraphStatisticsIntent(input: Readonly<{
     changeSelectedMethod(method: StatisticalMethod, recommended?: StatisticalMethod) {
       setSelectedMethod(method);
       recordMethod(method, recommended);
+    },
+    changeComparisonGoal(goal: ScientificComparisonGoal) {
+      setComparisonGoal(goal);
+      recordEvent("statistics_comparison_goal_selected", { goal }, "analysis_only");
+      input.clearAnalysis();
     },
     changePlannedContrastConditionIds(pairs: readonly (readonly [string, string])[]) {
       setPlannedContrastConditionIds([...pairs]);

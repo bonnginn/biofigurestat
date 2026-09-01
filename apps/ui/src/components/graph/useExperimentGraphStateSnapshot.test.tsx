@@ -14,6 +14,7 @@ function input(): WorkspaceGraphStateSnapshotInput {
     selectedTimePointIds: ["time.0", "time.24"],
     analysisTimePointId: "time.24",
     analysisMetric: { kind: "selected_timepoint" },
+    comparisonGoal: "difference",
     plannedContrastConditionIds: [],
     graphType: "dot",
     grouping: {

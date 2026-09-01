@@ -145,15 +145,18 @@ export function ExperimentGraphWorkbench({
   const {
     correlationMethod,
     selectedMethod: selectedStatisticalMethod,
+    comparisonGoal,
     contrastIntent,
     plannedContrastConditionIds,
     changeCorrelationMethod,
     changeSelectedMethod,
+    changeComparisonGoal,
     changePlannedContrastConditionIds,
     removeConditionFromPlannedContrasts,
     changeContrastIntent,
   } = useExperimentGraphStatisticsIntent({
     initialAnalysis: initialState?.analysis,
+    initialComparisonGoal: initialState?.comparisonGoal,
     clearAnalysis: () => setAnalysis(null),
   });
   const methodsText = useMemo(
@@ -179,6 +182,7 @@ export function ExperimentGraphWorkbench({
     selectedTimePointIds,
     analysisTimePointId,
     analysisMetric: timeAnalysis,
+    comparisonGoal,
     plannedContrastConditionIds,
     graphType,
     grouping,
@@ -694,6 +698,8 @@ export function ExperimentGraphWorkbench({
                           analysisAssessment.recommendedMethod ?? method,
                         ),
                       selectedMethod: selectedStatisticalMethod,
+                      comparisonGoal,
+                      onComparisonGoalChange: changeComparisonGoal,
                       onSelectedMethodChange: (method) =>
                         changeSelectedMethod(
                           method,

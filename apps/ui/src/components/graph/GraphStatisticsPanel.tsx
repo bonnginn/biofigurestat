@@ -11,7 +11,11 @@ import {
 import type { ExperimentDesign } from "@lsaa/domain";
 
 import { cancelLocalAnalysis, type AnalysisRunner } from "../../app/analysisClient";
-import type { ContrastIntent, DraftAnalysisAssessment } from "../../app/experimentDraftAnalysis";
+import type {
+  ContrastIntent,
+  DraftAnalysisAssessment,
+  ScientificComparisonGoal,
+} from "../../app/experimentDraftAnalysis";
 import {
   nestedIndependentSourceCorrection,
   type DraftAnalysisCorrection,
@@ -52,6 +56,8 @@ type GraphStatisticsPanelProps = Readonly<{
   onCorrelationMethodChange?: (method: "pearson" | "spearman") => void;
   selectedMethod?: AnalysisRecommendation["recommendedMethod"];
   onSelectedMethodChange?: (method: AnalysisRecommendation["recommendedMethod"]) => void;
+  comparisonGoal?: ScientificComparisonGoal;
+  onComparisonGoalChange?: (goal: ScientificComparisonGoal) => void;
   contrastIntent?: ContrastIntent;
   onContrastIntentChange?: (intent: ContrastIntent) => void;
   conditionOptions?: readonly ConditionOption[];
@@ -237,6 +243,8 @@ export function GraphStatisticsPanel({
   onCorrelationMethodChange,
   selectedMethod,
   onSelectedMethodChange,
+  comparisonGoal = "difference",
+  onComparisonGoalChange,
   contrastIntent,
   onContrastIntentChange,
   conditionOptions = [],
@@ -282,6 +290,7 @@ export function GraphStatisticsPanel({
   const sharedSourcePairing =
     matchedRelationship?.kind === "shared_source" ? matchedRelationship : null;
   const effectiveContrastIntent = contrastIntent ?? assessment.contrastIntent;
+  const equivalenceSelected = comparisonGoal === "equivalence";
   const plannedPairChoices = conditionOptions.flatMap((first, firstIndex) =>
     conditionOptions.slice(firstIndex + 1).map((second) => ({ first, second })),
   );
@@ -583,6 +592,9 @@ export function GraphStatisticsPanel({
           return label ? [{ test, label, index }] : [];
         })
       : [];
+  const hasNonSignificantDifferenceResult =
+    result?.status === "ok" &&
+    result.tests.some((test) => (test.adjustedPValue ?? test.pValue) >= 0.05);
   const diagnosticItems =
     result?.status === "ok"
       ? [
@@ -605,6 +617,14 @@ export function GraphStatisticsPanel({
     locale === "en"
       ? humanMethodLabel(assessment.recommendedMethod ?? assessment.method)
       : assessment.title.replace(/を推奨$/, "");
+  const equivalenceUnsupportedTitle = t(
+    "同等性解析は現在未サポートです",
+    "Equivalence analysis is currently unsupported",
+  );
+  const equivalenceUnsupportedReason = t(
+    "この目的には、データを見る前に科学的に定めた許容差と、実験構造に対応したequivalence analysisが必要です。通常のANOVAやt検定でp > 0.05となっても、同等性や影響がないことを示したことにはなりません。入力データと記述的グラフは保持します。",
+    "This objective requires a scientifically predefined margin and an equivalence analysis appropriate for the experimental structure. A standard ANOVA or t-test with p > 0.05 does not demonstrate equivalence or absence of an effect. Entered data and the descriptive Graph are retained.",
+  );
   const recommendationReason =
     locale === "en"
       ? `The design contains ${assessment.nByCondition.length} ${matchedAnalysis ? "matched" : "independent"} conditions (${assessment.nByCondition.map(({ label, n }) => `${label}: n=${n}`).join(", ")}). The recommendation follows the declared experimental-unit relationship and comparison objective; multiplicity is handled when condition comparisons are requested.`
@@ -644,8 +664,8 @@ export function GraphStatisticsPanel({
     : assessment.graphAnalysisSetDifference;
   const externalLlmPrompt = createStatisticsConsultationPrompt({
     conditions: conditionOptions.map(({ label }) => label),
-    methodTitle: recommendationTitle,
-    methodReason: recommendationReason,
+    methodTitle: equivalenceSelected ? equivalenceUnsupportedTitle : recommendationTitle,
+    methodReason: equivalenceSelected ? equivalenceUnsupportedReason : recommendationReason,
     nByCondition: Object.fromEntries(assessment.nByCondition.map(({ label, n }) => [label, n])),
     missingCount: assessment.missingCount,
     notPlannedCount: assessment.notPlannedCount,
@@ -691,8 +711,57 @@ export function GraphStatisticsPanel({
         />
         <ExternalLlmConsultation prompt={externalLlmPrompt} placement="statistics" />
       </div>
+      {assessment.state === "ready" ? (
+        <fieldset className="experiment-graph-method-choices">
+          <legend>{t("解析の目的", "Analysis goal")}</legend>
+          <label>
+            <input
+              type="radio"
+              name="scientific-comparison-goal"
+              value="difference"
+              checked={!equivalenceSelected}
+              onChange={() => {
+                setResult(null);
+                onAnalysisChange?.(null);
+                onComparisonGoalChange?.("difference");
+              }}
+            />
+            <span>{t("差があるか調べる", "Detect a difference")}</span>
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="scientific-comparison-goal"
+              value="equivalence"
+              checked={equivalenceSelected}
+              onChange={() => {
+                setResult(null);
+                onAnalysisChange?.(null);
+                onComparisonGoalChange?.("equivalence");
+              }}
+            />
+            <span>
+              {t(
+                "実質的に同等か調べる（現在未サポート）",
+                "Test for equivalence / no meaningful difference (currently unsupported)",
+              )}
+            </span>
+          </label>
+        </fieldset>
+      ) : null}
       <div className={`experiment-graph-recommendation is-${assessment.state}`}>
-        {assessment.state === "ready" ? (
+        {equivalenceSelected && assessment.state === "ready" ? (
+          <>
+            <strong>{equivalenceUnsupportedTitle}</strong>
+            <p>{equivalenceUnsupportedReason}</p>
+            <p>
+              {t(
+                "Equivalence marginはBioFigureStatが観測データから自動生成しません。正式実装では事前指定を必須にします。",
+                "BioFigureStat will not derive an equivalence margin from the observed data. A future supported workflow will require a prespecified margin.",
+              )}
+            </p>
+          </>
+        ) : assessment.state === "ready" ? (
           <>
             <strong>
               {t("推奨", "Recommended")}: {recommendationTitle}
@@ -805,7 +874,7 @@ export function GraphStatisticsPanel({
         </div>
       ) : null}
 
-      {assessment.state === "ready" ? (
+      {assessment.state === "ready" && !equivalenceSelected ? (
         <>
           {assessment.request?.protocolVersion === "0.2.0" ||
           assessment.request?.protocolVersion === "0.4.0" ? (
@@ -1273,6 +1342,14 @@ export function GraphStatisticsPanel({
                 </table>
               </div>
             </details>
+          ) : null}
+          {hasNonSignificantDifferenceResult ? (
+            <p className="experiment-graph-help" role="note">
+              {t(
+                "統計学的有意差は検出されませんでした。この結果だけでは、条件が同等であることや影響がないことを示したことにはなりません。",
+                "No statistically significant difference was detected. This result does not demonstrate equivalence or absence of an effect.",
+              )}
+            </p>
           ) : null}
           {diagnosticItems.length > 0 ? (
             <details
