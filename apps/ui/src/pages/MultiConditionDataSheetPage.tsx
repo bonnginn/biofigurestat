@@ -49,6 +49,7 @@ import {
   defaultAnalysisRunner,
   type AnalysisRunner,
 } from "../app/analysisClient";
+import { localizedText, useAppLocale } from "../app/appLocale";
 import { updateNestedPayloadExperimentDate } from "../app/nestedPayloadDates";
 import {
   actionErrorMessage,
@@ -275,6 +276,8 @@ export function MultiConditionDataSheetPage({
   onRequestExit,
   onRegisterSaveHandler,
 }: Props) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const isRepeated = recommendation.templateId === "D04";
   const initialDerivedRevision = initialProject?.state.derivedDatasetRevisions.find(
     (revision) =>
@@ -954,7 +957,14 @@ export function MultiConditionDataSheetPage({
     } catch (error) {
       setSaveStatus("error");
       setSaveError(
-        actionErrorMessage(error, "プロジェクトを保存できませんでした。入力は保持されています。"),
+        actionErrorMessage(
+          error,
+          t(
+            "プロジェクトを保存できませんでした。入力は保持されています。",
+            "The project could not be saved. Your entries are still retained.",
+          ),
+          locale,
+        ),
       );
       return false;
     }

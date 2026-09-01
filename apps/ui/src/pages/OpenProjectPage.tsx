@@ -371,6 +371,7 @@ function PersistedProjectView({
               "D17 projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
               "The saved D17 project could not be restored safely. The source file was not changed.",
             ),
+            locale,
           )}
         </p>
       );
@@ -424,6 +425,7 @@ function PersistedProjectView({
                 "Survival projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
                 "The saved Survival project could not be restored safely. The source file was not changed.",
               ),
+              locale,
             )}
           </p>
         );
@@ -575,6 +577,7 @@ function PersistedProjectView({
             "編集画面を安全に復元できません。元ファイルは変更されていません。",
             "The editor could not be restored safely. The source file was not changed.",
           ),
+          locale,
         )}
       </p>
     );
@@ -653,6 +656,7 @@ export function OpenProjectPage({
         actionErrorMessage(
           error,
           t("プロジェクトを開けませんでした。現在のワークスペースは変更されていません。", "The project could not be opened. The current workspace was not changed."),
+          locale,
         ),
       );
     }
@@ -676,7 +680,13 @@ export function OpenProjectPage({
       );
     } catch (error) {
       setStatus("error");
-      setMessage(actionErrorMessage(error, t("旧形式のprojectフォルダを取り込めませんでした。", "The legacy project folder could not be imported.")));
+      setMessage(
+        actionErrorMessage(
+          error,
+          t("旧形式のprojectフォルダを取り込めませんでした。", "The legacy project folder could not be imported."),
+          locale,
+        ),
+      );
     }
   }, [locale, onProjectOpened, openLegacyProject]);
 

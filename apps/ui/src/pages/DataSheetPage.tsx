@@ -46,6 +46,7 @@ import {
   defaultAnalysisRunner,
   type AnalysisRunner,
 } from "../app/analysisClient";
+import { localizedText, useAppLocale } from "../app/appLocale";
 import { updateNestedPayloadExperimentDate } from "../app/nestedPayloadDates";
 import {
   actionErrorMessage,
@@ -719,6 +720,8 @@ export function DataSheetPage({
   onRequestExit,
   onRegisterSaveHandler,
 }: DataSheetPageProps) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const initialDerivedRevision = initialProject?.state.derivedDatasetRevisions.find(
     (revision) =>
       revision.sourceRawRevisionId === initialProject.state.activeRawRevisionId &&
@@ -1190,7 +1193,11 @@ export function DataSheetPage({
       setSaveError(
         actionErrorMessage(
           error,
-          "プロジェクトを保存できませんでした。入力したデータは保持されています。",
+          t(
+            "プロジェクトを保存できませんでした。入力したデータは保持されています。",
+            "The project could not be saved. Your entered data is still retained.",
+          ),
+          locale,
         ),
       );
       return false;

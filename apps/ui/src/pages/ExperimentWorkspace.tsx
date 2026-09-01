@@ -3927,7 +3927,11 @@ export function ExperimentWorkspace({
       setAnalysisInvalidationMessage(
         actionErrorMessage(
           error,
-          "現在の測定値を安全に保持できないため、実験の組み立て編集を開始しませんでした。",
+          t(
+            "現在の測定値を安全に保持できないため、実験の組み立て編集を開始しませんでした。",
+            "Experiment structure editing was not started because the current measurements could not be retained safely.",
+          ),
+          locale,
         ),
       );
     }
@@ -4075,7 +4079,13 @@ export function ExperimentWorkspace({
         recordDiagnosticError("PROJECT_SAVE_FAILED", error);
         recordDiagnosticEvent("project_save_failed", { stage: "unknown" });
         setSaveStatus("error");
-        setSaveMessage(actionErrorMessage(error, "プロジェクトを保存できませんでした。"));
+        setSaveMessage(
+          actionErrorMessage(
+            error,
+            t("プロジェクトを保存できませんでした。", "The project could not be saved."),
+            locale,
+          ),
+        );
         return false;
       }
     },

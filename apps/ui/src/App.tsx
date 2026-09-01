@@ -885,7 +885,11 @@ export default function App({
           setSystemOpenError(
             actionErrorMessage(
               error,
-              "プロジェクトを開けませんでした。現在のワークスペースは変更されていません。",
+              t(
+                "プロジェクトを開けませんでした。現在のワークスペースは変更されていません。",
+                "The project could not be opened. The current workspace was not changed.",
+              ),
+              locale,
             ),
           );
         }
@@ -931,7 +935,13 @@ export default function App({
             }
           } catch (error) {
             recordDiagnosticError("PROJECT_OPEN_FAILED", error);
-            setSystemOpenError(actionErrorMessage(error, "プロジェクトタブを開けませんでした。"));
+            setSystemOpenError(
+              actionErrorMessage(
+                error,
+                t("プロジェクトタブを開けませんでした。", "The project tab could not be opened."),
+                locale,
+              ),
+            );
           }
         },
       };
@@ -988,7 +998,11 @@ export default function App({
               setSystemOpenError(
                 actionErrorMessage(
                   error,
-                  "次のプロジェクトタブを開けなかったため、現在のタブは閉じていません。",
+                  t(
+                    "次のプロジェクトタブを開けなかったため、現在のタブは閉じていません。",
+                    "The current tab was not closed because the next project tab could not be opened.",
+                  ),
+                  locale,
                 ),
               );
             }
@@ -1099,7 +1113,11 @@ export default function App({
           if (disposed) return;
           recordDiagnosticError("PROJECT_OPEN_FAILED", error);
           setSystemOpenError(
-            actionErrorMessage(error, "指定されたプロジェクトを開けませんでした。"),
+            actionErrorMessage(
+              error,
+              t("指定されたプロジェクトを開けませんでした。", "The selected project could not be opened."),
+              locale,
+            ),
           );
         } finally {
           inFlightTargets.delete(target);
@@ -1345,7 +1363,11 @@ export default function App({
                   } catch (error) {
                     recordDiagnosticError("PROJECT_OPEN_FAILED", error);
                     setSystemOpenError(
-                      actionErrorMessage(error, "最近のプロジェクトを開けませんでした。"),
+                      actionErrorMessage(
+                        error,
+                        t("最近のプロジェクトを開けませんでした。", "The recent project could not be opened."),
+                        locale,
+                      ),
                     );
                     navigate("open-project");
                   }

@@ -42,4 +42,29 @@ describe("project action error messages", () => {
       ),
     ).toBe("安全に復元できません。");
   });
+
+  it("localizes compatibility failures without exposing Japanese in English mode", () => {
+    const message = actionErrorMessage(
+      new ProjectCompatibilityError("PROJECT_SCHEMA_VERSION_NEWER_THAN_APP", {
+        foundVersion: "9.9.9",
+        supportedVersion: "0.3.0",
+      }),
+      "The project could not be opened.",
+      "en",
+    );
+
+    expect(message).toContain("newer BioFigureStat");
+    expect(message).toContain("9.9.9");
+    expect(message).not.toMatch(/[\u3040-\u30ff\u3400-\u9fff]/u);
+  });
+
+  it("uses the English fallback when an internal exception contains Japanese", () => {
+    expect(
+      actionErrorMessage(
+        new Error("プロジェクトを安全に復元できません"),
+        "The project could not be restored safely.",
+        "en",
+      ),
+    ).toBe("The project could not be restored safely.");
+  });
 });
