@@ -132,19 +132,19 @@ workflow pass together (50/50) without the React warning.
 For the English-localization branch, the full UI suite passes with 162 files and 1,200 tests.
 English no-Japanese assertions inspect visible text plus accessible labels, titles, placeholders,
 and image alternative text across the production surfaces. Typecheck, lint, and the production UI
-build pass. Windows candidate `a6a186f-alpha.20260901.win-review2` passes the Windows bundle verifier,
+build pass. Windows candidate `4041e85-alpha.20260901.win-review3` passes the Windows bundle verifier,
 release bundle verifier, packaged-engine smoke checks, and the exact-executable native UI scenario.
 Its installer SHA-256 is
-`C6D4C37E96A0D17876EB2B9D93F3076A8A23130084915105BFDD77DE553C3FBD`. Windows human language/layout
+`4382BA7A7534D74270C7E362320CBF2102AC9AAE64B13FEB3CB6310BA01FE8E2`. Windows human language/layout
 review and the macOS native candidate remain outstanding.
 
 Post-Alpha native regression automation now has a complete Windows packaged-app PASS. The
 dependency-free harness launches the exact Tauri executable with an isolated WebView2 profile and
 drives architecture IPC, exact native export, real Graph-only entry and mapping, Statistics
 validation visibility/focus, and the dirty-window Close / Cancel / Discard lifecycle while
-recording screenshots and JSON evidence. Revision `a6a186f-alpha.20260901.win-review2` passed every
+recording screenshots and JSON evidence. Revision `4041e85-alpha.20260901.win-review3` passed every
 step on this host; evidence is under
-`.tmp/native-ui-regression/win-review2-clean/`. The transient blank-target startup race remains
+`.tmp/native-ui-regression/win-review3-clean/`. The transient blank-target startup race remains
 classified separately from product regressions. The macOS Accessibility adapter is implemented,
 but a permissioned Mac run is still required before the gate is cross-platform. See
 `docs/alpha/NATIVE_UI_REGRESSION_HARNESS.md`.
@@ -154,7 +154,9 @@ accepted as one series per row reopened with its table intact but its Graph and 
 disabled. The saved `.lsa` still contained the mapping and active Graph. Revision `a6a186f`
 restores that explicit saved-Graph acceptance, keeps Save and Save As visible in the workspace
 header, and uses an English default title in English mode. The exact user-shaped save/reopen
-regression now passes without changing the schema or stored measurements.
+regression now passes without changing the schema or stored measurements. Revision `4041e85`
+also localizes legacy app-generated default titles to the active UI language while preserving
+arbitrary user-authored titles.
 
 ## Known bounded gaps
 

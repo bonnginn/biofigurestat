@@ -75,9 +75,9 @@ The runner accepts WebView2's transient blank-URL target, waits for navigation t
 origin and origin storage, and treats a target that remains opaque as
 `HARNESS_INFRASTRUCTURE_BLOCKED` rather than a product regression.
 
-On 2026-09-01, revision `a6a186f-alpha.20260901.win-review2` completed the entire scenario against
+On 2026-09-01, revision `4041e85-alpha.20260901.win-review3` completed the entire scenario against
 the exact packaged executable on the Windows development host. Evidence is in
-`.tmp/native-ui-regression/win-review2-clean/report.json`. The report records `x86_64`
+`.tmp/native-ui-regression/win-review3-clean/report.json`. The report records `x86_64`
 architecture IPC, zero unexpected Japanese findings, exact native export bytes, the English
 Graph-only Statistics validation alert and focus, dirty-value retention after native Close/Cancel,
 and process exit after explicit discard. This resolves the previously recorded same-host startup

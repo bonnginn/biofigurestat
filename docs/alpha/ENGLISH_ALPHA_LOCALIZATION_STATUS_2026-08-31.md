@@ -61,11 +61,11 @@ the application does not convert, discard, or overwrite the project.
 ## Windows native candidate
 
 The source-level production paths have automated no-Japanese rendering coverage. A Windows x64
-candidate was built with revision `a6a186f-alpha.20260901.win-review2`:
+candidate was built with revision `4041e85-alpha.20260901.win-review3`:
 
 - installer: `apps/desktop/src-tauri/target/release/bundle/nsis/BioFigureStat_0.1.0_x64-setup.exe`;
-- size: 47,880,936 bytes;
-- SHA-256: `C6D4C37E96A0D17876EB2B9D93F3076A8A23130084915105BFDD77DE553C3FBD`;
+- size: 47,884,996 bytes;
+- SHA-256: `4382BA7A7534D74270C7E362320CBF2102AC9AAE64B13FEB3CB6310BA01FE8E2`;
 - Windows bundle verification: pass;
 - release bundle verification: pass;
 - packaged statistical-engine smoke checks: pass;
@@ -79,6 +79,8 @@ series per source row reopens with Graph and Statistics available. Save and Save
 beside the Graph-only workspace tabs. The regression uses the same sample-ID/Treatment/Measurement
 shape that exposed the issue and verifies table, mapping, active Graph, and enabled tabs after
 reopen.
+Legacy projects whose title is one of the canonical app-generated Japanese/English defaults now
+display that default in the active UI language; user-authored titles remain unchanged.
 
 This candidate has not yet received a short human English-language review. A macOS candidate has
 not been built. Do not publish English assets until native lifecycle/export checks and human review
