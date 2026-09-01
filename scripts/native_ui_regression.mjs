@@ -221,6 +221,7 @@ $ErrorActionPreference = 'Stop'
 try {
   Add-Type -AssemblyName UIAutomationClient
   Add-Type -AssemblyName UIAutomationTypes
+  Add-Type -AssemblyName System.Windows.Forms
   Add-Type @'
 using System;
 using System.Runtime.InteropServices;
@@ -356,25 +357,11 @@ if ($action -eq 'cancel') {
   } catch {
     throw ('FILE_DIALOG_CONTROL_NOT_FOUND: SetValue failed for ' + $selectedEditId + ': ' + $_.Exception.Message)
   }
-  $buttonType = [Windows.Automation.PropertyCondition]::new(
-    [Windows.Automation.AutomationElement]::ControlTypeProperty,
-    [Windows.Automation.ControlType]::Button
-  )
-  $saveButtons = @($dialog.FindAll([Windows.Automation.TreeScope]::Descendants, $buttonType))
-  $saveAction = $null
-  foreach ($candidate in $saveButtons) {
-    if ($candidate.Current.AutomationId -ne '1' -and $candidate.Current.Name -notmatch 'Save|保存') { continue }
-    $pattern = $null
-    if ($candidate.TryGetCurrentPattern([Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)) {
-      $saveAction = $pattern
-      break
-    }
-  }
-  if ($null -eq $saveAction) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: invokable Save button' }
   try {
-    $saveAction.Invoke()
+    $selectedEdit.element.SetFocus()
+    [Windows.Forms.SendKeys]::SendWait('{ENTER}')
   } catch {
-    throw ('FILE_DIALOG_CONTROL_NOT_FOUND: Save invoke failed: ' + $_.Exception.Message)
+    throw ('FILE_DIALOG_CONTROL_NOT_FOUND: Save Enter failed: ' + $_.Exception.Message)
   }
 }
 $result = @{ ok = $true; action = $action; dialog = $dialog.Current.Name }
