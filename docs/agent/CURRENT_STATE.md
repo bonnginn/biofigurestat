@@ -145,6 +145,17 @@ Accessibility harness remains environment-blocked when reading a typed field val
 same product path passed bounded human review. See
 `docs/alpha/MACOS_BILINGUAL_REFACTOR_GATE_2026-09-01.md`.
 
+Windows candidate `ab5b012-alpha.20260901.win-refactor2` is built from the same application source
+tree and passes the production UI build, zero-marker release verification, packaged-engine smoke,
+Windows bundle verifier, harness self-test, and the complete exact-executable native scenario. The
+host run verified x86_64 IPC, zero unexpected Japanese Home copy, native export bytes, the real
+Graph-only Statistics handoff, unsaved-work Cancel retention, and explicit discard exit. Its NSIS
+installer SHA-256 is
+`F7064981BE4A36EB809C6B6C6F18C974E974771BBE001BEB5D37410C3EF85747`. Restricted-sandbox attempts
+could not attach CDP and remain separately recorded as `HARNESS_INFRASTRUCTURE_BLOCKED`; the same
+exact executable passed in the host WebView2 environment. See
+`docs/alpha/WINDOWS_BILINGUAL_REFACTOR_GATE_2026-09-01.md`.
+
 Post-Alpha native regression automation now has a complete Windows packaged-app PASS. The
 dependency-free harness launches the exact Tauri executable with an isolated WebView2 profile and
 drives architecture IPC, exact native export, real Graph-only entry and mapping, Statistics

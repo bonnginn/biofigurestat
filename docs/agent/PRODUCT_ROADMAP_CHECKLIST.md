@@ -48,7 +48,7 @@
 | ✅   | 日本語表示漏れの自動検査             | visible text、aria-label、title、placeholder、altを検査                                                                    |
 | ✅   | native自動検査で見つけた表示漏れ修正 | New Experiment wrapperとworkspace fallbackを修正                                                                           |
 | ✅   | 自動回帰                             | UI 162ファイル、1,200テストPASS。共有package等278テスト、typecheck・lintもPASS                                             |
-| ✅   | 日英統合Windows build                | `4041e85-alpha.20260901.win-review3`はbundle/engine/release/native UI verifierと人間の両言語・layout確認がPASS             |
+| ✅   | 日英統合Windows build                | `ab5b012-alpha.20260901.win-refactor2`はbuild/engine/bundle/releaseとexact-executable native harnessがPASS               |
 | ✅   | 日英統合macOS build                  | `15aabd0-alpha.20260901.mac-refactor2`はbuild/engine/bundle/releaseと全限定実機確認がPASS。Accessibility harness環境BLOCKは別管理 |
 | ⬜   | 日英統合buildの配布                  | 両native gate後に、同じアプリの次Alpha assetとrelease noteを追加                                                           |
 
