@@ -1,10 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { resetAppLocaleForTests } from "../../app/appLocale";
+import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
 import type { ExperimentSetDraft } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
 import {
   ExperimentGraphAppearanceEditor,
   type GraphDisplayPreset,
@@ -64,9 +65,7 @@ describe("ExperimentGraphAppearanceEditor", () => {
   it("delegates Graph type and preset changes without owning scientific state", () => {
     const onGraphTypeChange = vi.fn();
     const onApplyPreset = vi.fn();
-    render(
-      <Harness onGraphTypeChange={onGraphTypeChange} onApplyPreset={onApplyPreset} />,
-    );
+    render(<Harness onGraphTypeChange={onGraphTypeChange} onApplyPreset={onApplyPreset} />);
 
     fireEvent.change(screen.getByLabelText("グラフの基本形"), { target: { value: "bar" } });
     fireEvent.change(screen.getByLabelText("表示プリセット"), {
@@ -94,5 +93,13 @@ describe("ExperimentGraphAppearanceEditor", () => {
 
     expect(screen.getByLabelText("グラフの大きさ")).toHaveValue("standard");
     expect(screen.getByText("左右の余白：72px")).toBeInTheDocument();
+  });
+
+  it("contains no fixed Japanese copy in English", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<Harness />);
+
+    expect(screen.getByRole("heading", { name: "Graph appearance" })).toBeVisible();
+    expectNoJapaneseUi(view.container);
   });
 });

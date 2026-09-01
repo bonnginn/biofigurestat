@@ -9,12 +9,7 @@ type AxisSettings = WorkspaceGraphState["axes"];
 type GraphAppearance = WorkspaceGraphState["appearance"];
 type GraphType = WorkspaceGraphState["graphType"];
 
-export type GraphDisplayPreset =
-  | "simple"
-  | "publication"
-  | "presentation"
-  | "raw"
-  | "replicate";
+export type GraphDisplayPreset = "simple" | "publication" | "presentation" | "raw" | "replicate";
 
 export type ExperimentGraphAppearanceEditorProps = Readonly<{
   graphType: GraphType;
@@ -52,7 +47,7 @@ export function ExperimentGraphAppearanceEditor({
       <label className="experiment-graph-field">
         <span>{t("基本形", "Graph type")}</span>
         <select
-          aria-label="グラフの基本形"
+          aria-label={t("グラフの基本形", "Graph type")}
           value={graphType}
           onChange={(event) => onGraphTypeChange(event.target.value as GraphType)}
         >
@@ -84,7 +79,7 @@ export function ExperimentGraphAppearanceEditor({
       <label className="experiment-graph-field">
         <span>{t("表示プリセット", "Display preset")}</span>
         <select
-          aria-label="表示プリセット"
+          aria-label={t("表示プリセット", "Display preset")}
           defaultValue="simple"
           onChange={(event) => onApplyPreset(event.target.value as GraphDisplayPreset)}
         >
@@ -93,8 +88,12 @@ export function ExperimentGraphAppearanceEditor({
           <option value="presentation">{t("発表", "Presentation")}</option>
           {readoutShape === "nested_continuous" ? (
             <>
-              <option value="raw">{t("生データ分布を重視", "Emphasize raw-data distribution")}</option>
-              <option value="replicate">{t("実験単位だけを表示", "Show experimental units only")}</option>
+              <option value="raw">
+                {t("生データ分布を重視", "Emphasize raw-data distribution")}
+              </option>
+              <option value="replicate">
+                {t("実験単位だけを表示", "Show experimental units only")}
+              </option>
             </>
           ) : null}
         </select>
@@ -102,7 +101,7 @@ export function ExperimentGraphAppearanceEditor({
       <label className="experiment-graph-field">
         <span>{t("色", "Color")}</span>
         <select
-          aria-label="色の使い方"
+          aria-label={t("色の使い方", "Color scheme")}
           value={appearance.palette}
           onChange={(event) =>
             setAppearance((current) => ({
@@ -126,7 +125,7 @@ export function ExperimentGraphAppearanceEditor({
               <span>{condition.label}</span>
               <input
                 type="color"
-                aria-label={`${condition.label}の色`}
+                aria-label={t(`${condition.label}の色`, `${condition.label} color`)}
                 value={
                   appearance.seriesColors[condition.id] ??
                   GRAPH_PALETTES[appearance.palette][
@@ -149,14 +148,14 @@ export function ExperimentGraphAppearanceEditor({
             type="button"
             onClick={() => setAppearance((current) => ({ ...current, seriesColors: {} }))}
           >
-            パレット色に戻す
+            {t("パレット色に戻す", "Restore palette colors")}
           </button>
         </details>
       ) : null}
       <label className="experiment-graph-field">
-        <span>フォント</span>
+        <span>{t("フォント", "Font")}</span>
         <select
-          aria-label="グラフのフォント"
+          aria-label={t("グラフのフォント", "Graph font")}
           value={appearance.fontFamily}
           onChange={(event) =>
             setAppearance((current) => ({
@@ -171,9 +170,12 @@ export function ExperimentGraphAppearanceEditor({
         </select>
       </label>
       <label className="experiment-graph-field">
-        <span>グラフタイトル：{appearance.graphTitleFontSize}px</span>
+        <span>
+          {t("グラフタイトル：", "Graph title: ")}
+          {appearance.graphTitleFontSize}px
+        </span>
         <input
-          aria-label="グラフタイトルの文字サイズ"
+          aria-label={t("グラフタイトルの文字サイズ", "Graph-title font size")}
           type="range"
           min="12"
           max="32"
@@ -187,9 +189,9 @@ export function ExperimentGraphAppearanceEditor({
         />
       </label>
       <label className="experiment-graph-field">
-        <span>キャンバス</span>
+        <span>{t("キャンバス", "Canvas")}</span>
         <select
-          aria-label="グラフの大きさ"
+          aria-label={t("グラフの大きさ", "Graph size")}
           value={appearance.canvasPreset}
           onChange={(event) =>
             setAppearance((current) => ({
@@ -204,9 +206,12 @@ export function ExperimentGraphAppearanceEditor({
         </select>
       </label>
       <label className="experiment-graph-field">
-        <span>左右の余白：{appearance.sidePadding}px</span>
+        <span>
+          {t("左右の余白：", "Side padding: ")}
+          {appearance.sidePadding}px
+        </span>
         <input
-          aria-label="グラフ左右の余白"
+          aria-label={t("グラフ左右の余白", "Graph side padding")}
           type="range"
           min="56"
           max="180"
@@ -221,9 +226,12 @@ export function ExperimentGraphAppearanceEditor({
         />
       </label>
       <label className="experiment-graph-field">
-        <span>軸線：{appearance.axisLineWidth.toFixed(1)}px</span>
+        <span>
+          {t("軸線：", "Axis line: ")}
+          {appearance.axisLineWidth.toFixed(1)}px
+        </span>
         <input
-          aria-label="軸線の太さ"
+          aria-label={t("軸線の太さ", "Axis-line width")}
           type="range"
           min="0.8"
           max="2.4"
@@ -249,7 +257,7 @@ export function ExperimentGraphAppearanceEditor({
           setAxes((current) => ({ ...current, spacing: 1 }));
         }}
       >
-        レイアウトを自動設定に戻す
+        {t("レイアウトを自動設定に戻す", "Restore automatic layout")}
       </button>
     </section>
   );
