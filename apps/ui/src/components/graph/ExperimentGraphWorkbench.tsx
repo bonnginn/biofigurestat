@@ -1,16 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../../app/analysisClient";
 
-import {
-  hasSharedSourceConditionUnits,
-  type ExperimentCellMap,
-  type ExperimentSetDraft,
-} from "../../app/experimentDraft";
+import { type ExperimentCellMap, type ExperimentSetDraft } from "../../app/experimentDraft";
 import { isDerivedTimeMetric } from "../../app/experimentDraftAnalysis";
-import {
-  nestedIndependentSourceContext,
-  type DraftAnalysisCorrection,
-} from "../../app/draftAnalysisDiagnostics";
+import { type DraftAnalysisCorrection } from "../../app/draftAnalysisDiagnostics";
 import { defaultGraphYTitle, defaultLayersForGraphType } from "../../app/graphDefaults";
 import {
   createExperimentWorkspaceDesign,
@@ -55,6 +48,7 @@ import { ExperimentGraphXAxisEditor } from "./ExperimentGraphXAxisEditor";
 import { ExperimentGraphYAxisEditor } from "./ExperimentGraphYAxisEditor";
 import {
   createGraphAnalysisContextKey,
+  createGraphStatisticsRelationshipContext,
   createExperimentGraphMethodsText,
   varyingGraphAnalysisAttributes,
 } from "./experimentGraphStatistics";
@@ -145,11 +139,6 @@ export function ExperimentGraphWorkbench({
       return null;
     }
   }, [draft]);
-  const sharedSourceTopology =
-    hasSharedSourceConditionUnits(draft) &&
-    draft.conditionAssignment.matchedTopology?.kind === "distinct_condition_units_shared_source"
-      ? draft.conditionAssignment.matchedTopology
-      : null;
   const {
     selectedReadoutId,
     setSelectedReadoutId,
@@ -166,10 +155,12 @@ export function ExperimentGraphWorkbench({
     sourceMode,
     setSourceMode,
   } = useExperimentGraphDataSelectionState({ draft, initialState });
-  const independentNestedSource = nestedIndependentSourceContext({
-    draft,
-    readoutId: selectedReadoutId,
-  });
+  const {
+    sharedSourceTopology,
+    independentNestedSource,
+    matchedRelationship,
+    relationshipAlreadyDeclared,
+  } = createGraphStatisticsRelationshipContext(draft, selectedReadoutId);
   const {
     layers,
     setLayers,
@@ -1009,27 +1000,10 @@ export function ExperimentGraphWorkbench({
                     assessment={analysisAssessment}
                     design={recommendationDesign}
                     outcomeId={selectedReadoutId}
-                    relationshipAlreadyDeclared={
-                      (Boolean(draft.adaptiveInput) ||
-                        draft.entryRoute === "simple_independent_groups") &&
-                      !independentNestedSource
-                    }
+                    relationshipAlreadyDeclared={relationshipAlreadyDeclared}
                     independentNestedSourceContext={independentNestedSource}
                     onCorrectionRequested={onAnalysisCorrection}
-                    matchedRelationship={
-                      draft.conditionAssignment.kind === "matched"
-                        ? sharedSourceTopology
-                          ? {
-                              kind: "shared_source",
-                              unitLabel: draft.conditionAssignment.unitLabel,
-                              sourceLabel: sharedSourceTopology.sourceUnitLabel,
-                            }
-                          : {
-                              kind: "same_entity",
-                              unitLabel: draft.conditionAssignment.unitLabel,
-                            }
-                        : undefined
-                    }
+                    matchedRelationship={matchedRelationship}
                     analysisRunner={analysisRunner}
                     analysisAvailable={analysisAvailable}
                     initialAnalysis={initialState?.analysis}

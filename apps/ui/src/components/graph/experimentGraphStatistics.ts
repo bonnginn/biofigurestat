@@ -3,8 +3,13 @@ import {
   type AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
 
-import type { ExperimentSetDraft, TimeAnalysisPlan } from "../../app/experimentDraft";
+import {
+  hasSharedSourceConditionUnits,
+  type ExperimentSetDraft,
+  type TimeAnalysisPlan,
+} from "../../app/experimentDraft";
 import type { ContrastIntent } from "../../app/experimentDraftAnalysis";
+import { nestedIndependentSourceContext } from "../../app/draftAnalysisDiagnostics";
 import {
   createExperimentWorkspaceDesign,
   type WorkspaceGraphAnalysis,
@@ -17,6 +22,40 @@ type GraphAppearance = WorkspaceGraphState["appearance"];
 type AxisSettings = WorkspaceGraphState["axes"];
 type GraphType = WorkspaceGraphState["graphType"];
 type LayerState = WorkspaceGraphState["layers"];
+
+export function createGraphStatisticsRelationshipContext(
+  draft: ExperimentSetDraft,
+  readoutId: string,
+) {
+  const sharedSourceTopology =
+    hasSharedSourceConditionUnits(draft) &&
+    draft.conditionAssignment.matchedTopology?.kind ===
+      "distinct_condition_units_shared_source"
+      ? draft.conditionAssignment.matchedTopology
+      : null;
+  const independentNestedSource = nestedIndependentSourceContext({ draft, readoutId });
+  const matchedRelationship =
+    draft.conditionAssignment.kind !== "matched"
+      ? undefined
+      : sharedSourceTopology
+        ? {
+            kind: "shared_source" as const,
+            unitLabel: draft.conditionAssignment.unitLabel,
+            sourceLabel: sharedSourceTopology.sourceUnitLabel,
+          }
+        : {
+            kind: "same_entity" as const,
+            unitLabel: draft.conditionAssignment.unitLabel,
+          };
+  return {
+    sharedSourceTopology,
+    independentNestedSource,
+    matchedRelationship,
+    relationshipAlreadyDeclared:
+      (Boolean(draft.adaptiveInput) || draft.entryRoute === "simple_independent_groups") &&
+      !independentNestedSource,
+  };
+}
 
 export function createGraphAnalysisContextKey(input: Readonly<{
   draft: ExperimentSetDraft;
