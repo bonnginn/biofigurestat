@@ -37,6 +37,7 @@ import { localizedText, useAppLocale } from "../../app/appLocale";
 import { useBenchmarkRun } from "../../app/benchmarkEvaluation";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
+import { ExperimentGraphCanvasCaption } from "./ExperimentGraphCanvasCaption";
 import { ExperimentGraphCanvasToolbar } from "./ExperimentGraphCanvasToolbar";
 import { ExperimentGraphDataSummary } from "./ExperimentGraphDataSummary";
 import { ExperimentGraphDistributionEditor } from "./ExperimentGraphDistributionEditor";
@@ -1026,42 +1027,16 @@ export function ExperimentGraphWorkbench({
                 )}
               </div>
             )}
-            <p className="experiment-graph-caption">
-              {semanticReadiness === "unresolved_descriptive"
-                ? t(
-                    `現在の表示：${activeLayerDescription}。元の表の行を保持した記述的Graphです。行数をbiological nや対応関係とは解釈していません。`,
-                    `Current display: ${activeLayerDescription}. This descriptive Graph retains the source-table rows without interpreting row count as biological n or a matched relationship.`,
-                  )
-                : sharedSourceTopology
-                  ? t(
-                      `各点は条件別${draft.conditionAssignment.unitLabel}の値です。同じ${sharedSourceTopology.sourceUnitLabel}に由来する組は共有IDで対応づけていますが、条件別${draft.conditionAssignment.unitLabel}は別の実験単位として保持しています。`,
-                      `Each point is a condition-specific ${draft.conditionAssignment.unitLabel} value. Units from the same ${sharedSourceTopology.sourceUnitLabel} are matched by a shared ID while remaining separate experimental units across conditions.`,
-                    )
-                  : shape === "categorical_counts"
-                    ? t(
-                        "カテゴリ別countを保持し、構成割合を自動計算しています。連続値として扱わず、カテゴリ構成の推論統計はまだ実行しません。",
-                        "Category counts are retained and composition fractions are calculated automatically. They are not treated as continuous values, and inferential statistics for category composition are not run here.",
-                      )
-                    : draft.analysisIntent.kind === "correlation"
-                      ? t(
-                          "各点は同じ実験単位から得たXとYの完全な1組です。行順や日付から対応を推測していません。",
-                          "Each point is one complete X/Y pair from the same experimental unit. Matching is not inferred from row order or dates.",
-                        )
-                      : shape === "wb_ratio"
-                        ? t(
-                            `各点は実験単位（Exp）ごとの${readout.label} / ${readout.referenceLabel ?? "reference"}です。標的とreferenceの生値は別々に保持しています。`,
-                            `Each point is ${readout.label} / ${readout.referenceLabel ?? "reference"} for one experimental unit (Exp). Raw target and reference values are retained separately.`,
-                          )
-                        : shape === "proportion"
-                          ? t(
-                              `現在の表示：${activeLayerDescription}。割合と要約は実験単位（Exp）から計算しています。`,
-                              `Current display: ${activeLayerDescription}. Proportions and summaries are calculated from experimental units (Exp).`,
-                            )
-                          : t(
-                              `現在の表示：${activeLayerDescription}。細胞・ROIなどの生データを表示しても、統計上のnは実験単位です。`,
-                              `Current display: ${activeLayerDescription}. Showing raw cell or ROI data does not change statistical n, which remains the experimental unit.`,
-                            )}
-            </p>
+            <ExperimentGraphCanvasCaption
+              semanticReadiness={semanticReadiness}
+              activeLayerDescription={activeLayerDescription}
+              shape={shape}
+              isCorrelation={draft.analysisIntent.kind === "correlation"}
+              conditionUnitLabel={draft.conditionAssignment.unitLabel}
+              sharedSourceUnitLabel={sharedSourceTopology?.sourceUnitLabel}
+              readoutLabel={readout.label}
+              referenceLabel={readout.referenceLabel}
+            />
             <details className="experiment-graph-data-details">
               <summary>{t("使用データの内訳を表示", "Show data used")}</summary>
               <ExperimentGraphDataSummary shape={shape} series={series} />
