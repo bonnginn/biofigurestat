@@ -5,7 +5,7 @@ use std::{
 };
 
 const MAX_EXPORT_BYTES: usize = 64 * 1024 * 1024;
-const ALLOWED_EXPORT_EXTENSIONS: [&str; 5] = ["svg", "png", "csv", "txt", "json"];
+const ALLOWED_EXPORT_EXTENSIONS: [&str; 6] = ["svg", "png", "csv", "txt", "json", "html"];
 
 #[tauri::command]
 pub fn write_export_file(target: String, bytes: Vec<u8>) -> Result<(), String> {
@@ -62,6 +62,23 @@ mod tests {
         ));
         write_export_file(target.to_string_lossy().into_owned(), b"<svg/>".to_vec()).unwrap();
         assert_eq!(std::fs::read(&target).unwrap(), b"<svg/>");
+        let _ = std::fs::remove_file(target);
+    }
+
+    #[test]
+    fn writes_self_contained_html_review_export() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let target = std::env::temp_dir().join(format!(
+            "lsaa-review-export-{}-{}.html",
+            std::process::id(),
+            unique
+        ));
+        let content = b"<!doctype html><title>Analysis review set</title>";
+        write_export_file(target.to_string_lossy().into_owned(), content.to_vec()).unwrap();
+        assert_eq!(std::fs::read(&target).unwrap(), content);
         let _ = std::fs::remove_file(target);
     }
 }
