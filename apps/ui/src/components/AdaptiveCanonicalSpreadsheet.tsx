@@ -27,7 +27,6 @@ import {
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
 import { SPREADSHEET_ZOOM_LEVELS, useSpreadsheetZoom } from "./spreadsheetZoom";
 import { getAppLocale, localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
-import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
 import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
 import { SpreadsheetDraftTextCell } from "./SpreadsheetDraftTextCell";
 import {
@@ -1047,63 +1046,42 @@ function ExpandedScalarValueEditor({
   gridColumn: number;
   onPaste: (event: ClipboardEvent<HTMLInputElement>) => void;
 }>) {
-  const errorId = useId();
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const value = observation.values[valueKey];
   const initialText = value === null || value === undefined ? "" : String(value);
-  const { text, dirty, error, edit, accept, reportError } = useSpreadsheetCellDraft(initialText);
-
-  const commit = () => {
-    if (!dirty) return;
-    const parsed = parseOptionalSpreadsheetNumber(text);
-    if (parsed.kind === "invalid") {
-      reportError(
-        t(
-          "数値を入力してください。入力内容は消えていません。",
-          "Enter a numeric value. Your input was retained.",
-        ),
-      );
-      return;
-    }
-    const nextValue = parsed.kind === "value" ? parsed.value : null;
-    onObservationsChange(
-      updateExpandedValue({
-        observationId: observation.observationId,
-        valueKey,
-        value: nextValue,
-        observations,
-      }),
-    );
-    accept();
-  };
 
   return (
-    <div className="adaptive-canonical-spreadsheet__expanded-editor">
-      <input
-        type="text"
-        inputMode="decimal"
-        aria-label={label}
-        aria-describedby={error ? errorId : undefined}
-        aria-invalid={error ? "true" : undefined}
-        value={text}
-        data-spreadsheet-cell="true"
-        data-spreadsheet-row={gridRow}
-        data-spreadsheet-column={gridColumn}
-        data-expanded-field="value"
-        data-observation-id={observation.observationId}
-        data-semantic-key={valueKey}
-        onChange={(event) => edit(event.currentTarget.value)}
-        onKeyDown={moveSpreadsheetFocus}
-        onPaste={onPaste}
-        onBlur={commit}
-      />
-      {error ? (
-        <small id={errorId} role="alert">
-          {error}
-        </small>
-      ) : null}
-    </div>
+    <SpreadsheetDraftTextCell
+      wrapperClassName="adaptive-canonical-spreadsheet__expanded-editor"
+      canonicalText={initialText}
+      inputMode="decimal"
+      aria-label={label}
+      data-spreadsheet-row={gridRow}
+      data-spreadsheet-column={gridColumn}
+      data-expanded-field="value"
+      data-observation-id={observation.observationId}
+      data-semantic-key={valueKey}
+      onPaste={onPaste}
+      onCommit={(text) => {
+        const parsed = parseOptionalSpreadsheetNumber(text);
+        if (parsed.kind === "invalid") {
+          return t(
+            "数値を入力してください。入力内容は消えていません。",
+            "Enter a numeric value. Your input was retained.",
+          );
+        }
+        onObservationsChange(
+          updateExpandedValue({
+            observationId: observation.observationId,
+            valueKey,
+            value: parsed.kind === "value" ? parsed.value : null,
+            observations,
+          }),
+        );
+        return null;
+      }}
+    />
   );
 }
 
