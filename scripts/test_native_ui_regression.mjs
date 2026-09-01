@@ -32,7 +32,16 @@ test("parses a bounded Windows native regression invocation", () => {
       executable: "C:\\build\\BioFigureStat.exe",
       output: "C:\\evidence",
       timeoutMs: 30000,
+      nativeFileDialogSaveTargets: false,
     },
+  );
+});
+
+test("enables experimental native Save-target and .lsa reopen checks explicitly", () => {
+  assert.equal(
+    parseNativeRegressionArguments(["--native-file-dialog-save-targets"])
+      .nativeFileDialogSaveTargets,
+    true,
   );
 });
 

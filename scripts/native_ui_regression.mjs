@@ -41,6 +41,7 @@ export function parseNativeRegressionArguments(argv) {
     executable: undefined,
     output: undefined,
     timeoutMs: 20_000,
+    nativeFileDialogSaveTargets: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -57,6 +58,8 @@ export function parseNativeRegressionArguments(argv) {
     } else if (argument === "--timeout-ms" && value) {
       parsed.timeoutMs = Number(value);
       index += 1;
+    } else if (argument === "--native-file-dialog-save-targets") {
+      parsed.nativeFileDialogSaveTargets = true;
     } else {
       throw new Error(`Unknown or incomplete argument: ${argument}`);
     }
@@ -775,7 +778,12 @@ const inputValueByLabel = (labelText) => {
   return input.value;
 };
 
-async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
+async function runWindowsScenario({
+  executable,
+  outputDirectory,
+  timeoutMs,
+  nativeFileDialogSaveTargets,
+}) {
   const port = await reservePort();
   const profileDirectory = await mkdtemp(
     join(tmpdir(), "biofigurestat-native-regression-profile-"),
@@ -882,6 +890,11 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         throw new Error(`Japanese application copy found: ${JSON.stringify(findings)}`);
       return { findings: 0 };
     });
+    await runStep("native_project_open_dialog_cancel", async () => {
+      await client.evaluate(`document.querySelector('[data-primary-route="open-project"]')?.click()`);
+      const detail = await driveFileDialog("cancel");
+      return { ...detail, retainedApplication: true };
+    });
     await runStep("native_export_ipc", async () => {
       const payload = Buffer.from(
         '<svg xmlns="http://www.w3.org/2000/svg"><title>native regression</title></svg>',
@@ -963,7 +976,7 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
           throw error;
         }
       });
-      await runStep("native_svg_save_dialog_writes_selected_target", async () => {
+      if (nativeFileDialogSaveTargets) await runStep("native_svg_save_dialog_writes_selected_target", async () => {
         await client.evaluate(pageAction(clickByText, "SVG"));
         const detail = await driveFileDialog("save", dialogExportTarget);
         let written;
@@ -980,7 +993,7 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         if (!written.includes("<svg")) throw new Error("Native Save dialog wrote invalid SVG");
         return { ...detail, target: dialogExportTarget, bytes: Buffer.byteLength(written) };
       });
-      await runStep("native_project_save_dialog_writes_lsa", async () => {
+      if (nativeFileDialogSaveTargets) await runStep("native_project_save_dialog_writes_lsa", async () => {
         await client.evaluate(pageAction(clickByText, "Save"));
         const detail = await driveFileDialog("save", associationProjectTarget);
         const written = await waitForReadableFile(
@@ -1094,7 +1107,7 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
       });
       return { exited: true };
     });
-    await runStep("windows_lsa_command_line_open", async () => {
+    if (nativeFileDialogSaveTargets) await runStep("windows_lsa_command_line_open", async () => {
       const associationPort = await reservePort();
       const associationOutput = [];
       const associationChild = spawn(executable, [associationProjectTarget], {
@@ -1353,6 +1366,7 @@ export async function runNativeUiRegression(options) {
       executable,
       outputDirectory,
       timeoutMs: options.timeoutMs,
+      nativeFileDialogSaveTargets: options.nativeFileDialogSaveTargets,
     });
   } catch (error) {
     failure = error;
