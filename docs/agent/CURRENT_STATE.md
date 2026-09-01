@@ -504,6 +504,13 @@ workbench to 768 lines. The 60 existing Workbench/series/presentation tests, UI 
 lint, and the production build pass. The initial chunk remains 264.45 kB (gzip 81.20 kB) with no
 build advisory; no move-only test was added.
 
+General, categorical-composition, and correlation SVG renderers now derive their drawable plot
+rectangle from one margin-to-bounds helper. Axis endpoints, tick anchors, plot width/height, labels,
+and legend anchors therefore use the same left/top/right/bottom contract instead of recomputing
+`canvas - margins` locally. Kaplan–Meier remains separate because its risk-table rows extend the
+canvas with different semantics. The helper has a direct exact-bounds test, and the 62 focused
+layout/renderer/Workbench tests, UI typecheck, and focused lint pass.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
