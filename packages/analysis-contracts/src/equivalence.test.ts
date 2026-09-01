@@ -9,6 +9,7 @@ import {
   type EquivalenceAnalysisPlan,
 } from "./equivalence";
 import { AnalysisEngineResultSchema } from "./contracts";
+import { IndependentContinuousEquivalenceEngineRequestSchema } from "./contracts";
 
 const plan: EquivalenceAnalysisPlan = {
   schemaVersion: "0.1.0",
@@ -25,6 +26,66 @@ const plan: EquivalenceAnalysisPlan = {
 };
 
 describe("equivalence analysis contracts", () => {
+  it("admits only one prespecified raw-difference comparison to the first Welch TOST protocol", () => {
+    const request = {
+      protocolVersion: "0.15.0" as const,
+      requestId: "request.equivalence",
+      projectId: "project.equivalence",
+      analysisId: "analysis.equivalence",
+      templateId: "D01" as const,
+      templateVersion: "0.2.0" as const,
+      method: "welch_tost" as const,
+      comparisonId: "control:treatment",
+      contrastConditionIds: ["condition.control", "condition.treatment"] as const,
+      equivalencePlan: {
+        schemaVersion: "0.1.0" as const,
+        margin: {
+          scale: "raw_difference" as const,
+          lowerBound: -2,
+          upperBound: 2,
+          unit: "AU",
+          declaredAsPrespecified: true as const,
+        },
+        alpha: 0.05 as const,
+        claimMode: "single_primary_comparison" as const,
+        primaryComparisonId: "control:treatment",
+      },
+      observations: [
+        { observationId: "o.a1", conditionId: "condition.control", value: 1, experimentalUnitId: "u.a1" },
+        { observationId: "o.a2", conditionId: "condition.control", value: 2, experimentalUnitId: "u.a2" },
+        { observationId: "o.b1", conditionId: "condition.treatment", value: 1, experimentalUnitId: "u.b1" },
+        { observationId: "o.b2", conditionId: "condition.treatment", value: 2, experimentalUnitId: "u.b2" },
+      ],
+      options: {
+        alternative: "two_sided" as const,
+        confidenceLevel: 0.9 as const,
+        multiplicityMethod: null,
+      },
+    };
+    expect(IndependentContinuousEquivalenceEngineRequestSchema.safeParse(request).success).toBe(true);
+    expect(
+      IndependentContinuousEquivalenceEngineRequestSchema.safeParse({
+        ...request,
+        equivalencePlan: {
+          ...request.equivalencePlan,
+          margin: {
+            ...request.equivalencePlan.margin,
+            scale: "percentage_point_difference",
+          },
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      IndependentContinuousEquivalenceEngineRequestSchema.safeParse({
+        ...request,
+        equivalencePlan: {
+          ...request.equivalencePlan,
+          primaryComparisonId: "different-comparison",
+        },
+      }).success,
+    ).toBe(false);
+  });
+
   it("requires a scientifically declared interval around no difference", () => {
     expect(EquivalenceMarginSchema.safeParse(plan.margin).success).toBe(true);
     expect(

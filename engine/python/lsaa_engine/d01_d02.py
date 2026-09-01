@@ -128,6 +128,138 @@ def _independent_samples(request: dict[str, Any]) -> tuple[np.ndarray, np.ndarra
     return a, b
 
 
+def run_welch_tost(request: dict[str, Any]) -> dict[str, Any]:
+    condition_a, condition_b = request["contrastConditionIds"]
+    allowed_conditions = {condition_a, condition_b}
+    if any(
+        observation.get("pairId") is not None or observation.get("blockId") is not None
+        for observation in request["observations"]
+    ):
+        raise ValueError(
+            "Welch TOST supports independent units only; matched or blocked observations require a separate reviewed method"
+        )
+    if any(
+        observation["conditionId"] not in allowed_conditions
+        for observation in request["observations"]
+    ):
+        raise ValueError("Welch TOST observations must belong to the two contrasted conditions")
+
+    a, b = _independent_samples(request)
+    variance_a = float(np.var(a, ddof=1))
+    variance_b = float(np.var(b, ddof=1))
+    component_a = variance_a / len(a)
+    component_b = variance_b / len(b)
+    standard_error = math.sqrt(component_a + component_b)
+    if standard_error == 0:
+        raise ValueError("Welch TOST is undefined when both conditions have zero variance")
+    degrees_of_freedom = (component_a + component_b) ** 2 / (
+        component_a**2 / (len(a) - 1) + component_b**2 / (len(b) - 1)
+    )
+    difference = float(np.mean(a) - np.mean(b))
+    plan = request["equivalencePlan"]
+    margin = plan["margin"]
+    lower_bound = float(margin["lowerBound"])
+    upper_bound = float(margin["upperBound"])
+    confidence_level = float(request["options"]["confidenceLevel"])
+    expected_confidence_level = 1.0 - 2.0 * float(plan["alpha"])
+    if not math.isclose(confidence_level, expected_confidence_level, abs_tol=1e-12):
+        raise ValueError("Welch TOST confidence level must equal 1 - 2 alpha")
+
+    critical = _critical_value(confidence_level, degrees_of_freedom)
+    lower_confidence_bound = difference - critical * standard_error
+    upper_confidence_bound = difference + critical * standard_error
+    lower_statistic = (difference - lower_bound) / standard_error
+    upper_statistic = (difference - upper_bound) / standard_error
+    lower_p_value = float(stats.t.sf(lower_statistic, degrees_of_freedom))
+    upper_p_value = float(stats.t.cdf(upper_statistic, degrees_of_freedom))
+    tost_p_value = max(lower_p_value, upper_p_value)
+
+    if (
+        lower_confidence_bound > lower_bound
+        and upper_confidence_bound < upper_bound
+    ):
+        conclusion = "equivalence_supported"
+    elif (
+        upper_confidence_bound < lower_bound
+        or lower_confidence_bound > upper_bound
+    ):
+        conclusion = "meaningful_difference_supported"
+    else:
+        conclusion = "inconclusive"
+
+    result = base_result(request)
+    result["estimates"] = [
+        estimate(
+            "mean_difference",
+            difference,
+            standard_error,
+            {
+                "level": confidence_level,
+                "lower": lower_confidence_bound,
+                "upper": upper_confidence_bound,
+            },
+        )
+    ]
+    result["tests"] = [
+        {
+            "name": "welch_tost_lower_bound",
+            "statisticName": "t",
+            "statistic": lower_statistic,
+            "degreesOfFreedom": [float(degrees_of_freedom)],
+            "pValue": lower_p_value,
+            "adjustedPValue": None,
+            "effectSizeName": None,
+            "effectSize": None,
+        },
+        {
+            "name": "welch_tost_upper_bound",
+            "statisticName": "t",
+            "statistic": upper_statistic,
+            "degreesOfFreedom": [float(degrees_of_freedom)],
+            "pValue": upper_p_value,
+            "adjustedPValue": None,
+            "effectSizeName": None,
+            "effectSize": None,
+        },
+    ]
+    result["equivalence"] = {
+        "resultVersion": "0.1.0",
+        "plan": plan,
+        "comparisons": [
+            {
+                "comparisonId": request["comparisonId"],
+                "estimate": difference,
+                "standardError": standard_error,
+                "lowerConfidenceBound": lower_confidence_bound,
+                "upperConfidenceBound": upper_confidence_bound,
+                "confidenceLevel": confidence_level,
+                "lowerOneSidedPValue": lower_p_value,
+                "upperOneSidedPValue": upper_p_value,
+                "tostPValue": tost_p_value,
+                "conclusion": conclusion,
+            }
+        ],
+    }
+    result["diagnostics"] = [
+        {
+            "code": "equivalence_margin_prespecified",
+            "message": "The equivalence bounds were supplied by the saved prespecified plan and were not estimated from these observations.",
+        },
+        {
+            "code": "welch_tost_independent_units",
+            "message": "The two one-sided tests and confidence interval use unequal-variance Welch standard errors for independent experimental units.",
+        },
+    ]
+    if conclusion == "inconclusive":
+        result["warnings"].append(
+            {
+                "code": "equivalence_interval_crosses_margin",
+                "message": "The confidence interval overlaps an equivalence bound, so these data establish neither equivalence nor a meaningful difference.",
+            }
+        )
+    return result
+
+
 def _pooled_hedges_g(a: np.ndarray, b: np.ndarray) -> float | None:
     variance_a = float(np.var(a, ddof=1))
     variance_b = float(np.var(b, ddof=1))
@@ -361,6 +493,12 @@ def run_wilcoxon(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def _dispatch_request(request: dict[str, Any]) -> dict[str, Any]:
+    if request.get("protocolVersion") == "0.15.0":
+        if request.get("templateId") == "D01" and request.get("method") == "welch_tost":
+            return run_welch_tost(request)
+        raise ValueError(
+            f"Unsupported template/method combination: {request.get('templateId')}/{request.get('method')}"
+        )
     if request.get("protocolVersion") == "0.14.0":
         from .d17 import run_nonlinear_xy
         if request.get("templateId") == "D17" and request.get("method") == "nonlinear_xy_fit":

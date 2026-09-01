@@ -23,6 +23,151 @@ def request(template_id, method, observations):
 
 
 class D01D02EngineTests(unittest.TestCase):
+    def test_welch_tost_equivalent_fixture(self):
+        observations = []
+        for condition, values in (
+            ("condition.control", [1.2, 1.5, 1.7, 2.0]),
+            ("condition.treatment", [2.1, 2.4, 2.8, 3.0, 3.2]),
+        ):
+            for index, value in enumerate(values):
+                observations.append(
+                    {
+                        "observationId": f"observation.{condition}.{index}",
+                        "conditionId": condition,
+                        "value": value,
+                        "experimentalUnitId": f"unit.{condition}.{index}",
+                    }
+                )
+        equivalence_request = {
+            "protocolVersion": "0.15.0",
+            "requestId": "request.equivalence",
+            "projectId": "project.equivalence",
+            "analysisId": "analysis.equivalence",
+            "templateId": "D01",
+            "templateVersion": "0.2.0",
+            "method": "welch_tost",
+            "comparisonId": "control:treatment",
+            "contrastConditionIds": ["condition.control", "condition.treatment"],
+            "equivalencePlan": {
+                "schemaVersion": "0.1.0",
+                "margin": {
+                    "scale": "raw_difference",
+                    "lowerBound": -2.0,
+                    "upperBound": 0.2,
+                    "unit": "AU",
+                    "declaredAsPrespecified": True,
+                },
+                "alpha": 0.05,
+                "claimMode": "single_primary_comparison",
+                "primaryComparisonId": "control:treatment",
+            },
+            "observations": observations,
+            "options": {
+                "alternative": "two_sided",
+                "confidenceLevel": 0.9,
+                "multiplicityMethod": None,
+            },
+        }
+
+        result = run_request(equivalence_request)
+
+        comparison = result["equivalence"]["comparisons"][0]
+        self.assertEqual(comparison["conclusion"], "equivalence_supported")
+        self.assertAlmostEqual(comparison["estimate"], -1.1, places=12)
+        self.assertAlmostEqual(comparison["standardError"], 0.2614064523559687, places=12)
+        self.assertAlmostEqual(comparison["lowerConfidenceBound"], -1.5953141784852043, places=12)
+        self.assertAlmostEqual(comparison["upperConfidenceBound"], -0.6046858215147959, places=12)
+        self.assertAlmostEqual(comparison["lowerOneSidedPValue"], 0.005403898142320505, places=12)
+        self.assertAlmostEqual(comparison["upperOneSidedPValue"], 0.0008086289057122471, places=12)
+        self.assertAlmostEqual(comparison["tostPValue"], 0.005403898142320505, places=12)
+
+    def test_welch_tost_reports_inconclusive_from_interval_overlap(self):
+        observations = []
+        for condition, values in (
+            ("condition.control", [1.0, 2.0, 3.0]),
+            ("condition.treatment", [1.0, 2.0, 3.0]),
+        ):
+            for index, value in enumerate(values):
+                observations.append(
+                    {
+                        "observationId": f"observation.{condition}.{index}",
+                        "conditionId": condition,
+                        "value": value,
+                        "experimentalUnitId": f"unit.{condition}.{index}",
+                    }
+                )
+        equivalence_request = {
+            "protocolVersion": "0.15.0",
+            "requestId": "request.inconclusive",
+            "projectId": "project.equivalence",
+            "analysisId": "analysis.inconclusive",
+            "templateId": "D01",
+            "templateVersion": "0.2.0",
+            "method": "welch_tost",
+            "comparisonId": "control:treatment",
+            "contrastConditionIds": ["condition.control", "condition.treatment"],
+            "equivalencePlan": {
+                "schemaVersion": "0.1.0",
+                "margin": {
+                    "scale": "raw_difference",
+                    "lowerBound": -0.5,
+                    "upperBound": 0.5,
+                    "unit": "AU",
+                    "declaredAsPrespecified": True,
+                },
+                "alpha": 0.05,
+                "claimMode": "single_primary_comparison",
+                "primaryComparisonId": "control:treatment",
+            },
+            "observations": observations,
+            "options": {
+                "alternative": "two_sided",
+                "confidenceLevel": 0.9,
+                "multiplicityMethod": None,
+            },
+        }
+        result = run_request(equivalence_request)
+        self.assertEqual(
+            result["equivalence"]["comparisons"][0]["conclusion"],
+            "inconclusive",
+        )
+        self.assertTrue(
+            any(
+                warning["code"] == "equivalence_interval_crosses_margin"
+                for warning in result["warnings"]
+            )
+        )
+
+    def test_welch_tost_rejects_pair_or_block_metadata(self):
+        observations = [
+            {"observationId": "a1", "conditionId": "a", "value": 1, "experimentalUnitId": "ua1", "blockId": "run.1"},
+            {"observationId": "a2", "conditionId": "a", "value": 2, "experimentalUnitId": "ua2", "blockId": "run.2"},
+            {"observationId": "b1", "conditionId": "b", "value": 1, "experimentalUnitId": "ub1", "blockId": "run.1"},
+            {"observationId": "b2", "conditionId": "b", "value": 2, "experimentalUnitId": "ub2", "blockId": "run.2"},
+        ]
+        blocked_request = {
+            "protocolVersion": "0.15.0",
+            "requestId": "request.blocked",
+            "projectId": "project.equivalence",
+            "analysisId": "analysis.blocked",
+            "templateId": "D01",
+            "templateVersion": "0.2.0",
+            "method": "welch_tost",
+            "comparisonId": "a:b",
+            "contrastConditionIds": ["a", "b"],
+            "equivalencePlan": {
+                "schemaVersion": "0.1.0",
+                "margin": {"scale": "raw_difference", "lowerBound": -1, "upperBound": 1, "unit": "AU", "declaredAsPrespecified": True},
+                "alpha": 0.05,
+                "claimMode": "single_primary_comparison",
+                "primaryComparisonId": "a:b",
+            },
+            "observations": observations,
+            "options": {"alternative": "two_sided", "confidenceLevel": 0.9, "multiplicityMethod": None},
+        }
+        with self.assertRaisesRegex(ValueError, "independent units only"):
+            run_request(blocked_request)
+
     def test_duplicate_independent_unit_is_rejected(self):
         observations = [
             {

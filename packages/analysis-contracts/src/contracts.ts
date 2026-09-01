@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { EntityIdSchema, IsoDateTimeSchema } from "@lsaa/domain";
-import { EquivalenceAnalysisResultSchema } from "./equivalence";
+import {
+  EquivalenceAnalysisPlanSchema,
+  EquivalenceAnalysisResultSchema,
+} from "./equivalence";
 
 export const AnalysisTemplateIdSchema = z.enum([
   "D01",
@@ -45,6 +48,7 @@ export const StatisticalMethodSchema = z.enum([
   "mcnemar_exact",
   "simple_linear_regression",
   "nonlinear_xy_fit",
+  "welch_tost",
 ]);
 
 export const AnalysisRecommendationSchema = z.object({
@@ -92,6 +96,52 @@ export const TwoConditionAnalysisEngineRequestSchema = z.object({
   observations: z.array(EngineObservationSchema).min(2),
   options: AnalysisOptionsSchema,
 });
+
+export const IndependentContinuousEquivalenceEngineRequestSchema = z
+  .object({
+    protocolVersion: z.literal("0.15.0"),
+    requestId: EntityIdSchema,
+    projectId: EntityIdSchema,
+    analysisId: EntityIdSchema,
+    templateId: z.literal("D01"),
+    templateVersion: z.literal("0.2.0"),
+    method: z.literal("welch_tost"),
+    comparisonId: z.string().trim().min(1),
+    contrastConditionIds: z.tuple([EntityIdSchema, EntityIdSchema]),
+    equivalencePlan: EquivalenceAnalysisPlanSchema,
+    observations: z.array(EngineObservationSchema).min(4),
+    options: AnalysisOptionsSchema.extend({
+      alternative: z.literal("two_sided").default("two_sided"),
+      confidenceLevel: z.literal(0.9).default(0.9),
+      multiplicityMethod: z.null().default(null),
+    }),
+  })
+  .superRefine((request, context) => {
+    if (request.contrastConditionIds[0] === request.contrastConditionIds[1]) {
+      context.addIssue({
+        code: "custom",
+        path: ["contrastConditionIds"],
+        message: "Independent equivalence analysis requires two different conditions",
+      });
+    }
+    if (request.equivalencePlan.margin.scale !== "raw_difference") {
+      context.addIssue({
+        code: "custom",
+        path: ["equivalencePlan", "margin", "scale"],
+        message: "Continuous Welch TOST requires a raw-difference equivalence margin",
+      });
+    }
+    if (
+      request.equivalencePlan.claimMode !== "single_primary_comparison" ||
+      request.equivalencePlan.primaryComparisonId !== request.comparisonId
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["equivalencePlan", "primaryComparisonId"],
+        message: "The first executable Welch TOST route requires one matching primary comparison",
+      });
+    }
+  });
 
 export const MultiGroupAnalysisEngineRequestSchema = z.object({
   protocolVersion: z.literal("0.2.0"),
@@ -533,6 +583,7 @@ export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion
   FriedmanAnalysisEngineRequestSchema,
   SimpleLinearRegressionEngineRequestSchema,
   NonlinearXyFitEngineRequestSchema,
+  IndependentContinuousEquivalenceEngineRequestSchema,
 ]);
 
 export const EstimateSchema = z.object({
@@ -575,6 +626,7 @@ export const AnalysisEngineResultSchema = z.object({
     "0.12.0",
     "0.13.0",
     "0.14.0",
+    "0.15.0",
   ]),
   requestId: EntityIdSchema,
   status: z.enum(["ok", "validation_error", "engine_error"]),

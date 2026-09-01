@@ -263,6 +263,68 @@ class IndependentReferenceValidationTests(unittest.TestCase):
             production["estimates"][0]["confidenceInterval"]["upper"], upper, places=12
         )
 
+    def test_welch_tost_matches_statsmodels_unequal_variance_reference(self):
+        control = np.asarray([1.2, 1.5, 1.7, 2.0])
+        treatment = np.asarray([2.1, 2.4, 2.8, 3.0, 3.2])
+        observations = []
+        for condition, values in (
+            ("condition.control", control),
+            ("condition.treatment", treatment),
+        ):
+            for index, value in enumerate(values):
+                observations.append(
+                    {
+                        "observationId": f"observation.{condition}.{index}",
+                        "conditionId": condition,
+                        "value": float(value),
+                        "experimentalUnitId": f"unit.{condition}.{index}",
+                    }
+                )
+        production = run_request(
+            {
+                "protocolVersion": "0.15.0",
+                "requestId": "request.equivalence.reference",
+                "projectId": "project.reference",
+                "analysisId": "analysis.equivalence.reference",
+                "templateId": "D01",
+                "templateVersion": "0.2.0",
+                "method": "welch_tost",
+                "comparisonId": "control:treatment",
+                "contrastConditionIds": ["condition.control", "condition.treatment"],
+                "equivalencePlan": {
+                    "schemaVersion": "0.1.0",
+                    "margin": {
+                        "scale": "raw_difference",
+                        "lowerBound": -2.0,
+                        "upperBound": 0.2,
+                        "unit": "AU",
+                        "declaredAsPrespecified": True,
+                    },
+                    "alpha": 0.05,
+                    "claimMode": "single_primary_comparison",
+                    "primaryComparisonId": "control:treatment",
+                },
+                "observations": observations,
+                "options": {
+                    "alternative": "two_sided",
+                    "confidenceLevel": 0.9,
+                    "multiplicityMethod": None,
+                },
+            }
+        )
+        reference = CompareMeans(DescrStatsW(control), DescrStatsW(treatment))
+        tost_p, (lower_test, upper_test) = reference.ttost_ind(-2.0, 0.2, usevar="unequal")
+        lower_ci, upper_ci = reference.tconfint_diff(alpha=0.1, usevar="unequal")
+        comparison = production["equivalence"]["comparisons"][0]
+
+        self.assertAlmostEqual(comparison["tostPValue"], tost_p, places=12)
+        self.assertAlmostEqual(comparison["lowerOneSidedPValue"], lower_test[1], places=12)
+        self.assertAlmostEqual(comparison["upperOneSidedPValue"], upper_test[1], places=12)
+        self.assertAlmostEqual(production["tests"][0]["statistic"], lower_test[0], places=12)
+        self.assertAlmostEqual(production["tests"][1]["statistic"], upper_test[0], places=12)
+        self.assertAlmostEqual(comparison["lowerConfidenceBound"], lower_ci, places=12)
+        self.assertAlmostEqual(comparison["upperConfidenceBound"], upper_ci, places=12)
+
     def test_paired_difference_result_matches_statsmodels(self):
         control = np.asarray([10.0, 13.0, 9.0, 15.0, 11.0])
         treatment = np.asarray([12.0, 15.0, 14.0, 18.0, 13.0])
