@@ -16,7 +16,6 @@ import {
   createExperimentWorkspaceDesign,
   type WorkspaceGraphState,
 } from "../../app/experimentWorkspaceProject";
-import { createWorkspaceGraphStateSnapshot } from "../../app/experimentGraphStateSelectors";
 import { copyGraphToClipboard } from "../../app/graphExport";
 import {
   saveGraphCsvExport,
@@ -69,6 +68,7 @@ import {
 } from "./useExperimentGraphWorkspaceEffects";
 import { useExperimentGraphStatisticsIntent } from "./useExperimentGraphStatisticsIntent";
 import { useExperimentGraphAnalysisState } from "./useExperimentGraphAnalysisState";
+import { useExperimentGraphStateSnapshot } from "./useExperimentGraphStateSnapshot";
 import { useExperimentGraphPresentationState } from "./useExperimentGraphPresentationState";
 import { useExperimentGraphDataSelectionState } from "./useExperimentGraphDataSelectionState";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
@@ -235,47 +235,25 @@ export function ExperimentGraphWorkbench({
     [analysis, appearance, axes, draft, graphType, layers, selectedReadoutId, timeAnalysis],
   );
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const graphStateSnapshot = useMemo<Omit<WorkspaceGraphState, "id" | "displayName">>(
-    () =>
-      createWorkspaceGraphStateSnapshot({
-        selectedReadoutId,
-        sourceMode,
-        selectedConditionIds,
-        analysisConditionIds,
-        selectedTimePointIds,
-        analysisTimePointId,
-        analysisMetric: timeAnalysis,
-        plannedContrastConditionIds,
-        graphType,
-        grouping,
-        layers,
-        appearance,
-        axes,
-        statisticsAnnotation,
-        statisticsAnnotations,
-        initialAnalysisRunId: initialState?.analysisRunId,
-        analysis,
-      }),
-    [
-      analysis,
-      analysisTimePointId,
-      appearance,
-      axes,
-      graphType,
-      grouping,
-      initialState?.analysisRunId,
-      layers,
-      analysisConditionIds,
-      selectedConditionIds,
-      selectedReadoutId,
-      selectedTimePointIds,
-      plannedContrastConditionIds,
-      sourceMode,
-      statisticsAnnotation,
-      statisticsAnnotations,
-      timeAnalysis,
-    ],
-  );
+  const graphStateSnapshot = useExperimentGraphStateSnapshot({
+    selectedReadoutId,
+    sourceMode,
+    selectedConditionIds,
+    analysisConditionIds,
+    selectedTimePointIds,
+    analysisTimePointId,
+    analysisMetric: timeAnalysis,
+    plannedContrastConditionIds,
+    graphType,
+    grouping,
+    layers,
+    appearance,
+    axes,
+    statisticsAnnotation,
+    statisticsAnnotations,
+    initialAnalysisRunId: initialState?.analysisRunId,
+    analysis,
+  });
   const benchmarkRenderedState = createBenchmarkRenderedState({
     selectedReadoutId,
     sourceMode,
