@@ -1,9 +1,16 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { resetAppLocaleForTests } from "../app/appLocale";
 import { LegacyDataSheetWorkflowTabs } from "./LegacyDataSheetWorkflowTabs";
 
 describe("LegacyDataSheetWorkflowTabs", () => {
+  beforeEach(() => resetAppLocaleForTests("ja"));
+  afterEach(() => {
+    cleanup();
+    resetAppLocaleForTests("ja");
+  });
+
   it("renders shared progress without changing the owning sheet state", () => {
     const onSelect = vi.fn();
     render(
@@ -50,5 +57,27 @@ describe("LegacyDataSheetWorkflowTabs", () => {
     fireEvent.keyDown(inputTab, { key: "ArrowRight" });
     expect(onSelect).toHaveBeenCalledWith("analysis");
     expect(analysisTab).toHaveFocus();
+  });
+
+  it("renders the complete workflow contract in English", () => {
+    resetAppLocaleForTests("en");
+    render(
+      <LegacyDataSheetWorkflowTabs
+        idPrefix="test-workflow"
+        activeTab="save"
+        validated
+        analysisComplete
+        graphComplete
+        saved
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("tablist", { name: "Analysis workflow" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "1 Data entryValidated" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "2 AnalysisAnalyzed" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "3 GraphAnalyzed" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "4 SaveSaved" })).toBeVisible();
+    expect(document.body.textContent).not.toMatch(/[\u3040-\u30ff\u3400-\u9fff]/u);
   });
 });

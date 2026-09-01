@@ -1,5 +1,6 @@
 import type { KeyboardEvent } from "react";
 
+import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 import { nextRovingTabIndex } from "../components/rovingTab";
 import {
   LEGACY_WORKFLOW_TABS,
@@ -22,16 +23,27 @@ function statusFor(
     LegacyDataSheetWorkflowTabsProps,
     "validated" | "analysisComplete" | "graphComplete" | "saved"
   >,
+  locale: AppLocale,
 ): string {
-  if (tab === "input") return state.validated ? "検証済み" : "未入力";
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
+  if (tab === "input") return state.validated ? t("検証済み", "Validated") : t("未入力", "Not entered");
   if (tab === "analysis") {
-    return state.analysisComplete ? "解析済み" : state.validated ? "検証済み" : "未入力";
+    return state.analysisComplete
+      ? t("解析済み", "Analyzed")
+      : state.validated
+        ? t("検証済み", "Validated")
+        : t("未入力", "Not entered");
   }
-  if (tab === "graph") return state.graphComplete ? "解析済み" : "未入力";
-  return state.saved ? "保存済み" : state.validated ? "検証済み" : "未入力";
+  if (tab === "graph") return state.graphComplete ? t("解析済み", "Analyzed") : t("未入力", "Not entered");
+  return state.saved
+    ? t("保存済み", "Saved")
+    : state.validated
+      ? t("検証済み", "Validated")
+      : t("未入力", "Not entered");
 }
 
 export function LegacyDataSheetWorkflowTabs(props: LegacyDataSheetWorkflowTabsProps) {
+  const locale = useAppLocale();
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
     const nextIndex = nextRovingTabIndex(event.key, currentIndex, LEGACY_WORKFLOW_TABS.length);
     if (nextIndex === null) return;
@@ -42,7 +54,11 @@ export function LegacyDataSheetWorkflowTabs(props: LegacyDataSheetWorkflowTabsPr
   };
 
   return (
-    <nav className="workflow-tabs" aria-label="解析ワークフロー" role="tablist">
+    <nav
+      className="workflow-tabs"
+      aria-label={localizedText(locale, "解析ワークフロー", "Analysis workflow")}
+      role="tablist"
+    >
       {LEGACY_WORKFLOW_TABS.map(({ id, label }, index) => (
         <button
           key={id}
@@ -56,8 +72,8 @@ export function LegacyDataSheetWorkflowTabs(props: LegacyDataSheetWorkflowTabsPr
           onClick={() => props.onSelect(id)}
           onKeyDown={(event) => handleKeyDown(event, index)}
         >
-          <span>{label}</span>
-          <small>{statusFor(id, props)}</small>
+          <span>{localizedText(locale, label.ja, label.en)}</span>
+          <small>{statusFor(id, props, locale)}</small>
         </button>
       ))}
     </nav>

@@ -23,12 +23,12 @@ export type LegacyWorkflowTabId = "input" | "analysis" | "graph" | "save";
 
 export const LEGACY_WORKFLOW_TABS: ReadonlyArray<{
   id: LegacyWorkflowTabId;
-  label: string;
+  label: Readonly<{ ja: string; en: string }>;
 }> = [
-  { id: "input", label: "1 データ入力" },
-  { id: "analysis", label: "2 解析" },
-  { id: "graph", label: "3 グラフ" },
-  { id: "save", label: "4 保存" },
+  { id: "input", label: { ja: "1 データ入力", en: "1 Data entry" } },
+  { id: "analysis", label: { ja: "2 解析", en: "2 Analysis" } },
+  { id: "graph", label: { ja: "3 グラフ", en: "3 Graph" } },
+  { id: "save", label: { ja: "4 保存", en: "4 Save" } },
 ];
 
 let fallbackSequence = 0;
