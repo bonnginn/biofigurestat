@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { appendMatrixView, createInitialProjectState, ProjectStateSchema } from "./state";
+import {
+  appendMatrixView,
+  createInitialProjectState,
+  ProjectStateSchema,
+  type ProjectState,
+} from "./state";
 import { createUnresolvedVisualizationProjectState } from "./unresolved-visualization";
 import { createUnresolvedVisualizationPromotionHistory } from "./entry-source-history";
 import { createCoreTwoConditionGraphSpec, createHeatmapGraphSpec } from "@lsaa/graph-spec";
@@ -243,6 +248,62 @@ function analyzedFixtureState() {
   });
 }
 
+async function savePublicAlphaV02Fixture(input: {
+  storage: MemoryStorage;
+  target: string;
+  state: ProjectState;
+  rawExport: string;
+}) {
+  const { experimentWorkspace: _workspace, adaptiveInput: _adaptiveInput, ...legacyState } =
+    input.state;
+  const alphaState = { ...legacyState, schemaVersion: "0.2.0" };
+  const database = new TextEncoder().encode(JSON.stringify(alphaState));
+  const rawExport = new TextEncoder().encode(input.rawExport);
+  const databasePath = "project.sqlite";
+  const rawPath = "raw/exports/canonical.csv";
+
+  await saveProjectPackage(
+    input.storage,
+    input.target,
+    {
+      format: "life-science-analysis-project",
+      formatVersion: "0.2.0",
+      projectKind: "experiment",
+      projectId: alphaState.metadata.projectId,
+      metadata: alphaState.metadata,
+      appVersion: "0.1.0-alpha.1",
+      schemaVersions: {
+        design: "0.2.0",
+        data: "0.2.0",
+        analysis: "0.1.0",
+        graph: "0.1.0",
+      },
+      createdAt: alphaState.metadata.createdAt,
+      savedAt: alphaState.metadata.updatedAt,
+      files: [
+        {
+          path: databasePath,
+          role: "database",
+          sha256: await sha256(database),
+          sizeBytes: database.byteLength,
+        },
+        {
+          path: rawPath,
+          role: "raw_export",
+          sha256: await sha256(rawExport),
+          sizeBytes: rawExport.byteLength,
+        },
+      ],
+      recovery: {
+        canonicalRawExportPath: rawPath,
+        databasePath,
+      },
+    },
+    { [databasePath]: database, [rawPath]: rawExport },
+    sha256,
+  );
+}
+
 describe("populated project round trip", () => {
   it("round-trips an executed independent Welch TOST without changing its margin or conclusion", async () => {
     const storage = new MemoryStorage();
@@ -434,55 +495,13 @@ describe("populated project round trip", () => {
   it("opens a Public Alpha v0.2 package and preserves it through current save/reopen", async () => {
     const storage = new MemoryStorage();
     const current = analyzedFixtureState();
-    const { experimentWorkspace: _currentWorkspace, ...withoutWorkspace } = current;
-    const alphaState = { ...withoutWorkspace, schemaVersion: "0.2.0" };
-    const database = new TextEncoder().encode(JSON.stringify(alphaState));
-    const rawExport = new TextEncoder().encode(
-      "unit_id,condition,outcome,value\nunit.dark.1,condition.dark,outcome.wb,1\nunit.light.1,condition.light,outcome.wb,1.4\n",
-    );
-    const databasePath = "project.sqlite";
-    const rawPath = "raw/exports/canonical.csv";
-
-    await saveProjectPackage(
+    await savePublicAlphaV02Fixture({
       storage,
-      "/projects/public-alpha-v0.2.lsa",
-      {
-        format: "life-science-analysis-project",
-        formatVersion: "0.2.0",
-        projectKind: "experiment",
-        projectId: alphaState.metadata.projectId,
-        metadata: alphaState.metadata,
-        appVersion: "0.1.0-alpha.1",
-        schemaVersions: {
-          design: "0.2.0",
-          data: "0.2.0",
-          analysis: "0.1.0",
-          graph: "0.1.0",
-        },
-        createdAt: alphaState.metadata.createdAt,
-        savedAt: alphaState.metadata.updatedAt,
-        files: [
-          {
-            path: databasePath,
-            role: "database",
-            sha256: await sha256(database),
-            sizeBytes: database.byteLength,
-          },
-          {
-            path: rawPath,
-            role: "raw_export",
-            sha256: await sha256(rawExport),
-            sizeBytes: rawExport.byteLength,
-          },
-        ],
-        recovery: {
-          canonicalRawExportPath: rawPath,
-          databasePath,
-        },
-      },
-      { [databasePath]: database, [rawPath]: rawExport },
-      sha256,
-    );
+      target: "/projects/public-alpha-v0.2.lsa",
+      state: current,
+      rawExport:
+        "unit_id,condition,outcome,value\nunit.dark.1,condition.dark,outcome.wb,1\nunit.light.1,condition.light,outcome.wb,1.4\n",
+    });
 
     const opened = await openProjectStatePackage({
       storage,
@@ -523,6 +542,172 @@ describe("populated project round trip", () => {
     expect(reopened.unitInstances).toEqual(opened.unitInstances);
     expect(reopened.analysisRuns).toEqual(opened.analysisRuns);
     expect(reopened.graphs).toEqual(opened.graphs);
+  });
+
+  it("migrates Public Alpha Survival event and censoring records without treating censoring as missing", async () => {
+    const storage = new MemoryStorage();
+    const base = fixtureState();
+    const survivalState = createInitialProjectState({
+      metadata: {
+        ...base.metadata,
+        projectId: "project.alpha-survival",
+        projectName: "Alpha survival",
+      },
+      design: {
+        ...base.designRevisions[0]!.design,
+        id: "design.alpha-survival",
+        outcomes: [
+          {
+            id: "outcome.survival",
+            key: "survival",
+            label: "Survival",
+            type: "time_to_event",
+            unit: "days",
+          },
+        ],
+      },
+      rawRevision: { ...base.rawRevisions[0]!, id: "raw.alpha-survival" },
+      unitInstances: base.unitInstances,
+      observations: base.observations.map((observation, index) => ({
+        ...observation,
+        id: `alpha-survival.${index}`,
+        rawRevisionId: "raw.alpha-survival",
+        outcomeId: "outcome.survival",
+        measurement: {
+          kind: "time_to_event" as const,
+          followUpTime: index === 0 ? 12 : 18,
+          eventObserved: index === 0,
+        },
+      })),
+      actor: "researcher",
+    });
+
+    await savePublicAlphaV02Fixture({
+      storage,
+      target: "/projects/public-alpha-survival.lsa",
+      state: survivalState,
+      rawExport:
+        "unit_id,condition,outcome,follow_up_time,event_observed\nunit.dark.1,condition.dark,outcome.survival,12,true\nunit.light.1,condition.light,outcome.survival,18,false\n",
+    });
+    const opened = await openProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/public-alpha-survival.lsa",
+      sha256,
+    });
+    const resaved = await saveProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/public-alpha-survival-resaved.lsa",
+      state: opened,
+      sha256,
+      appVersion: "0.1.0-next",
+      savedAt: "2026-09-02T02:00:00Z",
+    });
+    const reopened = await openProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/public-alpha-survival-resaved.lsa",
+      sha256,
+    });
+
+    expect(reopened).toEqual(resaved);
+    expect(reopened.observations.map(({ measurement }) => measurement)).toEqual([
+      { kind: "time_to_event", followUpTime: 12, eventObserved: true },
+      { kind: "time_to_event", followUpTime: 18, eventObserved: false },
+    ]);
+  });
+
+  it("migrates Public Alpha ordered X/Y points without changing unit, series, X, or Y identity", async () => {
+    const storage = new MemoryStorage();
+    const base = fixtureState();
+    const orderedState = createInitialProjectState({
+      metadata: {
+        ...base.metadata,
+        projectId: "project.alpha-ordered-xy",
+        projectName: "Alpha ordered X/Y",
+      },
+      design: {
+        ...base.designRevisions[0]!.design,
+        id: "design.alpha-ordered-xy",
+        outcomes: [
+          {
+            id: "outcome.response",
+            key: "response",
+            label: "Response",
+            type: "continuous",
+            unit: "AU",
+          },
+        ],
+      },
+      rawRevision: { ...base.rawRevisions[0]!, id: "raw.alpha-ordered-xy" },
+      unitInstances: base.unitInstances,
+      observations: [
+        ["point.a.0", "unit.dark.1", "condition.dark", 0, 0.05],
+        ["point.a.5", "unit.dark.1", "condition.dark", 5, 0.66],
+        ["point.b.0", "unit.light.1", "condition.light", 0, 0.08],
+        ["point.b.5", "unit.light.1", "condition.light", 5, 0.91],
+      ].map(([id, unitInstanceId, conditionId, time, value]) => ({
+        id: String(id),
+        rawRevisionId: "raw.alpha-ordered-xy",
+        unitInstanceId: String(unitInstanceId),
+        conditionId: String(conditionId),
+        outcomeId: "outcome.response",
+        time: Number(time),
+        measurement: { kind: "scalar" as const, value: Number(value) },
+      })),
+      actor: "researcher",
+    });
+
+    await savePublicAlphaV02Fixture({
+      storage,
+      target: "/projects/public-alpha-ordered-xy.lsa",
+      state: orderedState,
+      rawExport:
+        "unit_id,series,x,y\nunit.dark.1,condition.dark,0,0.05\nunit.dark.1,condition.dark,5,0.66\nunit.light.1,condition.light,0,0.08\nunit.light.1,condition.light,5,0.91\n",
+    });
+    const opened = await openProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/public-alpha-ordered-xy.lsa",
+      sha256,
+    });
+    const resaved = await saveProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/public-alpha-ordered-xy-resaved.lsa",
+      state: opened,
+      sha256,
+      appVersion: "0.1.0-next",
+      savedAt: "2026-09-02T02:00:00Z",
+    });
+    const reopened = await openProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/public-alpha-ordered-xy-resaved.lsa",
+      sha256,
+    });
+
+    expect(reopened).toEqual(resaved);
+    expect(
+      reopened.observations.map(({ id, unitInstanceId, conditionId, time, measurement }) => ({
+        id,
+        unitInstanceId,
+        conditionId,
+        time,
+        measurement,
+      })),
+    ).toEqual(
+      orderedState.observations.map(
+        ({ id, unitInstanceId, conditionId, time, measurement }) => ({
+          id,
+          unitInstanceId,
+          conditionId,
+          time,
+          measurement,
+        }),
+      ),
+    );
   });
 
   it("reopens exact unresolved entry history without making it canonical data", async () => {

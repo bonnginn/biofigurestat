@@ -618,6 +618,14 @@ and legend anchors therefore use the same left/top/right/bottom contract instead
 canvas with different semantics. The helper has a direct exact-bounds test, and the 62 focused
 layout/renderer/Workbench tests, UI typecheck, and focused lint pass.
 
+The synthetic Public Alpha v0.2 migration coverage now includes the canonical Survival and ordered
+X/Y shapes in addition to the ordinary analyzed D01 project. Opening the legacy package and saving
+it again with the current writer preserves Survival event versus censor status and ordered-point
+unit, series, X, and Y identity. The package construction used by these fixtures is shared so new
+legacy shapes do not duplicate manifest/checksum plumbing. The complete project package suite
+passes 9 files / 71 tests together with project typecheck; no production schema or migration logic
+changed.
+
 The ordinary, scatter, and categorical Graph-creation previews now consume that same rectangle
 contract for axis endpoints, point scaling, bar baselines, and label anchors. Existing preview
 dimensions and data domains are unchanged; future margin changes no longer require several
