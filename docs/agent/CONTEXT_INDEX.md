@@ -70,6 +70,7 @@ Open older Graph ADRs only when the current ones explicitly depend on them.
 - Public Alpha source and bundle licensing: `docs/adr/0058-mit-public-alpha-license.md`
 - Release checklist: `docs/alpha/ALPHA_RELEASE_CHECKLIST.md`
 - Privacy: `docs/alpha/PRIVACY.md`
+- Institutional IT and data-handling summary: `docs/IT_DATA_HANDLING_OVERVIEW.md`
 - Known limitations: `docs/alpha/KNOWN_LIMITATIONS.md`
 - Diagnostics: `docs/alpha/DIAGNOSTICS_AND_ERROR_ARCHITECTURE.md`
 - Windows development setup: `docs/WINDOWS_BENCHMARK_DEVELOPMENT_SETUP.md`

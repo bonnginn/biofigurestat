@@ -78,6 +78,7 @@ Key boundaries:
 日本語を含む詳細は、[Alpha Quick Start](docs/alpha/QUICK_START.md)、
 [release notes / リリースノート](docs/alpha/RELEASE_NOTES_0.1.0-alpha.2.md)、
 [privacy notice / プライバシー](docs/alpha/PRIVACY.md)、
+[IT・データ取扱い概要 / IT and Data Handling Overview](docs/IT_DATA_HANDLING_OVERVIEW.md)、
 [known limitations / 既知の制限](docs/alpha/KNOWN_LIMITATIONS.md)を参照してください。
 The relationship between this clean public
 source snapshot and the validated native artifacts is recorded in the

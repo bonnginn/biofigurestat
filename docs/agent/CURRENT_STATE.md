@@ -88,6 +88,12 @@ and analysis run identity together. Japanese and English output share the same s
 the export uses the existing native-aware Save boundary. The original `.lsa` remains authoritative
 for editing and complete provenance. This source change is not yet part of a published binary.
 
+Institutional deployment review now has one bilingual `IT_DATA_HANDLING_OVERVIEW.md`, linked from the
+public README. It distinguishes local research-data processing from consented usage telemetry,
+explicit problem reports, and user-opened external links; records storage, permissions, signing,
+update, and integrity boundaries; and includes an adoption checklist without claiming certification
+or an external security review.
+
 The final source gate ran the 193-file / 1,304-test UI suite once. It produced 1,303 passes and one
 stale test expectation for the Japanese `概要` tab; the corrected focused workflow passes. Full
 workspace typecheck, UI lint, production UI build, the 9-test native-harness self-suite, and the

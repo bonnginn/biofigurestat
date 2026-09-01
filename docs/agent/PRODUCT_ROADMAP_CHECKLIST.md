@@ -19,11 +19,10 @@
 
 | 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
 | ---- | ---- | ---- | ------------ | -------- |
-| 1 | ⬜ | IT・データ取扱い概要 | 組織固有要件のみ | 通信、保存場所、権限、署名、利用情報送信を日英1文書に整理 |
-| 2 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
-| 3 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Open、Save As、PNG/SVG/CSVのCancelと保存先、および`.lsa`関連付けをpackaged appで再現 |
-| 4 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | Graph preview parity、Kaplan–Meierの軸・凡例設定、Graph-only表示差を実機で確認 |
-| 5 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
+| 1 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
+| 2 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Open、Save As、PNG/SVG/CSVのCancelと保存先、および`.lsa`関連付けをpackaged appで再現 |
+| 3 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | Graph preview parity、Kaplan–Meierの軸・凡例設定、Graph-only表示差を実機で確認 |
+| 4 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
 
 ## 公開・運用
 
@@ -98,6 +97,7 @@
 | ✅   | 制約付きExcelテンプレート＋取込レシピ  | 独立群、対応・反復、Survival、ordered X/Yを別sheetに分け、ID・実験回・日付・missing・censoringの意味を日英READMEと画面内手順へ固定。native readerとbundle同梱を検証済み |
 | ✅   | Homeから始まる5分ガイド                | 1つの合成デモでData→Graph→Statistics→Methodsを順に案内し、日英表示と遷移を回帰test済み |
 | ✅   | 共同研究者向け解析レビューセット       | 実行済みrunに限り、Graph、群別n、推定値・CI、検定、警告、Methods、表示データCSV、run IDを読取専用HTMLへ一括出力。日英表示とnative保存境界を回帰test済み |
+| ✅   | IT・データ取扱い概要                   | local解析、`.lsa`とexportの保存先、任意telemetry、不具合報告、権限、署名、更新、導入checklistを実装根拠付きの日英1文書に整理しREADMEから案内 |
 
 ## コード整理・堅牢化
 
