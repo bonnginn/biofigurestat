@@ -89,11 +89,13 @@ test("resolves the macOS executable from the application bundle metadata", async
   );
 });
 
-test("builds a bounded macOS Accessibility action without interpolating user text as code", () => {
-  const script = macAccessibilityScript("set", ["Experiment title"], 'quote " and 日本語');
+test("builds a bounded macOS Accessibility typing action without interpolating user text as code", () => {
+  const script = macAccessibilityScript("type", ["Experiment title"], 'quote " and 日本語');
   assert.match(script, /processes\.byName\("BioFigureStat"\)/);
   assert.match(script, /nodes\.length < 5000/);
   assert.match(script, /quote \\" and 日本語/);
+  assert.match(script, /keystroke\("a", \{ using: "command down" \}\)/);
+  assert.match(script, /keystroke\(replacement\)/);
 });
 
 test("audits visible text and accessibility attributes while allowing the language selector", () => {

@@ -228,6 +228,11 @@ if (action === "snapshot") {
     target.element.actions.byName("AXPress").perform();
   } else if (action === "set") {
     target.element.value = replacement;
+  } else if (action === "type") {
+    try { target.element.actions.byName("AXPress").perform(); } catch (_) {}
+    try { target.element.focused = true; } catch (_) {}
+    se.keystroke("a", { using: "command down" });
+    se.keystroke(replacement);
   } else {
     throw new Error("Unsupported accessibility action: " + action);
   }
@@ -882,10 +887,16 @@ async function runMacScenario({ executable, outputDirectory, timeoutMs }) {
         timeoutMs,
         child,
       );
-      return runMacAccessibility(
-        "set",
+      await runMacAccessibility(
+        "type",
         ["Experiment title", "実験タイトル", "実験タイトル（任意）"],
         "Native macOS regression experiment",
+      );
+      return waitForMacSnapshot(
+        (snapshot) => macSnapshotContains(snapshot, ["Native macOS regression experiment"]),
+        "typed experiment title",
+        timeoutMs,
+        child,
       );
     });
     await runStep("macos_quit_guard_cancel_retains_work", async () => {
