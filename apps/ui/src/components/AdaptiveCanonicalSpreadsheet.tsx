@@ -29,6 +29,7 @@ import { SPREADSHEET_ZOOM_LEVELS, useSpreadsheetZoom } from "./spreadsheetZoom";
 import { getAppLocale, localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
 import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
+import { SpreadsheetDraftTextCell } from "./SpreadsheetDraftTextCell";
 import {
   CanonicalMatrixWorksheet,
   canEditCanonicalMatrix,
@@ -987,62 +988,43 @@ function ExpandedIdentityEditor({
   gridColumn: number;
   onPaste: (event: ClipboardEvent<HTMLInputElement>) => void;
 }>) {
-  const errorId = useId();
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const initialText = observation.identities[identityKey] ?? "";
-  const { text, dirty, error, edit, accept, reportError } = useSpreadsheetCellDraft(initialText);
-
-  const commit = () => {
-    if (!dirty) return;
-    try {
-      onObservationsChange(
-        updateExpandedIdentity({
-          contract,
-          observation,
-          identityKey,
-          identity: text,
-          observations,
-        }),
-      );
-      accept();
-    } catch (cause) {
-      reportError(
-        locale === "ja" && cause instanceof Error
-          ? `${cause.message} 入力内容は消えていません。`
-          : t(
-              "名前を変更できませんでした。入力内容は消えていません。",
-              "The ID could not be changed. Your input was retained.",
-            ),
-      );
-    }
-  };
 
   return (
-    <div className="adaptive-canonical-spreadsheet__expanded-editor">
-      <input
-        type="text"
-        aria-label={label}
-        aria-describedby={error ? errorId : undefined}
-        aria-invalid={error ? "true" : undefined}
-        value={text}
-        data-spreadsheet-cell="true"
-        data-spreadsheet-row={gridRow}
-        data-spreadsheet-column={gridColumn}
-        data-expanded-field="identity"
-        data-observation-id={observation.observationId}
-        data-semantic-key={identityKey}
-        onChange={(event) => edit(event.currentTarget.value)}
-        onKeyDown={moveSpreadsheetFocus}
-        onPaste={onPaste}
-        onBlur={commit}
-      />
-      {error ? (
-        <small id={errorId} role="alert">
-          {error}
-        </small>
-      ) : null}
-    </div>
+    <SpreadsheetDraftTextCell
+      aria-label={label}
+      canonicalText={initialText}
+      wrapperClassName="adaptive-canonical-spreadsheet__expanded-editor"
+      data-spreadsheet-row={gridRow}
+      data-spreadsheet-column={gridColumn}
+      data-expanded-field="identity"
+      data-observation-id={observation.observationId}
+      data-semantic-key={identityKey}
+      onPaste={onPaste}
+      onCommit={(identity) => {
+        try {
+          onObservationsChange(
+            updateExpandedIdentity({
+              contract,
+              observation,
+              identityKey,
+              identity,
+              observations,
+            }),
+          );
+          return null;
+        } catch (cause) {
+          return locale === "ja" && cause instanceof Error
+            ? `${cause.message} 入力内容は消えていません。`
+            : t(
+                "名前を変更できませんでした。入力内容は消えていません。",
+                "The ID could not be changed. Your input was retained.",
+              );
+        }
+      }}
+    />
   );
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type ClipboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ClipboardEvent } from "react";
 
 import type { CompactScalarObservationIdFactoryContext } from "@lsaa/data-sheet";
 import {
@@ -17,8 +17,8 @@ import {
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
 import { LocalizedFileInput } from "./LocalizedFileInput";
 import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
-import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
 import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
+import { SpreadsheetDraftTextCell } from "./SpreadsheetDraftTextCell";
 
 export type CanonicalWorksheetRow = Readonly<{
   key: string;
@@ -624,52 +624,32 @@ function MatchedRowIdentityEditor({
 }>) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const errorId = useId();
   const canonicalIdentity = matchedRowIdentities(contract, observations)[rowIndex] ?? "";
-  const { text, dirty, error, edit, accept, reportError } =
-    useSpreadsheetCellDraft(canonicalIdentity);
-
-  const commit = () => {
-    if (!dirty) return;
-    try {
-      onObservationsChange(
-        renameMatchedRowIdentity({ contract, observations, rowIndex, identity: text }),
-      );
-      accept();
-    } catch (cause) {
-      reportError(
-        locale === "ja"
-          ? `${cause instanceof Error ? cause.message : "IDを変更できませんでした"}。入力内容は消えていません。`
-          : t(
-              "IDを変更できませんでした。入力内容は消えていません。",
-              "The ID could not be changed. The entered content was retained.",
-            ),
-      );
-    }
-  };
 
   return (
-    <div className="canonical-matrix-worksheet__row-identity">
-      <input
-        type="text"
-        aria-label={`${label} ${rowIndex + 1}`}
-        aria-describedby={error ? errorId : undefined}
-        aria-invalid={error ? "true" : undefined}
-        value={text}
-        disabled={readOnly}
-        data-spreadsheet-cell="true"
-        data-spreadsheet-row={rowIndex}
-        data-spreadsheet-column={-1}
-        onChange={(event) => edit(event.currentTarget.value)}
-        onKeyDown={moveSpreadsheetFocus}
-        onBlur={commit}
-      />
-      {error ? (
-        <small id={errorId} role="alert">
-          {error}
-        </small>
-      ) : null}
-    </div>
+    <SpreadsheetDraftTextCell
+      aria-label={`${label} ${rowIndex + 1}`}
+      canonicalText={canonicalIdentity}
+      wrapperClassName="canonical-matrix-worksheet__row-identity"
+      disabled={readOnly}
+      data-spreadsheet-row={rowIndex}
+      data-spreadsheet-column={-1}
+      onCommit={(identity) => {
+        try {
+          onObservationsChange(
+            renameMatchedRowIdentity({ contract, observations, rowIndex, identity }),
+          );
+          return null;
+        } catch (cause) {
+          return locale === "ja"
+            ? `${cause instanceof Error ? cause.message : "IDを変更できませんでした"}。入力内容は消えていません。`
+            : t(
+                "IDを変更できませんでした。入力内容は消えていません。",
+                "The ID could not be changed. The entered content was retained.",
+              );
+        }
+      }}
+    />
   );
 }
 
@@ -741,55 +721,31 @@ function IndependentRowIdentityEditor({
 }>) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const errorId = useId();
-  const { text, dirty, error, edit, accept, reportError } = useSpreadsheetCellDraft(
-    initialIdentity,
-    { preserveDirtyOnCanonicalChange: true },
-  );
-
-  const commit = () => {
-    if (!dirty) return;
-    const problem = onCommit(text);
-    if (problem) {
-      reportError(
-        locale === "ja" ? problem : t("IDを変更できませんでした", "The ID could not be changed"),
-      );
-      return;
-    }
-    accept();
-  };
 
   return (
-    <div className="canonical-matrix-worksheet__row-identity">
-      <input
-        type="text"
-        aria-label={label}
-        aria-describedby={error ? errorId : undefined}
-        aria-invalid={error ? "true" : undefined}
-        placeholder={
-          canonicalIdentity
-            ? undefined
-            : t("値の入力時に自動作成", "Created automatically when a value is entered")
-        }
-        value={text}
-        disabled={readOnly}
-        data-spreadsheet-cell="true"
-        data-spreadsheet-row={rowIndex}
-        data-spreadsheet-column={gridColumn}
-        onChange={(event) => {
-          const next = event.currentTarget.value;
-          edit(next);
-          if (!canonicalIdentity) onDraftChange(next);
-        }}
-        onKeyDown={moveSpreadsheetFocus}
-        onBlur={commit}
-      />
-      {error ? (
-        <small id={errorId} role="alert">
-          {error}
-        </small>
-      ) : null}
-    </div>
+    <SpreadsheetDraftTextCell
+      aria-label={label}
+      canonicalText={initialIdentity}
+      wrapperClassName="canonical-matrix-worksheet__row-identity"
+      preserveDirtyOnCanonicalChange
+      placeholder={
+        canonicalIdentity
+          ? undefined
+          : t("値の入力時に自動作成", "Created automatically when a value is entered")
+      }
+      disabled={readOnly}
+      data-spreadsheet-row={rowIndex}
+      data-spreadsheet-column={gridColumn}
+      onDraftChange={(next) => {
+        if (!canonicalIdentity) onDraftChange(next);
+      }}
+      onCommit={(identity) => {
+        const problem = onCommit(identity);
+        return problem && locale !== "ja"
+          ? t("IDを変更できませんでした", "The ID could not be changed")
+          : problem;
+      }}
+    />
   );
 }
 
