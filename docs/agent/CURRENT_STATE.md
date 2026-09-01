@@ -434,6 +434,16 @@ transition retains the existing distinction between Graph display scope and Stat
 does not infer condition identity or time semantics. The workbench is now 935 lines; its existing
 53 integration tests, UI typecheck, and focused lint pass without a new move-only test.
 
+The first regression-suite rationalization replaces repeated heavy App renders for partial
+persistence bridges with one pure capability truth table. Save-only and open-only combinations are
+still proven to fail closed, while route tests retain the user-visible no-bridge and complete-bridge
+paths for Graph-only, Heatmap, Survival, and ordered curves. The complete UI gate now passes 193
+files / 1,295 tests in 246 seconds (1,305 tests in 249 seconds before this step); total test work fell
+from 244 to 238 seconds. Ten parameterized route cases were removed net, without removing any
+scientific-data, save/open-content, or route-family assertion. UI typecheck, full lint, and
+production build pass; the initial chunk is 264.45 kB (gzip 81.20 kB) with no build advisory.
+The project package migration/round-trip suite also passes 9 files / 66 tests.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
