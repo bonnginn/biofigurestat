@@ -1,5 +1,6 @@
 import { recordDiagnosticError } from "../../app/diagnostics";
 import type { ControlledGraphExportResult } from "../../app/graphExportController";
+import { localizedText, type AppLocale } from "../../app/appLocale";
 
 export type GraphExportFeedback = Readonly<{
   kind: "success" | "error";
@@ -8,34 +9,52 @@ export type GraphExportFeedback = Readonly<{
 
 type GraphExportKind = "svg" | "png" | "csv";
 
-const SAVED_TEXT: Record<GraphExportKind, string> = {
-  svg: "SVGを保存しました。",
-  png: "現在のグラフを白背景のPNGで書き出しました。",
-  csv: "表示中のデータをCSVで保存しました。",
+const SAVED_TEXT: Record<GraphExportKind, Readonly<{ ja: string; en: string }>> = {
+  svg: { ja: "SVGを保存しました。", en: "Saved the SVG." },
+  png: {
+    ja: "現在のグラフを白背景のPNGで書き出しました。",
+    en: "Exported the current Graph as a white-background PNG.",
+  },
+  csv: { ja: "表示中のデータをCSVで保存しました。", en: "Saved the displayed data as CSV." },
 };
 
-const FAILED_TEXT: Record<GraphExportKind, string> = {
-  svg: "SVGを保存できませんでした。グラフは保持されています。",
-  png: "PNGを書き出せませんでした。グラフは保持されています。SVG書き出しを利用してください。",
-  csv: "CSVを保存できませんでした。グラフとデータは保持されています。",
+const FAILED_TEXT: Record<GraphExportKind, Readonly<{ ja: string; en: string }>> = {
+  svg: {
+    ja: "SVGを保存できませんでした。グラフは保持されています。",
+    en: "Could not save the SVG. The Graph is unchanged.",
+  },
+  png: {
+    ja: "PNGを書き出せませんでした。グラフは保持されています。SVG書き出しを利用してください。",
+    en: "Could not export the PNG. The Graph is unchanged. Use SVG export instead.",
+  },
+  csv: {
+    ja: "CSVを保存できませんでした。グラフとデータは保持されています。",
+    en: "Could not save the CSV. The Graph and data are unchanged.",
+  },
 };
+
+function message(locale: AppLocale, value: Readonly<{ ja: string; en: string }>): string {
+  return localizedText(locale, value.ja, value.en);
+}
 
 export async function runGraphUserExport(
   kind: GraphExportKind,
+  locale: AppLocale,
   operation: () => Promise<ControlledGraphExportResult>,
   setFeedback: (feedback: GraphExportFeedback | null) => void,
 ): Promise<void> {
   setFeedback(null);
   const result = await operation();
   if (result.status === "saved") {
-    setFeedback({ kind: "success", text: SAVED_TEXT[kind] });
+    setFeedback({ kind: "success", text: message(locale, SAVED_TEXT[kind]) });
   } else if (result.status === "failed") {
     recordDiagnosticError("GRAPH_EXPORT_FAILED", result.error);
-    setFeedback({ kind: "error", text: FAILED_TEXT[kind] });
+    setFeedback({ kind: "error", text: message(locale, FAILED_TEXT[kind]) });
   }
 }
 
 export async function runGraphClipboardCopy(
+  locale: AppLocale,
   operation: () => Promise<"svg" | "png" | "text">,
   setStatus: (status: string | null) => void,
 ): Promise<void> {
@@ -44,15 +63,19 @@ export async function runGraphClipboardCopy(
     const format = await operation();
     setStatus(
       format === "svg"
-        ? "ベクター形式でコピーしました。"
+        ? localizedText(locale, "ベクター形式でコピーしました。", "Copied as vector graphics.")
         : format === "png"
-          ? "透明背景のPNGでコピーしました。"
-          : "SVGテキストでコピーしました。",
+          ? localizedText(locale, "透明背景のPNGでコピーしました。", "Copied as a transparent PNG.")
+          : localizedText(locale, "SVGテキストでコピーしました。", "Copied as SVG text."),
     );
   } catch (error) {
     recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
     setStatus(
-      "この環境ではクリップボードへコピーできませんでした。SVG書き出しを利用してください。",
+      localizedText(
+        locale,
+        "この環境ではクリップボードへコピーできませんでした。SVG書き出しを利用してください。",
+        "Could not copy to the clipboard in this environment. Use SVG export instead.",
+      ),
     );
   }
 }

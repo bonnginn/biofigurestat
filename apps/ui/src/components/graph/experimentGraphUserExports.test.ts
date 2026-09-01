@@ -9,11 +9,11 @@ describe("Graph user export feedback", () => {
 
   it("reports saved output and keeps native cancellation silent", async () => {
     const setFeedback = vi.fn();
-    await runGraphUserExport("svg", async () => ({ status: "saved" }), setFeedback);
+    await runGraphUserExport("svg", "ja", async () => ({ status: "saved" }), setFeedback);
     expect(setFeedback).toHaveBeenLastCalledWith({ kind: "success", text: "SVGを保存しました。" });
 
     setFeedback.mockClear();
-    await runGraphUserExport("png", async () => ({ status: "cancelled" }), setFeedback);
+    await runGraphUserExport("png", "ja", async () => ({ status: "cancelled" }), setFeedback);
     expect(setFeedback).toHaveBeenCalledOnce();
     expect(setFeedback).toHaveBeenCalledWith(null);
     expect(diagnostic).not.toHaveBeenCalled();
@@ -24,6 +24,7 @@ describe("Graph user export feedback", () => {
     const setFeedback = vi.fn();
     await runGraphUserExport(
       "csv",
+      "ja",
       async () => ({ status: "failed", error: exportError }),
       setFeedback,
     );
@@ -35,7 +36,7 @@ describe("Graph user export feedback", () => {
 
     const copyError = new Error("clipboard failed");
     const setStatus = vi.fn();
-    await runGraphClipboardCopy(async () => Promise.reject(copyError), setStatus);
+    await runGraphClipboardCopy("ja", async () => Promise.reject(copyError), setStatus);
     expect(diagnostic).toHaveBeenLastCalledWith("GRAPH_EXPORT_FAILED", copyError);
     expect(setStatus).toHaveBeenLastCalledWith(
       "この環境ではクリップボードへコピーできませんでした。SVG書き出しを利用してください。",
@@ -44,11 +45,26 @@ describe("Graph user export feedback", () => {
 
   it("keeps the clipboard format-specific success messages", async () => {
     const setStatus = vi.fn();
-    await runGraphClipboardCopy(async () => "svg", setStatus);
+    await runGraphClipboardCopy("ja", async () => "svg", setStatus);
     expect(setStatus).toHaveBeenLastCalledWith("ベクター形式でコピーしました。");
-    await runGraphClipboardCopy(async () => "png", setStatus);
+    await runGraphClipboardCopy("ja", async () => "png", setStatus);
     expect(setStatus).toHaveBeenLastCalledWith("透明背景のPNGでコピーしました。");
-    await runGraphClipboardCopy(async () => "text", setStatus);
+    await runGraphClipboardCopy("ja", async () => "text", setStatus);
     expect(setStatus).toHaveBeenLastCalledWith("SVGテキストでコピーしました。");
+  });
+
+  it("keeps export and clipboard feedback in English mode", async () => {
+    const setFeedback = vi.fn();
+    await runGraphUserExport("png", "en", async () => ({ status: "saved" }), setFeedback);
+    expect(setFeedback).toHaveBeenLastCalledWith({
+      kind: "success",
+      text: "Exported the current Graph as a white-background PNG.",
+    });
+
+    const setStatus = vi.fn();
+    await runGraphClipboardCopy("en", async () => Promise.reject(new Error("コピー失敗")), setStatus);
+    expect(setStatus).toHaveBeenLastCalledWith(
+      "Could not copy to the clipboard in this environment. Use SVG export instead.",
+    );
   });
 });

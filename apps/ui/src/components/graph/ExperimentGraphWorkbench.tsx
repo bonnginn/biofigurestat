@@ -548,6 +548,7 @@ export function ExperimentGraphWorkbench({
     if (!svgRef.current || !readout) return;
     await runGraphUserExport(
       "svg",
+      locale,
       () => saveGraphSvgExport(svgRef.current!, `${safeGraphFileStem(readout.label)}.svg`),
       setPngExportFeedback,
     );
@@ -556,6 +557,7 @@ export function ExperimentGraphWorkbench({
     if (!svgRef.current || !readout) return;
     await runGraphUserExport(
       "png",
+      locale,
       () => saveGraphPngExport(svgRef.current!, `${safeGraphFileStem(readout.label)}.png`),
       setPngExportFeedback,
     );
@@ -564,6 +566,7 @@ export function ExperimentGraphWorkbench({
     if (!readout) return;
     await runGraphUserExport(
       "csv",
+      locale,
       () =>
         saveGraphCsvExport(
           readout.shape === "categorical_counts"
@@ -608,7 +611,7 @@ export function ExperimentGraphWorkbench({
   };
   const copyGraph = async () => {
     if (!svgRef.current) return;
-    await runGraphClipboardCopy(() => copyGraphToClipboard(svgRef.current!), setCopyStatus);
+    await runGraphClipboardCopy(locale, () => copyGraphToClipboard(svgRef.current!), setCopyStatus);
   };
   const inspectGraphPart = (target: InspectorTarget) => {
     if (workspaceMode === "graph" && target === "statistics") return;
