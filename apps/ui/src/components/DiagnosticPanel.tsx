@@ -121,7 +121,7 @@ export function DiagnosticPanel({
     setStatus(
       ja
         ? `${researcherError("DIAGNOSTIC_EXPORT_FAILED").title}（DIAGNOSTIC_EXPORT_FAILED）`
-        : "Could not export the diagnostic report (DIAGNOSTIC_EXPORT_FAILED).",
+        : `${researcherError("DIAGNOSTIC_EXPORT_FAILED", "en").title} (DIAGNOSTIC_EXPORT_FAILED).`,
     );
   };
 
@@ -147,7 +147,9 @@ export function DiagnosticPanel({
               </button>
               <div>
                 <strong>
-                  {ja ? "BioFigureStat Public Alphaへの報告" : "Report to BioFigureStat Public Alpha"}
+                  {ja
+                    ? "BioFigureStat Public Alphaへの報告"
+                    : "Report to BioFigureStat Public Alpha"}
                 </strong>
                 <p className="diagnostic-warning">
                   {ja
@@ -222,8 +224,10 @@ export function DiagnosticPanel({
                       <dd>
                         {submission.diagnostic ? (
                           <pre>{JSON.stringify(submission.diagnostic, null, 2)}</pre>
+                        ) : ja ? (
+                          "添付しない"
                         ) : (
-                          ja ? "添付しない" : "Not attached"
+                          "Not attached"
                         )}
                       </dd>
                     </div>
@@ -412,10 +416,14 @@ export function DiagnosticPanel({
 
               <details>
                 <summary>
-                  {ja ? "ローカル診断レポートをコピー・保存" : "Copy or save a local diagnostic report"}
+                  {ja
+                    ? "ローカル診断レポートをコピー・保存"
+                    : "Copy or save a local diagnostic report"}
                 </summary>
                 <p>
-                  {ja ? "この操作だけでは外部送信しません。" : "These actions do not send anything externally."}
+                  {ja
+                    ? "この操作だけでは外部送信しません。"
+                    : "These actions do not send anything externally."}
                 </p>
                 <div className="diagnostic-actions">
                   <button

@@ -197,6 +197,27 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
     expectNoJapaneseUi(view.container);
   });
 
+  it("keeps compact and expanded numeric validation errors in English", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<Harness />);
+
+    const compactValue = screen.getAllByRole("textbox", {
+      name: /Response: measured values for Condition=/,
+    })[0]!;
+    fireEvent.change(compactValue, { target: { value: "not-a-number" } });
+    fireEvent.blur(compactValue);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Enter numeric values separated by new lines or tabs",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "All values" }));
+    const expandedValue = screen.getByRole("textbox", { name: "obs.c1: Response" });
+    fireEvent.change(expandedValue, { target: { value: "still-not-a-number" } });
+    fireEvent.blur(expandedValue);
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter a numeric value");
+    expectNoJapaneseUi(view.container);
+  });
+
   it("shows every independent condition before values exist and creates stable unit identities", () => {
     render(<Harness initialObservations={[]} />);
 

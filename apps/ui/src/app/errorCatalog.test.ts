@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { APP_ERROR_CODES, ERROR_CATALOG } from "./errorCatalog";
+import { APP_ERROR_CODES, ERROR_CATALOG, researcherError } from "./errorCatalog";
 
 describe("researcher-facing error catalog", () => {
   it("keeps stable unique IDs with an explanation and safe next action", () => {
@@ -19,5 +19,16 @@ describe("researcher-facing error catalog", () => {
     expect(ERROR_CATALOG.UNSUPPORTED_ANALYSIS.category).toBe("user_correctable");
     expect(ERROR_CATALOG.ENGINE_EXECUTION_FAILED.category).toBe("application_failure");
     expect(ERROR_CATALOG.PROJECT_SAVE_FAILED.category).toBe("application_failure");
+  });
+
+  it("provides English application errors without changing stable codes or categories", () => {
+    APP_ERROR_CODES.forEach((code) => {
+      const japanese = researcherError(code);
+      const english = researcherError(code, "en");
+      expect(english).toMatchObject({ code, category: japanese.category });
+      expect(`${english.title} ${english.message} ${english.nextAction}`).not.toMatch(
+        /[\u3040-\u30ff\u3400-\u9fff]/u,
+      );
+    });
   });
 });

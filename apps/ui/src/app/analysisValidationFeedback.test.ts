@@ -39,4 +39,17 @@ describe("analysisValidationFeedback", () => {
     expect(feedback?.message).toContain("標準誤差が0");
     expect(feedback?.nextAction).toContain("代替法");
   });
+
+  it("returns the same validation route in English without Japanese application copy", () => {
+    const feedback = analysisValidationFeedback(
+      validationResult("Each independent D01 unit can contribute only one analyzed value"),
+      "en",
+    );
+
+    expect(feedback?.title).toContain("experimental-unit ID is duplicated");
+    expect(feedback?.nextAction).toContain("Dish ID");
+    expect(`${feedback?.title} ${feedback?.message} ${feedback?.nextAction}`).not.toMatch(
+      /[\u3040-\u30ff\u3400-\u9fff]/u,
+    );
+  });
 });

@@ -367,6 +367,28 @@ describe("GraphStatisticsPanel validation repair routes", () => {
     expect(analysisRunner).not.toHaveBeenCalled();
   });
 
+  it("shows a design-request safe stop entirely in English", async () => {
+    act(() => setAppLocale("en"));
+    const analysisRunner = vi.fn();
+    const view = render(
+      <GraphStatisticsPanel
+        assessment={readyAssessment}
+        design={panelDesign(defaultConditionOptions, "matched")}
+        outcomeId="outcome.value"
+        analysisRunner={analysisRunner}
+        relationshipAlreadyDeclared
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Run selected analysis" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "request does not match the experimental structure",
+    );
+    expect(analysisRunner).not.toHaveBeenCalled();
+    expectNoJapaneseUi(view.container);
+  });
+
   it("records a manual request and completion without researcher values or labels", async () => {
     vi.mocked(recordUsageMilestone).mockClear();
     const analysisRunner = vi.fn().mockResolvedValue(
@@ -482,6 +504,67 @@ describe("GraphStatisticsPanel validation repair routes", () => {
     expect(recordUsageMilestone).toHaveBeenCalledWith("home", "statistics_requested");
     expect(recordUsageMilestone).toHaveBeenCalledWith("home", "safe_stop");
     expect(recordUsageMilestone).not.toHaveBeenCalledWith("home", "statistics_completed");
+  });
+
+  it("shows engine validation feedback entirely in English", async () => {
+    act(() => setAppLocale("en"));
+    const analysisRunner = vi.fn().mockResolvedValue(
+      AnalysisEngineResultSchema.parse({
+        protocolVersion: "0.1.0",
+        requestId: "request.test",
+        status: "validation_error",
+        engine: { name: "lsaa-python", version: "test", packages: {} },
+        estimates: [],
+        tests: [],
+        diagnostics: [
+          {
+            code: "invalid_request",
+            message: "Each independent D01 unit can contribute only one analyzed value",
+          },
+        ],
+        warnings: [],
+        completedAt: "2026-08-28T00:00:00.000Z",
+      }),
+    );
+    const view = render(
+      <GraphStatisticsPanel
+        assessment={readyAssessment}
+        design={panelDesign()}
+        outcomeId="outcome.value"
+        analysisRunner={analysisRunner}
+        relationshipAlreadyDeclared
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Run selected analysis" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "experimental-unit ID is duplicated",
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Dish ID");
+    expectNoJapaneseUi(view.container);
+  });
+
+  it("keeps unsupported assessment copy out of the English UI", () => {
+    act(() => setAppLocale("en"));
+    const assessment: DraftAnalysisAssessment = {
+      ...readyAssessment,
+      state: "unsupported",
+      title: "すべての対応差が同じため、対応のあるt検定を計算できません",
+      reason: "差の標準誤差が0です。",
+      request: null,
+      correction: undefined,
+    };
+    const view = render(
+      <GraphStatisticsPanel
+        assessment={assessment}
+        design={panelDesign()}
+        analysisRunner={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("This analysis structure is not currently supported")).toBeVisible();
+    expectNoJapaneseUi(view.container);
   });
 
   it("offers a targeted data route and an explicit non-coercive alternative", () => {

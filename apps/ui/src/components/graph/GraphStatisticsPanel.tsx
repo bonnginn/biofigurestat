@@ -313,7 +313,11 @@ export function GraphStatisticsPanel({
         if (coreRecommendationOwned && !design) {
           if (mode === "manual") recordUsageMilestone(usageRoute, "safe_stop");
           setError(
-            "実験構造をcanonical designとして確認できないため停止しました（ENGINE_INPUT_INVALID）。実験構造へ戻り、試料の対応関係を確認してください。",
+            localizedText(
+              locale,
+              "実験構造をcanonical designとして確認できないため停止しました（ENGINE_INPUT_INVALID）。実験構造へ戻り、試料の対応関係を確認してください。",
+              "Analysis stopped because the experimental structure could not be validated as a canonical design (ENGINE_INPUT_INVALID). Return to the experimental structure and review how specimens are related.",
+            ),
           );
           onAnalysisChange?.(null);
           return;
@@ -325,7 +329,9 @@ export function GraphStatisticsPanel({
         if (canonicalMatch && !canonicalMatch.matched) {
           if (mode === "manual") recordUsageMilestone(usageRoute, "safe_stop");
           setError(
-            `実験構造と解析要求が一致しないため停止しました（ENGINE_INPUT_INVALID）。${canonicalMatch.explanation}`,
+            locale === "ja"
+              ? `実験構造と解析要求が一致しないため停止しました（ENGINE_INPUT_INVALID）。${canonicalMatch.explanation}`
+              : "Analysis stopped because the request does not match the experimental structure (ENGINE_INPUT_INVALID). Return to the experimental structure and review the units, conditions, and comparison objective.",
           );
           onAnalysisChange?.(null);
           return;
@@ -364,7 +370,11 @@ export function GraphStatisticsPanel({
         lastExecutedRequestRef.current = nextResult.status === "ok" ? request : null;
         setStaleNotice(
           mode === "automatic" && nextResult.status === "ok"
-            ? "値のみが変更され、実験設計・実験単位・比較・解析法が同一だったため、同じ解析を自動再実行しました。"
+            ? localizedText(
+                locale,
+                "値のみが変更され、実験設計・実験単位・比較・解析法が同一だったため、同じ解析を自動再実行しました。",
+                "Only values changed. The design, experimental units, comparison, and method were unchanged, so the same analysis was rerun automatically.",
+              )
             : null,
         );
         onAnalysisChange?.(
@@ -379,15 +389,15 @@ export function GraphStatisticsPanel({
         );
         if (nextResult.status !== "ok") {
           if (mode === "manual") recordUsageMilestone(usageRoute, "safe_stop");
-          const preciseFeedback = analysisValidationFeedback(nextResult);
+          const preciseFeedback = analysisValidationFeedback(nextResult, locale);
           if (preciseFeedback) {
             setError(
-              `${preciseFeedback.title}（ENGINE_INPUT_INVALID）。${preciseFeedback.message} ${preciseFeedback.nextAction}`,
+              `${preciseFeedback.title}${localizedText(locale, "（ENGINE_INPUT_INVALID）。", " (ENGINE_INPUT_INVALID). ")}${preciseFeedback.message} ${preciseFeedback.nextAction}`,
             );
           } else {
-            const researcherMessage = researcherError("ENGINE_INPUT_INVALID");
+            const researcherMessage = researcherError("ENGINE_INPUT_INVALID", locale);
             setError(
-              `${researcherMessage.title}（${researcherMessage.code}）。${researcherMessage.nextAction}`,
+              `${researcherMessage.title}${localizedText(locale, `（${researcherMessage.code}）。`, ` (${researcherMessage.code}). `)}${researcherMessage.nextAction}`,
             );
           }
         } else {
@@ -450,16 +460,27 @@ export function GraphStatisticsPanel({
         );
       } catch (reason) {
         if (mode === "manual") recordUsageMilestone(usageRoute, "safe_stop");
-        if (reason instanceof Error && reason.message.includes("解析を中止")) {
-          setError(reason.message);
+        if (
+          reason instanceof Error &&
+          (reason.message.includes("解析を中止") ||
+            reason.message.includes("ENGINE_PROCESS_CANCELLED"))
+        ) {
+          setError(
+            localizedText(
+              locale,
+              "解析を中止しました。入力したデータは保持されています。",
+              "Analysis was cancelled. Entered data is retained.",
+            ),
+          );
           return;
         }
         const errorCode = reason instanceof Error && "code" in reason ? String(reason.code) : null;
         const researcherMessage = researcherError(
           errorCode === "ENGINE_INPUT_INVALID" ? "ENGINE_INPUT_INVALID" : "ENGINE_EXECUTION_FAILED",
+          locale,
         );
         setError(
-          `${researcherMessage.title}（${researcherMessage.code}）。${researcherMessage.nextAction}`,
+          `${researcherMessage.title}${localizedText(locale, `（${researcherMessage.code}）。`, ` (${researcherMessage.code}). `)}${researcherMessage.nextAction}`,
         );
       } finally {
         if (executionGenerationRef.current === generation) {
@@ -468,7 +489,7 @@ export function GraphStatisticsPanel({
         }
       }
     },
-    [analysisRunner, assessment, design, onAnalysisChange, outcomeId],
+    [analysisRunner, assessment, design, locale, onAnalysisChange, outcomeId],
   );
 
   useEffect(() => {
@@ -493,8 +514,16 @@ export function GraphStatisticsPanel({
     if (executedRef.current) {
       setStaleNotice(
         automaticRerunIsSafe
-          ? "値の変更を検出しました。構造を確認後、同じ解析を自動再実行します…"
-          : "表示するデータまたは実験構造が変わったため、以前の解析結果を外しました。解析法は自動変更しません。",
+          ? localizedText(
+              locale,
+              "値の変更を検出しました。構造を確認後、同じ解析を自動再実行します…",
+              "Value changes were detected. After validating the structure, the same analysis will rerun automatically…",
+            )
+          : localizedText(
+              locale,
+              "表示するデータまたは実験構造が変わったため、以前の解析結果を外しました。解析法は自動変更しません。",
+              "The displayed data or experimental structure changed, so the previous result was removed. The method was not changed automatically.",
+            ),
       );
     }
     executedRef.current = false;
@@ -519,6 +548,7 @@ export function GraphStatisticsPanel({
     assessment.recommendedMethod,
     assessment.request,
     executeRequest,
+    locale,
     onAnalysisChange,
     relationshipAlreadyDeclared,
   ]);
@@ -579,6 +609,22 @@ export function GraphStatisticsPanel({
     locale === "en"
       ? `The design contains ${assessment.nByCondition.length} ${matchedAnalysis ? "matched" : "independent"} conditions (${assessment.nByCondition.map(({ label, n }) => `${label}: n=${n}`).join(", ")}). The recommendation follows the declared experimental-unit relationship and comparison objective; multiplicity is handled when condition comparisons are requested.`
       : assessment.reason;
+  const nonReadyTitle =
+    locale === "ja"
+      ? assessment.title
+      : assessment.state === "descriptive"
+        ? "This Graph is descriptive"
+        : assessment.state === "insufficient"
+          ? "More analyzable data are required"
+          : "This analysis structure is not currently supported";
+  const nonReadyReason =
+    locale === "ja"
+      ? assessment.reason
+      : assessment.state === "descriptive"
+        ? "The Graph can be shown, but no inferential analysis is attached to it."
+        : assessment.state === "insufficient"
+          ? "Review experimental units, conditions, matched IDs, and missing values in Data. Entered values are retained."
+          : "No nearby analysis is substituted automatically. The declared design and entered values are retained.";
   const analysisSetSummary = assessment.matchedAnalysisSet
     ? t(
         `完全な対応組 ${assessment.matchedAnalysisSet.completePairCount}組を統計解析に使います。対応相手がそろわない観測 ${assessment.matchedAnalysisSet.unmatchedObservationCount}件は解析から除外します。`,
@@ -657,8 +703,8 @@ export function GraphStatisticsPanel({
           </>
         ) : (
           <>
-            <strong>{assessment.title}</strong>
-            <p>{assessment.reason}</p>
+            <strong>{nonReadyTitle}</strong>
+            <p>{nonReadyReason}</p>
           </>
         )}
         {analysisSetSummary ? (
@@ -738,10 +784,14 @@ export function GraphStatisticsPanel({
       })}
 
       {assessment.correction ? (
-        <div className="experiment-graph-help" role="group" aria-label="解析入力の修正">
+        <div
+          className="experiment-graph-help"
+          role="group"
+          aria-label={t("解析入力の修正", "Analysis input correction")}
+        >
           {onCorrectionRequested ? (
             <button type="button" onClick={() => onCorrectionRequested(assessment.correction!)}>
-              {assessment.correction.actionLabel}
+              {t(assessment.correction.actionLabel, "Review the analysis input in Data")}
             </button>
           ) : null}
           {assessment.correction.suggestedMethod && onSelectedMethodChange ? (
@@ -952,7 +1002,11 @@ export function GraphStatisticsPanel({
                               : choice.explanation}
                           </small>
                           {!choice.enabled && choice.unavailableReason ? (
-                            <small>{choice.unavailableReason}</small>
+                            <small>
+                              {locale === "ja"
+                                ? choice.unavailableReason
+                                : "This option is unavailable for the current data and declared design."}
+                            </small>
                           ) : null}
                         </span>
                       </label>

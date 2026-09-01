@@ -85,6 +85,15 @@ const PROJECT_IO_STAGE_LABELS: Record<string, string> = {
   package_assembly: "project packageの組み立て",
 };
 
+const PROJECT_IO_STAGE_LABELS_EN: Record<string, string> = {
+  checksum: "checksum verification",
+  database_encode: "project database creation",
+  container_begin: "destination preparation",
+  container_write: "project-data writing",
+  container_commit: "saved-file finalization",
+  package_assembly: "project-package assembly",
+};
+
 export function projectIoStage(
   error: unknown,
 ): Exclude<DiagnosticProjectIoStage, "unknown"> | null {
@@ -107,8 +116,7 @@ export function canonicalProjectTargetKey(target: string): string {
   const normalized = slashNormalized.startsWith("//")
     ? `//${slashNormalized.slice(2).replace(/\/{2,}/g, "/")}`
     : slashNormalized.replace(/\/{2,}/g, "/");
-  const withoutTrailingSlash =
-    normalized.length > 1 ? normalized.replace(/\/+$/, "") : normalized;
+  const withoutTrailingSlash = normalized.length > 1 ? normalized.replace(/\/+$/, "") : normalized;
   return /^[A-Za-z]:\//.test(withoutTrailingSlash) || withoutTrailingSlash.startsWith("//")
     ? withoutTrailingSlash.toLowerCase()
     : withoutTrailingSlash;
@@ -145,10 +153,17 @@ function UnresolvedVisualizationPersistenceStop({ onBack }: Readonly<{ onBack: (
         <span className="empty-icon empty-icon--orange" aria-hidden="true">
           !
         </span>
-        <p className="overline">{t("入力を開始する前に停止しました", "Stopped before data entry")}</p>
-        <h1 id="visualization-persistence-stop-heading">{t("Heatmapを開始できません", "Heatmap cannot start")}</h1>
+        <p className="overline">
+          {t("入力を開始する前に停止しました", "Stopped before data entry")}
+        </p>
+        <h1 id="visualization-persistence-stop-heading">
+          {t("Heatmapを開始できません", "Heatmap cannot start")}
+        </h1>
         <p role="alert">
-          {t("行列とGraphを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。", "The connections required to save and reopen the matrix and Graph are unavailable. Data entry remains closed in this environment to prevent unsavable work.")}
+          {t(
+            "行列とGraphを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。",
+            "The connections required to save and reopen the matrix and Graph are unavailable. Data entry remains closed in this environment to prevent unsavable work.",
+          )}
         </p>
         <button className="primary-button" type="button" onClick={onBack}>
           {t("入口へ戻る", "Back to entry options")}
@@ -174,10 +189,17 @@ function SpecializedEntryPersistenceStop({
         <span className="empty-icon empty-icon--orange" aria-hidden="true">
           !
         </span>
-        <p className="overline">{t("入力を開始する前に停止しました", "Stopped before data entry")}</p>
-        <h1 id={headingId}>{locale === "ja" ? `${entryLabel}を開始できません` : `${entryLabel} cannot start`}</h1>
+        <p className="overline">
+          {t("入力を開始する前に停止しました", "Stopped before data entry")}
+        </p>
+        <h1 id={headingId}>
+          {locale === "ja" ? `${entryLabel}を開始できません` : `${entryLabel} cannot start`}
+        </h1>
         <p role="alert">
-          {t("入力途中の専用データを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。", "The connections required to save and reopen this specialized data are unavailable. Data entry remains closed in this environment to prevent unsavable work.")}
+          {t(
+            "入力途中の専用データを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。",
+            "The connections required to save and reopen this specialized data are unavailable. Data entry remains closed in this environment to prevent unsavable work.",
+          )}
         </p>
         <button className="primary-button" type="button" onClick={onBack}>
           {t("入口へ戻る", "Back to entry options")}
@@ -200,9 +222,17 @@ function LegacyAnalysisEntryStop({ onBack }: Readonly<{ onBack: () => void }>) {
           !
         </span>
         <p className="overline">{t("以前の解析用入口", "Legacy analysis entry")}</p>
-        <h1 id="legacy-analysis-entry-stop-heading">{t("この入口は通常モードでは利用できません", "This entry is unavailable in standard mode")}</h1>
+        <h1 id="legacy-analysis-entry-stop-heading">
+          {t(
+            "この入口は通常モードでは利用できません",
+            "This entry is unavailable in standard mode",
+          )}
+        </h1>
         <p role="alert">
-          {t("実験構造を確認せず解析形式だけを選ぶ以前の入口です。通常は「新しい実験」から目的に合う入口を選んでください。別の解析へ自動変換はしません。", "This legacy entry selects an analysis format without confirming the experimental structure. Choose the appropriate task from New Experiment instead. The app will not convert it to another analysis automatically.")}
+          {t(
+            "実験構造を確認せず解析形式だけを選ぶ以前の入口です。通常は「新しい実験」から目的に合う入口を選んでください。別の解析へ自動変換はしません。",
+            "This legacy entry selects an analysis format without confirming the experimental structure. Choose the appropriate task from New Experiment instead. The app will not convert it to another analysis automatically.",
+          )}
         </p>
         <button className="primary-button" type="button" onClick={onBack}>
           {t("新しい実験へ戻る", "Back to New Experiment")}
@@ -216,9 +246,18 @@ function CompatibilityModeNotice() {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   return (
-    <aside className="browser-preview-banner" role="status" aria-label={t("互換モード", "Compatibility mode")}>
+    <aside
+      className="browser-preview-banner"
+      role="status"
+      aria-label={t("互換モード", "Compatibility mode")}
+    >
       <strong>{t("互換モード（以前の入力方式）", "Compatibility mode (legacy entry)")}</strong>
-      <span>{t("この画面は通常のexperiment-first入口ではありません。", "This screen is not part of the standard experiment-first entry.")}</span>
+      <span>
+        {t(
+          "この画面は通常のexperiment-first入口ではありません。",
+          "This screen is not part of the standard experiment-first entry.",
+        )}
+      </span>
     </aside>
   );
 }
@@ -438,27 +477,30 @@ export default function App({
     );
   }, []);
 
-  const rememberProjectTab = useCallback((opened: OpenedAnyProject) => {
-    const openedTargetKey = canonicalProjectTargetKey(opened.project.target);
-    const existingTarget = projectTabs.find(
-      (tab) => canonicalProjectTargetKey(tab.target) === openedTargetKey,
-    )?.target;
-    const next: ProjectTab = {
-      target: existingTarget ?? opened.project.target,
-      name: opened.project.state.metadata.projectName,
-      kind: opened.kind,
-      dirty: false,
-    };
-    setProjectTabs((current) => {
-      const existing = current.findIndex(
+  const rememberProjectTab = useCallback(
+    (opened: OpenedAnyProject) => {
+      const openedTargetKey = canonicalProjectTargetKey(opened.project.target);
+      const existingTarget = projectTabs.find(
         (tab) => canonicalProjectTargetKey(tab.target) === openedTargetKey,
-      );
-      if (existing < 0) return [...current, next];
-      return current.map((tab, index) => (index === existing ? next : tab));
-    });
-    activeProjectTabTargetRef.current = next.target;
-    setActiveProjectTabTarget(next.target);
-  }, [projectTabs]);
+      )?.target;
+      const next: ProjectTab = {
+        target: existingTarget ?? opened.project.target,
+        name: opened.project.state.metadata.projectName,
+        kind: opened.kind,
+        dirty: false,
+      };
+      setProjectTabs((current) => {
+        const existing = current.findIndex(
+          (tab) => canonicalProjectTargetKey(tab.target) === openedTargetKey,
+        );
+        if (existing < 0) return [...current, next];
+        return current.map((tab, index) => (index === existing ? next : tab));
+      });
+      activeProjectTabTargetRef.current = next.target;
+      setActiveProjectTabTarget(next.target);
+    },
+    [projectTabs],
+  );
 
   const checkpointActiveWorkspace = useCallback(() => {
     if (!workspaceDirtyRef.current) return true;
@@ -503,19 +545,22 @@ export default function App({
         recordDiagnosticError("PROJECT_SAVE_FAILED", error);
         const failureStage = projectIoStage(error);
         recordDiagnosticEvent("project_save_failed", { stage: failureStage ?? "unknown" });
-        const message = researcherError("PROJECT_SAVE_FAILED");
+        const message = researcherError("PROJECT_SAVE_FAILED", locale);
         const stageMessage = failureStage
-          ? `失敗した処理：${PROJECT_IO_STAGE_LABELS[failureStage] ?? failureStage}。`
+          ? t(
+              `失敗した処理：${PROJECT_IO_STAGE_LABELS[failureStage] ?? failureStage}。`,
+              `Failed stage: ${PROJECT_IO_STAGE_LABELS_EN[failureStage] ?? failureStage}. `,
+            )
           : "";
         throw new Error(
-          `${message.title}（${message.code}）。${stageMessage}${message.nextAction}`,
+          `${message.title}${t(`（${message.code}）。`, ` (${message.code}). `)}${stageMessage}${message.nextAction}`,
           {
             cause: error,
           },
         );
       }
     },
-    [activeProjectActions, recordRecentProject, rememberProjectTab],
+    [activeProjectActions, locale, recordRecentProject, rememberProjectTab],
   );
 
   const saveUnresolvedVisualizationProject = useCallback(
@@ -1367,7 +1412,11 @@ export default function App({
         {systemOpenError &&
         (activeProject || activeVisualizationProject || activeSpecializedEntryDraft) ? (
           <div className="app-system-alert" role="alert">
-            <span>{locale === "ja" ? systemOpenError : "The operation could not be completed. The current workspace was retained."}</span>
+            <span>
+              {locale === "ja"
+                ? systemOpenError
+                : "The operation could not be completed. The current workspace was retained."}
+            </span>
             <button type="button" onClick={() => setSystemOpenError(null)}>
               {t("閉じる", "Close")}
             </button>

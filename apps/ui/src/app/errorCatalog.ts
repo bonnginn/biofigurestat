@@ -120,6 +120,107 @@ export const ERROR_CATALOG: Readonly<Record<AppErrorCode, ResearcherError>> = {
   },
 };
 
-export function researcherError(code: AppErrorCode): ResearcherError {
-  return ERROR_CATALOG[code];
+const ENGLISH_ERROR_CATALOG: Readonly<Record<AppErrorCode, ResearcherError>> = {
+  ENGINE_INPUT_INVALID: {
+    code: "ENGINE_INPUT_INVALID",
+    category: "user_correctable",
+    title: "The analysis input could not be validated",
+    message: "The local statistics engine could not accept this combination of design and values.",
+    nextAction:
+      "Review missing values, matched IDs, experimental units, and selected conditions. Entered values are retained.",
+  },
+  ENGINE_EXECUTION_FAILED: {
+    code: "ENGINE_EXECUTION_FAILED",
+    category: "application_failure",
+    title: "The local analysis could not be completed",
+    message: "The local statistics engine could not start or its result could not be validated.",
+    nextAction: "Retry without changing the input. If it recurs, save diagnostic information.",
+  },
+  PROJECT_SAVE_FAILED: {
+    code: "PROJECT_SAVE_FAILED",
+    category: "application_failure",
+    title: "The project could not be saved",
+    message: "Safe saving did not complete. The original project was not replaced.",
+    nextAction: "Choose another destination. If it recurs, save diagnostic information.",
+  },
+  PROJECT_OPEN_FAILED: {
+    code: "PROJECT_OPEN_FAILED",
+    category: "application_failure",
+    title: "The project could not be opened",
+    message: "Project loading or integrity validation did not complete.",
+    nextAction:
+      "Retry without moving the file, and keep the diagnostic information separate from the original file.",
+  },
+  PROJECT_SCHEMA_UNSUPPORTED: {
+    code: "PROJECT_SCHEMA_UNSUPPORTED",
+    category: "application_failure",
+    title: "This project format is not supported",
+    message: "Its schema version cannot be loaded safely by this app version.",
+    nextAction: "Keep the original file unchanged and check which app version supports it.",
+  },
+  GRAPH_EXPORT_FAILED: {
+    code: "GRAPH_EXPORT_FAILED",
+    category: "application_failure",
+    title: "The Graph could not be exported",
+    message: "The Graph remains unchanged, but the output file could not be created.",
+    nextAction: "Try another format or destination. If it recurs, save diagnostic information.",
+  },
+  STATISTICS_STALE: {
+    code: "STATISTICS_STALE",
+    category: "user_correctable",
+    title: "Update the statistical results",
+    message: "The design or values have changed since the last analysis.",
+    nextAction: "Review the current design and run the analysis again.",
+  },
+  INVALID_PAIRED_STRUCTURE: {
+    code: "INVALID_PAIRED_STRUCTURE",
+    category: "user_correctable",
+    title: "The matched structure is incomplete",
+    message: "A matched unit does not have values for every required condition.",
+    nextAction:
+      "Review matched IDs and missingness. Do not treat different observations as the same subject.",
+  },
+  INVALID_NESTED_STRUCTURE: {
+    code: "INVALID_NESTED_STRUCTURE",
+    category: "user_correctable",
+    title: "Review the nested structure",
+    message:
+      "The relationship between cells or ROIs and their biological experimental units cannot be determined safely.",
+    nextAction:
+      "Specify the parent experimental unit for each observation. Do not count cells as biological n.",
+  },
+  UNSUPPORTED_ANALYSIS: {
+    code: "UNSUPPORTED_ANALYSIS",
+    category: "user_correctable",
+    title: "This analysis structure is not supported",
+    message: "The current standard module cannot provide a scientifically valid route.",
+    nextAction:
+      "Keep the design unchanged and wait for a supported module or use an externally validated method.",
+  },
+  IMPORT_MAPPING_INVALID: {
+    code: "IMPORT_MAPPING_INVALID",
+    category: "user_correctable",
+    title: "The data mapping could not be validated",
+    message:
+      "Column mappings to experimental units, conditions, or readouts are incomplete or inconsistent.",
+    nextAction: "Review column meaning and experimental units in the mapping preview.",
+  },
+  DIAGNOSTIC_EXPORT_FAILED: {
+    code: "DIAGNOSTIC_EXPORT_FAILED",
+    category: "application_failure",
+    title: "Diagnostic information could not be saved",
+    message: "The diagnostic report could not be copied or saved.",
+    nextAction: "Check the destination or clipboard permission and try again.",
+  },
+  UNEXPECTED_APPLICATION_ERROR: {
+    code: "UNEXPECTED_APPLICATION_ERROR",
+    category: "application_failure",
+    title: "An unexpected problem occurred",
+    message: "Processing stopped without changing the entered data.",
+    nextAction: "Save diagnostic information before closing the screen.",
+  },
+};
+
+export function researcherError(code: AppErrorCode, locale: "ja" | "en" = "ja"): ResearcherError {
+  return locale === "en" ? ENGLISH_ERROR_CATALOG[code] : ERROR_CATALOG[code];
 }

@@ -338,6 +338,8 @@ function CompactScalarEditor({
   onRectangularPaste: (group: AdaptiveCompactGroup, text: string) => string | null;
 }>) {
   const errorId = useId();
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const valueKey = scalarReadoutValueKey(contract, group);
   const initialText = valueKey ? compactText(group, valueKey) : "";
   const [text, setText] = useState(initialText);
@@ -350,17 +352,25 @@ function CompactScalarEditor({
     setError(null);
   }, [initialText]);
 
-  if (!valueKey) return <span aria-label="測定値なし">—</span>;
+  if (!valueKey) return <span aria-label={t("測定値なし", "No measured value")}>—</span>;
 
   const readoutLabel =
     contract.readouts.find(({ key }) => key === group.coordinates.readoutKey)?.label ??
     group.coordinates.readoutKey;
-  const label = `${readoutLabel}・${coordinateLabel(contract, group)}の測定値`;
+  const label = t(
+    `${readoutLabel}・${coordinateLabel(contract, group)}の測定値`,
+    `${readoutLabel}: measured values for ${coordinateLabel(contract, group)}`,
+  );
   const commit = () => {
     if (disabled || !dirty) return;
     const values = parseCompactScalarText(text);
     if (!values) {
-      setError("数値を改行またはタブで入力してください。入力内容は消えていません。");
+      setError(
+        t(
+          "数値を改行またはタブで入力してください。入力内容は消えていません。",
+          "Enter numeric values separated by new lines or tabs. Your input was retained.",
+        ),
+      );
       return;
     }
     try {
@@ -374,7 +384,11 @@ function CompactScalarEditor({
       onObservationsChange(result.observations);
       setError(null);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "測定値を適用できませんでした。");
+      setError(
+        locale === "ja" && cause instanceof Error
+          ? cause.message
+          : t("測定値を適用できませんでした。", "The measured values could not be applied."),
+      );
     }
   };
 
@@ -401,7 +415,12 @@ function CompactScalarEditor({
           const pasted = event.clipboardData.getData("text");
           if (!pasted.includes("\t") && !/[\r\n]/u.test(pasted)) return;
           event.preventDefault();
-          setError(onRectangularPaste(group, pasted));
+          const pasteError = onRectangularPaste(group, pasted);
+          setError(
+            locale === "ja" || !pasteError
+              ? pasteError
+              : "The pasted values could not be applied. Existing values were not changed.",
+          );
         }}
       />
       {error ? (
@@ -468,7 +487,13 @@ function CompactTable({
           if (!trimmed) return null;
           const value = Number(trimmed);
           if (!Number.isFinite(value)) {
-            throw new Error(`数値として読めない値「${trimmed}」があります。`);
+            throw new Error(
+              localizedText(
+                locale,
+                `数値として読めない値「${trimmed}」があります。`,
+                `“${trimmed}” cannot be read as a number.`,
+              ),
+            );
           }
           return value;
         });
@@ -491,7 +516,13 @@ function CompactTable({
       onObservationsChange(next);
       return null;
     } catch (cause) {
-      return cause instanceof Error ? cause.message : "貼り付けた値を適用できませんでした。";
+      return locale === "ja" && cause instanceof Error
+        ? cause.message
+        : localizedText(
+            locale,
+            "貼り付けた値を適用できませんでした。",
+            "The pasted values could not be applied.",
+          );
     }
   };
 
@@ -581,6 +612,7 @@ function ExpandedTable({
   nextExperimentalUnitIdentity: AdaptiveCanonicalSpreadsheetProps["nextExperimentalUnitIdentity"];
   conditionCombinations: readonly CanonicalMatrixConditionCombination[];
 }>) {
+  const locale = useAppLocale();
   const [pasteError, setPasteError] = useState<string | null>(null);
   const entryGroups =
     model.compactEditability.status === "editable"
@@ -604,14 +636,26 @@ function ExpandedTable({
     const width = Math.max(...matrix.map((row) => row.length));
     const startIndex = entryGroups.findIndex(({ groupKey }) => groupKey === startGroup.groupKey);
     if (startIndex < 0 || startIndex + width > entryGroups.length) {
-      return "貼り付け範囲が入力表を超えています。既存の値は変更していません。";
+      return localizedText(
+        locale,
+        "貼り付け範囲が入力表を超えています。既存の値は変更していません。",
+        "The pasted range exceeds the worksheet. Existing values were not changed.",
+      );
     }
     let next = observations;
     try {
       for (let columnOffset = 0; columnOffset < width; columnOffset += 1) {
         const target = entryGroups[startIndex + columnOffset]!;
         const valueKey = scalarReadoutValueKey(contract, target);
-        if (!valueKey) throw new Error("貼り付け先の測定項目を確認できません。");
+        if (!valueKey) {
+          throw new Error(
+            localizedText(
+              locale,
+              "貼り付け先の測定項目を確認できません。",
+              "The target measured readout could not be identified.",
+            ),
+          );
+        }
         const appended = matrix.map((row) => {
           const trimmed = (row[columnOffset] ?? "").trim();
           if (!trimmed) return null;
@@ -644,9 +688,10 @@ function ExpandedTable({
       onObservationsChange(next);
       return null;
     } catch (cause) {
-      return cause instanceof Error
+      return locale === "ja" && cause instanceof Error
         ? cause.message
-        : textForLocale(
+        : localizedText(
+            locale,
             "貼り付けた値を適用できませんでした。",
             "The pasted values could not be applied.",
           );
@@ -942,6 +987,8 @@ function ExpandedIdentityEditor({
   onPaste: (event: ClipboardEvent<HTMLInputElement>) => void;
 }>) {
   const errorId = useId();
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const initialText = observation.identities[identityKey] ?? "";
   const [text, setText] = useState(initialText);
   const [dirty, setDirty] = useState(false);
@@ -969,7 +1016,12 @@ function ExpandedIdentityEditor({
       setError(null);
     } catch (cause) {
       setError(
-        `${cause instanceof Error ? cause.message : "名前を変更できませんでした。"} 入力内容は消えていません。`,
+        locale === "ja" && cause instanceof Error
+          ? `${cause.message} 入力内容は消えていません。`
+          : t(
+              "名前を変更できませんでした。入力内容は消えていません。",
+              "The ID could not be changed. Your input was retained.",
+            ),
       );
     }
   };
@@ -1026,6 +1078,8 @@ function ExpandedScalarValueEditor({
   onPaste: (event: ClipboardEvent<HTMLInputElement>) => void;
 }>) {
   const errorId = useId();
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const value = observation.values[valueKey];
   const initialText = value === null || value === undefined ? "" : String(value);
   const [text, setText] = useState(initialText);
@@ -1043,7 +1097,12 @@ function ExpandedScalarValueEditor({
     const trimmed = text.trim();
     const nextValue = trimmed === "" ? null : Number(trimmed);
     if (nextValue !== null && !Number.isFinite(nextValue)) {
-      setError("数値を入力してください。入力内容は消えていません。");
+      setError(
+        t(
+          "数値を入力してください。入力内容は消えていません。",
+          "Enter a numeric value. Your input was retained.",
+        ),
+      );
       return;
     }
     onObservationsChange(
