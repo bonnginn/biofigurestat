@@ -186,9 +186,10 @@ per-series styles, and violin/box distribution controls now have focused compone
 Their tests preserve condition and series identities, nested box compatibility layers, appearance
 state, and the distinction between displayed and canonical data. Spreadsheet ID/value editors now
 share one draft/commit hook, including external canonical-value synchronization. The project
-package also has a synthetic Public Alpha v0.2 migration test that verifies unit identities and
-measurements through migration and a current-format save/reopen without reading private research
-data. Graph inspector controls now have explicit English no-Japanese assertions for grouping,
+package also has a synthetic Public Alpha v0.2 migration test that verifies unit identities,
+measurements, one executed D01 analysis, and its linked Graph through migration and a current-format
+save/reopen without reading private research data. Graph inspector controls now have explicit
+English no-Japanese assertions for grouping,
 selection, series, distributions, raw points, error bars, connecting lines, legends, appearance,
 X/Y axes, and saved-result annotations. The current full UI suite passes with 169 files and 1,245
 tests; UI typecheck, full lint, production build, and the project package's 66 tests pass. The
@@ -485,6 +486,16 @@ was stopped when the already-recorded parallel Workspace save-target flaky recur
 Graph change remains covered by its passing focused suite; the next complete run belongs at the
 next batch boundary rather than immediately repeating roughly six minutes of work.
 
+Raw-observation, experiment-unit, uncertainty, connecting-line, and legend inspector composition
+now passes through one layer-inspector boundary. Analysis annotation insertion is owned by the
+analysis-state hook together with the analysis result and persisted annotations, rather than being
+mutated from the outer workbench. These changes preserve the same editor order and annotation
+lineage while reducing `ExperimentGraphWorkbench.tsx` to 825 lines, from 6,922 at the Public Alpha
+tag. The relevant 70- and 57-test focused groups pass. The completed Graph batch also passes UI
+typecheck, full lint, and the production build; the initial chunk remains 264.45 kB (gzip 81.20 kB)
+with no build advisory. The expanded Public Alpha migration fixture passes the complete project
+package suite (9 files / 66 tests) and project typecheck.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
@@ -509,7 +520,8 @@ next batch boundary rather than immediately repeating roughly six minutes of wor
   presentation state, data-selection state, analysis/annotation state, display-preset/type
   transitions, active
   layer descriptions, active scope, and persisted-snapshot projection are also separated.
-  Axis and Statistics inspector composition are now separate as well. Remaining benchmark
+  Axis, Statistics, and layer inspector composition are now separate as well, and annotation
+  insertion is colocated with the analysis-state boundary. Remaining benchmark
   finalization is the next bounded orchestration candidate; it must retain evidence semantics and
   stay isolated from ordinary product state.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
