@@ -325,6 +325,12 @@ Their existing empty-as-missing behavior, invalid-text retention, rectangular-pa
 unit identities, and canonical observations are preserved. The 122 focused spreadsheet/workspace
 tests, typecheck, and lint pass.
 
+The Graph and Statistics annotation surfaces now consume one shared editor-input projection.
+Analysis result, draft, contexts, adjusted family, selected annotation, and persisted annotations
+can no longer drift because a new prop was wired to only one of the two surfaces. Graph retains the
+selected-comparison action and Statistics remains display-only. The 57 focused tests, typecheck,
+and lint pass; this change intentionally improves one-source wiring without changing line count.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
