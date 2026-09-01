@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState, type ClipboardEvent } from "react";
+import { useId, useMemo, useState, type ClipboardEvent } from "react";
 
 import {
   cellIsNotPlanned,
@@ -13,6 +13,7 @@ import {
 } from "../app/experimentDraft";
 
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
+import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
 import "./WorkspaceNestedMeasurementSheet.css";
 import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 
@@ -136,8 +137,8 @@ function CompactValuesCell({
   const descriptionId = useId();
   const errorId = useId();
   const valuesText = coordinate.cell.rawValues.join("\n");
-  const [text, setText] = useState(valuesText);
-  const [message, setMessage] = useState<string | null>(null);
+  const { text, error: message, edit, accept, reportError, clearError } =
+    useSpreadsheetCellDraft(valuesText, { preserveDirtyOnCanonicalChange: true });
   const decision = compactEditability(coordinate, locale);
   const notPlanned = cellIsNotPlanned(coordinate.cell);
   const disabledReason = notPlanned
@@ -146,17 +147,16 @@ function CompactValuesCell({
       ? null
       : decision.reason;
 
-  useEffect(() => setText(valuesText), [valuesText]);
-
   const commit = () => {
     if (!decision.editable) return;
     const values = parseValues(text);
     if (!values) {
-      setMessage(t("数値を1行に1つ入力してください。入力内容は消していません。", "Enter one numeric value per line. The entered content was retained."));
+      reportError(t("数値を1行に1つ入力してください。入力内容は消していません。", "Enter one numeric value per line. The entered content was retained."));
       return;
     }
-    setMessage(null);
+    clearError();
     onChange({ ...coordinate.cell, rawValues: values, source: "manual" });
+    accept();
   };
 
   return (
@@ -177,15 +177,19 @@ function CompactValuesCell({
         data-spreadsheet-column={gridColumn}
         onBlur={commit}
         onChange={(event) => {
-          setText(event.currentTarget.value);
-          setMessage(null);
+          edit(event.currentTarget.value);
         }}
         onKeyDown={moveSpreadsheetFocus}
         onPaste={(event) => {
           const pasted = event.clipboardData.getData("text");
           if (!pasted.includes("\t") && !/[\r\n]/u.test(pasted)) return;
           event.preventDefault();
-          setMessage(onRectangularPaste(coordinate, pasted));
+          const pasteError = onRectangularPaste(coordinate, pasted);
+          if (pasteError) reportError(pasteError);
+          else {
+            clearError();
+            accept();
+          }
         }}
       />
       {disabledReason ? <small id={descriptionId}>{disabledReason}</small> : null}
@@ -224,9 +228,11 @@ function ExpandedValueInput({
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const errorId = useId();
-  const [text, setText] = useState(value === null ? "" : String(value));
-  const [invalid, setInvalid] = useState(false);
-  useEffect(() => setText(value === null ? "" : String(value)), [value]);
+  const { text, error, edit, accept, reportError } = useSpreadsheetCellDraft(
+    value === null ? "" : String(value),
+    { preserveDirtyOnCanonicalChange: true },
+  );
+  const invalid = error !== null;
   return (
     <div className="nested-measurement-sheet__expanded-value">
       <input
@@ -248,22 +254,21 @@ function ExpandedValueInput({
           if (!text.trim() && value === null) return;
           const number = Number(text);
           if (!text.trim() || !Number.isFinite(number)) {
-            setInvalid(true);
+            reportError(t("数値を入力してください。入力内容は消していません。", "Enter a numeric value. The entered content was retained."));
             return;
           }
-          setInvalid(false);
           onCommit(number);
+          accept(String(number));
         }}
         onChange={(event) => {
-          setText(event.currentTarget.value);
-          setInvalid(false);
+          edit(event.currentTarget.value);
         }}
         onKeyDown={moveSpreadsheetFocus}
         onPaste={onPaste}
       />
       {invalid ? (
         <small id={errorId} role="alert">
-          {t("数値を入力してください。入力内容は消していません。", "Enter a numeric value. The entered content was retained.")}
+          {error}
         </small>
       ) : null}
     </div>
