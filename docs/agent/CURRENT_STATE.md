@@ -308,8 +308,9 @@ adjusted-comparison annotation lineage. Pairwise endpoints, adjusted/unadjusted 
 symbol normalization, selected-time-point identity, and derived AUC/window lineage are fixed by
 direct tests rather than being assembled inside the React workbench. This removes a duplicated
 lineage path and reduces `ExperimentGraphWorkbench.tsx` to 1,086 lines. The relevant 55 Graph tests,
-UI typecheck, and focused lint pass. The purpose is single-source behavior and cheaper regression
-testing; file size reduction is only a secondary indicator.
+the full UI suite (191 files / 1,301 tests), UI typecheck, focused lint, and the production build
+pass. The purpose is single-source behavior and cheaper regression testing; file size reduction is
+only a secondary indicator.
 
 ## Known bounded gaps
 
