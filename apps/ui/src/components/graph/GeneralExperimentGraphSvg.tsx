@@ -389,7 +389,7 @@ export function ExperimentGraphSvg({
     xAxisTitleHeight +
     statisticsLegendHeight;
   margin.bottom = baseBottomMargin + extraLabelHeight + xAxisTitleHeight + statisticsLegendHeight;
-  const plotHeight = createPlotRectangle(width, height, margin).height;
+  const plot = createPlotRectangle(width, height, margin);
   const baseColors = GRAPH_PALETTES[appearance.palette];
   const visualSeriesKeys = [...new Set(series.map((item) => item.visualSeriesKey))];
   const colors = visualSeriesKeys.map(
@@ -436,9 +436,9 @@ export function ExperimentGraphSvg({
   const logMax = Math.log10(Math.max(domainMax, Number.MIN_VALUE));
   const yFor = (value: number) => {
     if (axes.yScale === "log10" && value > 0 && logMax > logMin) {
-      return margin.top + ((logMax - Math.log10(value)) / (logMax - logMin)) * plotHeight;
+      return plot.top + ((logMax - Math.log10(value)) / (logMax - logMin)) * plot.height;
     }
-    return margin.top + ((domainMax - value) / domainRange) * plotHeight;
+    return plot.top + ((domainMax - value) / domainRange) * plot.height;
   };
   const tickDirection = axes.tickDirection ?? "outside";
   const xTickDelta = tickDirection === "inside" ? -1 : 1;
@@ -463,14 +463,14 @@ export function ExperimentGraphSvg({
       axes.xScale === "log10" && value > 0 && continuousLogMax > continuousLogMin
         ? (Math.log10(value) - continuousLogMin) / (continuousLogMax - continuousLogMin)
         : (value - continuousDomainMin) / continuousXRange;
-    return margin.left + Math.max(0, Math.min(1, ratio)) * graphInnerWidth;
+    return plot.left + Math.max(0, Math.min(1, ratio)) * plot.width;
   };
   const xFor = (index: number) => {
     if (continuousLine) {
       const value = series[index]?.xValue ?? continuousDomainMin;
       return xForContinuousValue(value);
     }
-    return margin.left + categoryLayout.sidePadding + (categoryLayout.offsets[index] ?? 0);
+    return plot.left + categoryLayout.sidePadding + (categoryLayout.offsets[index] ?? 0);
   };
   const continuousTickIndices = continuousLine
     ? (() => {
@@ -532,8 +532,7 @@ export function ExperimentGraphSvg({
           ? -90
           : 0;
   const hasTimeLabels = axisLabels.some(({ timeLabel }) => timeLabel);
-  const xAxisTitleY =
-    height - margin.bottom + (hasTimeLabels ? 88 : 70) + extraLabelHeight;
+  const xAxisTitleY = plot.bottom + (hasTimeLabels ? 88 : 70) + extraLabelHeight;
   const yTicks =
     axes.yScale === "log10"
       ? Array.from(
@@ -625,7 +624,7 @@ export function ExperimentGraphSvg({
       data-graph-shape={shape}
       data-category-slot-width={continuousLine ? 0 : categoryLayout.baseSlot}
       data-side-padding={categoryLayout.sidePadding}
-      data-left-margin={margin.left}
+      data-left-margin={plot.left}
       data-statistics-bracket-levels={bracketRows}
       style={{
         fontFamily:
@@ -674,14 +673,14 @@ export function ExperimentGraphSvg({
             const row = appearance.legendPosition === "top" ? Math.floor(index / 3) : index;
             const legendX =
               appearance.legendPosition === "top"
-                ? margin.left + column * Math.max(130, categoryLayout.innerWidth / 3)
+                ? plot.left + column * Math.max(130, categoryLayout.innerWidth / 3)
                 : appearance.legendPosition === "right"
-                  ? width - margin.right + 24
-                  : width - margin.right - 165;
+                  ? plot.right + 24
+                  : plot.right - 165;
             const legendY =
               appearance.legendPosition === "top"
                 ? 20 + row * Math.max(34, appearance.legendFontSize * 2)
-                : margin.top + 14 + row * Math.max(30, appearance.legendFontSize * 1.8);
+                : plot.top + 14 + row * Math.max(30, appearance.legendFontSize * 1.8);
             const style = appearance.seriesStyles[item.visualSeriesKey];
             const linePresentation = resolveSeriesLinePresentation(
               style,
@@ -737,8 +736,8 @@ export function ExperimentGraphSvg({
         return (
           <g key={`tick-${index}`}>
             <line
-              x1={margin.left}
-              x2={margin.left + yTickDelta * 5}
+              x1={plot.left}
+              x2={plot.left + yTickDelta * 5}
               y1={y}
               y2={y}
               className="experiment-graph-tick"
@@ -746,7 +745,7 @@ export function ExperimentGraphSvg({
               data-tick-direction={tickDirection}
             />
             <text
-              x={margin.left - 10}
+              x={plot.left - 10}
               y={y + 5}
               textAnchor="end"
               className="experiment-graph-axis-label"
@@ -758,10 +757,10 @@ export function ExperimentGraphSvg({
         );
       })}
       <line
-        x1={margin.left}
-        x2={margin.left}
-        y1={margin.top}
-        y2={height - margin.bottom}
+        x1={plot.left}
+        x2={plot.left}
+        y1={plot.top}
+        y2={plot.bottom}
         className="experiment-graph-axis-line"
         style={{ strokeWidth: appearance.axisLineWidth }}
         onDoubleClick={(event) => {
@@ -770,10 +769,10 @@ export function ExperimentGraphSvg({
         }}
       />
       <line
-        x1={margin.left}
-        x2={margin.left}
-        y1={margin.top}
-        y2={height - margin.bottom}
+        x1={plot.left}
+        x2={plot.left}
+        y1={plot.top}
+        y2={plot.bottom}
         className="experiment-graph-axis-hit-target"
         data-inspector-target="y-axis"
         data-selected={activeInspectorTarget === "y-axis" || undefined}
@@ -783,10 +782,10 @@ export function ExperimentGraphSvg({
         }}
       />
       <line
-        x1={margin.left}
-        x2={width - margin.right}
-        y1={height - margin.bottom}
-        y2={height - margin.bottom}
+        x1={plot.left}
+        x2={plot.right}
+        y1={plot.bottom}
+        y2={plot.bottom}
         className="experiment-graph-axis-line"
         style={{ strokeWidth: appearance.axisLineWidth }}
         onDoubleClick={(event) => {
@@ -795,10 +794,10 @@ export function ExperimentGraphSvg({
         }}
       />
       <line
-        x1={margin.left}
-        x2={width - margin.right}
-        y1={height - margin.bottom}
-        y2={height - margin.bottom}
+        x1={plot.left}
+        x2={plot.right}
+        y1={plot.bottom}
+        y2={plot.bottom}
         className="experiment-graph-axis-hit-target"
         data-inspector-target="x-axis"
         data-selected={activeInspectorTarget === "x-axis" || undefined}
@@ -814,8 +813,8 @@ export function ExperimentGraphSvg({
                 key={`category-tick-${label.conditionId}-${label.timeLabel || "none"}-${index}`}
                 x1={xFor(index)}
                 x2={xFor(index)}
-                y1={height - margin.bottom}
-                y2={height - margin.bottom + xTickDelta * 6}
+                y1={plot.bottom}
+                y2={plot.bottom + xTickDelta * 6}
                 className="experiment-graph-category-tick"
                 data-inspector-target="x-axis"
                 data-axis-tick="x"
@@ -829,8 +828,8 @@ export function ExperimentGraphSvg({
                 key={`continuous-x-minor-tick-${value}`}
                 x1={xForContinuousValue(value)}
                 x2={xForContinuousValue(value)}
-                y1={height - margin.bottom}
-                y2={height - margin.bottom + xTickDelta * 3.5}
+                y1={plot.bottom}
+                y2={plot.bottom + xTickDelta * 3.5}
                 className="experiment-graph-minor-tick"
                 data-graph-layer="minor-tick"
                 data-axis-tick="x-minor"
@@ -842,15 +841,15 @@ export function ExperimentGraphSvg({
                 <line
                   x1={xForContinuousValue(value)}
                   x2={xForContinuousValue(value)}
-                  y1={height - margin.bottom}
-                  y2={height - margin.bottom + xTickDelta * 6}
+                  y1={plot.bottom}
+                  y2={plot.bottom + xTickDelta * 6}
                   className="experiment-graph-category-tick"
                   data-axis-tick="x"
                   data-tick-direction={tickDirection}
                 />
                 <text
                   x={xForContinuousValue(value)}
-                  y={height - margin.bottom + 25}
+                  y={plot.bottom + 25}
                   textAnchor="middle"
                   className="experiment-graph-condition-attribute experiment-graph-time-label"
                   style={{ fontSize: appearance.tickFontSize, fill: "#000" }}
@@ -870,8 +869,8 @@ export function ExperimentGraphSvg({
                 key={`category-group-separator-${group.key}`}
                 x1={separatorX}
                 x2={separatorX}
-                y1={height - margin.bottom}
-                y2={height - margin.bottom + xTickDelta * 10}
+                y1={plot.bottom}
+                y2={plot.bottom + xTickDelta * 10}
                 className="experiment-graph-category-group-separator"
                 data-graph-layer="category-group-separator"
                 data-tick-direction={tickDirection}
@@ -881,8 +880,8 @@ export function ExperimentGraphSvg({
         : null}
       <text
         x={yAxisTitleX}
-        y={margin.top + plotHeight / 2}
-        transform={`rotate(-90 ${yAxisTitleX} ${margin.top + plotHeight / 2})`}
+        y={plot.top + plot.height / 2}
+        transform={`rotate(-90 ${yAxisTitleX} ${plot.top + plot.height / 2})`}
         textAnchor="middle"
         className="experiment-graph-axis-title"
         style={{ fontSize: appearance.axisTitleFontSize, fill: "#000" }}
@@ -895,7 +894,7 @@ export function ExperimentGraphSvg({
       </text>
       {renderedXAxisTitle ? (
         <text
-          x={(margin.left + width - margin.right) / 2}
+          x={plot.left + plot.width / 2}
           y={xAxisTitleY}
           textAnchor="middle"
           className="experiment-graph-axis-title"
@@ -911,8 +910,8 @@ export function ExperimentGraphSvg({
       {axes.referenceLines?.map((reference) => (
         <g key={reference.id} data-graph-layer="reference-line">
           <line
-            x1={margin.left}
-            x2={width - margin.right}
+            x1={plot.left}
+            x2={plot.right}
             y1={yFor(reference.value)}
             y2={yFor(reference.value)}
             stroke={reference.color}
@@ -927,7 +926,7 @@ export function ExperimentGraphSvg({
           />
           {reference.label ? (
             <text
-              x={width - margin.right - 4}
+              x={plot.right - 4}
               y={yFor(reference.value) - 5}
               textAnchor="end"
               className="experiment-graph-stat-label"
@@ -956,7 +955,7 @@ export function ExperimentGraphSvg({
               <text
                 key={annotation.id}
                 x={xFor(targetIndex)}
-                y={Math.max(margin.top + 12, yFor(Math.max(...targetValues)) - 12)}
+                y={Math.max(plot.top + 12, yFor(Math.max(...targetValues)) - 12)}
                 textAnchor="middle"
                 className="experiment-graph-stat-label"
                 data-graph-layer="statistics-annotation"
@@ -973,27 +972,27 @@ export function ExperimentGraphSvg({
               <line
                 x1={xFor(pairwise[0])}
                 x2={xFor(pairwise[1])}
-                y1={margin.top - 10 - annotationLevel * 24}
-                y2={margin.top - 10 - annotationLevel * 24}
+                y1={plot.top - 10 - annotationLevel * 24}
+                y2={plot.top - 10 - annotationLevel * 24}
                 className="experiment-graph-stat-line"
               />
               <line
                 x1={xFor(pairwise[0])}
                 x2={xFor(pairwise[0])}
-                y1={margin.top - 10 - annotationLevel * 24}
-                y2={margin.top - 4 - annotationLevel * 24}
+                y1={plot.top - 10 - annotationLevel * 24}
+                y2={plot.top - 4 - annotationLevel * 24}
                 className="experiment-graph-stat-line"
               />
               <line
                 x1={xFor(pairwise[1])}
                 x2={xFor(pairwise[1])}
-                y1={margin.top - 10 - annotationLevel * 24}
-                y2={margin.top - 4 - annotationLevel * 24}
+                y1={plot.top - 10 - annotationLevel * 24}
+                y2={plot.top - 4 - annotationLevel * 24}
                 className="experiment-graph-stat-line"
               />
               <text
                 x={(xFor(pairwise[0]) + xFor(pairwise[1])) / 2}
-                y={margin.top - 14 - annotationLevel * 24}
+                y={plot.top - 14 - annotationLevel * 24}
                 textAnchor="middle"
                 className="experiment-graph-stat-label"
               >
@@ -1005,8 +1004,8 @@ export function ExperimentGraphSvg({
           ) : (
             <text
               key={annotation.id}
-              x={width - margin.right}
-              y={margin.top - 10 - stackIndex * 22}
+              x={plot.right}
+              y={plot.top - 10 - stackIndex * 22}
               textAnchor="end"
               className="experiment-graph-stat-label"
               data-graph-layer="statistics-annotation"
@@ -1025,7 +1024,7 @@ export function ExperimentGraphSvg({
       {statisticsLegendLabels.map((label, index) => (
         <text
           key={`statistics-legend-${label}`}
-          x={margin.left}
+          x={plot.left}
           y={height - xAxisTitleHeight - statisticsLegendHeight + 20 + index * 20}
           textAnchor="start"
           className="experiment-graph-statistics-legend"
@@ -1135,8 +1134,7 @@ export function ExperimentGraphSvg({
       {axes.showCategoryLabels
         ? hierarchyGroups.flatMap((groups, levelIndex) => {
             const rowY =
-              height -
-              margin.bottom +
+              plot.bottom +
               (hasTimeLabels ? 52 : 34) +
               (hierarchyDepth - 1 - levelIndex) * 27;
             const heading = axisLabels[0]?.levels[levelIndex]?.label;
@@ -1146,7 +1144,7 @@ export function ExperimentGraphSvg({
               !(levelIndex === 0 && heading === singleCategoricalFactorTitle) ? (
                 <text
                   key={`heading-${levelIndex}`}
-                  x={margin.left - 10}
+                  x={plot.left - 10}
                   y={rowY}
                   textAnchor="end"
                   className="experiment-graph-hierarchy-heading"
@@ -1289,7 +1287,7 @@ export function ExperimentGraphSvg({
             (!continuousTickIndices || continuousTickIndices.has(seriesIndex)) ? (
               <text
                 x={x}
-                y={height - margin.bottom + 25}
+                y={plot.bottom + 25}
                 textAnchor="middle"
                 className="experiment-graph-condition-attribute experiment-graph-time-label"
                 style={{ fontSize: appearance.hierarchyFontSize, fill: "#000" }}
