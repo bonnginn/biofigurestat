@@ -88,6 +88,7 @@
 | ⏸    | Kaplan–Meier外観設定の共通化           | 色、font size、軸、legend等を共通Graph相当に編集できる        |
 | ⏸    | Statistics結果一覧の改善               | 調整済み比較をStatisticsタブから一覧表示できる                |
 | ⏸    | 独立性確認の質問を短くする             | 科学的安全性を保ちつつ、単純実験で過度に厳しく見えない        |
+| ⏸    | SpreadsheetのUndo/Redo                 | `Ctrl+Z` / `Cmd+Z`で編集を戻し、canonical値・Graph・保存状態も同じ履歴へ同期する |
 | 🟡   | Graph-onlyの通常workspace統合          | 共通editorは利用可能。完成Graphとの表示差を継続解消           |
 | ✅   | 複数projectのタブ管理                  | 同一windowで保持、再Open、dirty checkpointを回帰test済み      |
 | ✅   | Excel workbook取込                     | `.xls/.xlsx/.xlsm/.xlsb`、sheet選択、Expとしてstackを実装済み |
@@ -97,7 +98,7 @@
 | 状態 | 項目                                  | 完了条件                                                                                                                                                                                                                                                                            |
 | ---- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 🟡   | Graph共通描画                         | 通常・Survival・非線形に加え旧Resultsの独自tickも`createNiceTicks`へ統合。1値rangeの重複tickも共通helperで解消。plot bounds等は継続                                                                                                                                                 |
-| 🟡   | Spreadsheet共通primitive              | keyboard/paste/zoom、Tab順、最小scroll focus、有限数値parse、割合表示に加え、canonical/adaptive・通常実験数値・nested compact/expandedのdraft/commit同期を共通hook化。残るspecialized cell presentationとidentity編集を継続                                                                 |
+| 🟡   | Spreadsheet共通primitive              | keyboard/paste/zoom、Tab順、最小scroll focus、有限数値parse、割合表示、canonical/adaptive・通常実験数値・nested compact/expandedのdraft/commit同期に加え、旧2条件/多条件sheetのworkflow tab、解析用数値抽出、token生成、metadata formを共通化。直近3commitでproductionを純減91行。残るspecialized cell presentationとidentity編集を継続 |
 | 🟡   | `ExperimentGraphWorkbench`分割        | 各editor、3種renderer、series/lineage投影、grouping/data selection/series/distribution、time analysis・analysis set・scope notice、Statistics context/注釈/intent、workspace同期、instrumentation、benchmark capture、native export feedback、canvas toolbar/semantic caption/inspector target/data editor/renderer composition、presentation/data-selection/analysis state、display preset、layer description、active scope、persisted snapshot projectionを分離済み。公開Alphaの6,854行から1,116行へ約84%縮小。残るview-model/analysis assessment orchestrationを段階的に分離 |
 | ✅   | 未使用prototypeの公開sourceからの分離 | private archiveへ保全し、public sourceには含めない                                                                                                                                                                                                                                  |
 | ✅   | benchmark生成物の公開sourceからの除外 | evaluation/benchmark materialを通常product sourceから分離                                                                                                                                                                                                                           |

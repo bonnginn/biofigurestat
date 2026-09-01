@@ -276,6 +276,16 @@ suite passes 184 files / 1,287 tests; UI typecheck, full lint, and production bu
 production chunk is 814.26 kB (gzip 223.54 kB), the Graph workbench chunk is 199.78 kB, and the
 existing greater-than-500-kB advisory remains.
 
+The legacy two-condition and multi-condition Data Sheets now share their workflow-tab model and
+roving keyboard UI, analysis-result holder, numeric-observation projection, collision-safe token
+factory, and project metadata form. These are presentation/orchestration concerns with identical
+meaning on both surfaces; relationship-specific row layout, experimental-unit wording, pairing,
+and validation remain owned by each sheet. Across the three focused Spreadsheet consolidation
+commits, production code is net -91 lines while 129 direct regression-test lines were added.
+DataSheet/MultiCondition focused tests, typecheck, and lint pass. Spreadsheet Undo/Redo remains an
+explicit Beta item because it must coordinate canonical values, Graph invalidation, dirty state,
+and persistence rather than only reverting visible text.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
