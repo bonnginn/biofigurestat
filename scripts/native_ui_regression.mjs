@@ -16,12 +16,28 @@ const DEFAULT_WINDOWS_EXECUTABLE = join(
   "release",
   "lifescience-analysis-app.exe",
 );
+const DEFAULT_MAC_APP = join(
+  ROOT,
+  "apps",
+  "desktop",
+  "src-tauri",
+  "target",
+  "release",
+  "bundle",
+  "macos",
+  "BioFigureStat.app",
+);
 const JAPANESE_PATTERN_SOURCE = "[ぁ-んァ-ヶ一-龯]";
 const execFileAsync = promisify(execFile);
 
 export function parseNativeRegressionArguments(argv) {
   const parsed = {
-    platform: process.platform === "win32" ? "windows" : process.platform === "darwin" ? "macos" : "unsupported",
+    platform:
+      process.platform === "win32"
+        ? "windows"
+        : process.platform === "darwin"
+          ? "macos"
+          : "unsupported",
     executable: undefined,
     output: undefined,
     timeoutMs: 20_000,
@@ -45,7 +61,11 @@ export function parseNativeRegressionArguments(argv) {
       throw new Error(`Unknown or incomplete argument: ${argument}`);
     }
   }
-  if (!Number.isFinite(parsed.timeoutMs) || parsed.timeoutMs < 1_000 || parsed.timeoutMs > 120_000) {
+  if (
+    !Number.isFinite(parsed.timeoutMs) ||
+    parsed.timeoutMs < 1_000 ||
+    parsed.timeoutMs > 120_000
+  ) {
     throw new Error("--timeout-ms must be between 1000 and 120000");
   }
   if (!new Set(["windows", "macos"]).has(parsed.platform)) {
@@ -56,20 +76,35 @@ export function parseNativeRegressionArguments(argv) {
 
 export function defaultNativeExecutable(platform) {
   if (platform === "windows") return DEFAULT_WINDOWS_EXECUTABLE;
-  return join(
-    ROOT,
-    "apps",
-    "desktop",
-    "src-tauri",
-    "target",
-    "release",
-    "bundle",
-    "macos",
-    "BioFigureStat.app",
-    "Contents",
-    "MacOS",
-    "BioFigureStat",
+  return DEFAULT_MAC_APP;
+}
+
+export function macBundleExecutableFromPlist(plist) {
+  const match = plist.match(
+    /<key>\s*CFBundleExecutable\s*<\/key>\s*<string>\s*([^<]+?)\s*<\/string>/u,
   );
+  if (!match) {
+    throw new Error("HARNESS_EXECUTABLE_RESOLUTION: CFBundleExecutable is missing from Info.plist");
+  }
+  return match[1]
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&apos;", "'");
+}
+
+export async function resolveNativeExecutable(platform, requestedTarget) {
+  const target = resolve(requestedTarget ?? defaultNativeExecutable(platform));
+  if (platform !== "macos" || !target.toLowerCase().endsWith(".app")) return target;
+  const plistPath = join(target, "Contents", "Info.plist");
+  try {
+    const plist = await readFile(plistPath, "utf8");
+    return join(target, "Contents", "MacOS", macBundleExecutableFromPlist(plist));
+  } catch (error) {
+    if (String(error).includes("HARNESS_EXECUTABLE_RESOLUTION")) throw error;
+    throw new Error(`HARNESS_EXECUTABLE_RESOLUTION: cannot read ${plistPath}: ${String(error)}`);
+  }
 }
 
 export function japaneseUiAuditExpression() {
@@ -114,7 +149,16 @@ export function selectWebviewTarget(targets) {
 export function classifyNativeRegressionFailure(error, steps) {
   const failedStep = steps.find((step) => step.status === "fail")?.name;
   const message = String(error);
-  if (failedStep === "macos_accessibility_attach" && /Accessibility|osascript|not allowed/i.test(message)) {
+  if (/HARNESS_EXECUTABLE_RESOLUTION/i.test(message)) {
+    return "HARNESS_INFRASTRUCTURE_BLOCKED";
+  }
+  if (failedStep === "macos_accessibility_attach" && /code -2|ENOENT|spawn/i.test(message)) {
+    return "HARNESS_INFRASTRUCTURE_BLOCKED";
+  }
+  if (
+    failedStep === "macos_accessibility_attach" &&
+    /Accessibility|osascript|not allowed/i.test(message)
+  ) {
     return "HARNESS_INFRASTRUCTURE_BLOCKED";
   }
   if (
@@ -204,7 +248,9 @@ class CdpClient {
       const socket = new WebSocket(this.url);
       this.socket = socket;
       socket.addEventListener("open", () => resolvePromise());
-      socket.addEventListener("error", () => rejectPromise(new Error("Could not connect to WebView2 CDP")));
+      socket.addEventListener("error", () =>
+        rejectPromise(new Error("Could not connect to WebView2 CDP")),
+      );
       socket.addEventListener("message", (event) => {
         const message = JSON.parse(String(event.data));
         if (!message.id) return;
@@ -245,7 +291,8 @@ class CdpClient {
       userGesture: true,
     });
     if (response.exceptionDetails) {
-      const detail = response.exceptionDetails.exception?.description ?? response.exceptionDetails.text;
+      const detail =
+        response.exceptionDetails.exception?.description ?? response.exceptionDetails.text;
       throw new Error(`WebView evaluation failed: ${detail}`);
     }
     return response.result?.value;
@@ -278,7 +325,9 @@ async function waitForTarget(port, timeoutMs, child) {
   let lastError;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
-      throw new Error(`Native application exited before WebView inspection (code ${child.exitCode})`);
+      throw new Error(
+        `Native application exited before WebView inspection (code ${child.exitCode})`,
+      );
     }
     try {
       const response = await fetch(`http://127.0.0.1:${port}/json/list`);
@@ -307,7 +356,9 @@ async function connectToStableWebview(port, initialTarget, timeoutMs, child) {
   let lastError;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
-      throw new Error(`Native application exited before WebView inspection (code ${child.exitCode})`);
+      throw new Error(
+        `Native application exited before WebView inspection (code ${child.exitCode})`,
+      );
     }
     if (target && !attemptedTargetIds.has(target.id)) {
       attemptedTargetIds.add(target.id);
@@ -408,11 +459,12 @@ const setInputByLabel = ({ labelText, value }) => {
   );
   const input = explicitlyNamed ?? label?.querySelector("input, textarea, select");
   if (!input) throw new Error(`Could not find input for label: ${labelText}`);
-  const prototype = input instanceof HTMLTextAreaElement
-    ? HTMLTextAreaElement.prototype
-    : input instanceof HTMLSelectElement
-      ? HTMLSelectElement.prototype
-      : HTMLInputElement.prototype;
+  const prototype =
+    input instanceof HTMLTextAreaElement
+      ? HTMLTextAreaElement.prototype
+      : input instanceof HTMLSelectElement
+        ? HTMLSelectElement.prototype
+        : HTMLInputElement.prototype;
   const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
   if (!setter) throw new Error(`Input value setter is unavailable: ${labelText}`);
   setter.call(input, value);
@@ -426,9 +478,8 @@ const setInputByTestId = ({ testId, value }) => {
   if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement)) {
     throw new Error(`Could not find spreadsheet input: ${testId}`);
   }
-  const prototype = input instanceof HTMLSelectElement
-    ? HTMLSelectElement.prototype
-    : HTMLInputElement.prototype;
+  const prototype =
+    input instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
   const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
   if (!setter) throw new Error(`Input value setter is unavailable: ${testId}`);
   setter.call(input, value);
@@ -460,7 +511,9 @@ const inputValueByLabel = (labelText) => {
 
 async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
   const port = await reservePort();
-  const profileDirectory = await mkdtemp(join(tmpdir(), "biofigurestat-native-regression-profile-"));
+  const profileDirectory = await mkdtemp(
+    join(tmpdir(), "biofigurestat-native-regression-profile-"),
+  );
   const exportTarget = join(outputDirectory, "native-command-export.svg");
   const nativeOutput = [];
   const child = spawn(executable, [], {
@@ -488,7 +541,12 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
       steps.push({ name, status: "pass", durationMs: Date.now() - startedAt, detail });
       return detail;
     } catch (error) {
-      steps.push({ name, status: "fail", durationMs: Date.now() - startedAt, detail: String(error) });
+      steps.push({
+        name,
+        status: "fail",
+        durationMs: Date.now() - startedAt,
+        detail: String(error),
+      });
       throw error;
     }
   };
@@ -500,7 +558,9 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
   };
 
   try {
-    const target = await runStep("native_webview_launch", () => waitForTarget(port, timeoutMs, child));
+    const target = await runStep("native_webview_launch", () =>
+      waitForTarget(port, timeoutMs, child),
+    );
     const connection = await runStep("native_webview_cdp_connect", () =>
       connectToStableWebview(port, target, timeoutMs, child),
     );
@@ -523,16 +583,20 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
       const architecture = await client.evaluate(
         `window.__TAURI_INTERNALS__.invoke("native_architecture")`,
       );
-      if (!architecture || typeof architecture !== "string") throw new Error("Architecture IPC returned no value");
+      if (!architecture || typeof architecture !== "string")
+        throw new Error("Architecture IPC returned no value");
       return { architecture };
     });
     await runStep("home_has_no_japanese_application_copy", async () => {
       const findings = await client.evaluate(japaneseUiAuditExpression());
-      if (findings.length) throw new Error(`Japanese application copy found: ${JSON.stringify(findings)}`);
+      if (findings.length)
+        throw new Error(`Japanese application copy found: ${JSON.stringify(findings)}`);
       return { findings: 0 };
     });
     await runStep("native_export_ipc", async () => {
-      const payload = Buffer.from("<svg xmlns=\"http://www.w3.org/2000/svg\"><title>native regression</title></svg>");
+      const payload = Buffer.from(
+        '<svg xmlns="http://www.w3.org/2000/svg"><title>native regression</title></svg>',
+      );
       await client.evaluate(
         `window.__TAURI_INTERNALS__.invoke("write_export_file", ${JSON.stringify({
           target: exportTarget,
@@ -576,10 +640,19 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         await client.evaluate(pageAction(setInputByTestId, { testId, value }));
       }
       await client.evaluate(pageAction(setInputByLabel, { labelText: "Graph X axis", value: "0" }));
-      await client.evaluate(pageAction(setInputByLabel, { labelText: "Graph measured value", value: "1" }));
-      await client.evaluate(pageAction(setInputByLabel, { labelText: "Subject ID for Graph data", value: "2" }));
+      await client.evaluate(
+        pageAction(setInputByLabel, { labelText: "Graph measured value", value: "1" }),
+      );
+      await client.evaluate(
+        pageAction(setInputByLabel, { labelText: "Subject ID for Graph data", value: "2" }),
+      );
       await client.evaluate(pageAction(clickByText, "Create Graph"));
-      await waitFor(client, `document.body.innerText.includes("Review statistics")`, "Graph workspace", timeoutMs);
+      await waitFor(
+        client,
+        `document.body.innerText.includes("Review statistics")`,
+        "Graph workspace",
+        timeoutMs,
+      );
       await client.evaluate(pageAction(clickByText, "Review statistics"));
       await waitFor(
         client,
@@ -588,7 +661,12 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         timeoutMs,
       );
       await client.evaluate(pageAction(clickControlByLabelText, "Treatment or group"));
-      await client.evaluate(pageAction(setInputByLabel, { labelText: "ID column identifying the subject or sample", value: "2" }));
+      await client.evaluate(
+        pageAction(setInputByLabel, {
+          labelText: "ID column identifying the subject or sample",
+          value: "2",
+        }),
+      );
       await client.evaluate(pageAction(clickByText, "Continue to experiment structure"));
       await waitFor(
         client,
@@ -597,15 +675,18 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         timeoutMs,
       );
       const findings = await client.evaluate(japaneseUiAuditExpression());
-      if (findings.length) throw new Error(`Japanese application copy found: ${JSON.stringify(findings)}`);
+      if (findings.length)
+        throw new Error(`Japanese application copy found: ${JSON.stringify(findings)}`);
       await captureScreenshot(client, join(outputDirectory, "graph-only-statistics-handoff.png"));
       return { findings: 0 };
     });
     await runStep("statistics_validation_is_visible_and_focused", async () => {
-      await client.evaluate(pageAction(setInputByLabel, {
-        labelText: "What unit directly received a condition or was assigned to a group?",
-        value: "culture dish",
-      }));
+      await client.evaluate(
+        pageAction(setInputByLabel, {
+          labelText: "What unit directly received a condition or was assigned to a group?",
+          value: "culture dish",
+        }),
+      );
       await client.evaluate(pageAction(clickByText, "Continue to statistics setup"));
       await waitFor(
         client,
@@ -631,7 +712,8 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         timeoutMs,
       );
       const findings = await client.evaluate(japaneseUiAuditExpression());
-      if (findings.length) throw new Error(`Japanese copy found in close guard: ${JSON.stringify(findings)}`);
+      if (findings.length)
+        throw new Error(`Japanese copy found in close guard: ${JSON.stringify(findings)}`);
       await client.evaluate(pageAction(clickByText, "Cancel"));
       await waitFor(
         client,
@@ -639,11 +721,14 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
         "close guard cancellation",
         timeoutMs,
       );
-      const value = await client.evaluate(pageAction(
-        inputValueByLabel,
-        "What unit directly received a condition or was assigned to a group?",
-      ));
-      if (value !== "culture dish") throw new Error("Cancel lost the retained biological-unit answer");
+      const value = await client.evaluate(
+        pageAction(
+          inputValueByLabel,
+          "What unit directly received a condition or was assigned to a group?",
+        ),
+      );
+      if (value !== "culture dish")
+        throw new Error("Cancel lost the retained biological-unit answer");
       return { retainedExperimentalUnit: value };
     });
     await runStep("native_close_discard_exits", async () => {
@@ -657,7 +742,10 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
       await captureScreenshot(client, join(outputDirectory, "native-close-guard.png"));
       await client.evaluate(pageAction(clickByText, "Discard changes and continue"));
       await new Promise((resolvePromise, rejectPromise) => {
-        const timeout = setTimeout(() => rejectPromise(new Error("Application did not exit after approved discard")), timeoutMs);
+        const timeout = setTimeout(
+          () => rejectPromise(new Error("Application did not exit after approved discard")),
+          timeoutMs,
+        );
         child.once("exit", (code) => {
           clearTimeout(timeout);
           if (code === 0 || code === null) resolvePromise();
@@ -691,7 +779,10 @@ async function runMacAccessibility(action, names = [], value = "") {
   const { stdout } = await execFileAsync(
     "osascript",
     ["-l", "JavaScript", "-e", macAccessibilityScript(action, names, value)],
-    { timeout: 20_000, maxBuffer: 4 * 1024 * 1024 },
+    {
+      timeout: 20_000,
+      maxBuffer: 4 * 1024 * 1024,
+    },
   );
   const output = stdout.trim();
   return output ? JSON.parse(output) : {};
@@ -712,7 +803,9 @@ async function waitForMacSnapshot(predicate, label, timeoutMs, child) {
     }
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 250));
   }
-  throw new Error(`${label} was not exposed through macOS Accessibility: ${String(lastError ?? "timeout")}`);
+  throw new Error(
+    `${label} was not exposed through macOS Accessibility: ${String(lastError ?? "timeout")}`,
+  );
 }
 
 function macSnapshotContains(snapshot, candidates) {
@@ -739,7 +832,12 @@ async function runMacScenario({ executable, outputDirectory, timeoutMs }) {
       steps.push({ name, status: "pass", durationMs: Date.now() - startedAt, detail });
       return detail;
     } catch (error) {
-      steps.push({ name, status: "fail", durationMs: Date.now() - startedAt, detail: String(error) });
+      steps.push({
+        name,
+        status: "fail",
+        durationMs: Date.now() - startedAt,
+        detail: String(error),
+      });
       throw error;
     }
   };
@@ -763,12 +861,19 @@ async function runMacScenario({ executable, outputDirectory, timeoutMs }) {
     await runStep("macos_open_simple_experiment", async () => {
       await runMacAccessibility("click", ["New experiment", "新しい実験"]);
       await waitForMacSnapshot(
-        (snapshot) => macSnapshotContains(snapshot, ["Simple independent-group comparison", "単純な独立群比較"]),
+        (snapshot) =>
+          macSnapshotContains(snapshot, [
+            "Simple independent-group comparison",
+            "単純な独立群比較",
+          ]),
         "simple experiment entry",
         timeoutMs,
         child,
       );
-      return runMacAccessibility("click", ["Simple independent-group comparison", "単純な独立群比較"]);
+      return runMacAccessibility("click", [
+        "Simple independent-group comparison",
+        "単純な独立群比較",
+      ]);
     });
     await runStep("macos_dirty_entry", async () => {
       await waitForMacSnapshot(
@@ -802,14 +907,18 @@ async function runMacScenario({ executable, outputDirectory, timeoutMs }) {
     await runStep("macos_quit_guard_discard_exits", async () => {
       await runMacAccessibility("quit");
       await waitForMacSnapshot(
-        (snapshot) => macSnapshotContains(snapshot, ["Discard changes and continue", "変更を破棄して続ける"]),
+        (snapshot) =>
+          macSnapshotContains(snapshot, ["Discard changes and continue", "変更を破棄して続ける"]),
         "second unsaved-work guard",
         timeoutMs,
         child,
       );
       await runMacAccessibility("click", ["Discard changes and continue", "変更を破棄して続ける"]);
       await new Promise((resolvePromise, rejectPromise) => {
-        const timer = setTimeout(() => rejectPromise(new Error("macOS application did not exit after discard")), timeoutMs);
+        const timer = setTimeout(
+          () => rejectPromise(new Error("macOS application did not exit after discard")),
+          timeoutMs,
+        );
         child.once("exit", (code) => {
           clearTimeout(timer);
           if (code === 0 || code === null) resolvePromise();
@@ -831,16 +940,18 @@ async function runMacScenario({ executable, outputDirectory, timeoutMs }) {
 }
 
 export async function runNativeUiRegression(options) {
-  const executable = resolve(options.executable ?? defaultNativeExecutable(options.platform));
-  if (!isAbsolute(executable)) throw new Error("Native executable path must be absolute");
+  let executable = resolve(options.executable ?? defaultNativeExecutable(options.platform));
   const outputDirectory = resolve(
-    options.output ?? join(ROOT, ".tmp", "native-ui-regression", new Date().toISOString().replaceAll(":", "-")),
+    options.output ??
+      join(ROOT, ".tmp", "native-ui-regression", new Date().toISOString().replaceAll(":", "-")),
   );
   await mkdir(outputDirectory, { recursive: true });
   const startedAt = new Date().toISOString();
   let result;
   let failure;
   try {
+    executable = await resolveNativeExecutable(options.platform, options.executable);
+    if (!isAbsolute(executable)) throw new Error("Native executable path must be absolute");
     result = await (options.platform === "macos" ? runMacScenario : runWindowsScenario)({
       executable,
       outputDirectory,
@@ -869,8 +980,15 @@ export async function runNativeUiRegression(options) {
     steps: result?.steps ?? failure?.nativeSteps ?? [],
     error: failure ? String(failure) : undefined,
   };
-  await writeFile(join(outputDirectory, "report.json"), `${JSON.stringify(report, null, 2)}\n`, "utf8");
-  if (failure) throw new Error(`${failure}\nNative regression report: ${join(outputDirectory, "report.json")}`);
+  await writeFile(
+    join(outputDirectory, "report.json"),
+    `${JSON.stringify(report, null, 2)}\n`,
+    "utf8",
+  );
+  if (failure)
+    throw new Error(
+      `${failure}\nNative regression report: ${join(outputDirectory, "report.json")}`,
+    );
   return report;
 }
 

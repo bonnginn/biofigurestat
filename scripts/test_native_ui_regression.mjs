@@ -5,8 +5,10 @@ import {
   classifyNativeRegressionFailure,
   defaultNativeExecutable,
   japaneseUiAuditExpression,
+  macBundleExecutableFromPlist,
   macAccessibilityScript,
   parseNativeRegressionArguments,
+  resolveNativeExecutable,
   selectWebviewTarget,
   windowsCloseCommand,
 } from "./native_ui_regression.mjs";
@@ -44,7 +46,10 @@ test("rejects unsupported platforms and unbounded timeouts", () => {
 });
 
 test("uses the packaged Windows application as its default exact target", () => {
-  assert.match(defaultNativeExecutable("windows"), /target[\\/]release[\\/]lifescience-analysis-app\.exe$/);
+  assert.match(
+    defaultNativeExecutable("windows"),
+    /target[\\/]release[\\/]lifescience-analysis-app\.exe$/,
+  );
 });
 
 test("requests an actual bounded Windows WM_CLOSE for the exact spawned process", () => {
@@ -63,12 +68,32 @@ test("accepts the fresh WebView2 page target before its initial URL is committed
   assert.equal(target?.webSocketDebuggerUrl, "ws://fresh-page");
 });
 
+test("resolves the macOS executable from the application bundle metadata", async () => {
+  assert.match(defaultNativeExecutable("macos"), /BioFigureStat\.app$/);
+  assert.equal(
+    macBundleExecutableFromPlist(`
+      <plist><dict>
+        <key>CFBundleExecutable</key>
+        <string>lifescience-analysis-app</string>
+      </dict></plist>
+    `),
+    "lifescience-analysis-app",
+  );
+  assert.match(
+    await resolveNativeExecutable("macos", "/tmp/BioFigureStat.app/Contents/MacOS/custom-binary"),
+    /custom-binary$/,
+  );
+  assert.throws(
+    () => macBundleExecutableFromPlist("<plist><dict /></plist>"),
+    /CFBundleExecutable/,
+  );
+});
+
 test("builds a bounded macOS Accessibility action without interpolating user text as code", () => {
   const script = macAccessibilityScript("set", ["Experiment title"], 'quote " and 日本語');
   assert.match(script, /processes\.byName\("BioFigureStat"\)/);
   assert.match(script, /nodes\.length < 5000/);
   assert.match(script, /quote \\" and 日本語/);
-  assert.match(defaultNativeExecutable("macos"), /BioFigureStat\.app[\\/]Contents[\\/]MacOS[\\/]BioFigureStat$/);
 });
 
 test("audits visible text and accessibility attributes while allowing the language selector", () => {
@@ -100,6 +125,20 @@ test("separates a missing WebView inspection channel from a product regression",
         "SecurityError: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.",
       ),
       [{ name: "isolated_english_session", status: "fail" }],
+    ),
+    "HARNESS_INFRASTRUCTURE_BLOCKED",
+  );
+  assert.equal(
+    classifyNativeRegressionFailure(
+      new Error("Native macOS application exited before BioFigureStat native window (code -2)"),
+      [{ name: "macos_accessibility_attach", status: "fail" }],
+    ),
+    "HARNESS_INFRASTRUCTURE_BLOCKED",
+  );
+  assert.equal(
+    classifyNativeRegressionFailure(
+      new Error("HARNESS_EXECUTABLE_RESOLUTION: CFBundleExecutable is missing from Info.plist"),
+      [],
     ),
     "HARNESS_INFRASTRUCTURE_BLOCKED",
   );
