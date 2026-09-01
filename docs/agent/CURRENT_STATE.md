@@ -292,13 +292,16 @@ descriptions now follow the selected application language without changing layer
 content semantics. Workbench, creation-dialog, appearance-editor, label, and assessment focused
 tests pass together with typecheck and lint.
 
-The new-experiment route now defers `ExperimentWorkspace` until a plan is ready to enter the
-workspace. This emits the workspace as a separate 245.24 kB chunk and reduces the initial
-JavaScript chunk from 813.08 kB (gzip 224.08 kB) to 569.02 kB (gzip 159.31 kB), a further 30%
-reduction and about 68% below the original 1.77 MB baseline. The localized loading boundary and
-existing dedicated-entry handoffs pass 29 focused tests; UI typecheck, focused lint, and the
-production build pass. This is a loading and dependency-boundary improvement, not a reduction in
-the application's total source lines.
+The new-experiment route now defers `ExperimentWorkspace`, Graph-only input, and the whole
+new-experiment entry until each boundary is needed. The initial JavaScript chunk is now 457.26 kB
+(gzip 131.30 kB), about 74% below the original 1.77 MB baseline and below the previous greater-than-
+500-kB advisory threshold. New Experiment, Workspace, and Graph-only are separate 148.31 kB,
+197.46 kB, and 38.41 kB chunks. Asynchronous route focus, global save, raw-table handoff, dirty-exit,
+favorite-design, and existing-table import contracts remain covered. The full UI suite passes 190
+files / 1,299 tests; UI typecheck, focused lint, and the production build pass. This is a loading and
+dependency-boundary improvement, not a reduction in the application's total source lines. The
+remaining build advisory is an ineffective specialist dynamic import caused by a static
+`OpenProjectPage` dependency.
 
 ## Known bounded gaps
 
