@@ -632,6 +632,13 @@ English UI, and the Survival 0/1 mapping gate uses retained internal evidence ra
 the translated display message. The 31-test specialist page suite, UI typecheck, and focused lint
 pass; scientific validation and stored data are unchanged.
 
+Numerical warning propagation is now audited end to end. Every executable engine module starts
+from the shared result envelope, the analysis contract requires a warning array, and the current
+Statistics panels, deterministic Methods text, and collaborator review-set export consume that
+array. The Public Alpha migration fixture now also proves that warning code and message survive
+legacy open and current save/reopen. This adds persistence evidence without adding another heavy UI
+route test.
+
 The ordinary, scatter, and categorical Graph-creation previews now consume that same rectangle
 contract for axis endpoints, point scaling, bar baselines, and label anchors. Existing preview
 dimensions and data domains are unchanged; future margin changes no longer require several

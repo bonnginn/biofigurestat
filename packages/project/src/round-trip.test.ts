@@ -212,7 +212,12 @@ function analyzedFixtureState() {
       },
     ],
     diagnostics: [],
-    warnings: [],
+    warnings: [
+      {
+        code: "numerical_library_reliability_warning",
+        message: "The numerical library reported a reliability warning.",
+      },
+    ],
     completedAt: "2026-08-20T00:30:00Z",
   };
   const recommendation = {
@@ -518,6 +523,12 @@ describe("populated project round trip", () => {
     ]);
     expect(opened.analysisRuns).toHaveLength(1);
     expect(opened.analysisRuns[0]?.request.requestId).toBe("request.roundtrip.1");
+    expect(opened.analysisRuns[0]?.result.warnings).toEqual([
+      {
+        code: "numerical_library_reliability_warning",
+        message: "The numerical library reported a reliability warning.",
+      },
+    ]);
     expect(opened.graphs).toHaveLength(1);
     expect(opened.graphs[0]?.spec.analysisResultId).toBe("request.roundtrip.1");
 
