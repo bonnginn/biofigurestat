@@ -110,4 +110,32 @@ describe("EquivalencePlanEditor", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("lower bound below 0");
     expect(onPlanChange).toHaveBeenLastCalledWith(null);
   });
+
+  it("records the sole comparison as the primary claim without asking for a redundant choice", () => {
+    const onPlanChange = vi.fn();
+    render(
+      <EquivalencePlanEditor
+        scale="raw_difference"
+        unit="AU"
+        comparisonCount={1}
+        comparisonOptions={[{ id: "equivalence:control:treatment", label: "Control vs treatment" }]}
+        onPlanChange={onPlanChange}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("下限"), { target: { value: "-0.5" } });
+    fireEvent.change(screen.getByLabelText("上限"), { target: { value: "0.5" } });
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: /この許容範囲は観測結果から自動決定せず/,
+      }),
+    );
+
+    expect(onPlanChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        claimMode: "single_primary_comparison",
+        primaryComparisonId: "equivalence:control:treatment",
+      }),
+    );
+  });
 });

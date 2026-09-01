@@ -134,6 +134,93 @@ const result: AnalysisEngineResult = {
 };
 
 describe("Japanese Methods generation", () => {
+  it("records the prespecified margin, 90% interval, both one-sided tests, and conclusion", () => {
+    const comparisonId = "equivalence:condition.control:condition.treatment";
+    const plan = {
+      schemaVersion: "0.1.0" as const,
+      margin: {
+        scale: "raw_difference" as const,
+        lowerBound: -0.5,
+        upperBound: 0.5,
+        unit: "AU",
+        declaredAsPrespecified: true as const,
+      },
+      alpha: 0.05 as const,
+      claimMode: "single_primary_comparison" as const,
+      primaryComparisonId: comparisonId,
+    };
+    const equivalenceRequest: AnalysisEngineRequest = {
+      protocolVersion: "0.15.0",
+      requestId: "request.methods:eq",
+      projectId: "project.methods",
+      analysisId: "analysis.methods:eq",
+      templateId: "D01",
+      templateVersion: "0.2.0",
+      method: "welch_tost",
+      comparisonId,
+      contrastConditionIds: ["condition.control", "condition.treatment"],
+      equivalencePlan: plan,
+      observations: request.observations,
+      options: { alternative: "two_sided", confidenceLevel: 0.9, multiplicityMethod: null },
+    };
+    const equivalenceResult: AnalysisEngineResult = {
+      ...result,
+      protocolVersion: "0.15.0",
+      requestId: equivalenceRequest.requestId,
+      estimates: [
+        {
+          name: "condition.treatment_minus_condition.control",
+          value: 0.1,
+          standardError: 0.1,
+          confidenceInterval: { level: 0.9, lower: -0.1, upper: 0.3 },
+        },
+      ],
+      tests: [],
+      equivalence: {
+        resultVersion: "0.1.0",
+        plan,
+        comparisons: [
+          {
+            comparisonId,
+            estimate: 0.1,
+            standardError: 0.1,
+            lowerConfidenceBound: -0.1,
+            upperConfidenceBound: 0.3,
+            confidenceLevel: 0.9,
+            lowerOneSidedPValue: 0.01,
+            upperOneSidedPValue: 0.02,
+            tostPValue: 0.02,
+            conclusion: "equivalence_supported",
+          },
+        ],
+      },
+    };
+    const equivalenceRecommendation: AnalysisRecommendation = {
+      templateId: "D01",
+      templateVersion: "0.2.0",
+      recommendedMethod: "welch_tost",
+      alternativeMethods: [],
+      reasonCode: "prespecified_independent_continuous_equivalence",
+      explanation: "Prespecified Welch TOST",
+      statisticalNDefinition: "Independent units at level unit.dish",
+      multiplicityMethod: null,
+    };
+
+    const text = generateMethodsText({
+      design,
+      recommendation: equivalenceRecommendation,
+      request: equivalenceRequest,
+      result: equivalenceResult,
+    });
+
+    expect(text).toContain("実行手法：Welch TOST（同等性検定）");
+    expect(text).toContain("事前指定した同等性範囲：-0.5～0.5 AU");
+    expect(text).toContain("90%信頼区間 -0.1～0.3");
+    expect(text).toContain("下限側片側p=0.01、上限側片側p=0.02、TOST p=0.02");
+    expect(text).toContain("同等性の結論：事前指定した範囲内の同等性を支持");
+    expect(text).toContain("事前指定した単一主比較だけを評価したため指定なし");
+  });
+
   it("includes design, execution, result, graph, and explicit caveats", () => {
     const graphSpec = createCoreTwoConditionGraphSpec({
       graphId: "graph.methods",

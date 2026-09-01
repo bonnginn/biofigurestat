@@ -40,6 +40,7 @@ import { ExternalLlmConsultation } from "../ExternalLlmConsultation";
 import { localizedText, useAppLocale, type AppLocale } from "../../app/appLocale";
 import { EquivalencePlanEditor } from "./EquivalencePlanEditor";
 import { EquivalenceResultPanel } from "./EquivalenceResultPanel";
+import { createIndependentContinuousEquivalenceRequest } from "./independentContinuousEquivalenceRequest";
 import type { EquivalenceSupportKind } from "./equivalenceSupportPresentation";
 
 type MatchedRelationship =
@@ -168,6 +169,7 @@ function estimateDisplayLabel(name: string, conditionOptions: readonly Condition
 }
 
 const ENGLISH_METHOD_LABELS: Readonly<Record<string, string>> = {
+  welch_tost: "Welch TOST for equivalence",
   welch_t: "Welch's t-test",
   student_t: "Student's t-test",
   paired_t: "Paired t-test",
@@ -333,6 +335,15 @@ export function GraphStatisticsPanel({
     id: `equivalence:${encodeURIComponent(first.id)}:${encodeURIComponent(second.id)}`,
     label: `${first.label} vs ${second.label}`,
   }));
+  const equivalenceRequest =
+    equivalenceSupportKind === "continuous_independent" &&
+    equivalenceComparisonOptions.length === 1
+      ? createIndependentContinuousEquivalenceRequest({
+          baseRequest: assessment.request,
+          plan: equivalencePlan,
+          comparisonId: equivalenceComparisonOptions[0]?.id,
+        })
+      : null;
   const plannedComparisonsMissing =
     effectiveContrastIntent === "planned_comparisons" && executablePlannedPairCount === 0;
   const executedRef = useRef(Boolean(initialAnalysis));
@@ -351,9 +362,12 @@ export function GraphStatisticsPanel({
       setRunningRequestId(request.requestId);
       setError(null);
       try {
-        const coreRecommendationOwned = (
-          CORE_WORKSPACE_RECOMMENDATION_TEMPLATES as readonly string[]
-        ).includes(request.templateId);
+        const isEquivalenceRequest = request.protocolVersion === "0.15.0";
+        const coreRecommendationOwned =
+          !isEquivalenceRequest &&
+          (CORE_WORKSPACE_RECOMMENDATION_TEMPLATES as readonly string[]).includes(
+            request.templateId,
+          );
         if (coreRecommendationOwned && !design) {
           if (mode === "manual") recordUsageMilestone(usageRoute, "safe_stop");
           setError(
@@ -380,7 +394,22 @@ export function GraphStatisticsPanel({
           onAnalysisChange?.(null);
           return;
         }
-        const canonicalRecommendation: AnalysisRecommendation = canonicalMatch?.matched
+        const canonicalRecommendation: AnalysisRecommendation = isEquivalenceRequest
+          ? {
+              templateId: request.templateId,
+              templateVersion: request.templateVersion,
+              recommendedMethod: "welch_tost",
+              alternativeMethods: [],
+              reasonCode: "prespecified_independent_continuous_equivalence",
+              explanation:
+                "Two independent continuous-outcome groups are evaluated against one prespecified raw-difference equivalence margin using Welch TOST and its corresponding 90% confidence interval.",
+              statisticalNDefinition:
+                assessment.statisticalNDefinition ??
+                assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join(", "),
+              multiplicityMethod: null,
+              decision: { kind: "accepted", selectedMethod: "welch_tost" },
+            }
+          : canonicalMatch?.matched
           ? {
               ...canonicalMatch.recommendation,
               ...(recommendationDecisionRef.current
@@ -469,7 +498,9 @@ export function GraphStatisticsPanel({
             recommendationSelectedMethod:
               canonicalRecommendation.decision?.selectedMethod ?? request.method,
             contrast:
-              request.protocolVersion === "0.2.0"
+              request.protocolVersion === "0.15.0"
+                ? `${request.comparisonId}:${request.contrastConditionIds.join("|")}`
+                : request.protocolVersion === "0.2.0"
                 ? request.contrastIntent === "planned_comparisons"
                   ? `${request.contrastIntent}:${(request.plannedContrastConditionIds ?? [])
                       .map(([firstId, secondId]) => `${firstId}:${secondId}`)
@@ -598,14 +629,15 @@ export function GraphStatisticsPanel({
   ]);
 
   const run = async () => {
+    const request = equivalenceSelected ? equivalenceRequest : assessment.request;
     if (
       !analysisAvailable ||
-      !assessment.request ||
+      !request ||
       !independenceConfirmed ||
-      plannedComparisonsMissing
+      (!equivalenceSelected && plannedComparisonsMissing)
     )
       return;
-    if (!recommendationDecision && assessment.recommendedMethod) {
+    if (!equivalenceSelected && !recommendationDecision && assessment.recommendedMethod) {
       const decision = {
         kind: "accepted" as const,
         selectedMethod: assessment.recommendedMethod,
@@ -613,7 +645,7 @@ export function GraphStatisticsPanel({
       setRecommendationDecision(decision);
       recommendationDecisionRef.current = decision;
     }
-    await executeRequest(assessment.request, "manual");
+    await executeRequest(request, "manual");
   };
   const primaryTests =
     result?.status === "ok"
@@ -652,19 +684,24 @@ export function GraphStatisticsPanel({
     locale === "en"
       ? humanMethodLabel(assessment.recommendedMethod ?? assessment.method)
       : assessment.title.replace(/を推奨$/, "");
-  const equivalenceUnsupportedTitle = t(
-    "同等性解析は現在未サポートです",
-    "Equivalence analysis is currently unsupported",
-  );
+  const equivalenceExecutable = equivalenceRequest !== null;
+  const equivalenceUnsupportedTitle = equivalenceExecutable
+    ? t("Welch TOSTによる同等性解析", "Equivalence analysis using Welch TOST")
+    : t("この同等性解析は現在未サポートです", "This equivalence analysis is currently unsupported");
   const equivalenceUnsupportedReason = t(
     "この目的には、データを見る前に科学的に定めた許容差と、実験構造に対応したequivalence analysisが必要です。通常のANOVAやt検定でp > 0.05となっても、同等性や影響がないことを示したことにはなりません。入力データと記述的グラフは保持します。",
     "This objective requires a scientifically predefined margin and an equivalence analysis appropriate for the experimental structure. A standard ANOVA or t-test with p > 0.05 does not demonstrate equivalence or absence of an effect. Entered data and the descriptive Graph are retained.",
   );
   const equivalenceDesignReason: Readonly<Record<EquivalenceSupportKind, string>> = {
-    continuous_independent: t(
-      "独立2群の連続量については、Welch互換のTOST／信頼区間methodと検証用reference値がまだ未実装です。",
-      "For two independent continuous groups, a Welch-compatible TOST/confidence-interval method and reviewed reference values are not yet implemented.",
-    ),
+    continuous_independent: equivalenceExecutable
+      ? t(
+          "独立2群の平均差を、事前指定したraw difference marginに対する2つの片側検定と90%信頼区間で評価します。等分散は仮定しません。",
+          "The mean difference between two independent groups is evaluated using two one-sided tests and a 90% confidence interval against the prespecified raw-difference margin. Equal variances are not assumed.",
+        )
+      : t(
+          "独立2群の連続量では実行できます。raw differenceの上下限を指定し、事前指定の確認を完了してください。",
+          "This route is executable for two independent continuous groups. Enter lower and upper raw-difference bounds and confirm that they were prespecified.",
+        ),
     continuous_matched: t(
       "対応差に対するTOST／信頼区間methodと、不完全な対応組の扱いがまだ未実装です。",
       "TOST/confidence-interval analysis of paired differences and the incomplete-pair policy are not yet implemented.",
@@ -807,8 +844,8 @@ export function GraphStatisticsPanel({
             />
             <span>
               {t(
-                "実質的に同等か調べる（現在未サポート）",
-                "Test for equivalence / no meaningful difference (currently unsupported)",
+                "実質的に同等か調べる",
+                "Test for equivalence / no meaningful difference",
               )}
             </span>
           </label>
@@ -822,8 +859,12 @@ export function GraphStatisticsPanel({
             <p role="note">{equivalenceDesignReason[equivalenceSupportKind]}</p>
             <p>
               {t(
-                "Equivalence marginはBioFigureStatが観測データから自動生成しません。ここで事前計画を保存できますが、正式な解析は対応法の検証後にのみ実行可能になります。",
-                "BioFigureStat will not derive an equivalence margin from the observed data. You can save the prespecified plan here, but formal analysis will remain unavailable until a supported method has been validated.",
+                equivalenceSupportKind === "continuous_independent"
+                  ? "Equivalence marginはBioFigureStatが観測データから自動生成しません。独立2群の単一主比較では、事前計画を完成すると検証済みWelch TOSTを実行できます。"
+                  : "Equivalence marginはBioFigureStatが観測データから自動生成しません。ここで事前計画を保存できますが、この実験構造では正式な解析を実行しません。",
+                equivalenceSupportKind === "continuous_independent"
+                  ? "BioFigureStat will not derive an equivalence margin from the observed data. For one primary comparison between two independent groups, completing this plan enables the validated Welch TOST."
+                  : "BioFigureStat will not derive an equivalence margin from the observed data. You can save the prespecified plan here, but formal analysis is not run for this experimental structure.",
               )}
             </p>
             <EquivalencePlanEditor
@@ -873,6 +914,52 @@ export function GraphStatisticsPanel({
           </p>
         ) : null}
       </div>
+
+      {assessment.state === "ready" && equivalenceSelected ? (
+        <div className="experiment-graph-equivalence-execution">
+          {relationshipAlreadyDeclared ? (
+            <p className="experiment-graph-confirmation is-declared" role="status">
+              <strong>{t("実験の組み立てで回答済み", "Already declared in experiment setup")}:</strong>{" "}
+              {t(
+                "条件ごとに別々の実験単位を扱います。",
+                "Each condition uses separate experimental units.",
+              )}
+            </p>
+          ) : (
+            <label className="experiment-graph-confirmation">
+              <input
+                type="checkbox"
+                checked={independenceConfirmed}
+                onChange={(event) => setIndependenceConfirmed(event.target.checked)}
+              />
+              <span>
+                {t(
+                  "条件間で実験単位が独立していることを確認しました。",
+                  "I confirmed that experimental units are independent across conditions.",
+                )}
+              </span>
+            </label>
+          )}
+          <button
+            className="experiment-graph-run-analysis"
+            type="button"
+            disabled={!analysisAvailable || !independenceConfirmed || !equivalenceExecutable || running}
+            onClick={run}
+          >
+            {running
+              ? t("ローカルで解析中…", "Running locally…")
+              : t("Welch TOSTを実行", "Run Welch TOST")}
+          </button>
+          {!equivalenceExecutable ? (
+            <p className="experiment-graph-help" role="note">
+              {t(
+                "対応する実験構造と、単一主比較の事前指定marginがそろうまで実行しません。入力と計画draftは保持します。",
+                "Analysis remains disabled until the supported design and a prespecified single-primary-comparison margin are complete. Entered data and the plan draft are retained.",
+              )}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {assessment.inputDiagnostics?.map((diagnostic, diagnosticIndex) => {
         const visibleSets = diagnostic.incompleteMatchedSets.slice(

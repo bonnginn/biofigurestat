@@ -244,6 +244,170 @@ function analyzedFixtureState() {
 }
 
 describe("populated project round trip", () => {
+  it("round-trips an executed independent Welch TOST without changing its margin or conclusion", async () => {
+    const storage = new MemoryStorage();
+    const source = analyzedFixtureState();
+    const ordinaryRun = source.analysisRuns[0]!;
+    const additionalUnits = [
+      {
+        id: "unit.dark.2",
+        levelId: "unit-level.dish",
+        parentUnitId: null,
+        label: "Dark 2",
+        metadata: {},
+      },
+      {
+        id: "unit.light.2",
+        levelId: "unit-level.dish",
+        parentUnitId: null,
+        label: "Light 2",
+        metadata: {},
+      },
+    ];
+    const additionalObservations = [
+      {
+        id: "observation.dark.2",
+        rawRevisionId: "raw.1",
+        unitInstanceId: "unit.dark.2",
+        conditionId: "condition.dark",
+        outcomeId: "outcome.wb",
+        measurement: { kind: "scalar" as const, value: 1.1 },
+      },
+      {
+        id: "observation.light.2",
+        rawRevisionId: "raw.1",
+        unitInstanceId: "unit.light.2",
+        conditionId: "condition.light",
+        outcomeId: "outcome.wb",
+        measurement: { kind: "scalar" as const, value: 1.3 },
+      },
+    ];
+    const canonicalObservations = [...source.observations, ...additionalObservations];
+    const comparisonId = "equivalence:condition.dark:condition.light";
+    const plan = {
+      schemaVersion: "0.1.0" as const,
+      margin: {
+        scale: "raw_difference" as const,
+        lowerBound: -0.5,
+        upperBound: 0.5,
+        unit: "AU",
+        declaredAsPrespecified: true as const,
+      },
+      alpha: 0.05 as const,
+      claimMode: "single_primary_comparison" as const,
+      primaryComparisonId: comparisonId,
+    };
+    const request = {
+      protocolVersion: "0.15.0" as const,
+      requestId: ordinaryRun.request.requestId,
+      projectId: ordinaryRun.request.projectId,
+      analysisId: ordinaryRun.request.analysisId,
+      templateId: "D01" as const,
+      templateVersion: "0.2.0" as const,
+      method: "welch_tost" as const,
+      comparisonId,
+      contrastConditionIds: ["condition.dark", "condition.light"] as [string, string],
+      equivalencePlan: plan,
+      observations: canonicalObservations.map((observation) => ({
+        observationId: observation.id,
+        conditionId: observation.conditionId,
+        experimentalUnitId: observation.unitInstanceId,
+        value:
+          observation.measurement.kind === "scalar" ? observation.measurement.value : Number.NaN,
+      })),
+      options: {
+        alternative: "two_sided" as const,
+        confidenceLevel: 0.9 as const,
+        multiplicityMethod: null,
+      },
+    };
+    const result = {
+      protocolVersion: "0.15.0" as const,
+      requestId: request.requestId,
+      status: "ok" as const,
+      engine: { name: "fixture", version: "0.15.0", packages: {} },
+      estimates: [
+        {
+          name: "condition.light_minus_condition.dark",
+          value: 0.2,
+          standardError: 0.1,
+          confidenceInterval: { level: 0.9, lower: 0.01, upper: 0.39 },
+        },
+      ],
+      tests: [],
+      equivalence: {
+        resultVersion: "0.1.0" as const,
+        plan,
+        comparisons: [
+          {
+            comparisonId,
+            estimate: 0.2,
+            standardError: 0.1,
+            lowerConfidenceBound: 0.01,
+            upperConfidenceBound: 0.39,
+            confidenceLevel: 0.9,
+            lowerOneSidedPValue: 0.001,
+            upperOneSidedPValue: 0.02,
+            tostPValue: 0.02,
+            conclusion: "equivalence_supported" as const,
+          },
+        ],
+      },
+      diagnostics: [],
+      warnings: [],
+      completedAt: ordinaryRun.result.completedAt,
+    };
+    const state = ProjectStateSchema.parse({
+      ...source,
+      unitInstances: [...source.unitInstances, ...additionalUnits],
+      observations: canonicalObservations,
+      analysisRuns: [
+        {
+          ...ordinaryRun,
+          request,
+          result,
+          recommendation: {
+            ...ordinaryRun.recommendation,
+            templateVersion: "0.2.0",
+            recommendedMethod: "welch_tost",
+            alternativeMethods: [],
+            reasonCode: "prespecified_independent_continuous_equivalence",
+            multiplicityMethod: null,
+          },
+        },
+      ],
+    });
+
+    const saved = await saveProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/equivalence.lsa",
+      state,
+      sha256,
+      appVersion: "0.1.0-alpha.2",
+      savedAt: "2026-09-02T00:00:00Z",
+    });
+    const reopened = await openProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/equivalence.lsa",
+      sha256,
+    });
+
+    expect(reopened).toEqual(saved);
+    expect(reopened.analysisRuns[0]?.request).toMatchObject({
+      protocolVersion: "0.15.0",
+      method: "welch_tost",
+      equivalencePlan: plan,
+    });
+    expect(reopened.analysisRuns[0]?.result.equivalence?.comparisons[0]).toMatchObject({
+      comparisonId,
+      conclusion: "equivalence_supported",
+      lowerConfidenceBound: 0.01,
+      upperConfidenceBound: 0.39,
+    });
+  });
+
   it("saves atomically and reopens the same validated canonical state", async () => {
     const storage = new MemoryStorage();
     const saved = await saveProjectStatePackage({

@@ -125,7 +125,7 @@ function conditionLabels(input: MethodsTextInput): string {
     input.design.conditions.map((condition) => [condition.id, condition.label]),
   );
   const contrastIds =
-    input.request.protocolVersion === "0.1.0"
+    input.request.protocolVersion === "0.1.0" || input.request.protocolVersion === "0.15.0"
       ? input.request.contrastConditionIds
       : input.request.protocolVersion === "0.9.0"
         ? [input.request.conditionId]
@@ -153,7 +153,7 @@ function allConditionLabels(input: MethodsTextInput): string {
     input.design.conditions.map((condition) => [condition.id, condition.label]),
   );
   const conditionIds =
-    input.request.protocolVersion === "0.1.0"
+    input.request.protocolVersion === "0.1.0" || input.request.protocolVersion === "0.15.0"
       ? input.request.contrastConditionIds
       : input.request.protocolVersion === "0.9.0"
         ? [input.request.conditionId]
@@ -295,6 +295,25 @@ function pairwiseResultLines(input: MethodsTextInput, testOffset: number): strin
 
 function executedResultLines(input: MethodsTextInput): string[] {
   const { recommendation, result, design } = input;
+  if (input.request.protocolVersion === "0.15.0" && result.equivalence) {
+    const comparison = result.equivalence.comparisons[0];
+    const margin = result.equivalence.plan.margin;
+    const conclusion =
+      comparison?.conclusion === "equivalence_supported"
+        ? "事前指定した範囲内の同等性を支持"
+        : comparison?.conclusion === "meaningful_difference_supported"
+          ? "事前指定した範囲を超える意味のある差を支持"
+          : "同等とも意味のある差とも結論できない";
+    return [
+      `結果：${result.status === "ok" ? "完了" : result.status}`,
+      `推定対象：独立2群の平均差（${conditionLabels(input)}）`,
+      `事前指定した同等性範囲：${numberLabel(margin.lowerBound)}～${numberLabel(margin.upperBound)} ${margin.unit}（raw difference）`,
+      `平均差：${numberLabel(comparison?.estimate)}（SE=${numberLabel(comparison?.standardError)}、${numberLabel(comparison?.confidenceLevel ? comparison.confidenceLevel * 100 : null)}%信頼区間 ${numberLabel(comparison?.lowerConfidenceBound)}～${numberLabel(comparison?.upperConfidenceBound)}）`,
+      `TOST：下限側片側p=${pValueLabel(comparison?.lowerOneSidedPValue)}、上限側片側p=${pValueLabel(comparison?.upperOneSidedPValue)}、TOST p=${pValueLabel(comparison?.tostPValue)}`,
+      `同等性の結論：${conclusion}`,
+      "判断規則：2つの片側検定をalpha=0.05で行い、対応する両側90%信頼区間が事前指定範囲内に完全に入る場合だけ同等性を支持した。",
+    ];
+  }
   if (recommendation.templateId === "D17" && result.nonlinearFit) {
     const modelId = result.nonlinearFit.modelId as NonlinearModelId;
     const descriptiveOnly =
@@ -432,7 +451,9 @@ export function generateMethodsText(input: MethodsTextInput): string {
   const resultLines = executedResultLines(input);
   const multiplicityNote = request.options.multiplicityMethod
     ? `多重性補正：${request.options.multiplicityMethod}を指定。`
-    : request.protocolVersion === "0.14.0"
+    : request.protocolVersion === "0.15.0"
+      ? "多重性補正：事前指定した単一主比較だけを評価したため指定なし。"
+      : request.protocolVersion === "0.14.0"
       ? request.fitInterpretation === "descriptive_point_estimate_only"
         ? "多重性補正：記述的curve fitのみで、仮説検定・SE・信頼区間を生成していないため対象外。"
         : "多重性補正：parameter estimationをseriesごとに独立して行い、仮説検定のp値を生成していないため指定なし。"

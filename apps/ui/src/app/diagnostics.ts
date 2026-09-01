@@ -44,6 +44,7 @@ const DIAGNOSTIC_ANALYSIS_TEMPLATES = [
   "D17",
 ] as const;
 const DIAGNOSTIC_STATISTICAL_METHODS = [
+  "welch_tost",
   "welch_t",
   "student_t",
   "mann_whitney",
@@ -82,6 +83,7 @@ const DIAGNOSTIC_PROTOCOL_VERSIONS = [
   "0.12.0",
   "0.13.0",
   "0.14.0",
+  "0.15.0",
 ] as const;
 const DIAGNOSTIC_PROJECT_IO_STAGES = [
   "checksum",

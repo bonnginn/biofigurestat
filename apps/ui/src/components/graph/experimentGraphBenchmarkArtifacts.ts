@@ -12,6 +12,13 @@ import {
 import { PRODUCT_IDENTITY } from "../../app/productIdentity";
 
 export function benchmarkContrastForRequest(request: AnalysisEngineRequest): unknown {
+  if (request.protocolVersion === "0.15.0") {
+    return {
+      comparisonId: request.comparisonId,
+      conditionIds: request.contrastConditionIds,
+      margin: request.equivalencePlan.margin,
+    };
+  }
   if (request.protocolVersion === "0.1.0") return request.contrastConditionIds;
   if (request.protocolVersion === "0.2.0") {
     return {

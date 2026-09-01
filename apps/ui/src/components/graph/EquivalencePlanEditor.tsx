@@ -27,14 +27,18 @@ type Props = Readonly<{
   onPlanChange?: (plan: EquivalenceAnalysisPlan | null) => void;
 }>;
 
-function initialDraft(plan?: EquivalenceAnalysisPlan | null): Draft {
+function initialDraft(
+  plan?: EquivalenceAnalysisPlan | null,
+  soleComparison?: ComparisonOption,
+): Draft {
   return {
     lowerBound: plan ? String(plan.margin.lowerBound) : "",
     upperBound: plan ? String(plan.margin.upperBound) : "",
     rationale: plan?.margin.rationale ?? "",
     declaredAsPrespecified: Boolean(plan),
-    claimMode: plan?.claimMode ?? "all_selected_comparisons",
-    primaryComparisonId: plan?.primaryComparisonId ?? "",
+    claimMode:
+      plan?.claimMode ?? (soleComparison ? "single_primary_comparison" : "all_selected_comparisons"),
+    primaryComparisonId: plan?.primaryComparisonId ?? soleComparison?.id ?? "",
   };
 }
 
@@ -48,7 +52,8 @@ export function EquivalencePlanEditor({
 }: Props) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const [draft, setDraft] = useState<Draft>(() => initialDraft(plan));
+  const soleComparison = comparisonCount === 1 ? comparisonOptions[0] : undefined;
+  const [draft, setDraft] = useState<Draft>(() => initialDraft(plan, soleComparison));
   const [validation, setValidation] = useState<string | null>(null);
 
   useEffect(() => {
@@ -210,8 +215,12 @@ export function EquivalencePlanEditor({
       {plan ? (
         <p role="status">
           {t(
-            "同等性marginをこのGraphの解析計画として保存します。解析方法はまだ実行不可です。",
-            "The equivalence margin is saved with this Graph's analysis plan. The method remains non-executable.",
+            comparisonCount === 1
+              ? "同等性marginと主比較をこのGraphの解析計画として保存します。"
+              : "同等性marginをこのGraphの解析計画として保存します。",
+            comparisonCount === 1
+              ? "The equivalence margin and primary comparison are saved with this Graph's analysis plan."
+              : "The equivalence margin is saved with this Graph's analysis plan.",
           )}
         </p>
       ) : null}

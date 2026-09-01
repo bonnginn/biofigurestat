@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import {
   AnalysisEngineRequestSchema,
   AnalysisEngineResultSchema,
@@ -158,7 +158,7 @@ it("safe-stops an equivalence goal without recommending or running ordinary NHST
     />,
   );
 
-  expect(screen.getByText("同等性解析は現在未サポートです")).toBeVisible();
+  expect(screen.getByText("この同等性解析は現在未サポートです")).toBeVisible();
   expect(screen.getByText(/通常のANOVAやt検定でp > 0.05となっても/)).toBeVisible();
   expect(screen.getByText(/観測データから自動生成しません/)).toBeVisible();
   expect(screen.getByText(/陽性数／総数と実験回内の依存/)).toBeVisible();
@@ -172,6 +172,107 @@ it("safe-stops an equivalence goal without recommending or running ordinary NHST
 
   fireEvent.click(screen.getByRole("radio", { name: "差があるか調べる" }));
   expect(onComparisonGoalChange).toHaveBeenCalledWith("difference");
+});
+
+it("runs only the supported independent two-group equivalence request", async () => {
+  const comparisonId = "equivalence:condition.vehicle:condition.drug";
+  const equivalencePlan = {
+    schemaVersion: "0.1.0" as const,
+    margin: {
+      scale: "raw_difference" as const,
+      lowerBound: -0.3,
+      upperBound: 0.3,
+      unit: "AU",
+      declaredAsPrespecified: true as const,
+    },
+    alpha: 0.05 as const,
+    claimMode: "single_primary_comparison" as const,
+    primaryComparisonId: comparisonId,
+  };
+  const result = AnalysisEngineResultSchema.parse({
+    protocolVersion: "0.15.0",
+    requestId: `${request.requestId}:eq`,
+    status: "ok",
+    engine: { name: "lsaa-python", version: "test", packages: {} },
+    estimates: [
+      {
+        name: "condition.drug_minus_condition.vehicle",
+        value: -0.21,
+        standardError: 0.04,
+        confidenceInterval: { level: 0.9, lower: -0.28, upper: -0.14 },
+      },
+    ],
+    tests: [
+      {
+        name: "welch_tost_lower_bound",
+        statisticName: "t",
+        statistic: 2.25,
+        degreesOfFreedom: [2],
+        pValue: 0.08,
+        adjustedPValue: null,
+        effectSizeName: null,
+        effectSize: null,
+      },
+      {
+        name: "welch_tost_upper_bound",
+        statisticName: "t",
+        statistic: -12.75,
+        degreesOfFreedom: [2],
+        pValue: 0.003,
+        adjustedPValue: null,
+        effectSizeName: null,
+        effectSize: null,
+      },
+    ],
+    equivalence: {
+      resultVersion: "0.1.0",
+      plan: equivalencePlan,
+      comparisons: [
+        {
+          comparisonId,
+          estimate: -0.21,
+          standardError: 0.04,
+          lowerConfidenceBound: -0.28,
+          upperConfidenceBound: -0.14,
+          confidenceLevel: 0.9,
+          lowerOneSidedPValue: 0.08,
+          upperOneSidedPValue: 0.003,
+          tostPValue: 0.08,
+          conclusion: "equivalence_supported",
+        },
+      ],
+    },
+    diagnostics: [],
+    warnings: [],
+    completedAt: "2026-09-02T00:00:00.000Z",
+  });
+  const analysisRunner = vi.fn().mockResolvedValue(result);
+  render(
+    <GraphStatisticsPanel
+      assessment={readyAssessment}
+      design={panelDesign()}
+      analysisRunner={analysisRunner}
+      comparisonGoal="equivalence"
+      equivalencePlan={equivalencePlan}
+      equivalenceSupportKind="continuous_independent"
+      conditionOptions={defaultConditionOptions}
+      relationshipAlreadyDeclared
+    />,
+  );
+
+  expect(screen.getByText("Welch TOSTによる同等性解析")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Welch TOSTを実行" }));
+
+  await waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(1));
+  expect(analysisRunner.mock.calls[0]?.[0]).toEqual(
+    expect.objectContaining({
+      protocolVersion: "0.15.0",
+      method: "welch_tost",
+      comparisonId,
+      equivalencePlan,
+    }),
+  );
+  expect(await screen.findByText("同等性を支持")).toBeVisible();
 });
 
 it("states that a non-significant difference test does not establish equivalence", () => {
