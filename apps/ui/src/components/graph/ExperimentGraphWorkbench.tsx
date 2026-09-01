@@ -43,6 +43,7 @@ import { ExperimentGraphDistributionEditor } from "./ExperimentGraphDistribution
 import { ExperimentGraphGroupingEditor } from "./ExperimentGraphGroupingEditor";
 import { ExperimentGraphSelectionEditor } from "./ExperimentGraphSelectionEditor";
 import { ExperimentGraphSeriesEditor } from "./ExperimentGraphSeriesEditor";
+import { ExperimentGraphTimeAnalysisEditor } from "./ExperimentGraphTimeAnalysisEditor";
 import { CompositionGraphSvg } from "./CompositionGraphSvg";
 import { CorrelationGraphSvg } from "./CorrelationGraphSvg";
 import { ExperimentGraphSvg } from "./GeneralExperimentGraphSvg";
@@ -1589,175 +1590,31 @@ export function ExperimentGraphWorkbench({
           {inspectorTarget === "statistics" ? (
             <>
               {draft.time.points.length > 1 ? (
-                <section className="experiment-graph-statistics-section">
-                  <h3>{t("時系列から何を比較するか", "What to compare from the time series")}</h3>
-                  <label className="experiment-graph-field">
-                    <span>解析に使う値</span>
-                    <select
-                      aria-label="時系列の解析値"
-                      value={timeAnalysis.kind}
-                      onChange={(event) => {
-                        const nextPlan = {
-                          kind: event.target.value as TimeAnalysisPlan["kind"],
-                        };
-                        setTimeAnalysis(nextPlan);
-                        if (nextPlan.kind === "full_time_course") setSourceMode("raw_readout");
-                        if (sourceMode === "derived_metric") {
-                          setAxes((current) => ({
-                            ...current,
-                            yTitle: `${readout?.label ?? t("測定値", "Measured value")} — ${timeMetricLabel(nextPlan, locale)}`,
-                          }));
-                        }
-                        setAnalysis(null);
-                      }}
-                    >
-                      <option value="selected_timepoint">選んだ時点の値</option>
-                      <option value="full_time_course">
-                        {draft.time.sampling === "longitudinal"
-                          ? "条件×時間（反復測定の全体モデル）"
-                          : "条件×時間（時点ごとに独立な全体モデル）"}
-                      </option>
-                      <option value="endpoint" disabled={draft.time.sampling !== "longitudinal"}>
-                        最後の時点（endpoint）
-                      </option>
-                      <option value="maximum" disabled={draft.time.sampling !== "longitudinal"}>
-                        最大値
-                      </option>
-                      <option value="minimum" disabled={draft.time.sampling !== "longitudinal"}>
-                        最小値
-                      </option>
-                      <option value="auc" disabled={draft.time.sampling !== "longitudinal"}>
-                        AUC（台形法）
-                      </option>
-                      <option
-                        value="change_from_baseline"
-                        disabled={draft.time.sampling !== "longitudinal"}
-                      >
-                        baselineからの変化量
-                      </option>
-                      <option value="f_over_f0" disabled={draft.time.sampling !== "longitudinal"}>
-                        F/F0（最初の時点を基準）
-                      </option>
-                    </select>
-                  </label>
-                  {draft.time.sampling !== "longitudinal" ? (
-                    <p className="experiment-graph-help">
-                      時点ごとに別サンプルのため、AUCやbaseline変化は選べません。
-                    </p>
-                  ) : null}
-                  {timeAnalysis.kind === "auc" ? (
-                    <p className="experiment-graph-help">
-                      AUCは時間曲線の下の面積です。選んだ範囲の応答の大きさと持続時間を1つの値にまとめます。単位は「測定値
-                      ×{draft.time.unit}」で、時間経過の形や開始値の違いは別に確認が必要です。
-                    </p>
-                  ) : null}
-                  {timeAnalysis.kind === "selected_timepoint" ? (
-                    <label className="experiment-graph-field">
-                      <span>グラフとは別に選択</span>
-                      <select
-                        aria-label="解析する時点"
-                        value={analysisTimePointId ?? ""}
-                        onChange={(event) => {
-                          setAnalysisTimePointId(event.target.value || null);
-                          setAnalysis(null);
-                        }}
-                      >
-                        <option value="">時点を選択</option>
-                        {draft.time.points.map((point) => (
-                          <option key={point.id} value={point.id}>
-                            {point.value} {draft.time.unit}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : null}
-                  {isDerivedTimeMetric(timeAnalysis) ? (
-                    <div className="experiment-graph-field-grid">
-                      <label className="experiment-graph-field">
-                        <span>解析windowの開始</span>
-                        <select
-                          aria-label="解析windowの開始"
-                          value={timeAnalysis.windowStart ?? ""}
-                          onChange={(event) => {
-                            setTimeAnalysis((current) => ({
-                              ...current,
-                              ...(event.target.value === ""
-                                ? { windowStart: undefined }
-                                : { windowStart: Number(event.target.value) }),
-                            }));
-                            setAnalysis(null);
-                          }}
-                        >
-                          <option value="">最初の時点</option>
-                          {draft.time.points.map((point) => (
-                            <option key={point.id} value={point.value}>
-                              {point.value} {draft.time.unit}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className="experiment-graph-field">
-                        <span>解析windowの終了</span>
-                        <select
-                          aria-label="解析windowの終了"
-                          value={timeAnalysis.windowEnd ?? ""}
-                          onChange={(event) => {
-                            setTimeAnalysis((current) => ({
-                              ...current,
-                              ...(event.target.value === ""
-                                ? { windowEnd: undefined }
-                                : { windowEnd: Number(event.target.value) }),
-                            }));
-                            setAnalysis(null);
-                          }}
-                        >
-                          <option value="">最後の時点</option>
-                          {draft.time.points.map((point) => (
-                            <option key={point.id} value={point.value}>
-                              {point.value} {draft.time.unit}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      {timeAnalysis.kind === "change_from_baseline" ||
-                      timeAnalysis.kind === "f_over_f0" ? (
-                        <label className="experiment-graph-field">
-                          <span>baseline時点</span>
-                          <select
-                            aria-label="baseline時点"
-                            value={timeAnalysis.baselineTime ?? ""}
-                            onChange={(event) => {
-                              setTimeAnalysis((current) => ({
-                                ...current,
-                                ...(event.target.value === ""
-                                  ? { baselineTime: undefined }
-                                  : { baselineTime: Number(event.target.value) }),
-                              }));
-                              setAnalysis(null);
-                            }}
-                          >
-                            <option value="">最初の時点</option>
-                            {draft.time.points.map((point) => (
-                              <option key={point.id} value={point.value}>
-                                {point.value} {draft.time.unit}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {timeAnalysis.kind === "full_time_course" ? (
-                    <p className="experiment-graph-help">
-                      {draft.time.sampling === "longitudinal"
-                        ? "全時点と実験単位identityを保持し、条件×時間の交互作用を最初に評価します。欠測のないbalanced設計に限定します。"
-                        : "各条件×時点で別々の実験単位を使い、交互作用と両主効果を評価します。反復測定とは扱わず、欠測のないbalanced設計に限定します。"}
-                    </p>
-                  ) : null}
-                  <p className="experiment-graph-help">
-                    図には全時間を表示したまま、特定時点または各実験単位から求めた派生値を解析できます。
-                  </p>
-                </section>
+                <ExperimentGraphTimeAnalysisEditor
+                  time={draft.time}
+                  plan={timeAnalysis}
+                  analysisTimePointId={analysisTimePointId}
+                  onKindChange={(kind) => {
+                    const nextPlan = { kind };
+                    setTimeAnalysis(nextPlan);
+                    if (kind === "full_time_course") setSourceMode("raw_readout");
+                    if (sourceMode === "derived_metric") {
+                      setAxes((current) => ({
+                        ...current,
+                        yTitle: `${readout?.label ?? t("測定値", "Measured value")} — ${timeMetricLabel(nextPlan, locale)}`,
+                      }));
+                    }
+                    setAnalysis(null);
+                  }}
+                  onPlanChange={(nextPlan) => {
+                    setTimeAnalysis(nextPlan);
+                    setAnalysis(null);
+                  }}
+                  onAnalysisTimePointChange={(timePointId) => {
+                    setAnalysisTimePointId(timePointId);
+                    setAnalysis(null);
+                  }}
+                />
               ) : null}
               {draft.time.points.length > 1 &&
               timeAnalysis.kind === "selected_timepoint" &&
