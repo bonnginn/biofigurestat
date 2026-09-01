@@ -17,7 +17,7 @@ The first Windows gate covers:
 - native architecture IPC;
 - visible and accessible application-copy scan for unexpected Japanese text;
 - native export command and exact byte verification;
-- the real Windows SVG Save dialog, including Cancel and an exact researcher-selected target;
+- the real Windows project Open and SVG Save dialogs, including Cancel without losing the app;
 - actual Graph-only table entry, mapping, Graph creation, and Statistics handoff;
 - required biological-structure validation appearing inline and receiving focus;
 - retained Graph-only and biological-answer dirty-value retention;
@@ -62,16 +62,19 @@ the exact process it created. Window-close checks send `WM_CLOSE` to that exact 
 rather than relying on a WebView IPC permission that may not be present in the least-privilege
 release capability set.
 
-After the Graph-only Graph is created, the Windows adapter now clicks the product's actual `SVG`
-control twice. The first native Save dialog is cancelled and must not create the evidence target.
-The second is driven to an absolute, harness-owned evidence path; the resulting file must contain
-valid SVG markup. Windows UI Automation is restricted to top-level windows owned by the exact
-spawned process, and non-ASCII target paths are passed as UTF-16/Base64 rather than interpolated
-into PowerShell source. A missing Save dialog is a `PRODUCT_REGRESSION`; an unavailable Windows UI
-Automation assembly is `HARNESS_INFRASTRUCTURE_BLOCKED`.
+The Windows adapter now opens the product's actual project Open dialog and clicks the actual `SVG`
+control after the Graph-only Graph loads. It identifies dialogs belonging to the exact spawned
+process, including modal descendants and separately hosted windows whose owner is that process.
+Both dialogs receive an asynchronous Escape at their owned native handle; the application must
+remain usable after each Cancel. Revision `707d613-beta.20260902.win-native1` passed the extended
+normal scenario, with evidence in `.tmp/native-ui-regression/win-native-dialog-stable2/`.
 
-This adapter and its failure classification have source-level self-tests. It must still pass once
-against a newly packaged Windows candidate before the dialog step is treated as release evidence.
+An explicit `--native-file-dialog-save-targets` experimental flag also contains bounded logic for
+an absolute SVG target, project Save, and command-line `.lsa` reopen. It is not part of the normal
+gate yet: this host exposes the writable filename field as `System.ItemNameDisplay` without a
+native handle, and synchronous provider calls block. That result is
+`HARNESS_INFRASTRUCTURE_BLOCKED`, not a product failure. Target paths remain UTF-16/Base64 encoded
+and are never interpolated as PowerShell source.
 
 ## First implementation evidence
 
@@ -124,8 +127,8 @@ still be recorded on macOS before making it a mandatory release gate.
 ## Current boundary
 
 This is the first native automation layer, not a claim that human review is unnecessary. Windows
-SVG Save/Cancel automation is implemented but awaits its first packaged-candidate run. Open/Save
-As project pickers, PNG/CSV dialog variants, installed-build file association, clipboard paste
+project Open Cancel and SVG Save Cancel are now part of the passing normal gate. Automated target
+selection, Save As, PNG/CSV dialog variants, installed-build file association, clipboard paste
 into third-party apps, and high-DPI layout judgment remain separate gates.
 
 Until the first packaged-app run of the adapter passes on a permissioned Mac runner,
