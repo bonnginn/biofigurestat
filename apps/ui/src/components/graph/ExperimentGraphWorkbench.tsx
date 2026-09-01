@@ -6,7 +6,6 @@ import {
   type ExperimentCellMap,
   type ExperimentSetDraft,
   type ReadoutDraft,
-  type TimeAnalysisPlan,
 } from "../../app/experimentDraft";
 import { assessDraftGraphAnalysis, isDerivedTimeMetric } from "../../app/experimentDraftAnalysis";
 import {
@@ -73,6 +72,7 @@ import {
   DEFAULT_GRAPH_LAYERS,
   useExperimentGraphPresentationState,
 } from "./useExperimentGraphPresentationState";
+import { useExperimentGraphDataSelectionState } from "./useExperimentGraphDataSelectionState";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
 import {
   runGraphClipboardCopy,
@@ -222,48 +222,26 @@ export function ExperimentGraphWorkbench({
     draft.conditionAssignment.matchedTopology?.kind === "distinct_condition_units_shared_source"
       ? draft.conditionAssignment.matchedTopology
       : null;
-  const [selectedReadoutId, setSelectedReadoutId] = useState(
-    initialState?.selectedReadoutId ?? draft.readouts[0]?.id ?? "",
-  );
+  const {
+    selectedReadoutId,
+    setSelectedReadoutId,
+    selectedConditionIds,
+    setSelectedConditionIds,
+    analysisConditionIds,
+    setAnalysisConditionIds,
+    selectedTimePointIds,
+    setSelectedTimePointIds,
+    analysisTimePointId,
+    setAnalysisTimePointId,
+    timeAnalysis,
+    setTimeAnalysis,
+    sourceMode,
+    setSourceMode,
+  } = useExperimentGraphDataSelectionState({ draft, initialState });
   const independentNestedSource = nestedIndependentSourceContext({
     draft,
     readoutId: selectedReadoutId,
   });
-  const [selectedConditionIds, setSelectedConditionIds] = useState<string[]>(() =>
-    initialState
-      ? [
-          ...(initialState.dataSets?.displaySet.conditionIds.length
-            ? initialState.dataSets.displaySet.conditionIds
-            : initialState.selectedConditionIds),
-        ]
-      : draft.conditions.map(({ id }) => id),
-  );
-  const [analysisConditionIds, setAnalysisConditionIds] = useState<string[]>(() =>
-    initialState?.dataSets?.analysisSet.conditionIds.length
-      ? [...initialState.dataSets.analysisSet.conditionIds]
-      : initialState?.analysisConditionIds
-        ? [...initialState.analysisConditionIds]
-        : draft.conditions.filter(({ role }) => role !== "auxiliary_reference").map(({ id }) => id),
-  );
-  const [selectedTimePointIds, setSelectedTimePointIds] = useState<string[]>(() =>
-    initialState
-      ? [
-          ...(initialState.dataSets?.displaySet.timePointIds.length
-            ? initialState.dataSets.displaySet.timePointIds
-            : initialState.selectedTimePointIds),
-        ]
-      : draft.time.points.map(({ id }) => id),
-  );
-  const [analysisTimePointId, setAnalysisTimePointId] = useState<string | null>(
-    initialState?.analysisTimePointId ??
-      (draft.time.points.length === 1 ? (draft.time.points[0]?.id ?? null) : null),
-  );
-  const [timeAnalysis, setTimeAnalysis] = useState<TimeAnalysisPlan>(
-    initialState?.analysisMetric ?? { kind: "selected_timepoint" },
-  );
-  const [sourceMode, setSourceMode] = useState<"raw_readout" | "derived_metric">(
-    initialState?.sourceMode ?? "raw_readout",
-  );
   const {
     layers,
     setLayers,
