@@ -359,7 +359,8 @@ if ($action -eq 'cancel') {
   }
   try {
     $selectedEdit.element.SetFocus()
-    [Windows.Forms.SendKeys]::SendWait('{ENTER}')
+    [Windows.Forms.SendKeys]::Send('{ENTER}')
+    Start-Sleep -Milliseconds 250
   } catch {
     throw ('FILE_DIALOG_CONTROL_NOT_FOUND: Save Enter failed: ' + $_.Exception.Message)
   }
