@@ -41,6 +41,7 @@ import { ExperimentGraphAnnotationEditor } from "./ExperimentGraphAnnotationEdit
 import { ExperimentGraphAnalysisScopeNotice } from "./ExperimentGraphAnalysisScopeNotice";
 import { ExperimentGraphAnalysisSetEditor } from "./ExperimentGraphAnalysisSetEditor";
 import { ExperimentGraphAppearanceEditor } from "./ExperimentGraphAppearanceEditor";
+import { graphPresentationForPreset } from "./experimentGraphPresets";
 import { ExperimentGraphConnectingLineEditor } from "./ExperimentGraphConnectingLineEditor";
 import { ExperimentGraphErrorBarEditor } from "./ExperimentGraphErrorBarEditor";
 import { ExperimentGraphLegendEditor } from "./ExperimentGraphLegendEditor";
@@ -66,11 +67,7 @@ import {
 } from "./useExperimentGraphWorkspaceEffects";
 import { useExperimentGraphStatisticsIntent } from "./useExperimentGraphStatisticsIntent";
 import { useExperimentGraphAnalysisState } from "./useExperimentGraphAnalysisState";
-import {
-  DEFAULT_GRAPH_APPEARANCE,
-  DEFAULT_GRAPH_LAYERS,
-  useExperimentGraphPresentationState,
-} from "./useExperimentGraphPresentationState";
+import { useExperimentGraphPresentationState } from "./useExperimentGraphPresentationState";
 import { useExperimentGraphDataSelectionState } from "./useExperimentGraphDataSelectionState";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
 import {
@@ -519,10 +516,6 @@ export function ExperimentGraphWorkbench({
     [axisLabels, grouping.facet?.levelOrder, series],
   );
   const visualSeriesOptions = useMemo(() => uniqueVisualSeriesOptions(series), [series]);
-  const defaultPresentationAppearance: GraphAppearance = {
-    ...DEFAULT_GRAPH_APPEARANCE,
-    ...(visualSeriesOptions.length > 1 ? { legendPosition: "right", palette: "condition" } : {}),
-  };
   const baseAnnotationContext = analysis
     ? graphAnnotationContext({
         request: analysis.request,
@@ -608,51 +601,15 @@ export function ExperimentGraphWorkbench({
     setAnalysis(null);
   };
   const applyPreset = (preset: "simple" | "publication" | "presentation" | "raw" | "replicate") => {
-    const restrainedLayers = defaultLayersForGraphType(graphType, shape);
-    if (preset === "raw") {
-      setLayers({
-        ...DEFAULT_GRAPH_LAYERS,
-        raw: true,
-        distribution: true,
-        experiment: true,
-        overall: false,
-      });
-      setAppearance((current) => ({ ...current, palette: "condition" }));
-      return;
-    }
-    if (preset === "replicate") {
-      setLayers({
-        ...DEFAULT_GRAPH_LAYERS,
-        raw: false,
-        distribution: false,
-        box: false,
-        experiment: true,
-        overall: true,
-      });
-      setAppearance(defaultPresentationAppearance);
-      return;
-    }
-    if (preset === "publication") {
-      setLayers(restrainedLayers);
-      setAppearance({
-        ...defaultPresentationAppearance,
-        pointSize: 6,
-        axisLineWidth: 1.4,
-      });
-      return;
-    }
-    if (preset === "presentation") {
-      setLayers(restrainedLayers);
-      setAppearance({
-        ...defaultPresentationAppearance,
-        palette: visualSeriesOptions.length > 1 ? "condition" : "publication",
-        pointSize: 8,
-        axisLineWidth: 2,
-      });
-      return;
-    }
-    setLayers(restrainedLayers);
-    setAppearance(defaultPresentationAppearance);
+    const next = graphPresentationForPreset({
+      preset,
+      graphType,
+      shape,
+      visualSeriesCount: visualSeriesOptions.length,
+      currentAppearance: appearance,
+    });
+    setLayers(next.layers);
+    setAppearance(next.appearance);
   };
   const graphTypeLabel: Record<GraphType, string> = {
     dot: "Dot",
