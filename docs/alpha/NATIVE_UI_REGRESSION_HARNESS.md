@@ -98,9 +98,11 @@ pnpm native:ui-regression:mac
 ```
 
 It launches the exact binary inside `BioFigureStat.app`, opens the simple experiment entry, writes a
-dirty title, invokes Command+Q, verifies that Cancel retains the value, then invokes Command+Q again
-and confirms explicit discard exits. The traversal is bounded to 5,000 accessibility nodes and the
-process wait is bounded by the harness timeout.
+dirty title, invokes Command+Q, verifies that Cancel returns to the experiment entry, then invokes
+Command+Q again and confirms that the unsaved guard still appears before explicit discard exits.
+This lifecycle proof does not require WKWebView to expose the text field's current value through
+Accessibility. The traversal is bounded to 5,000 accessibility nodes and the process wait is
+bounded by the harness timeout.
 
 The runner host must grant Accessibility permission to the terminal or automation runner that calls
 `osascript`. A missing permission is `HARNESS_INFRASTRUCTURE_BLOCKED`, not a product regression. The
@@ -111,7 +113,7 @@ still be recorded on macOS before making it a mandatory release gate.
 
 This is the first native automation layer, not a claim that human review is unnecessary. Native
 file-picker automation, installed-build file association, clipboard paste into third-party apps,
-high-DPI layout judgment, and macOS UI driving remain separate gates.
+and high-DPI layout judgment remain separate gates.
 
 Until the first packaged-app run of the adapter passes on a permissioned Mac runner,
 `pnpm native:verify:mac` plus the bounded manual handoff remains authoritative for macOS.
