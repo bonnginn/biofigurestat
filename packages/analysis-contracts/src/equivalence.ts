@@ -137,3 +137,88 @@ export function assessEquivalenceInterval(
   }
   return "inconclusive";
 }
+
+export const EquivalenceComparisonResultSchema = z
+  .object({
+    comparisonId: z.string().trim().min(1),
+    estimate: z.number().finite(),
+    standardError: z.number().finite().positive(),
+    lowerConfidenceBound: z.number().finite(),
+    upperConfidenceBound: z.number().finite(),
+    confidenceLevel: z.number().gt(0).lt(1),
+    lowerOneSidedPValue: z.number().min(0).max(1),
+    upperOneSidedPValue: z.number().min(0).max(1),
+    tostPValue: z.number().min(0).max(1),
+    conclusion: EquivalenceConclusionSchema,
+  })
+  .superRefine((comparison, context) => {
+    const expectedTostPValue = Math.max(
+      comparison.lowerOneSidedPValue,
+      comparison.upperOneSidedPValue,
+    );
+    if (Math.abs(comparison.tostPValue - expectedTostPValue) > 1e-12) {
+      context.addIssue({
+        code: "custom",
+        path: ["tostPValue"],
+        message: "The TOST p-value must be the larger of the two one-sided p-values",
+      });
+    }
+  });
+
+export const EquivalenceAnalysisResultSchema = z
+  .object({
+    resultVersion: z.literal("0.1.0"),
+    plan: EquivalenceAnalysisPlanSchema,
+    comparisons: z.array(EquivalenceComparisonResultSchema).min(1),
+  })
+  .superRefine((result, context) => {
+    const seen = new Set<string>();
+    result.comparisons.forEach((comparison, index) => {
+      if (seen.has(comparison.comparisonId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["comparisons", index, "comparisonId"],
+          message: "Equivalence comparison IDs must be unique",
+        });
+      }
+      seen.add(comparison.comparisonId);
+      const evidence = EquivalenceIntervalEvidenceSchema.safeParse({
+        plan: result.plan,
+        estimate: comparison.estimate,
+        lowerConfidenceBound: comparison.lowerConfidenceBound,
+        upperConfidenceBound: comparison.upperConfidenceBound,
+        confidenceLevel: comparison.confidenceLevel,
+      });
+      if (!evidence.success) {
+        evidence.error.issues.forEach((issue) => {
+          context.addIssue({
+            code: "custom",
+            path: ["comparisons", index, ...issue.path],
+            message: issue.message,
+          });
+        });
+      } else if (assessEquivalenceInterval(evidence.data) !== comparison.conclusion) {
+        context.addIssue({
+          code: "custom",
+          path: ["comparisons", index, "conclusion"],
+          message: "The equivalence conclusion must match the prespecified bounds and interval",
+        });
+      }
+    });
+    if (
+      result.plan.claimMode === "single_primary_comparison" &&
+      (result.comparisons.length !== 1 ||
+        result.comparisons[0]?.comparisonId !== result.plan.primaryComparisonId)
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["comparisons"],
+        message: "A single-primary result must contain exactly its prespecified comparison",
+      });
+    }
+  });
+
+export type EquivalenceComparisonResult = z.infer<
+  typeof EquivalenceComparisonResultSchema
+>;
+export type EquivalenceAnalysisResult = z.infer<typeof EquivalenceAnalysisResultSchema>;

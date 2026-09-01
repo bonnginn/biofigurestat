@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   EquivalenceAnalysisPlanSchema,
+  EquivalenceAnalysisResultSchema,
   EquivalenceIntervalEvidenceSchema,
   EquivalenceMarginSchema,
   assessEquivalenceInterval,
   type EquivalenceAnalysisPlan,
 } from "./equivalence";
+import { AnalysisEngineResultSchema } from "./contracts";
 
 const plan: EquivalenceAnalysisPlan = {
   schemaVersion: "0.1.0",
@@ -97,6 +99,66 @@ describe("equivalence analysis contracts", () => {
         lowerConfidenceBound: -5,
         upperConfidenceBound: 5,
         confidenceLevel: 0.95,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts only a complete interval-centered result with a matching three-state conclusion", () => {
+    const singlePlan: EquivalenceAnalysisPlan = {
+      ...plan,
+      claimMode: "single_primary_comparison",
+      primaryComparisonId: "parent:clone-2",
+    };
+    const result = {
+      resultVersion: "0.1.0" as const,
+      plan: singlePlan,
+      comparisons: [
+        {
+          comparisonId: "parent:clone-2",
+          estimate: 1,
+          standardError: 2,
+          lowerConfidenceBound: -4,
+          upperConfidenceBound: 6,
+          confidenceLevel: 0.9,
+          lowerOneSidedPValue: 0.001,
+          upperOneSidedPValue: 0.02,
+          tostPValue: 0.02,
+          conclusion: "equivalence_supported" as const,
+        },
+      ],
+    };
+
+    expect(EquivalenceAnalysisResultSchema.safeParse(result).success).toBe(true);
+    expect(
+      AnalysisEngineResultSchema.safeParse({
+        protocolVersion: "0.1.0",
+        requestId: "request.equivalence",
+        status: "ok",
+        engine: { name: "test-engine", version: "test", packages: {} },
+        estimates: [],
+        tests: [],
+        equivalence: result,
+        diagnostics: [],
+        warnings: [],
+        completedAt: "2026-09-02T00:00:00.000Z",
+      }).success,
+    ).toBe(true);
+    expect(
+      EquivalenceAnalysisResultSchema.safeParse({
+        ...result,
+        comparisons: [{ ...result.comparisons[0], tostPValue: 0.001 }],
+      }).success,
+    ).toBe(false);
+    expect(
+      EquivalenceAnalysisResultSchema.safeParse({
+        ...result,
+        comparisons: [{ ...result.comparisons[0], conclusion: "inconclusive" }],
+      }).success,
+    ).toBe(false);
+    expect(
+      EquivalenceAnalysisResultSchema.safeParse({
+        ...result,
+        comparisons: [{ ...result.comparisons[0], comparisonId: "parent:clone-3" }],
       }).success,
     ).toBe(false);
   });

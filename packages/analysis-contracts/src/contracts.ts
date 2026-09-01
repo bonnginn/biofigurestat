@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EntityIdSchema, IsoDateTimeSchema } from "@lsaa/domain";
+import { EquivalenceAnalysisResultSchema } from "./equivalence";
 
 export const AnalysisTemplateIdSchema = z.enum([
   "D01",
@@ -584,6 +585,7 @@ export const AnalysisEngineResultSchema = z.object({
   }),
   estimates: z.array(EstimateSchema),
   tests: z.array(TestResultSchema),
+  equivalence: EquivalenceAnalysisResultSchema.optional(),
   factorMetadata: z
     .object({
       withinFactor: z.object({
