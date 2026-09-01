@@ -37,6 +37,7 @@ import { localizedText, useAppLocale } from "../../app/appLocale";
 import { useBenchmarkRun } from "../../app/benchmarkEvaluation";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
+import { ExperimentGraphCanvasToolbar } from "./ExperimentGraphCanvasToolbar";
 import { ExperimentGraphDataSummary } from "./ExperimentGraphDataSummary";
 import { ExperimentGraphDistributionEditor } from "./ExperimentGraphDistributionEditor";
 import { ExperimentGraphGroupingEditor } from "./ExperimentGraphGroupingEditor";
@@ -921,105 +922,32 @@ export function ExperimentGraphWorkbench({
             className="experiment-graph-canvas-panel"
             aria-label={t("グラフプレビュー", "Graph preview")}
           >
-            <div className="experiment-graph-canvas-heading">
-              <div>
-                <p className="experiment-graph-overline">{graphTypeLabel[graphType]}</p>
-                <h3 style={{ fontSize: appearance.graphTitleFontSize, color: "#000" }}>
-                  {activeLayerDescription}
-                </h3>
-              </div>
-              <div
-                className="experiment-graph-export-actions"
-                aria-label={t("グラフの書き出し", "Graph export")}
-              >
-                <button
-                  type="button"
-                  aria-label={t("グラフをコピー", "Copy Graph")}
-                  disabled={!hasData}
-                  onClick={() => void copyGraph()}
-                >
-                  {t("コピー", "Copy")}
-                </button>
-                <button
-                  type="button"
-                  aria-label={t("SVGを書き出す", "Export SVG")}
-                  disabled={!hasData}
-                  onClick={() => void exportSvg()}
-                >
-                  SVG
-                </button>
-                <button
-                  type="button"
-                  aria-label={t("PNGを書き出す", "Export PNG")}
-                  disabled={!hasData}
-                  onClick={() => void exportPng()}
-                >
-                  PNG
-                </button>
-                <button
-                  type="button"
-                  aria-label={t("表示データCSV", "Export displayed data as CSV")}
-                  disabled={!hasData}
-                  onClick={() => void exportCsv()}
-                >
-                  CSV
-                </button>
-                {import.meta.env.DEV && evaluationModeIsConfigured(evaluationMode) ? (
-                  <button
-                    type="button"
-                    aria-label="Benchmark runを完了"
-                    disabled={
-                      !hasData ||
-                      !benchmarkRun.identity ||
-                      !benchmarkRun.supportStatus ||
-                      !benchmarkRun.defaultGraphCaptured ||
-                      (!analysis && !descriptiveBenchmarkRun)
-                    }
-                    onClick={() => void finalizeBenchmarkRun()}
-                  >
-                    Benchmark完了
-                  </button>
-                ) : null}
-              </div>
-            </div>
-            {copyStatus ? (
-              <p className="experiment-graph-copy-status" role="status">
-                {copyStatus}
-              </p>
-            ) : null}
-            {pngExportFeedback ? (
-              <p
-                className={`experiment-graph-copy-status${pngExportFeedback.kind === "error" ? " experiment-graph-copy-status--error" : ""}`}
-                role={pngExportFeedback.kind === "error" ? "alert" : "status"}
-              >
-                {pngExportFeedback.text}
-              </p>
-            ) : null}
-            {benchmarkCaptureStatus ? <p role="status">{benchmarkCaptureStatus}</p> : null}
-            {hasData ? (
-              <div
-                className="experiment-graph-view-controls"
-                role="group"
-                aria-label={t("Graph表示サイズ", "Graph display size")}
-              >
-                <button
-                  className={!fitOverview ? "is-active" : ""}
-                  type="button"
-                  aria-pressed={!fitOverview}
-                  onClick={() => setFitOverview(false)}
-                >
-                  {t("実寸（横スクロール）", "Readable size (horizontal scroll)")}
-                </button>
-                <button
-                  className={fitOverview ? "is-active" : ""}
-                  type="button"
-                  aria-pressed={fitOverview}
-                  onClick={() => setFitOverview(true)}
-                >
-                  {t("画面に全体を収める", "Fit entire Graph")}
-                </button>
-              </div>
-            ) : null}
+            <ExperimentGraphCanvasToolbar
+              graphTypeLabel={graphTypeLabel[graphType]}
+              layerDescription={activeLayerDescription}
+              graphTitleFontSize={appearance.graphTitleFontSize}
+              hasData={hasData}
+              copyStatus={copyStatus}
+              exportFeedback={pngExportFeedback}
+              benchmarkCaptureStatus={benchmarkCaptureStatus}
+              fitOverview={fitOverview}
+              showBenchmarkAction={
+                import.meta.env.DEV && evaluationModeIsConfigured(evaluationMode)
+              }
+              benchmarkActionDisabled={
+                !hasData ||
+                !benchmarkRun.identity ||
+                !benchmarkRun.supportStatus ||
+                !benchmarkRun.defaultGraphCaptured ||
+                (!analysis && !descriptiveBenchmarkRun)
+              }
+              onCopy={() => void copyGraph()}
+              onExportSvg={() => void exportSvg()}
+              onExportPng={() => void exportPng()}
+              onExportCsv={() => void exportCsv()}
+              onFinalizeBenchmark={() => void finalizeBenchmarkRun()}
+              onFitOverviewChange={setFitOverview}
+            />
             {hasData && readout ? (
               <div
                 className={`experiment-graph-stage experiment-graph-stage--${appearance.legendPosition}`}

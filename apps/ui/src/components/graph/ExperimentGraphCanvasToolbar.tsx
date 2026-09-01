@@ -1,0 +1,138 @@
+import { localizedText, useAppLocale } from "../../app/appLocale";
+import type { GraphExportFeedback } from "./experimentGraphUserExports";
+
+type Props = Readonly<{
+  graphTypeLabel: string;
+  layerDescription: string;
+  graphTitleFontSize: number;
+  hasData: boolean;
+  copyStatus: string | null;
+  exportFeedback: GraphExportFeedback | null;
+  benchmarkCaptureStatus: string | null;
+  fitOverview: boolean;
+  showBenchmarkAction: boolean;
+  benchmarkActionDisabled: boolean;
+  onCopy: () => void;
+  onExportSvg: () => void;
+  onExportPng: () => void;
+  onExportCsv: () => void;
+  onFinalizeBenchmark: () => void;
+  onFitOverviewChange: (fit: boolean) => void;
+}>;
+
+export function ExperimentGraphCanvasToolbar({
+  graphTypeLabel,
+  layerDescription,
+  graphTitleFontSize,
+  hasData,
+  copyStatus,
+  exportFeedback,
+  benchmarkCaptureStatus,
+  fitOverview,
+  showBenchmarkAction,
+  benchmarkActionDisabled,
+  onCopy,
+  onExportSvg,
+  onExportPng,
+  onExportCsv,
+  onFinalizeBenchmark,
+  onFitOverviewChange,
+}: Props) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
+  return (
+    <>
+      <div className="experiment-graph-canvas-heading">
+        <div>
+          <p className="experiment-graph-overline">{graphTypeLabel}</p>
+          <h3 style={{ fontSize: graphTitleFontSize, color: "#000" }}>{layerDescription}</h3>
+        </div>
+        <div
+          className="experiment-graph-export-actions"
+          aria-label={t("グラフの書き出し", "Graph export")}
+        >
+          <button
+            type="button"
+            aria-label={t("グラフをコピー", "Copy Graph")}
+            disabled={!hasData}
+            onClick={onCopy}
+          >
+            {t("コピー", "Copy")}
+          </button>
+          <button
+            type="button"
+            aria-label={t("SVGを書き出す", "Export SVG")}
+            disabled={!hasData}
+            onClick={onExportSvg}
+          >
+            SVG
+          </button>
+          <button
+            type="button"
+            aria-label={t("PNGを書き出す", "Export PNG")}
+            disabled={!hasData}
+            onClick={onExportPng}
+          >
+            PNG
+          </button>
+          <button
+            type="button"
+            aria-label={t("表示データCSV", "Export displayed data as CSV")}
+            disabled={!hasData}
+            onClick={onExportCsv}
+          >
+            CSV
+          </button>
+          {showBenchmarkAction ? (
+            <button
+              type="button"
+              aria-label="Benchmark runを完了"
+              disabled={benchmarkActionDisabled}
+              onClick={onFinalizeBenchmark}
+            >
+              Benchmark完了
+            </button>
+          ) : null}
+        </div>
+      </div>
+      {copyStatus ? (
+        <p className="experiment-graph-copy-status" role="status">
+          {copyStatus}
+        </p>
+      ) : null}
+      {exportFeedback ? (
+        <p
+          className={`experiment-graph-copy-status${exportFeedback.kind === "error" ? " experiment-graph-copy-status--error" : ""}`}
+          role={exportFeedback.kind === "error" ? "alert" : "status"}
+        >
+          {exportFeedback.text}
+        </p>
+      ) : null}
+      {benchmarkCaptureStatus ? <p role="status">{benchmarkCaptureStatus}</p> : null}
+      {hasData ? (
+        <div
+          className="experiment-graph-view-controls"
+          role="group"
+          aria-label={t("Graph表示サイズ", "Graph display size")}
+        >
+          <button
+            className={!fitOverview ? "is-active" : ""}
+            type="button"
+            aria-pressed={!fitOverview}
+            onClick={() => onFitOverviewChange(false)}
+          >
+            {t("実寸（横スクロール）", "Readable size (horizontal scroll)")}
+          </button>
+          <button
+            className={fitOverview ? "is-active" : ""}
+            type="button"
+            aria-pressed={fitOverview}
+            onClick={() => onFitOverviewChange(true)}
+          >
+            {t("画面に全体を収める", "Fit entire Graph")}
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
+}
