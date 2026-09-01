@@ -374,6 +374,23 @@ lint. Separately, four locale-sensitive UI suites now settle their locale-store 
 React `act(...)`; their 40 existing tests pass without the warnings they previously emitted. No
 test cases or assertions were removed.
 
+Graph Statistics relationship context is now assembled once from the experiment declaration and
+selected readout. Shared-source matched units, same-entity matching, independent nested-source
+reconfirmation, and the experiment-first declaration flag can no longer be wired independently at
+the panel call site. Existing shared-source, matched, nested, and general workbench coverage passes
+with the Statistics orchestration suite (58 tests); no additional test was added because these
+integration contracts already exercise the extracted mapping. The workbench is now 1,046 lines.
+
+Canonical matrix numeric cells and expanded nested numeric cells now use the same draft-text
+lifecycle as expanded adaptive scalar cells. The shared boundary commits the browser-visible value
+at blur even if React has not rendered the last keystroke yet, which preserves the existing
+visible-value-equals-canonical-value integrity test. Adaptive and nested compact multiline editors
+also share a textarea lifecycle for dirty retention, blur commit, structured paste, keyboard
+movement, and accessible errors; numeric parsing, rectangular-paste targets, missingness, unit
+identity, and canonical updates remain with their respective callers. The affected 56-, 65-, and
+92-test focused groups pass with UI typecheck and focused lint. These extractions add no new test
+cases; they reuse the existing behavioral coverage.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
