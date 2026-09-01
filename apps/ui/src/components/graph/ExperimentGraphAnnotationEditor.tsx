@@ -20,7 +20,8 @@ export type ExperimentGraphAnnotationEditorProps = Readonly<{
   statisticsAnnotations: readonly StatisticsAnnotationEntry[];
   setStatisticsAnnotation: Dispatch<SetStateAction<StatisticsAnnotation>>;
   setStatisticsAnnotations: Dispatch<SetStateAction<StatisticsAnnotationEntry[]>>;
-  onAddSelectedComparison: () => void;
+  onAddSelectedComparison?: () => void;
+  variant?: "full" | "display-only";
 }>;
 
 export function ExperimentGraphAnnotationEditor({
@@ -34,6 +35,7 @@ export function ExperimentGraphAnnotationEditor({
   setStatisticsAnnotation,
   setStatisticsAnnotations,
   onAddSelectedComparison,
+  variant = "full",
 }: ExperimentGraphAnnotationEditorProps) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
@@ -44,13 +46,15 @@ export function ExperimentGraphAnnotationEditor({
       aria-label={t("統計注釈", "Statistical annotations")}
     >
       <h3>{t("グラフ上の注釈", "Annotations on the Graph")}</h3>
-      <p className="experiment-graph-help">
-        {t(
-          "Statisticsで保存した解析結果から表示します。まず全比較を一括表示し、不要な比較だけを下の一覧から外せます。ここでは再計算しません。",
-          "Annotations use the analysis result saved in Statistics. You can show all comparisons first and remove unneeded comparisons below. No analysis is recalculated here.",
-        )}
-      </p>
-      {adjustedComparisonAnnotations.length > 0 ? (
+      {variant === "full" ? (
+        <p className="experiment-graph-help">
+          {t(
+            "Statisticsで保存した解析結果から表示します。まず全比較を一括表示し、不要な比較だけを下の一覧から外せます。ここでは再計算しません。",
+            "Annotations use the analysis result saved in Statistics. You can show all comparisons first and remove unneeded comparisons below. No analysis is recalculated here.",
+          )}
+        </p>
+      ) : null}
+      {variant === "full" && adjustedComparisonAnnotations.length > 0 ? (
         <fieldset
           className="experiment-graph-condition-fieldset experiment-graph-comparison-visibility"
           aria-label={t("調整済み比較の表示", "Adjusted-comparison visibility")}
@@ -132,7 +136,7 @@ export function ExperimentGraphAnnotationEditor({
           <option value="symbol">{t("有意差記号", "Significance symbol")}</option>
         </select>
       </label>
-      {adjustedComparisonAnnotations.length > 0 ? (
+      {variant === "full" && adjustedComparisonAnnotations.length > 0 ? (
         <button
           type="button"
           aria-label={t(
@@ -154,10 +158,12 @@ export function ExperimentGraphAnnotationEditor({
           )}
         </button>
       ) : null}
-      <button type="button" onClick={onAddSelectedComparison}>
-        {t("この比較を注釈へ追加", "Add this comparison to the annotations")}
-      </button>
-      {statisticsAnnotations.length > 0 ? (
+      {variant === "full" && onAddSelectedComparison ? (
+        <button type="button" onClick={onAddSelectedComparison}>
+          {t("この比較を注釈へ追加", "Add this comparison to the annotations")}
+        </button>
+      ) : null}
+      {variant === "full" && statisticsAnnotations.length > 0 ? (
         <ul className="experiment-graph-annotation-list">
           {statisticsAnnotations.map((annotation) => {
             const test = analysisResult.tests[annotation.testIndex];

@@ -1707,60 +1707,18 @@ export function ExperimentGraphWorkbench({
                 </>
               )}
               {analysisResult?.status === "ok" ? (
-                <section className="experiment-graph-statistics-section" aria-label="統計注釈">
-                  <h3>グラフ上の注釈</h3>
-                  {analysisResult.tests.length > 1 ? (
-                    <label className="experiment-graph-field">
-                      <span>比較結果</span>
-                      <select
-                        aria-label="統計注釈の比較"
-                        title={
-                          analysisResult.tests[statisticsAnnotation.testIndex]
-                            ? analysisTestAnnotationLabel(
-                                analysisResult.tests[statisticsAnnotation.testIndex]!,
-                                draft,
-                                baseAnnotationContext,
-                              )
-                            : undefined
-                        }
-                        value={statisticsAnnotation.testIndex}
-                        onChange={(event) =>
-                          setStatisticsAnnotation((current) => ({
-                            ...current,
-                            testIndex: Number(event.target.value),
-                          }))
-                        }
-                      >
-                        {analysisResult.tests.map((test, index) => (
-                          <option key={`${test.name}:${index}`} value={index}>
-                            {analysisTestAnnotationLabel(test, draft, baseAnnotationContext)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : null}
-                  <label className="experiment-graph-field">
-                    <span>表示</span>
-                    <select
-                      aria-label="統計注釈の表示"
-                      value={statisticsAnnotation.mode}
-                      onChange={(event) =>
-                        setStatisticsAnnotation((current) => ({
-                          ...current,
-                          mode: event.target.value as StatisticsAnnotation["mode"],
-                        }))
-                      }
-                    >
-                      <option value="hidden">表示しない</option>
-                      <option value="exact_p">正確なp値</option>
-                      <option value="symbol">有意差記号</option>
-                    </select>
-                  </label>
-                  <p className="experiment-graph-help">
-                    表示内容：{annotationContext}
-                    。保存済みのこのグラフの解析結果にだけリンクします。派生値の注釈はそのmetric/windowだけを表し、曲線全体の推論を意味しません。データや比較対象を変更すると注釈も外れます。
-                  </p>
-                </section>
+                <ExperimentGraphAnnotationEditor
+                  variant="display-only"
+                  analysisResult={analysisResult}
+                  draft={draft}
+                  baseAnnotationContext={baseAnnotationContext}
+                  annotationContext={annotationContext}
+                  adjustedComparisonAnnotations={adjustedComparisonAnnotations}
+                  statisticsAnnotation={statisticsAnnotation}
+                  statisticsAnnotations={statisticsAnnotations}
+                  setStatisticsAnnotation={setStatisticsAnnotation}
+                  setStatisticsAnnotations={setStatisticsAnnotations}
+                />
               ) : null}
             </>
           ) : null}

@@ -52,7 +52,13 @@ const candidates: StatisticsAnnotationEntry[] = [
   },
 ];
 
-function Harness({ onAddSelectedComparison = vi.fn() }) {
+function Harness({
+  onAddSelectedComparison = vi.fn(),
+  variant = "full",
+}: Readonly<{
+  onAddSelectedComparison?: () => void;
+  variant?: "full" | "display-only";
+}>) {
   const [selection, setSelection] = useState<StatisticsAnnotation>({
     mode: "symbol",
     testIndex: 0,
@@ -70,6 +76,7 @@ function Harness({ onAddSelectedComparison = vi.fn() }) {
       setStatisticsAnnotation={setSelection}
       setStatisticsAnnotations={setAnnotations}
       onAddSelectedComparison={onAddSelectedComparison}
+      variant={variant}
     />
   );
 }
@@ -111,5 +118,15 @@ describe("ExperimentGraphAnnotationEditor", () => {
 
     expect(screen.getByRole("heading", { name: "Annotations on the Graph" })).toBeVisible();
     expectNoJapaneseUi(view.container);
+  });
+
+  it("reuses only the existing display controls in the Statistics workspace", () => {
+    render(<Harness variant="display-only" />);
+
+    expect(screen.getByLabelText("統計注釈の比較")).toBeVisible();
+    expect(screen.getByLabelText("統計注釈の表示")).toBeVisible();
+    expect(screen.queryByLabelText("調整済み比較の表示")).toBeNull();
+    expect(screen.queryByRole("button", { name: "この比較を注釈へ追加" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "グラフから外す" })).toBeNull();
   });
 });
