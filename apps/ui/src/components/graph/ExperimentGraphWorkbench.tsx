@@ -39,6 +39,7 @@ import { localizedText, useAppLocale } from "../../app/appLocale";
 import { useBenchmarkRun } from "../../app/benchmarkEvaluation";
 import { evaluationModeIsConfigured, evaluationMode } from "../../app/evaluationMode";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
+import { ExperimentGraphDataSummary } from "./ExperimentGraphDataSummary";
 import { CompositionGraphSvg } from "./CompositionGraphSvg";
 import { CorrelationGraphSvg } from "./CorrelationGraphSvg";
 import { ExperimentGraphSvg } from "./GeneralExperimentGraphSvg";
@@ -90,7 +91,6 @@ import {
   safeGraphFileStem,
   serializeCompositionData,
   serializeVisibleGraphData,
-  type GraphSeries,
 } from "./experimentGraphDataExport";
 export { serializeVisibleGraphData } from "./experimentGraphDataExport";
 import { buildDerivedGraphLineageRows, buildExperimentGraphSeries } from "./experimentGraphSeries";
@@ -243,61 +243,6 @@ export function describeActiveGraphLayers(
     parts.push(`${errorBar.toUpperCase()} error bars`);
   }
   return parts.join(" + ") || "No data layers selected";
-}
-
-function ProportionSummary({ series }: { series: readonly GraphSeries[] }) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  return (
-    <div
-      className="experiment-graph-data-summary"
-      aria-label={t("割合データの要約", "Proportion-data summary")}
-    >
-      {series.map((item) => (
-        <div className="experiment-graph-summary-row" key={item.seriesKey}>
-          <strong>
-            {item.conditionLabel}
-            {item.timeLabel ? `・${item.timeLabel}` : ""}
-          </strong>
-          <span>
-            {t(
-              `${item.proportionPoints.length}実験単位・`,
-              `${item.proportionPoints.length} experimental units · `,
-            )}
-            {item.proportionPoints
-              .map((point) => `${point.positive}/${point.eligible}`)
-              .join(t("、", ", ")) || t("有効値なし", "no valid values")}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function NestedSummary({ series }: { series: readonly GraphSeries[] }) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  return (
-    <div
-      className="experiment-graph-data-summary"
-      aria-label={t("階層データの要約", "Hierarchical-data summary")}
-    >
-      {series.map((item) => (
-        <div className="experiment-graph-summary-row" key={item.seriesKey}>
-          <strong>
-            {item.conditionLabel}
-            {item.timeLabel ? `・${item.timeLabel}` : ""}
-          </strong>
-          <span>
-            {t(
-              `実験単位 ${item.experimentPoints.length}、細胞・ROI ${item.rawPoints.length}`,
-              `Experimental units ${item.experimentPoints.length}, cells/ROIs ${item.rawPoints.length}`,
-            )}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 export function ExperimentGraphWorkbench({
@@ -1207,25 +1152,7 @@ export function ExperimentGraphWorkbench({
             </p>
             <details className="experiment-graph-data-details">
               <summary>{t("使用データの内訳を表示", "Show data used")}</summary>
-              {shape === "proportion" ? (
-                <ProportionSummary series={series} />
-              ) : shape === "nested_continuous" ? (
-                <NestedSummary series={series} />
-              ) : shape === "wb_ratio" ? (
-                <div className="experiment-graph-data-summary" aria-label="WB比の要約">
-                  {series.map((item) => (
-                    <div className="experiment-graph-summary-row" key={item.seriesKey}>
-                      <strong>
-                        {item.conditionLabel}
-                        {item.timeLabel ? `・${item.timeLabel}` : ""}
-                      </strong>
-                      <span>実験単位 {item.experimentPoints.length}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p>カテゴリ別のcountと自動計算した割合を使用しています。</p>
-              )}
+              <ExperimentGraphDataSummary shape={shape} series={series} />
             </details>
           </section>
         ) : null}
