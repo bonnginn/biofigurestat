@@ -391,6 +391,14 @@ identity, and canonical updates remain with their respective callers. The affect
 92-test focused groups pass with UI typecheck and focused lint. These extractions add no new test
 cases; they reuse the existing behavioral coverage.
 
+After these Graph relationship and Spreadsheet lifecycle increments, the complete UI suite passes
+192 files / 1,305 tests. UI typecheck, full lint, and the production build pass; the initial chunk
+remains 264.32 kB (gzip 81.16 kB) with no build advisory. Locale-reset warnings in four suites and
+post-save warnings in the progressive sparse workflow were removed without deleting assertions.
+The remaining React scheduling warnings are isolated to the broad adaptive production-path suite
+and the evaluation-only run bar. They are retained as explicit test-harness debt rather than being
+silenced globally or used as a reason to remove persistence, lineage, or Statistics coverage.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
