@@ -115,13 +115,7 @@ export const NonlinearFitGraph = forwardRef<
             data-tick-value={value}
             data-tick-direction="outside"
           />
-          <line
-            x1={PLOT.left}
-            y1={y(value)}
-            x2={PLOT.right}
-            y2={y(value)}
-            stroke="#d8e0e8"
-          />
+          <line x1={PLOT.left} y1={y(value)} x2={PLOT.right} y2={y(value)} stroke="#d8e0e8" />
           <text x={PLOT.left - 10} y={y(value) + 5} textAnchor="end" fontSize="13">
             {label(value)}
           </text>

@@ -439,8 +439,7 @@ export function CurrentDataGraphPreview({
         ? Math.max(0, observedMax + padding)
         : observedMax + padding;
   const yFor = (value: number) =>
-    previewPlot.top +
-    ((domainMax - value) / (domainMax - domainMin)) * previewPlot.height;
+    previewPlot.top + ((domainMax - value) / (domainMax - domainMin)) * previewPlot.height;
   const xFor = (index: number) => previewPlot.left + 16 + index * 72;
   const summaryLines = [...new Set(groups.map(({ conditionId }) => conditionId))].flatMap(
     (conditionId) => {

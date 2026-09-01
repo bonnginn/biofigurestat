@@ -46,9 +46,7 @@ type GraphAppearance = WorkspaceGraphState["appearance"];
 type AxisSettings = WorkspaceGraphState["axes"];
 type GraphType = WorkspaceGraphState["graphType"];
 type StatisticsAnnotation = NonNullable<WorkspaceGraphState["statisticsAnnotation"]>;
-type StatisticsAnnotationEntry = NonNullable<
-  WorkspaceGraphState["statisticsAnnotations"]
->[number];
+type StatisticsAnnotationEntry = NonNullable<WorkspaceGraphState["statisticsAnnotations"]>[number];
 type ConditionAxisLabel = Readonly<{
   conditionId: string;
   levels: readonly Readonly<{ id: string; label: string; value: string }>[];
@@ -1134,9 +1132,7 @@ export function ExperimentGraphSvg({
       {axes.showCategoryLabels
         ? hierarchyGroups.flatMap((groups, levelIndex) => {
             const rowY =
-              plot.bottom +
-              (hasTimeLabels ? 52 : 34) +
-              (hierarchyDepth - 1 - levelIndex) * 27;
+              plot.bottom + (hasTimeLabels ? 52 : 34) + (hierarchyDepth - 1 - levelIndex) * 27;
             const heading = axisLabels[0]?.levels[levelIndex]?.label;
             return [
               heading &&
@@ -1335,7 +1331,12 @@ export function ExperimentGraphSvg({
                   onInspect("violin");
                 }}
               >
-                <title>{t("バイオリン分布を編集（ダブルクリック）", "Edit violin distribution (double-click)")}</title>
+                <title>
+                  {t(
+                    "バイオリン分布を編集（ダブルクリック）",
+                    "Edit violin distribution (double-click)",
+                  )}
+                </title>
                 <path
                   d={currentViolinPath}
                   fill={distributionFillColor}

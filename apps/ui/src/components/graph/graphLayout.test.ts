@@ -3,9 +3,14 @@ import { createCategoryLayout, createNiceTicks, createPlotRectangle } from "./gr
 
 describe("graph layout", () => {
   it("derives one exact drawable rectangle from canvas margins", () => {
-    expect(
-      createPlotRectangle(720, 520, { top: 44, right: 44, bottom: 88, left: 94 }),
-    ).toEqual({ left: 94, top: 44, right: 676, bottom: 432, width: 582, height: 388 });
+    expect(createPlotRectangle(720, 520, { top: 44, right: 44, bottom: 88, left: 94 })).toEqual({
+      left: 94,
+      top: 44,
+      right: 676,
+      bottom: 432,
+      width: 582,
+      height: 388,
+    });
   });
 
   it("keeps three simple categories in stable compact slots", () => {

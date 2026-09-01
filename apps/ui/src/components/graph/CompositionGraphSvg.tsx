@@ -213,10 +213,7 @@ export function CompositionGraphSvg({
         );
       })}
       {categories.map((category, index) => (
-        <g
-          key={category.id}
-          transform={`translate(${plot.right + 32} ${plot.top + index * 30})`}
-        >
+        <g key={category.id} transform={`translate(${plot.right + 32} ${plot.top + index * 30})`}>
           <rect width="14" height="14" fill={colors[index % colors.length]} />
           <text x="22" y="12" style={{ fontSize: appearance.legendFontSize, fill: "#000" }}>
             {category.label}
@@ -226,4 +223,3 @@ export function CompositionGraphSvg({
     </svg>
   );
 }
-

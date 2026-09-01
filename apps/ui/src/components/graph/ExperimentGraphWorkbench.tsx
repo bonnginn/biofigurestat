@@ -50,10 +50,7 @@ import { useExperimentGraphDataSelectionState } from "./useExperimentGraphDataSe
 import { useExperimentGraphDerivedData } from "./useExperimentGraphDerivedData";
 import { useExperimentGraphUserActions } from "./useExperimentGraphUserActions";
 import { finalizeBenchmarkGraphCapture } from "./finalizeBenchmarkGraphCapture";
-import {
-  analysisTestAnnotationLabel,
-  graphAnnotationContext,
-} from "./experimentGraphAnnotations";
+import { analysisTestAnnotationLabel, graphAnnotationContext } from "./experimentGraphAnnotations";
 export {
   analysisTestAnnotationLabel,
   repeatedAxisAnnotationLabel,
@@ -298,25 +295,19 @@ export function ExperimentGraphWorkbench({
     locale,
   });
 
-  const {
-    series,
-    derivedLineageRows,
-    shape,
-    facetGroups,
-    visualSeriesOptions,
-    hasData,
-  } = useExperimentGraphDerivedData({
-    draft,
-    cells,
-    readout,
-    activeConditions,
-    activeTimePoints,
-    axes,
-    appearance,
-    grouping,
-    sourceMode,
-    timeAnalysis,
-  });
+  const { series, derivedLineageRows, shape, facetGroups, visualSeriesOptions, hasData } =
+    useExperimentGraphDerivedData({
+      draft,
+      cells,
+      readout,
+      activeConditions,
+      activeTimePoints,
+      axes,
+      appearance,
+      grouping,
+      sourceMode,
+      timeAnalysis,
+    });
   const baseAnnotationContext = analysis
     ? graphAnnotationContext({
         request: analysis.request,
@@ -409,15 +400,18 @@ export function ExperimentGraphWorkbench({
     setLayers,
     setAppearance,
   });
-  const activeLayerDescription = describeActiveGraphLayers({
-    graphType,
-    shape,
-    layers,
-    errorBar: appearance.errorBar,
-    timeSampling: draft.time.sampling,
-    matched: draft.conditionAssignment.kind === "matched",
-    semanticReadiness,
-  }, locale);
+  const activeLayerDescription = describeActiveGraphLayers(
+    {
+      graphType,
+      shape,
+      layers,
+      errorBar: appearance.errorBar,
+      timeSampling: draft.time.sampling,
+      matched: draft.conditionAssignment.kind === "matched",
+      semanticReadiness,
+    },
+    locale,
+  );
   const {
     copyStatus,
     exportFeedback: pngExportFeedback,
