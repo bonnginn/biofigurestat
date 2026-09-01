@@ -1,5 +1,6 @@
 import type { ExperimentSetDraft, ReadoutDraft } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { localizedText, type AppLocale } from "../../app/appLocale";
 
 export function describeActiveGraphLayers(
   input: Readonly<{
@@ -10,23 +11,31 @@ export function describeActiveGraphLayers(
     timeSampling: ExperimentSetDraft["time"]["sampling"];
     matched: boolean;
   }>,
+  locale: AppLocale = "en",
 ): string {
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const { graphType, shape, layers, errorBar, timeSampling, matched } = input;
   if (shape === "categorical_counts") {
-    if (graphType === "stacked") return "Stacked category counts";
-    if (graphType === "category_percentage") return "Category percentages";
-    return "100% stacked composition";
+    if (graphType === "stacked") return t("カテゴリ数の積み上げ", "Stacked category counts");
+    if (graphType === "category_percentage") return t("カテゴリの割合", "Category percentages");
+    return t("100%積み上げ構成", "100% stacked composition");
   }
-  if (graphType === "scatter") return "Paired X–Y observations";
+  if (graphType === "scatter") return t("対応するX–Y観測値", "Paired X–Y observations");
   if (graphType === "line") {
     const parts = [
-      ...(timeSampling === "longitudinal" && matched ? ["Individual trajectories"] : []),
-      "Summary trend",
+      ...(timeSampling === "longitudinal" && matched
+        ? [t("個体ごとの軌跡", "Individual trajectories")]
+        : []),
+      t("要約トレンド", "Summary trend"),
       ...(layers.experiment
-        ? [shape === "nested_continuous" ? "Experiment summaries" : "Biological replicates"]
+        ? [
+            shape === "nested_continuous"
+              ? t("実験単位の要約", "Experiment summaries")
+              : t("生物学的反復", "Biological replicates"),
+          ]
         : []),
       ...(layers.overall && layers.errorBar && errorBar !== "none"
-        ? [`${errorBar.toUpperCase()} error bars`]
+        ? [t(`${errorBar.toUpperCase()}エラーバー`, `${errorBar.toUpperCase()} error bars`)]
         : []),
     ];
     return parts.join(" + ");
@@ -34,37 +43,46 @@ export function describeActiveGraphLayers(
   if (graphType === "paired_dot") {
     return (
       [
-        ...(layers.experiment ? ["Paired observations"] : []),
-        ...(layers.connectingLine ? ["Connecting lines"] : []),
+        ...(layers.experiment ? [t("対応する観測値", "Paired observations")] : []),
+        ...(layers.connectingLine ? [t("対応線", "Connecting lines")] : []),
         ...(layers.overall
-          ? [layers.errorBar && errorBar !== "none" ? `Mean ± ${errorBar.toUpperCase()}` : "Mean"]
+          ? [
+              layers.errorBar && errorBar !== "none"
+                ? t(`平均 ± ${errorBar.toUpperCase()}`, `Mean ± ${errorBar.toUpperCase()}`)
+                : t("平均", "Mean"),
+            ]
           : []),
-      ].join(" + ") || "Paired Graph"
+      ].join(" + ") || t("対応グラフ", "Paired Graph")
     );
   }
 
   const parts: string[] = [];
-  if (graphType === "bar") parts.push("Bars (Mean)");
-  if (layers.violin) parts.push("Distribution");
+  if (graphType === "bar") parts.push(t("棒（平均）", "Bars (Mean)"));
+  if (layers.violin) parts.push(t("分布", "Distribution"));
   if (layers.box || (shape === "nested_continuous" && layers.distribution)) {
-    parts.push("Box plot");
+    parts.push(t("箱ひげ図", "Box plot"));
   }
-  if (shape === "nested_continuous" && layers.raw) parts.push("Raw observations");
+  if (shape === "nested_continuous" && layers.raw)
+    parts.push(t("生の観測値", "Raw observations"));
   if (layers.experiment) {
-    parts.push(shape === "nested_continuous" ? "Experiment summaries" : "Biological replicates");
+    parts.push(
+      shape === "nested_continuous"
+        ? t("実験単位の要約", "Experiment summaries")
+        : t("生物学的反復", "Biological replicates"),
+    );
   }
   if (layers.overall && graphType !== "bar") {
     if (layers.errorBar && errorBar !== "none") {
       parts.push(
         graphType === "dot"
-          ? `Mean ± ${errorBar.toUpperCase()}`
-          : `${errorBar.toUpperCase()} error bars`,
+          ? t(`平均 ± ${errorBar.toUpperCase()}`, `Mean ± ${errorBar.toUpperCase()}`)
+          : t(`${errorBar.toUpperCase()}エラーバー`, `${errorBar.toUpperCase()} error bars`),
       );
     } else {
-      parts.push("Mean");
+      parts.push(t("平均", "Mean"));
     }
   } else if (graphType === "bar" && layers.overall && layers.errorBar && errorBar !== "none") {
-    parts.push(`${errorBar.toUpperCase()} error bars`);
+    parts.push(t(`${errorBar.toUpperCase()}エラーバー`, `${errorBar.toUpperCase()} error bars`));
   }
-  return parts.join(" + ") || "No data layers selected";
+  return parts.join(" + ") || t("表示レイヤーなし", "No data layers selected");
 }

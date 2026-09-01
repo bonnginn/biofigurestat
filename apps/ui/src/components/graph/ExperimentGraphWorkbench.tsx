@@ -519,13 +519,18 @@ export function ExperimentGraphWorkbench({
     errorBar: appearance.errorBar,
     timeSampling: draft.time.sampling,
     matched: draft.conditionAssignment.kind === "matched",
-  });
+  }, locale);
   const activeLayerDescription =
     semanticReadiness === "unresolved_descriptive"
-      ? resolvedLayerDescription
-          .replaceAll("Raw observations", "元表の行")
-          .replaceAll("Experiment summaries", "元表の行")
-          .replaceAll("Biological replicates", "元表の行")
+      ? locale === "ja"
+        ? resolvedLayerDescription
+            .replaceAll("生の観測値", "元表の行")
+            .replaceAll("実験単位の要約", "元表の行")
+            .replaceAll("生物学的反復", "元表の行")
+        : resolvedLayerDescription
+            .replaceAll("Raw observations", "Table rows")
+            .replaceAll("Experiment summaries", "Table rows")
+            .replaceAll("Biological replicates", "Table rows")
       : resolvedLayerDescription;
   const exportSvg = async () => {
     if (!svgRef.current || !readout) return;

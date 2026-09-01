@@ -589,7 +589,7 @@ describe("ExperimentGraphWorkbench", () => {
     const workbench = screen.getByRole("region", { name: "実験からグラフを作成" });
     expect(within(workbench).getByRole("img", { name: /実験単位ごとのグラフ/ })).toBeVisible();
     expect(
-      within(workbench).getByRole("heading", { name: "Biological replicates + Mean ± SD" }),
+      within(workbench).getByRole("heading", { name: "生物学的反復 + 平均 ± SD" }),
     ).toBeVisible();
     expect(workbench.querySelectorAll('[data-graph-layer="proportion-experiment"]')).toHaveLength(
       6,
@@ -1377,7 +1377,7 @@ describe("ExperimentGraphWorkbench", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "誤差線の要約方法" }), {
       target: { value: "sem" },
     });
-    expect(screen.getByRole("heading", { name: /Mean ± SEM/ })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /平均 ± SEM/ })).toBeVisible();
     selectInspectorTarget("background");
     fireEvent.change(screen.getByRole("combobox", { name: "色の使い方" }), {
       target: { value: "condition" },
@@ -1689,19 +1689,19 @@ describe("ExperimentGraphWorkbench", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Box plot + Raw observations + Experiment summaries + Mean ± SD",
+        name: "箱ひげ図 + 生の観測値 + 実験単位の要約 + 平均 ± SD",
       }),
     ).toBeVisible();
     selectInspectorTarget("experiment-summary");
     fireEvent.click(screen.getByRole("checkbox", { name: "全体平均を表示" }));
     expect(
       screen.getByRole("heading", {
-        name: "Box plot + Raw observations + Experiment summaries",
+        name: "箱ひげ図 + 生の観測値 + 実験単位の要約",
       }),
     ).toBeVisible();
     expect(
       screen.getByRole("heading", {
-        name: "Box plot + Raw observations + Experiment summaries",
+        name: "箱ひげ図 + 生の観測値 + 実験単位の要約",
       }),
     ).not.toHaveTextContent(/Mean|SD|SEM/);
 
@@ -1709,7 +1709,7 @@ describe("ExperimentGraphWorkbench", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "バイオリンを表示" }));
     expect(
       screen.getByRole("heading", {
-        name: "Distribution + Box plot + Raw observations + Experiment summaries",
+        name: "分布 + 箱ひげ図 + 生の観測値 + 実験単位の要約",
       }),
     ).not.toHaveTextContent(/Mean|SD|SEM/);
   });
@@ -1725,15 +1725,15 @@ describe("ExperimentGraphWorkbench", () => {
     const svg = screen.getByRole("img", {
       name: /実験単位ごとのグラフ/,
     }) as unknown as SVGSVGElement;
-    expect(screen.getByRole("heading", { name: "Box plot + Biological replicates" })).toBeVisible();
-    expect(svg.querySelector("desc")).toHaveTextContent("Box plot + Biological replicates");
+    expect(screen.getByRole("heading", { name: "箱ひげ図 + 生物学的反復" })).toBeVisible();
+    expect(svg.querySelector("desc")).toHaveTextContent("箱ひげ図 + 生物学的反復");
     expect(svg.querySelector("desc")).not.toHaveTextContent(/SD|SEM|細胞・ROI分布/);
 
     selectInspectorTarget("box");
     fireEvent.click(screen.getByRole("checkbox", { name: "箱ひげを表示" }));
-    expect(screen.getByRole("heading", { name: "Biological replicates" })).toBeVisible();
-    expect(svg.querySelector("desc")).toHaveTextContent("Biological replicates");
-    expect(svg.querySelector("desc")).not.toHaveTextContent("Box plot");
+    expect(screen.getByRole("heading", { name: "生物学的反復" })).toBeVisible();
+    expect(svg.querySelector("desc")).toHaveTextContent("生物学的反復");
+    expect(svg.querySelector("desc")).not.toHaveTextContent("箱ひげ図");
 
     fireEvent.click(screen.getByRole("checkbox", { name: "箱ひげを表示" }));
     selectInspectorTarget("experiment-summary");
@@ -1742,10 +1742,10 @@ describe("ExperimentGraphWorkbench", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "誤差線を表示" }));
     expect(
       screen.getByRole("heading", {
-        name: "Box plot + Biological replicates + SD error bars",
+        name: "箱ひげ図 + 生物学的反復 + SDエラーバー",
       }),
     ).toBeVisible();
-    expect(serializeGraphSvg(svg)).toContain("Box plot + Biological replicates + SD error bars");
+    expect(serializeGraphSvg(svg)).toContain("箱ひげ図 + 生物学的反復 + SDエラーバー");
   });
 
   it("複数属性×時間を単純な一時点比較へ黙って縮約しない", () => {

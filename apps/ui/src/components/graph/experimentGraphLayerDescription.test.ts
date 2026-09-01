@@ -50,4 +50,20 @@ describe("describeActiveGraphLayers", () => {
       }),
     ).toBe("No data layers selected");
   });
+
+  it("describes the same scientific layers in Japanese when requested", () => {
+    expect(
+      describeActiveGraphLayers(
+        {
+          graphType: "line",
+          shape: "nested_continuous",
+          layers: DEFAULT_GRAPH_LAYERS,
+          errorBar: "sd",
+          timeSampling: "longitudinal",
+          matched: true,
+        },
+        "ja",
+      ),
+    ).toBe("個体ごとの軌跡 + 要約トレンド + 実験単位の要約 + SDエラーバー");
+  });
 });
