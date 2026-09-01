@@ -261,8 +261,8 @@ They preserve stable readout/condition/time identities, keep the displayed set d
 Statistics analysis set, copy selection arrays before emission, and retain the exact public
 workspace schema. `ExperimentGraphWorkbench.tsx` is 1,116 lines, down from 6,854 at the Public
 Alpha tag (about 84%). This is architectural concentration reduction, not a claim that the whole
-application became smaller: since that tag, `apps/ui/src` production code is net +5,135 lines and
-tests are net +5,351 lines because bilingual UI, native automation, compatibility guards,
+application became smaller: since that tag, `apps/ui/src` production code is net +5,121 lines and
+tests are net +5,606 lines because bilingual UI, native automation, compatibility guards,
 extracted boundaries, and regression coverage were added. Graph-family production code is net
 +1,920 lines while Graph tests are net +3,976 lines. The next consolidation pass must therefore
 look for overlap among the extracted boundaries instead of judging progress only by the workbench
@@ -272,16 +272,16 @@ Specialist and standard Graph export/copy feedback now respects the active local
 exposes a legacy Japanese exception in English mode. The formerly timing-sensitive Survival save
 test now awaits its asynchronous success feedback and passes repeatedly in isolation and in the
 full run. Focused export, locale, Workbench, snapshot, and Survival tests pass. The combined full UI
-suite passes 184 files / 1,287 tests; UI typecheck, full lint, and production build pass. The initial
-production chunk is 814.26 kB (gzip 223.54 kB), the Graph workbench chunk is 199.78 kB, and the
+suite passes 188 files / 1,296 tests; UI typecheck, full lint, and production build pass. The initial
+production chunk is 813.08 kB (gzip 224.08 kB), the Graph workbench chunk is 199.78 kB, and the
 existing greater-than-500-kB advisory remains.
 
 The legacy two-condition and multi-condition Data Sheets now share their workflow-tab model and
 roving keyboard UI, analysis-result holder, numeric-observation projection, collision-safe token
-factory, and project metadata form. These are presentation/orchestration concerns with identical
+factory, project metadata form, localized save panel, and localized progress/status labels. These are presentation/orchestration concerns with identical
 meaning on both surfaces; relationship-specific row layout, experimental-unit wording, pairing,
-and validation remain owned by each sheet. Across the three focused Spreadsheet consolidation
-commits, production code is net -91 lines while 129 direct regression-test lines were added.
+and validation remain owned by each sheet. Across the six focused Spreadsheet consolidation
+commits, production code is net -27 lines while 226 direct regression-test lines were added.
 DataSheet/MultiCondition focused tests, typecheck, and lint pass. Spreadsheet Undo/Redo remains an
 explicit Beta item because it must coordinate canonical values, Graph invalidation, dirty state,
 and persistence rather than only reverting visible text.
