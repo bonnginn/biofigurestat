@@ -41,6 +41,7 @@ import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
 import { ExperimentGraphDataSummary } from "./ExperimentGraphDataSummary";
 import { ExperimentGraphGroupingEditor } from "./ExperimentGraphGroupingEditor";
 import { ExperimentGraphSelectionEditor } from "./ExperimentGraphSelectionEditor";
+import { ExperimentGraphSeriesEditor } from "./ExperimentGraphSeriesEditor";
 import { CompositionGraphSvg } from "./CompositionGraphSvg";
 import { CorrelationGraphSvg } from "./CorrelationGraphSvg";
 import { ExperimentGraphSvg } from "./GeneralExperimentGraphSvg";
@@ -52,7 +53,6 @@ import { ExperimentGraphLegendEditor } from "./ExperimentGraphLegendEditor";
 import { ExperimentGraphRawDotsEditor } from "./ExperimentGraphRawDotsEditor";
 import { ExperimentGraphXAxisEditor } from "./ExperimentGraphXAxisEditor";
 import { ExperimentGraphYAxisEditor } from "./ExperimentGraphYAxisEditor";
-import { GRAPH_PALETTES } from "./graphAppearance";
 import {
   createGraphAnalysisContextKey,
   createExperimentGraphMethodsText,
@@ -1457,251 +1457,14 @@ export function ExperimentGraphWorkbench({
           ) : null}
 
           {inspectorTarget === "experiment-summary" || inspectorTarget === "series-style" ? (
-            <section className="experiment-graph-inspector-section">
-              <h3>{inspectorTarget === "series-style" ? "系列の色・線・点" : "実験単位の要約"}</h3>
-              {inspectorTarget === "experiment-summary" ? (
-                <>
-                  <label className="experiment-graph-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={layers.experiment}
-                      aria-label="実験単位の点を表示"
-                      onChange={(event) =>
-                        setLayers((current) => ({ ...current, experiment: event.target.checked }))
-                      }
-                    />
-                    <span>個々の生物学的反復を表示</span>
-                  </label>
-                  <label className="experiment-graph-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={layers.overall}
-                      aria-label="全体平均を表示"
-                      onChange={(event) =>
-                        setLayers((current) => ({ ...current, overall: event.target.checked }))
-                      }
-                    />
-                    <span>全体平均を表示</span>
-                  </label>
-                  <label className="experiment-graph-field">
-                    <span>点の大きさ：{appearance.pointSize}px</span>
-                    <input
-                      aria-label="実験単位点の大きさ"
-                      type="range"
-                      min="4"
-                      max="10"
-                      step="1"
-                      value={appearance.pointSize}
-                      onChange={(event) =>
-                        setAppearance((current) => ({
-                          ...current,
-                          pointSize: Number(event.target.value),
-                        }))
-                      }
-                    />
-                  </label>
-                  <label className="experiment-graph-field">
-                    <span>平均線：{appearance.summaryLineWidth.toFixed(1)}px</span>
-                    <input
-                      type="range"
-                      min="0.6"
-                      max="4"
-                      step="0.1"
-                      aria-label="平均線の太さ"
-                      value={appearance.summaryLineWidth}
-                      onChange={(event) =>
-                        setAppearance((current) => ({
-                          ...current,
-                          summaryLineWidth: Number(event.target.value),
-                        }))
-                      }
-                    />
-                  </label>
-                  <label className="experiment-graph-color-field">
-                    <span>平均線の色</span>
-                    <input
-                      type="color"
-                      aria-label="平均線の色"
-                      value={appearance.summaryColor}
-                      onChange={(event) =>
-                        setAppearance((current) => ({
-                          ...current,
-                          summaryColor: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                </>
-              ) : (
-                <p className="experiment-graph-help">
-                  凡例に出る各系列の色、線種、線幅、点、表示順をまとめて編集します。
-                </p>
-              )}
-              {inspectorTarget === "series-style"
-                ? visualSeriesOptions.map((item, index) => {
-                    const style = appearance.seriesStyles[item.visualSeriesKey] ?? {};
-                    return (
-                      <fieldset
-                        className="experiment-graph-condition-fieldset"
-                        key={item.visualSeriesKey}
-                      >
-                        <legend>{item.visualSeriesLabel}</legend>
-                        <label className="experiment-graph-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={style.visible !== false}
-                            onChange={(event) =>
-                              setAppearance((current) => ({
-                                ...current,
-                                seriesStyles: {
-                                  ...current.seriesStyles,
-                                  [item.visualSeriesKey]: {
-                                    ...current.seriesStyles[item.visualSeriesKey],
-                                    visible: event.target.checked,
-                                  },
-                                },
-                              }))
-                            }
-                          />
-                          <span>表示</span>
-                        </label>
-                        <label className="experiment-graph-field">
-                          <span>凡例ラベル</span>
-                          <input
-                            value={style.legendLabel ?? item.visualSeriesLabel}
-                            onChange={(event) =>
-                              setAppearance((current) => ({
-                                ...current,
-                                seriesStyles: {
-                                  ...current.seriesStyles,
-                                  [item.visualSeriesKey]: {
-                                    ...current.seriesStyles[item.visualSeriesKey],
-                                    legendLabel: event.target.value || item.visualSeriesLabel,
-                                  },
-                                },
-                              }))
-                            }
-                          />
-                        </label>
-                        <label className="experiment-graph-field">
-                          <span>色</span>
-                          <input
-                            type="color"
-                            value={
-                              style.color ??
-                              GRAPH_PALETTES[appearance.palette][
-                                index % GRAPH_PALETTES[appearance.palette].length
-                              ]
-                            }
-                            onChange={(event) =>
-                              setAppearance((current) => ({
-                                ...current,
-                                seriesStyles: {
-                                  ...current.seriesStyles,
-                                  [item.visualSeriesKey]: {
-                                    ...current.seriesStyles[item.visualSeriesKey],
-                                    color: event.target.value,
-                                  },
-                                },
-                              }))
-                            }
-                          />
-                        </label>
-                        <label className="experiment-graph-field">
-                          <span>線</span>
-                          <select
-                            value={style.lineStyle ?? "solid"}
-                            onChange={(event) =>
-                              setAppearance((current) => ({
-                                ...current,
-                                seriesStyles: {
-                                  ...current.seriesStyles,
-                                  [item.visualSeriesKey]: {
-                                    ...current.seriesStyles[item.visualSeriesKey],
-                                    lineStyle: event.target.value as "solid" | "dashed" | "dotted",
-                                  },
-                                },
-                              }))
-                            }
-                          >
-                            <option value="solid">実線</option>
-                            <option value="dashed">破線</option>
-                            <option value="dotted">点線</option>
-                          </select>
-                        </label>
-                        <label className="experiment-graph-field">
-                          <span>
-                            線幅：{(style.lineWidth ?? appearance.summaryLineWidth).toFixed(1)}
-                          </span>
-                          <input
-                            aria-label={`${item.visualSeriesLabel}の線幅`}
-                            type="range"
-                            min="0.5"
-                            max="8"
-                            step="0.5"
-                            value={style.lineWidth ?? appearance.summaryLineWidth}
-                            onChange={(event) =>
-                              setAppearance((current) => ({
-                                ...current,
-                                seriesStyles: {
-                                  ...current.seriesStyles,
-                                  [item.visualSeriesKey]: {
-                                    ...current.seriesStyles[item.visualSeriesKey],
-                                    lineWidth: Number(event.target.value),
-                                  },
-                                },
-                              }))
-                            }
-                          />
-                        </label>
-                        <label className="experiment-graph-field">
-                          <span>点</span>
-                          <select
-                            value={style.pointStyle ?? "circle"}
-                            onChange={(event) =>
-                              setAppearance((current) => ({
-                                ...current,
-                                seriesStyles: {
-                                  ...current.seriesStyles,
-                                  [item.visualSeriesKey]: {
-                                    ...current.seriesStyles[item.visualSeriesKey],
-                                    pointStyle: event.target.value as
-                                      "circle" | "square" | "triangle" | "diamond",
-                                  },
-                                },
-                              }))
-                            }
-                          >
-                            <option value="circle">丸</option>
-                            <option value="square">四角</option>
-                            <option value="triangle">三角</option>
-                            <option value="diamond">菱形</option>
-                          </select>
-                        </label>
-                        <label className="experiment-graph-field">
-                          <span>順序</span>
-                          <input
-                            type="number"
-                            value={style.order ?? index}
-                            onChange={(event) =>
-                              setAppearance((current) => ({
-                                ...current,
-                                seriesStyles: {
-                                  ...current.seriesStyles,
-                                  [item.visualSeriesKey]: {
-                                    ...current.seriesStyles[item.visualSeriesKey],
-                                    order: Number(event.target.value),
-                                  },
-                                },
-                              }))
-                            }
-                          />
-                        </label>
-                      </fieldset>
-                    );
-                  })
-                : null}
-            </section>
+            <ExperimentGraphSeriesEditor
+              mode={inspectorTarget}
+              layers={layers}
+              appearance={appearance}
+              visualSeriesOptions={visualSeriesOptions}
+              setLayers={setLayers}
+              setAppearance={setAppearance}
+            />
           ) : null}
 
           {inspectorTarget === "violin" ? (
