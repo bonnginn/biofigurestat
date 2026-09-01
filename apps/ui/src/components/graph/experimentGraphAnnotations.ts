@@ -162,6 +162,63 @@ export function isPairwiseComparisonTest(testName: string): boolean {
   );
 }
 
+type AnnotationLineageInput = Readonly<{
+  sourceMode: "raw_readout" | "derived_metric";
+  timeAnalysis: TimeAnalysisPlan;
+  analysisTimePointId: string | null;
+}>;
+
+function createAnnotationLineage(
+  input: AnnotationLineageInput,
+): StatisticsAnnotationEntry["lineage"] {
+  return {
+    ...(input.sourceMode === "derived_metric" ? { derivedMetric: input.timeAnalysis.kind } : {}),
+    ...(input.analysisTimePointId ? { timePointId: input.analysisTimePointId } : {}),
+    ...(input.timeAnalysis.kind !== "selected_timepoint"
+      ? {
+          endpoint: input.timeAnalysis.kind,
+          ...(input.timeAnalysis.windowStart === undefined
+            ? {}
+            : { windowStart: input.timeAnalysis.windowStart }),
+          ...(input.timeAnalysis.windowEnd === undefined
+            ? {}
+            : { windowEnd: input.timeAnalysis.windowEnd }),
+        }
+      : {}),
+  };
+}
+
+export function createSelectedComparisonAnnotation(
+  input: AnnotationLineageInput &
+    Readonly<{
+      test: AnalysisEngineResult["tests"][number];
+      testIndex: number;
+      requestId: string;
+      mode: StatisticsAnnotationEntry["mode"] | "hidden";
+    }>,
+): StatisticsAnnotationEntry {
+  const [, firstConditionId, secondConditionId] = input.test.name.split(":");
+  return {
+    id: `annotation.${input.testIndex}`,
+    analysisId: input.requestId,
+    comparisonId: input.test.name,
+    testIndex: input.testIndex,
+    mode: input.mode === "hidden" ? "symbol" : input.mode,
+    showNonSignificant: true,
+    presentation: "bracket",
+    ...(firstConditionId && secondConditionId
+      ? {
+          endpoints: [
+            { conditionId: firstConditionId },
+            { conditionId: secondConditionId },
+          ] as const,
+        }
+      : {}),
+    pValueStatus: input.test.adjustedPValue === null ? "unadjusted" : "adjusted",
+    lineage: createAnnotationLineage(input),
+  };
+}
+
 export function createAdjustedComparisonAnnotation(
   input: Readonly<{
     test: AnalysisEngineResult["tests"][number];
@@ -185,20 +242,6 @@ export function createAdjustedComparisonAnnotation(
     presentation: "bracket",
     endpoints: [{ conditionId: firstConditionId }, { conditionId: secondConditionId }],
     pValueStatus: "adjusted",
-    lineage: {
-      ...(input.sourceMode === "derived_metric" ? { derivedMetric: input.timeAnalysis.kind } : {}),
-      ...(input.analysisTimePointId ? { timePointId: input.analysisTimePointId } : {}),
-      ...(input.timeAnalysis.kind !== "selected_timepoint"
-        ? {
-            endpoint: input.timeAnalysis.kind,
-            ...(input.timeAnalysis.windowStart === undefined
-              ? {}
-              : { windowStart: input.timeAnalysis.windowStart }),
-            ...(input.timeAnalysis.windowEnd === undefined
-              ? {}
-              : { windowEnd: input.timeAnalysis.windowEnd }),
-          }
-        : {}),
-    },
+    lineage: createAnnotationLineage(input),
   };
 }

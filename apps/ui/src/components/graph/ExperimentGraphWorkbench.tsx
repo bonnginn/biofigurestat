@@ -81,6 +81,7 @@ import {
 } from "./experimentGraphUserExports";
 import {
   analysisTestAnnotationLabel,
+  createSelectedComparisonAnnotation,
   graphAnnotationContext,
   timeMetricLabel,
 } from "./experimentGraphAnnotations";
@@ -103,7 +104,6 @@ import {
 } from "./experimentGraphPresentation";
 import "./graph-workbench.css";
 
-type StatisticsAnnotationEntry = NonNullable<WorkspaceGraphState["statisticsAnnotations"]>[number];
 export type ExperimentGraphWorkbenchProps = Readonly<{
   draft: ExperimentSetDraft;
   cells: ExperimentCellMap;
@@ -917,43 +917,15 @@ export function ExperimentGraphWorkbench({
               onAddSelectedComparison={() => {
                 const test = analysisResult.tests[statisticsAnnotation.testIndex];
                 if (!test) return;
-                const [, firstConditionId, secondConditionId] = test.name.split(":");
-                const next: StatisticsAnnotationEntry = {
-                  id: `annotation.${statisticsAnnotation.testIndex}`,
-                  analysisId: analysisResult.requestId,
-                  comparisonId: test.name,
+                const next = createSelectedComparisonAnnotation({
+                  test,
                   testIndex: statisticsAnnotation.testIndex,
-                  mode:
-                    statisticsAnnotation.mode === "hidden" ? "symbol" : statisticsAnnotation.mode,
-                  showNonSignificant: true,
-                  presentation: "bracket",
-                  ...(firstConditionId && secondConditionId
-                    ? {
-                        endpoints: [
-                          { conditionId: firstConditionId },
-                          { conditionId: secondConditionId },
-                        ] as const,
-                      }
-                    : {}),
-                  pValueStatus: test.adjustedPValue === null ? "unadjusted" : "adjusted",
-                  lineage: {
-                    ...(sourceMode === "derived_metric"
-                      ? { derivedMetric: timeAnalysis.kind }
-                      : {}),
-                    ...(analysisTimePointId ? { timePointId: analysisTimePointId } : {}),
-                    ...(timeAnalysis.kind !== "selected_timepoint"
-                      ? {
-                          endpoint: timeAnalysis.kind,
-                          ...(timeAnalysis.windowStart === undefined
-                            ? {}
-                            : { windowStart: timeAnalysis.windowStart }),
-                          ...(timeAnalysis.windowEnd === undefined
-                            ? {}
-                            : { windowEnd: timeAnalysis.windowEnd }),
-                        }
-                      : {}),
-                  },
-                };
+                  requestId: analysisResult.requestId,
+                  mode: statisticsAnnotation.mode,
+                  sourceMode,
+                  timeAnalysis,
+                  analysisTimePointId,
+                });
                 setStatisticsAnnotations((current) => [
                   ...current.filter(({ testIndex }) => testIndex !== next.testIndex),
                   next,
