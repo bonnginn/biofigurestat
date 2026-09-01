@@ -470,6 +470,13 @@ feedback boundary. CSV composition and visible-series serialization are unchange
 the orchestration workbench to 898 lines; the 57 focused Workbench/export tests, UI typecheck, and
 focused lint pass.
 
+The remaining X/Y-axis and Statistics inspector ordering now has explicit composition components.
+The workspace still owns axes, appearance, analysis selection, recommendation, request execution,
+and annotation state; the extracted components only select the appropriate editor and preserve the
+existing time-selection → scope notice → Statistics panel → saved-annotation order. This reduces
+the workbench to 892 lines. The existing 61 axis and 63 Statistics/Workbench focused tests pass,
+with UI typecheck and focused lint passing; no move-only test was added.
+
 Regression verification now has an explicit cost-aware cadence in
 `docs/agent/REGRESSION_TEST_POLICY.md`. Full UI runs are reserved for meaningful batches,
 high-risk schema/scientific/persistence changes, handoff, and release gates; small extractions use
@@ -502,8 +509,9 @@ next batch boundary rather than immediately repeating roughly six minutes of wor
   presentation state, data-selection state, analysis/annotation state, display-preset/type
   transitions, active
   layer descriptions, active scope, and persisted-snapshot projection are also separated.
-  Remaining benchmark finalization is the next bounded orchestration candidate; it must retain
-  evidence semantics and stay isolated from ordinary product state.
+  Axis and Statistics inspector composition are now separate as well. Remaining benchmark
+  finalization is the next bounded orchestration candidate; it must retain evidence semantics and
+  stay isolated from ordinary product state.
 - Spreadsheet implementations still include legacy and canonical surfaces, but their keyboard
   focus, row-major Tab movement, zoom, clipboard parsing, finite numeric parsing, proportion
   display, and ID/scalar/append-value draft synchronization now use shared primitives. Remaining
