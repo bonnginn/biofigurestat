@@ -1,10 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { resetAppLocaleForTests } from "../../app/appLocale";
+import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
 import type { ExperimentSetDraft } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
 import { ExperimentGraphXAxisEditor } from "./ExperimentGraphXAxisEditor";
 
 type AxisSettings = WorkspaceGraphState["axes"];
@@ -114,5 +115,13 @@ describe("ExperimentGraphXAxisEditor", () => {
     rerender(<Harness graphType="bar" />);
     expect(screen.getByLabelText("棒の輪郭線を表示")).toBeEnabled();
     expect(screen.getByLabelText("棒の幅")).toBeEnabled();
+  });
+
+  it("contains no fixed Japanese copy in English", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<Harness />);
+
+    expect(screen.getByLabelText("X-axis meaning")).toBeVisible();
+    expectNoJapaneseUi(view.container);
   });
 });

@@ -50,9 +50,9 @@ export function ExperimentGraphXAxisEditor({
       {hasOrderedAxis ? (
         <>
           <label className="experiment-graph-field">
-            <span>X軸の意味</span>
+            <span>{t("X軸の意味", "X-axis meaning")}</span>
             <select
-              aria-label="X軸の意味"
+              aria-label={t("X軸の意味", "X-axis meaning")}
               value={axes.xSemantic}
               onChange={(event) =>
                 setAxes((current) => ({
@@ -67,15 +67,15 @@ export function ExperimentGraphXAxisEditor({
                 }))
               }
             >
-              <option value="time">時間</option>
-              <option value="numeric_covariate">数値共変量</option>
-              <option value="categorical">カテゴリ</option>
+              <option value="time">{t("時間", "Time")}</option>
+              <option value="numeric_covariate">{t("数値共変量", "Numeric covariate")}</option>
+              <option value="categorical">{t("カテゴリ", "Category")}</option>
             </select>
           </label>
           <label className="experiment-graph-field">
             <span>{t("X軸タイトル", "X-axis title")}</span>
             <input
-              aria-label="X軸タイトル"
+              aria-label={t("X軸タイトル", "X-axis title")}
               type="text"
               value={axes.xTitle}
               onChange={(event) =>
@@ -84,9 +84,9 @@ export function ExperimentGraphXAxisEditor({
             />
           </label>
           <label className="experiment-graph-field">
-            <span>X軸単位</span>
+            <span>{t("X軸単位", "X-axis unit")}</span>
             <input
-              aria-label="X軸単位"
+              aria-label={t("X軸単位", "X-axis unit")}
               type="text"
               value={axes.xUnit}
               onChange={(event) =>
@@ -97,7 +97,7 @@ export function ExperimentGraphXAxisEditor({
           {axes.xSemantic !== "categorical" ? (
             <>
               <label className="experiment-graph-field">
-                <span>Xスケール</span>
+                <span>{t("Xスケール", "X scale")}</span>
                 <select
                   value={axes.xScale ?? "linear"}
                   onChange={(event) =>
@@ -112,7 +112,7 @@ export function ExperimentGraphXAxisEditor({
                 </select>
               </label>
               <label className="experiment-graph-field">
-                <span>X範囲</span>
+                <span>{t("X範囲", "X range")}</span>
                 <select
                   value={axes.xRangeMode ?? "auto"}
                   onChange={(event) =>
@@ -122,14 +122,14 @@ export function ExperimentGraphXAxisEditor({
                     }))
                   }
                 >
-                  <option value="auto">自動</option>
-                  <option value="manual">手動</option>
+                  <option value="auto">{t("自動", "Automatic")}</option>
+                  <option value="manual">{t("手動", "Manual")}</option>
                 </select>
               </label>
               {axes.xRangeMode === "manual" ? (
                 <div className="experiment-graph-range-grid">
                   <label className="experiment-graph-field">
-                    <span>最小</span>
+                    <span>{t("最小", "Minimum")}</span>
                     <input
                       type="number"
                       value={axes.xMin ?? ""}
@@ -142,7 +142,7 @@ export function ExperimentGraphXAxisEditor({
                     />
                   </label>
                   <label className="experiment-graph-field">
-                    <span>最大</span>
+                    <span>{t("最大", "Maximum")}</span>
                     <input
                       type="number"
                       value={axes.xMax ?? ""}
@@ -157,7 +157,7 @@ export function ExperimentGraphXAxisEditor({
                 </div>
               ) : null}
               <label className="experiment-graph-field">
-                <span>X目盛</span>
+                <span>{t("X目盛", "X ticks")}</span>
                 <select
                   value={axes.xTickMode ?? "auto"}
                   onChange={(event) =>
@@ -167,13 +167,13 @@ export function ExperimentGraphXAxisEditor({
                     }))
                   }
                 >
-                  <option value="auto">自動</option>
-                  <option value="manual">手動間隔</option>
+                  <option value="auto">{t("自動", "Automatic")}</option>
+                  <option value="manual">{t("手動間隔", "Manual interval")}</option>
                 </select>
               </label>
               {axes.xTickMode === "manual" ? (
                 <label className="experiment-graph-field">
-                  <span>目盛間隔</span>
+                  <span>{t("目盛間隔", "Tick interval")}</span>
                   <input
                     type="number"
                     min="0"
@@ -193,7 +193,7 @@ export function ExperimentGraphXAxisEditor({
                 <input
                   type="checkbox"
                   checked={axes.showMinorTicks ?? true}
-                  aria-label="補助目盛を表示"
+                  aria-label={t("補助目盛を表示", "Show minor ticks")}
                   onChange={(event) =>
                     setAxes((current) => ({
                       ...current,
@@ -201,7 +201,9 @@ export function ExperimentGraphXAxisEditor({
                     }))
                   }
                 />
-                <span>補助目盛を表示（グリッド線なし）</span>
+                <span>
+                  {t("補助目盛を表示（グリッド線なし）", "Show minor ticks (without grid lines)")}
+                </span>
               </label>
             </>
           ) : null}
@@ -211,7 +213,7 @@ export function ExperimentGraphXAxisEditor({
         <input
           type="checkbox"
           checked={appearance.hierarchicalLabels}
-          aria-label="条件属性を階層表示"
+          aria-label={t("条件属性を階層表示", "Show condition attributes as hierarchy")}
           onChange={(event) =>
             setAppearance((current) => ({
               ...current,
@@ -219,13 +221,18 @@ export function ExperimentGraphXAxisEditor({
             }))
           }
         />
-        <span>条件属性を個別の階層として表示</span>
+        <span>
+          {t(
+            "条件属性を個別の階層として表示",
+            "Show condition attributes as separate hierarchy levels",
+          )}
+        </span>
       </label>
       <label className="experiment-graph-checkbox">
         <input
           type="checkbox"
           checked={axes.showCategoryLabels}
-          aria-label="カテゴリラベルを表示"
+          aria-label={t("カテゴリラベルを表示", "Show category labels")}
           onChange={(event) =>
             setAxes((current) => ({
               ...current,
@@ -233,12 +240,12 @@ export function ExperimentGraphXAxisEditor({
             }))
           }
         />
-        <span>カテゴリと階層ラベルを表示</span>
+        <span>{t("カテゴリと階層ラベルを表示", "Show category and hierarchy labels")}</span>
       </label>
       <label className="experiment-graph-field">
-        <span>軸目盛の向き</span>
+        <span>{t("軸目盛の向き", "Tick direction")}</span>
         <select
-          aria-label="軸目盛の向き"
+          aria-label={t("軸目盛の向き", "Tick direction")}
           value={axes.tickDirection ?? "outside"}
           onChange={(event) =>
             setAxes((current) => ({
@@ -247,8 +254,8 @@ export function ExperimentGraphXAxisEditor({
             }))
           }
         >
-          <option value="outside">グラフの外側</option>
-          <option value="inside">グラフの内側</option>
+          <option value="outside">{t("グラフの外側", "Outside the graph")}</option>
+          <option value="inside">{t("グラフの内側", "Inside the graph")}</option>
         </select>
       </label>
       {axes.xSemantic === "categorical" && groupingXSource === "factor" ? (
@@ -256,7 +263,7 @@ export function ExperimentGraphXAxisEditor({
           <input
             type="checkbox"
             checked={axes.showCategoryGroupSeparators ?? false}
-            aria-label="X軸のグループ境界を表示"
+            aria-label={t("X軸のグループ境界を表示", "Show X-axis group boundaries")}
             onChange={(event) =>
               setAxes((current) => ({
                 ...current,
@@ -264,11 +271,11 @@ export function ExperimentGraphXAxisEditor({
               }))
             }
           />
-          <span>X軸のグループ境界を表示</span>
+          <span>{t("X軸のグループ境界を表示", "Show X-axis group boundaries")}</span>
         </label>
       ) : null}
       <label className="experiment-graph-field">
-        <span>カテゴリラベル角度</span>
+        <span>{t("カテゴリラベル角度", "Category-label angle")}</span>
         <select
           value={axes.categoryLabelRotation ?? "none"}
           onChange={(event) =>
@@ -280,7 +287,7 @@ export function ExperimentGraphXAxisEditor({
             }))
           }
         >
-          <option value="none">水平</option>
+          <option value="none">{t("水平", "Horizontal")}</option>
           <option value="minus_30">−30°</option>
           <option value="minus_45">−45°</option>
           <option value="minus_90">−90°</option>
@@ -291,7 +298,7 @@ export function ExperimentGraphXAxisEditor({
           type="checkbox"
           checked={appearance.barOutline ?? true}
           disabled={graphType !== "bar"}
-          aria-label="棒の輪郭線を表示"
+          aria-label={t("棒の輪郭線を表示", "Show bar outlines")}
           onChange={(event) =>
             setAppearance((current) => ({
               ...current,
@@ -299,14 +306,14 @@ export function ExperimentGraphXAxisEditor({
             }))
           }
         />
-        <span>棒の輪郭線を表示</span>
+        <span>{t("棒の輪郭線を表示", "Show bar outlines")}</span>
       </label>
       <label className="experiment-graph-checkbox">
         <input
           type="checkbox"
           checked={appearance.barMeanMarker ?? false}
           disabled={graphType !== "bar"}
-          aria-label="棒に平均マーカーを重ねる"
+          aria-label={t("棒に平均マーカーを重ねる", "Overlay mean markers on bars")}
           onChange={(event) =>
             setAppearance((current) => ({
               ...current,
@@ -314,12 +321,15 @@ export function ExperimentGraphXAxisEditor({
             }))
           }
         />
-        <span>棒に平均マーカーを重ねる</span>
+        <span>{t("棒に平均マーカーを重ねる", "Overlay mean markers on bars")}</span>
       </label>
       <label className="experiment-graph-field">
-        <span>カテゴリ間隔：{axes.spacing.toFixed(1)}</span>
+        <span>
+          {t("カテゴリ間隔：", "Category spacing: ")}
+          {axes.spacing.toFixed(1)}
+        </span>
         <input
-          aria-label="カテゴリ間隔"
+          aria-label={t("カテゴリ間隔", "Category spacing")}
           type="range"
           min="0.7"
           max="1.6"
@@ -334,9 +344,12 @@ export function ExperimentGraphXAxisEditor({
         />
       </label>
       <label className="experiment-graph-field">
-        <span>棒の幅：{appearance.barWidth.toFixed(2)}</span>
+        <span>
+          {t("棒の幅：", "Bar width: ")}
+          {appearance.barWidth.toFixed(2)}
+        </span>
         <input
-          aria-label="棒の幅"
+          aria-label={t("棒の幅", "Bar width")}
           type="range"
           min="0.25"
           max="1"
@@ -352,9 +365,12 @@ export function ExperimentGraphXAxisEditor({
         />
       </label>
       <label className="experiment-graph-field">
-        <span>系列内：{appearance.withinGroupSpacing.toFixed(2)}</span>
+        <span>
+          {t("系列内：", "Within series: ")}
+          {appearance.withinGroupSpacing.toFixed(2)}
+        </span>
         <input
-          aria-label="系列内の間隔"
+          aria-label={t("系列内の間隔", "Within-series spacing")}
           type="range"
           min="0.4"
           max="1.4"
@@ -369,9 +385,12 @@ export function ExperimentGraphXAxisEditor({
         />
       </label>
       <label className="experiment-graph-field">
-        <span>X群間：{appearance.betweenGroupSpacing.toFixed(2)}</span>
+        <span>
+          {t("X群間：", "Between X groups: ")}
+          {appearance.betweenGroupSpacing.toFixed(2)}
+        </span>
         <input
-          aria-label="X群間の間隔"
+          aria-label={t("X群間の間隔", "Between-X-group spacing")}
           type="range"
           min="0.8"
           max="2.4"
@@ -386,12 +405,15 @@ export function ExperimentGraphXAxisEditor({
         />
       </label>
       <label className="experiment-graph-field">
-        <span>階層ラベル文字：{appearance.hierarchyFontSize}px</span>
+        <span>
+          {t("階層ラベル文字：", "Hierarchy-label text: ")}
+          {appearance.hierarchyFontSize}px
+        </span>
         <input
           type="range"
           min="9"
           max="24"
-          aria-label="階層ラベルの文字サイズ"
+          aria-label={t("階層ラベルの文字サイズ", "Hierarchy-label font size")}
           value={appearance.hierarchyFontSize}
           onChange={(event) =>
             setAppearance((current) => ({
@@ -402,34 +424,35 @@ export function ExperimentGraphXAxisEditor({
         />
       </label>
       <div className="experiment-graph-hierarchy-order">
-        <strong>階層の順序</strong>
-        {(axes.hierarchyOrder.length > 0 ? axes.hierarchyOrder : attributes.map(({ id }) => id)).map(
-          (attributeId, index, order) => {
-            const attribute = attributes.find(({ id }) => id === attributeId);
-            if (!attribute) return null;
-            return (
-              <div key={attributeId}>
-                <span>{attribute.label}</span>
-                <button
-                  type="button"
-                  disabled={index === 0}
-                  aria-label={`${attribute.label}を上へ`}
-                  onClick={() => moveHierarchy(attributeId, -1)}
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  disabled={index === order.length - 1}
-                  aria-label={`${attribute.label}を下へ`}
-                  onClick={() => moveHierarchy(attributeId, 1)}
-                >
-                  ↓
-                </button>
-              </div>
-            );
-          },
-        )}
+        <strong>{t("階層の順序", "Hierarchy order")}</strong>
+        {(axes.hierarchyOrder.length > 0
+          ? axes.hierarchyOrder
+          : attributes.map(({ id }) => id)
+        ).map((attributeId, index, order) => {
+          const attribute = attributes.find(({ id }) => id === attributeId);
+          if (!attribute) return null;
+          return (
+            <div key={attributeId}>
+              <span>{attribute.label}</span>
+              <button
+                type="button"
+                disabled={index === 0}
+                aria-label={t(`${attribute.label}を上へ`, `Move ${attribute.label} up`)}
+                onClick={() => moveHierarchy(attributeId, -1)}
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                disabled={index === order.length - 1}
+                aria-label={t(`${attribute.label}を下へ`, `Move ${attribute.label} down`)}
+                onClick={() => moveHierarchy(attributeId, 1)}
+              >
+                ↓
+              </button>
+            </div>
+          );
+        })}
       </div>
     </>
   );
