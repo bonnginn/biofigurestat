@@ -53,6 +53,10 @@ export type DraftAnalysisAssessment = Readonly<{
   statisticalNDefinition?: string;
   analysisSetSummary?: string;
   graphAnalysisSetDifference?: string;
+  matchedAnalysisSet?: Readonly<{
+    completePairCount: number;
+    unmatchedObservationCount: number;
+  }>;
   missingCount: number;
   notPlannedCount: number;
   request: AnalysisEngineRequest | null;
@@ -776,6 +780,10 @@ export function assessDraftGraphAnalysis(input: {
             unmatchedObservationCount > 0
               ? "Graphには入力済みの観測を残します。統計解析だけが完全な対応組に限定されます。"
               : "Graphと統計解析は、同じ完全な対応組を使用します。",
+          matchedAnalysisSet: {
+            completePairCount: completePairIds.size,
+            unmatchedObservationCount,
+          },
         }
       : {}),
   };
@@ -1053,10 +1061,7 @@ export function assessDraftGraphAnalysis(input: {
         ? attributeId
         : `factor.${attributeId}`;
     };
-    const canonicalLevelId = (
-      attributeId: string,
-      levelIndex: number,
-    ): string => {
+    const canonicalLevelId = (attributeId: string, levelIndex: number): string => {
       const adaptiveKey = attributeId.startsWith("factor.")
         ? attributeId.slice("factor.".length)
         : "";
@@ -1109,8 +1114,8 @@ export function assessDraftGraphAnalysis(input: {
       method: "two_way_anova",
       factors: varyingAttributes.map((attribute, factorIndex) => ({
         factorId: canonicalFactorId(attribute.id),
-        levelIds: factorLevels[factorIndex].map(
-          (_level, levelIndex) => canonicalLevelId(attribute.id, levelIndex),
+        levelIds: factorLevels[factorIndex].map((_level, levelIndex) =>
+          canonicalLevelId(attribute.id, levelIndex),
         ),
       })),
       conditions: factorialConditions,

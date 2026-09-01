@@ -467,6 +467,42 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
     expect(within(expanded).getByText("24")).toBeVisible();
   });
 
+  it("renders the contract-driven record-entry form entirely in English", () => {
+    act(() => setAppLocale("en"));
+    const orderedContract = makeContract({
+      identities: [{ key: "unit_id", label: "Dish ID", unitLevelKey: "unit", required: true }],
+      orderedAxes: [
+        {
+          key: "time",
+          label: "Time",
+          unit: "hour",
+          levels: [0, 24],
+          sampling: "repeated_same_identity",
+          identityRetained: true,
+        },
+      ],
+      readouts: [
+        {
+          key: "signal",
+          label: "Signal",
+          valueType: "scalar",
+          representation: "scalar",
+          componentKeys: ["value"],
+          referenceRole: "none",
+          observationLevelKey: "unit",
+          axisKeys: ["time"],
+        },
+      ],
+    });
+
+    const view = render(<Harness contract={orderedContract} initialObservations={[]} />);
+
+    const form = screen.getByRole("form", { name: "Add a new measurement record" });
+    expect(within(form).getByRole("heading", { name: "New measurement record" })).toBeVisible();
+    expect(within(form).getByRole("button", { name: "Add measurement row" })).toBeVisible();
+    expectNoJapaneseUi(view.container);
+  });
+
   it("pastes identity and measurement rectangles in the all-values spreadsheet", () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
@@ -865,9 +901,7 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "横一行は条件ごとの値を見やすく並べる表示位置",
     );
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "同じ実験日・実験回・pairを意味しません",
-    );
+    expect(screen.getByRole("status")).toHaveTextContent("同じ実験日・実験回・pairを意味しません");
     expect(screen.getByRole("status")).toHaveTextContent(
       "この表示では条件ごとの実験日は入力できません",
     );

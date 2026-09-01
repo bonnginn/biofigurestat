@@ -437,9 +437,7 @@ describe("GraphStatisticsPanel validation repair routes", () => {
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
 
     expect(await screen.findByText("重要な注意（2件）")).toBeVisible();
-    expect(
-      screen.getByText(/対応する各実験単位について条件間の差を計算/),
-    ).toBeVisible();
+    expect(screen.getByText(/対応する各実験単位について条件間の差を計算/)).toBeVisible();
     expect(screen.queryByText("paired_difference_distribution")).toBeNull();
     const details = container.querySelector(".experiment-graph-analysis-diagnostics");
     expect(details).toHaveAttribute("open");
@@ -588,6 +586,53 @@ describe("GraphStatisticsPanel validation repair routes", () => {
     expect(onCorrectionRequested).toHaveBeenCalledWith(
       assessment.inputDiagnostics?.[0]?.correction,
     );
+  });
+
+  it("localizes matched analysis-set and incomplete-set diagnostics from legacy Japanese runtime copy", () => {
+    act(() => setAppLocale("en"));
+    const assessment: DraftAnalysisAssessment = {
+      ...readyAssessment,
+      missingCount: 1,
+      analysisSetSummary:
+        "完全な対応組 1組を統計解析に使います。対応相手がそろわない観測 1件は解析から除外します。",
+      graphAnalysisSetDifference:
+        "Graphには入力済みの観測を残します。統計解析だけが完全な対応組に限定されます。",
+      matchedAnalysisSet: {
+        completePairCount: 1,
+        unmatchedObservationCount: 1,
+      },
+      inputDiagnostics: [
+        {
+          code: "INCOMPLETE_MATCHED_SET",
+          title: "対応がそろっていない組が1組あります",
+          message:
+            "完全な組だけを対応解析に使い、不完全な組の入力値と実験設計は保持します。独立群には読み替えません。",
+          incompleteMatchedSets: [
+            {
+              pairId: "mouse.1",
+              experimentId: "experiment.1",
+              experimentLabel: "Mouse 1",
+              missingConditions: [{ conditionId: "condition.drug", label: "Drug" }],
+            },
+          ],
+        },
+      ],
+    };
+    const view = render(
+      <GraphStatisticsPanel
+        assessment={assessment}
+        design={panelDesign(defaultConditionOptions, "matched")}
+        analysisRunner={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(/1 complete matched pair will be used/);
+    expect(screen.getByText("1 matched set is incomplete")).toBeVisible();
+    fireEvent.click(screen.getByText("1 matched set is incomplete"));
+    expect(
+      screen.getByRole("list", { name: "Missing conditions by stable unit / pair ID" }),
+    ).toHaveTextContent("mouse.1 (Mouse 1): Drug");
+    expectNoJapaneseUi(view.container);
   });
 
   it("asks the Case 3 run/source question before enabling an independent dish analysis", () => {

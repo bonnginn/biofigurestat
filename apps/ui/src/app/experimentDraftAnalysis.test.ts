@@ -302,6 +302,10 @@ describe("temporary experiment-first analysis adapter", () => {
     expect(assessment.analysisSetSummary).toBe(
       "完全な対応組 2組を統計解析に使います。対応相手がそろわない観測 1件は解析から除外します。",
     );
+    expect(assessment.matchedAnalysisSet).toEqual({
+      completePairCount: 2,
+      unmatchedObservationCount: 1,
+    });
     expect(assessment.graphAnalysisSetDifference).toContain("Graphには入力済みの観測を残します");
   });
 
