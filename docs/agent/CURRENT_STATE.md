@@ -521,6 +521,10 @@ The nonlinear-fit/observed-X/Y renderer also uses the shared plot rectangle for 
 ticks, legend anchors, and the X-title center. Its authoritative fitted curves and raw XY points
 are unchanged. The focused nonlinear/layout group passes 11 tests with UI typecheck and lint.
 
+The legacy Results dot/grouped and correlation renderers now use the same plot rectangle too.
+Their biological-unit points, pairing lines, factor-level grouping, error bars, and correlation
+pairs are unchanged. The focused Results/layout group passes 13 tests with UI typecheck and lint.
+
 ## Known bounded gaps
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
