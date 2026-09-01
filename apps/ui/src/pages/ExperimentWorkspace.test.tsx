@@ -574,7 +574,7 @@ describe("ExperimentWorkspace", () => {
     expect(onOpenProject).toHaveBeenCalledTimes(1);
   });
 
-  it("enters an X-Y pair directly and creates a scatter graph from stable sample IDs", () => {
+  it("enters an X-Y pair directly and creates a scatter graph from stable sample IDs", async () => {
     const fixture = createXyCorrelationFixture();
     render(
       <ExperimentWorkspace
@@ -594,7 +594,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     expect(screen.getByRole("button", { name: "Scatterを選択（おすすめ）" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    const graph = screen.getByRole("img", { name: /散布図/ });
+    const graph = await screen.findByRole("img", { name: /散布図/ }, { timeout: 5_000 });
     expect(graph).toHaveAttribute("data-graph-type", "scatter");
     expect(graph.querySelectorAll("[data-experimental-unit]")).toHaveLength(5);
   });
@@ -684,7 +684,7 @@ describe("ExperimentWorkspace", () => {
     expect(target).toHaveValue(20);
   });
 
-  it("keeps category counts editable and creates a 100% stacked composition graph", () => {
+  it("keeps category counts editable and creates a 100% stacked composition graph", async () => {
     const fixture = createCategoricalCompositionFixture();
     render(
       <ExperimentWorkspace
@@ -705,7 +705,7 @@ describe("ExperimentWorkspace", () => {
       screen.getByRole("button", { name: "Category percentageを選択（おすすめ）" }),
     ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    const graph = screen.getByRole("img", { name: /カテゴリ構成グラフ/ });
+    const graph = await screen.findByRole("img", { name: /カテゴリ構成グラフ/ });
     expect(graph).toHaveAttribute("data-graph-type", "stacked_100");
     expect(graph.querySelectorAll('[data-graph-layer="category-stack"]')).not.toHaveLength(0);
   });
@@ -1040,7 +1040,7 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByText("作成後の初期表示")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     expect(document.querySelector(".experiment-workspace-body")).toHaveAttribute("hidden");
-    expect(screen.getByRole("region", { name: "実験からグラフを作成" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "実験からグラフを作成" })).toBeInTheDocument();
     await waitFor(() =>
       expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "auto", block: "start" }),
     );
@@ -1084,7 +1084,7 @@ describe("ExperimentWorkspace", () => {
     scrollTo.mockRestore();
   }, 15_000);
 
-  it("ネスト測定のViolin初期表示を観測分布と実験単位点だけに抑える", () => {
+  it("ネスト測定のViolin初期表示を観測分布と実験単位点だけに抑える", async () => {
     const fixture = createNestedContinuousFixture();
     render(
       <ExperimentWorkspace
@@ -1096,7 +1096,7 @@ describe("ExperimentWorkspace", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     chooseAndCreateGraph(/Violinを選択/);
-    const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
+    const graph = await screen.findByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="violin"]')).not.toHaveLength(0);
     expect(graph.querySelectorAll('[data-graph-layer="nested-raw"]')).not.toHaveLength(0);
     expect(graph.querySelectorAll('[data-graph-layer="nested-experiment"]')).not.toHaveLength(0);
@@ -1104,7 +1104,7 @@ describe("ExperimentWorkspace", () => {
     expect(graph.querySelectorAll('[data-graph-layer="nested-overall"]')).toHaveLength(0);
   });
 
-  it("縦断データには時間変化と分布の複数候補を示し、個体軌跡を初期表示する", () => {
+  it("縦断データには時間変化と分布の複数候補を示し、個体軌跡を初期表示する", async () => {
     const fixture = createLongitudinalFixture();
     render(
       <ExperimentWorkspace
@@ -1123,7 +1123,7 @@ describe("ExperimentWorkspace", () => {
     );
     expect(screen.getByRole("checkbox", { name: "同じ単位を結ぶ線" })).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
+    const graph = await screen.findByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="unit-trajectory"]')).toHaveLength(8);
     expect(graph.querySelector('[data-graph-layer="legend"]')).not.toBeNull();
     expect(graph).toHaveTextContent("Control");
@@ -1142,7 +1142,7 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("combobox", { name: "凡例の位置" })).toHaveValue("right");
   });
 
-  it("縦断データのAUCを元トレースと分けたGraph sourceとして作成する", () => {
+  it("縦断データのAUCを元トレースと分けたGraph sourceとして作成する", async () => {
     const fixture = createLongitudinalFixture();
     render(
       <ExperimentWorkspace
@@ -1167,7 +1167,7 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("button", { name: "対応を線で結ぶを選択（おすすめ）" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
 
-    expect(screen.getByText(/派生値：AUC（台形法）/)).toBeVisible();
+    expect(await screen.findByText(/派生値：AUC（台形法）/)).toBeVisible();
     fireEvent.change(screen.getByRole("combobox", { name: "編集対象" }), {
       target: { value: "data" },
     });
@@ -1180,7 +1180,7 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("table", { name: "派生値のラインネージ" })).toBeVisible();
   });
 
-  it("複数測定項目を作成時に明示し、別グラフのsourceとして独立保持する", () => {
+  it("複数測定項目を作成時に明示し、別グラフのsourceとして独立保持する", async () => {
     const fixture = createMultipleReadoutFixture();
     render(
       <ExperimentWorkspace
@@ -1198,7 +1198,7 @@ describe("ExperimentWorkspace", () => {
     const source = screen.getByRole("combobox", { name: "表示する測定項目" });
     expect(source).toHaveValue("readout.multi.proportion");
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    expect(screen.getByRole("combobox", { name: "測定項目" })).toHaveValue(
+    expect(await screen.findByRole("combobox", { name: "測定項目" })).toHaveValue(
       "readout.multi.proportion",
     );
 
@@ -1208,7 +1208,7 @@ describe("ExperimentWorkspace", () => {
     });
     expect(screen.getByRole("button", { name: /Violinを選択（おすすめ）/ })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    expect(screen.getByRole("img", { name: /蛍光強度/ })).toBeVisible();
+    expect(await screen.findByRole("img", { name: /蛍光強度/ })).toBeVisible();
     expect(screen.getByRole("combobox", { name: "測定項目" })).toHaveValue(
       "readout.multi.intensity",
     );
@@ -1219,7 +1219,7 @@ describe("ExperimentWorkspace", () => {
     );
   });
 
-  it("明示対応のfixtureを対応グラフの開始点として開く", () => {
+  it("明示対応のfixtureを対応グラフの開始点として開く", async () => {
     const fixture = createPairedTwoConditionFixture();
     render(
       <ExperimentWorkspace
@@ -1232,7 +1232,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     expect(screen.getByRole("button", { name: "対応を線で結ぶを選択（おすすめ）" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
+    const graph = await screen.findByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="unit-trajectory"]')).toHaveLength(4);
     fixture.draft.experiments.forEach((experiment) => {
       const stableUnitId = experiment.stableUnitId!;
@@ -1283,6 +1283,7 @@ describe("ExperimentWorkspace", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
+    await screen.findByRole("region", { name: "実験からグラフを作成" });
     fireEvent.click(screen.getByRole("button", { name: "統計" }));
     expect(screen.getByRole("region", { name: "統計ワークスペース" })).toBeVisible();
     expect(screen.queryByRole("combobox", { name: "編集対象" })).toBeNull();
@@ -1294,9 +1295,9 @@ describe("ExperimentWorkspace", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "グラフ (1)" }));
     expect(
-      screen
-        .getByRole("img", { name: /実験単位ごとのグラフ/ })
-        .querySelector('[data-graph-layer="statistics-annotation"]'),
+      (await screen.findByRole("img", { name: /実験単位ごとのグラフ/ })).querySelector(
+        '[data-graph-layer="statistics-annotation"]',
+      ),
     ).toHaveTextContent("p = 0.02");
 
     fireEvent.click(screen.getByRole("button", { name: "閉じる" }));
@@ -1339,7 +1340,7 @@ describe("ExperimentWorkspace", () => {
     expect(within(dialog).getByRole("button", { name: "このグラフを作成" })).toBeEnabled();
   });
 
-  it("Dot初期表示で個々の生物学的反復と平均・SDを表示する", () => {
+  it("Dot初期表示で個々の生物学的反復と平均・SDを表示する", async () => {
     const fixture = createComplexProportionFixture();
     render(
       <ExperimentWorkspace
@@ -1351,7 +1352,7 @@ describe("ExperimentWorkspace", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     chooseAndCreateGraph(/Dotを選択/);
-    const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
+    const graph = await screen.findByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="proportion-experiment"]')).not.toHaveLength(
       0,
     );

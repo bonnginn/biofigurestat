@@ -41,7 +41,6 @@ import {
   type TimeAnalysisPlan,
   type TimePointDraft,
 } from "../app/experimentDraft";
-import { ExperimentGraphWorkbench } from "../components/graph/ExperimentGraphWorkbench";
 import type { DraftAnalysisCorrection } from "../app/draftAnalysisDiagnostics";
 import {
   WorkspaceNestedMeasurementSheet,
@@ -97,6 +96,12 @@ const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
       })),
     )
   : null;
+
+const ExperimentGraphWorkbench = lazy(() =>
+  import("../components/graph/ExperimentGraphWorkbench").then(
+    ({ ExperimentGraphWorkbench: GraphWorkbench }) => ({ default: GraphWorkbench }),
+  ),
+);
 
 export type ExperimentWorkspaceProps = {
   initialDraft: ExperimentSetDraft;
@@ -555,7 +560,12 @@ function OverviewUnitSummaryMatrix({
       <div className="experiment-workspace-quick-entry-heading">
         <div>
           <h3 id="overview-quick-entry-heading">{t("まとめて入力", "Enter as a table")}</h3>
-          <p>{t("左上のセルを選び、Excelから行列をそのまま貼り付けられます。空欄はmissingとして保持します。", "Select the top-left cell and paste a rectangular range directly from Excel. Blank cells remain missing.")}</p>
+          <p>
+            {t(
+              "左上のセルを選び、Excelから行列をそのまま貼り付けられます。空欄はmissingとして保持します。",
+              "Select the top-left cell and paste a rectangular range directly from Excel. Blank cells remain missing.",
+            )}
+          </p>
         </div>
         <span>{t("Excel貼り付け対応", "Paste from Excel")}</span>
       </div>
@@ -676,8 +686,15 @@ function OverviewProportionMatrix({
     >
       <div className="experiment-workspace-quick-entry-heading">
         <div>
-          <h3 id="overview-proportion-quick-entry-heading">{t("まとめて入力", "Enter as a table")}</h3>
-          <p>{t("各条件は「陽性数・対象数」の2列です。Excelから矩形のまま貼り付けられ、割合は自動計算します。", "Each condition has two columns: positive count and total count. Paste a rectangle from Excel; percentages are calculated automatically.")}</p>
+          <h3 id="overview-proportion-quick-entry-heading">
+            {t("まとめて入力", "Enter as a table")}
+          </h3>
+          <p>
+            {t(
+              "各条件は「陽性数・対象数」の2列です。Excelから矩形のまま貼り付けられ、割合は自動計算します。",
+              "Each condition has two columns: positive count and total count. Paste a rectangle from Excel; percentages are calculated automatically.",
+            )}
+          </p>
         </div>
         <span>{t("Excel貼り付け対応", "Paste from Excel")}</span>
       </div>
@@ -910,7 +927,8 @@ function OverviewPanel({
     const groups = new Map<string, { label: string; units: Set<string>; observations: number }>();
     canonicalSpreadsheet.observations.forEach((observation) => {
       const factorValues = contract.factors.map(
-        ({ key, label }) => observation.factors[key]?.trim() || `${label}: ${t("未設定", "not set")}`,
+        ({ key, label }) =>
+          observation.factors[key]?.trim() || `${label}: ${t("未設定", "not set")}`,
       );
       const groupKey = JSON.stringify(factorValues);
       const group = groups.get(groupKey) ?? {
@@ -936,7 +954,9 @@ function OverviewPanel({
       <div className="experiment-workspace-panel-heading">
         <div>
           <p className="experiment-workspace-eyebrow">
-            {canonicalSpreadsheet || quickEntryReadout ? t("データ", "Data") : t("実験の確認", "Experiment review")}
+            {canonicalSpreadsheet || quickEntryReadout
+              ? t("データ", "Data")
+              : t("実験の確認", "Experiment review")}
           </p>
           <h2 id="experiment-overview-heading">
             {canonicalSpreadsheet
@@ -1005,21 +1025,37 @@ function OverviewPanel({
           }
         >
           <div className="experiment-workspace-progress-topline">
-            <strong>{t(`${canonicalSpreadsheet.observations.length}件の測定値`, `${canonicalSpreadsheet.observations.length} measurements`)}</strong>
+            <strong>
+              {t(
+                `${canonicalSpreadsheet.observations.length}件の測定値`,
+                `${canonicalSpreadsheet.observations.length} measurements`,
+              )}
+            </strong>
           </div>
           <p>
             {canonicalSpreadsheet.readOnly
-              ? t("元の表との対応を保ったまま、条件ごとの件数と個々の測定値を確認できます。", "Review counts by condition and individual measurements while retaining their source-table mapping.")
-              : t("条件ごとの件数が異なっていても、そのまま保持します。", "Unequal counts between conditions are retained as entered.")}
+              ? t(
+                  "元の表との対応を保ったまま、条件ごとの件数と個々の測定値を確認できます。",
+                  "Review counts by condition and individual measurements while retaining their source-table mapping.",
+                )
+              : t(
+                  "条件ごとの件数が異なっていても、そのまま保持します。",
+                  "Unequal counts between conditions are retained as entered.",
+                )}
           </p>
           {canonicalConditionSummaries.length ? (
-            <ul className="experiment-workspace-condition-counts" aria-label={t("条件ごとの入力件数", "Entry counts by condition")}>
+            <ul
+              className="experiment-workspace-condition-counts"
+              aria-label={t("条件ごとの入力件数", "Entry counts by condition")}
+            >
               {canonicalConditionSummaries.map(({ label, units, observations }) => (
                 <li key={label}>
                   <strong>{label}</strong>
                   <span>
                     {t("実験単位", "Experimental units")} n={units.size}
-                    {observations !== units.size ? t(` · 測定値 ${observations}件`, ` · ${observations} measurements`) : ""}
+                    {observations !== units.size
+                      ? t(` · 測定値 ${observations}件`, ` · ${observations} measurements`)
+                      : ""}
                   </span>
                 </li>
               ))}
@@ -1033,7 +1069,10 @@ function OverviewPanel({
         >
           <div className="experiment-workspace-progress-topline">
             <strong>
-              {t(`${completedCells} / ${plannedCells} セル入力済み`, `${completedCells} / ${plannedCells} cells entered`)}
+              {t(
+                `${completedCells} / ${plannedCells} セル入力済み`,
+                `${completedCells} / ${plannedCells} cells entered`,
+              )}
             </strong>
             <span>{progress}%</span>
           </div>
@@ -1042,11 +1081,19 @@ function OverviewPanel({
           </div>
           <p>
             {missingCells > 0
-              ? t(`未入力のセルが${missingCells}件あります。途中の状態でもグラフを作成できます。`, `${missingCells} cells are blank. You can create a Graph from partial data.`)
+              ? t(
+                  `未入力のセルが${missingCells}件あります。途中の状態でもグラフを作成できます。`,
+                  `${missingCells} cells are blank. You can create a Graph from partial data.`,
+                )
               : t("必要なセルがすべて入力されています。", "All required cells have been entered.")}
           </p>
           {notPlannedCells > 0 ? (
-            <p>{t(`測定予定なし：${notPlannedCells}セル（進捗・解析から除外）`, `Not planned: ${notPlannedCells} cells (excluded from progress and analysis)`)}</p>
+            <p>
+              {t(
+                `測定予定なし：${notPlannedCells}セル（進捗・解析から除外）`,
+                `Not planned: ${notPlannedCells} cells (excluded from progress and analysis)`,
+              )}
+            </p>
           ) : null}
         </div>
       )}
@@ -1243,12 +1290,12 @@ function OverviewPanel({
                   ? `About matched ${draft.conditionAssignment.unitLabel || "units"}`
                   : "About experiment numbers"
               : sharedSource
-              ? `${sharedSource.sourceUnitLabel}と条件別${draft.conditionAssignment.unitLabel}について`
-              : draft.conditionAssignment.kind === "matched"
-                ? `${draft.conditionAssignment.unitLabel || "対応単位"}について`
-                : independentAdaptiveInputRows(draft)
-                  ? "入力行について"
-                  : "Exp番号について"}
+                ? `${sharedSource.sourceUnitLabel}と条件別${draft.conditionAssignment.unitLabel}について`
+                : draft.conditionAssignment.kind === "matched"
+                  ? `${draft.conditionAssignment.unitLabel || "対応単位"}について`
+                  : independentAdaptiveInputRows(draft)
+                    ? "入力行について"
+                    : "Exp番号について"}
           </strong>
           <p>
             {locale === "en"
@@ -1260,12 +1307,12 @@ function OverviewPanel({
                     ? "Entry rows align values across conditions for display only. Values in the same row are not treated as the same subject or as a pair."
                     : "Exp 1, Exp 2, and so on organize experimental sessions. They do not statistically pair independent conditions."
               : sharedSource
-              ? `各行は1つの${sharedSource.sourceIdentityLabel}を表します。条件ごとの${draft.conditionAssignment.unitLabel}は別の実験単位で、同じ${sharedSource.sourceUnitLabel}に由来する組として対応づけます。`
-              : draft.conditionAssignment.kind === "matched"
-                ? `${draft.conditionAssignment.unitLabel || "対応単位"} 1、2…の各行では、同じ${draft.conditionAssignment.unitLabel || "単位"}の条件間測定を対応づけています。これらは実験回数ではありません。`
-                : independentAdaptiveInputRows(draft)
-                  ? "入力行1、2…は条件ごとの値を横に並べるための表示位置です。同じ行にある別条件の値を、同じ対象やpairとして扱いません。"
-                  : "Exp 1、Exp 2…は実験セッションを整理するための番号です。独立した条件同士を統計的に対応付けるものではありません。"}
+                ? `各行は1つの${sharedSource.sourceIdentityLabel}を表します。条件ごとの${draft.conditionAssignment.unitLabel}は別の実験単位で、同じ${sharedSource.sourceUnitLabel}に由来する組として対応づけます。`
+                : draft.conditionAssignment.kind === "matched"
+                  ? `${draft.conditionAssignment.unitLabel || "対応単位"} 1、2…の各行では、同じ${draft.conditionAssignment.unitLabel || "単位"}の条件間測定を対応づけています。これらは実験回数ではありません。`
+                  : independentAdaptiveInputRows(draft)
+                    ? "入力行1、2…は条件ごとの値を横に並べるための表示位置です。同じ行にある別条件の値を、同じ対象やpairとして扱いません。"
+                    : "Exp 1、Exp 2…は実験セッションを整理するための番号です。独立した条件同士を統計的に対応付けるものではありません。"}
           </p>
         </div>
       ) : null}
@@ -2955,8 +3002,7 @@ export function ExperimentWorkspace({
     [isDirty, locale, onRequestExit],
   );
 
-  const requestBack = () =>
-    requestExit(localizedText(locale, "前の画面に戻る", "go back"), onBack);
+  const requestBack = () => requestExit(localizedText(locale, "前の画面に戻る", "go back"), onBack);
 
   useEffect(() => {
     if (!showGraphTypeChoice) {
@@ -3841,7 +3887,9 @@ export function ExperimentWorkspace({
     const label = graphRenameDraft.trim() || t("名称未設定", "Untitled");
     setGraphs((current) =>
       current.map((graph) =>
-        graph.id === graphId ? { ...graph, displayName: label || t("名称未設定", "Untitled") } : graph,
+        graph.id === graphId
+          ? { ...graph, displayName: label || t("名称未設定", "Untitled") }
+          : graph,
       ),
     );
     setRenamingGraphId(null);
@@ -4109,7 +4157,9 @@ export function ExperimentWorkspace({
           ← {t("戻る", "Back")}
         </button>
         <div>
-          <p className="experiment-workspace-eyebrow">{t("実験ワークスペース", "Experiment workspace")}</p>
+          <p className="experiment-workspace-eyebrow">
+            {t("実験ワークスペース", "Experiment workspace")}
+          </p>
           <h1>{draft.name}</h1>
           <p className="experiment-workspace-context">
             {draft.context === "cell_culture"
@@ -4128,7 +4178,10 @@ export function ExperimentWorkspace({
         <div className="experiment-workspace-demo-banner" role="status">
           <strong>{t("合成デモデータ", "Synthetic demo data")}</strong>
           <span>
-            {t("学習・画面確認用の人工データです。実測・未発表データではなく、正式な研究結果として使用しないでください。", "These are artificial data for learning and interface review. They are not measured or unpublished research data and must not be used as formal research results.")}
+            {t(
+              "学習・画面確認用の人工データです。実測・未発表データではなく、正式な研究結果として使用しないでください。",
+              "These are artificial data for learning and interface review. They are not measured or unpublished research data and must not be used as formal research results.",
+            )}
           </span>
         </div>
       ) : null}
@@ -4160,7 +4213,10 @@ export function ExperimentWorkspace({
         </Suspense>
       ) : null}
 
-      <nav className="experiment-workspace-project-nav" aria-label={t("プロジェクト内の移動", "Project navigation")}>
+      <nav
+        className="experiment-workspace-project-nav"
+        aria-label={t("プロジェクト内の移動", "Project navigation")}
+      >
         <details className="experiment-workspace-file-menu">
           <summary>{t("ファイル", "File")}</summary>
           <div>
@@ -4224,7 +4280,8 @@ export function ExperimentWorkspace({
           disabled={graphs.length === 0}
           onClick={openExistingGraphs}
         >
-          {t("グラフ", "Graph")}{graphs.length > 0 ? ` (${graphs.length})` : ""}
+          {t("グラフ", "Graph")}
+          {graphs.length > 0 ? ` (${graphs.length})` : ""}
         </button>
         <button
           className={showGraph && graphWorkspaceMode === "statistics" ? "is-active" : ""}
@@ -4245,7 +4302,11 @@ export function ExperimentWorkspace({
         <button
           className="experiment-workspace-project-nav-save"
           type="button"
-          aria-label={saveStatus === "saving" ? t("保存中", "Saving") : t("プロジェクトを保存", "Save project")}
+          aria-label={
+            saveStatus === "saving"
+              ? t("保存中", "Saving")
+              : t("プロジェクトを保存", "Save project")
+          }
           title={t("保存（⌘S / Ctrl+S）", "Save (⌘S / Ctrl+S)")}
           disabled={!saveProject || saveStatus === "saving"}
           onClick={() => void handleSave(false)}
@@ -4290,8 +4351,15 @@ export function ExperimentWorkspace({
             <div className="experiment-workspace-graph-choice-heading">
               <div>
                 <p className="experiment-workspace-eyebrow">{t("新しいグラフ", "New Graph")}</p>
-                <h2 id="graph-choice-heading">{t("グラフの基本形を選ぶ", "Choose a Graph type")}</h2>
-                <p>{t("基本形を選んだ後も、点・箱・誤差線などのレイヤーを追加できます。", "After choosing a base type, you can still add layers such as points, boxes, and error bars.")}</p>
+                <h2 id="graph-choice-heading">
+                  {t("グラフの基本形を選ぶ", "Choose a Graph type")}
+                </h2>
+                <p>
+                  {t(
+                    "基本形を選んだ後も、点・箱・誤差線などのレイヤーを追加できます。",
+                    "After choosing a base type, you can still add layers such as points, boxes, and error bars.",
+                  )}
+                </p>
               </div>
               <button type="button" onClick={() => setShowGraphTypeChoice(false)}>
                 {t("キャンセル", "Cancel")}
@@ -4311,7 +4379,12 @@ export function ExperimentWorkspace({
                     </option>
                   ))}
                 </select>
-                <small>{t("この選択は新しいグラフにだけ保存されます。", "This selection is saved only in the new Graph.")}</small>
+                <small>
+                  {t(
+                    "この選択は新しいグラフにだけ保存されます。",
+                    "This selection is saved only in the new Graph.",
+                  )}
+                </small>
               </label>
             ) : null}
             {draft.time.sampling === "longitudinal" && draft.time.points.length > 1 ? (
@@ -4333,7 +4406,10 @@ export function ExperimentWorkspace({
                     checked={selectedCreateSourceMode === "derived_metric"}
                     onChange={() => selectCreateSourceMode("derived_metric")}
                   />
-                  {t("各生物学的単位から求めた派生値を別グラフにする", "Create a separate Graph from a value derived for each biological unit")}
+                  {t(
+                    "各生物学的単位から求めた派生値を別グラフにする",
+                    "Create a separate Graph from a value derived for each biological unit",
+                  )}
                 </label>
                 {selectedCreateSourceMode === "derived_metric" ? (
                   <>
@@ -4352,7 +4428,9 @@ export function ExperimentWorkspace({
                         <option value="endpoint">{t("最後の時点", "Last time point")}</option>
                         <option value="maximum">{t("最大値", "Maximum")}</option>
                         <option value="minimum">{t("最小値", "Minimum")}</option>
-                        <option value="change_from_baseline">{t("baselineからの変化量", "Change from baseline")}</option>
+                        <option value="change_from_baseline">
+                          {t("baselineからの変化量", "Change from baseline")}
+                        </option>
                         <option value="f_over_f0">F/F0</option>
                       </select>
                     </label>
@@ -4368,7 +4446,10 @@ export function ExperimentWorkspace({
                           <label className="experiment-graph-field">
                             <span>{t("AUC windowの開始", "Start of AUC window")}</span>
                             <select
-                              aria-label={t("新しいAUC windowの開始", "Start of the new AUC window")}
+                              aria-label={t(
+                                "新しいAUC windowの開始",
+                                "Start of the new AUC window",
+                              )}
                               value={selectedCreateMetric.windowStart ?? ""}
                               onChange={(event) => {
                                 const value = event.currentTarget.value;
@@ -4409,7 +4490,12 @@ export function ExperimentWorkspace({
                           </label>
                         </div>
                         {!createMetricWindowIsValid ? (
-                          <small role="alert">{t("開始時点は終了時点以前にしてください。", "The start must be at or before the end.")}</small>
+                          <small role="alert">
+                            {t(
+                              "開始時点は終了時点以前にしてください。",
+                              "The start must be at or before the end.",
+                            )}
+                          </small>
                         ) : null}
                       </>
                     ) : null}
@@ -4442,18 +4528,38 @@ export function ExperimentWorkspace({
                         : graphType === "scatter"
                           ? t("XとYの関係を見る", "View the relationship between X and Y")
                           : graphType === "stacked_100"
-                            ? t("全体に占めるカテゴリ構成を見る", "View category composition of the whole")
+                            ? t(
+                                "全体に占めるカテゴリ構成を見る",
+                                "View category composition of the whole",
+                              )
                             : graphType === "category_percentage"
-                              ? t("カテゴリごとの割合を見る", "View the percentage in each category")
+                              ? t(
+                                  "カテゴリごとの割合を見る",
+                                  "View the percentage in each category",
+                                )
                               : graphType === "violin"
-                                ? t("各条件・時点の分布を見る", "View distributions by condition and time point")
+                                ? t(
+                                    "各条件・時点の分布を見る",
+                                    "View distributions by condition and time point",
+                                  )
                                 : graphType === "paired_dot"
                                   ? sharedSource
-                                    ? t(`同じ${sharedSource.sourceUnitLabel}に由来する組の差を見る`, `View differences among sets derived from the same ${sharedSource.sourceUnitLabel}`)
+                                    ? t(
+                                        `同じ${sharedSource.sourceUnitLabel}に由来する組の差を見る`,
+                                        `View differences among sets derived from the same ${sharedSource.sourceUnitLabel}`,
+                                      )
                                     : t("同じ単位の変化を見る", "View changes within the same unit")
-                                  : t("実験単位ごとの値を見る", "View values for each experimental unit")}
+                                  : t(
+                                      "実験単位ごとの値を見る",
+                                      "View values for each experimental unit",
+                                    )}
                     </strong>
-                    <small>{t("データ構造に合う初期表示。選択は後から変更できます。", "An initial display suited to the data structure. You can change it later.")}</small>
+                    <small>
+                      {t(
+                        "データ構造に合う初期表示。選択は後から変更できます。",
+                        "An initial display suited to the data structure. You can change it later.",
+                      )}
+                    </small>
                   </span>
                 </button>
               ))}
@@ -4463,8 +4569,12 @@ export function ExperimentWorkspace({
               aria-labelledby="current-preview-heading"
             >
               <div>
-                <p className="experiment-workspace-eyebrow">{t("現在のデータで確認", "Preview with current data")}</p>
-                <h3 id="current-preview-heading">{t("作成後の初期表示", "Initial display after creation")}</h3>
+                <p className="experiment-workspace-eyebrow">
+                  {t("現在のデータで確認", "Preview with current data")}
+                </p>
+                <h3 id="current-preview-heading">
+                  {t("作成後の初期表示", "Initial display after creation")}
+                </h3>
               </div>
               {graphTypeSelectionActive ? (
                 <CurrentDataGraphPreview
@@ -4478,11 +4588,17 @@ export function ExperimentWorkspace({
                 />
               ) : (
                 <p className="graph-current-preview__empty">
-                  {t("グラフ形式を選ぶと、現在のデータでプレビューします。", "Choose a Graph type to preview it with the current data.")}
+                  {t(
+                    "グラフ形式を選ぶと、現在のデータでプレビューします。",
+                    "Choose a Graph type to preview it with the current data.",
+                  )}
                 </p>
               )}
               <p className="experiment-workspace-current-preview-note">
-                {t("現在の選択とデータを使ったプレビューです。詳細な見た目は作成後に変更できます。", "This preview uses the current selection and data. You can adjust detailed appearance after creation.")}
+                {t(
+                  "現在の選択とデータを使ったプレビューです。詳細な見た目は作成後に変更できます。",
+                  "This preview uses the current selection and data. You can adjust detailed appearance after creation.",
+                )}
               </p>
               {selectedGraphType === "box" && draft.experiments.length <= 3 ? (
                 <p className="experiment-workspace-box-guidance" role="note">
@@ -4491,7 +4607,10 @@ export function ExperimentWorkspace({
                 </p>
               ) : null}
             </section>
-            <div className="experiment-workspace-graph-type-grid" aria-label={t("その他のグラフ形式", "Other Graph types")}>
+            <div
+              className="experiment-workspace-graph-type-grid"
+              aria-label={t("その他のグラフ形式", "Other Graph types")}
+            >
               {(
                 [
                   ["dot", "Dot"],
@@ -4534,7 +4653,11 @@ export function ExperimentWorkspace({
                     }
                     key={value}
                     type="button"
-                  aria-label={locale === "ja" ? `${label}を選択` : `Select ${value === "paired_dot" ? "Connected matched points" : label}`}
+                    aria-label={
+                      locale === "ja"
+                        ? `${label}を選択`
+                        : `Select ${value === "paired_dot" ? "Connected matched points" : label}`
+                    }
                     aria-pressed={graphTypeSelectionActive && selectedGraphType === value}
                     disabled={
                       (value === "paired_dot" && !canConnectUnits) ||
@@ -4553,16 +4676,25 @@ export function ExperimentWorkspace({
                 ))}
               {draft.analysisIntent.kind !== "correlation" ? (
                 <small id="scatter-disabled-reason">
-                  {t("Scatterは「同じ試料のXとYの関係を見る」設計で利用できます", "Scatter is available for designs that examine X and Y in the same sample.")}
+                  {t(
+                    "Scatterは「同じ試料のXとYの関係を見る」設計で利用できます",
+                    "Scatter is available for designs that examine X and Y in the same sample.",
+                  )}
                 </small>
               ) : null}
             </div>
             {!canConnectUnits ? (
               <p className="experiment-workspace-graph-type-guidance">
-                {t("同じ単位の対応情報がある設計で利用できます", "Available for designs with explicit matching information for the same units.")}
+                {t(
+                  "同じ単位の対応情報がある設計で利用できます",
+                  "Available for designs with explicit matching information for the same units.",
+                )}
               </p>
             ) : null}
-            <section className="experiment-workspace-layer-builder" aria-label={t("初期レイヤー", "Initial layers")}>
+            <section
+              className="experiment-workspace-layer-builder"
+              aria-label={t("初期レイヤー", "Initial layers")}
+            >
               <button
                 className="secondary-button"
                 type="button"
@@ -4571,7 +4703,10 @@ export function ExperimentWorkspace({
               >
                 {showLayerBuilder
                   ? t("カスタムグラフ設定を閉じる", "Close custom Graph settings")
-                  : t("＋ カスタムグラフ（レイヤーから組み立てる）", "+ Custom Graph (build from layers)")}
+                  : t(
+                      "＋ カスタムグラフ（レイヤーから組み立てる）",
+                      "+ Custom Graph (build from layers)",
+                    )}
               </button>
               {showLayerBuilder ? (
                 <fieldset>
@@ -4622,7 +4757,10 @@ export function ExperimentWorkspace({
             <div className="experiment-workspace-graph-choice-actions">
               {!graphTypeSelectionActive ? (
                 <p className="experiment-workspace-graph-choice-required" role="status">
-                  {t("グラフ形式を1つ選んでください。選択するまでグラフは作成できません。", "Choose one Graph type. A Graph cannot be created until a type is selected.")}
+                  {t(
+                    "グラフ形式を1つ選んでください。選択するまでグラフは作成できません。",
+                    "Choose one Graph type. A Graph cannot be created until a type is selected.",
+                  )}
                 </p>
               ) : null}
               <button type="button" onClick={() => setShowGraphTypeChoice(false)}>
@@ -4642,7 +4780,10 @@ export function ExperimentWorkspace({
       ) : null}
 
       {!showGraph && !canonicalSpreadsheetPresentation.enabled ? (
-        <nav className="experiment-workspace-tabs" aria-label={t("実験の表示切り替え", "Experiment views")}>
+        <nav
+          className="experiment-workspace-tabs"
+          aria-label={t("実験の表示切り替え", "Experiment views")}
+        >
           <div role="tablist" aria-label={t("実験タブ", "Experiment tabs")}>
             <button
               id="workspace-tab-0"
@@ -4699,7 +4840,10 @@ export function ExperimentWorkspace({
           ref={graphWorkspaceRef}
           tabIndex={-1}
         >
-          <nav className="experiment-workspace-graph-tabs" aria-label={t("作成したグラフ", "Created Graphs")}>
+          <nav
+            className="experiment-workspace-graph-tabs"
+            aria-label={t("作成したグラフ", "Created Graphs")}
+          >
             {graphs.map((graph) => {
               const active = graph.id === activeGraphId;
               const renaming = graph.id === renamingGraphId;
@@ -4741,7 +4885,10 @@ export function ExperimentWorkspace({
                     <button
                       className="experiment-workspace-graph-tab-rename"
                       type="button"
-                      aria-label={t(`${graph.displayName}の名前を変更`, `Rename ${graph.displayName}`)}
+                      aria-label={t(
+                        `${graph.displayName}の名前を変更`,
+                        `Rename ${graph.displayName}`,
+                      )}
                       title={t("グラフ名を変更", "Rename Graph")}
                       onClick={() => beginGraphRename(graph)}
                     >
@@ -4754,23 +4901,31 @@ export function ExperimentWorkspace({
           </nav>
           {graphs.map((graph) => (
             <div key={graph.id} hidden={graph.id !== activeGraphId}>
-              <ExperimentGraphWorkbench
-                draft={draft}
-                cells={cells}
-                workspaceMode={graphWorkspaceMode}
-                analysisRunner={analysisRunner}
-                analysisAvailable={analysisAvailable}
-                initialState={graph}
-                onStateChange={(state) =>
-                  setGraphs((current) =>
-                    current.map((candidate) =>
-                      candidate.id === graph.id ? { ...candidate, ...state } : candidate,
-                    ),
-                  )
+              <Suspense
+                fallback={
+                  <p className="experiment-graph-help" role="status">
+                    {t("グラフ編集画面を読み込んでいます…", "Loading the Graph editor…")}
+                  </p>
                 }
-                onClose={() => setShowGraph(false)}
-                onAnalysisCorrection={handleAnalysisCorrection}
-              />
+              >
+                <ExperimentGraphWorkbench
+                  draft={draft}
+                  cells={cells}
+                  workspaceMode={graphWorkspaceMode}
+                  analysisRunner={analysisRunner}
+                  analysisAvailable={analysisAvailable}
+                  initialState={graph}
+                  onStateChange={(state) =>
+                    setGraphs((current) =>
+                      current.map((candidate) =>
+                        candidate.id === graph.id ? { ...candidate, ...state } : candidate,
+                      ),
+                    )
+                  }
+                  onClose={() => setShowGraph(false)}
+                  onAnalysisCorrection={handleAnalysisCorrection}
+                />
+              </Suspense>
             </div>
           ))}
         </div>

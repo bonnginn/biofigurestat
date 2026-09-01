@@ -493,7 +493,9 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    expect(screen.getByRole("img", { name: /実験単位ごとのグラフ/ })).toBeVisible();
+    expect(
+      await screen.findByRole("img", { name: /実験単位ごとのグラフ/ }, { timeout: 5_000 }),
+    ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "統計" }));
     expect(screen.getByRole("region", { name: "統計ワークスペース" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));

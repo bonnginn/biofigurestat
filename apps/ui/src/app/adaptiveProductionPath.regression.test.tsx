@@ -286,7 +286,9 @@ describe("adaptive production path regressions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    expect(screen.getByRole("img", { name: /実験単位ごとのグラフ/ })).toBeVisible();
+    expect(
+      await screen.findByRole("img", { name: /実験単位ごとのグラフ/ }, { timeout: 5_000 }),
+    ).toBeVisible();
     expect(screen.getByLabelText(/Control 入力行 1の実験単位平均/)).toBeVisible();
     expect(screen.getByLabelText(/Control 入力行 2の実験単位平均: 101/)).toBeVisible();
     expect(screen.queryByLabelText(/97101/)).toBeNull();

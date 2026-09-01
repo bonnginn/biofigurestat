@@ -51,9 +51,9 @@ function mapColumns(input: { x?: string; y?: string; series?: string; id?: strin
   }
 }
 
-function openGraph(): HTMLElement {
+async function openGraph(): Promise<HTMLElement> {
   fireEvent.click(screen.getByRole("button", { name: "Graphを作成" }));
-  return screen.getByRole("region", { name: "表からグラフを作成" });
+  return screen.findByRole("region", { name: "表からグラフを作成" }, { timeout: 5_000 });
 }
 
 function mappedState(): UnresolvedVisualizationProjectState {
@@ -155,10 +155,7 @@ describe("Graph-only production workspace", () => {
   it("keeps the Graph-only statistics handoff in English without inferring biological n", () => {
     act(() => setAppLocale("en"));
     const view = render(
-      <GraphOnlyVisualizationPage
-        onNavigate={vi.fn()}
-        onStatisticsStructureRequested={vi.fn()}
-      />,
+      <GraphOnlyVisualizationPage onNavigate={vi.fn()} onStatisticsStructureRequested={vi.fn()} />,
     );
 
     pasteTable();
@@ -179,14 +176,12 @@ describe("Graph-only production workspace", () => {
         name: "Add experiment information required for statistics",
       }),
     ).toBeVisible();
-    expect(
-      screen.getByText(/What does the X axis .*Condition.* represent/),
-    ).toBeVisible();
+    expect(screen.getByText(/What does the X axis .*Condition.* represent/)).toBeVisible();
     expect(screen.getByRole("button", { name: "Continue to experiment structure" })).toBeDisabled();
     expectNoJapaneseUi(view.container);
   });
 
-  it("keeps Data, Graph, and Statistics as separate workspace tabs", () => {
+  it("keeps Data, Graph, and Statistics as separate workspace tabs", async () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
     expect(screen.getByRole("button", { name: "データ" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("button", { name: "グラフ" })).toBeDisabled();
@@ -194,7 +189,7 @@ describe("Graph-only production workspace", () => {
 
     pasteTable();
     mapColumns({ id: "3" });
-    const workbench = openGraph();
+    const workbench = await openGraph();
     expect(screen.getByRole("button", { name: "グラフ" })).toHaveAttribute("aria-current", "page");
     expect(within(workbench).getByRole("region", { name: "グラフプレビュー" })).toBeVisible();
     expect(within(workbench).getByRole("button", { name: "グラフをコピー" })).toBeEnabled();
@@ -204,11 +199,11 @@ describe("Graph-only production workspace", () => {
     expect(within(workbench).getByRole("heading", { name: "元表の行" })).toBeVisible();
   });
 
-  it("uses an ID column only as a row label and never as a legend series", () => {
+  it("uses an ID column only as a row label and never as a legend series", async () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
     pasteTable();
     mapColumns({ id: "3" });
-    const workbench = openGraph();
+    const workbench = await openGraph();
     expect(within(workbench).queryByText("dish-1")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "データ" }));
     expect(screen.getByRole("combobox", { name: "Graph用データの対象ID" })).toHaveValue("3");
@@ -225,11 +220,11 @@ describe("Graph-only production workspace", () => {
     expect(screen.getByRole("button", { name: "Graphを作成" })).toBeEnabled();
   });
 
-  it("retains ordinary grouping while keeping sample ID separate", () => {
+  it("retains ordinary grouping while keeping sample ID separate", async () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
     pasteTable();
     mapColumns({ series: "2", id: "3" });
-    const workbench = openGraph();
+    const workbench = await openGraph();
     expect(within(workbench).getByRole("region", { name: "グラフプレビュー" })).toBeVisible();
     expect(screen.queryByRole("alert")).toBeNull();
   });
@@ -242,7 +237,7 @@ describe("Graph-only production workspace", () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} saveProject={saveProject} />);
     pasteTable();
     mapColumns({ series: "2", id: "3" });
-    const workbench = openGraph();
+    const workbench = await openGraph();
 
     fireEvent.click(within(workbench).getByRole("img", { name: /Valueの実験単位ごとのグラフ/ }));
     fireEvent.change(within(workbench).getByRole("combobox", { name: "グラフの基本形" }), {
@@ -279,10 +274,8 @@ describe("Graph-only production workspace", () => {
     );
     pasteTable(uniqueSeriesText);
     mapColumns({ x: "1", y: "2", series: "0" });
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: "各行を別系列として表示する意図である" }),
-    );
-    openGraph();
+    fireEvent.click(screen.getByRole("checkbox", { name: "各行を別系列として表示する意図である" }));
+    await openGraph();
     expect(screen.getByRole("button", { name: "保存" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "別名で保存" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "保存" }));
@@ -311,7 +304,7 @@ describe("Graph-only production workspace", () => {
     await waitFor(() => expect(openProject).toHaveBeenCalledOnce());
     expect(screen.getByRole("combobox", { name: "Graphの系列" })).toHaveValue("2");
     expect(screen.getByRole("combobox", { name: "Graph用データの対象ID" })).toHaveValue("3");
-    openGraph();
+    await openGraph();
     expect(screen.getByRole("region", { name: "表からグラフを作成" })).toBeVisible();
   });
 
