@@ -94,6 +94,13 @@ explicit problem reports, and user-opened external links; records storage, permi
 update, and integrity boundaries; and includes an adoption checklist without claiming certification
 or an external security review.
 
+Projects with at least two saved Graphs can now export a simple two-column panel SVG without
+recalculating data or statistics. The export adds A/B/... labels, preserves each rendered Graph's
+appearance, namespaces internal SVG IDs so gradients do not collide, and records source Graph IDs and
+display names in metadata. Panel layout is export-only and does not change the `.lsa` schema. The
+serializer, rendered-Graph collection, native-aware save boundary, button state, typecheck, lint, and
+production build are covered; final visual judgment remains a Beta manual-review item.
+
 The final source gate ran the 193-file / 1,304-test UI suite once. It produced 1,303 passes and one
 stale test expectation for the Japanese `概要` tab; the corrected focused workflow passes. Full
 workspace typecheck, UI lint, production UI build, the 9-test native-harness self-suite, and the

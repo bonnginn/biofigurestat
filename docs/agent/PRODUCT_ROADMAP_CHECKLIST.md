@@ -98,6 +98,7 @@
 | ✅   | Homeから始まる5分ガイド                | 1つの合成デモでData→Graph→Statistics→Methodsを順に案内し、日英表示と遷移を回帰test済み |
 | ✅   | 共同研究者向け解析レビューセット       | 実行済みrunに限り、Graph、群別n、推定値・CI、検定、警告、Methods、表示データCSV、run IDを読取専用HTMLへ一括出力。日英表示とnative保存境界を回帰test済み |
 | ✅   | IT・データ取扱い概要                   | local解析、`.lsa`とexportの保存先、任意telemetry、不具合報告、権限、署名、更新、導入checklistを実装根拠付きの日英1文書に整理しREADMEから案内 |
+| ✅   | 保存済みGraphの簡易パネルSVG           | 2件以上の保存済みGraphを再解析せず2列配置し、A/B…label、Graph ID・表示名metadata、個別SVG styleを保持してnative-aware SVG保存。panel layout自体は`.lsa` schemaへ追加しない |
 
 ## コード整理・堅牢化
 
