@@ -363,12 +363,36 @@ export function CurrentDataGraphPreview({
     }
     const xValues = pairs.map(({ x }) => x);
     const yValues = pairs.map(({ y }) => y);
-    const xMin = Math.min(...xValues);
-    const xMax = Math.max(...xValues);
-    const yMin = Math.min(...yValues);
-    const yMax = Math.max(...yValues);
-    const xRange = Math.max(1, xMax - xMin);
-    const yRange = Math.max(1, yMax - yMin);
+    const observedXMin = Math.min(...xValues);
+    const observedXMax = Math.max(...xValues);
+    const observedYMin = Math.min(...yValues);
+    const observedYMax = Math.max(...yValues);
+    const xPadding = Math.max(
+      (observedXMax - observedXMin) * 0.08,
+      Math.max(Math.abs(observedXMin), Math.abs(observedXMax), 1) * 0.04,
+    );
+    const yPadding = Math.max(
+      (observedYMax - observedYMin) * 0.08,
+      Math.max(Math.abs(observedYMin), Math.abs(observedYMax), 1) * 0.04,
+    );
+    const xMin = observedXMin - xPadding;
+    const xMax = observedXMax + xPadding;
+    const yMin = observedYMin - yPadding;
+    const yMax = observedYMax + yPadding;
+    const xRange = xMax - xMin;
+    const yRange = yMax - yMin;
+    const xTicks = createNiceTicks(xMin, xMax, 5, null);
+    const yTicks = createNiceTicks(yMin, yMax, 5, null);
+    const tickFormatter = new Intl.NumberFormat(locale, { maximumSignificantDigits: 4 });
+    const yTickLabels = yTicks.map((tick) => tickFormatter.format(tick));
+    const yTitleX = yAxisTitlePosition({
+      axisX: previewPlot.left,
+      tickLabels: yTickLabels,
+      tickFontSize: 11,
+      titleFontSize: 12,
+      minimumX: 14,
+      gap: 4,
+    });
     const xForPair = (value: number) =>
       previewPlot.left + ((value - xMin) / xRange) * previewPlot.width;
     const yForPair = (value: number) =>
@@ -382,6 +406,10 @@ export function CurrentDataGraphPreview({
           `${xGroup?.label ?? "X"}と${yGroup?.label ?? "Y"}の現在のデータによる散布図preview`,
           `Scatter-plot preview of the current ${xGroup?.label ?? "X"} and ${yGroup?.label ?? "Y"} data`,
         )}
+        data-domain-x-min={xMin}
+        data-domain-x-max={xMax}
+        data-domain-y-min={yMin}
+        data-domain-y-max={yMax}
       >
         <line
           x1={previewPlot.left}
@@ -389,6 +417,50 @@ export function CurrentDataGraphPreview({
           y1={previewPlot.top}
           y2={previewPlot.bottom}
         />
+        {xTicks.map((tick) => {
+          const x = xForPair(tick);
+          return (
+            <g key={`x-tick-${tick}`} data-preview-x-tick={tick}>
+              <line
+                className="graph-current-preview__tick"
+                x1={x}
+                x2={x}
+                y1={previewPlot.bottom}
+                y2={previewPlot.bottom + 5}
+              />
+              <text
+                className="graph-current-preview__tick-label"
+                x={x}
+                y={previewPlot.bottom + 19}
+                textAnchor="middle"
+              >
+                {tickFormatter.format(tick)}
+              </text>
+            </g>
+          );
+        })}
+        {yTicks.map((tick, index) => {
+          const y = yForPair(tick);
+          return (
+            <g key={`y-tick-${tick}`} data-preview-y-tick={tick}>
+              <line
+                className="graph-current-preview__tick"
+                x1={previewPlot.left - 5}
+                x2={previewPlot.left}
+                y1={y}
+                y2={y}
+              />
+              <text
+                className="graph-current-preview__tick-label"
+                x={previewPlot.left - 9}
+                y={y + 4}
+                textAnchor="end"
+              >
+                {yTickLabels[index]}
+              </text>
+            </g>
+          );
+        })}
         <line
           x1={previewPlot.left}
           x2={previewPlot.right}
@@ -398,14 +470,20 @@ export function CurrentDataGraphPreview({
         {pairs.map((pair) => (
           <circle key={pair.id} cx={xForPair(pair.x)} cy={yForPair(pair.y)} r="5" />
         ))}
-        <text x={previewPlot.left + previewPlot.width / 2} y="275" textAnchor="middle">
+        <text
+          className="graph-current-preview__axis-title"
+          x={previewPlot.left + previewPlot.width / 2}
+          y="275"
+          textAnchor="middle"
+        >
           {xGroup?.label ?? "X"}
         </text>
         <text
-          x="20"
+          className="graph-current-preview__axis-title"
+          x={yTitleX}
           y={previewPlot.top + previewPlot.height / 2}
           textAnchor="middle"
-          transform={`rotate(-90 20 ${previewPlot.top + previewPlot.height / 2})`}
+          transform={`rotate(-90 ${yTitleX} ${previewPlot.top + previewPlot.height / 2})`}
         >
           {yGroup?.label ?? "Y"}
         </text>

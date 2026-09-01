@@ -92,4 +92,17 @@ describe("CurrentDataGraphPreview scientific integrity", () => {
     expect(path?.getAttribute("d")?.match(/ L /g)?.length).toBeGreaterThan(40);
     expect(path?.getAttribute("d")).not.toContain(" C ");
   });
+
+  it("pads scatter points away from axes and renders shared nice ticks", () => {
+    const { draft, cells } = previewFixture();
+    render(<CurrentDataGraphPreview type="scatter" draft={draft} cells={cells} />);
+
+    const graph = screen.getByRole("img", { name: /散布図preview/ });
+    expect(Number(graph.getAttribute("data-domain-x-min"))).toBeLessThan(0.72);
+    expect(Number(graph.getAttribute("data-domain-x-max"))).toBeGreaterThan(0.88);
+    expect(Number(graph.getAttribute("data-domain-y-min"))).toBeLessThan(1.4);
+    expect(Number(graph.getAttribute("data-domain-y-max"))).toBeGreaterThan(1.62);
+    expect(graph.querySelectorAll("[data-preview-x-tick]").length).toBeGreaterThanOrEqual(2);
+    expect(graph.querySelectorAll("[data-preview-y-tick]").length).toBeGreaterThanOrEqual(2);
+  });
 });

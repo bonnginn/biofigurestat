@@ -82,7 +82,7 @@
 
 | 状態 | 項目                                   | 完了条件                                                                         |
 | ---- | -------------------------------------- | -------------------------------------------------------------------------------- |
-| 🟡   | Graph preview品質を完成Graphへ近づける | 通常previewへ共有plot bounds、nice Y ticks、軸title、tick余白を実装し、点・誤差線と合わせて座標回帰を固定。scatter/category構成を含む最終的な見た目は実機確認待ち |
+| 🟡   | Graph preview品質を完成Graphへ近づける | 通常previewへ共有plot bounds、nice Y ticks、軸title、tick余白を実装し、scatterにも両軸nice ticksとdata paddingを追加。点・誤差線と合わせて座標回帰を固定。category構成と最終的な見た目は実機確認待ち |
 | ✅   | workspace上部をcompact化               | compact headerと安全な概要導線を実装・回帰test済み                               |
 | ✅   | 実験metadataの再編集                   | 既存のstructure revision経路から実験名・条件・測定項目を安全に修正可能           |
 | 🟡   | Kaplan–Meier外観設定の共通化           | 系列色と保存互換なfont sizeを実装。軸・legend等のparityは継続                    |

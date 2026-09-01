@@ -647,8 +647,10 @@ The ordinary current-data Graph preview now exposes the same minimum axis contex
 finished Graph: a shared plot rectangle, nice-number Y ticks, tick labels, and X/Y titles with the
 shared adaptive Y-title spacing rule. The preview's scientific layers, domains, values, and graph
 selection are unchanged. A direct coordinate regression proves the title remains left of the
-plot, and the focused preview tests, UI typecheck, and focused lint pass. Final visual judgment for
-scatter/composition variants remains a human Beta review item.
+plot. Scatter preview points also receive bounded domain padding instead of landing on the axes,
+with shared nice ticks and adaptive Y-title spacing on both numeric axes. The four focused preview
+tests, UI typecheck, and focused lint pass. Final visual judgment for composition variants remains
+a human Beta review item.
 
 The ordinary, scatter, and categorical Graph-creation previews now consume that same rectangle
 contract for axis endpoints, point scaling, bar baselines, and label anchors. Existing preview
