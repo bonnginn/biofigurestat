@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { resetAppLocaleForTests } from "../../app/appLocale";
+import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
 import { ExperimentGraphLegendEditor } from "./ExperimentGraphLegendEditor";
 
 type GraphAppearance = WorkspaceGraphState["appearance"];
@@ -44,5 +45,13 @@ describe("ExperimentGraphLegendEditor", () => {
 
     expect(screen.getByLabelText("palette")).toHaveTextContent("colorblind");
     expect(screen.getByText("文字：18px")).toBeInTheDocument();
+  });
+
+  it("contains no fixed Japanese copy in English", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<Harness />);
+
+    expect(screen.getByRole("heading", { name: "Legend" })).toBeVisible();
+    expectNoJapaneseUi(view.container);
   });
 });

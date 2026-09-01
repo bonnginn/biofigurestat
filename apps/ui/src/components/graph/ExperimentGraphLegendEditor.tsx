@@ -21,9 +21,9 @@ export function ExperimentGraphLegendEditor({
     <section className="experiment-graph-inspector-section">
       <h3>{t("凡例", "Legend")}</h3>
       <label className="experiment-graph-field">
-        <span>位置</span>
+        <span>{t("位置", "Position")}</span>
         <select
-          aria-label="凡例の位置"
+          aria-label={t("凡例の位置", "Legend position")}
           value={appearance.legendPosition}
           onChange={(event) =>
             setAppearance((current) => ({
@@ -36,19 +36,22 @@ export function ExperimentGraphLegendEditor({
             }))
           }
         >
-          <option value="hidden">なし</option>
-          <option value="top">上</option>
-          <option value="right">右</option>
-          <option value="inside">内側</option>
+          <option value="hidden">{t("なし", "None")}</option>
+          <option value="top">{t("上", "Top")}</option>
+          <option value="right">{t("右", "Right")}</option>
+          <option value="inside">{t("内側", "Inside")}</option>
         </select>
       </label>
       <label className="experiment-graph-field">
-        <span>文字：{appearance.legendFontSize}px</span>
+        <span>
+          {t("文字：", "Text: ")}
+          {appearance.legendFontSize}px
+        </span>
         <input
           type="range"
           min="9"
           max="24"
-          aria-label="凡例の文字サイズ"
+          aria-label={t("凡例の文字サイズ", "Legend font size")}
           value={appearance.legendFontSize}
           onChange={(event) =>
             setAppearance((current) => ({

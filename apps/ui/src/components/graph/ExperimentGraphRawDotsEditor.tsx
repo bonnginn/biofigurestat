@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 
+import { localizedText, useAppLocale } from "../../app/appLocale";
 import type { ReadoutDraft } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 
@@ -21,27 +22,44 @@ export function ExperimentGraphRawDotsEditor({
   setLayers,
   setAppearance,
 }: ExperimentGraphRawDotsEditorProps) {
+  const locale = useAppLocale();
+  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const nested = shape === "nested_continuous";
   const layer = nested ? "raw" : "experiment";
 
   return (
     <section className="experiment-graph-inspector-section">
-      <h3>{nested ? "細胞・ROIの生データ" : "実験単位の点"}</h3>
+      <h3>
+        {nested
+          ? t("細胞・ROIの生データ", "Raw cell/ROI data")
+          : t("実験単位の点", "Experimental-unit points")}
+      </h3>
       <label className="experiment-graph-checkbox">
         <input
           type="checkbox"
           checked={layers[layer]}
-          aria-label={nested ? "生データの点を表示" : "実験単位の点を表示"}
+          aria-label={
+            nested
+              ? t("生データの点を表示", "Show raw-data points")
+              : t("実験単位の点を表示", "Show experimental-unit points")
+          }
           onChange={(event) =>
             setLayers((current) => ({ ...current, [layer]: event.target.checked }))
           }
         />
-        <span>{nested ? "細胞・ROIの生データ" : "実験単位の点"}</span>
+        <span>
+          {nested
+            ? t("細胞・ROIの生データ", "Raw cell/ROI data")
+            : t("実験単位の点", "Experimental-unit points")}
+        </span>
       </label>
       <label className="experiment-graph-field">
-        <span>点の大きさ：{appearance.pointSize}px</span>
+        <span>
+          {t("点の大きさ：", "Point size: ")}
+          {appearance.pointSize}px
+        </span>
         <input
-          aria-label="生データ点の大きさ"
+          aria-label={t("生データ点の大きさ", "Raw-data point size")}
           type="range"
           min="4"
           max="10"
@@ -56,9 +74,12 @@ export function ExperimentGraphRawDotsEditor({
         />
       </label>
       <label className="experiment-graph-field">
-        <span>横方向のばらし幅：{appearance.jitter}px</span>
+        <span>
+          {t("横方向のばらし幅：", "Horizontal jitter: ")}
+          {appearance.jitter}px
+        </span>
         <input
-          aria-label="生データ点のjitter"
+          aria-label={t("生データ点のjitter", "Raw-data point jitter")}
           type="range"
           min="0"
           max="24"
@@ -74,10 +95,10 @@ export function ExperimentGraphRawDotsEditor({
       </label>
       {nested ? (
         <label className="experiment-graph-color-field">
-          <span>生データ点の色</span>
+          <span>{t("生データ点の色", "Raw-data point color")}</span>
           <input
             type="color"
-            aria-label="生データ点の色"
+            aria-label={t("生データ点の色", "Raw-data point color")}
             value={appearance.rawPointColor}
             onChange={(event) =>
               setAppearance((current) => ({
@@ -89,7 +110,10 @@ export function ExperimentGraphRawDotsEditor({
         </label>
       ) : null}
       <p className="experiment-graph-help">
-        細胞・ROIの点は観測分布の表示用で、統計上のnとしては扱いません。
+        {t(
+          "細胞・ROIの点は観測分布の表示用で、統計上のnとしては扱いません。",
+          "Cell and ROI points show the observed distribution and are not treated as the statistical n.",
+        )}
       </p>
     </section>
   );

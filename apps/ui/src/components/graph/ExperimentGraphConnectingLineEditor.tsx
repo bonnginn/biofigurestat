@@ -29,21 +29,26 @@ export function ExperimentGraphConnectingLineEditor({
         <input
           type="checkbox"
           checked={layers.connectingLine}
-          aria-label="接続線を表示"
+          aria-label={t("接続線を表示", "Show connecting lines")}
           onChange={(event) =>
             setLayers((current) => ({ ...current, connectingLine: event.target.checked }))
           }
         />
-        <span>条件または時点の要約を線で結ぶ</span>
+        <span>
+          {t("条件または時点の要約を線で結ぶ", "Connect condition or time-point summaries")}
+        </span>
       </label>
       <label className="experiment-graph-field">
-        <span>線幅：{appearance.connectingLineWidth.toFixed(1)}px</span>
+        <span>
+          {t("線幅：", "Line width: ")}
+          {appearance.connectingLineWidth.toFixed(1)}px
+        </span>
         <input
           type="range"
           min="0.6"
           max="4"
           step="0.1"
-          aria-label="接続線の太さ"
+          aria-label={t("接続線の太さ", "Connecting-line width")}
           value={appearance.connectingLineWidth}
           onChange={(event) =>
             setAppearance((current) => ({
@@ -54,10 +59,10 @@ export function ExperimentGraphConnectingLineEditor({
         />
       </label>
       <label className="experiment-graph-color-field">
-        <span>接続線の色</span>
+        <span>{t("接続線の色", "Connecting-line color")}</span>
         <input
           type="color"
-          aria-label="接続線の色"
+          aria-label={t("接続線の色", "Connecting-line color")}
           value={appearance.connectingLineColor}
           onChange={(event) =>
             setAppearance((current) => ({

@@ -1,9 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
+import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
 import type { ReadoutDraft } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
 import { ExperimentGraphRawDotsEditor } from "./ExperimentGraphRawDotsEditor";
 
 type LayerState = WorkspaceGraphState["layers"];
@@ -31,6 +33,8 @@ function Harness({ shape }: { shape: ReadoutDraft["shape"] }) {
 }
 
 describe("ExperimentGraphRawDotsEditor", () => {
+  beforeEach(() => resetAppLocaleForTests("ja"));
+
   it("updates the raw observation layer and its visual settings for nested data", () => {
     render(<Harness shape="nested_continuous" />);
 
@@ -57,5 +61,13 @@ describe("ExperimentGraphRawDotsEditor", () => {
     fireEvent.click(screen.getByLabelText("実験単位の点を表示"));
     expect(screen.getByLabelText("実験単位の点を表示")).not.toBeChecked();
     expect(screen.queryByLabelText("生データ点の色")).not.toBeInTheDocument();
+  });
+
+  it("contains no fixed Japanese copy in English", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<Harness shape="nested_continuous" />);
+
+    expect(screen.getByRole("heading", { name: "Raw cell/ROI data" })).toBeVisible();
+    expectNoJapaneseUi(view.container);
   });
 });

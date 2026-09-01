@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { resetAppLocaleForTests } from "../../app/appLocale";
+import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
 import { ExperimentGraphConnectingLineEditor } from "./ExperimentGraphConnectingLineEditor";
 
 type LayerState = WorkspaceGraphState["layers"];
@@ -38,5 +39,13 @@ describe("ExperimentGraphConnectingLineEditor", () => {
     expect(screen.getByLabelText("接続線を表示")).not.toBeChecked();
     expect(screen.getByText("線幅：2.3px")).toBeInTheDocument();
     expect(screen.getByLabelText("接続線の色")).toHaveValue("#abcdef");
+  });
+
+  it("contains no fixed Japanese copy in English", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<Harness />);
+
+    expect(screen.getByRole("heading", { name: "Connecting lines" })).toBeVisible();
+    expectNoJapaneseUi(view.container);
   });
 });

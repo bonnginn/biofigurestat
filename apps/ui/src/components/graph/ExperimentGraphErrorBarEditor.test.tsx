@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { resetAppLocaleForTests } from "../../app/appLocale";
+import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
 import { ExperimentGraphErrorBarEditor } from "./ExperimentGraphErrorBarEditor";
 
 type LayerState = WorkspaceGraphState["layers"];
@@ -62,5 +63,13 @@ describe("ExperimentGraphErrorBarEditor", () => {
     expect(screen.getByText("線幅：2.4px")).toBeInTheDocument();
     expect(screen.getByLabelText("誤差線の色")).toHaveValue("#abcdef");
     expect(screen.getByText("リボン透明度：0.30")).toBeInTheDocument();
+  });
+
+  it("contains no fixed Japanese copy in English", () => {
+    act(() => setAppLocale("en"));
+    const view = render(<Harness />);
+
+    expect(screen.getByRole("heading", { name: "Error bars" })).toBeVisible();
+    expectNoJapaneseUi(view.container);
   });
 });
