@@ -326,16 +326,19 @@ if ($action -eq 'cancel') {
     [Windows.Automation.ControlType]::Edit
   )
   $editCandidates = @()
+  $focused = [Windows.Automation.AutomationElement]::FocusedElement
+  if ($null -ne $focused) { $editCandidates += $focused }
   if ($null -ne $edit) { $editCandidates += $edit }
   $editCandidates += @($dialog.FindAll([Windows.Automation.TreeScope]::Descendants, $editType))
   $editable = @()
-  foreach ($candidate in $editCandidates) {
+  for ($candidateIndex = 0; $candidateIndex -lt $editCandidates.Count; $candidateIndex += 1) {
+    $candidate = $editCandidates[$candidateIndex]
     $pattern = $null
     if ($candidate.TryGetCurrentPattern([Windows.Automation.ValuePattern]::Pattern, [ref]$pattern)) {
       $editable += @{
         element = $candidate
         pattern = $pattern
-        preferred = $candidate.Current.AutomationId -eq '1001' -or $candidate.Current.Name -match 'File name|ファイル名'
+        preferred = $candidateIndex -eq 0 -or $candidate.Current.AutomationId -eq '1001' -or $candidate.Current.Name -match 'File name|ファイル名'
       }
     }
   }
@@ -343,6 +346,8 @@ if ($action -eq 'cancel') {
   if ($null -eq $selectedEdit) { $selectedEdit = @($editable | Select-Object -Last 1)[0] }
   if ($null -eq $selectedEdit) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: writable file name input' }
   $selectedEdit.pattern.SetValue($target)
+  $selectedEditName = $selectedEdit.element.Current.Name
+  $selectedEditId = $selectedEdit.element.Current.AutomationId
   $saveId = [Windows.Automation.PropertyCondition]::new(
     [Windows.Automation.AutomationElement]::AutomationIdProperty,
     '1'
@@ -363,7 +368,12 @@ if ($action -eq 'cancel') {
   if ($null -eq $save) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: Save button' }
   $save.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke()
 }
-[Console]::Out.Write((ConvertTo-Json @{ ok = $true; action = $action; dialog = $dialog.Current.Name } -Compress))
+$result = @{ ok = $true; action = $action; dialog = $dialog.Current.Name }
+if ($action -eq 'save') {
+  $result.fileNameControl = $selectedEditName
+  $result.fileNameAutomationId = $selectedEditId
+}
+[Console]::Out.Write((ConvertTo-Json $result -Compress))
 `;
   return ["-NoProfile", "-NonInteractive", "-Command", script];
 }
@@ -923,12 +933,17 @@ async function runWindowsScenario({ executable, outputDirectory, timeoutMs }) {
       await runStep("native_svg_save_dialog_writes_selected_target", async () => {
         await client.evaluate(pageAction(clickByText, "SVG"));
         const detail = await driveFileDialog("save", dialogExportTarget);
-        const written = await waitForReadableFile(
-          dialogExportTarget,
-          "SVG selected in the native Save dialog",
-          timeoutMs,
-          "utf8",
-        );
+        let written;
+        try {
+          written = await waitForReadableFile(
+            dialogExportTarget,
+            "SVG selected in the native Save dialog",
+            timeoutMs,
+            "utf8",
+          );
+        } catch (error) {
+          throw new Error(`${String(error)}; dialog=${JSON.stringify(detail)}`);
+        }
         if (!written.includes("<svg")) throw new Error("Native Save dialog wrote invalid SVG");
         return { ...detail, target: dialogExportTarget, bytes: Buffer.byteLength(written) };
       });
