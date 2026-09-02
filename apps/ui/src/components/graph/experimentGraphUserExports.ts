@@ -50,14 +50,68 @@ export async function runGraphUserExport(
   locale: AppLocale,
   operation: () => Promise<ControlledGraphExportResult>,
   setFeedback: (feedback: GraphExportFeedback | null) => void,
+  textOverride?: Readonly<{ saved?: string; failed?: string }>,
+  recordFailure = true,
 ): Promise<void> {
   setFeedback(null);
   const result = await operation();
   if (result.status === "saved") {
-    setFeedback({ kind: "success", text: message(locale, SAVED_TEXT[kind]) });
+    setFeedback({
+      kind: "success",
+      text: textOverride?.saved ?? message(locale, SAVED_TEXT[kind]),
+    });
   } else if (result.status === "failed") {
-    recordDiagnosticError("GRAPH_EXPORT_FAILED", result.error);
-    setFeedback({ kind: "error", text: message(locale, FAILED_TEXT[kind]) });
+    if (recordFailure) recordDiagnosticError("GRAPH_EXPORT_FAILED", result.error);
+    setFeedback({
+      kind: "error",
+      text: textOverride?.failed ?? message(locale, FAILED_TEXT[kind]),
+    });
+  }
+}
+
+type GraphClipboardTextOverride = Readonly<{
+  svg?: string;
+  png?: string;
+  text?: string;
+  failed?: string;
+}>;
+
+async function graphClipboardCopyFeedback(
+  locale: AppLocale,
+  operation: () => Promise<"svg" | "png" | "text">,
+  textOverride?: GraphClipboardTextOverride,
+  recordFailure = true,
+): Promise<GraphExportFeedback> {
+  try {
+    const format = await operation();
+    return {
+      kind: "success",
+      text:
+        format === "svg"
+          ? (textOverride?.svg ??
+            localizedText(locale, "ベクター形式でコピーしました。", "Copied as vector graphics."))
+          : format === "png"
+            ? (textOverride?.png ??
+              localizedText(
+                locale,
+                "透明背景のPNGでコピーしました。",
+                "Copied as a transparent PNG.",
+              ))
+            : (textOverride?.text ??
+              localizedText(locale, "SVGテキストでコピーしました。", "Copied as SVG text.")),
+    };
+  } catch (error) {
+    if (recordFailure) recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
+    return {
+      kind: "error",
+      text:
+        textOverride?.failed ??
+        localizedText(
+          locale,
+          "この環境ではクリップボードへコピーできませんでした。SVG書き出しを利用してください。",
+          "Could not copy to the clipboard in this environment. Use SVG export instead.",
+        ),
+    };
   }
 }
 
@@ -65,25 +119,19 @@ export async function runGraphClipboardCopy(
   locale: AppLocale,
   operation: () => Promise<"svg" | "png" | "text">,
   setStatus: (status: string | null) => void,
+  textOverride?: GraphClipboardTextOverride,
 ): Promise<void> {
   setStatus(null);
-  try {
-    const format = await operation();
-    setStatus(
-      format === "svg"
-        ? localizedText(locale, "ベクター形式でコピーしました。", "Copied as vector graphics.")
-        : format === "png"
-          ? localizedText(locale, "透明背景のPNGでコピーしました。", "Copied as a transparent PNG.")
-          : localizedText(locale, "SVGテキストでコピーしました。", "Copied as SVG text."),
-    );
-  } catch (error) {
-    recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
-    setStatus(
-      localizedText(
-        locale,
-        "この環境ではクリップボードへコピーできませんでした。SVG書き出しを利用してください。",
-        "Could not copy to the clipboard in this environment. Use SVG export instead.",
-      ),
-    );
-  }
+  setStatus((await graphClipboardCopyFeedback(locale, operation, textOverride)).text);
+}
+
+export async function runGraphClipboardCopyWithFeedback(
+  locale: AppLocale,
+  operation: () => Promise<"svg" | "png" | "text">,
+  setFeedback: (feedback: GraphExportFeedback | null) => void,
+  textOverride?: GraphClipboardTextOverride,
+  recordFailure = true,
+): Promise<void> {
+  setFeedback(null);
+  setFeedback(await graphClipboardCopyFeedback(locale, operation, textOverride, recordFailure));
 }

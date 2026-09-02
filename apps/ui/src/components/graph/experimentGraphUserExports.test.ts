@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { runGraphClipboardCopy, runGraphUserExport } from "./experimentGraphUserExports";
+import {
+  runGraphClipboardCopy,
+  runGraphClipboardCopyWithFeedback,
+  runGraphUserExport,
+} from "./experimentGraphUserExports";
 
 const diagnostic = vi.hoisted(() => vi.fn());
 vi.mock("../../app/diagnostics", () => ({ recordDiagnosticError: diagnostic }));
@@ -68,9 +72,35 @@ describe("Graph user export feedback", () => {
     });
 
     const setStatus = vi.fn();
-    await runGraphClipboardCopy("en", async () => Promise.reject(new Error("コピー失敗")), setStatus);
+    await runGraphClipboardCopy(
+      "en",
+      async () => Promise.reject(new Error("コピー失敗")),
+      setStatus,
+    );
     expect(setStatus).toHaveBeenLastCalledWith(
       "Could not copy to the clipboard in this environment. Use SVG export instead.",
     );
+  });
+
+  it("supports legacy surface copy while retaining success and error roles", async () => {
+    const setFeedback = vi.fn();
+    await runGraphClipboardCopyWithFeedback("ja", async () => "png", setFeedback, {
+      png: "PNGでコピーしました。",
+    });
+    expect(setFeedback).toHaveBeenLastCalledWith({
+      kind: "success",
+      text: "PNGでコピーしました。",
+    });
+
+    const failure = new Error("legacy copy failed");
+    await runGraphClipboardCopyWithFeedback(
+      "ja",
+      async () => Promise.reject(failure),
+      setFeedback,
+      { failed: "従来の失敗表示" },
+      false,
+    );
+    expect(setFeedback).toHaveBeenLastCalledWith({ kind: "error", text: "従来の失敗表示" });
+    expect(diagnostic).not.toHaveBeenCalledWith("GRAPH_EXPORT_FAILED", failure);
   });
 });

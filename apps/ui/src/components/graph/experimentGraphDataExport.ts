@@ -178,3 +178,12 @@ export function safeGraphFileStem(value: string): string {
       .slice(0, 80) || "graph"
   );
 }
+
+/** Preserve researcher-facing spacing while excluding characters forbidden by native save dialogs. */
+export function safeNativeGraphFileStem(value: string): string {
+  const reserved = '<>:"/\\|?*';
+  const sanitized = Array.from(value.trim(), (character) =>
+    character.charCodeAt(0) < 32 || reserved.includes(character) ? "-" : character,
+  ).join("");
+  return sanitized || "graph";
+}
