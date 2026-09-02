@@ -1534,7 +1534,8 @@ describe("ExperimentGraphWorkbench", () => {
       expect(Number(bar.getAttribute("width"))).toBeGreaterThan(0);
       expect(Number(bar.getAttribute("height"))).toBeGreaterThan(0);
       expect(Number(bar.dataset.summaryValue)).toBeGreaterThan(0);
-      expect(bar).toHaveAttribute("opacity", "0.24");
+      expect(bar).toHaveAttribute("fill-opacity", "0.24");
+      expect(bar).not.toHaveAttribute("opacity");
       expect(bar.style.stroke).toBe("#245c8a");
     });
     expect(svg.querySelectorAll('[data-graph-layer="proportion-experiment"]')).toHaveLength(9);

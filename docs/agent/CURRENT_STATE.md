@@ -876,7 +876,8 @@ project-package tests cover both executable routes and save/reopen compatibility
   SVG. Previously a shared CSS rule overrode both states, making the checkbox appear ineffective.
   Bar outlines can now be disabled or use the full-opacity fill color, black, or a custom color,
   with an independent width. New optional appearance fields preserve these settings; older `.lsa`
-  files remain valid and use the compatible fill-color outline default.
+  files remain valid and use the compatible fill-color outline default. Bar translucency is applied
+  to the fill only, so a selected black or full-color outline is not unintentionally rendered gray.
   Kaplan–Meier now supports saved/reopened curve colors, overall and legend font sizes, legend
   positions (`hidden`, `top`, `right`, `inside`), minor-tick visibility, tick direction, and axis
   titles. The optional GraphSpec fields preserve older `.lsa` parsing and the read-only legacy path

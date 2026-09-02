@@ -1302,7 +1302,7 @@ export function ExperimentGraphSvg({
                 width={barHalfWidth * 2}
                 height={Math.max(1, Math.abs(barBaselineY - meanY))}
                 fill={color}
-                opacity={0.24}
+                fillOpacity={0.24}
                 style={{
                   // Keep this inline so both the live stylesheet and the SVG export stylesheet
                   // respect the researcher's explicit outline toggle.

@@ -335,12 +335,12 @@
 
 .experiment-graph-bar {
   cursor: pointer;
-  transition: opacity 120ms ease;
+  transition: fill-opacity 120ms ease;
 }
 
 .experiment-graph-bar:hover,
 .experiment-graph-bar[data-selected="true"] {
-  opacity: 0.34;
+  fill-opacity: 0.34;
 }
 
 [data-inspector-target="experiment-summary"],
