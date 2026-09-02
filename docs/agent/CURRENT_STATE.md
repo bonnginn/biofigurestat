@@ -63,6 +63,15 @@ Public Alpha `.lsa` compatibility gates. It should not wait for every Beta featu
 replace the existing `alpha.2` assets. The decision boundary is recorded in
 `docs/alpha/PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`.
 
+The 2026-09-03 Graph-control/density batch passes 22 focused editor-control tests, all 16
+Graph-only page tests, UI typecheck, focused lint, the production UI build, and the release bundle
+verifier. The related selector then exercised 33 files / 421 tests: 415 passed immediately, five
+tests exposed stale assumptions that the intentionally hidden Graph-only entry heading remained
+accessible after entering the compact workspace, and one workspace save-target test showed its
+known parallel-only flake. The five assertions now verify the visible current Graph tab and their
+two suites pass all 25 tests; the save-target case passes in focused isolation. The complete
+421-test selection was not repeated solely to replace those already-isolated failures.
+
 Formal equivalence support now has its first executable route: one prespecified primary comparison
 between two independent groups with a continuous outcome and a raw-difference margin. Protocol
 `0.15.0` runs unequal-variance Welch TOST, records both one-sided p values and the corresponding
