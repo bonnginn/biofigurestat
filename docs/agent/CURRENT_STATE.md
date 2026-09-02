@@ -1,6 +1,6 @@
 # Current Working State
 
-Updated: 2026-09-02 (Public Alpha published; first formal equivalence route implemented)
+Updated: 2026-09-03 (Public Alpha published; current Windows Beta preview reviewed)
 
 This is the short operational snapshot. Accepted ADRs, schemas, method references, and tests remain
 the authority for durable behavior.
@@ -878,6 +878,13 @@ project-package tests cover both executable routes and save/reopen compatibility
   with an independent width. New optional appearance fields preserve these settings; older `.lsa`
   files remain valid and use the compatible fill-color outline default. Bar translucency is applied
   to the fill only, so a selected black or full-color outline is not unintentionally rendered gray.
+  Windows candidate `8923797-beta.20260903.win-preview14` passed focused UI/schema/project tests,
+  typecheck, production build, bundle/release verification, engine smoke, and the unrestricted
+  exact-executable native scenario. Human review passed black/custom/fill-matched outlines, width
+  and visibility changes, `.lsa` save/reopen, and SVG/PNG parity. Following that review, Bar-only
+  outline, mean-marker, and width controls moved from X axis to `Graph overall > Bars`; custom
+  outlines now offer seven named quick colors alongside the unrestricted color picker. This final
+  placement/palette increment is source-only and does not change stored fields or rendering.
   Kaplan–Meier now supports saved/reopened curve colors, overall and legend font sizes, legend
   positions (`hidden`, `top`, `right`, `inside`), minor-tick visibility, tick direction, and axis
   titles. The optional GraphSpec fields preserve older `.lsa` parsing and the read-only legacy path

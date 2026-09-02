@@ -1548,7 +1548,7 @@ describe("ExperimentGraphWorkbench", () => {
     expect(serialized).toContain("stroke: #245c8a");
     expect(serialized.match(/<rect[^>]+data-graph-layer="bar"/g)).toHaveLength(3);
 
-    selectInspectorTarget("x-axis");
+    selectInspectorTarget("background");
     fireEvent.change(screen.getByRole("combobox", { name: "棒の外枠色" }), {
       target: { value: "black" },
     });
@@ -1605,7 +1605,7 @@ describe("ExperimentGraphWorkbench", () => {
     expect(screen.getByRole("combobox", { name: "編集対象" })).toHaveValue("series-style");
     expect(screen.getByRole("heading", { name: "系列の色・線・点" })).toBeVisible();
     selectInspectorTarget("data");
-    selectInspectorTarget("x-axis");
+    selectInspectorTarget("background");
     fireEvent.change(screen.getByRole("slider", { name: "棒の幅" }), {
       target: { value: "1" },
     });

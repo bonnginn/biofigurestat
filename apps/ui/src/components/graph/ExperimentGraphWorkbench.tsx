@@ -649,7 +649,6 @@ export function ExperimentGraphWorkbench({
                 attributes: draft.attributes,
                 hasOrderedAxis: draft.time.points.length > 0,
                 groupingXSource: grouping.x.source,
-                graphType,
                 setAxes,
                 setAppearance,
               }}

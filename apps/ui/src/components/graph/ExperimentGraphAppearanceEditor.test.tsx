@@ -31,12 +31,20 @@ const appearance = {
   canvasPreset: "wide",
   sidePadding: 120,
   axisLineWidth: 1.4,
+  barOutline: true,
+  barOutlineMode: "series",
+  barOutlineColor: "#111111",
+  barOutlineWidth: 1.2,
+  barMeanMarker: false,
+  barWidth: 0.72,
 } as GraphAppearance;
 
 function Harness({
+  graphType = "dot",
   onGraphTypeChange = vi.fn(),
   onApplyPreset = vi.fn(),
 }: {
+  graphType?: WorkspaceGraphState["graphType"];
   onGraphTypeChange?: (graphType: WorkspaceGraphState["graphType"]) => void;
   onApplyPreset?: (preset: GraphDisplayPreset) => void;
 }) {
@@ -44,7 +52,7 @@ function Harness({
   const [currentAppearance, setAppearance] = useState(appearance);
   return (
     <ExperimentGraphAppearanceEditor
-      graphType="dot"
+      graphType={graphType}
       appearance={currentAppearance}
       readoutShape="nested_continuous"
       analysisIntentKind="group_comparison"
@@ -89,6 +97,27 @@ describe("ExperimentGraphAppearanceEditor", () => {
     expect(screen.getByLabelText("Vehicleの色")).toHaveValue("#123456");
   });
 
+  it("keeps Bar appearance with Graph appearance and offers quick preset colors", () => {
+    const { rerender } = render(<Harness graphType="dot" />);
+    expect(screen.queryByRole("heading", { name: "棒" })).not.toBeInTheDocument();
+
+    rerender(<Harness graphType="bar" />);
+    expect(screen.getByRole("heading", { name: "棒" })).toBeVisible();
+    expect(screen.getByLabelText("棒の外枠色")).toHaveValue("series");
+
+    fireEvent.change(screen.getByLabelText("棒の外枠色"), { target: { value: "custom" } });
+    expect(screen.getByRole("group", { name: "棒の外枠のプリセット色" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "赤を選択" }));
+    expect(screen.getByLabelText("棒の外枠の任意色")).toHaveValue("#b42318");
+
+    fireEvent.change(screen.getByLabelText("棒の外枠の太さ"), { target: { value: "2.4" } });
+    expect(screen.getByLabelText("棒の外枠の太さ")).toHaveValue("2.4");
+    fireEvent.click(screen.getByLabelText("棒に平均マーカーを重ねる"));
+    expect(screen.getByLabelText("棒に平均マーカーを重ねる")).toBeChecked();
+    fireEvent.change(screen.getByLabelText("棒の幅"), { target: { value: "0.9" } });
+    expect(screen.getByLabelText("棒の幅")).toHaveValue("0.9");
+  });
+
   it("resets only layout presentation values", () => {
     render(<Harness />);
 
@@ -100,9 +129,10 @@ describe("ExperimentGraphAppearanceEditor", () => {
 
   it("contains no fixed Japanese copy in English", () => {
     act(() => setAppLocale("en"));
-    const view = render(<Harness />);
+    const view = render(<Harness graphType="bar" />);
 
     expect(screen.getByRole("heading", { name: "Graph appearance" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Bars" })).toBeVisible();
     expectNoJapaneseUi(view.container);
   });
 });

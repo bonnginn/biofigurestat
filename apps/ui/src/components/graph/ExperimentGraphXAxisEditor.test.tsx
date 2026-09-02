@@ -55,13 +55,7 @@ const initialAppearance = {
   hierarchyFontSize: 17,
 } as GraphAppearance;
 
-function Harness({
-  hasOrderedAxis = true,
-  graphType = "dot",
-}: {
-  hasOrderedAxis?: boolean;
-  graphType?: WorkspaceGraphState["graphType"];
-}) {
+function Harness({ hasOrderedAxis = true }: { hasOrderedAxis?: boolean }) {
   const [axes, setAxes] = useState(initialAxes);
   const [appearance, setAppearance] = useState(initialAppearance);
   return (
@@ -71,7 +65,6 @@ function Harness({
       attributes={attributes}
       hasOrderedAxis={hasOrderedAxis}
       groupingXSource="factor"
-      graphType={graphType}
       setAxes={setAxes}
       setAppearance={setAppearance}
     />
@@ -110,23 +103,12 @@ describe("ExperimentGraphXAxisEditor", () => {
     expect(screen.getByLabelText("Treatmentを下へ")).toBeDisabled();
   });
 
-  it("enables bar-only appearance controls only for a bar Graph", () => {
-    const { rerender } = render(<Harness graphType="dot" />);
-    expect(screen.getByLabelText("棒の輪郭線を表示")).toBeDisabled();
-    expect(screen.getByLabelText("棒の幅")).toBeDisabled();
+  it("keeps bar-only appearance controls out of the X-axis editor", () => {
+    render(<Harness />);
 
-    rerender(<Harness graphType="bar" />);
-    expect(screen.getByLabelText("棒の輪郭線を表示")).toBeEnabled();
-    expect(screen.getByLabelText("棒の外枠色")).toHaveValue("series");
-    fireEvent.change(screen.getByLabelText("棒の外枠色"), { target: { value: "custom" } });
-    expect(screen.getByLabelText("棒の外枠の任意色")).toHaveValue("#111111");
-    fireEvent.change(screen.getByLabelText("棒の外枠の任意色"), {
-      target: { value: "#cc3311" },
-    });
-    expect(screen.getByLabelText("棒の外枠の任意色")).toHaveValue("#cc3311");
-    fireEvent.change(screen.getByLabelText("棒の外枠の太さ"), { target: { value: "2.4" } });
-    expect(screen.getByLabelText("棒の外枠の太さ")).toHaveValue("2.4");
-    expect(screen.getByLabelText("棒の幅")).toBeEnabled();
+    expect(screen.queryByLabelText("棒の輪郭線を表示")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("棒の幅")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("カテゴリ間隔")).toBeEnabled();
   });
 
   it("contains no fixed Japanese copy in English", () => {

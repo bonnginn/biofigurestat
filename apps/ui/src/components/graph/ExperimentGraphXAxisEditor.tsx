@@ -14,7 +14,6 @@ export type ExperimentGraphXAxisEditorProps = Readonly<{
   attributes: ExperimentSetDraft["attributes"];
   hasOrderedAxis: boolean;
   groupingXSource: GraphGrouping["x"]["source"];
-  graphType: WorkspaceGraphState["graphType"];
   setAxes: Dispatch<SetStateAction<AxisSettings>>;
   setAppearance: Dispatch<SetStateAction<GraphAppearance>>;
 }>;
@@ -25,7 +24,6 @@ export function ExperimentGraphXAxisEditor({
   attributes,
   hasOrderedAxis,
   groupingXSource,
-  graphType,
   setAxes,
   setAppearance,
 }: ExperimentGraphXAxisEditorProps) {
@@ -293,95 +291,6 @@ export function ExperimentGraphXAxisEditor({
           <option value="minus_90">−90°</option>
         </select>
       </label>
-      <label className="experiment-graph-checkbox">
-        <input
-          type="checkbox"
-          checked={appearance.barOutline ?? true}
-          disabled={graphType !== "bar"}
-          aria-label={t("棒の輪郭線を表示", "Show bar outlines")}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              barOutline: event.target.checked,
-            }))
-          }
-        />
-        <span>{t("棒の輪郭線を表示", "Show bar outlines")}</span>
-      </label>
-      {graphType === "bar" && (appearance.barOutline ?? true) ? (
-        <>
-          <label className="experiment-graph-field">
-            <span>{t("棒の外枠色", "Bar outline color")}</span>
-            <select
-              aria-label={t("棒の外枠色", "Bar outline color")}
-              value={appearance.barOutlineMode ?? "series"}
-              onChange={(event) =>
-                setAppearance((current) => ({
-                  ...current,
-                  barOutlineMode: event.target.value as NonNullable<
-                    GraphAppearance["barOutlineMode"]
-                  >,
-                }))
-              }
-            >
-              <option value="series">{t("塗り色に合わせる", "Match fill color")}</option>
-              <option value="black">{t("黒", "Black")}</option>
-              <option value="custom">{t("任意色", "Custom color")}</option>
-            </select>
-          </label>
-          {appearance.barOutlineMode === "custom" ? (
-            <label className="experiment-graph-color-field">
-              <span>{t("棒の外枠の任意色", "Custom bar outline color")}</span>
-              <input
-                type="color"
-                aria-label={t("棒の外枠の任意色", "Custom bar outline color")}
-                value={appearance.barOutlineColor ?? "#111111"}
-                onChange={(event) =>
-                  setAppearance((current) => ({
-                    ...current,
-                    barOutlineColor: event.target.value,
-                  }))
-                }
-              />
-            </label>
-          ) : null}
-          <label className="experiment-graph-field">
-            <span>
-              {t("棒の外枠の太さ：", "Bar outline width: ")}
-              {(appearance.barOutlineWidth ?? appearance.distributionLineWidth ?? 1.2).toFixed(1)}px
-            </span>
-            <input
-              type="range"
-              min="0.5"
-              max="4"
-              step="0.1"
-              aria-label={t("棒の外枠の太さ", "Bar outline width")}
-              value={appearance.barOutlineWidth ?? appearance.distributionLineWidth ?? 1.2}
-              onChange={(event) =>
-                setAppearance((current) => ({
-                  ...current,
-                  barOutlineWidth: Number(event.target.value),
-                }))
-              }
-            />
-          </label>
-        </>
-      ) : null}
-      <label className="experiment-graph-checkbox">
-        <input
-          type="checkbox"
-          checked={appearance.barMeanMarker ?? false}
-          disabled={graphType !== "bar"}
-          aria-label={t("棒に平均マーカーを重ねる", "Overlay mean markers on bars")}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              barMeanMarker: event.target.checked,
-            }))
-          }
-        />
-        <span>{t("棒に平均マーカーを重ねる", "Overlay mean markers on bars")}</span>
-      </label>
       <label className="experiment-graph-field">
         <span>
           {t("カテゴリ間隔：", "Category spacing: ")}
@@ -398,27 +307,6 @@ export function ExperimentGraphXAxisEditor({
             setAxes((current) => ({
               ...current,
               spacing: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("棒の幅：", "Bar width: ")}
-          {appearance.barWidth.toFixed(2)}
-        </span>
-        <input
-          aria-label={t("棒の幅", "Bar width")}
-          type="range"
-          min="0.25"
-          max="1"
-          step="0.05"
-          value={appearance.barWidth}
-          disabled={graphType !== "bar"}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              barWidth: Number(event.target.value),
             }))
           }
         />

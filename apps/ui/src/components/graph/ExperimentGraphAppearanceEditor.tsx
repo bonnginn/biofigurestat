@@ -4,6 +4,7 @@ import { localizedText, useAppLocale } from "../../app/appLocale";
 import type { ExperimentSetDraft, ReadoutDraft } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { GRAPH_PALETTES, type GraphPaletteMode } from "./graphAppearance";
+import { ExperimentGraphBarAppearanceEditor } from "./ExperimentGraphBarAppearanceEditor";
 import { experimentGraphTypeLabel } from "./experimentGraphTypeLabel";
 
 type AxisSettings = WorkspaceGraphState["axes"];
@@ -154,6 +155,9 @@ export function ExperimentGraphAppearanceEditor({
             {t("パレット色に戻す", "Restore palette colors")}
           </button>
         </details>
+      ) : null}
+      {graphType === "bar" ? (
+        <ExperimentGraphBarAppearanceEditor appearance={appearance} setAppearance={setAppearance} />
       ) : null}
       <label className="experiment-graph-field">
         <span>{t("フォント", "Font")}</span>
