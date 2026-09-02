@@ -10,6 +10,8 @@ opening broad documents.
 - Regression-test retention and rationalization: `docs/agent/REGRESSION_TEST_POLICY.md`
 - Public release behavior and limitations: `docs/alpha/RELEASE_NOTES_0.1.0-alpha.2.md`,
   `docs/alpha/QUICK_START.md`, and `docs/alpha/KNOWN_LIMITATIONS.md`
+- Next Public Alpha timing and go/no-go boundary:
+  `docs/alpha/PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`
 - Public/private source relationship:
   `docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md` and
   `docs/alpha/BILINGUAL_ALPHA_UPDATE_READINESS_2026-09-01.md`

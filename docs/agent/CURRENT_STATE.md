@@ -49,6 +49,20 @@ English UI. Switching to Japanese opens the unchanged legacy editor; no project 
 Structural simplification is proceeding as small behavior-preserving commits. It does not change
 the published Alpha artifacts, scientific semantics, or the project schema.
 
+Graph appearance editors now share checked-state, numeric-range, and color-control primitives.
+Bar, uncertainty, connecting-line, raw-point, distribution, summary, and visual-series editors use
+the same event normalization and named-color foundation while retaining their existing appearance
+fields and graph-specific availability rules. The Graph-only editing route also applies a compact
+chrome modifier to workspace spacing, headings, Inspector sections, and ordinary inputs without
+resizing the rendered Graph or changing saved presentation values. These changes are source-only;
+their next native viewport review belongs to the `alpha.3` candidate gate.
+
+The recommended next public update is a maintenance `v0.1.0-alpha.3` after one same-source Windows
+and macOS candidate passes the release, native/manual, localization, export, and representative
+Public Alpha `.lsa` compatibility gates. It should not wait for every Beta feature, and it must not
+replace the existing `alpha.2` assets. The decision boundary is recorded in
+`docs/alpha/PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`.
+
 Formal equivalence support now has its first executable route: one prespecified primary comparison
 between two independent groups with a continuous outcome and a raw-difference margin. Protocol
 `0.15.0` runs unequal-variance Welch TOST, records both one-sided p values and the corresponding
