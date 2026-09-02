@@ -2,10 +2,44 @@ from __future__ import annotations
 
 import unittest
 
-from verify_engine_reference import compare
+from verify_engine_reference import (
+    compare,
+    reference_case_id,
+    reference_coverage,
+    reference_source_platform,
+    require_reference_writer_platform,
+)
 
 
 class EngineReferenceComparatorTests(unittest.TestCase):
+    def test_reference_writer_is_restricted_to_the_reviewed_platform(self) -> None:
+        self.assertEqual(reference_source_platform("Darwin", "aarch64"), "Darwin-arm64")
+        require_reference_writer_platform("Darwin", "arm64")
+        with self.assertRaisesRegex(SystemExit, "restricted to the reviewed Darwin-arm64"):
+            require_reference_writer_platform("Windows", "AMD64")
+
+    def test_reports_missing_and_obsolete_protocol_cases_without_executing_them(self) -> None:
+        current = {
+            "templateId": "D01",
+            "method": "welch_tost",
+            "requestId": "request.tost",
+        }
+        retired = {
+            "templateId": "D99",
+            "method": "retired",
+            "requestId": "request.old",
+        }
+        reference = {
+            "cases": [
+                {"caseId": reference_case_id(retired), "request": retired, "result": {}},
+            ]
+        }
+
+        self.assertEqual(
+            reference_coverage(reference, [current]),
+            ([reference_case_id(current)], [reference_case_id(retired)]),
+        )
+
     def test_numeric_tolerance_and_exact_semantics(self) -> None:
         expected = {
             "method": "welch_t",

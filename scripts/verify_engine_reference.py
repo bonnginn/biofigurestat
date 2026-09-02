@@ -28,6 +28,40 @@ NON_NUMERIC_PRESENTATION_PATH = re.compile(
 )
 
 
+def reference_source_platform(system: str, machine: str) -> str:
+    normalized_machine = "arm64" if machine.lower() in {"arm64", "aarch64"} else machine
+    return f"{system}-{normalized_machine}"
+
+
+def require_reference_writer_platform(system: str, machine: str) -> None:
+    source_platform = reference_source_platform(system, machine)
+    if source_platform != "Darwin-arm64":
+        raise SystemExit(
+            "Reference writing is restricted to the reviewed Darwin-arm64 authority; "
+            f"current platform is {source_platform}."
+        )
+
+
+def reference_case_id(request: dict[str, Any]) -> str:
+    return ":".join(
+        str(value)
+        for value in (
+            request["templateId"],
+            request["method"],
+            request.get("contrastIntent", "default"),
+            request["requestId"],
+        )
+    )
+
+
+def reference_coverage(
+    reference: dict[str, Any], requests: list[dict[str, Any]]
+) -> tuple[list[str], list[str]]:
+    reference_ids = {case["caseId"] for case in reference.get("cases", [])}
+    implemented_ids = {reference_case_id(request) for request in requests}
+    return sorted(implemented_ids - reference_ids), sorted(reference_ids - implemented_ids)
+
+
 def execute(request: dict[str, Any]) -> dict[str, Any]:
     environment = os.environ.copy()
     existing = environment.get("PYTHONPATH")
@@ -89,25 +123,16 @@ def compare(actual: Any, expected: Any, path: str = "result") -> list[str]:
 def create_reference() -> dict[str, Any]:
     cases = []
     for request in smoke_requests():
-        case_id = ":".join(
-            str(value)
-            for value in (
-                request["templateId"],
-                request["method"],
-                request.get("contrastIntent", "default"),
-                request["requestId"],
-            )
-        )
         cases.append(
             {
-                "caseId": case_id,
+                "caseId": reference_case_id(request),
                 "request": request,
                 "result": execute(request),
             }
         )
     return {
         "referenceVersion": "1.0.0",
-        "sourcePlatform": f"{platform.system()}-{platform.machine()}",
+        "sourcePlatform": reference_source_platform(platform.system(), platform.machine()),
         "pythonVersion": platform.python_version(),
         "numericTolerance": {"relative": 1e-10, "absolute": 1e-12},
         "cases": cases,
@@ -121,8 +146,14 @@ def main() -> None:
         action="store_true",
         help="Replace the committed reference intentionally on the known-good reference platform.",
     )
+    parser.add_argument(
+        "--require-complete-coverage",
+        action="store_true",
+        help="Fail when an implemented smoke protocol has no committed reference case.",
+    )
     args = parser.parse_args()
     if args.write_reference:
+        require_reference_writer_platform(platform.system(), platform.machine())
         payload = create_reference()
         REFERENCE.parent.mkdir(parents=True, exist_ok=True)
         REFERENCE.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -131,6 +162,17 @@ def main() -> None:
     if not REFERENCE.is_file():
         raise SystemExit(f"Reference file is missing: {REFERENCE}")
     reference = json.loads(REFERENCE.read_text(encoding="utf-8"))
+    if args.require_complete_coverage:
+        missing, obsolete = reference_coverage(reference, smoke_requests())
+        if missing:
+            for case_id in missing:
+                print(f"MISSING {case_id}")
+        if obsolete:
+            for case_id in obsolete:
+                print(f"OBSOLETE {case_id}")
+        if missing or obsolete:
+            raise SystemExit(1)
+        print(f"Reference coverage PASS ({len(reference['cases'])} implemented cases).")
     differences: list[str] = []
     for case in reference["cases"]:
         actual = execute(case["request"])
