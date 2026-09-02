@@ -31,6 +31,8 @@
     "format:check": "prettier --check .",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
+    "test:ui:english": "node scripts/run_english_ui_tests.mjs",
+    "test:ui:english:self": "node --test scripts/test_run_english_ui_tests.mjs",
     "test:ui:related": "node scripts/run_related_ui_tests.mjs",
     "test:ui:related:self": "node --test scripts/test_run_related_ui_tests.mjs",
     "typecheck": "pnpm -r --if-present typecheck",

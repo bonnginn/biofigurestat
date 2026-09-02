@@ -48,13 +48,13 @@ warning noise, flakiness, and maintenance cost are part of the decision, not aft
 The full UI suite is a milestone gate, not a per-commit reflex. Use the narrowest evidence that
 matches the risk:
 
-| Change | Required immediate evidence |
-| --- | --- |
-| Pure helper or selector | Its direct test file |
-| Component wiring or local state transition | Direct component test plus the smallest existing route test that proves wiring |
-| Several related source commits | Focused tests, UI typecheck, lint, and production build once for the batch |
-| Project schema/migration, scientific routing, shared persistence, or release candidate | Relevant package tests plus the complete UI/release gate |
-| Native-only behavior | Native verifier or harness; browser tests are not a substitute |
+| Change                                                                                 | Required immediate evidence                                                    |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Pure helper or selector                                                                | Its direct test file                                                           |
+| Component wiring or local state transition                                             | Direct component test plus the smallest existing route test that proves wiring |
+| Several related source commits                                                         | Focused tests, UI typecheck, lint, and production build once for the batch     |
+| Project schema/migration, scientific routing, shared persistence, or release candidate | Relevant package tests plus the complete UI/release gate                       |
+| Native-only behavior                                                                   | Native verifier or harness; browser tests are not a substitute                 |
 
 Run the complete UI suite at the end of a meaningful batch or before handoff/release, not after
 each small extraction. If a known parallel flaky fails during a complete run, finish or stop that
@@ -75,6 +75,18 @@ included in either mode. Deleting a source file fails closed because Vitest cann
 from a file that no longer exists. Run explicit focused tests for that case. This helper is a
 focused-development aid, not a replacement for direct package tests after schema/scientific
 changes or the complete UI/release gate at a milestone.
+
+English-copy changes have a separate focused gate:
+
+```text
+pnpm test:ui:english
+```
+
+It discovers every UI test file that calls the shared `expectNoJapaneseUi` assertion and runs that
+set only. The selection follows assertion use instead of a hand-maintained filename list, so a new
+English surface joins the gate when its contract test is added. This checks rendered and accessible
+application copy; it does not reject researcher-entered Japanese labels in real projects, and it
+does not replace the full release gate.
 
 ## Current rationalization direction
 
