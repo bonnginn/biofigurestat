@@ -144,7 +144,9 @@ actual assertion use and runs them as a focused localization gate; the measured 
 66.77 seconds. Expanded nested-value paste also replaces a Japanese exception from its parent
 update callback with an English safe fallback. Japanese mode retains diagnostic detail, and entered
 values remain unchanged. UI typecheck, focused lint, the production build, and the zero-marker
-release verifier pass for this batch; the full UI milestone suite was not repeated.
+release verifier pass for this batch. The import-graph-selected related gate also passes 25 files /
+332 tests in 113.79 seconds across both localization changes; the full UI milestone suite was not
+repeated.
 
 The final source gate ran the 193-file / 1,304-test UI suite once. It produced 1,303 passes and one
 stale test expectation for the Japanese `概要` tab; the corrected focused workflow passes. Full
