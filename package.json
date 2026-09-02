@@ -12,6 +12,7 @@
     "evaluation:bridge": "node scripts/run_with_engine_python.mjs scripts/evaluation_bridge.py",
     "engine:test": "node scripts/run_with_engine_python.mjs -m unittest discover -s engine/python/tests -p test_*.py",
     "engine:reference": "node scripts/run_with_engine_python.mjs scripts/verify_engine_reference.py",
+    "engine:reference:coverage": "node scripts/run_with_engine_python.mjs scripts/verify_engine_reference.py --require-complete-coverage",
     "benchmark:verify": "node scripts/run_with_engine_python.mjs scripts/verify_benchmark_runs.py",
     "release:verify": "node scripts/run_with_engine_python.mjs scripts/verify_release_bundle.py",
     "preview:ux": "pnpm --filter @lsaa/ui build && pnpm --filter @lsaa/ui preview --host 127.0.0.1 --port 4173 --strictPort",
