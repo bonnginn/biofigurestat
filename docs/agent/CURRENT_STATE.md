@@ -86,12 +86,15 @@ analysis values, or the project schema.
 
 The five-condition, three-unit-per-condition Games–Howell request now calculates only the ten
 upper-triangle comparisons that the product stores, rather than asking SciPy to evaluate diagonal
-and symmetric duplicate matrix cells. Direct packaged-engine runs on the review Windows host fell
-from 3.268–3.317 seconds to 2.194–2.262 seconds. All ten adjusted p values and simultaneous
-confidence intervals agree with the former full SciPy matrix to 14 decimal places; the complete
-69-test engine suite and 17-case frozen sidecar smoke pass. The existing per-request timeout and
-cancel isolation is unchanged, and no approximation was introduced. Timings remain a
-machine-specific diagnostic rather than a release guarantee.
+and symmetric duplicate matrix cells. It also reuses a critical value only where pairwise degrees
+of freedom are exactly equal; no rounded or approximate grouping is used. In-process calculation
+on the review Windows host fell from about 2.03 seconds to 0.22–0.23 seconds, and warm direct
+packaged-engine runs fell from 3.268–3.317 seconds to 1.562–1.654 seconds. A fresh-build cold run
+took 9.545 seconds and is recorded separately rather than hidden in the warm comparison. All ten
+adjusted p values and simultaneous confidence intervals agree with the former full SciPy matrix to
+14 decimal places; the complete 69-test engine suite and 17-case frozen sidecar smoke pass. The
+existing per-request timeout and cancel isolation is unchanged, and no approximation was
+introduced. Timings remain a machine-specific diagnostic rather than a release guarantee.
 
 The import workflow also bundles a constrained bilingual Excel template with separate sheets for
 independent groups, paired/repeated observations, Survival, and ordered X/Y data. The in-app recipe

@@ -94,7 +94,7 @@
 | ✅   | 途中行からの入力と実験回・日付の保持   | 空行を挟んだ入力を同じ行に保持し、canonical observationと実験回・日付を明示的に連結。保存・再読込・Graph・Statisticsで回帰確認済み。日付からpairingは推定しない |
 | ✅   | 数値入力の表示桁と表keyboard操作       | `1.00`などの入力表記をcanonical数値と分離して保存・再表示し、数値セルは左右矢印1回で移動。Enterは同列、左端からの連続入力後の右端Enterと右端Tabは次行左端へ移動することを回帰・Windows実機確認済み |
 | ✅   | 単純な独立群比較の条件数               | 最初の4欄を保ったまま最大50条件まで追加可能。5条件の作成、Graph、Welch ANOVA＋Games–Howell、4対照比較注釈、save/reopenをWindows packaged appで確認 |
-| ✅   | 多条件Statisticsの待ち時間             | SciPyが生成する対角・対称行列25セルのうち、製品が保存する上三角10比較だけを同じstudentized-range式で計算。5条件・各n=3のpackaged engineは旧3.268–3.317秒から2.194–2.262秒へ短縮。10比較の調整p値・同時CIを従来SciPy行列と小数14桁で照合し、engine 69 testsと17-case frozen smokeがPASS |
+| ✅   | 多条件Statisticsの待ち時間             | SciPyが生成する対角・対称行列25セルのうち製品が保存する上三角10比較だけを計算し、完全に同じ自由度のcritical valueだけを再利用。5条件・各n=3のin-process計算は旧約2.03秒から0.22–0.23秒、warm packaged engineは旧3.268–3.317秒から1.562–1.654秒へ短縮。fresh build直後のcold runは9.545秒だったため配布環境の初回値とは区別する。10比較の調整p値・同時CIを従来SciPy行列と小数14桁で照合し、engine 69 testsと17-case frozen smokeがPASS |
 | ⏸    | 独立性確認の質問を短くする             | 科学的安全性を保ちつつ、単純実験で過度に厳しく見えない                           |
 | ✅   | SpreadsheetのUndo/Redo                 | bounded canonical履歴を共通化し、Ctrl/Cmd+Z・redo・外部置換時clearを回帰test済み |
 | 🟡   | Graph-onlyの通常workspace統合          | 共通editorは利用可能。完成Graphとの表示差を継続解消                              |
