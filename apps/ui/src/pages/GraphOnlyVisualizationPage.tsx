@@ -27,6 +27,7 @@ import {
 import { createGraphOnlyWorkbenchModel } from "../app/graphOnlyWorkbenchAdapter";
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
 import { GraphOnlyColumnMappingPanel } from "../components/graph/GraphOnlyColumnMappingPanel";
+import { GraphOnlyStatisticsHandoff } from "../components/graph/GraphOnlyStatisticsHandoff";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 import { localizedFailureMessage, localizedText, useAppLocale } from "../app/appLocale";
 import "./GraphOnlyVisualizationPage.css";
@@ -304,12 +305,6 @@ export function GraphOnlyVisualizationPage({
       summaryVisible: true,
     });
   }, [canGraph]);
-
-  const columns = parsed.headers.map((header, index) => (
-    <option key={`${index}.${header}`} value={index}>
-      {header || t(`列 ${index + 1}`, `Column ${index + 1}`)}
-    </option>
-  ));
 
   const buildState = (): UnresolvedVisualizationProjectState | null => {
     if (!canGraph) return null;
@@ -919,255 +914,49 @@ export function GraphOnlyVisualizationPage({
           </p>
         ) : null}
         {workspaceTab === "statistics" && statisticsHandoffVisible ? (
-          <section
-            className="graph-only__statistics-handoff"
-            aria-labelledby="graph-only-statistics-handoff-heading"
-          >
-            <h3 id="graph-only-statistics-handoff-heading">
-              {t(
-                "統計に必要な実験情報を追加",
-                "Add experiment information required for statistics",
-              )}
-            </h3>
-            <p>
-              {t(
-                "元の表とGraphはこの画面に保持します。まず、横軸の意味だけ確認してから実験の質問へ進みます。",
-                "The source table and Graph remain on this screen. First confirm what the X axis means, then continue to the experiment questions.",
-              )}
-            </p>
-            <fieldset>
-              <legend>
-                {t(
-                  `横軸「${xColumn === "" ? "未指定" : parsed.headers[xColumn]}」は何を表しますか？`,
-                  `What does the X axis “${xColumn === "" ? "not selected" : parsed.headers[xColumn]}” represent?`,
-                )}
-              </legend>
-              <label>
-                <input
-                  type="radio"
-                  name="graph-only-x-meaning"
-                  checked={statisticsXMeaning === "condition"}
-                  onChange={() => {
-                    setStatisticsXMeaning("condition");
-                    statisticsSafeStopRecordedRef.current = false;
-                  }}
-                />
-                {t(
-                  "処理・群分け（Control、Drug A、genotypeなど）",
-                  "Treatment or group (for example Control, Drug A, or genotype)",
-                )}
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="graph-only-x-meaning"
-                  checked={statisticsXMeaning === "ordered"}
-                  onChange={() => {
-                    setStatisticsXMeaning("ordered");
-                    recordStatisticsSafeStop();
-                  }}
-                />
-                {t(
-                  "時間・濃度・距離など順序のある値",
-                  "An ordered value such as time, concentration, or distance",
-                )}
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="graph-only-x-meaning"
-                  checked={statisticsXMeaning === "unknown"}
-                  onChange={() => {
-                    setStatisticsXMeaning("unknown");
-                    recordStatisticsSafeStop();
-                  }}
-                />
-                {t("その他、または分からない", "Other or unknown")}
-              </label>
-            </fieldset>
-            {statisticsXMeaning === "condition" ? (
-              <label className="experiment-start__field">
-                <span>
-                  {t(
-                    "各行の対象・試料を示すID列（表にある場合）",
-                    "ID column identifying the subject or sample in each row (if present)",
-                  )}
-                </span>
-                <select
-                  aria-label={t("統計で使う対象ID", "Subject ID used for statistics")}
-                  value={
-                    identityDecision === "unanswered"
-                      ? ""
-                      : identityDecision === "no_id"
-                        ? "no_id"
-                        : String(idColumn)
-                  }
-                  onChange={(event) => {
-                    if (event.target.value === "") {
-                      setIdentityDecision("unanswered");
-                      setIdColumn("");
-                      setSourceRowUnitDecision("unanswered");
-                    } else if (event.target.value === "no_id") {
-                      setIdentityDecision("no_id");
-                      setIdColumn("");
-                      setSourceRowUnitDecision("unanswered");
-                    } else {
-                      setIdentityDecision("selected_column");
-                      setIdColumn(Number(event.target.value));
-                      setSourceRowUnitDecision("unanswered");
-                    }
-                  }}
-                >
-                  <option value="">{t("選択してください", "Select")}</option>
-                  <option value="no_id">
-                    {t(
-                      "元の表に対象・試料IDの列はない",
-                      "The source table has no subject or sample ID column",
-                    )}
-                  </option>
-                  {columns}
-                </select>
-                <small>
-                  {t(
-                    "DishID・AnimalIDなど、元の表にあるIDは独立した実験でも保持します。ID列を選んだだけでは対応ありと判断せず、次の質問で条件間の関係を確認します。行の順番から対応付けることはありません。ID列がない場合は、各行が別々の対象だと確認できたときだけアプリ内IDを作ります。同じ対象を繰り返し測った実験には、元のID列が必要です。",
-                    "IDs present in the source table, such as Dish ID or Animal ID, are retained even for independent experiments. Selecting an ID column does not imply matching; the next question confirms the relationship between conditions. Rows are never matched by order. Without an ID column, app-generated IDs are created only after you confirm that every row is a distinct subject. Repeated measurements of the same subject require an ID column in the source table.",
-                  )}
-                </small>
-              </label>
-            ) : null}
-            {statisticsXMeaning === "condition" && identityDecision === "no_id" ? (
-              <fieldset>
-                <legend>
-                  {t(
-                    "表の各行は、別々に処置した実験対象・試料ですか？",
-                    "Is each row a separately treated experimental subject or sample?",
-                  )}
-                </legend>
-                <label>
-                  <input
-                    type="radio"
-                    name="graph-only-source-row-unit"
-                    checked={sourceRowUnitDecision === "each_row_distinct_unit"}
-                    onChange={() => {
-                      setSourceRowUnitDecision("each_row_distinct_unit");
-                      statisticsSafeStopRecordedRef.current = false;
-                    }}
-                  />
-                  {t(
-                    "はい。各行が別々のanimal・dish・wellなどです",
-                    "Yes. Each row is a different animal, dish, well, or similar unit",
-                  )}
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="graph-only-source-row-unit"
-                    checked={sourceRowUnitDecision === "multiple_rows_per_unit"}
-                    onChange={() => {
-                      setSourceRowUnitDecision("multiple_rows_per_unit");
-                      recordStatisticsSafeStop();
-                    }}
-                  />
-                  {t(
-                    "いいえ。同じ対象内のCell・ROI・視野などを複数行に記録しています",
-                    "No. Multiple rows record cells, ROIs, fields, or similar observations within the same subject",
-                  )}
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="graph-only-source-row-unit"
-                    checked={sourceRowUnitDecision === "unknown"}
-                    onChange={() => {
-                      setSourceRowUnitDecision("unknown");
-                      recordStatisticsSafeStop();
-                    }}
-                  />
-                  {t("分からない", "I do not know")}
-                </label>
-              </fieldset>
-            ) : null}
-            {statisticsXMeaning === "condition" && identityDecision === "unanswered" ? (
-              <p className="graph-only__error" role="status">
-                {t(
-                  "対象・試料IDの列があるか回答してください。未回答のまま行番号をIDとして使うことはありません。",
-                  "Indicate whether a subject or sample ID column exists. Row numbers will not be used as IDs without your answer.",
-                )}
-              </p>
-            ) : null}
-            {statisticsXMeaning === "condition" &&
-            identityDecision === "no_id" &&
-            sourceRowUnitDecision === "unanswered" ? (
-              <p className="graph-only__error" role="status">
-                {t(
-                  "各行が別々に処置した対象・試料か回答してください。回答前に行を独立したnとして扱うことはありません。",
-                  "Confirm whether each row is a separately treated subject or sample. Rows will not be treated as independent n before confirmation.",
-                )}
-              </p>
-            ) : null}
-            {statisticsXMeaning === "condition" &&
-            identityDecision === "no_id" &&
-            sourceRowUnitDecision === "multiple_rows_per_unit" ? (
-              <p className="graph-only__error" role="alert">
-                {t(
-                  "Cell・ROI・視野を独立したnには変換しません。元の表へdish・animalなど共通の由来を示すID列を追加して選ぶまで、元データを保持して停止します。",
-                  "Cells, ROIs, or fields will not be converted into independent n. The source data are retained and the workflow stops until you add and select an ID column identifying their shared dish, animal, or other origin.",
-                )}
-              </p>
-            ) : null}
-            {statisticsXMeaning === "condition" &&
-            identityDecision === "no_id" &&
-            sourceRowUnitDecision === "unknown" ? (
-              <p className="graph-only__error" role="alert">
-                {t(
-                  "1行が何を表すか確認できるまで統計へ進みません。元の表とGraphは保持されています。",
-                  "Statistics will not continue until the meaning of one row is confirmed. The source table and Graph are retained.",
-                )}
-              </p>
-            ) : null}
-            {seriesColumn !== "" ? (
-              <p className="graph-only__error" role="alert">
-                {t(
-                  "選択中のグループ列が、処理条件・batch・表示だけの分類のどれか確認する必要があります。現在は自動で無視せず、元の表を保持して停止します。",
-                  "The selected group column must be identified as a treatment condition, batch, or display-only category. BioFigureStat retains the source table and stops instead of ignoring it automatically.",
-                )}
-              </p>
-            ) : null}
-            {statisticsXMeaning === "ordered" ? (
-              <p className="graph-only__error" role="alert">
-                {t(
-                  "順序のあるXを一般実験へ安全に引き継ぐ仕組みは準備中です。別の実験構造へ変換せず、元の表を保持します。",
-                  "Safe transfer of an ordered X axis into the general experiment workflow is not available yet. The source table is retained without converting it to another experiment structure.",
-                )}
-              </p>
-            ) : null}
-            {statisticsXMeaning === "unknown" ? (
-              <p className="graph-only__error" role="alert">
-                {t(
-                  "横軸の意味が決まるまで推測して進みません。元の表は保持されています。",
-                  "BioFigureStat will not guess and continue until the meaning of the X axis is known. The source table is retained.",
-                )}
-              </p>
-            ) : null}
-            <button
-              className="primary-button"
-              type="button"
-              disabled={
-                statisticsXMeaning !== "condition" ||
-                identityDecision === "unanswered" ||
-                (identityDecision === "no_id" &&
-                  sourceRowUnitDecision !== "each_row_distinct_unit") ||
-                seriesColumn !== ""
+          <GraphOnlyStatisticsHandoff
+            headers={parsed.headers}
+            xColumn={xColumn}
+            seriesColumn={seriesColumn}
+            idColumn={idColumn}
+            identityDecision={identityDecision}
+            sourceRowUnitDecision={sourceRowUnitDecision}
+            xMeaning={statisticsXMeaning}
+            onXMeaningChange={(meaning) => {
+              setStatisticsXMeaning(meaning);
+              if (meaning === "condition") {
+                statisticsSafeStopRecordedRef.current = false;
+              } else {
+                recordStatisticsSafeStop();
               }
-              onClick={() => {
-                const state = buildState();
-                if (state) onStatisticsStructureRequested?.(state);
-                else recordStatisticsSafeStop();
-              }}
-            >
-              {t("実験構造の確認へ", "Continue to experiment structure")}
-            </button>
-          </section>
+            }}
+            onIdentitySelectionChange={(selection) => {
+              if (selection === "") {
+                setIdentityDecision("unanswered");
+                setIdColumn("");
+              } else if (selection === "no_id") {
+                setIdentityDecision("no_id");
+                setIdColumn("");
+              } else {
+                setIdentityDecision("selected_column");
+                setIdColumn(selection);
+              }
+              setSourceRowUnitDecision("unanswered");
+            }}
+            onSourceRowUnitDecisionChange={(decision) => {
+              setSourceRowUnitDecision(decision);
+              if (decision === "each_row_distinct_unit") {
+                statisticsSafeStopRecordedRef.current = false;
+              } else {
+                recordStatisticsSafeStop();
+              }
+            }}
+            onContinue={() => {
+              const state = buildState();
+              if (state) onStatisticsStructureRequested?.(state);
+              else recordStatisticsSafeStop();
+            }}
+          />
         ) : null}
         {saveMessage ? (
           <p className="graph-only__success" role="status">

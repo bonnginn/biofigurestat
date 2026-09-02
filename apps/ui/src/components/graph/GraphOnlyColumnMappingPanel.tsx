@@ -60,7 +60,7 @@ export function GraphOnlyColumnMappingPanel({
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const columns = headers.map((header, index) => (
     <option key={`${index}:${header}`} value={index}>
-      {header}
+      {header || t(`列 ${index + 1}`, `Column ${index + 1}`)}
     </option>
   ));
 
