@@ -103,7 +103,11 @@ race for the current runner and candidate. A clean CI/VM remains desirable for r
 is no longer required to demonstrate the first complete Windows packaged-app PASS.
 
 A CDP-connection failure remains `HARNESS_INFRASTRUCTURE_BLOCKED`; it must never be reported as a
-BioFigureStat product regression without product-level evidence.
+BioFigureStat product regression without product-level evidence. Each WebSocket attachment attempt
+has its own bounded timeout, so an inspection provider that neither accepts nor rejects a socket
+cannot overrun the scenario deadline indefinitely. Failure evidence records only bounded page-target
+transitions (`id`, URL, and whether a WebSocket endpoint existed), making a persistent blank target,
+target replacement, and discovery-channel loss distinguishable without collecting page content.
 
 The Windows scenario also sends a deterministic independent two-group Welch TOST request through
 the packaged application's actual `run_analysis` command. It requires protocol `0.15.0`, an `ok`

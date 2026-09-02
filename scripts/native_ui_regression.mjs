@@ -149,6 +149,16 @@ export function selectWebviewTarget(targets) {
   );
 }
 
+export function summarizeWebviewTargets(targets) {
+  return targets
+    .filter((target) => target.type === "page")
+    .map((target) => ({
+      id: typeof target.id === "string" ? target.id : "",
+      url: typeof target.url === "string" ? target.url : "",
+      websocket: typeof target.webSocketDebuggerUrl === "string",
+    }));
+}
+
 export function classifyNativeRegressionFailure(error, steps) {
   const failedStep = steps.find((step) => step.status === "fail")?.name;
   const message = String(error);
@@ -498,14 +508,32 @@ class CdpClient {
     this.socket = null;
   }
 
-  async connect() {
+  async connect(timeoutMs = 2_000) {
     await new Promise((resolvePromise, rejectPromise) => {
       const socket = new WebSocket(this.url);
       this.socket = socket;
-      socket.addEventListener("open", () => resolvePromise());
-      socket.addEventListener("error", () =>
-        rejectPromise(new Error("Could not connect to WebView2 CDP")),
-      );
+      let settled = false;
+      const finish = (action, value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        socket.removeEventListener("open", onOpen);
+        socket.removeEventListener("error", onError);
+        action(value);
+      };
+      const onOpen = () => finish(resolvePromise);
+      const onError = () => finish(rejectPromise, new Error("Could not connect to WebView2 CDP"));
+      const timer = setTimeout(() => {
+        finish(
+          rejectPromise,
+          new Error(`Timed out connecting to WebView2 CDP after ${timeoutMs} ms`),
+        );
+        try {
+          socket.close();
+        } catch (_) {}
+      }, timeoutMs);
+      socket.addEventListener("open", onOpen);
+      socket.addEventListener("error", onError);
       socket.addEventListener("message", (event) => {
         const message = JSON.parse(String(event.data));
         if (!message.id) return;
@@ -609,6 +637,15 @@ async function connectToStableWebview(port, initialTarget, timeoutMs, child) {
   let target = initialTarget;
   let lastConnectionError;
   let lastDiscoveryError;
+  const targetTransitions = [];
+  const recordTargets = (targets) => {
+    const summary = summarizeWebviewTargets(targets);
+    const encoded = JSON.stringify(summary);
+    if (targetTransitions.at(-1)?.encoded !== encoded && targetTransitions.length < 12) {
+      targetTransitions.push({ encoded, summary });
+    }
+  };
+  recordTargets(initialTarget ? [initialTarget] : []);
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       throw new Error(
@@ -618,7 +655,7 @@ async function connectToStableWebview(port, initialTarget, timeoutMs, child) {
     if (target) {
       const candidate = new CdpClient(target.webSocketDebuggerUrl);
       try {
-        await candidate.connect();
+        await candidate.connect(Math.max(250, Math.min(2_000, deadline - Date.now())));
         const navigationDeadline = Math.min(deadline, Date.now() + 5_000);
         let appDocumentReady = false;
         while (Date.now() < navigationDeadline) {
@@ -653,6 +690,7 @@ async function connectToStableWebview(port, initialTarget, timeoutMs, child) {
       const response = await fetch(`http://127.0.0.1:${port}/json/list`);
       if (response.ok) {
         const targets = await response.json();
+        recordTargets(targets);
         target = selectWebviewTarget(targets);
       } else {
         lastDiscoveryError = new Error(`CDP discovery returned HTTP ${response.status}`);
@@ -663,7 +701,7 @@ async function connectToStableWebview(port, initialTarget, timeoutMs, child) {
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 150));
   }
   throw new Error(
-    `WebView2 CDP target never became stable; connection=${String(lastConnectionError)}; discovery=${String(lastDiscoveryError)}`,
+    `WebView2 CDP target never became stable; connection=${String(lastConnectionError)}; discovery=${String(lastDiscoveryError)}; targetTransitions=${JSON.stringify(targetTransitions.map(({ summary }) => summary))}`,
   );
 }
 

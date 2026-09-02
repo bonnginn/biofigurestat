@@ -10,6 +10,7 @@ import {
   parseNativeRegressionArguments,
   resolveNativeExecutable,
   selectWebviewTarget,
+  summarizeWebviewTargets,
   windowsCloseCommand,
   windowsFileDialogCommand,
   windowsFileDialogFailure,
@@ -135,6 +136,26 @@ test("accepts the fresh WebView2 page target before its initial URL is committed
     { type: "page", url: "", webSocketDebuggerUrl: "ws://fresh-page" },
   ]);
   assert.equal(target?.webSocketDebuggerUrl, "ws://fresh-page");
+});
+
+test("records bounded CDP target evidence without serializing unrelated target fields", () => {
+  assert.deepEqual(
+    summarizeWebviewTargets([
+      {
+        id: "page-1",
+        type: "page",
+        url: "about:blank",
+        title: "transient title",
+        webSocketDebuggerUrl: "ws://127.0.0.1/devtools/page/page-1",
+      },
+      { id: "worker-1", type: "service_worker", url: "", webSocketDebuggerUrl: "ws://worker" },
+      { id: 2, type: "page", url: null },
+    ]),
+    [
+      { id: "page-1", url: "about:blank", websocket: true },
+      { id: "", url: "", websocket: false },
+    ],
+  );
 });
 
 test("resolves the macOS executable from the application bundle metadata", async () => {
