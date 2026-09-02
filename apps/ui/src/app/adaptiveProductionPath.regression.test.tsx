@@ -350,7 +350,7 @@ describe("adaptive production path regressions", () => {
     );
   });
 
-  it("keeps a first value entered below blank rows on that experiment row", () => {
+  it("keeps a first value entered below blank rows on that experiment row through save/open", async () => {
     const contract = biologicalContract({
       title: "Sparse independent entry",
       measurement: "Fluorescence intensity",
@@ -366,12 +366,17 @@ describe("adaptive production path regressions", () => {
       now,
     });
     if (!workspace.draft) throw new Error("Expected an editable adaptive workspace");
+    const saveProject = vi.fn(async (state: ProjectState, target?: string) => ({
+      state,
+      target: target ?? "/tmp/sparse-independent-entry.lsa",
+    }));
 
-    render(
+    const rendered = render(
       <ExperimentWorkspace
         initialDraft={workspace.draft}
         initialCells={workspace.cells}
         onBack={vi.fn()}
+        saveProject={saveProject}
       />,
     );
     const thirdControlCell = screen.getByRole("textbox", {
@@ -380,6 +385,41 @@ describe("adaptive production path regressions", () => {
     fireEvent.change(thirdControlCell, { target: { value: "999" } });
     fireEvent.blur(thirdControlCell);
 
+    expect(
+      screen.getByRole("textbox", {
+        name: "入力行 1・Control・Fluorescence intensity",
+      }),
+    ).toHaveValue("");
+    expect(
+      screen.getByRole("textbox", {
+        name: "入力行 3・Control・Fluorescence intensity",
+      }),
+    ).toHaveValue("999");
+
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const saved = saveProject.mock.calls[0]![0];
+    expect(saved.adaptiveInput?.canonicalObservations).toHaveLength(1);
+    expect(saved.adaptiveInput?.canonicalObservations[0]).toMatchObject({
+      factors: { treatment: "Control" },
+      experimentSessionId: saved.experimentWorkspace?.experimentSessions[2]?.id,
+    });
+    expect(Object.values(saved.adaptiveInput?.canonicalObservations[0]?.values ?? {})).toEqual([
+      999,
+    ]);
+
+    const reopened = rehydrateExperimentWorkspace(
+      ProjectStateSchema.parse(JSON.parse(JSON.stringify(saved))),
+    );
+    if (!reopened) throw new Error("Expected the sparse project to reopen");
+    rendered.unmount();
+    render(
+      <ExperimentWorkspace
+        initialDraft={reopened.draft}
+        initialCells={reopened.cells}
+        onBack={vi.fn()}
+      />,
+    );
     expect(
       screen.getByRole("textbox", {
         name: "入力行 1・Control・Fluorescence intensity",
