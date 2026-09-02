@@ -7,6 +7,7 @@ import {
 import { ExperimentDesignSchema } from "@lsaa/domain";
 import { afterEach, vi } from "vitest";
 
+import { AnalysisClientError } from "../../app/analysisClient";
 import type { DraftAnalysisAssessment } from "../../app/experimentDraftAnalysis";
 import { recordUsageMilestone } from "../../app/usageTelemetry";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
@@ -273,6 +274,30 @@ it("runs only the supported independent two-group equivalence request", async ()
     }),
   );
   expect(await screen.findByText("同等性を支持")).toBeVisible();
+});
+
+it("retains privacy-safe local engine guidance instead of replacing it with a generic error", async () => {
+  const analysisRunner = vi.fn().mockRejectedValue(
+    new AnalysisClientError(
+      "ENGINE_EXECUTION_FAILED",
+      "ローカル統計エンジンの出力を検証できませんでした。診断情報を保存してください。",
+    ),
+  );
+  render(
+    <GraphStatisticsPanel
+      assessment={readyAssessment}
+      design={panelDesign()}
+      analysisRunner={analysisRunner}
+      relationshipAlreadyDeclared
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+
+  expect(
+    await screen.findByText(/ローカル統計エンジンの出力を検証できませんでした/u),
+  ).toBeVisible();
+  expect(screen.getByText(/ENGINE_EXECUTION_FAILED/u)).toBeVisible();
 });
 
 it("states that a non-significant difference test does not establish equivalence", () => {

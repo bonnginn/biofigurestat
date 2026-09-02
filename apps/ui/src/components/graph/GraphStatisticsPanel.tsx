@@ -12,7 +12,11 @@ import {
 } from "@lsaa/analysis-contracts";
 import type { ExperimentDesign } from "@lsaa/domain";
 
-import { cancelLocalAnalysis, type AnalysisRunner } from "../../app/analysisClient";
+import {
+  AnalysisClientError,
+  cancelLocalAnalysis,
+  type AnalysisRunner,
+} from "../../app/analysisClient";
 import type {
   ContrastIntent,
   DraftAnalysisAssessment,
@@ -555,7 +559,9 @@ export function GraphStatisticsPanel({
           locale,
         );
         setError(
-          `${researcherMessage.title}${localizedText(locale, `（${researcherMessage.code}）。`, ` (${researcherMessage.code}). `)}${researcherMessage.nextAction}`,
+          reason instanceof AnalysisClientError && locale === "ja"
+            ? `${researcherMessage.title}（${researcherMessage.code}）。${reason.message}`
+            : `${researcherMessage.title}${localizedText(locale, `（${researcherMessage.code}）。`, ` (${researcherMessage.code}). `)}${researcherMessage.nextAction}`,
         );
       } finally {
         if (executionGenerationRef.current === generation) {
