@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import type { AdaptiveInputSnapshot, StructureContract } from "@lsaa/domain";
 import {
-  ADAPTIVE_SURFACE_GRAMMAR,
   adaptiveMessage,
   buildStructureContract,
   importForSelectedSurface,
@@ -12,6 +11,7 @@ import {
 import { adaptiveSurvivalPaste, createAdaptiveWorkspace } from "../app/adaptiveWorkspace";
 import { localizedFailureMessage } from "../app/appLocale";
 import { adaptiveConfirmationReason } from "../app/adaptiveConfirmationMessages";
+import { adaptiveSurfaceGrammar, adaptiveSurfaceTitle } from "../app/adaptiveSurfaceMessages";
 import type { ExperimentCellMap, ExperimentSetDraft } from "../app/experimentDraft";
 import "./AdaptiveExperimentEntry.css";
 
@@ -431,7 +431,7 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
     );
 
   if (!contract || !selection) return null;
-  const grammar = ADAPTIVE_SURFACE_GRAMMAR[selection.surfaceId];
+  const grammar = adaptiveSurfaceGrammar(locale, selection.surfaceId);
   return (
     <section
       className="adaptive-entry"
@@ -439,7 +439,7 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
       data-adaptive-surface={selection.surfaceId}
     >
       <p className="experiment-start__eyebrow">{adaptiveMessage(locale, "structureSummary")}</p>
-      <h1 id="adaptive-surface-title">{selection.surfaceId}</h1>
+      <h1 id="adaptive-surface-title">{adaptiveSurfaceTitle(locale, selection.surfaceId)}</h1>
       <div className="adaptive-entry__edit-design">
         <p>
           {locale === "ja"

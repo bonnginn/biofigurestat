@@ -36,7 +36,7 @@ describe("AdaptiveExperimentEntry accessibility and localization", () => {
     generate.focus();
     expect(generate).toHaveFocus();
     fireEvent.click(generate);
-    expect(screen.getByRole("heading", { name: "compact_unit_matrix" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "条件ごとの対応入力" })).toBeVisible();
     const paste = screen.getByLabelText("表を貼り付ける");
     fireEvent.change(paste, { target: { value: "CellID\tDark\tLit\nC1\t1\t2\nC2\t3\t4" } });
     fireEvent.click(screen.getByRole("button", { name: "この入力面を使う" }));
@@ -155,7 +155,7 @@ describe("AdaptiveExperimentEntry accessibility and localization", () => {
     fireEvent.change(screen.getByLabelText("条件・要因名 2"), { target: { value: "Construct" } });
     fireEvent.change(screen.getByLabelText("水準 2"), { target: { value: "Empty, Rescue" } });
     fireEvent.click(screen.getByRole("button", { name: "入力面を作る" }));
-    expect(screen.getByRole("heading", { name: "factor_observation_table" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "観測ごとの入力表" })).toBeVisible();
     fireEvent.change(screen.getByLabelText("表を貼り付ける"), {
       target: {
         value:

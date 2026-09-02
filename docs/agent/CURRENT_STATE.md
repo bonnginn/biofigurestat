@@ -138,10 +138,10 @@ production build are covered; final visual judgment remains a Beta manual-review
 The English-UI residue assertion now inspects current input/textarea values and
 `aria-description`, in addition to visible text, labels, titles, placeholders, and alt text. This
 closes the class of leak where a generated Japanese default remains only inside an editable field.
-All 38 suites that use the assertion pass (358 tests) with English fixtures; researcher-entered
+All 39 suites that use the assertion pass (359 tests) with English fixtures; researcher-entered
 content remains data and is not translated. `pnpm test:ui:english` now discovers those suites from
 actual assertion use and runs them as a focused localization gate; the measured run completed in
-67.01 seconds. Expanded nested-value paste also replaces a Japanese exception from its parent
+68.46 seconds. Expanded nested-value paste also replaces a Japanese exception from its parent
 update callback with an English safe fallback. Japanese mode retains diagnostic detail, and entered
 values remain unchanged. UI typecheck, focused lint, the production build, and the zero-marker
 release verifier pass for this batch. The import-graph-selected related gate also passes 25 files /
@@ -150,7 +150,12 @@ repeated.
 
 The older adaptive-entry confirmation surface now maps its stable relationship, missingness, and
 ordered-axis identity keys to reviewed Japanese explanations instead of displaying the package's
-canonical English reason in Japanese mode. Semantic keys and saved structure remain unchanged.
+canonical English reason in Japanese mode. Its five deterministic row/column grammar descriptions
+and researcher-facing surface titles are localized at the same UI boundary, so internal names such
+as `compact_unit_matrix` remain machine identifiers instead of headings. Semantic keys, surface
+IDs, and saved structure remain unchanged.
+The related gate for the final adaptive-surface change passes 16 files / 185 tests in 58.98
+seconds.
 
 The final source gate ran the 193-file / 1,304-test UI suite once. It produced 1,303 passes and one
 stale test expectation for the Japanese `概要` tab; the corrected focused workflow passes. Full
