@@ -2103,28 +2103,6 @@ function CategoricalCountsTable({
 }) {
   const rows = rowsFor(draft, experiment.id);
   const categories = readout.categories ?? [];
-  const move = (event: KeyboardEvent<HTMLInputElement>, rowIndex: number, columnIndex: number) => {
-    const delta =
-      event.key === "ArrowUp"
-        ? [-1, 0]
-        : event.key === "ArrowDown" || event.key === "Enter"
-          ? [1, 0]
-          : event.key === "ArrowLeft"
-            ? [0, -1]
-            : event.key === "ArrowRight"
-              ? [0, 1]
-              : null;
-    if (!delta) return;
-    const target = event.currentTarget
-      .closest("table")
-      ?.querySelector<HTMLInputElement>(
-        `[data-grid-row="${rowIndex + delta[0]}"][data-grid-column="${columnIndex + delta[1]}"]`,
-      );
-    if (!target) return;
-    event.preventDefault();
-    target.focus();
-    target.select();
-  };
   const paste = (startRow: number, startColumn: number, text: string) => {
     proportionPasteRows(text).forEach((tokens, rowOffset) => {
       const row = rows[startRow + rowOffset];
@@ -2192,15 +2170,16 @@ function CategoricalCountsTable({
                     <input
                       aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の${category.label}数`}
                       className="experiment-workspace-number-input"
-                      data-grid-row={rowIndex}
-                      data-grid-column={columnIndex}
+                      data-spreadsheet-cell="true"
+                      data-spreadsheet-row={rowIndex}
+                      data-spreadsheet-column={columnIndex}
                       min="0"
                       step="1"
                       type="number"
                       value={cell.counts[category.id] ?? ""}
                       onFocus={(event) => event.currentTarget.select()}
                       onWheel={(event) => event.currentTarget.blur()}
-                      onKeyDown={(event) => move(event, rowIndex, columnIndex)}
+                      onKeyDown={moveSpreadsheetFocus}
                       onChange={(event) =>
                         onChange(key, category.id, countValue(event.currentTarget.value))
                       }
@@ -2291,28 +2270,6 @@ function WbRatioTable({
     if (field.endsWith("Intensity")) return `${bandLabel} Intensity`;
     if (field.endsWith("Background")) return `${bandLabel} Background`;
     return `${bandLabel} Area`;
-  };
-  const move = (event: KeyboardEvent<HTMLInputElement>, rowIndex: number, columnIndex: number) => {
-    const delta =
-      event.key === "ArrowUp"
-        ? [-1, 0]
-        : event.key === "ArrowDown" || event.key === "Enter"
-          ? [1, 0]
-          : event.key === "ArrowLeft"
-            ? [0, -1]
-            : event.key === "ArrowRight"
-              ? [0, 1]
-              : null;
-    if (!delta) return;
-    const target = event.currentTarget
-      .closest("table")
-      ?.querySelector<HTMLInputElement>(
-        `[data-grid-row="${rowIndex + delta[0]}"][data-grid-column="${columnIndex + delta[1]}"]`,
-      );
-    if (!target) return;
-    event.preventDefault();
-    target.focus();
-    target.select();
   };
   const paste = (startRow: number, startColumn: number, text: string) => {
     proportionPasteRows(text).forEach((tokens, rowOffset) => {
@@ -2434,15 +2391,16 @@ function WbRatioTable({
                     <input
                       aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の${fieldLabel(field)}`}
                       className="experiment-workspace-number-input"
-                      data-grid-column={columnIndex}
-                      data-grid-row={rowIndex}
+                      data-spreadsheet-cell="true"
+                      data-spreadsheet-column={columnIndex}
+                      data-spreadsheet-row={rowIndex}
                       inputMode="decimal"
                       min="0"
                       type="number"
                       value={wbEditableValue(cell, field) ?? ""}
                       onFocus={(event) => event.currentTarget.select()}
                       onWheel={(event) => event.currentTarget.blur()}
-                      onKeyDown={(event) => move(event, rowIndex, columnIndex)}
+                      onKeyDown={moveSpreadsheetFocus}
                       onChange={(event) => {
                         const value = parseSpreadsheetNumber(event.currentTarget.value);
                         onChange(key, field, value !== null && value >= 0 ? value : null);

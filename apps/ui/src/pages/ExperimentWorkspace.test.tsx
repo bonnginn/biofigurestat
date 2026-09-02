@@ -746,6 +746,33 @@ describe("ExperimentWorkspace", () => {
     expect(target).toHaveValue(20);
   });
 
+  it("uses the shared one-keystroke grid navigation in WB and categorical tables", () => {
+    const wb = render(
+      <ExperimentWorkspace initialDraft={draftWithTwoConditions("wb_ratio")} onBack={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
+    const target = screen.getByRole("spinbutton", { name: "Controlの標的タンパク質" });
+    fireEvent.keyDown(target, { key: "ArrowRight" });
+    expect(screen.getByRole("spinbutton", { name: "ControlのGAPDH" })).toHaveFocus();
+    wb.unmount();
+
+    const fixture = createCategoricalCompositionFixture();
+    render(
+      <ExperimentWorkspace
+        initialDraft={fixture.draft}
+        initialCells={fixture.cells}
+        onBack={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
+    const firstCount = screen.getByRole("spinbutton", { name: "ControlのG0/G1数" });
+    fireEvent.keyDown(firstCount, { key: "ArrowRight" });
+    const secondCount = screen.getByRole("spinbutton", { name: "ControlのS数" });
+    expect(secondCount).toHaveFocus();
+    fireEvent.keyDown(secondCount, { key: "ArrowDown" });
+    expect(screen.getByRole("spinbutton", { name: "TreatmentのS数" })).toHaveFocus();
+  });
+
   it("keeps category counts editable and creates a 100% stacked composition graph", async () => {
     const fixture = createCategoricalCompositionFixture();
     render(
@@ -1353,11 +1380,7 @@ describe("ExperimentWorkspace", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    await screen.findByRole(
-      "region",
-      { name: "実験からグラフを作成" },
-      { timeout: 5_000 },
-    );
+    await screen.findByRole("region", { name: "実験からグラフを作成" }, { timeout: 5_000 });
     fireEvent.click(screen.getByRole("button", { name: "統計" }));
     expect(screen.getByRole("region", { name: "統計ワークスペース" })).toBeVisible();
     expect(screen.queryByRole("combobox", { name: "編集対象" })).toBeNull();
