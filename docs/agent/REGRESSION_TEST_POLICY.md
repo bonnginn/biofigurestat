@@ -63,6 +63,19 @@ Do not restart the whole suite merely to obtain an all-green screenshot. A sourc
 after the last complete gate requires focused evidence immediately and can wait for the next
 scheduled complete gate unless it touches one of the high-risk contracts above.
 
+For a source batch, the related-test helper asks Vitest to follow the actual import graph from the
+changed UI and shared-package TypeScript/CSS files:
+
+```text
+pnpm test:ui:related --base <known-good-commit>
+```
+
+With no `--base`, it selects uncommitted changes relative to `HEAD`; new untracked source files are
+included in either mode. Deleting a source file fails closed because Vitest cannot trace imports
+from a file that no longer exists. Run explicit focused tests for that case. This helper is a
+focused-development aid, not a replacement for direct package tests after schema/scientific
+changes or the complete UI/release gate at a milestone.
+
 ## Current rationalization direction
 
 The largest jsdom suites (`ExperimentGraphWorkbench`, `App`, `CommonCoveragePage`, and the adaptive

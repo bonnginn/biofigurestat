@@ -732,6 +732,12 @@ toolbar, and Vite configuration group passes 59 tests with UI typecheck and focu
 production build retains the 264.45 kB initial chunk, and the release verifier finds zero forbidden
 `benchmark` markers in the generated bundle.
 
+The related-test development gate now asks Vitest to follow the import graph from changed UI and
+shared-package TypeScript/CSS (`pnpm test:ui:related --base <known-good-commit>`). Its first measured
+use selected two test files and ran 23 tests in 12.37 seconds, instead of repeating the roughly
+four-minute full UI milestone gate. The selector has direct Node tests. Schema, scientific-routing,
+persistence, native, and release changes still require their explicit package or milestone gates.
+
 ## Known bounded gaps
 
 Adaptive independent worksheets now retain sparse row identity: entering row 3 before rows 1 and
