@@ -742,6 +742,10 @@ stale expectations rather than product failures: a keyboard case skipped the req
 Tab sequence before contextual Enter, and an idempotence case still expected the new explicit
 experiment-session link to be absent. Both corrected focused tests pass; the complete milestone
 suite has not been repeated solely to replace those two already-isolated failures.
+The five slowest React integration files pass 229 tests in 76.85 seconds with the current process
+pool and 75.21 seconds with `vmThreads` under the same two-worker limit. A 2% one-host difference
+does not justify changing the cross-platform runner. The effective optimization remains selecting
+related tests during development, not weakening isolation or changing pools.
 
 ## Known bounded gaps
 
