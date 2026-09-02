@@ -19,7 +19,7 @@
 
 | 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
 | ---- | ---- | ---- | ------------ | -------- |
-| 1 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
+| 1 | 🟡 | 正式な同等性解析の次の実行method | pairedの不完全ペア方針と比較方向の確認。shared-run、positive/totalは別途科学レビュー | 独立2群continuousの単一主比較は完了。paired continuousはADR 0062へ式・禁止境界・reference vectorを提案済みだが実行は未有効化 |
 | 2 | 🟡 | installed `.lsa` file associationの自動確認 | installerとOS関連付けの確認時のみ | 同じexeへのpath指定再起動はpackaged PASS。次にinstaller経由のdouble-clickを再現 |
 | 3 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | 通常Graph previewとKaplan–Meierの安全な外観設定は実装済み。Graph-only表示差と最終的な見た目を実機で確認 |
 | 4 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |

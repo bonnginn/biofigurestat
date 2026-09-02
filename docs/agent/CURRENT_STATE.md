@@ -774,6 +774,12 @@ An interval-centered result component is ready to display estimate, CI, margin, 
 tests, and the three-state conclusion once a reviewed engine route is enabled. No equivalence
 engine route is enabled by these foundation changes.
 
+Paired continuous equivalence has a bounded, non-executable implementation proposal in ADR 0062.
+It specifies a one-sample TOST on stable-ID difference scores, first-condition-minus-second
+direction, raw prespecified bounds, a frozen SciPy/statsmodels reference vector, and explicit
+failure cases. Production remains safely stopped because the incomplete-pair policy and displayed
+direction wording still require review; Welch TOST is not reused for paired data.
+
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
   integration, diagnostics, and benchmark capture. Native export and persisted-state projection
   have been separated, and X/Y-axis editing now sits behind component boundaries; rendering and

@@ -8,8 +8,8 @@ opening broad documents.
 
 - Short current snapshot: `docs/agent/CURRENT_STATE.md`
 - Regression-test retention and rationalization: `docs/agent/REGRESSION_TEST_POLICY.md`
-- Public release behavior and limitations: `docs/alpha/RELEASE_NOTES_0.1.0-alpha.md` and
-  `docs/alpha/KNOWN_LIMITATIONS.md`
+- Public release behavior and limitations: `docs/alpha/RELEASE_NOTES_0.1.0-alpha.2.md`,
+  `docs/alpha/QUICK_START.md`, and `docs/alpha/KNOWN_LIMITATIONS.md`
 - Public/private source relationship:
   `docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md`
 
@@ -31,6 +31,7 @@ needs historical rationale.
 - Numerical-method authority: `docs/STATISTICAL_METHODS_REFERENCE.md`
 - User-facing method catalog: `docs/STATISTICAL_METHOD_CATALOG.md`
 - Pairing/blocking rules: `docs/PAIRING_BLOCKING_WIZARD_RULES_v0.1.md`
+- Equivalence execution boundary: accepted ADR 0061; paired-continuous proposal ADR 0062
 - Full safety and validation rules: `docs/agent/PROJECT_RULES.md`
 - Relevant contract under `packages/analysis-contracts/` and engine implementation/test under
   `engine/python/lsaa_engine/` and `engine/python/tests/`
