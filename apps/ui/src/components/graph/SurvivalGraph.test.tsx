@@ -167,6 +167,41 @@ describe("SurvivalGraph", () => {
     ).toBe("p = 0.272");
   });
 
+  it("positions, sizes, and hides the legend without changing survival data", () => {
+    const model = createKaplanMeierGraphModel(
+      [{ id: "control", label: "Control" }],
+      [
+        {
+          observationId: "control.1",
+          experimentalUnitId: "mouse.control.1",
+          conditionId: "control",
+          followUpTime: 4,
+          eventObserved: true,
+        },
+      ],
+    );
+    const { rerender } = render(
+      <SurvivalGraph
+        model={model}
+        legendPosition="inside"
+        legendFontSize={18}
+      />,
+    );
+    const legend = screen
+      .getByRole("img", { name: "Kaplan–Meier survival graph" })
+      .querySelector('[data-graph-layer="series-legend"]');
+    expect(legend).toHaveAttribute("data-legend-position", "inside");
+    expect(legend?.querySelector("text")).toHaveAttribute("font-size", "18");
+
+    rerender(<SurvivalGraph model={model} legendPosition="hidden" />);
+    expect(
+      screen
+        .getByRole("img", { name: "Kaplan–Meier survival graph" })
+        .querySelector('[data-graph-layer="series-legend"]'),
+    ).toBeNull();
+    expect(model.groups[0]).toMatchObject({ n: 1, events: 1, censored: 0 });
+  });
+
   it("separates the risk title, a time-zero header, and the first group row", () => {
     const model = createKaplanMeierGraphModel(
       [{ id: "control", label: "Control" }],

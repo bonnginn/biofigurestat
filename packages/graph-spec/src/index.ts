@@ -239,6 +239,8 @@ export const GraphSpecSchema = z
       palette: z.array(z.string()).min(1),
       pointSize: z.number().positive(),
       fontSize: z.number().min(9).max(24).optional(),
+      legendFontSize: z.number().min(9).max(24).optional(),
+      legendPosition: z.enum(["hidden", "top", "right", "inside"]).optional(),
       opacity: z.number().min(0).max(1),
       showRawPoints: z.boolean(),
       showPairedLines: z.boolean(),
@@ -472,6 +474,8 @@ export function createSurvivalGraphSpec(
     probabilityLabel?: string;
     palette?: readonly string[];
     fontSize?: number;
+    legendFontSize?: number;
+    legendPosition?: "hidden" | "top" | "right" | "inside";
   }>,
 ): GraphSpec {
   return GraphSpecSchema.parse({
@@ -486,6 +490,8 @@ export function createSurvivalGraphSpec(
       palette: [...(input.palette ?? ["#4477AA", "#CC6677", "#228833"])],
       pointSize: 5,
       fontSize: input.fontSize ?? 12,
+      legendFontSize: input.legendFontSize ?? Math.min(24, (input.fontSize ?? 12) + 1),
+      legendPosition: input.legendPosition ?? "right",
       opacity: 1,
       showRawPoints: false,
       showPairedLines: false,

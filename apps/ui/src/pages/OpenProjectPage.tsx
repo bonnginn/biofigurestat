@@ -406,6 +406,10 @@ function PersistedProjectView({
   if (outcome.type === "time_to_event") {
     if (!state.adaptiveInput) {
       try {
+        const savedSurvivalSpec = state.graphs.find(
+          ({ state: graphState, spec }) =>
+            graphState === "current" && spec.type === "survival_curve",
+        )?.spec;
         const model = createKaplanMeierGraphModel(
           design.conditions,
           state.observations
@@ -437,7 +441,15 @@ function PersistedProjectView({
                 "This legacy Survival project lacks the StructureContract, mapping, and raw lineage required for editing. It is shown read-only without conversion to another supported design.",
               )}
             </p>
-            <SurvivalGraph model={model} timeLabel={outcome.unit ?? "Follow-up time"} />
+            <SurvivalGraph
+              model={model}
+              timeLabel={savedSurvivalSpec?.axes.xLabel || outcome.unit || "Follow-up time"}
+              probabilityLabel={savedSurvivalSpec?.axes.yLabel || "Survival probability"}
+              palette={savedSurvivalSpec?.appearance.palette}
+              fontSize={savedSurvivalSpec?.appearance.fontSize}
+              legendFontSize={savedSurvivalSpec?.appearance.legendFontSize}
+              legendPosition={savedSurvivalSpec?.appearance.legendPosition}
+            />
           </div>
         );
       } catch (error) {

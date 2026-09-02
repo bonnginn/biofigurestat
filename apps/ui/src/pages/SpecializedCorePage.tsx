@@ -482,6 +482,18 @@ export function SpecializedCorePage({
   const [survivalFontSize, setSurvivalFontSize] = useState(
     initialDraft?.survivalFontSize ?? initialSurvivalGraphSpec?.appearance.fontSize ?? 12,
   );
+  const [survivalLegendFontSize, setSurvivalLegendFontSize] = useState(
+    initialDraft?.survivalLegendFontSize ??
+      initialSurvivalGraphSpec?.appearance.legendFontSize ??
+      13,
+  );
+  const [survivalLegendPosition, setSurvivalLegendPosition] = useState<
+    "hidden" | "top" | "right" | "inside"
+  >(
+    initialDraft?.survivalLegendPosition ??
+      initialSurvivalGraphSpec?.appearance.legendPosition ??
+      "right",
+  );
   const [survivalWorkspaceTab, setSurvivalWorkspaceTab] = useState<"data" | "graph" | "statistics">(
     experimentFirstEntry ? "data" : "statistics",
   );
@@ -591,6 +603,8 @@ export function SpecializedCorePage({
       survivalYAxisLabel,
       survivalPalette,
       survivalFontSize,
+      survivalLegendFontSize,
+      survivalLegendPosition,
       entryIntent: effectiveEntryIntent,
     }),
     [
@@ -608,6 +622,8 @@ export function SpecializedCorePage({
       survivalYAxisLabel,
       survivalPalette,
       survivalFontSize,
+      survivalLegendFontSize,
+      survivalLegendPosition,
       text,
       transform,
       effectiveEntryIntent,
@@ -1212,6 +1228,8 @@ export function SpecializedCorePage({
                   probabilityLabel: survivalYAxisLabel,
                   palette: survivalPalette,
                   fontSize: survivalFontSize,
+                  legendFontSize: survivalLegendFontSize,
+                  legendPosition: survivalLegendPosition,
                 })
               : null;
           const survivalState = createInitialProjectState({
@@ -1278,6 +1296,8 @@ export function SpecializedCorePage({
                 probabilityLabel: survivalYAxisLabel,
                 palette: survivalPalette,
                 fontSize: survivalFontSize,
+                legendFontSize: survivalLegendFontSize,
+                legendPosition: survivalLegendPosition,
               })
             : null;
         const updatedAdaptiveInput = activeAdaptiveInput
@@ -2166,6 +2186,41 @@ export function SpecializedCorePage({
         </fieldset>
       ) : null}
       <label>
+        <span>{t("凡例の位置", "Legend position")}</span>
+        <select
+          aria-label="Survival legend position"
+          value={survivalLegendPosition}
+          onChange={(event) => {
+            setSurvivalLegendPosition(
+              event.target.value as "hidden" | "top" | "right" | "inside",
+            );
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+          }}
+        >
+          <option value="hidden">{t("なし", "None")}</option>
+          <option value="top">{t("上", "Top")}</option>
+          <option value="right">{t("右", "Right")}</option>
+          <option value="inside">{t("内側", "Inside")}</option>
+        </select>
+      </label>
+      <label>
+        <span>
+          {t("凡例の文字サイズ", "Legend font size")}: {survivalLegendFontSize}px
+        </span>
+        <input
+          type="range"
+          min="9"
+          max="24"
+          step="1"
+          aria-label="Survival legend font size"
+          value={survivalLegendFontSize}
+          onChange={(event) => {
+            setSurvivalLegendFontSize(Number(event.target.value));
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+          }}
+        />
+      </label>
+      <label>
         <span>
           {t("Graphの文字サイズ", "Graph font size")}: {survivalFontSize}px
         </span>
@@ -2870,6 +2925,8 @@ export function SpecializedCorePage({
                   probabilityLabel={survivalYAxisLabel}
                   palette={survivalPalette}
                   fontSize={survivalFontSize}
+                  legendFontSize={survivalLegendFontSize}
+                  legendPosition={survivalLegendPosition}
                   annotation={showLogRankAnnotation ? (logRankDisplay ?? undefined) : undefined}
                   countSemantics={
                     !experimentFirstEntry || activeAdaptiveInput ? "biological_n" : "records"

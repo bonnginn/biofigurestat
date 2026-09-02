@@ -19,6 +19,8 @@ export const SurvivalGraph = forwardRef<
     probabilityLabel?: string;
     palette?: readonly string[];
     fontSize?: number;
+    legendFontSize?: number;
+    legendPosition?: "hidden" | "top" | "right" | "inside";
     annotation?: string;
     countSemantics?: "biological_n" | "records";
   }
@@ -29,16 +31,20 @@ export const SurvivalGraph = forwardRef<
     probabilityLabel = "Survival probability",
     palette = DEFAULT_SURVIVAL_COLORS,
     fontSize = 12,
+    legendFontSize,
+    legendPosition = "right",
     annotation,
     countSemantics = "biological_n",
   },
   ref,
 ) {
   const colors = palette.length > 0 ? palette : DEFAULT_SURVIVAL_COLORS;
+  const legendRows = legendPosition === "top" ? Math.ceil(model.groups.length / 3) : 0;
+  const resolvedLegendFontSize = legendFontSize ?? Math.min(24, fontSize + 1);
   const width = 820,
     plotHeight = 410,
     left = 80,
-    top = 30,
+    top = 30 + legendRows * 22,
     right = 30;
   const axisY = plotHeight - 10;
   const riskHeadingY = plotHeight + 76;
@@ -69,6 +75,15 @@ export const SurvivalGraph = forwardRef<
   const xTicks = createNiceTicks(0, maxTime, 6, null);
   const xMinorTicks = createMinorTicks(xTicks, 0, maxTime, 5);
   const yMinorTicks = createMinorTicks(yTicks, 0, 1, 5);
+  const legendCoordinates = (index: number) => {
+    if (legendPosition === "top") {
+      return { x: left + (index % 3) * 220, y: 18 + Math.floor(index / 3) * 22 };
+    }
+    if (legendPosition === "inside") {
+      return { x: left + 14, y: top + 20 + index * 22 };
+    }
+    return { x: width - 210, y: 45 + index * 22 };
+  };
   return (
     <svg
       ref={ref}
@@ -212,19 +227,29 @@ export const SurvivalGraph = forwardRef<
               />
             </g>
           ))}
-          <g data-graph-layer="series-legend" data-series-id={group.conditionId}>
-            <line
-              x1={width - 210}
-              x2={width - 180}
-              y1={45 + index * 22}
-              y2={45 + index * 22}
-              stroke={colors[index % colors.length] ?? DEFAULT_SURVIVAL_COLORS[0]}
-              strokeWidth="3"
-            />
-            <text x={width - 172} y={50 + index * 22} fontSize={fontSize + 1}>
-              {group.label} ({countSemantics === "biological_n" ? "n" : "records"}={group.n})
-            </text>
-          </g>
+          {legendPosition !== "hidden" ? (
+            <g
+              data-graph-layer="series-legend"
+              data-series-id={group.conditionId}
+              data-legend-position={legendPosition}
+            >
+              <line
+                x1={legendCoordinates(index).x}
+                x2={legendCoordinates(index).x + 30}
+                y1={legendCoordinates(index).y}
+                y2={legendCoordinates(index).y}
+                stroke={colors[index % colors.length] ?? DEFAULT_SURVIVAL_COLORS[0]}
+                strokeWidth="3"
+              />
+              <text
+                x={legendCoordinates(index).x + 38}
+                y={legendCoordinates(index).y + 5}
+                fontSize={resolvedLegendFontSize}
+              >
+                {group.label} ({countSemantics === "biological_n" ? "n" : "records"}={group.n})
+              </text>
+            </g>
+          ) : null}
         </g>
       ))}
       <text

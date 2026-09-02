@@ -52,6 +52,8 @@ export type SpecializedCoreDraft = Readonly<{
   survivalYAxisLabel?: string;
   survivalPalette?: readonly string[];
   survivalFontSize?: number;
+  survivalLegendFontSize?: number;
+  survivalLegendPosition?: "hidden" | "top" | "right" | "inside";
   /** Preserves unsupported/deferred module facts when the researcher revisits this route. */
   entryIntent?: DedicatedEntryIntent;
 }>;

@@ -21,7 +21,7 @@
 | ---- | ---- | ---- | ------------ | -------- |
 | 1 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
 | 2 | 🟡 | installed `.lsa` file associationの自動確認 | installerとOS関連付けの確認時のみ | 同じexeへのpath指定再起動はpackaged PASS。次にinstaller経由のdouble-clickを再現 |
-| 3 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | 通常Graph previewの軸contextは実装済み。Kaplan–Meierの軸・凡例設定、Graph-only表示差と最終的な見た目を実機で確認 |
+| 3 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | 通常Graph previewの軸contextとKaplan–Meierの凡例位置・文字サイズは実装済み。残る軸parity、Graph-only表示差と最終的な見た目を実機で確認 |
 | 4 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
 
 ## 公開・運用
@@ -86,7 +86,7 @@
 | 🟡   | Graph preview品質を完成Graphへ近づける | 通常previewへ共有plot bounds、nice Y ticks、軸title、tick余白を実装し、scatterにも両軸nice ticksとdata paddingを追加。category構成は0–100%軸、条件label、legend、wide scrollを追加。5件の座標・semantic回帰はPASSし、最終的な見た目のみ実機確認待ち |
 | ✅   | workspace上部をcompact化               | compact headerと安全な概要導線を実装・回帰test済み                               |
 | ✅   | 実験metadataの再編集                   | 既存のstructure revision経路から実験名・条件・測定項目を安全に修正可能           |
-| 🟡   | Kaplan–Meier外観設定の共通化           | 系列色と保存互換なfont sizeを実装。軸・legend等のparityは継続                    |
+| 🟡   | Kaplan–Meier外観設定の共通化           | 系列色、全体font size、凡例位置（なし／上／右／内側）、凡例font sizeを保存・再読込対応。旧`.lsa`は従来defaultで表示し、軸の追加parityのみ継続 |
 | ✅   | Statistics結果一覧の改善               | 対照群比較を選択でき、調整済み比較familyをStatistics上で展開可能                 |
 | 🟡   | 同等性／「意味のある差がない」解析     | 独立goal、通常NHSTへの誤誘導防止、n.s.警告、事前規定marginの保存、90% CI中心の3状態contract、design/outcome別の禁止境界を実装・ADR 0061へ固定。独立2群continuous・raw difference・単一主比較のWelch TOSTはengine/UI/Methods/save-reopenまで実装済み。positive/total、shared-run、paired、複数claimは科学レビューまで安全停止 |
 | ✅   | 途中行からの入力と実験回・日付の保持   | 空行を挟んだ入力を同じ行に保持し、canonical observationと実験回・日付を明示的に連結。保存・再読込・Graph・Statisticsで回帰確認済み。日付からpairingは推定しない |

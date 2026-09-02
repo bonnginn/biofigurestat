@@ -832,11 +832,22 @@ describe("specialized Core entry pages", () => {
     fireEvent.change(screen.getByLabelText("Survival font size"), {
       target: { value: "16" },
     });
+    fireEvent.change(screen.getByLabelText("Survival legend position"), {
+      target: { value: "top" },
+    });
+    fireEvent.change(screen.getByLabelText("Survival legend font size"), {
+      target: { value: "14" },
+    });
     expect(
       screen
         .getByRole("img", { name: "Kaplan–Meier survival graph" })
         .querySelector('[data-condition-id="condition.1"]'),
     ).toHaveAttribute("stroke", "#123456");
+    const editedLegend = screen
+      .getByRole("img", { name: "Kaplan–Meier survival graph" })
+      .querySelector('[data-graph-layer="series-legend"]');
+    expect(editedLegend).toHaveAttribute("data-legend-position", "top");
+    expect(editedLegend?.querySelector("text")).toHaveAttribute("font-size", "14");
     expandAdaptiveStatistics();
     fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
       target: { value: "subject_is_experimental_unit" },
@@ -891,6 +902,8 @@ describe("specialized Core entry pages", () => {
     });
     expect(savedGraphSpec.appearance.palette[0]).toBe("#123456");
     expect(savedGraphSpec.appearance.fontSize).toBe(16);
+    expect(savedGraphSpec.appearance.legendPosition).toBe("top");
+    expect(savedGraphSpec.appearance.legendFontSize).toBe(14);
 
     rendered.unmount();
     render(
@@ -906,6 +919,8 @@ describe("specialized Core entry pages", () => {
     expect(screen.getByLabelText("Survival X axis title")).toHaveValue("Days after treatment");
     expect(screen.getByLabelText("Survival Y axis title")).toHaveValue("Tumor-free probability");
     expect(screen.getByLabelText("Survival font size")).toHaveValue("16");
+    expect(screen.getByLabelText("Survival legend position")).toHaveValue("top");
+    expect(screen.getByLabelText("Survival legend font size")).toHaveValue("14");
     fireEvent.click(screen.getByRole("button", { name: "グラフ" }));
     expect(screen.getByLabelText("ControlのSurvival曲線色")).toHaveValue("#123456");
   });

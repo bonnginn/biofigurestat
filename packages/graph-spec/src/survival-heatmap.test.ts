@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createHeatmapModel } from "./heatmap";
 import { createKaplanMeierGraphModel } from "./survival";
 import { createCoreGraphModel } from "./core-model";
-import { createCoreMultiGroupGraphSpec } from "./index";
+import { createCoreMultiGroupGraphSpec, createSurvivalGraphSpec, GraphSpecSchema } from "./index";
 
 describe("single-cohort Core graph", () => {
   it("creates a dot/summary model with one real cohort", () => {
@@ -29,6 +29,23 @@ describe("single-cohort Core graph", () => {
 });
 
 describe("Kaplan–Meier Core graph", () => {
+  it("persists optional legend presentation while accepting an older spec without it", () => {
+    const spec = createSurvivalGraphSpec({
+      graphId: "graph.survival",
+      dataSource: { kind: "analysis_result", id: "run.1", revision: "run.1" },
+      analysisResultId: "run.1",
+      timeLabel: "Days",
+      legendFontSize: 15,
+      legendPosition: "top",
+    });
+    expect(spec.appearance).toMatchObject({ legendFontSize: 15, legendPosition: "top" });
+
+    const legacy = structuredClone(spec);
+    delete legacy.appearance.legendFontSize;
+    delete legacy.appearance.legendPosition;
+    expect(GraphSpecSchema.parse(legacy).appearance).not.toHaveProperty("legendPosition");
+  });
+
   it("uses steps, censor marks, and explicit number-at-risk values", () => {
     const model = createKaplanMeierGraphModel(
       [{ id: "control", label: "Control" }],
