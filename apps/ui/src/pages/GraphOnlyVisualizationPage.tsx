@@ -4,15 +4,11 @@ import {
   appendUnresolvedVisualizationDataRevision,
   appendUnresolvedVisualizationGraph,
   createUnresolvedVisualizationProjectState,
-  resolveUnresolvedVisualizationIdentityDecision,
-  resolveUnresolvedVisualizationSourceRowUnitDecision,
   UnresolvedVisualizationProjectStateSchema,
   type UnresolvedVisualizationProjectState,
-  type UnresolvedVisualizationColumnMapping,
   type UnresolvedVisualizationIdentityDecision,
   type UnresolvedVisualizationSourceRowUnitDecision,
 } from "@lsaa/project";
-import { GraphSpecSchema, type GraphEditorPresentation, type GraphSpec } from "@lsaa/graph-spec";
 
 import type {
   OpenUnresolvedVisualizationProjectAction,
@@ -24,7 +20,6 @@ import { routeFromPath } from "../app/routes";
 import { DelimitedTextSpreadsheet } from "../components/DelimitedTextSpreadsheet";
 import { LocalizedFileInput } from "../components/LocalizedFileInput";
 import {
-  GRAPH_ONLY_DEFAULT_PALETTE,
   graphOnlySeriesKeys,
   graphOnlyUsesNumericXAxis,
   type GraphOnlyPresentation,
@@ -42,6 +37,20 @@ import {
   parseVisualizationInput,
   type GraphOnlyColumnIndex as ColumnIndex,
 } from "../app/graphOnlyVisualizationInput";
+import {
+  DIRECT_ENTRY_TEMPLATE,
+  activeGraphOnlyGraph,
+  graphOnlyEditorPresentation,
+  graphOnlyGraphSpec,
+  graphOnlyLifecycleSnapshot,
+  initialGraphOnlyColumn,
+  initialGraphOnlyEditorState,
+  initialGraphOnlyIdentityDecision,
+  initialGraphOnlyPresentation,
+  initialGraphOnlySourceRowUnitDecision,
+  sameGraphOnlyGraph,
+  sameGraphOnlyMapping,
+} from "../app/graphOnlyVisualizationState";
 
 const ExperimentGraphWorkbench = lazy(() =>
   import("../components/graph/ExperimentGraphWorkbench").then(
@@ -79,121 +88,6 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function graphSpecFor(
-  tableId: string,
-  revision: string,
-  headers: readonly string[],
-  xColumn: number,
-  yColumn: number,
-  seriesColumn: ColumnIndex,
-  graphId: string,
-  presentation: GraphOnlyPresentation,
-  numericXAxis: boolean,
-  seriesKeys: readonly string[],
-  editorPresentation?: GraphEditorPresentation,
-): GraphSpec {
-  const seriesHeader = seriesColumn === "" ? undefined : headers[seriesColumn];
-  return GraphSpecSchema.parse({
-    id: graphId,
-    version: "0.1.0",
-    // `scatter` is reserved for the Core D09 paired-measurement contract. A
-    // graph-only numeric X/Y table remains descriptive until biological unit
-    // identity is explicitly supplied, so persist it as a dot graph with a
-    // continuous x scale instead of fabricating a D09 pair mapping.
-    type: seriesHeader ? "grouped_dot" : "dot_summary",
-    dataSource: { kind: "visualization_table", id: tableId, revision },
-    analysisResultId: null,
-    dataSets: {
-      displaySet: { conditionIds: [], timePointIds: [] },
-      analysisSet: { conditionIds: [], timePointIds: [] },
-      comparisonSet: [],
-      annotationSet: [],
-    },
-    mappings: {
-      x: headers[xColumn] ?? `column_${xColumn + 1}`,
-      xHierarchy: [],
-      y: headers[yColumn] ?? `column_${yColumn + 1}`,
-      ...(seriesHeader ? { series: seriesHeader, color: seriesHeader } : {}),
-    },
-    summary: editorPresentation
-      ? {
-          center: editorPresentation.layers.overall ? "mean" : "none",
-          interval:
-            editorPresentation.layers.errorBar && editorPresentation.appearance.errorBar !== "none"
-              ? editorPresentation.appearance.errorBar
-              : "none",
-        }
-      : { center: "none", interval: "none" },
-    annotations: [],
-    appearance: {
-      palette: [...presentation.palette],
-      pointSize: presentation.pointSize,
-      opacity: presentation.opacity,
-      showRawPoints: true,
-      showPairedLines: false,
-      distributionFill: "none",
-      distributionFillColor: "#ffffff",
-      distributionOutlineColor: "#111111",
-      barWidth: 0.72,
-      withinGroupSpacing: 0.72,
-      betweenGroupSpacing: 1.35,
-      barOutline: true,
-      barOutlineMode: "series",
-      barOutlineColor: "#111111",
-      barOutlineWidth: 1.2,
-      barMeanMarker: false,
-      boxWhiskerMode: "tukey_1_5_iqr",
-      uncertaintyStyle: "none",
-      ribbonOpacity: 0.18,
-      seriesStyles: Object.fromEntries(
-        seriesKeys.map((series, index) => [
-          series,
-          {
-            color: presentation.palette[index % presentation.palette.length],
-            legendLabel: presentation.seriesLabels[series]?.trim() || series,
-            visible: true,
-          },
-        ]),
-      ),
-    },
-    axes: {
-      yStartAtZero: editorPresentation
-        ? editorPresentation.axes.yRangeMode === "manual" && editorPresentation.axes.yMin === 0
-        : presentation.yStartAtZero,
-      yScale: editorPresentation?.axes.yScale ?? "linear",
-      ...(numericXAxis ? { xScale: editorPresentation?.axes.xScale ?? ("linear" as const) } : {}),
-      xLabel: editorPresentation?.axes.xTitle || presentation.xLabel || headers[xColumn] || "X",
-      yLabel:
-        editorPresentation?.axes.yTitle || presentation.yLabel || headers[yColumn] || "測定値",
-      showMinorTicks: editorPresentation?.axes.showMinorTicks ?? true,
-      tickDirection: editorPresentation?.axes.tickDirection ?? "outside",
-      showCategoryGroupSeparators:
-        editorPresentation?.axes.showCategoryGroupSeparators ?? Boolean(seriesHeader),
-    },
-    ...(editorPresentation ? { editorPresentation } : {}),
-  });
-}
-
-function editorPresentationFromWorkspaceState(
-  state: Omit<WorkspaceGraphState, "id" | "displayName"> | null,
-): GraphEditorPresentation | undefined {
-  if (!state) return undefined;
-  return {
-    graphType: state.graphType,
-    grouping: state.grouping!,
-    layers: state.layers,
-    appearance: {
-      ...state.appearance,
-      barOutline: state.appearance.barOutline ?? true,
-      barMeanMarker: state.appearance.barMeanMarker ?? false,
-      boxWhiskerMode: state.appearance.boxWhiskerMode ?? "tukey_1_5_iqr",
-      uncertaintyStyle: state.appearance.uncertaintyStyle ?? "error_bars",
-      ribbonOpacity: state.appearance.ribbonOpacity ?? 0.18,
-    },
-    axes: state.axes,
-  };
-}
-
 function newMetadata(projectName: string, timestamp: string) {
   return {
     projectId: visualizationId("project"),
@@ -206,152 +100,6 @@ function newMetadata(projectName: string, timestamp: string) {
     updatedAt: timestamp,
   };
 }
-
-function initialColumn(
-  state: UnresolvedVisualizationProjectState | null | undefined,
-  role: "x" | "y" | "series" | "id",
-): ColumnIndex {
-  const column = state?.mapping?.columns.find((candidate) => candidate.role === role);
-  return column?.index ?? "";
-}
-
-function initialIdentityDecision(
-  state: UnresolvedVisualizationProjectState | null | undefined,
-): UnresolvedVisualizationIdentityDecision {
-  return state?.mapping
-    ? resolveUnresolvedVisualizationIdentityDecision(state.mapping)
-    : "unanswered";
-}
-
-function initialSourceRowUnitDecision(
-  state: UnresolvedVisualizationProjectState | null | undefined,
-): UnresolvedVisualizationSourceRowUnitDecision {
-  return state?.mapping
-    ? resolveUnresolvedVisualizationSourceRowUnitDecision(state.mapping)
-    : "unanswered";
-}
-
-function graphOnlyLifecycleSnapshot(
-  values: Readonly<{
-    text: string;
-    sourceLabel: string;
-    xColumn: ColumnIndex;
-    yColumn: ColumnIndex;
-    seriesColumn: ColumnIndex;
-    idColumn: ColumnIndex;
-    identityDecision: UnresolvedVisualizationIdentityDecision;
-    sourceRowUnitDecision: UnresolvedVisualizationSourceRowUnitDecision;
-    preferredGraphType: GraphType;
-    presentation: GraphOnlyPresentation;
-    editorPresentation?: GraphEditorPresentation;
-  }>,
-): string {
-  return JSON.stringify(values);
-}
-
-function activeGraphFor(
-  state: UnresolvedVisualizationProjectState | null | undefined,
-): GraphSpec | null {
-  if (!state?.activeGraphId) return null;
-  return state.graphSpecs.find(({ id }) => id === state.activeGraphId) ?? null;
-}
-
-function initialGraphOnlyPresentation(
-  state: UnresolvedVisualizationProjectState | null | undefined,
-  locale: "ja" | "en",
-): GraphOnlyPresentation {
-  const graph = activeGraphFor(state);
-  const localizedDefaultTitle = localizedText(
-    locale,
-    "表から作成したGraph",
-    "Graph created from a table",
-  );
-  const storedTitle = state?.metadata.projectName;
-  const seriesLabels = Object.fromEntries(
-    Object.entries(graph?.appearance.seriesStyles ?? {}).flatMap(([series, style]) =>
-      style.legendLabel ? [[series, style.legendLabel]] : [],
-    ),
-  );
-  return {
-    title:
-      storedTitle === "表から作成したGraph" || storedTitle === "Graph created from a table"
-        ? localizedDefaultTitle
-        : (storedTitle ?? localizedDefaultTitle),
-    xLabel: graph?.axes.xLabel ?? null,
-    yLabel: graph?.axes.yLabel ?? null,
-    pointSize: graph?.appearance.pointSize ?? 5,
-    opacity: graph?.appearance.opacity ?? 0.9,
-    palette: graph?.appearance.palette ?? GRAPH_ONLY_DEFAULT_PALETTE,
-    yStartAtZero: graph?.axes.yStartAtZero ?? false,
-    seriesLabels,
-  };
-}
-
-function sameGraphDefinition(left: GraphSpec | null, right: GraphSpec): boolean {
-  return left !== null && JSON.stringify(left) === JSON.stringify(right);
-}
-
-function sameMappingDefinition(
-  left: UnresolvedVisualizationColumnMapping | null,
-  right: UnresolvedVisualizationColumnMapping,
-): boolean {
-  return (
-    left !== null &&
-    left.sourceLabel === right.sourceLabel &&
-    left.delimiter === right.delimiter &&
-    left.headerRow === right.headerRow &&
-    resolveUnresolvedVisualizationIdentityDecision(left) ===
-      resolveUnresolvedVisualizationIdentityDecision(right) &&
-    resolveUnresolvedVisualizationSourceRowUnitDecision(left) ===
-      resolveUnresolvedVisualizationSourceRowUnitDecision(right) &&
-    left.columns.length === right.columns.length &&
-    left.columns.every((column, index) => {
-      const candidate = right.columns[index];
-      return (
-        candidate !== undefined &&
-        column.index === candidate.index &&
-        column.header === candidate.header &&
-        column.role === candidate.role
-      );
-    })
-  );
-}
-
-function initialEditorStateFor(
-  model: NonNullable<ReturnType<typeof createGraphOnlyWorkbenchModel>>,
-  graph: GraphSpec | null,
-): Omit<WorkspaceGraphState, "id" | "displayName"> | undefined {
-  const editor = graph?.editorPresentation;
-  if (!editor) return undefined;
-  return {
-    selectedReadoutId: model.draft.readouts[0]!.id,
-    sourceMode: "raw_readout",
-    selectedConditionIds: [...model.conditionIds],
-    analysisConditionIds: [...model.conditionIds],
-    selectedTimePointIds: [...model.timePointIds],
-    dataSets: {
-      displaySet: {
-        conditionIds: [...model.conditionIds],
-        timePointIds: [...model.timePointIds],
-      },
-      analysisSet: {
-        conditionIds: [...model.conditionIds],
-        timePointIds: [...model.timePointIds],
-      },
-      comparisonSet: [],
-      annotationSet: [],
-    },
-    analysisTimePointId: null,
-    analysisMetric: { kind: "selected_timepoint" },
-    ...editor,
-    statisticsAnnotation: { mode: "hidden", testIndex: 0 },
-    statisticsAnnotations: [],
-    analysisRunId: null,
-    analysis: null,
-  };
-}
-
-const DIRECT_ENTRY_TEMPLATE = "X / condition\tY / value\tGroup (optional)\tID (optional)";
 
 export function GraphOnlyVisualizationPage({
   onNavigate,
@@ -387,29 +135,29 @@ export function GraphOnlyVisualizationPage({
   );
   const [savedTarget, setSavedTarget] = useState<string | undefined>(initialTarget);
   const [xColumn, setXColumn] = useState<ColumnIndex>(
-    compatibleInitialState ? initialColumn(compatibleInitialState, "x") : 0,
+    compatibleInitialState ? initialGraphOnlyColumn(compatibleInitialState, "x") : 0,
   );
   const [yColumn, setYColumn] = useState<ColumnIndex>(
-    compatibleInitialState ? initialColumn(compatibleInitialState, "y") : 1,
+    compatibleInitialState ? initialGraphOnlyColumn(compatibleInitialState, "y") : 1,
   );
   const [seriesColumn, setSeriesColumn] = useState<ColumnIndex>(
-    initialColumn(compatibleInitialState, "series"),
+    initialGraphOnlyColumn(compatibleInitialState, "series"),
   );
   const [idColumn, setIdColumn] = useState<ColumnIndex>(
-    initialColumn(compatibleInitialState, "id"),
+    initialGraphOnlyColumn(compatibleInitialState, "id"),
   );
   const [identityDecision, setIdentityDecision] = useState<UnresolvedVisualizationIdentityDecision>(
-    initialIdentityDecision(compatibleInitialState),
+    initialGraphOnlyIdentityDecision(compatibleInitialState),
   );
   const [sourceRowUnitDecision, setSourceRowUnitDecision] =
     useState<UnresolvedVisualizationSourceRowUnitDecision>(
-      initialSourceRowUnitDecision(compatibleInitialState),
+      initialGraphOnlySourceRowUnitDecision(compatibleInitialState),
     );
   const [graphPresentation, setGraphPresentation] = useState<GraphOnlyPresentation>(() =>
     initialGraphOnlyPresentation(compatibleInitialState, locale),
   );
   const [preferredGraphType, setPreferredGraphType] = useState<GraphType>(
-    activeGraphFor(compatibleInitialState)?.editorPresentation?.graphType ?? "dot",
+    activeGraphOnlyGraph(compatibleInitialState)?.editorPresentation?.graphType ?? "dot",
   );
   const [error, setError] = useState<string | null>(initialIntentError);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -440,8 +188,8 @@ export function GraphOnlyVisualizationPage({
     preferredGraphType,
     presentation: graphPresentation,
     editorPresentation:
-      editorPresentationFromWorkspaceState(workspaceGraphState) ??
-      activeGraphFor(compatibleInitialState)?.editorPresentation,
+      graphOnlyEditorPresentation(workspaceGraphState) ??
+      activeGraphOnlyGraph(compatibleInitialState)?.editorPresentation,
   });
   const savedLifecycleSnapshotRef = useRef<string | null>(initialDirty ? null : lifecycleSnapshot);
   const isDirty =
@@ -527,7 +275,7 @@ export function GraphOnlyVisualizationPage({
   const loadedEditorState = useMemo(
     () =>
       workbenchModel
-        ? initialEditorStateFor(workbenchModel, activeGraphFor(loadedState))
+        ? initialGraphOnlyEditorState(workbenchModel, activeGraphOnlyGraph(loadedState))
         : undefined,
     [loadedState, workbenchModel],
   );
@@ -590,7 +338,7 @@ export function GraphOnlyVisualizationPage({
     );
     if (!candidateMapping) return null;
     const mapping =
-      loadedState?.mapping && sameMappingDefinition(loadedState.mapping, candidateMapping)
+      loadedState?.mapping && sameGraphOnlyMapping(loadedState.mapping, candidateMapping)
         ? loadedState.mapping
         : candidateMapping;
     const table = {
@@ -644,8 +392,8 @@ export function GraphOnlyVisualizationPage({
         metadata: { ...base.metadata, projectName: projectTitle, updatedAt: timestamp },
       });
     }
-    const activeGraph = activeGraphFor(base);
-    const comparisonSpec = graphSpecFor(
+    const activeGraph = activeGraphOnlyGraph(base);
+    const comparisonSpec = graphOnlyGraphSpec(
       tableId,
       base.activeDataRevisionId,
       parsed.headers,
@@ -656,9 +404,9 @@ export function GraphOnlyVisualizationPage({
       graphPresentation,
       numericXAxis,
       seriesKeys,
-      editorPresentationFromWorkspaceState(workspaceGraphState) ?? activeGraph?.editorPresentation,
+      graphOnlyEditorPresentation(workspaceGraphState) ?? activeGraph?.editorPresentation,
     );
-    if (sameGraphDefinition(activeGraph, comparisonSpec)) return base;
+    if (sameGraphOnlyGraph(activeGraph, comparisonSpec)) return base;
     const spec = activeGraph ? { ...comparisonSpec, id: visualizationId("graph") } : comparisonSpec;
     return appendUnresolvedVisualizationGraph(base, {
       spec,
@@ -680,15 +428,15 @@ export function GraphOnlyVisualizationPage({
     setSavedTarget(target);
     setText(state.rawLineage.rawText);
     setSourceLabel(state.rawLineage.sourceLabel);
-    setXColumn(initialColumn(state, "x"));
-    setYColumn(initialColumn(state, "y"));
-    setSeriesColumn(initialColumn(state, "series"));
-    setIdColumn(initialColumn(state, "id"));
-    setIdentityDecision(initialIdentityDecision(state));
-    setSourceRowUnitDecision(initialSourceRowUnitDecision(state));
+    setXColumn(initialGraphOnlyColumn(state, "x"));
+    setYColumn(initialGraphOnlyColumn(state, "y"));
+    setSeriesColumn(initialGraphOnlyColumn(state, "series"));
+    setIdColumn(initialGraphOnlyColumn(state, "id"));
+    setIdentityDecision(initialGraphOnlyIdentityDecision(state));
+    setSourceRowUnitDecision(initialGraphOnlySourceRowUnitDecision(state));
     const loadedPresentation = initialGraphOnlyPresentation(state, locale);
     setGraphPresentation(loadedPresentation);
-    setPreferredGraphType(activeGraphFor(state)?.editorPresentation?.graphType ?? "dot");
+    setPreferredGraphType(activeGraphOnlyGraph(state)?.editorPresentation?.graphType ?? "dot");
     setWorkspaceGraphState(null);
     setAllowUniqueSeries(Boolean(state.activeGraphId));
     setWorkspaceTab(state.activeGraphId ? "graph" : "data");
@@ -706,15 +454,15 @@ export function GraphOnlyVisualizationPage({
     savedLifecycleSnapshotRef.current = graphOnlyLifecycleSnapshot({
       text: state.rawLineage.rawText,
       sourceLabel: state.rawLineage.sourceLabel,
-      xColumn: initialColumn(state, "x"),
-      yColumn: initialColumn(state, "y"),
-      seriesColumn: initialColumn(state, "series"),
-      idColumn: initialColumn(state, "id"),
-      identityDecision: initialIdentityDecision(state),
-      sourceRowUnitDecision: initialSourceRowUnitDecision(state),
-      preferredGraphType: activeGraphFor(state)?.editorPresentation?.graphType ?? "dot",
+      xColumn: initialGraphOnlyColumn(state, "x"),
+      yColumn: initialGraphOnlyColumn(state, "y"),
+      seriesColumn: initialGraphOnlyColumn(state, "series"),
+      idColumn: initialGraphOnlyColumn(state, "id"),
+      identityDecision: initialGraphOnlyIdentityDecision(state),
+      sourceRowUnitDecision: initialGraphOnlySourceRowUnitDecision(state),
+      preferredGraphType: activeGraphOnlyGraph(state)?.editorPresentation?.graphType ?? "dot",
       presentation: loadedPresentation,
-      editorPresentation: activeGraphFor(state)?.editorPresentation,
+      editorPresentation: activeGraphOnlyGraph(state)?.editorPresentation,
     });
     onDirtyChange?.(false);
     recordUsageMilestone(routeFromPath(window.location.pathname), "project_opened");
