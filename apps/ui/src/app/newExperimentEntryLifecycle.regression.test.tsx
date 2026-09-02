@@ -65,7 +65,10 @@ async function cancelExitAndVerifyRawTable(): Promise<void> {
   expect(screen.getByRole("heading", { name: "統計に必要な実験情報" })).toBeVisible();
 
   fireEvent.click(screen.getByRole("button", { name: "戻る" }));
-  expect(await screen.findByRole("heading", { name: "手元の表からGraphを作る" })).toBeVisible();
+  expect(await screen.findByRole("button", { name: "グラフ" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
   expect(screen.getByTestId("graph-only-cell-1-0")).toHaveValue("Control");
   expect(screen.getByTestId("graph-only-cell-1-1")).toHaveValue("10");
   expect(screen.getByTestId("graph-only-cell-2-0")).toHaveValue("Drug");
@@ -110,7 +113,10 @@ describe("new experiment cross-stage dirty lifecycle", () => {
     render(<App projectActions={projectActions()} />);
     await enterBiologicalQuestionsFromGraphOnly();
     fireEvent.click(screen.getByRole("button", { name: "戻る" }));
-    expect(await screen.findByRole("heading", { name: "手元の表からGraphを作る" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "グラフ" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
     fireEvent.click(screen.getByRole("button", { name: "データ" }));
 
     fireEvent.click(screen.getByRole("button", { name: "保存したGraph用データを開く" }));

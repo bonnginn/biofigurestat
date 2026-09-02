@@ -57,12 +57,7 @@ describe("New Experiment dedicated entry handoff", () => {
 
   it("opens a supplied five-minute guide fixture directly in the populated workspace", async () => {
     const fixture = createIndependentTwoGroupFixture();
-    render(
-      <NewExperimentPage
-        initialFixture={fixture}
-        onNavigate={vi.fn()}
-      />,
-    );
+    render(<NewExperimentPage initialFixture={fixture} onNavigate={vi.fn()} />);
 
     expect(
       await screen.findByRole("heading", { name: fixture.draft.name }, { timeout: 10_000 }),
@@ -134,9 +129,7 @@ describe("New Experiment dedicated entry handoff", () => {
       target: { value: "culture dish" },
     });
     fireEvent.click(screen.getByRole("checkbox", { name: /条件ごとに別々の実験単位/ }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "条件別スプレッドシートを作る" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "条件別スプレッドシートを作る" }));
 
     expect(await screen.findByText("実験ワークスペース")).toBeVisible();
     expect(screen.getByText("Vehicle")).toBeVisible();
@@ -197,9 +190,7 @@ describe("New Experiment dedicated entry handoff", () => {
     const graphOnly = screen.getByRole("button", { name: "手元の表からGraphを作るを開く" });
     expect(graphOnly).toBeEnabled();
     fireEvent.click(graphOnly);
-    expect(
-      await screen.findByRole("heading", { name: "手元の表からGraphを作る" }),
-    ).toHaveFocus();
+    expect(await screen.findByRole("heading", { name: "手元の表からGraphを作る" })).toHaveFocus();
     expect(screen.getByRole("region", { name: "Graph用データシート" })).toBeVisible();
     expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("X / condition");
     expect(screen.getByTestId("graph-only-cell-1-0")).toBeEnabled();
@@ -291,7 +282,7 @@ describe("New Experiment dedicated entry handoff", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "戻る" }));
 
-    expect(screen.getByRole("heading", { name: "手元の表からGraphを作る" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "グラフ" })).toHaveAttribute("aria-current", "page");
     fireEvent.click(screen.getByRole("button", { name: "データ" }));
     expect(screen.getByTestId("graph-only-cell-0-0")).toHaveValue("Condition");
     expect(screen.getByTestId("graph-only-cell-0-1")).toHaveValue("Value");
@@ -445,9 +436,7 @@ describe("New Experiment dedicated entry handoff", () => {
     fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
     fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
 
-    expect(
-      await screen.findByRole("heading", { name: "細胞生存率の実験" }),
-    ).toHaveFocus();
+    expect(await screen.findByRole("heading", { name: "細胞生存率の実験" })).toHaveFocus();
     expect(screen.getByText("実験ワークスペース")).toBeVisible();
   });
 
