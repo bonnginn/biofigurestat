@@ -70,6 +70,54 @@ def d02_request() -> dict[str, Any]:
     return two_condition_request("D02", "paired_t", observations)
 
 
+def d01_equivalence_request() -> dict[str, Any]:
+    observations = []
+    for condition, values in (
+        ("condition.control", [1.00, 1.02, 0.98, 1.01, 0.99]),
+        ("condition.treatment", [1.01, 1.03, 0.99, 1.02, 1.00]),
+    ):
+        observations.extend(
+            {
+                "observationId": f"observation.{condition}.{index}",
+                "conditionId": condition,
+                "value": value,
+                "experimentalUnitId": f"unit.{condition}.{index}",
+            }
+            for index, value in enumerate(values)
+        )
+    comparison_id = "equivalence:condition.control:condition.treatment"
+    return {
+        "protocolVersion": "0.15.0",
+        "requestId": "request.d01.welch-tost",
+        "projectId": "project.smoke",
+        "analysisId": "analysis.d01.welch-tost",
+        "templateId": "D01",
+        "templateVersion": "0.2.0",
+        "method": "welch_tost",
+        "comparisonId": comparison_id,
+        "contrastConditionIds": ["condition.control", "condition.treatment"],
+        "equivalencePlan": {
+            "schemaVersion": "0.1.0",
+            "margin": {
+                "scale": "raw_difference",
+                "lowerBound": -0.1,
+                "upperBound": 0.1,
+                "unit": "Relative activity",
+                "declaredAsPrespecified": True,
+            },
+            "alpha": 0.05,
+            "claimMode": "single_primary_comparison",
+            "primaryComparisonId": comparison_id,
+        },
+        "observations": observations,
+        "options": {
+            "alternative": "two_sided",
+            "confidenceLevel": 0.9,
+            "multiplicityMethod": None,
+        },
+    }
+
+
 def execute(executable: Path, request: dict[str, Any]) -> dict[str, Any]:
     completed = subprocess.run(
         [str(executable)],
@@ -93,6 +141,7 @@ def smoke_requests() -> list[dict[str, Any]]:
         independent,
         {**independent, "requestId": "request.d01.student", "method": "student_t"},
         {**independent, "requestId": "request.d01.mann-whitney", "method": "mann_whitney"},
+        d01_equivalence_request(),
         paired,
         {**paired, "requestId": "request.d02.wilcoxon", "method": "wilcoxon_signed_rank"},
         d03_request(),
@@ -142,6 +191,10 @@ def main() -> int:
             raise RuntimeError(f"{request['templateId']} changed protocol version")
         if result.get("engine", {}).get("version") != ENGINE_VERSION:
             raise RuntimeError(f"{request['templateId']} sidecar has a stale engine version")
+        if request["protocolVersion"] == "0.15.0":
+            comparison = (result.get("equivalence") or {}).get("comparisons", [{}])[0]
+            if comparison.get("conclusion") != "equivalence_supported":
+                raise RuntimeError("D01 Welch TOST smoke did not preserve its expected conclusion")
         engine = result.get("engine", {})
         units = {item.get("experimentalUnitId") for item in request.get("observations", [])}
         pairs = {item.get("pairId") for item in request.get("observations", []) if item.get("pairId")}
