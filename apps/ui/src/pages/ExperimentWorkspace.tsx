@@ -40,7 +40,6 @@ import {
   type WbRatioCellDraft,
   type ReadoutDraft,
   type TimeAnalysisPlan,
-  type TimePointDraft,
 } from "../app/experimentDraft";
 import type { DraftAnalysisCorrection } from "../app/draftAnalysisDiagnostics";
 import {
@@ -75,6 +74,15 @@ import {
   isSameCanonicalWorksheetIngress,
   stableWorkspaceCoordinate,
 } from "../app/experimentWorkspaceGraphIntegrity";
+import {
+  createWorkspaceCells as createCellsForDraft,
+  findWorkspaceCellDescriptor as findCellDescriptor,
+  workspaceConditionAttributeValues as conditionAttributeValues,
+  workspaceRows as rowsFor,
+  workspaceTimePoints as timePointsFor,
+  type WorkspaceCellDescriptor as CellDescriptor,
+  type WorkspaceTableRow as TableRow,
+} from "../app/experimentWorkspaceTableModel";
 import {
   actionErrorMessage,
   type OpenedProject,
@@ -154,81 +162,6 @@ type AdaptiveStructureRevisionSession = Readonly<{
   prefill: BiologicalSetupPrefill;
 }>;
 
-type CellDescriptor = {
-  key: string;
-  experiment: ExperimentSessionDraft;
-  conditionId: string;
-  conditionLabel: string;
-  timePoint: TimePointDraft | null;
-  timeUnit: string;
-  readout: ReadoutDraft;
-};
-
-type TableRow = {
-  key: string;
-  conditionId: string;
-  conditionLabel: string;
-  timePoint: TimePointDraft | null;
-};
-
-function timePointsFor(draft: ExperimentSetDraft): Array<TimePointDraft | null> {
-  return draft.time.points.length > 0 ? [...draft.time.points] : [null];
-}
-
-function createCellsForDraft(draft: ExperimentSetDraft): ExperimentCellMap {
-  const cells: Record<string, ExperimentCellDraft> = {};
-  const timePoints = timePointsFor(draft);
-  for (const experiment of draft.experiments) {
-    for (const condition of draft.conditions) {
-      for (const readout of draft.readouts) {
-        for (const timePoint of timePoints) {
-          const key = experimentCellKey({
-            experimentId: experiment.id,
-            conditionId: condition.id,
-            readoutId: readout.id,
-            timePointId: timePoint?.id,
-          });
-          cells[key] =
-            readout.shape === "proportion"
-              ? { kind: "proportion", positive: null, eligible: null }
-              : readout.shape === "wb_ratio"
-                ? {
-                    kind: "wb_ratio",
-                    target: null,
-                    reference: null,
-                    inputMode: readout.wbInputMode ?? "corrected_value",
-                  }
-                : readout.shape === "categorical_counts"
-                  ? {
-                      kind: "categorical_counts",
-                      counts: Object.fromEntries(
-                        (readout.categories ?? []).map(({ id }) => [id, null]),
-                      ),
-                    }
-                  : { kind: "nested_continuous", rawValues: [], source: "manual" };
-        }
-      }
-    }
-  }
-  return cells;
-}
-
-function rowsFor(draft: ExperimentSetDraft, experimentId: string): TableRow[] {
-  return draft.conditions.flatMap((condition) =>
-    timePointsFor(draft).map((timePoint) => ({
-      key: `${experimentId}::${condition.id}::${timePoint?.id ?? "time.none"}`,
-      conditionId: condition.id,
-      conditionLabel: condition.label,
-      timePoint,
-    })),
-  );
-}
-
-function conditionAttributeValues(draft: ExperimentSetDraft, conditionId: string): string[] {
-  const condition = draft.conditions.find((candidate) => candidate.id === conditionId);
-  return draft.attributes.map((attribute) => condition?.attributes[attribute.id]?.trim() || "—");
-}
-
 function ConditionCells({ draft, row }: { draft: ExperimentSetDraft; row: TableRow }) {
   const values = conditionAttributeValues(draft, row.conditionId);
   return values.map((value, index) =>
@@ -245,35 +178,6 @@ function ConditionCells({ draft, row }: { draft: ExperimentSetDraft; row: TableR
       </td>
     ),
   );
-}
-
-function findCellDescriptor(draft: ExperimentSetDraft, key: string): CellDescriptor | null {
-  for (const experiment of draft.experiments) {
-    for (const condition of draft.conditions) {
-      for (const readout of draft.readouts) {
-        for (const timePoint of timePointsFor(draft)) {
-          const candidate = experimentCellKey({
-            experimentId: experiment.id,
-            conditionId: condition.id,
-            readoutId: readout.id,
-            timePointId: timePoint?.id,
-          });
-          if (candidate === key) {
-            return {
-              key,
-              experiment,
-              conditionId: condition.id,
-              conditionLabel: condition.label,
-              timePoint,
-              timeUnit: orderedAxisUnit(draft.time),
-              readout,
-            };
-          }
-        }
-      }
-    }
-  }
-  return null;
 }
 
 function countValue(value: string): number | null {
