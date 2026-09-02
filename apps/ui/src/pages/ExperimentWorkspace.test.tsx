@@ -652,6 +652,10 @@ describe("ExperimentWorkspace", () => {
     expect(
       screen.getByRole("spinbutton", { name: "Sample 1のFluorescence intensity (a.u.)" }),
     ).toHaveValue(25);
+    fireEvent.keyDown(xInput, { key: "ArrowRight" });
+    expect(
+      screen.getByRole("spinbutton", { name: "Sample 1のFluorescence intensity (a.u.)" }),
+    ).toHaveFocus();
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     expect(screen.getByRole("button", { name: "散布図を選択（おすすめ）" })).toBeVisible();

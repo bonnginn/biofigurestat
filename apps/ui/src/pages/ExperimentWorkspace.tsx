@@ -1505,33 +1505,6 @@ function ProportionTable({
   const [pasteStatus, setPasteStatus] = useState<string | null>(null);
   const rows = rowsFor(draft, experiment.id);
 
-  const moveGridFocus = (
-    event: KeyboardEvent<HTMLInputElement>,
-    rowIndex: number,
-    columnIndex: number,
-  ) => {
-    const movement: Record<string, [number, number]> = {
-      ArrowUp: [-1, 0],
-      ArrowDown: [1, 0],
-      ArrowLeft: [0, -1],
-      ArrowRight: [0, 1],
-      Enter: [event.shiftKey ? -1 : 1, 0],
-    };
-    const delta = movement[event.key];
-    if (!delta) return;
-    const nextRow = rowIndex + delta[0];
-    const nextColumn = columnIndex + delta[1];
-    const target = event.currentTarget
-      .closest("table")
-      ?.querySelector<HTMLInputElement>(
-        `[data-grid-row="${nextRow}"][data-grid-column="${nextColumn}"]`,
-      );
-    if (!target) return;
-    event.preventDefault();
-    target.focus();
-    target.select();
-  };
-
   return (
     <div className="experiment-workspace-table-wrap">
       <table className="experiment-workspace-table experiment-workspace-table--proportion">
@@ -1596,12 +1569,13 @@ function ProportionTable({
                     aria-describedby={validationMessage ? validationId : undefined}
                     min="0"
                     step="1"
-                    data-grid-row={rowIndex}
-                    data-grid-column={0}
+                    data-spreadsheet-cell="true"
+                    data-spreadsheet-row={rowIndex}
+                    data-spreadsheet-column={0}
                     value={proportionCell.positive ?? ""}
                     onFocus={(event) => event.currentTarget.select()}
                     onWheel={(event) => event.currentTarget.blur()}
-                    onKeyDown={(event) => moveGridFocus(event, rowIndex, 0)}
+                    onKeyDown={moveSpreadsheetFocus}
                     onChange={(event) => {
                       setPasteStatus(null);
                       onChange(key, "positive", countValue(event.currentTarget.value));
@@ -1630,12 +1604,13 @@ function ProportionTable({
                     aria-describedby={validationMessage ? validationId : undefined}
                     min="0"
                     step="1"
-                    data-grid-row={rowIndex}
-                    data-grid-column={1}
+                    data-spreadsheet-cell="true"
+                    data-spreadsheet-row={rowIndex}
+                    data-spreadsheet-column={1}
                     value={proportionCell.eligible ?? ""}
                     onFocus={(event) => event.currentTarget.select()}
                     onWheel={(event) => event.currentTarget.blur()}
-                    onKeyDown={(event) => moveGridFocus(event, rowIndex, 1)}
+                    onKeyDown={moveSpreadsheetFocus}
                     onChange={(event) => {
                       setPasteStatus(null);
                       onChange(key, "eligible", countValue(event.currentTarget.value));
@@ -2048,7 +2023,9 @@ function CorrelationTable({
                 <input
                   aria-label={`${experiment.label}の${variable.label}`}
                   className="experiment-workspace-number-input"
-                  data-grid-column={index}
+                  data-spreadsheet-cell="true"
+                  data-spreadsheet-column={index}
+                  data-spreadsheet-row={0}
                   inputMode="decimal"
                   type="number"
                   value={values[index] ?? ""}
@@ -2057,18 +2034,7 @@ function CorrelationTable({
                   onChange={(event) =>
                     onChange(keys[index], parseSpreadsheetNumber(event.currentTarget.value))
                   }
-                  onKeyDown={(event) => {
-                    const offset =
-                      event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0;
-                    if (!offset) return;
-                    const target = event.currentTarget
-                      .closest("table")
-                      ?.querySelector<HTMLInputElement>(`[data-grid-column="${index + offset}"]`);
-                    if (!target) return;
-                    event.preventDefault();
-                    target.focus();
-                    target.select();
-                  }}
+                  onKeyDown={moveSpreadsheetFocus}
                   onPaste={(event) => {
                     const text = event.clipboardData.getData("text");
                     if (!text.includes("\t") && !text.includes("\n")) return;
