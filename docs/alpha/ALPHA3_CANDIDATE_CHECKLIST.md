@@ -2,7 +2,8 @@
 
 Updated: 2026-09-03 (JST)
 
-Status: source preparation in progress; no candidate artifact or release has been authorized.
+Status: automated product-source gate passed at `2d9fba6`; no candidate artifact or release has
+been authorized.
 
 Use this checklist only for the maintenance Alpha described in
 `PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`. The historical Alpha checklist remains a record of the
@@ -10,7 +11,9 @@ earlier release and must not be silently reinterpreted as current evidence.
 
 ## Source authority
 
-- [ ] Record the clean candidate branch and full commit SHA.
+- [x] Record the clean product-source branch and commit SHA: branch
+      `codex/native-ui-regression-automation-2026-08-31`, product source
+      `2d9fba652b79e69e98aec623f534c2d8e9a59a39`.
 - [ ] Confirm the public-source tree and private release-build tree relationship without copying
       sealed evaluation material into the public repository.
 - [ ] Record the application version, engine version, build revision, license, and build date.
@@ -18,15 +21,21 @@ earlier release and must not be silently reinterpreted as current evidence.
 
 ## Automated source gate
 
-- [ ] Focused tests for every changed responsibility pass.
-- [ ] Project migration tests pass for Public Alpha continuous, Survival, and ordered X/Y fixtures.
+- [x] Focused tests for every changed responsibility pass.
+- [x] Project migration tests pass for Public Alpha continuous, Survival, and ordered X/Y fixtures
+      (9 files / 73 tests).
 - [ ] Analysis-contract and engine reference/smoke tests pass for Welch TOST, paired TOST, and
       multi-condition Games–Howell.
-- [ ] UI English-residue gate passes without translating researcher-entered labels.
-- [ ] Workspace typecheck and lint pass.
-- [ ] One full package/UI milestone gate passes, or every isolated failure has an explicit product,
+- [x] UI English-residue gate passes without translating researcher-entered labels (39 files / 362
+      tests).
+- [x] Workspace typecheck and lint pass.
+- [x] One full package/UI milestone gate passes, or every isolated failure has an explicit product,
       stale-test, or flaky disposition before a single bounded rerun.
-- [ ] Production UI build and release verifier pass with zero forbidden evaluation markers.
+- [x] Production UI build and release verifier pass with zero forbidden evaluation markers.
+
+The engine unit suite (75), analysis-contract suite (55), and existing frozen 14-case reference
+suite pass. The TOST protocols are not yet represented in that frozen cross-platform reference
+set, so the combined TOST reference item above remains open rather than overstating the evidence.
 
 ## Windows artifact gate
 
@@ -80,7 +89,7 @@ earlier release and must not be silently reinterpreted as current evidence.
 
 ## Final verdict
 
-- Candidate source: `TBD`
+- Candidate source: product source gate passed at `2d9fba6`; artifact nomination pending
 - Windows artifact: `TBD`
 - macOS artifact: `TBD`
 - Product failures: `TBD`

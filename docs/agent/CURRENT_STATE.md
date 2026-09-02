@@ -926,6 +926,32 @@ project-package tests cover both executable routes and save/reopen compatibility
 
 ## Working-tree rule
 
+### 2026-09-03 maintenance-refactor source gate
+
+The post-Alpha maintenance batch now has one recorded product-source authority,
+`2d9fba652b79e69e98aec623f534c2d8e9a59a39`. Graph control primitives, native-aware export
+control, Spreadsheet focus movement, Graph Statistics presentation, Graph-only input/state/UI,
+and Experiment workspace Graph-integrity/table construction now have named responsibility
+boundaries. Graph-only fell from 1,660 to 979 physical lines, Graph Statistics from 1,681 to 1,298,
+and Experiment workspace from 5,321 to 5,043. Production source in the batch is net +51 lines;
+the improvement is lower coupling and one behavior authority rather than artificial source shrinkage.
+
+The batch source gate passes: focused Graph-only 16/16, workspace structure/idempotence 14/14,
+main workspace 56/56, English UI 39 files / 362 tests, project package 9 files / 73 tests,
+graph-spec 7 files / 32 tests, analysis contracts 14 files / 55 tests, engine 75 tests, and the
+existing 14-case frozen engine reference. The single full UI milestone run passes 211 files /
+1,400 tests in 280.69 seconds. All TypeScript project checks, full UI lint, production build, and
+release verifier pass; the initial bundle is 266.38 kB (gzip 81.76 kB) with no forbidden evaluation
+marker. No native artifacts were rebuilt, uploaded, or published from this source tip.
+
+`v0.1.0-alpha.3` is now appropriate as the next maintenance candidate after reviewed frozen TOST
+reference cases and same-source Windows/macOS artifact gates. Broader Excel, panel-layout, and
+Prism-level appearance work remains Beta scope and should not be pulled into this release boundary.
+
+The detailed nine-part report is
+`docs/alpha/POST_ALPHA_REFACTOR_REPORT_2026-09-03.md`; the executable release gate remains
+`docs/alpha/ALPHA3_CANDIDATE_CHECKLIST.md`.
+
 Always run `git status --short` before editing. Preserve unrelated changes. Use small commits and
 focused tests first, then expand validation in proportion to risk. Do not access sealed evaluation
 pools or historical benchmark contents during ordinary product work.
