@@ -3,8 +3,8 @@ import { focusSpreadsheetControl, type SpreadsheetControl } from "./spreadsheetF
 
 export type ClipboardMatrix = readonly (readonly string[])[];
 
-const continuousRowEntryTarget = new WeakMap<HTMLTableElement, SpreadsheetControl>();
-const trackedTables = new WeakSet<HTMLTableElement>();
+const continuousRowEntryTarget = new WeakMap<HTMLElement, SpreadsheetControl>();
+const trackedGrids = new WeakSet<HTMLElement>();
 
 /** Preserve interior empty cells while removing only the clipboard's final empty line. */
 export function parseClipboardMatrix(text: string): ClipboardMatrix {
@@ -17,7 +17,7 @@ export function parseClipboardMatrix(text: string): ClipboardMatrix {
 function controlsFor(control: SpreadsheetControl): SpreadsheetControl[] {
   return [
     ...(control
-      .closest("table")
+      .closest('table, [data-unit-grid="true"]')
       ?.querySelectorAll<SpreadsheetControl>('[data-spreadsheet-cell="true"]:not(:disabled)') ??
       []),
   ];
@@ -29,23 +29,23 @@ function coordinate(control: SpreadsheetControl): { row: number; column: number 
   return Number.isInteger(row) && Number.isInteger(column) ? { row, column } : null;
 }
 
-function trackDirectSelection(table: HTMLTableElement) {
-  if (trackedTables.has(table)) return;
-  trackedTables.add(table);
-  table.addEventListener(
+function trackDirectSelection(grid: HTMLElement) {
+  if (trackedGrids.has(grid)) return;
+  trackedGrids.add(grid);
+  grid.addEventListener(
     "pointerdown",
     () => {
-      continuousRowEntryTarget.delete(table);
+      continuousRowEntryTarget.delete(grid);
     },
     { capture: true },
   );
 }
 
 function restoreFocusAfterCommit(
-  table: HTMLTableElement | null,
+  grid: HTMLElement | null,
   targetCoordinate: { row: number; column: number },
 ) {
-  if (!table) return;
+  if (!grid) return;
   queueMicrotask(() => {
     const active = document.activeElement;
     if (
@@ -59,9 +59,9 @@ function restoreFocusAfterCommit(
         activeCoordinate.column === targetCoordinate.column
       )
         return;
-      if (table.contains(active)) return;
+      if (grid.contains(active)) return;
     }
-    const replacement = table.querySelector<SpreadsheetControl>(
+    const replacement = grid.querySelector<SpreadsheetControl>(
       `[data-spreadsheet-cell="true"][data-spreadsheet-row="${targetCoordinate.row}"][data-spreadsheet-column="${targetCoordinate.column}"]:not(:disabled)`,
     );
     if (replacement) focusSpreadsheetControl(replacement);
@@ -77,8 +77,8 @@ export function moveSpreadsheetFocus(event: KeyboardEvent<SpreadsheetControl>): 
   const current = event.currentTarget;
   const currentCoordinate = coordinate(current);
   if (!currentCoordinate) return false;
-  const table = current.closest("table");
-  if (table) trackDirectSelection(table);
+  const grid = current.closest<HTMLElement>('table, [data-unit-grid="true"]');
+  if (grid) trackDirectSelection(grid);
   const controls = controlsFor(current);
   const currentIndex = controls.indexOf(current);
   let target: SpreadsheetControl | undefined;
@@ -114,7 +114,7 @@ export function moveSpreadsheetFocus(event: KeyboardEvent<SpreadsheetControl>): 
           ? coordinate(right)!.column - coordinate(left)!.column
           : coordinate(left)!.column - coordinate(right)!.column,
       )[0];
-    if (table) continuousRowEntryTarget.delete(table);
+    if (grid) continuousRowEntryTarget.delete(grid);
   } else if (event.key === "ArrowUp" || event.key === "ArrowDown" || event.key === "Enter") {
     const direction = event.key === "ArrowUp" || (event.key === "Enter" && event.shiftKey) ? -1 : 1;
     const candidateRows = [
@@ -132,8 +132,8 @@ export function moveSpreadsheetFocus(event: KeyboardEvent<SpreadsheetControl>): 
     const wrapContinuousEnter =
       event.key === "Enter" &&
       !event.shiftKey &&
-      table !== null &&
-      continuousRowEntryTarget.get(table) === current &&
+      grid !== null &&
+      continuousRowEntryTarget.get(grid) === current &&
       current === currentRowControls.at(-1);
     for (const row of candidateRows) {
       const rowControls = controls
@@ -151,11 +151,11 @@ export function moveSpreadsheetFocus(event: KeyboardEvent<SpreadsheetControl>): 
           )[0]);
       if (target) break;
     }
-    if (table) continuousRowEntryTarget.delete(table);
+    if (grid) continuousRowEntryTarget.delete(grid);
   }
 
   if (!target) return false;
-  if (event.key === "Tab" && table) {
+  if (event.key === "Tab" && grid) {
     const currentRowControls = controls
       .filter((candidate) => coordinate(candidate)?.row === currentCoordinate.row)
       .sort((left, right) => coordinate(left)!.column - coordinate(right)!.column);
@@ -163,13 +163,13 @@ export function moveSpreadsheetFocus(event: KeyboardEvent<SpreadsheetControl>): 
     const continuesFromLeft =
       !event.shiftKey &&
       targetCoordinate?.row === currentCoordinate.row &&
-      (current === currentRowControls[0] || continuousRowEntryTarget.get(table) === current);
-    if (continuesFromLeft) continuousRowEntryTarget.set(table, target);
-    else continuousRowEntryTarget.delete(table);
+      (current === currentRowControls[0] || continuousRowEntryTarget.get(grid) === current);
+    if (continuesFromLeft) continuousRowEntryTarget.set(grid, target);
+    else continuousRowEntryTarget.delete(grid);
   }
   event.preventDefault();
   const targetCoordinate = coordinate(target);
   focusSpreadsheetControl(target);
-  if (targetCoordinate) restoreFocusAfterCommit(table, targetCoordinate);
+  if (targetCoordinate) restoreFocusAfterCommit(grid, targetCoordinate);
   return true;
 }

@@ -69,7 +69,11 @@ describe("SpreadsheetGridInput", () => {
     fireEvent.keyDown(second, { key: "Tab", shiftKey: true });
     expect(first).toHaveFocus();
 
-    const edgeEvent = new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, cancelable: true });
+    const edgeEvent = new KeyboardEvent("keydown", {
+      key: "Tab",
+      shiftKey: true,
+      cancelable: true,
+    });
     first.dispatchEvent(edgeEvent);
     expect(edgeEvent.defaultPrevented).toBe(false);
   });
@@ -85,6 +89,19 @@ describe("SpreadsheetGridInput", () => {
 
     expect(target).toHaveFocus();
     expect(onKeyDown).toHaveBeenCalledOnce();
+  });
+
+  it("wraps Enter to the next row's left edge only after continuous left-to-right entry", () => {
+    render(<TestGrid />);
+    const first = screen.getByRole("textbox", { name: "row 1 value" });
+    const rightEdge = screen.getByRole("textbox", { name: "row 1 note" });
+    const nextLeftEdge = screen.getByRole("textbox", { name: "row 2 date" });
+
+    first.focus();
+    fireEvent.keyDown(first, { key: "Tab" });
+    expect(rightEdge).toHaveFocus();
+    fireEvent.keyDown(rightEdge, { key: "Enter" });
+    expect(nextLeftEdge).toHaveFocus();
   });
 
   it("does not recenter an adjacent visible cell in a scrollable legacy grid", () => {
