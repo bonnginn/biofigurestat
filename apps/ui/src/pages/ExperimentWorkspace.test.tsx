@@ -488,11 +488,14 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("textbox", { name: "Treatmentの細胞強度" })).toHaveValue("16");
   });
 
-  it("wraps Enter from the right edge of the Overview matrix to the next row", () => {
+  it("distinguishes continuous row entry from directly selected Enter navigation", () => {
     const draft = draftWithTwoConditions("nested_continuous");
     render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
 
     const table = screen.getByRole("table", { name: "細胞強度をまとめて入力" });
+    const firstRowLeft = within(table).getByRole("textbox", {
+      name: "Exp 1・Controlの細胞強度",
+    });
     const firstRowRight = within(table).getByRole("textbox", {
       name: "Exp 1・Treatmentの細胞強度",
     });
@@ -500,8 +503,27 @@ describe("ExperimentWorkspace", () => {
       name: "Exp 2・Controlの細胞強度",
     });
 
-    firstRowRight.focus();
+    fireEvent.pointerDown(firstRowRight);
+    fireEvent.focus(firstRowRight);
     fireEvent.keyDown(firstRowRight, { key: "Enter" });
+
+    expect(
+      within(table).getByRole("textbox", {
+        name: "Exp 2・Treatmentの細胞強度",
+      }),
+    ).toHaveFocus();
+
+    fireEvent.pointerDown(firstRowLeft);
+    fireEvent.focus(firstRowLeft);
+    fireEvent.keyDown(firstRowLeft, { key: "Tab" });
+    expect(firstRowRight).toHaveFocus();
+    fireEvent.keyDown(firstRowRight, { key: "Enter" });
+
+    expect(nextRowLeft).toHaveFocus();
+
+    fireEvent.pointerDown(firstRowRight);
+    fireEvent.focus(firstRowRight);
+    fireEvent.keyDown(firstRowRight, { key: "Tab" });
 
     expect(nextRowLeft).toHaveFocus();
   });

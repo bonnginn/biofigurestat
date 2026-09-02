@@ -82,11 +82,30 @@ describe("spreadsheet grid interaction", () => {
     fireEvent.keyDown(first, { key: "ArrowRight" });
     expect(screen.getByRole("textbox", { name: "0:2" })).toHaveFocus();
     fireEvent.keyDown(document.activeElement!, { key: "Enter" });
-    expect(screen.getByRole("textbox", { name: "1:0" })).toHaveFocus();
+    expect(screen.getByRole("textbox", { name: "1:2" })).toHaveFocus();
     fireEvent.keyDown(document.activeElement!, { key: "Enter", shiftKey: true });
     expect(screen.getByRole("textbox", { name: "0:2" })).toHaveFocus();
     fireEvent.keyDown(document.activeElement!, { key: "Tab" });
     expect(screen.getByRole("textbox", { name: "1:0" })).toHaveFocus();
+  });
+
+  it("wraps Enter only after continuous left-to-right entry", () => {
+    render(<Grid />);
+    const firstRowLeft = screen.getByRole("textbox", { name: "0:0" });
+    const firstRowRight = screen.getByRole("textbox", { name: "0:2" });
+    const nextRowLeft = screen.getByRole("textbox", { name: "1:0" });
+    const nextRowRight = screen.getByRole("textbox", { name: "1:2" });
+
+    firstRowLeft.focus();
+    fireEvent.keyDown(firstRowLeft, { key: "Tab" });
+    expect(firstRowRight).toHaveFocus();
+    fireEvent.keyDown(firstRowRight, { key: "Enter" });
+    expect(nextRowLeft).toHaveFocus();
+
+    fireEvent.pointerDown(firstRowRight);
+    firstRowRight.focus();
+    fireEvent.keyDown(firstRowRight, { key: "Enter" });
+    expect(nextRowRight).toHaveFocus();
   });
 
   it("moves focus without changing the worksheet scroll position", () => {
