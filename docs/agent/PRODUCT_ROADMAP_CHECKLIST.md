@@ -21,10 +21,9 @@
 | ---- | ---- | ---- | ------------ | -------- |
 | 1 | 🟡 | Windows native Welch TOST境界不具合 | `win-preview9`で失敗時の固定分類を1件確認 | 保存済みsynthetic `.lsa`、source/sidecar、`CREATE_NO_WINDOW`直接実行はすべてPASS。Tauri UI経路だけで出るinvalid JSONを安全な分類で特定し、同じ`.lsa`で実行完了 |
 | 2 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
-| 3 | 🟡 | 多条件Statisticsの応答時間 | 最終的な待ち時間の許容判断 | 5条件Games–Howellは現行Windows packaged engineで約3.2–3.3秒。近似化せず、engine起動と同一計算の重複を安全に減らす |
-| 4 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Windows OpenとSVG/PNG/CSV Export Cancelはpackaged PASS。次に保存先指定、Save Asと`.lsa`関連付けを再現 |
-| 5 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | 通常Graph previewの軸contextは実装済み。Kaplan–Meierの軸・凡例設定、Graph-only表示差と最終的な見た目を実機で確認 |
-| 6 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
+| 3 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Windows OpenとSVG/PNG/CSV Export Cancelはpackaged PASS。次に保存先指定、Save Asと`.lsa`関連付けを再現 |
+| 4 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | 通常Graph previewの軸contextは実装済み。Kaplan–Meierの軸・凡例設定、Graph-only表示差と最終的な見た目を実機で確認 |
+| 5 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
 
 ## 公開・運用
 
@@ -70,7 +69,7 @@
 | ✅   | 製品FAILとharness環境FAILの分離        | `PRODUCT_REGRESSION`と`HARNESS_INFRASTRUCTURE_BLOCKED`を区別                                   |
 | ✅   | Windows WebView2起動・接続             | transient blank targetを待機し、このhostの最新packaged exeでscenario全体がPASS                 |
 | ✅   | Graph-only Statistics validation       | 実表入力からGraph/Statisticsへ進み、未回答項目の英語alert表示とfocusをnativeで検査             |
-| 🟡   | Welch TOST native実行                  | frozen sidecar smokeと保存済みsynthetic `.lsa`再構築はPASS。Tauri IPC直結stepをharnessへ追加し、WebView2接続可能hostでの実証待ち |
+| 🟡   | Welch TOST native実行                  | frozen sidecar smoke、保存済みsynthetic `.lsa`再構築、packaged engineをRust製品境界（pipe、`CREATE_NO_WINDOW`、timeout監視、JSON parse）から呼ぶ回帰はPASS。Tauri IPC直結stepはharnessへ追加済みで、WebView2接続可能hostでの実証待ち |
 | 🟡   | native file dialog自動操作             | Windows実OpenとSVG/PNG/CSV Save画面のCancelをpackaged PASS、自己test 12/12。保存先指定はmodern filename controlの環境BLOCKで実験flagへ隔離 |
 | 🟡   | `.lsa` file association自動確認        | project保存→同じexeへpathを渡す再起動scenarioは実装済み。保存先自動入力BLOCK解消後にpackaged実証し、installed double-clickへ拡張 |
 | 🟡   | macOS adapter                          | Accessibilityで入力、Command+Q、Cancel保持、破棄終了を同じreport schemaへ実装。Mac実行証拠待ち |
@@ -95,7 +94,7 @@
 | ✅   | 途中行からの入力と実験回・日付の保持   | 空行を挟んだ入力を同じ行に保持し、canonical observationと実験回・日付を明示的に連結。保存・再読込・Graph・Statisticsで回帰確認済み。日付からpairingは推定しない |
 | ✅   | 数値入力の表示桁と表keyboard操作       | `1.00`などの入力表記をcanonical数値と分離して保存・再表示し、数値セルは左右矢印1回で移動。Enterは同列、左端からの連続入力後の右端Enterと右端Tabは次行左端へ移動することを回帰・Windows実機確認済み |
 | ✅   | 単純な独立群比較の条件数               | 最初の4欄を保ったまま最大50条件まで追加可能。5条件の作成、Graph、Welch ANOVA＋Games–Howell、4対照比較注釈、save/reopenをWindows packaged appで確認 |
-| 🟡   | 多条件Statisticsの待ち時間             | 5条件・各n=3でpackaged engine 3回が3.268、3.231、3.317秒。Games–Howell CI約1.8秒とprocess起動を、数値結果・timeout/cancel分離を変えずに最適化する |
+| ✅   | 多条件Statisticsの待ち時間             | SciPyが生成する対角・対称行列25セルのうち、製品が保存する上三角10比較だけを同じstudentized-range式で計算。5条件・各n=3のpackaged engineは旧3.268–3.317秒から2.194–2.262秒へ短縮。10比較の調整p値・同時CIを従来SciPy行列と小数14桁で照合し、engine 69 testsと17-case frozen smokeがPASS |
 | ⏸    | 独立性確認の質問を短くする             | 科学的安全性を保ちつつ、単純実験で過度に厳しく見えない                           |
 | ✅   | SpreadsheetのUndo/Redo                 | bounded canonical履歴を共通化し、Ctrl/Cmd+Z・redo・外部置換時clearを回帰test済み |
 | 🟡   | Graph-onlyの通常workspace統合          | 共通editorは利用可能。完成Graphとの表示差を継続解消                              |

@@ -84,12 +84,14 @@ five-condition packaged-app review passed worksheet creation, Graph, Welch ANOVA
 four control comparisons, and save/reopen. These changes do not alter biological-unit identity,
 analysis values, or the project schema.
 
-The same five-condition, three-unit-per-condition request took 3.268, 3.231, and 3.317 seconds in
-three direct packaged-engine runs on the review Windows host. In-process profiling attributed about
-1.8 seconds to the exact Games–Howell simultaneous confidence interval calculation; process startup
-accounts for much of the remainder. This is a machine-specific diagnostic rather than a release
-performance guarantee. Optimization must retain the SciPy numerical result and the existing
-per-request timeout/cancel isolation; approximation is not an accepted shortcut.
+The five-condition, three-unit-per-condition Games–Howell request now calculates only the ten
+upper-triangle comparisons that the product stores, rather than asking SciPy to evaluate diagonal
+and symmetric duplicate matrix cells. Direct packaged-engine runs on the review Windows host fell
+from 3.268–3.317 seconds to 2.194–2.262 seconds. All ten adjusted p values and simultaneous
+confidence intervals agree with the former full SciPy matrix to 14 decimal places; the complete
+69-test engine suite and 17-case frozen sidecar smoke pass. The existing per-request timeout and
+cancel isolation is unchanged, and no approximation was introduced. Timings remain a
+machine-specific diagnostic rather than a release guarantee.
 
 The import workflow also bundles a constrained bilingual Excel template with separate sheets for
 independent groups, paired/repeated observations, Survival, and ordered X/Y data. The in-app recipe
