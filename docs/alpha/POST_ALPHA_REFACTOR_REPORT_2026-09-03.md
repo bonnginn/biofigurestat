@@ -2,7 +2,7 @@
 
 This report records the maintenance/refactor batch based on product source commit
 `ecdb2748314153cb83e159efb60d662b53883c88` and ending at product source commit
-`e2cc364`. Reference coverage tooling continues through
+`82ac3af`. Reference coverage tooling continues through
 `35e3431`. This report does not nominate or publish a release artifact.
 
 ## 1. BASELINE
@@ -11,7 +11,7 @@ This report records the maintenance/refactor batch based on product source commi
   `v0.1.0-alpha.2` remains in scope.
 - Working branch: `codex/native-ui-regression-automation-2026-08-31`.
 - Product-source batch base: `ecdb2748314153cb83e159efb60d662b53883c88`.
-- Product-source batch tip: `e2cc364`.
+- Product-source batch tip: `82ac3af`.
 - The working tree was clean before each increment. No reset, discard, overwrite, push,
   publication, installer build, or native installation was performed.
 - Pool D, historical benchmark evidence, and external evaluation corpora were not opened.
@@ -52,6 +52,8 @@ This report records the maintenance/refactor batch based on product source commi
   scaffolding from the 5,000-line route coordinator.
 - `e2cc364`: moved the ordered X/Y import, identity, missingness, compatibility, and raw-revision
   rules behind one pure Common Coverage workflow boundary; the route retains orchestration only.
+- `82ac3af`: adopted the shared Graph color, range, and visibility controls in Survival and
+  Heatmap settings while retaining their specialized graph specs and availability rules.
 - `56af9f9`, `52bda30`: recorded the maintenance Alpha strategy, gate, and bilingual draft notes.
 
 ## 4. BEHAVIOR_PRESERVED
@@ -79,6 +81,8 @@ This report records the maintenance/refactor batch based on product source commi
 - Focused Graph export paths: 2/2 specialist cases plus existing export-controller suites PASS.
 - Common Coverage route: 41/41 PASS after extracting the ordered X/Y workflow, including exact
   raw lineage, missing rows, save/reopen, D17, model safe-stops, and Japanese/English rendering.
+- Specialist Survival/Heatmap route: 31/31 PASS after sharing appearance controls, including
+  event/censoring preservation, save/reopen, D11 execution, and unresolved Heatmap behavior.
 - Workspace structure revision/idempotence: 14/14 PASS.
 - Main Experiment workspace: 56/56 PASS.
 - English application-copy gate: 39 files / 362 tests PASS.
@@ -92,7 +96,7 @@ This report records the maintenance/refactor batch based on product source commi
 - Existing frozen engine reference suite: 14/14 PASS at `rtol=1e-10`, `atol=1e-12`.
 - Full UI milestone gate: 211 files / 1,400 tests PASS in 280.69 seconds.
 - All eight TypeScript project checks PASS; full UI lint PASS.
-- Final production UI build PASS; initial chunk 266.38 kB (gzip 81.75 kB), no size advisory.
+- Final production UI build PASS; initial chunk 266.38 kB (gzip 81.76 kB), no size advisory.
 - Release bundle verifier PASS with zero forbidden evaluation markers.
 
 The full UI gate was run once at the batch boundary. Focused suites were used between commits so
@@ -107,6 +111,8 @@ the approximately five-minute milestone test was not repeated after every extrac
   moved behind named boundaries.
 - Route-local ordered X/Y parsing, example generation, legacy restoration, and raw-revision
   construction were moved to `commonCoverageOrderedCurve.ts`.
+- Survival/Heatmap-local color, range, and visibility event adapters were removed in favor of the
+  same Graph control primitives used by the general workbench.
 - No historical evidence or evaluation material was read, moved, deleted, or copied.
 - No production capability was quarantined or disabled.
 
@@ -127,7 +133,7 @@ the approximately five-minute milestone test was not repeated after every extrac
 
 ## 8. NATIVE_VERIFICATION
 
-- No native binary was rebuilt from `e2cc364`; therefore this source tip does not yet have a current
+- No native binary was rebuilt from `82ac3af`; therefore this source tip does not yet have a current
   executable-level PASS.
 - The existing Windows engine sidecar passed all 18 smoke requests. This verifies the unchanged
   engine executable boundary, not the current desktop UI bundle.
@@ -154,7 +160,7 @@ the approximately five-minute milestone test was not repeated after every extrac
 
 ## Size interpretation
 
-Across this batch, production TypeScript/TSX/CSS changed by +2,996 / -2,923 lines (net +73), while
+Across this batch, production TypeScript/TSX/CSS changed by +3,076 / -3,026 lines (net +50), while
 tests changed by +300 / -27 lines (net +273). This is primarily redistribution into explicit
 boundaries, not source-code shrinkage. The three large coordinators that were directly addressed
 became smaller: Graph-only -681 physical lines, Graph Statistics -383, Experiment workspace -278,
