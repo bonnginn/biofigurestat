@@ -90,6 +90,11 @@ import { HeatmapGraph } from "../components/graph/HeatmapGraph";
 import { DEFAULT_SURVIVAL_COLORS, SurvivalGraph } from "../components/graph/SurvivalGraph";
 import { GraphExportActions } from "../components/graph/GraphExportActions";
 import { GraphWorkspaceFrame } from "../components/graph/GraphWorkspaceFrame";
+import {
+  ExperimentGraphColorControl,
+  ExperimentGraphRangeControl,
+  ExperimentGraphVisibilityControl,
+} from "../components/graph/ExperimentGraphControlPrimitives";
 import { DelimitedTextSpreadsheet } from "../components/DelimitedTextSpreadsheet";
 import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import type { AnalysisRouteSwitcherAccess } from "../app/analysisRouteSwitcherAccess";
@@ -495,9 +500,7 @@ export function SpecializedCorePage({
       "right",
   );
   const [survivalShowMinorTicks, setSurvivalShowMinorTicks] = useState(
-    initialDraft?.survivalShowMinorTicks ??
-      initialSurvivalGraphSpec?.axes.showMinorTicks ??
-      true,
+    initialDraft?.survivalShowMinorTicks ?? initialSurvivalGraphSpec?.axes.showMinorTicks ?? true,
   );
   const [survivalTickDirection, setSurvivalTickDirection] = useState<"inside" | "outside">(
     initialDraft?.survivalTickDirection ??
@@ -1930,9 +1933,7 @@ export function SpecializedCorePage({
   const numericStatusMappingRequired =
     experimentFirstEntry &&
     mode === "survival" &&
-    ((survival &&
-      "error" in survival &&
-      /numeric mapping/iu.test(survival.internalError ?? "")) ||
+    ((survival && "error" in survival && /numeric mapping/iu.test(survival.internalError ?? "")) ||
       numericStatusMapping !== null);
   const survivalStatisticsSetupBlockedReason =
     directTimeToEventEntry?.status === "safe_unsupported"
@@ -2169,31 +2170,26 @@ export function SpecializedCorePage({
         <fieldset>
           <legend>{t("凡例と曲線の色", "Legend and curve colors")}</legend>
           {survival.conditions.map((condition, index) => (
-            <label key={condition.id}>
-              <span>{condition.label}</span>
-              <input
-                type="color"
-                aria-label={t(
-                  `${condition.label}のSurvival曲線色`,
-                  `${condition.label} survival curve color`,
-                )}
-                value={
-                  survivalPalette[index] ??
-                  DEFAULT_SURVIVAL_COLORS[index % DEFAULT_SURVIVAL_COLORS.length]
-                }
-                onChange={(event) => {
-                  setSurvivalPalette((current) => {
-                    const next = [...current];
-                    next[index] = event.target.value;
-                    return next;
-                  });
-                  recordUsageGraphEdit(
-                    routeFromPath(window.location.pathname),
-                    "appearance_layout",
-                  );
-                }}
-              />
-            </label>
+            <ExperimentGraphColorControl
+              key={condition.id}
+              label={condition.label}
+              ariaLabel={t(
+                `${condition.label}のSurvival曲線色`,
+                `${condition.label} survival curve color`,
+              )}
+              value={
+                survivalPalette[index] ??
+                DEFAULT_SURVIVAL_COLORS[index % DEFAULT_SURVIVAL_COLORS.length]
+              }
+              onChange={(value) => {
+                setSurvivalPalette((current) => {
+                  const next = [...current];
+                  next[index] = value;
+                  return next;
+                });
+                recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+              }}
+            />
           ))}
           <small>
             {t(
@@ -2209,9 +2205,7 @@ export function SpecializedCorePage({
           aria-label="Survival legend position"
           value={survivalLegendPosition}
           onChange={(event) => {
-            setSurvivalLegendPosition(
-              event.target.value as "hidden" | "top" | "right" | "inside",
-            );
+            setSurvivalLegendPosition(event.target.value as "hidden" | "top" | "right" | "inside");
             recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
           }}
         >
@@ -2221,35 +2215,28 @@ export function SpecializedCorePage({
           <option value="inside">{t("内側", "Inside")}</option>
         </select>
       </label>
-      <label>
-        <span>
-          {t("凡例の文字サイズ", "Legend font size")}: {survivalLegendFontSize}px
-        </span>
-        <input
-          type="range"
-          min="9"
-          max="24"
-          step="1"
-          aria-label="Survival legend font size"
-          value={survivalLegendFontSize}
-          onChange={(event) => {
-            setSurvivalLegendFontSize(Number(event.target.value));
-            recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
-          }}
-        />
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          aria-label="Survival show minor ticks"
-          checked={survivalShowMinorTicks}
-          onChange={(event) => {
-            setSurvivalShowMinorTicks(event.target.checked);
-            recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
-          }}
-        />
-        <span>{t("補助目盛を表示", "Show minor ticks")}</span>
-      </label>
+      <ExperimentGraphRangeControl
+        label={t("凡例の文字サイズ", "Legend font size")}
+        ariaLabel="Survival legend font size"
+        value={survivalLegendFontSize}
+        min={9}
+        max={24}
+        step={1}
+        suffix="px"
+        onChange={(value) => {
+          setSurvivalLegendFontSize(value);
+          recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+        }}
+      />
+      <ExperimentGraphVisibilityControl
+        label={t("補助目盛を表示", "Show minor ticks")}
+        ariaLabel="Survival show minor ticks"
+        checked={survivalShowMinorTicks}
+        onChange={(checked) => {
+          setSurvivalShowMinorTicks(checked);
+          recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
+        }}
+      />
       <label>
         <span>{t("軸目盛の向き", "Tick direction")}</span>
         <select
@@ -2264,23 +2251,19 @@ export function SpecializedCorePage({
           <option value="inside">{t("グラフの内側", "Inside the graph")}</option>
         </select>
       </label>
-      <label>
-        <span>
-          {t("Graphの文字サイズ", "Graph font size")}: {survivalFontSize}px
-        </span>
-        <input
-          type="range"
-          min="9"
-          max="24"
-          step="1"
-          aria-label="Survival font size"
-          value={survivalFontSize}
-          onChange={(event) => {
-            setSurvivalFontSize(Number(event.target.value));
-            recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
-          }}
-        />
-      </label>
+      <ExperimentGraphRangeControl
+        label={t("Graphの文字サイズ", "Graph font size")}
+        ariaLabel="Survival font size"
+        value={survivalFontSize}
+        min={9}
+        max={24}
+        step={1}
+        suffix="px"
+        onChange={(value) => {
+          setSurvivalFontSize(value);
+          recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+        }}
+      />
       <p className="specialized-engine-note">
         {t(
           "Graphの見た目を変更しても、Kaplan–Meier推定やlog-rank検定は再計算しません。",
@@ -2360,29 +2343,23 @@ export function SpecializedCorePage({
           }}
         />
       </label>
-      <label>
-        {t("欠損値の色", "Missing-value color")}
-        <input
-          aria-label="Heatmap missing color"
-          type="color"
-          value={missingColor}
-          onChange={(event) => {
-            setMissingColor(event.target.value);
-            recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
-          }}
-        />
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={showCellValues}
-          onChange={(event) => {
-            setShowCellValues(event.target.checked);
-            recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
-          }}
-        />{" "}
-        {t("各セルの値を表示", "Show each cell value")}
-      </label>
+      <ExperimentGraphColorControl
+        label={t("欠損値の色", "Missing-value color")}
+        ariaLabel="Heatmap missing color"
+        value={missingColor}
+        onChange={(value) => {
+          setMissingColor(value);
+          recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+        }}
+      />
+      <ExperimentGraphVisibilityControl
+        label={t("各セルの値を表示", "Show each cell value")}
+        checked={showCellValues}
+        onChange={(checked) => {
+          setShowCellValues(checked);
+          recordUsageGraphEdit(routeFromPath(window.location.pathname), "appearance_layout");
+        }}
+      />
       <p className="specialized-engine-note">
         {t(
           "Heatmapは入力行列を可視化します。列を自動的に生物学的な独立例とはみなしません。",
