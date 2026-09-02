@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from verify_engine_reference import (
+    append_missing_reference_cases,
     compare,
     reference_case_id,
     reference_coverage,
@@ -12,6 +13,36 @@ from verify_engine_reference import (
 
 
 class EngineReferenceComparatorTests(unittest.TestCase):
+    def test_appends_only_missing_cases_and_preserves_existing_expected_results(self) -> None:
+        existing_request = {
+            "templateId": "D01",
+            "method": "welch_t",
+            "requestId": "request.existing",
+        }
+        missing_request = {
+            "templateId": "D01",
+            "method": "welch_tost",
+            "requestId": "request.missing",
+        }
+        existing_case = {
+            "caseId": reference_case_id(existing_request),
+            "request": existing_request,
+            "result": {"p": 0.125},
+        }
+        executed: list[str] = []
+
+        updated, appended = append_missing_reference_cases(
+            {"referenceVersion": "1.0.0", "cases": [existing_case]},
+            [existing_request, missing_request],
+            lambda request: executed.append(request["requestId"]) or {"p": 0.025},
+        )
+
+        self.assertIs(updated["cases"][0], existing_case)
+        self.assertEqual(updated["cases"][0]["result"], {"p": 0.125})
+        self.assertEqual(executed, ["request.missing"])
+        self.assertEqual(appended, [reference_case_id(missing_request)])
+        self.assertEqual(updated["cases"][1]["result"], {"p": 0.025})
+
     def test_reference_writer_is_restricted_to_the_reviewed_platform(self) -> None:
         self.assertEqual(reference_source_platform("Darwin", "aarch64"), "Darwin-arm64")
         require_reference_writer_platform("Darwin", "arm64")

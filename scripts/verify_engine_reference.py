@@ -12,7 +12,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,6 +60,27 @@ def reference_coverage(
     reference_ids = {case["caseId"] for case in reference.get("cases", [])}
     implemented_ids = {reference_case_id(request) for request in requests}
     return sorted(implemented_ids - reference_ids), sorted(reference_ids - implemented_ids)
+
+
+def append_missing_reference_cases(
+    reference: dict[str, Any],
+    requests: list[dict[str, Any]],
+    executor: Callable[[dict[str, Any]], dict[str, Any]],
+) -> tuple[dict[str, Any], list[str]]:
+    missing, _ = reference_coverage(reference, requests)
+    missing_ids = set(missing)
+    appended = [
+        {
+            "caseId": reference_case_id(request),
+            "request": request,
+            "result": executor(request),
+        }
+        for request in requests
+        if reference_case_id(request) in missing_ids
+    ]
+    return {**reference, "cases": [*reference.get("cases", []), *appended]}, [
+        case["caseId"] for case in appended
+    ]
 
 
 def execute(request: dict[str, Any]) -> dict[str, Any]:
@@ -141,10 +162,16 @@ def create_reference() -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
+    write_group = parser.add_mutually_exclusive_group()
+    write_group.add_argument(
         "--write-reference",
         action="store_true",
         help="Replace the committed reference intentionally on the known-good reference platform.",
+    )
+    write_group.add_argument(
+        "--append-missing-reference",
+        action="store_true",
+        help="Append only implemented cases missing from the reviewed Darwin-arm64 reference.",
     )
     parser.add_argument(
         "--require-complete-coverage",
@@ -162,6 +189,17 @@ def main() -> None:
     if not REFERENCE.is_file():
         raise SystemExit(f"Reference file is missing: {REFERENCE}")
     reference = json.loads(REFERENCE.read_text(encoding="utf-8"))
+    if args.append_missing_reference:
+        require_reference_writer_platform(platform.system(), platform.machine())
+        payload, appended = append_missing_reference_cases(reference, smoke_requests(), execute)
+        if not appended:
+            print("Reference already covers every implemented smoke protocol.")
+            return
+        REFERENCE.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        for case_id in appended:
+            print(f"APPENDED {case_id}")
+        print(f"WROTE {REFERENCE} with {len(appended)} new cases; existing cases were preserved.")
+        return
     if args.require_complete_coverage:
         missing, obsolete = reference_coverage(reference, smoke_requests())
         if missing:
