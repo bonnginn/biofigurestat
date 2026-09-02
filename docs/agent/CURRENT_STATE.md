@@ -100,12 +100,14 @@ Windows candidate `951b3b7-beta.20260902.win-preview10` packages that engine rev
 the production UI build, Windows bundle verifier, and release verifier. The saved synthetic Welch
 TOST request also passes the frozen-sidecar smoke and an ignored Rust integration test that invokes
 the packaged engine through the production process boundary, including pipes, `CREATE_NO_WINDOW`,
-timeout supervision, and JSON deserialization. The managed native harness launched the exact
-candidate but WebView2 exposed only a transient `about:blank` target and then rejected CDP before
-any product step ran; this is recorded as `HARNESS_INFRASTRUCTURE_BLOCKED`, not a product failure.
-One manual execution of the saved `.lsa` through the Tauri UI remains the only product-boundary
-confirmation for this incident. No schema, margin, comparison identity, or TOST conclusion rule
-was changed during the investigation.
+timeout supervision, and JSON deserialization. An unrestricted exact-executable native harness run
+then passed WebView2 attachment and the real Tauri `run_analysis` command against the same candidate:
+protocol `0.15.0`, status `ok`, and conclusion `equivalence_supported` returned through JSON IPC.
+The sidecar, Rust packaged-process test, and native harness now read the same request fixture so its
+ten observations, margin, and comparison identity cannot drift between boundaries. The full native
+scenario, including Open/Export Cancel, Graph-only Statistics handoff, and dirty-close lifecycle,
+also passed; evidence is under `.tmp/native-ui-regression/win-preview10-cdp-diagnostics/`. No schema,
+margin, comparison identity, or TOST conclusion rule was changed during the investigation.
 
 The import workflow also bundles a constrained bilingual Excel template with separate sheets for
 independent groups, paired/repeated observations, Survival, and ordered X/Y data. The in-app recipe
