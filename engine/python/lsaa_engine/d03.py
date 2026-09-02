@@ -107,7 +107,11 @@ def _games_howell_upper_triangle(
     adjusted_p_values = stats.studentized_range.sf(
         np.asarray(range_statistics, dtype=float), group_count, pair_df
     )
-    critical_values = stats.studentized_range.ppf(confidence_level, group_count, pair_df)
+    unique_df, critical_value_index = np.unique(pair_df, return_inverse=True)
+    unique_critical_values = np.atleast_1d(
+        stats.studentized_range.ppf(confidence_level, group_count, unique_df)
+    )
+    critical_values = unique_critical_values[critical_value_index]
     confidence_radii = critical_values * np.asarray(range_standard_errors, dtype=float)
     comparisons: list[_GamesHowellComparison] = []
     for index, pair_input in enumerate(pair_inputs):
