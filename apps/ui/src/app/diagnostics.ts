@@ -161,7 +161,17 @@ const SAFE_ERROR_KINDS = new Set([
 ]);
 
 function safeErrorKind(error: unknown): string {
+  if (typeof error === "string") {
+    if (/ENGINE_PROCESS_TIMEOUT/u.test(error)) return "EngineProcessTimeout";
+    if (/ENGINE_PROCESS_CANCELLED/u.test(error)) return "EngineProcessCancelled";
+    if (/missing from application resources/iu.test(error)) return "EngineResourceMissing";
+    if (/Could not start the local analysis engine/iu.test(error)) return "EngineProcessLaunchError";
+    if (/local analysis engine failed/iu.test(error)) return "EngineProcessFailure";
+    if (/analysis engine returned invalid JSON/iu.test(error)) return "EngineInvalidJson";
+    return "NonErrorThrow";
+  }
   if (!(error instanceof Error)) return "NonErrorThrow";
+  if (error.name === "ZodError") return "EngineResponseValidationError";
   return SAFE_ERROR_KINDS.has(error.name) ? error.name : "Error";
 }
 
