@@ -1,6 +1,10 @@
 import unittest
 
+import numpy as np
+from scipy import stats
+
 from lsaa_engine.d01_d02 import run_request
+from lsaa_engine.d03 import _games_howell_upper_triangle
 
 
 CONDITIONS = ["condition.control", "condition.low", "condition.high"]
@@ -50,6 +54,38 @@ def d03_request(
 
 
 class D03EngineTests(unittest.TestCase):
+    def test_upper_triangle_games_howell_matches_full_scipy_matrices(self):
+        samples = [
+            np.asarray([1.0, 1.04, 0.98]),
+            np.asarray([1.15, 1.21, 1.26, 1.18]),
+            np.asarray([1.37, 1.43, 1.49]),
+            np.asarray([0.72, 0.81, 0.76, 0.88, 0.79]),
+            np.asarray([1.55, 1.63, 1.71]),
+        ]
+        expected = stats.tukey_hsd(*samples, equal_var=False)
+        expected_interval = expected.confidence_interval(confidence_level=0.95)
+        actual = _games_howell_upper_triangle(samples, 0.95)
+
+        self.assertEqual(len(actual), 10)
+        for comparison in actual:
+            first_index = comparison.first_index
+            second_index = comparison.second_index
+            self.assertAlmostEqual(
+                comparison.adjusted_p_value,
+                float(expected.pvalue[first_index, second_index]),
+                places=14,
+            )
+            self.assertAlmostEqual(
+                comparison.confidence_lower,
+                float(expected_interval.low[first_index, second_index]),
+                places=14,
+            )
+            self.assertAlmostEqual(
+                comparison.confidence_upper,
+                float(expected_interval.high[first_index, second_index]),
+                places=14,
+            )
+
     def test_welch_anova_and_games_howell_fixture(self):
         result = run_request(d03_request())
 
