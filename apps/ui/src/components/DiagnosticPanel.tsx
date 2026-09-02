@@ -68,6 +68,7 @@ export function DiagnosticPanel({
   const [draft, setDraft] = useState<ProblemReportDraft>(() => initialDraft(route));
   const [submission, setSubmission] = useState<ProblemReportSubmission | null>(null);
   const [sending, setSending] = useState(false);
+  const [includeTechnicalDetails, setIncludeTechnicalDetails] = useState(false);
   const [reportId, setReportId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -115,7 +116,7 @@ export function DiagnosticPanel({
     !draft.contactEmail.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(draft.contactEmail.trim());
   const canPreview = Boolean(draft.attempted.trim() && draft.observed.trim() && contactValid);
   const localReport = () =>
-    createDiagnosticReport({ route, project, includeTechnicalDetails: false });
+    createDiagnosticReport({ route, project, includeTechnicalDetails });
   const localFailure = (error: unknown) => {
     recordDiagnosticError("DIAGNOSTIC_EXPORT_FAILED", error);
     setStatus(
@@ -425,6 +426,21 @@ export function DiagnosticPanel({
                     ? "この操作だけでは外部送信しません。"
                     : "These actions do not send anything externally."}
                 </p>
+                <label className="diagnostic-expanded-option">
+                  <input
+                    type="checkbox"
+                    checked={includeTechnicalDetails}
+                    onChange={(event) => setIncludeTechnicalDetails(event.currentTarget.checked)}
+                  />
+                  <span>
+                    {ja ? "技術的なエラー分類を含める" : "Include technical error classifications"}
+                    <small>
+                      {ja
+                        ? "固定error codeとエラー種別だけを含めます。測定値、project名、条件名、ファイル名・pathは含めません。"
+                        : "Includes only fixed error codes and error classes. Measurements, project and condition names, file names, and paths are excluded."}
+                    </small>
+                  </span>
+                </label>
                 <div className="diagnostic-actions">
                   <button
                     type="button"
