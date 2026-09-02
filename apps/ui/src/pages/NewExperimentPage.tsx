@@ -1,12 +1,4 @@
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { lazy, Suspense, useCallback, useLayoutEffect, useRef, useState } from "react";
 
 import type {
   ConditionAttributeDraft,
@@ -40,6 +32,7 @@ import type {
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
 import { ConditionTimePreview } from "../components/ConditionTimePreview";
 import { ExistingDataImport } from "../components/ExistingDataImport";
+import { moveSpreadsheetFocus } from "../components/spreadsheetGrid";
 import type { ExperimentWorkspaceProps } from "./ExperimentWorkspace";
 import { recordBenchmarkEvent } from "../app/benchmarkEvaluation";
 import { evaluationMode, evaluationModeIsConfigured } from "../app/evaluationMode";
@@ -135,10 +128,7 @@ type ExplicitStructureAnswers = Readonly<{
   sharedSourceSplit: boolean;
 }>;
 
-function graphOnlyBiologicalInitial(
-  state: UnresolvedVisualizationProjectState,
-  locale: AppLocale,
-) {
+function graphOnlyBiologicalInitial(state: UnresolvedVisualizationProjectState, locale: AppLocale) {
   const xColumn = state.mapping?.columns.find(({ role }) => role === "x");
   const yColumn = state.mapping?.columns.find(({ role }) => role === "y");
   if (!xColumn || !yColumn) return undefined;
@@ -1427,33 +1417,6 @@ function ConditionsStep({
       </section>
     );
   }
-  const moveConditionGridFocus = (
-    event: KeyboardEvent<HTMLInputElement>,
-    rowIndex: number,
-    columnIndex: number,
-  ) => {
-    const movement: Record<string, [number, number]> = {
-      ArrowUp: [-1, 0],
-      ArrowDown: [1, 0],
-      ArrowLeft: [0, -1],
-      ArrowRight: [0, 1],
-      Enter: [event.shiftKey ? -1 : 1, 0],
-    };
-    const delta = movement[event.key];
-    if (!delta || event.metaKey || event.ctrlKey || event.altKey) return;
-    const target = event.currentTarget
-      .closest("table")
-      ?.querySelector<HTMLInputElement>(
-        `[data-condition-row="${rowIndex + delta[0]}"][data-condition-column="${
-          columnIndex + delta[1]
-        }"]`,
-      );
-    if (!target) return;
-    event.preventDefault();
-    target.focus();
-    target.select();
-  };
-
   const appendRows = (count = 5) => {
     if (draft.conditions.length >= 50) return;
     onUpdate((current) => {
@@ -1718,10 +1681,12 @@ function ConditionsStep({
                     <input
                       aria-label={`行${index + 1}：${attribute.label || `列${columnIndex + 1}`}`}
                       value={condition.attributes[attribute.id] ?? ""}
-                      data-condition-row={index}
-                      data-condition-column={columnIndex}
+                      data-spreadsheet-cell="true"
+                      data-spreadsheet-row={index}
+                      data-spreadsheet-column={columnIndex}
+                      data-spreadsheet-arrow-navigation="cell"
                       onFocus={(event) => event.currentTarget.select()}
-                      onKeyDown={(event) => moveConditionGridFocus(event, index, columnIndex)}
+                      onKeyDown={moveSpreadsheetFocus}
                       onChange={(event) =>
                         updateDescriptor(condition.id, attribute.id, event.target.value)
                       }
@@ -2398,7 +2363,9 @@ export function NewExperimentPage({
           : "context",
   );
   const [designStep, setDesignStep] = useState<DesignStep>(0);
-  const [furthestStep, setFurthestStep] = useState<FlowStep>(initialDraft || initialFixture ? 4 : 0);
+  const [furthestStep, setFurthestStep] = useState<FlowStep>(
+    initialDraft || initialFixture ? 4 : 0,
+  );
   const [draft, setDraft] = useState<ExperimentSetDraft | null>(
     initialFixture?.draft ?? initialDraft,
   );
@@ -2715,7 +2682,11 @@ export function NewExperimentPage({
       <Suspense
         fallback={
           <p className="app-route-loading" role="status">
-            {localizedText(locale, "実験ワークスペースを読み込んでいます…", "Loading experiment workspace…")}
+            {localizedText(
+              locale,
+              "実験ワークスペースを読み込んでいます…",
+              "Loading experiment workspace…",
+            )}
           </p>
         }
       >
@@ -2819,17 +2790,15 @@ export function NewExperimentPage({
                 },
                 survival: {
                   available: Boolean(onDedicatedEntryReady) && dedicatedEntryAvailable,
-                  reason:
-                    onDedicatedEntryReady
-                      ? "この版では入力途中の生存時間データを保存して再開できないため、データ入力前に停止しています。"
-                      : "この版では生存時間の専用シートを安全に開けません。別の実験形式へは自動変換しません。",
+                  reason: onDedicatedEntryReady
+                    ? "この版では入力途中の生存時間データを保存して再開できないため、データ入力前に停止しています。"
+                    : "この版では生存時間の専用シートを安全に開けません。別の実験形式へは自動変換しません。",
                 },
                 orderedCurve: {
                   available: Boolean(onDedicatedEntryReady) && dedicatedEntryAvailable,
-                  reason:
-                    onDedicatedEntryReady
-                      ? "この版では入力途中の濃度–反応・酵素反応データを保存して再開できないため、データ入力前に停止しています。"
-                      : "この版では反応曲線の専用シートを安全に開けません。別の実験形式へは自動変換しません。",
+                  reason: onDedicatedEntryReady
+                    ? "この版では入力途中の濃度–反応・酵素反応データを保存して再開できないため、データ入力前に停止しています。"
+                    : "この版では反応曲線の専用シートを安全に開けません。別の実験形式へは自動変換しません。",
                 },
                 heatmap: {
                   available:
@@ -2921,8 +2890,7 @@ export function NewExperimentPage({
               if (pendingGraphOnlyState) {
                 updateEntryDirtySource("biological", false);
                 setStage("graph-only");
-              }
-              else
+              } else
                 requestEntryExit(
                   localizedText(locale, "実験の種類を変更する", "change the experiment type"),
                   goBackToContext,
