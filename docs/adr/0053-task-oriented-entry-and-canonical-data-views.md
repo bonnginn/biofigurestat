@@ -225,6 +225,19 @@ abstractly simple or complex. Experiments outside the bounded facts return to **
 The earlier Alpha entry-count clarification is superseded only for this evidence-backed sixth
 destination; its prohibition on speculative entry proliferation remains in force.
 
+### Beta simple-group condition-count amendment — 2026-09-02
+
+Everyday-use validation found that the four visible condition fields were being interpreted as a
+scientific or analysis limit. The dedicated simple independent-group destination therefore keeps
+four fields visible initially but allows additional conditions up to the same 50-condition UI
+guard used by the general condition editor. Its semantic boundary is otherwise unchanged: one
+scalar readout, independent experimental units, and one value per experimental unit. Increasing
+the condition count does not imply that every statistical method supports every resulting design;
+Statistics continues to select or stop from the declared structure and implemented method
+contracts. A five-condition Windows packaged-app review covered worksheet creation, Graph,
+multi-group Statistics, annotations, and save/reopen without changing biological `n`, project
+schema, or analysis semantics.
+
 - `/new-experiment` presents two main routes and three direct specialist routes. The compatibility
   entry is hidden unless explicitly enabled, and unsupported handoffs do not fall back to a legacy
   interpretation.

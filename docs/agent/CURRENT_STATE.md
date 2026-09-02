@@ -75,6 +75,22 @@ the populated Data workspace and guides the user through Graph, Statistics, and 
 changing analysis semantics or the `.lsa` schema. These changes are not yet part of a published
 binary.
 
+Windows preview validation on 2026-09-02 added three bounded data-entry corrections. Numeric
+summary cells retain the entered lexical precision such as `1.00` separately from the canonical
+numeric value, move horizontally on the first arrow press, and distinguish direct Enter movement
+from a left-to-right row-entry sequence. The simple independent-group entry still opens with four
+condition fields but can add conditions up to the general editor's 50-condition UI guard. A
+five-condition packaged-app review passed worksheet creation, Graph, Welch ANOVA with Games–Howell,
+four control comparisons, and save/reopen. These changes do not alter biological-unit identity,
+analysis values, or the project schema.
+
+The same five-condition, three-unit-per-condition request took 3.268, 3.231, and 3.317 seconds in
+three direct packaged-engine runs on the review Windows host. In-process profiling attributed about
+1.8 seconds to the exact Games–Howell simultaneous confidence interval calculation; process startup
+accounts for much of the remainder. This is a machine-specific diagnostic rather than a release
+performance guarantee. Optimization must retain the SciPy numerical result and the existing
+per-request timeout/cancel isolation; approximation is not an accepted shortcut.
+
 The import workflow also bundles a constrained bilingual Excel template with separate sheets for
 independent groups, paired/repeated observations, Survival, and ordered X/Y data. The in-app recipe
 links to that workbook and states that IDs/dates retain provenance but do not prove pairing or
