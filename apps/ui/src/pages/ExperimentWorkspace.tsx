@@ -90,6 +90,13 @@ import { routeFromPath } from "../app/routes";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 import { recordDiagnosticError, recordDiagnosticEvent } from "../app/diagnostics";
 import { localizedText, useAppLocale } from "../app/appLocale";
+import {
+  analysisCorrectionNavigationMessage,
+  scientificSourceInvalidatedMessage,
+  structureRevisionAppliedMessage,
+  structureRevisionErrorMessage,
+  structureRevisionStoppedMessage,
+} from "../app/experimentWorkspaceMessages";
 import { useSpreadsheetCellDraft } from "../components/useSpreadsheetCellDraft";
 import {
   parseOptionalSpreadsheetNumber,
@@ -3154,9 +3161,7 @@ export function ExperimentWorkspace({
     previousScientificSourceRef.current = scientificSourceSnapshot;
     const hadAnalysis = graphs.some((graph) => Boolean(graph.analysis));
     if (hadAnalysis) {
-      setAnalysisInvalidationMessage(
-        "データまたは実験単位の構造が変わったため、以前の解析結果・p値注釈・Methodsを外しました。グラフの見た目は保持しています。",
-      );
+      setAnalysisInvalidationMessage(scientificSourceInvalidatedMessage(locale));
       setGraphs((current) =>
         current.map((graph) =>
           graph.analysis
@@ -3170,7 +3175,7 @@ export function ExperimentWorkspace({
         ),
       );
     }
-  }, [graphs, scientificSourceSnapshot]);
+  }, [graphs, locale, scientificSourceSnapshot]);
 
   useEffect(() => {
     if (!analysisInvalidationMessage) return;
@@ -4082,7 +4087,7 @@ export function ExperimentWorkspace({
         retainedSetup ? { contract: sourceContract, ...retainedSetup } : sourceContract,
       );
       if (initial.status === "stopped") {
-        setAnalysisInvalidationMessage(initial.reason);
+        setAnalysisInvalidationMessage(structureRevisionStoppedMessage(locale, initial.reason));
         return;
       }
       setStructureRevisionError(null);
@@ -4103,7 +4108,14 @@ export function ExperimentWorkspace({
 
   const handleAnalysisCorrection = (correction: DraftAnalysisCorrection) => {
     setShowGraph(false);
-    setAnalysisInvalidationMessage(`${correction.title}。${correction.message}`);
+    setAnalysisInvalidationMessage(
+      analysisCorrectionNavigationMessage(
+        locale,
+        correction.code,
+        correction.title,
+        correction.message,
+      ),
+    );
     if (correction.target === "experiment_structure") {
       if (draft.adaptiveInput) beginAdaptiveStructureRevision();
       else setActiveTab("overview");
@@ -4143,16 +4155,14 @@ export function ExperimentWorkspace({
     });
     if (compatibility.status === "stopped") {
       setStructureRevisionError(
-        `${compatibility.reason} 入力済みデータは変更されていません。「変更せず戻る」で元のワークスペースへ戻れます。`,
+        structureRevisionErrorMessage(locale, "compatibility", compatibility.reason),
       );
       return false;
     }
 
     const presentation = createBiologicalSetupPresentation(result);
     if (presentation.status === "stopped") {
-      setStructureRevisionError(
-        "変更後の条件表と実験構造の対応を確認できません。入力済みデータは変更されていません。",
-      );
+      setStructureRevisionError(structureRevisionErrorMessage(locale, "presentation"));
       return false;
     }
 
@@ -4165,9 +4175,7 @@ export function ExperimentWorkspace({
       biologicalSetup: presentation.presentation,
     });
     if (rebuilt.status !== "ready" || !rebuilt.draft) {
-      setStructureRevisionError(
-        "変更後の構造へ既存データを安全に対応づけられません。入力済みデータは変更されていません。",
-      );
+      setStructureRevisionError(structureRevisionErrorMessage(locale, "rebuild"));
       return false;
     }
     const rebuiltSnapshot = rebuilt.draft.adaptiveInput;
@@ -4178,9 +4186,7 @@ export function ExperimentWorkspace({
       JSON.stringify(rebuiltSnapshot.mapping) !== JSON.stringify(sourceSnapshot.mapping) ||
       JSON.stringify(rebuiltSnapshot.rawLineage) !== JSON.stringify(sourceSnapshot.rawLineage)
     ) {
-      setStructureRevisionError(
-        "既存データまたは元データ履歴が変わる可能性を検出したため、変更を適用しませんでした。",
-      );
+      setStructureRevisionError(structureRevisionErrorMessage(locale, "lineage"));
       return false;
     }
 
@@ -4198,11 +4204,7 @@ export function ExperimentWorkspace({
     setShowGraph(false);
     setActiveGraphId(null);
     closeAdaptiveStructureRevision();
-    setAnalysisInvalidationMessage(
-      graphCoordinatesStable
-        ? "実験の組み立てを更新しました。測定値とGraphの外観は保持し、以前の解析結果・p値注釈・Methodsは外しました。"
-        : "実験の組み立てを更新しました。測定値は保持しましたが、条件の参照を一意に保てないGraphは安全のためワークスペースから外しました。保存済みprojectの旧履歴は残ります。",
-    );
+    setAnalysisInvalidationMessage(structureRevisionAppliedMessage(locale, graphCoordinatesStable));
     return true;
   };
 

@@ -138,10 +138,10 @@ production build are covered; final visual judgment remains a Beta manual-review
 The English-UI residue assertion now inspects current input/textarea values and
 `aria-description`, in addition to visible text, labels, titles, placeholders, and alt text. This
 closes the class of leak where a generated Japanese default remains only inside an editable field.
-All 35 suites that use the assertion pass (352 tests) with English fixtures; researcher-entered
+All 36 suites that use the assertion pass (354 tests) with English fixtures; researcher-entered
 content remains data and is not translated. `pnpm test:ui:english` now discovers those suites from
 actual assertion use and runs them as a focused localization gate; the measured run completed in
-65.34 seconds. Expanded nested-value paste also replaces a Japanese exception from its parent
+66.34 seconds. Expanded nested-value paste also replaces a Japanese exception from its parent
 update callback with an English safe fallback. Japanese mode retains diagnostic detail, and entered
 values remain unchanged. UI typecheck, focused lint, the production build, and the zero-marker
 release verifier pass for this batch; the full UI milestone suite was not repeated.
@@ -827,7 +827,10 @@ direction wording still require review; Welch TOST is not reused for paired data
   further splitting must preserve renderer and export parity.
 - English localization is covered for the production Public Alpha surfaces. Pre-workspace legacy
   D01-D05 editors use an explicit English compatibility stop rather than a partially translated
-  editor. The reviewed bilingual native release is published as `v0.1.0-alpha.2`.
+  editor. Post-analysis data invalidation, analysis-input correction, and experiment-structure
+  revision messages now use one locale-aware boundary; English mode does not expose legacy
+  Japanese diagnostic reasons through these delayed action paths. The reviewed bilingual native
+  release is published as `v0.1.0-alpha.2`.
 - Beta work includes Graph-preview parity, compact workspace chrome, editable experiment metadata,
   and Kaplan–Meier appearance-control parity while preserving censoring and risk-table semantics.
   Kaplan–Meier now supports saved/reopened curve colors, overall and legend font sizes, legend

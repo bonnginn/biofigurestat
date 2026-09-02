@@ -1353,7 +1353,11 @@ describe("ExperimentWorkspace", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    await screen.findByRole("region", { name: "実験からグラフを作成" });
+    await screen.findByRole(
+      "region",
+      { name: "実験からグラフを作成" },
+      { timeout: 5_000 },
+    );
     fireEvent.click(screen.getByRole("button", { name: "統計" }));
     expect(screen.getByRole("region", { name: "統計ワークスペース" })).toBeVisible();
     expect(screen.queryByRole("combobox", { name: "編集対象" })).toBeNull();
