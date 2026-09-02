@@ -19,7 +19,7 @@
 
 | 順位 | 状態 | 作業                   | ユーザー確認             | 完了条件                                                                                                                                                               |
 | ---- | ---- | ---------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | 🟡   | Public Alpha 3候補gate | 最終的な見た目と公開承認 | product source `2d9fba6`でfocused、英語362件、project 73件、full UI 1,400件、typecheck、lint、build、release verifierまでPASS。残りはTOST frozen reference追加、同一commitのWindows/macOS artifact、native/manual確認。詳細は`PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md` |
+| 1    | 🟡   | Public Alpha 3候補gate | 最終的な見た目と公開承認 | product source `2d9fba6`でfocused、英語362件、project 73件、full UI 1,400件、typecheck、lint、build、release verifierまでPASS。Windows sidecarは18 protocol PASS。残りはDarwin-arm64固定参照4件（TOST 2件、Survival、D17）、同一commitのWindows/macOS artifact、native/manual確認。詳細は`PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md` |
 | 2    | ⏸    | 独立性確認文の短文化   | 科学表現の承認が必要     | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする                                                                                                     |
 
 ## 公開・運用

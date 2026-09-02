@@ -944,6 +944,13 @@ existing 14-case frozen engine reference. The single full UI milestone run passe
 release verifier pass; the initial bundle is 266.38 kB (gzip 81.76 kB) with no forbidden evaluation
 marker. No native artifacts were rebuilt, uploaded, or published from this source tip.
 
+The existing Windows x64 engine sidecar, built after the last engine-source change, also passes all
+18 current smoke protocols including both TOST routes, Survival, and D17. A complete-reference gate
+now reports those four protocols as absent from the committed Darwin-arm64 numerical reference.
+Reference writing is mechanically restricted to Darwin-arm64 so Windows output cannot silently
+replace the cross-platform authority. This is a remaining Alpha candidate gate, not an engine
+result mismatch.
+
 `v0.1.0-alpha.3` is now appropriate as the next maintenance candidate after reviewed frozen TOST
 reference cases and same-source Windows/macOS artifact gates. Broader Excel, panel-layout, and
 Prism-level appearance work remains Beta scope and should not be pulled into this release boundary.

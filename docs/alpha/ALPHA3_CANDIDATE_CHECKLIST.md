@@ -33,9 +33,13 @@ earlier release and must not be silently reinterpreted as current evidence.
       stale-test, or flaky disposition before a single bounded rerun.
 - [x] Production UI build and release verifier pass with zero forbidden evaluation markers.
 
-The engine unit suite (75), analysis-contract suite (55), and existing frozen 14-case reference
-suite pass. The TOST protocols are not yet represented in that frozen cross-platform reference
-set, so the combined TOST reference item above remains open rather than overstating the evidence.
+The engine unit suite (75), analysis-contract suite (55), existing Windows sidecar smoke (18), and
+existing frozen 14-case reference suite pass. `pnpm engine:reference:coverage` intentionally stops
+and reports four missing Darwin-arm64 cases: Welch TOST, paired TOST, Survival, and D17. The
+combined reference item above remains open rather than overstating the evidence. On the reviewed
+Darwin-arm64 host, run `verify_engine_reference.py --write-reference`, review that only the four
+expected cases are added or numerically refreshed, then run the complete coverage gate on both
+hosts. The writer refuses to run on another platform.
 
 ## Windows artifact gate
 

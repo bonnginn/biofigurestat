@@ -77,6 +77,9 @@ This report records the maintenance/refactor batch based on product source commi
 - Graph-spec package: 7 files / 32 tests PASS.
 - Analysis-contract package: 14 files / 55 tests PASS.
 - Engine unit suite: 75/75 PASS.
+- Existing Windows x64 sidecar smoke: 18/18 implemented protocols PASS, including Welch TOST,
+  paired TOST, Survival, and D17. The sidecar was built after the last engine-source change; it is
+  not a current desktop-app bundle.
 - Existing frozen engine reference suite: 14/14 PASS at `rtol=1e-10`, `atol=1e-12`.
 - Full UI milestone gate: 211 files / 1,400 tests PASS in 280.69 seconds.
 - All eight TypeScript project checks PASS; full UI lint PASS.
@@ -107,13 +110,16 @@ the approximately five-minute milestone test was not repeated after every extrac
 - `GeneralExperimentGraphSvg.tsx` remains a large renderer. Kaplan–Meier risk-table geometry and
   family-specific scientific layers must not be folded into it merely to reduce file count.
 - The existing frozen cross-platform reference set predates the two TOST protocols. Engine and
-  contract tests cover them, but adding reviewed frozen TOST reference cases is a release-gate
-  improvement, not something to synthesize by changing expected values in this refactor.
+  contract tests cover them. The new coverage gate also reports missing Survival and D17 cases.
+  Adding all four reviewed Darwin-arm64 results is a release-gate improvement, not something to
+  synthesize from Windows output or by changing expected values in this refactor.
 
 ## 8. NATIVE_VERIFICATION
 
 - No native binary was rebuilt from `2d9fba6`; therefore this source tip does not yet have a current
   executable-level PASS.
+- The existing Windows engine sidecar passed all 18 smoke requests. This verifies the unchanged
+  engine executable boundary, not the current desktop UI bundle.
 - The previously reviewed Windows and macOS Alpha paths remain historical evidence only and are
   not relabeled as evidence for this source tip.
 - The next candidate must build Windows x64 and Apple Silicon macOS artifacts from the same clean
