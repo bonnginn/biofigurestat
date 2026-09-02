@@ -88,6 +88,18 @@ describe("local engine failure guidance", () => {
     expect(message).not.toContain("ENGINE_PROCESS_CANCELLED");
   });
 
+  it.each([
+    ["ENGINE_OUTPUT_INVALID_JSON:empty:bytes=0", "解析結果が返りませんでした"],
+    ["ENGINE_OUTPUT_INVALID_JSON:eof:bytes=1042", "応答が途中で途切れました"],
+    ["ENGINE_OUTPUT_INVALID_JSON:non_finite:bytes=1300", "有限でない数値"],
+    ["ENGINE_OUTPUT_INVALID_JSON:syntax:bytes=24", "応答形式を確認できなかった"],
+  ])("gives privacy-safe guidance for invalid engine output (%s)", (detail, guidance) => {
+    const message = localEngineFailureMessage(detail);
+    expect(message).toContain(guidance);
+    expect(message).not.toContain("ENGINE_OUTPUT_INVALID_JSON");
+    expect(message).toContain("入力したデータは保持されています");
+  });
+
   it("distinguishes insufficient nonlinear-fit data from a missing engine", () => {
     expect(
       localEngineFailureMessage(

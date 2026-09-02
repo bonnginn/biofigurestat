@@ -84,6 +84,18 @@ export function localEngineFailureMessage(error: unknown): string {
   if (/ENGINE_PROCESS_CANCELLED/u.test(detail)) {
     return "解析を中止しました。入力したデータは保持されています。";
   }
+  if (/ENGINE_OUTPUT_INVALID_JSON:empty/iu.test(detail)) {
+    return "ローカル統計エンジンから解析結果が返りませんでした。入力したデータは保持されています。診断情報を保存して、再試行してください。";
+  }
+  if (/ENGINE_OUTPUT_INVALID_JSON:eof/iu.test(detail)) {
+    return "ローカル統計エンジンの応答が途中で途切れました。入力したデータは保持されています。診断情報を保存して、再試行してください。";
+  }
+  if (/ENGINE_OUTPUT_INVALID_JSON:non_finite/iu.test(detail)) {
+    return "ローカル統計エンジンの結果に有限でない数値が含まれたため、安全に停止しました。入力したデータは保持されています。診断情報を保存してください。";
+  }
+  if (/ENGINE_OUTPUT_INVALID_JSON|analysis engine returned invalid JSON/iu.test(detail)) {
+    return "ローカル統計エンジンの応答形式を確認できなかったため、安全に停止しました。入力したデータは保持されています。診断情報を保存して、再試行してください。";
+  }
   if (/requires at least|insufficient residual degrees of freedom/i.test(detail)) {
     return "非線形fitに必要な異なるX値が不足しています。各seriesの時点数と欠損値を確認してください。入力したデータは保持されています。";
   }
