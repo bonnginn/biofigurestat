@@ -2,6 +2,11 @@ import type { Dispatch, SetStateAction } from "react";
 
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import {
+  ExperimentGraphColorControl,
+  ExperimentGraphRangeControl,
+  ExperimentGraphVisibilityControl,
+} from "./ExperimentGraphControlPrimitives";
 
 type LayerState = WorkspaceGraphState["layers"];
 type GraphAppearance = WorkspaceGraphState["appearance"];
@@ -26,17 +31,11 @@ export function ExperimentGraphErrorBarEditor({
   return (
     <section className="experiment-graph-inspector-section">
       <h3>{t("誤差線", "Error bars")}</h3>
-      <label className="experiment-graph-checkbox">
-        <input
-          type="checkbox"
-          checked={layers.errorBar}
-          aria-label={t("誤差線を表示", "Show error bars")}
-          onChange={(event) =>
-            setLayers((current) => ({ ...current, errorBar: event.target.checked }))
-          }
-        />
-        <span>{t("誤差線を表示", "Show error bars")}</span>
-      </label>
+      <ExperimentGraphVisibilityControl
+        label={t("誤差線を表示", "Show error bars")}
+        checked={layers.errorBar}
+        onChange={(errorBar) => setLayers((current) => ({ ...current, errorBar }))}
+      />
       <label className="experiment-graph-field">
         <span>{t("要約方法", "Summary method")}</span>
         <select
@@ -93,40 +92,27 @@ export function ExperimentGraphErrorBarEditor({
           />
         </label>
       ) : null}
-      <label className="experiment-graph-field">
-        <span>
-          {t("線幅：", "Line width: ")}
-          {appearance.errorBarLineWidth.toFixed(1)}px
-        </span>
-        <input
-          type="range"
-          min="0.6"
-          max="4"
-          step="0.1"
-          aria-label={t("誤差線の太さ", "Error-bar width")}
-          value={appearance.errorBarLineWidth}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              errorBarLineWidth: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
-      <label className="experiment-graph-color-field">
-        <span>{t("誤差線の色", "Error-bar color")}</span>
-        <input
-          type="color"
-          aria-label={t("誤差線の色", "Error-bar color")}
-          value={appearance.errorBarColor}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              errorBarColor: event.target.value,
-            }))
-          }
-        />
-      </label>
+      <ExperimentGraphRangeControl
+        label={t("線幅", "Line width")}
+        ariaLabel={t("誤差線の太さ", "Error-bar width")}
+        value={appearance.errorBarLineWidth}
+        min={0.6}
+        max={4}
+        step={0.1}
+        suffix="px"
+        separator={t("：", ": ")}
+        formatValue={(value) => value.toFixed(1)}
+        onChange={(errorBarLineWidth) =>
+          setAppearance((current) => ({ ...current, errorBarLineWidth }))
+        }
+      />
+      <ExperimentGraphColorControl
+        label={t("誤差線の色", "Error-bar color")}
+        ariaLabel={t("誤差線の色", "Error-bar color")}
+        value={appearance.errorBarColor}
+        showPresets
+        onChange={(errorBarColor) => setAppearance((current) => ({ ...current, errorBarColor }))}
+      />
     </section>
   );
 }
