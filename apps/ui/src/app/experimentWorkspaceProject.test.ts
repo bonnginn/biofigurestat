@@ -195,6 +195,29 @@ describe("experiment workspace project adapter", () => {
     expect(legacyCompatible.experimentWorkspace?.dataViewMode).toBe("compact");
   });
 
+  it("入力した小数表現をcanonical数値とは別に保存・復元する", () => {
+    const continuous = createNestedContinuousFixture();
+    const key = Object.keys(continuous.cells)[0]!;
+    const state = createExperimentWorkspaceProject({
+      draft: continuous.draft,
+      cells: continuous.cells,
+      graphs: [],
+      cellDisplayTexts: { [key]: "1.00" },
+      now: "2026-08-21T02:30:00.000Z",
+    });
+
+    expect(state.experimentWorkspace?.cellDisplayTexts[key]).toBe("1.00");
+    expect(rehydrateExperimentWorkspace(state)?.cellDisplayTexts[key]).toBe("1.00");
+    const legacyCompatible = ProjectStateSchema.parse({
+      ...state,
+      experimentWorkspace: {
+        ...state.experimentWorkspace!,
+        cellDisplayTexts: undefined,
+      },
+    });
+    expect(legacyCompatible.experimentWorkspace?.cellDisplayTexts).toEqual({});
+  });
+
   it("実験回IDと安定した生物学的単位IDを保存・再読込で分離して保つ", () => {
     const fixture = createLongitudinalFixture();
     const state = createExperimentWorkspaceProject({
@@ -1276,7 +1299,10 @@ describe("experiment workspace project adapter", () => {
         connectingLine: false,
       },
       appearance: TEST_APPEARANCE,
-      axes: testAxes("Relative cell viability", adaptiveDraft.attributes.map(({ id }) => id)),
+      axes: testAxes(
+        "Relative cell viability",
+        adaptiveDraft.attributes.map(({ id }) => id),
+      ),
       analysis: { request: analysisRequest, result },
     };
 
@@ -1390,9 +1416,7 @@ describe("experiment workspace project adapter", () => {
     expect(
       new Set(
         linkedState.unitInstances
-          .filter(
-            ({ levelId }) => levelId === `unit-level.${contract.experimentalUnitLevelKey}`,
-          )
+          .filter(({ levelId }) => levelId === `unit-level.${contract.experimentalUnitLevelKey}`)
           .map(({ metadata }) => metadata.experimentSessionId),
       ),
     ).toEqual(new Set(sessionIds));

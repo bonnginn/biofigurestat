@@ -210,6 +210,8 @@ export const ExperimentWorkspaceStateSchema = z
     /** Immutable ingress evidence; never used as canonical analysis input. */
     entrySourceHistory: ExperimentEntrySourceHistorySchema.nullable().optional(),
     dataViewMode: z.enum(["compact", "expanded"]).default("compact"),
+    /** UI-only numeric lexemes such as `1.00`; canonical analysis values remain numeric. */
+    cellDisplayTexts: z.record(z.string(), z.string()).default({}),
     adaptiveInput: AdaptiveInputSnapshotSchema.nullable().optional(),
     notPlannedCellKeys: z.array(z.string().min(1)).default([]),
     graphs: z.array(

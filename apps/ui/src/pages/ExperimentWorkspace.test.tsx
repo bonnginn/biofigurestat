@@ -723,9 +723,7 @@ describe("ExperimentWorkspace", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     expect(screen.getByRole("button", { name: "100%積み上げを選択（おすすめ）" })).toBeVisible();
-    expect(
-      screen.getByRole("button", { name: "カテゴリの割合を選択（おすすめ）" }),
-    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "カテゴリの割合を選択（おすすめ）" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     const graph = await screen.findByRole("img", { name: /カテゴリ構成グラフ/ });
     expect(graph).toHaveAttribute("data-graph-type", "stacked_100");
@@ -1003,6 +1001,12 @@ describe("ExperimentWorkspace", () => {
     fireEvent.paste(input, { clipboardData: { getData: () => "1.2\n1.3" } });
     expect(input).toHaveValue("1.74");
     expect(screen.getByRole("status")).toHaveTextContent("複数値は反映せず");
+    fireEvent.change(input, { target: { value: "1.00" } });
+    fireEvent.blur(input);
+    expect(input).toHaveValue("1.00");
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 2" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
+    expect(screen.getByRole("textbox", { name: "Controlの細胞強度" })).toHaveValue("1.00");
   });
 
   it("closes the selected raw-cell inspector when switching experiment tabs", () => {
@@ -1063,11 +1067,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     expect(document.querySelector(".experiment-workspace-body")).toHaveAttribute("hidden");
     expect(
-      await screen.findByRole(
-        "region",
-        { name: "実験からグラフを作成" },
-        { timeout: 5_000 },
-      ),
+      await screen.findByRole("region", { name: "実験からグラフを作成" }, { timeout: 5_000 }),
     ).toBeInTheDocument();
     await waitFor(() =>
       expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "auto", block: "start" }),

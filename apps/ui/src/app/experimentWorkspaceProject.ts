@@ -628,6 +628,7 @@ function createWorkspaceSnapshot(
   cells: ExperimentCellMap,
   graphs: readonly WorkspaceGraphState[],
   dataViewMode: "compact" | "expanded",
+  cellDisplayTexts: Readonly<Record<string, string>> = {},
 ): ExperimentWorkspaceState {
   return ExperimentWorkspaceStateSchema.parse({
     version: "0.1.0",
@@ -646,6 +647,7 @@ function createWorkspaceSnapshot(
     importProvenance: draft.importProvenance,
     entrySourceHistory: draft.entrySourceHistory ?? null,
     dataViewMode,
+    cellDisplayTexts,
     adaptiveInput: draft.adaptiveInput ?? null,
     notPlannedCellKeys: Object.entries(cells)
       .filter(([, cell]) => cell.availability === "not_planned")
@@ -1441,6 +1443,7 @@ export function createExperimentWorkspaceProject(input: {
   cells: ExperimentCellMap;
   graphs: readonly WorkspaceGraphState[];
   dataViewMode?: "compact" | "expanded";
+  cellDisplayTexts?: Readonly<Record<string, string>>;
   existingState?: ProjectState;
   now?: string;
 }): ProjectState {
@@ -1530,6 +1533,7 @@ export function createExperimentWorkspaceProject(input: {
             input.dataViewMode ??
               input.existingState.experimentWorkspace?.dataViewMode ??
               "compact",
+            input.cellDisplayTexts,
           ),
         })
       : input.existingState;
@@ -1623,6 +1627,7 @@ export function createExperimentWorkspaceProject(input: {
       input.cells,
       linkedGraphs,
       input.dataViewMode ?? "compact",
+      input.cellDisplayTexts,
     ),
     adaptiveInput: draft.adaptiveInput ?? null,
   });
@@ -1633,6 +1638,7 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
   cells: ExperimentCellMap;
   graphs: WorkspaceGraphState[];
   dataViewMode: "compact" | "expanded";
+  cellDisplayTexts: Readonly<Record<string, string>>;
 } | null {
   const workspace = state.experimentWorkspace;
   if (!workspace) return null;
@@ -1822,5 +1828,11 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
         : { analysis: null }),
     };
   });
-  return { draft, cells, graphs, dataViewMode: workspace.dataViewMode };
+  return {
+    draft,
+    cells,
+    graphs,
+    dataViewMode: workspace.dataViewMode,
+    cellDisplayTexts: workspace.cellDisplayTexts,
+  };
 }

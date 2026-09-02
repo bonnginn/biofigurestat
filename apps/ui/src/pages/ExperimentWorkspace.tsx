@@ -116,6 +116,7 @@ export type ExperimentWorkspaceProps = {
   initialCells?: ExperimentCellMap;
   initialGraphs?: readonly WorkspaceGraphState[];
   initialDataViewMode?: WorkspaceDataViewMode;
+  initialCellDisplayTexts?: Readonly<Record<string, string>>;
   initialProject?: OpenedProject;
   onBack: () => void;
   analysisRunner?: AnalysisRunner;
@@ -523,13 +524,17 @@ function OverviewUnitSummaryMatrix({
   draft,
   readout,
   cells,
+  cellDisplayTexts,
   onChange,
+  onDisplayTextChange,
   onPaste,
 }: {
   draft: ExperimentSetDraft;
   readout: ReadoutDraft;
   cells: ExperimentCellMap;
+  cellDisplayTexts: Readonly<Record<string, string>>;
   onChange: (key: string, value: number | null) => void;
+  onDisplayTextChange: (key: string, text: string | null) => void;
   onPaste: (request: OverviewScalarPasteRequest) => OverviewScalarPasteResult;
 }) {
   const locale = useAppLocale();
@@ -608,8 +613,10 @@ function OverviewUnitSummaryMatrix({
                           `${readout.label}: ${experiment.label}, ${condition.label}`,
                         )}
                         value={value}
+                        displayText={cellDisplayTexts[key]}
                         disabled={notPlanned}
                         onChange={(nextValue) => onChange(key, nextValue)}
+                        onDisplayTextChange={(text) => onDisplayTextChange(key, text)}
                         onRejectedPaste={() =>
                           setPasteMessage(
                             t(
@@ -842,10 +849,12 @@ function OverviewProportionMatrix({
 function OverviewPanel({
   draft,
   cells,
+  cellDisplayTexts,
   onReviseStructure,
   onProportionChange,
   onProportionPaste,
   onNestedScalarChange,
+  onNestedDisplayTextChange,
   onNestedScalarPaste,
   onNestedCellChange,
   dataViewMode,
@@ -854,10 +863,12 @@ function OverviewPanel({
 }: {
   draft: ExperimentSetDraft;
   cells: ExperimentCellMap;
+  cellDisplayTexts: Readonly<Record<string, string>>;
   onReviseStructure?: (trigger: HTMLButtonElement) => void;
   onProportionChange: (key: string, field: "positive" | "eligible", value: number | null) => void;
   onProportionPaste: (request: OverviewProportionPasteRequest) => OverviewScalarPasteResult;
   onNestedScalarChange: (key: string, value: number | null) => void;
+  onNestedDisplayTextChange: (key: string, text: string | null) => void;
   onNestedScalarPaste: (request: OverviewScalarPasteRequest) => OverviewScalarPasteResult;
   onNestedCellChange: (key: string, cell: NestedContinuousCellDraft) => void;
   dataViewMode: WorkspaceDataViewMode;
@@ -996,7 +1007,9 @@ function OverviewPanel({
           draft={draft}
           readout={quickEntryReadout}
           cells={cells}
+          cellDisplayTexts={cellDisplayTexts}
           onChange={onNestedScalarChange}
+          onDisplayTextChange={onNestedDisplayTextChange}
           onPaste={onNestedScalarPaste}
         />
       ) : null}
@@ -1775,24 +1788,31 @@ function NestedContinuousTable({
 function DecimalValueInput({
   label,
   value,
+  displayText,
   disabled = false,
   onChange,
+  onDisplayTextChange,
   onRejectedPaste,
   onMatrixPaste,
 }: {
   label: string;
   value: number | null;
+  displayText?: string;
   disabled?: boolean;
   onChange: (value: number | null) => void;
+  onDisplayTextChange?: (text: string | null) => void;
   onRejectedPaste: () => void;
   onMatrixPaste?: (text: string) => boolean;
 }) {
   const locale = useAppLocale();
   const inputRef = useRef<HTMLInputElement>(null);
-  const { text: draftValue, edit, accept } = useSpreadsheetCellDraft(
-    value === null ? "" : String(value),
-    { preserveDirtyOnCanonicalChange: true },
-  );
+  const {
+    text: draftValue,
+    edit,
+    accept,
+  } = useSpreadsheetCellDraft(displayText ?? (value === null ? "" : String(value)), {
+    preserveDirtyOnCanonicalChange: true,
+  });
 
   const commitIfComplete = (text: string) => {
     if (text.trim() === "") {
@@ -1819,11 +1839,14 @@ function DecimalValueInput({
       onChange={(event) => {
         const text = event.currentTarget.value;
         edit(text);
+        onDisplayTextChange?.(text === "" ? null : text);
         commitIfComplete(text);
       }}
       onBlur={() => {
         const parsed = parseSpreadsheetNumber(draftValue);
-        accept(parsed === null ? "" : String(parsed));
+        const acceptedText = parsed === null ? "" : draftValue.trim();
+        accept(acceptedText);
+        onDisplayTextChange?.(acceptedText === "" ? null : acceptedText);
         onChange(parsed);
       }}
       onPaste={(event) => {
@@ -1835,7 +1858,8 @@ function DecimalValueInput({
             const accepted = onMatrixPaste(text);
             if (accepted) {
               const firstToken = proportionPasteRows(text)[0]?.[0]?.trim() ?? "";
-              edit(firstToken === "" ? "" : String(Number(firstToken)));
+              edit(firstToken);
+              onDisplayTextChange?.(firstToken === "" ? null : firstToken);
             }
           } else onRejectedPaste();
         }
@@ -1849,14 +1873,18 @@ function UnitSummaryContinuousTable({
   experiment,
   readout,
   cells,
+  cellDisplayTexts,
   onChange,
+  onDisplayTextChange,
   onToggleNotPlanned,
 }: {
   draft: ExperimentSetDraft;
   experiment: ExperimentSessionDraft;
   readout: ReadoutDraft;
   cells: ExperimentCellMap;
+  cellDisplayTexts: Readonly<Record<string, string>>;
   onChange: (key: string, value: number | null) => void;
+  onDisplayTextChange: (key: string, text: string | null) => void;
   onToggleNotPlanned: (key: string) => void;
 }) {
   const rows = rowsFor(draft, experiment.id);
@@ -1907,8 +1935,10 @@ function UnitSummaryContinuousTable({
                   <DecimalValueInput
                     label={label}
                     value={value}
+                    displayText={cellDisplayTexts[key]}
                     disabled={notPlanned}
                     onChange={(nextValue) => onChange(key, nextValue)}
+                    onDisplayTextChange={(text) => onDisplayTextChange(key, text)}
                     onRejectedPaste={() =>
                       setPasteMessage(
                         "この欄には実験単位の要約値を1つだけ入力します。複数値は反映せず、既存値を保持しました。",
@@ -1972,9 +2002,9 @@ function CorrelationTable({
       .replace(/\r\n?/g, "\n")
       .split(/[\t\n]/)
       .filter((token) => token.trim());
-    tokens.slice(0, 2).forEach((token, index) =>
-      onChange(keys[index], parseSpreadsheetNumber(token)),
-    );
+    tokens
+      .slice(0, 2)
+      .forEach((token, index) => onChange(keys[index], parseSpreadsheetNumber(token)));
   };
   return (
     <div className="experiment-workspace-table-wrap">
@@ -2522,11 +2552,13 @@ function ExperimentPanel({
   draft,
   experiment,
   cells,
+  cellDisplayTexts,
   onExperimentChange,
   onProportionChange,
   onProportionPaste,
   onNestedSelect,
   onNestedScalarChange,
+  onNestedDisplayTextChange,
   onCategoricalChange,
   onWbRatioChange,
   onToggleNotPlanned,
@@ -2536,11 +2568,13 @@ function ExperimentPanel({
   draft: ExperimentSetDraft;
   experiment: ExperimentSessionDraft;
   cells: ExperimentCellMap;
+  cellDisplayTexts: Readonly<Record<string, string>>;
   onExperimentChange: (patch: Partial<ExperimentSessionDraft>) => void;
   onProportionChange: (key: string, field: "positive" | "eligible", value: number | null) => void;
   onProportionPaste: (request: ProportionPasteRequest) => string;
   onNestedSelect: (key: string) => void;
   onNestedScalarChange: (key: string, value: number | null) => void;
+  onNestedDisplayTextChange: (key: string, text: string | null) => void;
   onCategoricalChange: (key: string, categoryId: string, value: number | null) => void;
   onWbRatioChange: (key: string, field: WbEditableField, value: number | null) => void;
   onToggleNotPlanned: (key: string) => void;
@@ -2650,7 +2684,9 @@ function ExperimentPanel({
               experiment={experiment}
               readout={readout}
               cells={cells}
+              cellDisplayTexts={cellDisplayTexts}
               onChange={onNestedScalarChange}
+              onDisplayTextChange={onNestedDisplayTextChange}
               onToggleNotPlanned={onToggleNotPlanned}
             />
           ) : (
@@ -2674,6 +2710,7 @@ export function ExperimentWorkspace({
   initialCells,
   initialGraphs = [],
   initialDataViewMode = "compact",
+  initialCellDisplayTexts = {},
   initialProject,
   onBack,
   analysisRunner = defaultAnalysisRunner,
@@ -2696,6 +2733,9 @@ export function ExperimentWorkspace({
   const [cells, setCells] = useState<ExperimentCellMap>(() => ({
     ...createCellsForDraft(initialDraft),
     ...initialCells,
+  }));
+  const [cellDisplayTexts, setCellDisplayTexts] = useState<Record<string, string>>(() => ({
+    ...initialCellDisplayTexts,
   }));
   const dataEntryRecordedRef = useRef(
     Object.values({ ...createCellsForDraft(initialDraft), ...initialCells }).some(
@@ -2839,14 +2879,12 @@ export function ExperimentWorkspace({
               )
             : undefined,
       }));
-      const reservedStableUnitIds = new Set(
-        [
-          ...previousSessions.map(({ stableUnitId, id }) => stableUnitId ?? id),
-          ...rebuiltExperiments.flatMap(({ experiment, previous }) =>
-            previous ? [previous.stableUnitId ?? experiment.stableUnitId] : [],
-          ),
-        ],
-      );
+      const reservedStableUnitIds = new Set([
+        ...previousSessions.map(({ stableUnitId, id }) => stableUnitId ?? id),
+        ...rebuiltExperiments.flatMap(({ experiment, previous }) =>
+          previous ? [previous.stableUnitId ?? experiment.stableUnitId] : [],
+        ),
+      ]);
       let nextStableUnitOrdinal = 1;
       const nextAvailableStableUnitId = (preferred?: string) => {
         if (preferred && !reservedStableUnitIds.has(preferred)) {
@@ -2876,8 +2914,9 @@ export function ExperimentWorkspace({
         const match = /^experiment\.worksheet\.(\d+)$/.exec(id);
         return Math.max(furthest, match ? Number(match[1]) : 0);
       }, 0);
-      const worksheetSessionIds = Array.from({ length: furthestWorksheetRow }, (_, index) =>
-        previousSessions[index]?.id ?? `experiment.worksheet.${index + 1}`,
+      const worksheetSessionIds = Array.from(
+        { length: furthestWorksheetRow },
+        (_, index) => previousSessions[index]?.id ?? `experiment.worksheet.${index + 1}`,
       );
       const explicitSessionIds = [
         ...new Set([...worksheetSessionIds, ...observedExplicitSessionIds]),
@@ -2985,7 +3024,7 @@ export function ExperimentWorkspace({
   );
   const scientificSourceSnapshot = JSON.stringify({ draft, cells });
   const previousScientificSourceRef = useRef(scientificSourceSnapshot);
-  const currentSnapshot = JSON.stringify({ draft, cells, graphs, dataViewMode });
+  const currentSnapshot = JSON.stringify({ draft, cells, graphs, dataViewMode, cellDisplayTexts });
   const savedSnapshotRef = useRef(initialProject ? currentSnapshot : "");
   const graphWorkspaceRef = useRef<HTMLDivElement | null>(null);
   const graphChoiceDialogRef = useRef<HTMLElement | null>(null);
@@ -3292,6 +3331,19 @@ export function ExperimentWorkspace({
         source: "manual",
       },
     }));
+  };
+
+  const updateNestedDisplayText = (key: string, text: string | null) => {
+    setCellDisplayTexts((previous) => {
+      if (text === null) {
+        if (!(key in previous)) return previous;
+        const next = { ...previous };
+        delete next[key];
+        return next;
+      }
+      if (previous[key] === text) return previous;
+      return { ...previous, [key]: text };
+    });
   };
 
   const applyOverviewScalarPaste = ({
@@ -4152,6 +4204,7 @@ export function ExperimentWorkspace({
           cells,
           graphs,
           dataViewMode,
+          cellDisplayTexts,
           existingState: savedProject?.state,
         });
         const saved = await saveProject(state, saveAs ? undefined : savedProject?.target);
@@ -4188,7 +4241,17 @@ export function ExperimentWorkspace({
         return false;
       }
     },
-    [cells, currentSnapshot, dataViewMode, draft, graphs, locale, saveProject, savedProject],
+    [
+      cellDisplayTexts,
+      cells,
+      currentSnapshot,
+      dataViewMode,
+      draft,
+      graphs,
+      locale,
+      saveProject,
+      savedProject,
+    ],
   );
   useEffect(() => {
     if (!onRegisterSaveHandler) return;
@@ -4205,6 +4268,7 @@ export function ExperimentWorkspace({
                   cells,
                   graphs,
                   dataViewMode,
+                  cellDisplayTexts,
                   existingState: savedProject.state,
                 }),
               },
@@ -4212,7 +4276,16 @@ export function ExperimentWorkspace({
           : null,
     });
     return () => onRegisterSaveHandler(null);
-  }, [cells, dataViewMode, draft, graphs, handleSave, onRegisterSaveHandler, savedProject]);
+  }, [
+    cellDisplayTexts,
+    cells,
+    dataViewMode,
+    draft,
+    graphs,
+    handleSave,
+    onRegisterSaveHandler,
+    savedProject,
+  ]);
 
   if (structureRevisionSession) {
     return (
@@ -4237,9 +4310,7 @@ export function ExperimentWorkspace({
     "overview",
     ...draft.experiments.map(({ id }) => `experiment:${id}` as WorkspaceTab),
   ];
-  const guideAnalysisComplete = graphs.some(
-    ({ analysis }) => analysis?.result.status === "ok",
-  );
+  const guideAnalysisComplete = graphs.some(({ analysis }) => analysis?.result.status === "ok");
   const handleWorkspaceTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     if (!(["ArrowLeft", "ArrowRight", "Home", "End"] as string[]).includes(event.key)) return;
     event.preventDefault();
@@ -4294,9 +4365,14 @@ export function ExperimentWorkspace({
       ) : null}
 
       {fiveMinuteGuide ? (
-        <aside className="experiment-workspace-five-minute-guide" aria-label={t("5分ガイド", "Five-minute guide")}>
+        <aside
+          className="experiment-workspace-five-minute-guide"
+          aria-label={t("5分ガイド", "Five-minute guide")}
+        >
           <div>
-            <strong>{t("5分ガイド：基本の1往復", "Five-minute guide: one complete workflow")}</strong>
+            <strong>
+              {t("5分ガイド：基本の1往復", "Five-minute guide: one complete workflow")}
+            </strong>
             <p>
               {t(
                 "合成データだけを使います。順番にData、Graph、Statistics、Methodsを確認してください。",
@@ -4305,10 +4381,24 @@ export function ExperimentWorkspace({
             </p>
           </div>
           <ol>
-            <li data-complete="true">{t("Data：入力済みの値と実験単位を確認", "Data: review the values and experimental units")}</li>
-            <li data-complete={graphs.length > 0}>{t("Graph：グラフを1つ作成", "Graph: create one Graph")}</li>
-            <li data-complete={guideAnalysisComplete}>{t("Statistics：推奨法を実行", "Statistics: run the recommended method")}</li>
-            <li data-complete={guideAnalysisComplete}>{t("Methods：再現用の文章を確認・コピー", "Methods: review and copy the reproducibility text")}</li>
+            <li data-complete="true">
+              {t(
+                "Data：入力済みの値と実験単位を確認",
+                "Data: review the values and experimental units",
+              )}
+            </li>
+            <li data-complete={graphs.length > 0}>
+              {t("Graph：グラフを1つ作成", "Graph: create one Graph")}
+            </li>
+            <li data-complete={guideAnalysisComplete}>
+              {t("Statistics：推奨法を実行", "Statistics: run the recommended method")}
+            </li>
+            <li data-complete={guideAnalysisComplete}>
+              {t(
+                "Methods：再現用の文章を確認・コピー",
+                "Methods: review and copy the reproducibility text",
+              )}
+            </li>
           </ol>
           {graphs.length === 0 ? (
             <button type="button" onClick={openGraph}>
@@ -4811,32 +4901,32 @@ export function ExperimentWorkspace({
                 .map((value) => {
                   const label = experimentGraphTypeLabel(value, locale);
                   return (
-                  <button
-                    className={
-                      graphTypeSelectionActive && selectedGraphType === value ? "is-selected" : ""
-                    }
-                    key={value}
-                    type="button"
-                    aria-label={
-                      locale === "ja"
-                        ? `${label}を選択`
-                        : `Select ${value === "paired_dot" ? "Connected matched points" : label}`
-                    }
-                    aria-pressed={graphTypeSelectionActive && selectedGraphType === value}
-                    disabled={
-                      (value === "paired_dot" && !canConnectUnits) ||
-                      (value === "scatter" && draft.analysisIntent.kind !== "correlation") ||
-                      (value !== "scatter" && draft.analysisIntent.kind === "correlation")
-                    }
-                    onClick={() => selectGraphType(value)}
-                  >
-                    <GraphTypeThumbnail type={value} />
-                    <strong>
-                      {locale === "en" && value === "paired_dot"
-                        ? "Connected matched points"
-                        : label}
-                    </strong>
-                  </button>
+                    <button
+                      className={
+                        graphTypeSelectionActive && selectedGraphType === value ? "is-selected" : ""
+                      }
+                      key={value}
+                      type="button"
+                      aria-label={
+                        locale === "ja"
+                          ? `${label}を選択`
+                          : `Select ${value === "paired_dot" ? "Connected matched points" : label}`
+                      }
+                      aria-pressed={graphTypeSelectionActive && selectedGraphType === value}
+                      disabled={
+                        (value === "paired_dot" && !canConnectUnits) ||
+                        (value === "scatter" && draft.analysisIntent.kind !== "correlation") ||
+                        (value !== "scatter" && draft.analysisIntent.kind === "correlation")
+                      }
+                      onClick={() => selectGraphType(value)}
+                    >
+                      <GraphTypeThumbnail type={value} />
+                      <strong>
+                        {locale === "en" && value === "paired_dot"
+                          ? "Connected matched points"
+                          : label}
+                      </strong>
+                    </button>
                   );
                 })}
               {draft.analysisIntent.kind !== "correlation" ? (
@@ -5118,6 +5208,7 @@ export function ExperimentWorkspace({
               <OverviewPanel
                 draft={draft}
                 cells={cells}
+                cellDisplayTexts={cellDisplayTexts}
                 onReviseStructure={
                   draft.adaptiveInput
                     ? (trigger) => beginAdaptiveStructureRevision(trigger)
@@ -5126,6 +5217,7 @@ export function ExperimentWorkspace({
                 onProportionChange={updateProportion}
                 onProportionPaste={applyOverviewProportionPaste}
                 onNestedScalarChange={updateNestedScalar}
+                onNestedDisplayTextChange={updateNestedDisplayText}
                 onNestedScalarPaste={applyOverviewScalarPaste}
                 onNestedCellChange={(key, cell) =>
                   setCells((current) => ({ ...current, [key]: cell }))
@@ -5178,11 +5270,13 @@ export function ExperimentWorkspace({
                     draft={draft}
                     experiment={experiment}
                     cells={cells}
+                    cellDisplayTexts={cellDisplayTexts}
                     onExperimentChange={(patch) => updateExperiment(experiment.id, patch)}
                     onProportionChange={updateProportion}
                     onProportionPaste={applyProportionPaste}
                     onNestedSelect={setSelectedCellKey}
                     onNestedScalarChange={updateNestedScalar}
+                    onNestedDisplayTextChange={updateNestedDisplayText}
                     onCategoricalChange={updateCategoricalCount}
                     onWbRatioChange={updateWbRatio}
                     onToggleNotPlanned={toggleNotPlanned}

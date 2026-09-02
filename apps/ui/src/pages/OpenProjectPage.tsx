@@ -223,6 +223,7 @@ function PersistedProjectView({
         initialCells={workspace.cells}
         initialGraphs={workspace.graphs}
         initialDataViewMode={workspace.dataViewMode}
+        initialCellDisplayTexts={workspace.cellDisplayTexts}
         initialProject={project}
         saveProject={saveProject}
         onBack={onBack}
@@ -239,7 +240,14 @@ function PersistedProjectView({
     (revision) => revision.id === state.activeDesignRevisionId,
   )?.design;
   if (!design) {
-    return <p role="alert">{t("有効な実験デザインを復元できません。", "The active experiment design could not be restored.")}</p>;
+    return (
+      <p role="alert">
+        {t(
+          "有効な実験デザインを復元できません。",
+          "The active experiment design could not be restored.",
+        )}
+      </p>
+    );
   }
   const matrixView = state.matrixViews?.at(-1);
   if (matrixView?.spec.heatmap) {
@@ -251,8 +259,9 @@ function PersistedProjectView({
         </button>
         <h1>{state.metadata.projectName}</h1>
         <p>
-          {t("保存済みのraw matrixとtransform", "Restored the saved raw matrix and transform")} {matrixView.spec.heatmap.transform} (
-          {matrixView.spec.heatmap.transformVersion}){locale === "ja" ? " を復元しました。" : "."}
+          {t("保存済みのraw matrixとtransform", "Restored the saved raw matrix and transform")}{" "}
+          {matrixView.spec.heatmap.transform} ({matrixView.spec.heatmap.transformVersion})
+          {locale === "ja" ? " を復元しました。" : "."}
         </p>
         <HeatmapGraph
           model={model}
@@ -297,7 +306,14 @@ function PersistedProjectView({
         graph.spec.type === "nonlinear_xy",
     );
     if (!graphRecord) {
-      return <p role="alert">{t("保存済みD17結果に対応するGraph specificationがありません。", "No Graph specification corresponds to the saved D17 result.")}</p>;
+      return (
+        <p role="alert">
+          {t(
+            "保存済みD17結果に対応するGraph specificationがありません。",
+            "No Graph specification corresponds to the saved D17 result.",
+          )}
+        </p>
+      );
     }
     try {
       const labels = Object.fromEntries(
@@ -335,7 +351,10 @@ function PersistedProjectView({
               yLabel={`${nonlinearRun.request.yLabel}${nonlinearRun.request.yUnit ? ` (${nonlinearRun.request.yUnit})` : ""}`}
               seriesLabels={labels}
             />
-            <div className="nonlinear-fit-results" aria-label={t("復元した非線形fit結果", "Restored nonlinear-fit result")}>
+            <div
+              className="nonlinear-fit-results"
+              aria-label={t("復元した非線形fit結果", "Restored nonlinear-fit result")}
+            >
               {nonlinearRun.result.nonlinearFit.series.map((seriesFit) => (
                 <section key={seriesFit.seriesId} className="nonlinear-fit-series-result">
                   <h2>{labels[seriesFit.seriesId] ?? seriesFit.seriesId}</h2>
@@ -378,7 +397,12 @@ function PersistedProjectView({
     }
   }
   const outcome = design.outcomes[0];
-  if (!outcome) return <p role="alert">{t("解析項目を復元できません。", "The analysis outcome could not be restored.")}</p>;
+  if (!outcome)
+    return (
+      <p role="alert">
+        {t("解析項目を復元できません。", "The analysis outcome could not be restored.")}
+      </p>
+    );
   if (outcome.type === "time_to_event") {
     if (!state.adaptiveInput) {
       try {
@@ -452,13 +476,16 @@ function PersistedProjectView({
   if (locale === "en") {
     return (
       <div className="page-stack">
-        <button type="button" onClick={onBack}>← Back</button>
+        <button type="button" onClick={onBack}>
+          ← Back
+        </button>
         <section className="workspace-panel" aria-labelledby="legacy-project-language-heading">
           <p className="overline">Legacy project editor</p>
           <h1 id="legacy-project-language-heading">This project uses a legacy data-sheet format</h1>
           <p role="note">
-            The project file was opened and validated, but its legacy editor has not been translated.
-            Switch the display language to Japanese to edit it. The file and its measurements remain unchanged.
+            The project file was opened and validated, but its legacy editor has not been
+            translated. Switch the display language to Japanese to edit it. The file and its
+            measurements remain unchanged.
           </p>
         </section>
       </div>
@@ -505,7 +532,12 @@ function PersistedProjectView({
             ? recommendD03(design)
             : recommendD04(design);
       if (!multiMatch.matched)
-        throw new Error(t("この実験デザインはD03/D04/D05編集画面の対象外です。", "This experiment design is not supported by the D03/D04/D05 editor."));
+        throw new Error(
+          t(
+            "この実験デザインはD03/D04/D05編集画面の対象外です。",
+            "This experiment design is not supported by the D03/D04/D05 editor.",
+          ),
+        );
       const multiSheet =
         design.pairing.kind === "independent"
           ? rehydrateIndependentMultiConditionDataSheet(
@@ -545,7 +577,13 @@ function PersistedProjectView({
       (decision) => decision.questionId === "correlation.relationship_form",
     );
     const match = isCorrelation ? recommendD09(design) : recommendD01OrD02(design);
-    if (!match.matched) throw new Error(t("この実験デザインはD01/D02編集画面の対象外です。", "This experiment design is not supported by the D01/D02 editor."));
+    if (!match.matched)
+      throw new Error(
+        t(
+          "この実験デザインはD01/D02編集画面の対象外です。",
+          "This experiment design is not supported by the D01/D02 editor.",
+        ),
+      );
     const sheet = rehydrateTwoConditionDataSheet(
       design,
       outcome.id,
@@ -635,27 +673,46 @@ export function OpenProjectPage({
       }
       if (opened.kind !== "experiment") {
         if (!onAnyProjectOpened) {
-          throw new Error(t("この環境では、この入力途中projectの表示先がありません。", "This environment cannot display this in-progress project."));
+          throw new Error(
+            t(
+              "この環境では、この入力途中projectの表示先がありません。",
+              "This environment cannot display this in-progress project.",
+            ),
+          );
         }
         onAnyProjectOpened(opened);
         setStatus("success");
         setMessage(
           opened.kind === "unresolved_visualization"
-            ? t(`${opened.project.state.metadata.projectName} を開き、入力表とGraph設定を復元しました。`, `Opened ${opened.project.state.metadata.projectName} and restored its data table and Graph settings.`)
-            : t(`${opened.project.state.metadata.projectName} を開き、入力途中の表と回答を復元しました。`, `Opened ${opened.project.state.metadata.projectName} and restored the in-progress table and answers.`),
+            ? t(
+                `${opened.project.state.metadata.projectName} を開き、入力表とGraph設定を復元しました。`,
+                `Opened ${opened.project.state.metadata.projectName} and restored its data table and Graph settings.`,
+              )
+            : t(
+                `${opened.project.state.metadata.projectName} を開き、入力途中の表と回答を復元しました。`,
+                `Opened ${opened.project.state.metadata.projectName} and restored the in-progress table and answers.`,
+              ),
         );
         return;
       }
       setOpenedProject(opened.project);
       onProjectOpened?.(opened.project);
       setStatus("success");
-      setMessage(t(`${opened.project.state.metadata.projectName} を開き、整合性を確認しました。`, `Opened ${opened.project.state.metadata.projectName} and verified its integrity.`));
+      setMessage(
+        t(
+          `${opened.project.state.metadata.projectName} を開き、整合性を確認しました。`,
+          `Opened ${opened.project.state.metadata.projectName} and verified its integrity.`,
+        ),
+      );
     } catch (error) {
       setStatus("error");
       setMessage(
         actionErrorMessage(
           error,
-          t("プロジェクトを開けませんでした。現在のワークスペースは変更されていません。", "The project could not be opened. The current workspace was not changed."),
+          t(
+            "プロジェクトを開けませんでした。現在のワークスペースは変更されていません。",
+            "The project could not be opened. The current workspace was not changed.",
+          ),
           locale,
         ),
       );
@@ -676,14 +733,20 @@ export function OpenProjectPage({
       onProjectOpened?.(project);
       setStatus("success");
       setMessage(
-        t(`${project.state.metadata.projectName} を開きました。次回の保存で1ファイル形式へ安全に変換します。`, `Opened ${project.state.metadata.projectName}. It will be safely converted to the single-file format the next time you save.`),
+        t(
+          `${project.state.metadata.projectName} を開きました。次回の保存で1ファイル形式へ安全に変換します。`,
+          `Opened ${project.state.metadata.projectName}. It will be safely converted to the single-file format the next time you save.`,
+        ),
       );
     } catch (error) {
       setStatus("error");
       setMessage(
         actionErrorMessage(
           error,
-          t("旧形式のprojectフォルダを取り込めませんでした。", "The legacy project folder could not be imported."),
+          t(
+            "旧形式のprojectフォルダを取り込めませんでした。",
+            "The legacy project folder could not be imported.",
+          ),
           locale,
         ),
       );
@@ -727,7 +790,10 @@ export function OpenProjectPage({
         <p className="overline">{t("ワークスペース", "Workspace")} / 04</p>
         <h1 id="open-project-heading">{t("ローカルプロジェクトを開く", "Open a local project")}</h1>
         <p>
-          {t("このコンピューター上のプロジェクトパッケージを選びます。ファイル選択と検証の結果だけを表示します。", "Select a project package on this computer. BioFigureStat only displays the result of file selection and validation.")}
+          {t(
+            "このコンピューター上のプロジェクトパッケージを選びます。ファイル選択と検証の結果だけを表示します。",
+            "Select a project package on this computer. BioFigureStat only displays the result of file selection and validation.",
+          )}
         </p>
         <button
           className="primary-button primary-button--ready"
@@ -735,8 +801,12 @@ export function OpenProjectPage({
           disabled={status === "opening"}
           onClick={handleOpen}
         >
-          {status === "opening" ? t("プロジェクトを開いています…", "Opening project…") : t("プロジェクトファイルを選ぶ", "Choose project file")}
-          <span className="button-note">{t("ローカルのデスクトッププロジェクトを開きます", "Open a local desktop project")}</span>
+          {status === "opening"
+            ? t("プロジェクトを開いています…", "Opening project…")
+            : t("プロジェクトファイルを選ぶ", "Choose project file")}
+          <span className="button-note">
+            {t("ローカルのデスクトッププロジェクトを開きます", "Open a local desktop project")}
+          </span>
         </button>
         {openLegacyProject ? (
           <button
@@ -755,7 +825,11 @@ export function OpenProjectPage({
         )}
         {status === "error" && message && (
           <p className="project-action-message project-action-message--error" role="alert">
-            {message} {t("現在のワークスペースは変更されていません。", "The current workspace was not changed.")}
+            {message}{" "}
+            {t(
+              "現在のワークスペースは変更されていません。",
+              "The current workspace was not changed.",
+            )}
           </p>
         )}
       </section>
