@@ -511,48 +511,10 @@ mod tests {
             "engine/python/dist/windows-amd64/lsaa-engine.exe/lsaa-engine.exe",
         );
         assert!(executable.is_file(), "build the packaged Windows engine first");
-        let comparison_id = "equivalence:condition.control:condition.treatment";
-        let request = json!({
-            "protocolVersion": "0.15.0",
-            "requestId": "request.rust-packaged-welch-tost",
-            "projectId": "project.rust-packaged-welch-tost",
-            "analysisId": "analysis.rust-packaged-welch-tost",
-            "templateId": "D01",
-            "templateVersion": "0.2.0",
-            "method": "welch_tost",
-            "comparisonId": comparison_id,
-            "contrastConditionIds": ["condition.control", "condition.treatment"],
-            "equivalencePlan": {
-                "schemaVersion": "0.1.0",
-                "margin": {
-                    "scale": "raw_difference",
-                    "lowerBound": -0.1,
-                    "upperBound": 0.1,
-                    "unit": "Relative activity",
-                    "declaredAsPrespecified": true
-                },
-                "alpha": 0.05,
-                "claimMode": "single_primary_comparison",
-                "primaryComparisonId": comparison_id
-            },
-            "observations": [
-                {"observationId": "control.1", "conditionId": "condition.control", "value": 1.0, "experimentalUnitId": "unit.control.1"},
-                {"observationId": "control.2", "conditionId": "condition.control", "value": 1.02, "experimentalUnitId": "unit.control.2"},
-                {"observationId": "control.3", "conditionId": "condition.control", "value": 0.98, "experimentalUnitId": "unit.control.3"},
-                {"observationId": "control.4", "conditionId": "condition.control", "value": 1.01, "experimentalUnitId": "unit.control.4"},
-                {"observationId": "control.5", "conditionId": "condition.control", "value": 0.99, "experimentalUnitId": "unit.control.5"},
-                {"observationId": "treatment.1", "conditionId": "condition.treatment", "value": 1.01, "experimentalUnitId": "unit.treatment.1"},
-                {"observationId": "treatment.2", "conditionId": "condition.treatment", "value": 1.03, "experimentalUnitId": "unit.treatment.2"},
-                {"observationId": "treatment.3", "conditionId": "condition.treatment", "value": 0.99, "experimentalUnitId": "unit.treatment.3"},
-                {"observationId": "treatment.4", "conditionId": "condition.treatment", "value": 1.02, "experimentalUnitId": "unit.treatment.4"},
-                {"observationId": "treatment.5", "conditionId": "condition.treatment", "value": 1.0, "experimentalUnitId": "unit.treatment.5"}
-            ],
-            "options": {
-                "alternative": "two_sided",
-                "confidenceLevel": 0.9,
-                "multiplicityMethod": null
-            }
-        });
+        let request: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../engine/python/smoke_fixtures/welch-tost-equivalence-supported-request.json"
+        ))
+        .expect("shared Welch TOST boundary fixture");
 
         let result = execute_engine_process(
             EngineLaunch::PackagedBinary { executable },

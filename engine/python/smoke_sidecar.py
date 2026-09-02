@@ -71,51 +71,10 @@ def d02_request() -> dict[str, Any]:
 
 
 def d01_equivalence_request() -> dict[str, Any]:
-    observations = []
-    for condition, values in (
-        ("condition.control", [1.00, 1.02, 0.98, 1.01, 0.99]),
-        ("condition.treatment", [1.01, 1.03, 0.99, 1.02, 1.00]),
-    ):
-        observations.extend(
-            {
-                "observationId": f"observation.{condition}.{index}",
-                "conditionId": condition,
-                "value": value,
-                "experimentalUnitId": f"unit.{condition}.{index}",
-            }
-            for index, value in enumerate(values)
-        )
-    comparison_id = "equivalence:condition.control:condition.treatment"
-    return {
-        "protocolVersion": "0.15.0",
-        "requestId": "request.d01.welch-tost",
-        "projectId": "project.smoke",
-        "analysisId": "analysis.d01.welch-tost",
-        "templateId": "D01",
-        "templateVersion": "0.2.0",
-        "method": "welch_tost",
-        "comparisonId": comparison_id,
-        "contrastConditionIds": ["condition.control", "condition.treatment"],
-        "equivalencePlan": {
-            "schemaVersion": "0.1.0",
-            "margin": {
-                "scale": "raw_difference",
-                "lowerBound": -0.1,
-                "upperBound": 0.1,
-                "unit": "Relative activity",
-                "declaredAsPrespecified": True,
-            },
-            "alpha": 0.05,
-            "claimMode": "single_primary_comparison",
-            "primaryComparisonId": comparison_id,
-        },
-        "observations": observations,
-        "options": {
-            "alternative": "two_sided",
-            "confidenceLevel": 0.9,
-            "multiplicityMethod": None,
-        },
-    }
+    fixture = Path(__file__).resolve().parent / "smoke_fixtures" / (
+        "welch-tost-equivalence-supported-request.json"
+    )
+    return json.loads(fixture.read_text(encoding="utf-8"))
 
 
 def execute(executable: Path, request: dict[str, Any]) -> dict[str, Any]:

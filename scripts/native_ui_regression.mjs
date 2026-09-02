@@ -925,51 +925,18 @@ async function runWindowsScenario({
       return { architecture };
     });
     await runStep("native_welch_tost_ipc", async () => {
-      const comparisonId = "equivalence:condition.control:condition.treatment";
-      const observations = [
-        ...[1.0, 1.02, 0.98, 1.01, 0.99].map((value, index) => ({
-          observationId: `observation.control.${index + 1}`,
-          conditionId: "condition.control",
-          value,
-          experimentalUnitId: `unit.control.${index + 1}`,
-        })),
-        ...[1.01, 1.03, 0.99, 1.02, 1.0].map((value, index) => ({
-          observationId: `observation.treatment.${index + 1}`,
-          conditionId: "condition.treatment",
-          value,
-          experimentalUnitId: `unit.treatment.${index + 1}`,
-        })),
-      ];
-      const request = {
-        protocolVersion: "0.15.0",
-        requestId: "request.native-regression.welch-tost",
-        projectId: "project.native-regression",
-        analysisId: "analysis.native-regression.welch-tost",
-        templateId: "D01",
-        templateVersion: "0.2.0",
-        method: "welch_tost",
-        comparisonId,
-        contrastConditionIds: ["condition.control", "condition.treatment"],
-        equivalencePlan: {
-          schemaVersion: "0.1.0",
-          margin: {
-            scale: "raw_difference",
-            lowerBound: -0.1,
-            upperBound: 0.1,
-            unit: "Relative activity",
-            declaredAsPrespecified: true,
-          },
-          alpha: 0.05,
-          claimMode: "single_primary_comparison",
-          primaryComparisonId: comparisonId,
-        },
-        observations,
-        options: {
-          alternative: "two_sided",
-          confidenceLevel: 0.9,
-          multiplicityMethod: null,
-        },
-      };
+      const request = JSON.parse(
+        await readFile(
+          join(
+            ROOT,
+            "engine",
+            "python",
+            "smoke_fixtures",
+            "welch-tost-equivalence-supported-request.json",
+          ),
+          "utf8",
+        ),
+      );
       const result = await client.evaluate(
         `window.__TAURI_INTERNALS__.invoke("run_analysis", ${JSON.stringify({ request })})`,
       );

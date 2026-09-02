@@ -1,0 +1,94 @@
+{
+  "protocolVersion": "0.15.0",
+  "requestId": "request.boundary.welch-tost",
+  "projectId": "project.boundary.welch-tost",
+  "analysisId": "analysis.boundary.welch-tost",
+  "templateId": "D01",
+  "templateVersion": "0.2.0",
+  "method": "welch_tost",
+  "comparisonId": "equivalence:condition.control:condition.treatment",
+  "contrastConditionIds": [
+    "condition.control",
+    "condition.treatment"
+  ],
+  "equivalencePlan": {
+    "schemaVersion": "0.1.0",
+    "margin": {
+      "scale": "raw_difference",
+      "lowerBound": -0.1,
+      "upperBound": 0.1,
+      "unit": "Relative activity",
+      "declaredAsPrespecified": true
+    },
+    "alpha": 0.05,
+    "claimMode": "single_primary_comparison",
+    "primaryComparisonId": "equivalence:condition.control:condition.treatment"
+  },
+  "observations": [
+    {
+      "observationId": "control.1",
+      "conditionId": "condition.control",
+      "value": 1.0,
+      "experimentalUnitId": "unit.control.1"
+    },
+    {
+      "observationId": "control.2",
+      "conditionId": "condition.control",
+      "value": 1.02,
+      "experimentalUnitId": "unit.control.2"
+    },
+    {
+      "observationId": "control.3",
+      "conditionId": "condition.control",
+      "value": 0.98,
+      "experimentalUnitId": "unit.control.3"
+    },
+    {
+      "observationId": "control.4",
+      "conditionId": "condition.control",
+      "value": 1.01,
+      "experimentalUnitId": "unit.control.4"
+    },
+    {
+      "observationId": "control.5",
+      "conditionId": "condition.control",
+      "value": 0.99,
+      "experimentalUnitId": "unit.control.5"
+    },
+    {
+      "observationId": "treatment.1",
+      "conditionId": "condition.treatment",
+      "value": 1.01,
+      "experimentalUnitId": "unit.treatment.1"
+    },
+    {
+      "observationId": "treatment.2",
+      "conditionId": "condition.treatment",
+      "value": 1.03,
+      "experimentalUnitId": "unit.treatment.2"
+    },
+    {
+      "observationId": "treatment.3",
+      "conditionId": "condition.treatment",
+      "value": 0.99,
+      "experimentalUnitId": "unit.treatment.3"
+    },
+    {
+      "observationId": "treatment.4",
+      "conditionId": "condition.treatment",
+      "value": 1.02,
+      "experimentalUnitId": "unit.treatment.4"
+    },
+    {
+      "observationId": "treatment.5",
+      "conditionId": "condition.treatment",
+      "value": 1.0,
+      "experimentalUnitId": "unit.treatment.5"
+    }
+  ],
+  "options": {
+    "alternative": "two_sided",
+    "confidenceLevel": 0.9,
+    "multiplicityMethod": null
+  }
+}
