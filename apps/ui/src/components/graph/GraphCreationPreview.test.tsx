@@ -87,10 +87,15 @@ describe("CurrentDataGraphPreview scientific integrity", () => {
 
     expect({ plotLeft, plotRight, plotTop, plotBottom }).toEqual({
       plotLeft: 70,
-      plotRight: 340,
+      plotRight: 300,
       plotTop: 22,
       plotBottom: 222,
     });
+    const groupCenters = [...graph.querySelectorAll("[data-preview-group-x]")].map((group) =>
+      Number(group.getAttribute("data-preview-group-x")),
+    );
+    expect(groupCenters[0] - plotLeft).toBeGreaterThanOrEqual(30);
+    expect(plotRight - groupCenters.at(-1)!).toBeGreaterThanOrEqual(30);
     expect(graph.querySelectorAll("[data-preview-y-tick]").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("条件")).toBeVisible();
     expect(Number(yTitle.getAttribute("x"))).toBeLessThan(plotLeft);

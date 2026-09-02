@@ -581,7 +581,7 @@ export function CurrentDataGraphPreview({
   }
   // Keep a short axis for ordinary two- or three-group previews. Wider designs
   // still grow horizontally and remain scrollable instead of compressing labels.
-  const width = Math.max(360, 100 + groups.length * 72);
+  const width = Math.max(320, 100 + groups.length * 72);
   const height = 300;
   const previewPlot = createPlotRectangle(width, height, {
     top: 22,
@@ -608,7 +608,13 @@ export function CurrentDataGraphPreview({
         : observedMax + padding;
   const yFor = (value: number) =>
     previewPlot.top + ((domainMax - value) / (domainMax - domainMin)) * previewPlot.height;
-  const xFor = (index: number) => previewPlot.left + 16 + index * 72;
+  const categoryInset = Math.min(32, previewPlot.width / 3);
+  const xFor = (index: number) =>
+    groups.length === 1
+      ? previewPlot.left + previewPlot.width / 2
+      : previewPlot.left +
+        categoryInset +
+        (index * (previewPlot.width - categoryInset * 2)) / (groups.length - 1);
   const yTicks = createNiceTicks(domainMin, domainMax, 5, null);
   const tickFormatter = new Intl.NumberFormat(locale, { maximumSignificantDigits: 4 });
   const yTickLabels = yTicks.map((tick) => tickFormatter.format(tick));
@@ -735,7 +741,7 @@ export function CurrentDataGraphPreview({
             group.observationValues.length > 0 ? group.observationValues : group.experimentValues;
           const currentViolinPath = violinDensityPath(source, x, yFor, 22);
           return (
-            <g key={group.key}>
+            <g key={group.key} data-preview-group-x={x}>
               {type === "bar" && average !== null ? (
                 <rect
                   className="graph-current-preview__bar"
