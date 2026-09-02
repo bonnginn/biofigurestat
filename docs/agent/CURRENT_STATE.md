@@ -257,9 +257,9 @@ The reviewed application was packaged without rebuilding as
 `BioFigureStat-0.1.0-alpha.2-macOS-Apple-Silicon.zip`; archive integrity and the extracted
 application's strict code-signature verification pass. The zip is `47,883,673` bytes with SHA-256
 `4EE4734D57F703845C38EB00BB8A859D1CB54A2C019E7875F5841D5DFA888722`.
-The bilingual `v0.1.0-alpha.2` GitHub release is prepared as a Draft Pre-release. Both reviewed
-Windows and macOS assets are uploaded; the macOS GitHub digest matches the local SHA-256. Final
-publication remains an explicit user decision and does not replace `v0.1.0-alpha.1`.
+The bilingual `v0.1.0-alpha.2` GitHub release is published as a Pre-release. Both reviewed Windows
+and macOS assets are available; the recorded GitHub asset digests match the local SHA-256 values.
+The earlier `v0.1.0-alpha.1` release remains available and unchanged.
 
 Windows candidate `ab5b012-alpha.20260901.win-refactor2` is built from the same application source
 tree and passes the production UI build, zero-marker release verification, packaged-engine smoke,
@@ -826,7 +826,7 @@ direction wording still require review; Welch TOST is not reused for paired data
   further splitting must preserve renderer and export parity.
 - English localization is covered for the production Public Alpha surfaces. Pre-workspace legacy
   D01-D05 editors use an explicit English compatibility stop rather than a partially translated
-  editor; no English native release has been declared ready.
+  editor. The reviewed bilingual native release is published as `v0.1.0-alpha.2`.
 - Beta work includes Graph-preview parity, compact workspace chrome, editable experiment metadata,
   and Kaplan–Meier appearance-control parity while preserving censoring and risk-table semantics.
   Kaplan–Meier now supports saved/reopened curve colors, overall and legend font sizes, legend

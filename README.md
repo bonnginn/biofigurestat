@@ -80,9 +80,9 @@ Key boundaries:
 [privacy notice / プライバシー](docs/alpha/PRIVACY.md)、
 [IT・データ取扱い概要 / IT and Data Handling Overview](docs/IT_DATA_HANDLING_OVERVIEW.md)、
 [known limitations / 既知の制限](docs/alpha/KNOWN_LIMITATIONS.md)を参照してください。
-The relationship between this clean public
-source snapshot and the validated native artifacts is recorded in the
-[source provenance note](docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md).
+The relationship between the clean public source snapshots and validated native artifacts is
+recorded in the [alpha.1 source provenance note](docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md)
+and the [bilingual alpha.2 publication record](docs/alpha/BILINGUAL_ALPHA_UPDATE_READINESS_2026-09-01.md).
 
 ## Development
 
