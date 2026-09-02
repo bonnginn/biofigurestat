@@ -70,9 +70,9 @@ const DEDICATED_ENTRY_CARDS: readonly EntryCard[] = [
     id: "simple",
     title: "単純な独立群比較",
     titleEn: "Simple independent-group comparison",
-    description: "1測定項目・独立した2〜4条件・1実験単位に1つの値を入力します。",
+    description: "1測定項目・独立した2条件以上・1実験単位に1つの値を入力します。",
     descriptionEn:
-      "Enter one readout for two to four independent conditions, with one value per experimental unit.",
+      "Enter one readout for two or more independent conditions, with one value per experimental unit.",
     actionLabel: "条件別シートを開く",
     actionLabelEn: "Open grouped worksheet",
   },
@@ -90,8 +90,7 @@ const DEDICATED_ENTRY_CARDS: readonly EntryCard[] = [
     id: "orderedCurve",
     title: "濃度–反応・酵素反応",
     titleEn: "Dose-response and enzyme kinetics",
-    description:
-      "基質濃度–計算済み反応初速度と、時間–応答・飽和カーブのX/Yデータを入力します。",
+    description: "基質濃度–計算済み反応初速度と、時間–応答・飽和カーブのX/Yデータを入力します。",
     descriptionEn:
       "Enter substrate concentration–calculated initial velocity or time–response X/Y data.",
     actionLabel: "専用シートを開く",
@@ -189,7 +188,9 @@ export function NewExperimentEntryHub({
       data-usage-area="entry_choice"
     >
       <header className="new-entry-hub__heading">
-        <h1 id="new-entry-hub-heading">{ja ? "何から始めますか？" : "Where would you like to start?"}</h1>
+        <h1 id="new-entry-hub-heading">
+          {ja ? "何から始めますか？" : "Where would you like to start?"}
+        </h1>
         <p>
           {ja
             ? "実験内容から始めるか、すでにある表・専用形式から始めるかを選びます。"

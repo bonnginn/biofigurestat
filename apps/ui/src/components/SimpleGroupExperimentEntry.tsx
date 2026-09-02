@@ -16,6 +16,7 @@ type SimpleGroupExperimentEntryProps = Readonly<{
 }>;
 
 const INITIAL_CONDITIONS = ["", "", "", ""] as const;
+const MAX_CONDITIONS = 50;
 
 export function SimpleGroupExperimentEntry({
   onBack,
@@ -58,11 +59,17 @@ export function SimpleGroupExperimentEntry({
 
   const createWorksheet = () => {
     if (!factorName.trim()) {
-      setMessage(ja ? "処理・群分けの名前を入力してください。" : "Enter a treatment or grouping name.");
+      setMessage(
+        ja ? "処理・群分けの名前を入力してください。" : "Enter a treatment or grouping name.",
+      );
       return;
     }
     if (populatedConditions.length < 2) {
-      setMessage(ja ? "比較する条件を2つ以上入力してください。" : "Enter at least two conditions to compare.");
+      setMessage(
+        ja
+          ? "比較する条件を2つ以上入力してください。"
+          : "Enter at least two conditions to compare.",
+      );
       return;
     }
     if (!readoutLabel.trim()) {
@@ -166,8 +173,8 @@ export function SimpleGroupExperimentEntry({
         <strong>{ja ? "この入口を使える実験" : "Use this entry when"}</strong>
         <span>
           {ja
-            ? "1測定項目・独立した2〜4条件・1実験単位につき1つの値"
-            : "There is one readout, two to four independent conditions, and one value per experimental unit"}
+            ? "1測定項目・独立した2条件以上・1実験単位につき1つの値"
+            : "There is one readout, two or more independent conditions, and one value per experimental unit"}
         </span>
         <button type="button" onClick={onBack}>
           {ja
@@ -215,6 +222,14 @@ export function SimpleGroupExperimentEntry({
               </label>
             ))}
           </div>
+          <button
+            className="simple-group-entry__add-condition"
+            type="button"
+            disabled={conditionLabels.length >= MAX_CONDITIONS}
+            onClick={() => setConditionLabels((current) => [...current, ""])}
+          >
+            {ja ? "＋ 条件を追加" : "+ Add condition"}
+          </button>
         </fieldset>
       </div>
 
@@ -242,7 +257,9 @@ export function SimpleGroupExperimentEntry({
         <label>
           <span>{ja ? "対照群（任意）" : "Control condition (optional)"}</span>
           <select
-            aria-label={ja ? "単純な群比較の対照群" : "Control condition for simple group comparison"}
+            aria-label={
+              ja ? "単純な群比較の対照群" : "Control condition for simple group comparison"
+            }
             value={controlConditionIndex ?? ""}
             onChange={(event) =>
               setControlConditionIndex(
@@ -273,7 +290,9 @@ export function SimpleGroupExperimentEntry({
             max={100}
             value={initialUnitCount}
             onChange={(event) =>
-              setInitialUnitCount(Math.min(100, Math.max(1, Number(event.currentTarget.value) || 1)))
+              setInitialUnitCount(
+                Math.min(100, Math.max(1, Number(event.currentTarget.value) || 1)),
+              )
             }
           />
         </label>
@@ -292,9 +311,15 @@ export function SimpleGroupExperimentEntry({
         </span>
       </label>
 
-      {message ? <p className="simple-group-entry__message" role="alert">{message}</p> : null}
+      {message ? (
+        <p className="simple-group-entry__message" role="alert">
+          {message}
+        </p>
+      ) : null}
       <div className="simple-group-entry__actions">
-        <button type="button" onClick={onBack}>{ja ? "戻る" : "Back"}</button>
+        <button type="button" onClick={onBack}>
+          {ja ? "戻る" : "Back"}
+        </button>
         <button type="button" className="primary-button" onClick={createWorksheet}>
           {ja ? "条件別スプレッドシートを作る" : "Create grouped worksheet"}
         </button>

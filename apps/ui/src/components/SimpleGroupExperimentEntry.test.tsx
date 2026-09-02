@@ -54,4 +54,27 @@ describe("SimpleGroupExperimentEntry", () => {
     });
     expect(screen.queryByText("条件を受けたものと材料のつながり")).toBeNull();
   });
+
+  it("adds conditions beyond the four initially visible fields", () => {
+    const onReady = vi.fn();
+    render(<SimpleGroupExperimentEntry onBack={vi.fn()} onReady={onReady} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "＋ 条件を追加" }));
+    ["Vehicle", "Drug A", "Drug B", "Drug C", "Drug D"].forEach((label, index) => {
+      fireEvent.change(screen.getByLabelText(`単純な群比較の条件 ${index + 1}`), {
+        target: { value: label },
+      });
+    });
+    fireEvent.change(screen.getByPlaceholderText("例：Relative protein amount"), {
+      target: { value: "Relative protein amount" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("例：culture dish、mouse"), {
+      target: { value: "culture dish" },
+    });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "条件別スプレッドシートを作る" }));
+
+    expect(onReady.mock.calls[0]?.[0].conditions).toHaveLength(5);
+    expect(onReady.mock.calls[0]?.[0].conditions[4]).toMatchObject({ label: "Drug D" });
+  });
 });
