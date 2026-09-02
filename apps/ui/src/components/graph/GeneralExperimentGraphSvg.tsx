@@ -1303,8 +1303,13 @@ export function ExperimentGraphSvg({
                 height={Math.max(1, Math.abs(barBaselineY - meanY))}
                 fill={color}
                 opacity={0.24}
-                stroke={appearance.barOutline === false ? "none" : color}
-                strokeWidth={appearance.barOutline === false ? 0 : appearance.distributionLineWidth}
+                style={{
+                  // Keep this inline so both the live stylesheet and the SVG export stylesheet
+                  // respect the researcher's explicit outline toggle.
+                  stroke: appearance.barOutline === false ? "none" : "#111111",
+                  strokeWidth:
+                    appearance.barOutline === false ? 0 : appearance.distributionLineWidth,
+                }}
                 className="experiment-graph-bar"
                 data-graph-layer="bar"
                 data-inspector-target="experiment-summary"

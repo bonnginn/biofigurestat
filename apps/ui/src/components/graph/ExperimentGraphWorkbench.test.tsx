@@ -1535,6 +1535,7 @@ describe("ExperimentGraphWorkbench", () => {
       expect(Number(bar.getAttribute("height"))).toBeGreaterThan(0);
       expect(Number(bar.dataset.summaryValue)).toBeGreaterThan(0);
       expect(bar).toHaveAttribute("opacity", "0.24");
+      expect(bar.style.stroke).toBe("#111111");
     });
     expect(svg.querySelectorAll('[data-graph-layer="proportion-experiment"]')).toHaveLength(9);
     expect(svg.querySelectorAll(".experiment-graph-error-line")).toHaveLength(3);
@@ -1542,8 +1543,13 @@ describe("ExperimentGraphWorkbench", () => {
 
     const serialized = serializeGraphSvg(svg);
     expect(serialized).toContain('data-graph-layer="bar"');
-    expect(serialized).toContain(".experiment-graph-bar");
+    expect(serialized).toContain('class="experiment-graph-bar"');
+    expect(serialized).toContain("stroke: #111111");
     expect(serialized.match(/<rect[^>]+data-graph-layer="bar"/g)).toHaveLength(3);
+
+    selectInspectorTarget("x-axis");
+    fireEvent.click(screen.getByRole("checkbox", { name: "棒の輪郭線を表示" }));
+    bars.forEach((bar) => expect(bar.style.stroke).toBe("none"));
 
     class TestClipboardItem {
       constructor(readonly data: Record<string, Blob>) {}

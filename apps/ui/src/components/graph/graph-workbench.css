@@ -334,18 +334,13 @@
 }
 
 .experiment-graph-bar {
-  stroke: #274f70;
-  stroke-width: 1;
   cursor: pointer;
-  transition:
-    opacity 120ms ease,
-    stroke-width 120ms ease;
+  transition: opacity 120ms ease;
 }
 
 .experiment-graph-bar:hover,
 .experiment-graph-bar[data-selected="true"] {
   opacity: 0.34;
-  stroke-width: 2;
 }
 
 [data-inspector-target="experiment-summary"],
