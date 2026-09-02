@@ -48,6 +48,7 @@ import {
   type WorkspaceDataViewMode,
 } from "../components/WorkspaceNestedMeasurementSheet";
 import { AdaptiveCanonicalSpreadsheet } from "../components/AdaptiveCanonicalSpreadsheet";
+import { moveSpreadsheetFocus } from "../components/spreadsheetGrid";
 import {
   canEditCanonicalMatrix,
   type CanonicalWorksheetFileCommit,
@@ -615,6 +616,10 @@ function OverviewUnitSummaryMatrix({
                         value={value}
                         displayText={cellDisplayTexts[key]}
                         disabled={notPlanned}
+                        spreadsheetPosition={{
+                          row: experimentIndex,
+                          column: conditionIndex,
+                        }}
                         onChange={(nextValue) => onChange(key, nextValue)}
                         onDisplayTextChange={(text) => onDisplayTextChange(key, text)}
                         onRejectedPaste={() =>
@@ -1790,6 +1795,7 @@ function DecimalValueInput({
   value,
   displayText,
   disabled = false,
+  spreadsheetPosition,
   onChange,
   onDisplayTextChange,
   onRejectedPaste,
@@ -1799,6 +1805,7 @@ function DecimalValueInput({
   value: number | null;
   displayText?: string;
   disabled?: boolean;
+  spreadsheetPosition?: { row: number; column: number };
   onChange: (value: number | null) => void;
   onDisplayTextChange?: (text: string | null) => void;
   onRejectedPaste: () => void;
@@ -1829,10 +1836,14 @@ function DecimalValueInput({
       aria-label={label}
       className="experiment-workspace-number-input"
       disabled={disabled}
+      data-spreadsheet-cell={spreadsheetPosition ? "true" : undefined}
+      data-spreadsheet-column={spreadsheetPosition?.column}
+      data-spreadsheet-row={spreadsheetPosition?.row}
       inputMode="decimal"
       placeholder={localizedText(locale, "数値を入力", "Enter a number")}
       type="text"
       value={draftValue}
+      onKeyDown={spreadsheetPosition ? moveSpreadsheetFocus : undefined}
       onFocus={(event) => {
         event.currentTarget.select();
       }}
@@ -1910,7 +1921,7 @@ function UnitSummaryContinuousTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
+          {rows.map((row, rowIndex) => {
             const key = experimentCellKey({
               experimentId: experiment.id,
               conditionId: row.conditionId,
@@ -1937,6 +1948,7 @@ function UnitSummaryContinuousTable({
                     value={value}
                     displayText={cellDisplayTexts[key]}
                     disabled={notPlanned}
+                    spreadsheetPosition={{ row: rowIndex, column: 0 }}
                     onChange={(nextValue) => onChange(key, nextValue)}
                     onDisplayTextChange={(text) => onDisplayTextChange(key, text)}
                     onRejectedPaste={() =>

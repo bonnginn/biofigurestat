@@ -488,6 +488,24 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("textbox", { name: "Treatmentの細胞強度" })).toHaveValue("16");
   });
 
+  it("wraps Enter from the right edge of the Overview matrix to the next row", () => {
+    const draft = draftWithTwoConditions("nested_continuous");
+    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
+
+    const table = screen.getByRole("table", { name: "細胞強度をまとめて入力" });
+    const firstRowRight = within(table).getByRole("textbox", {
+      name: "Exp 1・Treatmentの細胞強度",
+    });
+    const nextRowLeft = within(table).getByRole("textbox", {
+      name: "Exp 2・Controlの細胞強度",
+    });
+
+    firstRowRight.focus();
+    fireEvent.keyDown(firstRowRight, { key: "Enter" });
+
+    expect(nextRowLeft).toHaveFocus();
+  });
+
   it("rejects an invalid Overview matrix atomically and retains existing values", () => {
     const draft = draftWithTwoConditions("nested_continuous");
     render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
