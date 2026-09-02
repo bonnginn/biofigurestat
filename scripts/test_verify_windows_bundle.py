@@ -3,7 +3,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from verify_windows_bundle import read_pe_subsystem, verify_windows_artifacts
+from verify_windows_bundle import (
+    read_pe_subsystem,
+    verify_file_association_config,
+    verify_windows_artifacts,
+)
 
 
 def write_pe(path: Path, subsystem: int) -> None:
@@ -18,6 +22,41 @@ def write_pe(path: Path, subsystem: int) -> None:
 
 
 class WindowsBundleVerifierTests(unittest.TestCase):
+    def test_accepts_canonical_lsa_file_association(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "tauri.conf.json"
+            config.write_text(
+                """{
+                  "bundle": {"fileAssociations": [{
+                    "ext": ["lsa"],
+                    "name": "BioFigureStat Project",
+                    "description": "BioFigureStat project package",
+                    "role": "Editor",
+                    "rank": "Owner",
+                    "mimeType": "application/x-lifescience-analysis-project"
+                  }]}
+                }""",
+                encoding="utf-8",
+            )
+            self.assertEqual(verify_file_association_config(config), [])
+
+    def test_rejects_missing_or_drifted_lsa_file_association(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "tauri.conf.json"
+            config.write_text(
+                '{"bundle":{"fileAssociations":[{"ext":["csv"],"role":"Viewer"}]}}',
+                encoding="utf-8",
+            )
+            self.assertTrue(
+                any("does not declare" in item for item in verify_file_association_config(config))
+            )
+            config.write_text(
+                '{"bundle":{"fileAssociations":[{"ext":[".LSA"],"role":"Viewer"}]}}',
+                encoding="utf-8",
+            )
+            failures = verify_file_association_config(config)
+            self.assertTrue(any("role" in item and "Editor" in item for item in failures))
+
     def test_accepts_gui_executable_and_installer(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -291,7 +291,10 @@ and Unicode `SendInput`, avoiding the synchronous provider call blocked by the h
 11 filename control. The packaged `951b3b7-beta.20260902.win-preview10` application passes absolute
 SVG save, project `.lsa` save, same-executable path reopen, editable-data restoration, and enabled
 Graph/Statistics in `.tmp/native-ui-regression/win-preview10-save-targets-alt-n4/`. Installed `.lsa`
-double-click remains the next installer-level slice. The same exact-process
+double-click remains the next installer-level slice. The Windows bundle verifier now also rejects
+missing or drifted `.lsa` extension, product name, description, Editor/Owner role, and MIME
+declarations before packaging; its 5 focused tests and the current artifact verification pass.
+The same exact-process
 gate now also opens and cancels the native PNG and CSV Save dialogs after confirming that all three
 Graph export controls are enabled. SVG/PNG/CSV Cancel and the remainder of the lifecycle scenario
 pass against the packaged `707d613-beta.20260902.win-native1` application; current JSON evidence is

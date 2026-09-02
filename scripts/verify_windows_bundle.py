@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import struct
 
@@ -47,6 +48,41 @@ def verify_windows_artifacts(executable: Path, installer: Path) -> list[str]:
     return failures
 
 
+def verify_file_association_config(config: Path) -> list[str]:
+    try:
+        document = json.loads(config.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        return [f"Tauri configuration is not readable JSON: {config}: {error}"]
+
+    associations = document.get("bundle", {}).get("fileAssociations", [])
+    lsa = next(
+        (
+            association
+            for association in associations
+            if isinstance(association, dict)
+            and "lsa" in [str(ext).lower().lstrip(".") for ext in association.get("ext", [])]
+        ),
+        None,
+    )
+    if lsa is None:
+        return ["Tauri bundle configuration does not declare the .lsa file association"]
+
+    failures: list[str] = []
+    expected = {
+        "name": "BioFigureStat Project",
+        "description": "BioFigureStat project package",
+        "role": "Editor",
+        "rank": "Owner",
+        "mimeType": "application/x-lifescience-analysis-project",
+    }
+    for field, value in expected.items():
+        if lsa.get(field) != value:
+            failures.append(
+                f".lsa file association {field} is {lsa.get(field)!r}; expected {value!r}"
+            )
+    return failures
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -62,8 +98,14 @@ def main() -> int:
             "BioFigureStat_0.1.0_x64-setup.exe"
         ),
     )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path("apps/desktop/src-tauri/tauri.conf.json"),
+    )
     args = parser.parse_args()
     failures = verify_windows_artifacts(args.executable, args.installer)
+    failures.extend(verify_file_association_config(args.config))
     if failures:
         print("Windows bundle verification FAILED")
         for failure in failures:
