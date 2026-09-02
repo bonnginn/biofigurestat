@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
-import { parseAdaptiveDelimited, type ParsedAdaptiveInput } from "@lsaa/adaptive-input";
 import {
   appendUnresolvedVisualizationDataRevision,
   appendUnresolvedVisualizationGraph,
@@ -34,13 +33,15 @@ import { createGraphOnlyWorkbenchModel } from "../app/graphOnlyWorkbenchAdapter"
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
 import { experimentGraphTypeLabel } from "../components/graph/experimentGraphTypeLabel";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
-import {
-  localizedFailureMessage,
-  localizedText,
-  useAppLocale,
-  type AppLocale,
-} from "../app/appLocale";
+import { localizedFailureMessage, localizedText, useAppLocale } from "../app/appLocale";
 import "./GraphOnlyVisualizationPage.css";
+import {
+  createGraphOnlyColumnMapping,
+  graphOnlyNumericValue,
+  graphOnlySourceKind,
+  parseVisualizationInput,
+  type GraphOnlyColumnIndex as ColumnIndex,
+} from "../app/graphOnlyVisualizationInput";
 
 const ExperimentGraphWorkbench = lazy(() =>
   import("../components/graph/ExperimentGraphWorkbench").then(
@@ -48,15 +49,9 @@ const ExperimentGraphWorkbench = lazy(() =>
   ),
 );
 
-type ColumnIndex = number | "";
 type GraphType = WorkspaceGraphState["graphType"];
 
 const GRAPH_ONLY_GRAPH_TYPES: readonly GraphType[] = ["dot", "box", "violin", "bar", "line"];
-
-type ParsedVisualizationInput = Readonly<{
-  parsed: ParsedAdaptiveInput;
-  error: string | null;
-}>;
 
 type GraphOnlyVisualizationPageProps = Readonly<{
   onNavigate: (route: AppRoute) => void;
@@ -82,96 +77,6 @@ function visualizationId(prefix: string): string {
 
 function nowIso(): string {
   return new Date().toISOString();
-}
-
-function parseVisualizationInput(text: string, locale: AppLocale = "ja"): ParsedVisualizationInput {
-  if (!text.trim())
-    return { parsed: { headers: [], rows: [], delimiter: "tab", headerRow: 1 }, error: null };
-  try {
-    const parsed = parseAdaptiveDelimited(text);
-    if (parsed.headers.some((header) => !header.trim())) {
-      return {
-        parsed,
-        error: localizedText(
-          locale,
-          "列名が空です。1行目に列名を入れてください。",
-          "A column name is blank. Add column names in the first row.",
-        ),
-      };
-    }
-    if (parsed.rows.some((row) => row.length !== parsed.headers.length)) {
-      return {
-        parsed,
-        error: localizedText(
-          locale,
-          "行ごとの列数がそろっていません。元の表で空欄の列も区切りを残してください。",
-          "Rows do not contain the same number of columns. Preserve delimiters for blank columns in the source table.",
-        ),
-      };
-    }
-    return { parsed, error: null };
-  } catch {
-    return {
-      parsed: { headers: [], rows: [], delimiter: "tab", headerRow: 1 },
-      error: localizedText(
-        locale,
-        "表を読み取れませんでした。1行目を列名にしたCSVまたはTSVを貼り付けてください。",
-        "The table could not be read. Paste CSV or TSV with column names in the first row.",
-      ),
-    };
-  }
-}
-
-function numericValue(raw: string | undefined): number | null {
-  const value = raw?.trim() ?? "";
-  if (!value || ["NA", "N/A", "—"].includes(value)) return null;
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
-}
-
-function sourceKindFor(
-  sourceLabel: string,
-  delimiter: ParsedAdaptiveInput["delimiter"],
-): "direct_entry" | "clipboard" | "csv" | "tsv" | "generic_file" {
-  if (sourceLabel === "direct-entry") return "direct_entry";
-  if (sourceLabel === "clipboard") return "clipboard";
-  if (/\.tsv$/i.test(sourceLabel) || delimiter === "tab") return "tsv";
-  if (/\.csv$/i.test(sourceLabel) || delimiter === "comma") return "csv";
-  return "generic_file";
-}
-
-function mappingFor(
-  parsed: ParsedAdaptiveInput,
-  xColumn: ColumnIndex,
-  yColumn: ColumnIndex,
-  seriesColumn: ColumnIndex,
-  idColumn: ColumnIndex,
-  identityDecision: UnresolvedVisualizationIdentityDecision,
-  sourceRowUnitDecision: UnresolvedVisualizationSourceRowUnitDecision,
-  sourceLabel: string,
-  confirmedAt: string,
-): UnresolvedVisualizationColumnMapping | null {
-  if (xColumn === "" || yColumn === "") return null;
-  const roles = new Map<number, "x" | "y" | "series" | "id">([
-    [xColumn, "x"],
-    [yColumn, "y"],
-    ...(seriesColumn === "" ? [] : [[seriesColumn, "series"] as const]),
-    ...(idColumn === "" ? [] : [[idColumn, "id"] as const]),
-  ]);
-  return {
-    schemaVersion: "0.1.0",
-    sourceLabel,
-    delimiter: parsed.delimiter,
-    headerRow: parsed.headerRow,
-    columns: parsed.headers.map((header, index) => ({
-      index,
-      header,
-      role: roles.get(index) ?? "metadata",
-    })),
-    identityDecision,
-    sourceRowUnitDecision,
-    confirmedAt,
-  };
 }
 
 function graphSpecFor(
@@ -580,7 +485,7 @@ export function GraphOnlyVisualizationPage({
     yColumn === ""
       ? 0
       : parsed.rows.reduce(
-          (count, row) => count + (numericValue(row[yColumn]) === null ? 0 : 1),
+          (count, row) => count + (graphOnlyNumericValue(row[yColumn]) === null ? 0 : 1),
           0,
         );
   const skippedYCount = yColumn === "" ? 0 : parsed.rows.length - finiteYCount;
@@ -671,8 +576,8 @@ export function GraphOnlyVisualizationPage({
     const metadata = loadedState?.metadata ?? newMetadata(projectTitle, timestamp);
     const numericXAxis = graphOnlyUsesNumericXAxis(parsed, selectedX, selectedY, seriesColumn);
     const seriesKeys = graphOnlySeriesKeys(parsed, selectedX, selectedY, seriesColumn);
-    const lineageSource = sourceKindFor(sourceLabel, parsed.delimiter);
-    const candidateMapping = mappingFor(
+    const lineageSource = graphOnlySourceKind(sourceLabel, parsed.delimiter);
+    const candidateMapping = createGraphOnlyColumnMapping(
       parsed,
       selectedX,
       selectedY,
