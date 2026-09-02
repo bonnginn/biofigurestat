@@ -802,10 +802,13 @@ engine route is enabled by these foundation changes.
   editor; no English native release has been declared ready.
 - Beta work includes Graph-preview parity, compact workspace chrome, editable experiment metadata,
   and Kaplan–Meier appearance-control parity while preserving censoring and risk-table semantics.
-  Kaplan–Meier now supports saved/reopened curve colors, overall and legend font sizes, and legend
-  positions (`hidden`, `top`, `right`, `inside`). The optional GraphSpec fields preserve older
-  `.lsa` parsing and the read-only legacy path also honors saved appearance. Focused UI/renderer
-  tests (35) and graph-spec tests (5), both package typechecks, and targeted lint pass.
+  Kaplan–Meier now supports saved/reopened curve colors, overall and legend font sizes, legend
+  positions (`hidden`, `top`, `right`, `inside`), minor-tick visibility, tick direction, and axis
+  titles. The optional GraphSpec fields preserve older `.lsa` parsing and the read-only legacy path
+  also honors saved appearance. Survival probability remains fixed to 0–1 on a linear scale and
+  follow-up remains uncropped so visual customization cannot hide event/censoring or risk-table
+  context. Focused UI/renderer tests (35) and graph-spec tests (5), both package typechecks, and
+  targeted lint pass.
 - Windows native UI regression passes against the current exact packaged executable. Clean-runner
   repetition is desirable, and the implemented macOS Accessibility adapter still needs its first
   permissioned `.app` PASS. Human review remains for scientific usability and visual judgment.

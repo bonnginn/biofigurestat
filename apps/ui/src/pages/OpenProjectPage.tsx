@@ -449,6 +449,8 @@ function PersistedProjectView({
               fontSize={savedSurvivalSpec?.appearance.fontSize}
               legendFontSize={savedSurvivalSpec?.appearance.legendFontSize}
               legendPosition={savedSurvivalSpec?.appearance.legendPosition}
+              showMinorTicks={savedSurvivalSpec?.axes.showMinorTicks}
+              tickDirection={savedSurvivalSpec?.axes.tickDirection}
             />
           </div>
         );

@@ -185,6 +185,8 @@ describe("SurvivalGraph", () => {
         model={model}
         legendPosition="inside"
         legendFontSize={18}
+        showMinorTicks={false}
+        tickDirection="inside"
       />,
     );
     const legend = screen
@@ -192,6 +194,16 @@ describe("SurvivalGraph", () => {
       .querySelector('[data-graph-layer="series-legend"]');
     expect(legend).toHaveAttribute("data-legend-position", "inside");
     expect(legend?.querySelector("text")).toHaveAttribute("font-size", "18");
+    expect(
+      screen
+        .getByRole("img", { name: "Kaplan–Meier survival graph" })
+        .querySelectorAll('[data-axis-tick$="minor"]'),
+    ).toHaveLength(0);
+    const yTick = screen
+      .getByRole("img", { name: "Kaplan–Meier survival graph" })
+      .querySelector<SVGLineElement>('[data-axis-tick="y"]')!;
+    expect(yTick).toHaveAttribute("data-tick-direction", "inside");
+    expect(Number(yTick.getAttribute("x2"))).toBeGreaterThan(Number(yTick.getAttribute("x1")));
 
     rerender(<SurvivalGraph model={model} legendPosition="hidden" />);
     expect(

@@ -21,6 +21,8 @@ export const SurvivalGraph = forwardRef<
     fontSize?: number;
     legendFontSize?: number;
     legendPosition?: "hidden" | "top" | "right" | "inside";
+    showMinorTicks?: boolean;
+    tickDirection?: "inside" | "outside";
     annotation?: string;
     countSemantics?: "biological_n" | "records";
   }
@@ -33,6 +35,8 @@ export const SurvivalGraph = forwardRef<
     fontSize = 12,
     legendFontSize,
     legendPosition = "right",
+    showMinorTicks = true,
+    tickDirection = "outside",
     annotation,
     countSemantics = "biological_n",
   },
@@ -73,8 +77,10 @@ export const SurvivalGraph = forwardRef<
   ].sort((a, b) => a - b);
   const yTicks = [0, 0.25, 0.5, 0.75, 1];
   const xTicks = createNiceTicks(0, maxTime, 6, null);
-  const xMinorTicks = createMinorTicks(xTicks, 0, maxTime, 5);
-  const yMinorTicks = createMinorTicks(yTicks, 0, 1, 5);
+  const xMinorTicks = showMinorTicks ? createMinorTicks(xTicks, 0, maxTime, 5) : [];
+  const yMinorTicks = showMinorTicks ? createMinorTicks(yTicks, 0, 1, 5) : [];
+  const yTickEnd = (length: number) => left + (tickDirection === "inside" ? length : -length);
+  const xTickEnd = (length: number) => axisY + (tickDirection === "inside" ? -length : length);
   const legendCoordinates = (index: number) => {
     if (legendPosition === "top") {
       return { x: left + (index % 3) * 220, y: 18 + Math.floor(index / 3) * 22 };
@@ -99,12 +105,12 @@ export const SurvivalGraph = forwardRef<
         <line
           key={`y.minor.${tick}`}
           x1={left}
-          x2={left - 3.5}
+          x2={yTickEnd(3.5)}
           y1={y(tick)}
           y2={y(tick)}
           stroke="#111"
           data-axis-tick="y-minor"
-          data-tick-direction="outside"
+          data-tick-direction={tickDirection}
           data-tick-value={tick}
         />
       ))}
@@ -114,10 +120,10 @@ export const SurvivalGraph = forwardRef<
           x1={x(tick)}
           x2={x(tick)}
           y1={axisY}
-          y2={axisY + 3.5}
+          y2={xTickEnd(3.5)}
           stroke="#111"
           data-axis-tick="x-minor"
-          data-tick-direction="outside"
+          data-tick-direction={tickDirection}
           data-tick-value={tick}
         />
       ))}
@@ -125,12 +131,12 @@ export const SurvivalGraph = forwardRef<
         <g key={tick}>
           <line
             x1={left}
-            x2={left - 5}
+            x2={yTickEnd(5)}
             y1={y(tick)}
             y2={y(tick)}
             stroke="#111"
             data-axis-tick="y"
-            data-tick-direction="outside"
+            data-tick-direction={tickDirection}
             data-tick-value={tick}
           />
           <text
@@ -151,10 +157,10 @@ export const SurvivalGraph = forwardRef<
             x1={x(tick)}
             x2={x(tick)}
             y1={axisY}
-            y2={axisY + 6}
+            y2={xTickEnd(6)}
             stroke="#111"
             data-axis-tick="x"
-            data-tick-direction="outside"
+            data-tick-direction={tickDirection}
             data-tick-value={tick}
           />
           <text

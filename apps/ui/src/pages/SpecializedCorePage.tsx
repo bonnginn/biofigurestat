@@ -494,6 +494,16 @@ export function SpecializedCorePage({
       initialSurvivalGraphSpec?.appearance.legendPosition ??
       "right",
   );
+  const [survivalShowMinorTicks, setSurvivalShowMinorTicks] = useState(
+    initialDraft?.survivalShowMinorTicks ??
+      initialSurvivalGraphSpec?.axes.showMinorTicks ??
+      true,
+  );
+  const [survivalTickDirection, setSurvivalTickDirection] = useState<"inside" | "outside">(
+    initialDraft?.survivalTickDirection ??
+      initialSurvivalGraphSpec?.axes.tickDirection ??
+      "outside",
+  );
   const [survivalWorkspaceTab, setSurvivalWorkspaceTab] = useState<"data" | "graph" | "statistics">(
     experimentFirstEntry ? "data" : "statistics",
   );
@@ -605,6 +615,8 @@ export function SpecializedCorePage({
       survivalFontSize,
       survivalLegendFontSize,
       survivalLegendPosition,
+      survivalShowMinorTicks,
+      survivalTickDirection,
       entryIntent: effectiveEntryIntent,
     }),
     [
@@ -624,6 +636,8 @@ export function SpecializedCorePage({
       survivalFontSize,
       survivalLegendFontSize,
       survivalLegendPosition,
+      survivalShowMinorTicks,
+      survivalTickDirection,
       text,
       transform,
       effectiveEntryIntent,
@@ -1230,6 +1244,8 @@ export function SpecializedCorePage({
                   fontSize: survivalFontSize,
                   legendFontSize: survivalLegendFontSize,
                   legendPosition: survivalLegendPosition,
+                  showMinorTicks: survivalShowMinorTicks,
+                  tickDirection: survivalTickDirection,
                 })
               : null;
           const survivalState = createInitialProjectState({
@@ -1298,6 +1314,8 @@ export function SpecializedCorePage({
                 fontSize: survivalFontSize,
                 legendFontSize: survivalLegendFontSize,
                 legendPosition: survivalLegendPosition,
+                showMinorTicks: survivalShowMinorTicks,
+                tickDirection: survivalTickDirection,
               })
             : null;
         const updatedAdaptiveInput = activeAdaptiveInput
@@ -2221,6 +2239,32 @@ export function SpecializedCorePage({
         />
       </label>
       <label>
+        <input
+          type="checkbox"
+          aria-label="Survival show minor ticks"
+          checked={survivalShowMinorTicks}
+          onChange={(event) => {
+            setSurvivalShowMinorTicks(event.target.checked);
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
+          }}
+        />
+        <span>{t("補助目盛を表示", "Show minor ticks")}</span>
+      </label>
+      <label>
+        <span>{t("軸目盛の向き", "Tick direction")}</span>
+        <select
+          aria-label="Survival tick direction"
+          value={survivalTickDirection}
+          onChange={(event) => {
+            setSurvivalTickDirection(event.target.value as "inside" | "outside");
+            recordUsageGraphEdit(routeFromPath(window.location.pathname), "axes");
+          }}
+        >
+          <option value="outside">{t("グラフの外側", "Outside the graph")}</option>
+          <option value="inside">{t("グラフの内側", "Inside the graph")}</option>
+        </select>
+      </label>
+      <label>
         <span>
           {t("Graphの文字サイズ", "Graph font size")}: {survivalFontSize}px
         </span>
@@ -2927,6 +2971,8 @@ export function SpecializedCorePage({
                   fontSize={survivalFontSize}
                   legendFontSize={survivalLegendFontSize}
                   legendPosition={survivalLegendPosition}
+                  showMinorTicks={survivalShowMinorTicks}
+                  tickDirection={survivalTickDirection}
                   annotation={showLogRankAnnotation ? (logRankDisplay ?? undefined) : undefined}
                   countSemantics={
                     !experimentFirstEntry || activeAdaptiveInput ? "biological_n" : "records"

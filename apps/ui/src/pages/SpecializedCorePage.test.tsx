@@ -838,6 +838,10 @@ describe("specialized Core entry pages", () => {
     fireEvent.change(screen.getByLabelText("Survival legend font size"), {
       target: { value: "14" },
     });
+    fireEvent.click(screen.getByLabelText("Survival show minor ticks"));
+    fireEvent.change(screen.getByLabelText("Survival tick direction"), {
+      target: { value: "inside" },
+    });
     expect(
       screen
         .getByRole("img", { name: "Kaplan–Meier survival graph" })
@@ -904,6 +908,8 @@ describe("specialized Core entry pages", () => {
     expect(savedGraphSpec.appearance.fontSize).toBe(16);
     expect(savedGraphSpec.appearance.legendPosition).toBe("top");
     expect(savedGraphSpec.appearance.legendFontSize).toBe(14);
+    expect(savedGraphSpec.axes.showMinorTicks).toBe(false);
+    expect(savedGraphSpec.axes.tickDirection).toBe("inside");
 
     rendered.unmount();
     render(
@@ -921,6 +927,8 @@ describe("specialized Core entry pages", () => {
     expect(screen.getByLabelText("Survival font size")).toHaveValue("16");
     expect(screen.getByLabelText("Survival legend position")).toHaveValue("top");
     expect(screen.getByLabelText("Survival legend font size")).toHaveValue("14");
+    expect(screen.getByLabelText("Survival show minor ticks")).not.toBeChecked();
+    expect(screen.getByLabelText("Survival tick direction")).toHaveValue("inside");
     fireEvent.click(screen.getByRole("button", { name: "グラフ" }));
     expect(screen.getByLabelText("ControlのSurvival曲線色")).toHaveValue("#123456");
   });

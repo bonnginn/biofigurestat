@@ -37,8 +37,11 @@ describe("Kaplan–Meier Core graph", () => {
       timeLabel: "Days",
       legendFontSize: 15,
       legendPosition: "top",
+      showMinorTicks: false,
+      tickDirection: "inside",
     });
     expect(spec.appearance).toMatchObject({ legendFontSize: 15, legendPosition: "top" });
+    expect(spec.axes).toMatchObject({ showMinorTicks: false, tickDirection: "inside" });
 
     const legacy = structuredClone(spec);
     delete legacy.appearance.legendFontSize;

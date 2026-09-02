@@ -476,6 +476,8 @@ export function createSurvivalGraphSpec(
     fontSize?: number;
     legendFontSize?: number;
     legendPosition?: "hidden" | "top" | "right" | "inside";
+    showMinorTicks?: boolean;
+    tickDirection?: "inside" | "outside";
   }>,
 ): GraphSpec {
   return GraphSpecSchema.parse({
@@ -501,6 +503,8 @@ export function createSurvivalGraphSpec(
       yScale: "linear",
       xLabel: input.timeLabel,
       yLabel: input.probabilityLabel ?? "Survival probability",
+      showMinorTicks: input.showMinorTicks ?? true,
+      tickDirection: input.tickDirection ?? "outside",
     },
   });
 }

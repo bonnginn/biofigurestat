@@ -54,6 +54,8 @@ export type SpecializedCoreDraft = Readonly<{
   survivalFontSize?: number;
   survivalLegendFontSize?: number;
   survivalLegendPosition?: "hidden" | "top" | "right" | "inside";
+  survivalShowMinorTicks?: boolean;
+  survivalTickDirection?: "inside" | "outside";
   /** Preserves unsupported/deferred module facts when the researcher revisits this route. */
   entryIntent?: DedicatedEntryIntent;
 }>;
