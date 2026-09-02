@@ -1837,6 +1837,7 @@ function DecimalValueInput({
       className="experiment-workspace-number-input"
       disabled={disabled}
       data-spreadsheet-cell={spreadsheetPosition ? "true" : undefined}
+      data-spreadsheet-arrow-navigation={spreadsheetPosition ? "cell" : undefined}
       data-spreadsheet-column={spreadsheetPosition?.column}
       data-spreadsheet-row={spreadsheetPosition?.row}
       inputMode="decimal"

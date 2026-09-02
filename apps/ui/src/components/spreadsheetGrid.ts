@@ -87,10 +87,12 @@ export function moveSpreadsheetFocus(event: KeyboardEvent<SpreadsheetControl>): 
     target = controls[currentIndex + (event.shiftKey ? -1 : 1)];
   } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
     if (current instanceof HTMLSelectElement) return false;
+    const alwaysMoveCell = current.dataset.spreadsheetArrowNavigation === "cell";
     const selectionStart = current.selectionStart;
     const selectionEnd = current.selectionEnd;
     const supportsCaretNavigation = selectionStart !== null && selectionEnd !== null;
     if (
+      !alwaysMoveCell &&
       supportsCaretNavigation &&
       (selectionStart !== selectionEnd ||
         (event.key === "ArrowLeft" && selectionStart > 0) ||

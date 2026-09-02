@@ -13,6 +13,8 @@ function Grid() {
               <td key={column}>
                 <input
                   aria-label={`${row}:${column}`}
+                  defaultValue={`${row}:${column}`}
+                  data-spreadsheet-arrow-navigation="cell"
                   data-spreadsheet-cell="true"
                   data-spreadsheet-column={column}
                   data-spreadsheet-row={row}
@@ -77,7 +79,7 @@ describe("spreadsheet grid interaction", () => {
 
   it("moves with arrows, Enter, Shift+Enter, and Tab while skipping read-only gaps", () => {
     render(<Grid />);
-    const first = screen.getByRole("textbox", { name: "0:0" });
+    const first = screen.getByRole("textbox", { name: "0:0" }) as HTMLInputElement;
     first.focus();
     fireEvent.keyDown(first, { key: "ArrowRight" });
     expect(screen.getByRole("textbox", { name: "0:2" })).toHaveFocus();
@@ -87,6 +89,17 @@ describe("spreadsheet grid interaction", () => {
     expect(screen.getByRole("textbox", { name: "0:2" })).toHaveFocus();
     fireEvent.keyDown(document.activeElement!, { key: "Tab" });
     expect(screen.getByRole("textbox", { name: "1:0" })).toHaveFocus();
+  });
+
+  it("moves a numeric-style cell with one horizontal arrow press", () => {
+    render(<Grid />);
+    const first = screen.getByRole("textbox", { name: "0:0" }) as HTMLInputElement;
+
+    first.focus();
+    first.setSelectionRange(0, 0);
+    fireEvent.keyDown(first, { key: "ArrowRight" });
+
+    expect(screen.getByRole("textbox", { name: "0:2" })).toHaveFocus();
   });
 
   it("wraps Enter only after continuous left-to-right entry", () => {
