@@ -9,7 +9,11 @@ import {
   type EquivalenceAnalysisPlan,
 } from "./equivalence";
 import { AnalysisEngineResultSchema } from "./contracts";
-import { IndependentContinuousEquivalenceEngineRequestSchema } from "./contracts";
+import {
+  AnalysisEngineRequestSchema,
+  IndependentContinuousEquivalenceEngineRequestSchema,
+  PairedContinuousEquivalenceEngineRequestSchema,
+} from "./contracts";
 
 const plan: EquivalenceAnalysisPlan = {
   schemaVersion: "0.1.0",
@@ -26,6 +30,87 @@ const plan: EquivalenceAnalysisPlan = {
 };
 
 describe("equivalence analysis contracts", () => {
+  it("requires stable pair IDs and rejects block-only metadata for paired TOST", () => {
+    const request = {
+      protocolVersion: "0.16.0" as const,
+      requestId: "request.paired-equivalence",
+      projectId: "project.paired-equivalence",
+      analysisId: "analysis.paired-equivalence",
+      templateId: "D02" as const,
+      templateVersion: "0.2.0" as const,
+      method: "paired_tost" as const,
+      comparisonId: "first:second",
+      contrastConditionIds: ["condition.first", "condition.second"] as const,
+      equivalencePlan: {
+        schemaVersion: "0.1.0" as const,
+        margin: {
+          scale: "raw_difference" as const,
+          lowerBound: -0.2,
+          upperBound: 0.2,
+          unit: "AU",
+          declaredAsPrespecified: true as const,
+        },
+        alpha: 0.05 as const,
+        claimMode: "single_primary_comparison" as const,
+        primaryComparisonId: "first:second",
+      },
+      observations: [
+        {
+          observationId: "o.1a",
+          conditionId: "condition.first",
+          value: 1,
+          experimentalUnitId: "p.1",
+          pairId: "p.1",
+        },
+        {
+          observationId: "o.1b",
+          conditionId: "condition.second",
+          value: 1.1,
+          experimentalUnitId: "p.1",
+          pairId: "p.1",
+        },
+        {
+          observationId: "o.2a",
+          conditionId: "condition.first",
+          value: 2,
+          experimentalUnitId: "p.2",
+          pairId: "p.2",
+        },
+        {
+          observationId: "o.2b",
+          conditionId: "condition.second",
+          value: 2.1,
+          experimentalUnitId: "p.2",
+          pairId: "p.2",
+        },
+      ],
+      options: {
+        alternative: "two_sided" as const,
+        confidenceLevel: 0.9 as const,
+        multiplicityMethod: null,
+      },
+    };
+    expect(PairedContinuousEquivalenceEngineRequestSchema.safeParse(request).success).toBe(true);
+    expect(AnalysisEngineRequestSchema.safeParse(request).success).toBe(true);
+    expect(
+      PairedContinuousEquivalenceEngineRequestSchema.safeParse({
+        ...request,
+        observations: request.observations.map(
+          ({ pairId: _pairId, ...observation }) => observation,
+        ),
+      }).success,
+    ).toBe(false);
+    expect(
+      PairedContinuousEquivalenceEngineRequestSchema.safeParse({
+        ...request,
+        observations: request.observations.map((observation) => ({
+          ...observation,
+          blockId: "run.1",
+        })),
+      }).success,
+    ).toBe(false);
+  });
+
   it("admits only one prespecified raw-difference comparison to the first Welch TOST protocol", () => {
     const request = {
       protocolVersion: "0.15.0" as const,
@@ -51,10 +136,30 @@ describe("equivalence analysis contracts", () => {
         primaryComparisonId: "control:treatment",
       },
       observations: [
-        { observationId: "o.a1", conditionId: "condition.control", value: 1, experimentalUnitId: "u.a1" },
-        { observationId: "o.a2", conditionId: "condition.control", value: 2, experimentalUnitId: "u.a2" },
-        { observationId: "o.b1", conditionId: "condition.treatment", value: 1, experimentalUnitId: "u.b1" },
-        { observationId: "o.b2", conditionId: "condition.treatment", value: 2, experimentalUnitId: "u.b2" },
+        {
+          observationId: "o.a1",
+          conditionId: "condition.control",
+          value: 1,
+          experimentalUnitId: "u.a1",
+        },
+        {
+          observationId: "o.a2",
+          conditionId: "condition.control",
+          value: 2,
+          experimentalUnitId: "u.a2",
+        },
+        {
+          observationId: "o.b1",
+          conditionId: "condition.treatment",
+          value: 1,
+          experimentalUnitId: "u.b1",
+        },
+        {
+          observationId: "o.b2",
+          conditionId: "condition.treatment",
+          value: 2,
+          experimentalUnitId: "u.b2",
+        },
       ],
       options: {
         alternative: "two_sided" as const,
@@ -62,7 +167,9 @@ describe("equivalence analysis contracts", () => {
         multiplicityMethod: null,
       },
     };
-    expect(IndependentContinuousEquivalenceEngineRequestSchema.safeParse(request).success).toBe(true);
+    expect(IndependentContinuousEquivalenceEngineRequestSchema.safeParse(request).success).toBe(
+      true,
+    );
     expect(
       IndependentContinuousEquivalenceEngineRequestSchema.safeParse({
         ...request,
@@ -88,9 +195,9 @@ describe("equivalence analysis contracts", () => {
 
   it("requires a scientifically declared interval around no difference", () => {
     expect(EquivalenceMarginSchema.safeParse(plan.margin).success).toBe(true);
-    expect(
-      EquivalenceMarginSchema.safeParse({ ...plan.margin, lowerBound: 0 }).success,
-    ).toBe(false);
+    expect(EquivalenceMarginSchema.safeParse({ ...plan.margin, lowerBound: 0 }).success).toBe(
+      false,
+    );
     expect(
       EquivalenceMarginSchema.safeParse({
         ...plan.margin,

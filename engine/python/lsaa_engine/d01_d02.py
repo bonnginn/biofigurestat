@@ -260,6 +260,171 @@ def run_welch_tost(request: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def run_paired_tost(request: dict[str, Any]) -> dict[str, Any]:
+    condition_first, condition_second = request["contrastConditionIds"]
+    if condition_first == condition_second:
+        raise ValueError("Paired TOST requires two different conditions")
+    allowed_conditions = {condition_first, condition_second}
+    pairs: dict[str, dict[str, float]] = defaultdict(dict)
+    for observation in request["observations"]:
+        pair_id = observation.get("pairId")
+        if not pair_id:
+            raise ValueError("Paired TOST requires a stable pairId for every observation")
+        if observation.get("blockId") is not None:
+            raise ValueError("Paired TOST does not infer pairing from block metadata")
+        condition_id = observation["conditionId"]
+        if condition_id not in allowed_conditions:
+            raise ValueError("Paired TOST observations must belong to the two contrasted conditions")
+        if condition_id in pairs[pair_id]:
+            raise ValueError(
+                f"Paired TOST found duplicate observations for pair {pair_id} and condition {condition_id}"
+            )
+        value = float(observation["value"])
+        if not math.isfinite(value):
+            raise ValueError("Paired TOST analysis values must be finite numbers")
+        pairs[pair_id][condition_id] = value
+
+    complete_pair_ids = sorted(
+        pair_id
+        for pair_id, values in pairs.items()
+        if set(values) == allowed_conditions
+    )
+    declared_excluded_pair_ids = request.get("excludedIncompletePairIds", [])
+    if len(set(declared_excluded_pair_ids)) != len(declared_excluded_pair_ids):
+        raise ValueError("Paired TOST excluded incomplete pair IDs must be unique")
+    if set(declared_excluded_pair_ids).intersection(pairs):
+        raise ValueError("An excluded incomplete pair cannot also appear in analyzed observations")
+    incomplete_pair_ids = sorted(
+        (set(pairs) - set(complete_pair_ids)).union(declared_excluded_pair_ids)
+    )
+    if len(complete_pair_ids) < 2:
+        raise ValueError("Paired TOST requires at least two complete pairs")
+
+    # The public contrast direction is deliberately second condition minus first condition.
+    differences = np.asarray(
+        [
+            pairs[pair_id][condition_second] - pairs[pair_id][condition_first]
+            for pair_id in complete_pair_ids
+        ],
+        dtype=float,
+    )
+    standard_deviation = float(np.std(differences, ddof=1))
+    if standard_deviation <= 0:
+        raise ValueError("Paired TOST is undefined when paired differences have zero variance")
+    standard_error = standard_deviation / math.sqrt(len(differences))
+    degrees_of_freedom = float(len(differences) - 1)
+    difference = float(np.mean(differences))
+
+    plan = request["equivalencePlan"]
+    margin = plan["margin"]
+    lower_bound = float(margin["lowerBound"])
+    upper_bound = float(margin["upperBound"])
+    confidence_level = float(request["options"]["confidenceLevel"])
+    expected_confidence_level = 1.0 - 2.0 * float(plan["alpha"])
+    if not math.isclose(confidence_level, expected_confidence_level, abs_tol=1e-12):
+        raise ValueError("Paired TOST confidence level must equal 1 - 2 alpha")
+
+    critical = _critical_value(confidence_level, degrees_of_freedom)
+    lower_confidence_bound = difference - critical * standard_error
+    upper_confidence_bound = difference + critical * standard_error
+    lower_statistic = (difference - lower_bound) / standard_error
+    upper_statistic = (difference - upper_bound) / standard_error
+    lower_p_value = float(stats.t.sf(lower_statistic, degrees_of_freedom))
+    upper_p_value = float(stats.t.cdf(upper_statistic, degrees_of_freedom))
+    tost_p_value = max(lower_p_value, upper_p_value)
+
+    if lower_confidence_bound > lower_bound and upper_confidence_bound < upper_bound:
+        conclusion = "equivalence_supported"
+    elif upper_confidence_bound < lower_bound or lower_confidence_bound > upper_bound:
+        conclusion = "meaningful_difference_supported"
+    else:
+        conclusion = "inconclusive"
+
+    result = base_result(request)
+    result["estimates"] = [
+        estimate(
+            f"{condition_second}_minus_{condition_first}",
+            difference,
+            standard_error,
+            {
+                "level": confidence_level,
+                "lower": lower_confidence_bound,
+                "upper": upper_confidence_bound,
+            },
+        )
+    ]
+    result["tests"] = [
+        {
+            "name": "paired_tost_lower_bound",
+            "statisticName": "t",
+            "statistic": lower_statistic,
+            "degreesOfFreedom": [degrees_of_freedom],
+            "pValue": lower_p_value,
+            "adjustedPValue": None,
+            "effectSizeName": None,
+            "effectSize": None,
+        },
+        {
+            "name": "paired_tost_upper_bound",
+            "statisticName": "t",
+            "statistic": upper_statistic,
+            "degreesOfFreedom": [degrees_of_freedom],
+            "pValue": upper_p_value,
+            "adjustedPValue": None,
+            "effectSizeName": None,
+            "effectSize": None,
+        },
+    ]
+    result["equivalence"] = {
+        "resultVersion": "0.1.0",
+        "plan": plan,
+        "comparisons": [
+            {
+                "comparisonId": request["comparisonId"],
+                "estimate": difference,
+                "standardError": standard_error,
+                "lowerConfidenceBound": lower_confidence_bound,
+                "upperConfidenceBound": upper_confidence_bound,
+                "confidenceLevel": confidence_level,
+                "lowerOneSidedPValue": lower_p_value,
+                "upperOneSidedPValue": upper_p_value,
+                "tostPValue": tost_p_value,
+                "conclusion": conclusion,
+                "analysisSet": {
+                    "completePairCount": len(complete_pair_ids),
+                    "excludedIncompletePairIds": incomplete_pair_ids,
+                },
+            }
+        ],
+    }
+    result["diagnostics"] = [
+        {
+            "code": "equivalence_margin_prespecified",
+            "message": "The equivalence bounds were supplied by the saved prespecified plan and were not estimated from these observations.",
+        },
+        {
+            "code": "paired_tost_complete_pairs",
+            "message": f"Paired TOST used {len(complete_pair_ids)} complete pairs with second-condition minus first-condition differences.",
+        },
+    ]
+    if incomplete_pair_ids:
+        result["diagnostics"].append(
+            {
+                "code": "paired_tost_incomplete_pairs_excluded",
+                "message": "Incomplete pairs excluded from paired TOST (retained in Data and Graph): "
+                + ", ".join(incomplete_pair_ids),
+            }
+        )
+    if conclusion == "inconclusive":
+        result["warnings"].append(
+            {
+                "code": "equivalence_interval_crosses_margin",
+                "message": "The confidence interval overlaps an equivalence bound, so these data establish neither equivalence nor a meaningful difference.",
+            }
+        )
+    return result
+
+
 def _pooled_hedges_g(a: np.ndarray, b: np.ndarray) -> float | None:
     variance_a = float(np.var(a, ddof=1))
     variance_b = float(np.var(b, ddof=1))
@@ -493,6 +658,12 @@ def run_wilcoxon(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def _dispatch_request(request: dict[str, Any]) -> dict[str, Any]:
+    if request.get("protocolVersion") == "0.16.0":
+        if request.get("templateId") == "D02" and request.get("method") == "paired_tost":
+            return run_paired_tost(request)
+        raise ValueError(
+            f"Unsupported template/method combination: {request.get('templateId')}/{request.get('method')}"
+        )
     if request.get("protocolVersion") == "0.15.0":
         if request.get("templateId") == "D01" and request.get("method") == "welch_tost":
             return run_welch_tost(request)

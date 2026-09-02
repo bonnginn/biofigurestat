@@ -1,0 +1,116 @@
+{
+  "protocolVersion": "0.16.0",
+  "requestId": "request.paired-equivalence.smoke",
+  "projectId": "project.paired-equivalence.smoke",
+  "analysisId": "analysis.paired-equivalence.smoke",
+  "templateId": "D02",
+  "templateVersion": "0.2.0",
+  "method": "paired_tost",
+  "comparisonId": "first:second",
+  "contrastConditionIds": ["condition.first", "condition.second"],
+  "equivalencePlan": {
+    "schemaVersion": "0.1.0",
+    "margin": {
+      "scale": "raw_difference",
+      "lowerBound": -0.2,
+      "upperBound": 0.2,
+      "unit": "AU",
+      "declaredAsPrespecified": true
+    },
+    "alpha": 0.05,
+    "claimMode": "single_primary_comparison",
+    "primaryComparisonId": "first:second"
+  },
+  "excludedIncompletePairIds": ["pair.incomplete"],
+  "observations": [
+    {
+      "observationId": "o.1a",
+      "conditionId": "condition.first",
+      "value": 1.0,
+      "experimentalUnitId": "pair.1",
+      "pairId": "pair.1"
+    },
+    {
+      "observationId": "o.1b",
+      "conditionId": "condition.second",
+      "value": 1.1,
+      "experimentalUnitId": "pair.1",
+      "pairId": "pair.1"
+    },
+    {
+      "observationId": "o.2a",
+      "conditionId": "condition.first",
+      "value": 1.0,
+      "experimentalUnitId": "pair.2",
+      "pairId": "pair.2"
+    },
+    {
+      "observationId": "o.2b",
+      "conditionId": "condition.second",
+      "value": 0.95,
+      "experimentalUnitId": "pair.2",
+      "pairId": "pair.2"
+    },
+    {
+      "observationId": "o.3a",
+      "conditionId": "condition.first",
+      "value": 1.0,
+      "experimentalUnitId": "pair.3",
+      "pairId": "pair.3"
+    },
+    {
+      "observationId": "o.3b",
+      "conditionId": "condition.second",
+      "value": 1.05,
+      "experimentalUnitId": "pair.3",
+      "pairId": "pair.3"
+    },
+    {
+      "observationId": "o.4a",
+      "conditionId": "condition.first",
+      "value": 1.0,
+      "experimentalUnitId": "pair.4",
+      "pairId": "pair.4"
+    },
+    {
+      "observationId": "o.4b",
+      "conditionId": "condition.second",
+      "value": 1.0,
+      "experimentalUnitId": "pair.4",
+      "pairId": "pair.4"
+    },
+    {
+      "observationId": "o.5a",
+      "conditionId": "condition.first",
+      "value": 1.0,
+      "experimentalUnitId": "pair.5",
+      "pairId": "pair.5"
+    },
+    {
+      "observationId": "o.5b",
+      "conditionId": "condition.second",
+      "value": 1.08,
+      "experimentalUnitId": "pair.5",
+      "pairId": "pair.5"
+    },
+    {
+      "observationId": "o.6a",
+      "conditionId": "condition.first",
+      "value": 1.0,
+      "experimentalUnitId": "pair.6",
+      "pairId": "pair.6"
+    },
+    {
+      "observationId": "o.6b",
+      "conditionId": "condition.second",
+      "value": 0.98,
+      "experimentalUnitId": "pair.6",
+      "pairId": "pair.6"
+    }
+  ],
+  "options": {
+    "alternative": "two_sided",
+    "confidenceLevel": 0.9,
+    "multiplicityMethod": null
+  }
+}

@@ -1,9 +1,6 @@
 import { z } from "zod";
 import { EntityIdSchema, IsoDateTimeSchema } from "@lsaa/domain";
-import {
-  EquivalenceAnalysisPlanSchema,
-  EquivalenceAnalysisResultSchema,
-} from "./equivalence";
+import { EquivalenceAnalysisPlanSchema, EquivalenceAnalysisResultSchema } from "./equivalence";
 
 export const AnalysisTemplateIdSchema = z.enum([
   "D01",
@@ -49,6 +46,7 @@ export const StatisticalMethodSchema = z.enum([
   "simple_linear_regression",
   "nonlinear_xy_fit",
   "welch_tost",
+  "paired_tost",
 ]);
 
 export const AnalysisRecommendationSchema = z.object({
@@ -141,6 +139,88 @@ export const IndependentContinuousEquivalenceEngineRequestSchema = z
         message: "The first executable Welch TOST route requires one matching primary comparison",
       });
     }
+  });
+
+export const PairedContinuousEquivalenceEngineRequestSchema = z
+  .object({
+    protocolVersion: z.literal("0.16.0"),
+    requestId: EntityIdSchema,
+    projectId: EntityIdSchema,
+    analysisId: EntityIdSchema,
+    templateId: z.literal("D02"),
+    templateVersion: z.literal("0.2.0"),
+    method: z.literal("paired_tost"),
+    comparisonId: z.string().trim().min(1),
+    contrastConditionIds: z.tuple([EntityIdSchema, EntityIdSchema]),
+    equivalencePlan: EquivalenceAnalysisPlanSchema,
+    excludedIncompletePairIds: z.array(z.string().trim().min(1)).default([]),
+    observations: z.array(EngineObservationSchema.extend({ pairId: EntityIdSchema })).min(4),
+    options: AnalysisOptionsSchema.extend({
+      alternative: z.literal("two_sided").default("two_sided"),
+      confidenceLevel: z.literal(0.9).default(0.9),
+      multiplicityMethod: z.null().default(null),
+    }),
+  })
+  .superRefine((request, context) => {
+    if (request.contrastConditionIds[0] === request.contrastConditionIds[1]) {
+      context.addIssue({
+        code: "custom",
+        path: ["contrastConditionIds"],
+        message: "Paired equivalence analysis requires two different conditions",
+      });
+    }
+    if (request.equivalencePlan.margin.scale !== "raw_difference") {
+      context.addIssue({
+        code: "custom",
+        path: ["equivalencePlan", "margin", "scale"],
+        message: "Paired TOST requires a raw-difference equivalence margin",
+      });
+    }
+    if (
+      request.equivalencePlan.claimMode !== "single_primary_comparison" ||
+      request.equivalencePlan.primaryComparisonId !== request.comparisonId
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["equivalencePlan", "primaryComparisonId"],
+        message: "Paired TOST requires one matching primary comparison",
+      });
+    }
+    request.observations.forEach((observation, index) => {
+      if (observation.blockId !== undefined) {
+        context.addIssue({
+          code: "custom",
+          path: ["observations", index, "blockId"],
+          message: "Paired TOST does not infer pairing from block metadata",
+        });
+      }
+      if (!request.contrastConditionIds.includes(observation.conditionId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["observations", index, "conditionId"],
+          message: "Paired TOST observations must belong to the contrasted conditions",
+        });
+      }
+    });
+    const analyzedPairIds = new Set(request.observations.map(({ pairId }) => pairId));
+    if (
+      new Set(request.excludedIncompletePairIds).size !== request.excludedIncompletePairIds.length
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["excludedIncompletePairIds"],
+        message: "Excluded incomplete pair IDs must be unique",
+      });
+    }
+    request.excludedIncompletePairIds.forEach((pairId, index) => {
+      if (analyzedPairIds.has(pairId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["excludedIncompletePairIds", index],
+          message: "An excluded incomplete pair cannot also appear in analyzed observations",
+        });
+      }
+    });
   });
 
 export const MultiGroupAnalysisEngineRequestSchema = z.object({
@@ -584,6 +664,7 @@ export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion
   SimpleLinearRegressionEngineRequestSchema,
   NonlinearXyFitEngineRequestSchema,
   IndependentContinuousEquivalenceEngineRequestSchema,
+  PairedContinuousEquivalenceEngineRequestSchema,
 ]);
 
 export const EstimateSchema = z.object({
@@ -627,6 +708,7 @@ export const AnalysisEngineResultSchema = z.object({
     "0.13.0",
     "0.14.0",
     "0.15.0",
+    "0.16.0",
   ]),
   requestId: EntityIdSchema,
   status: z.enum(["ok", "validation_error", "engine_error"]),

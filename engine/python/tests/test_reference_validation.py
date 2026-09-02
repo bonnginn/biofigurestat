@@ -361,6 +361,67 @@ class IndependentReferenceValidationTests(unittest.TestCase):
             production["estimates"][0]["confidenceInterval"]["upper"], upper, places=12
         )
 
+    def test_paired_tost_matches_statsmodels_one_sample_difference_reference(self):
+        differences = np.asarray([0.10, -0.05, 0.05, 0.00, 0.08, -0.02])
+        observations = []
+        for index, difference in enumerate(differences):
+            for condition, value in (
+                ("condition.first", 1.0),
+                ("condition.second", 1.0 + difference),
+            ):
+                observations.append(
+                    {
+                        "observationId": f"observation.{condition}.{index}",
+                        "conditionId": condition,
+                        "value": float(value),
+                        "experimentalUnitId": f"unit.{index}",
+                        "pairId": f"pair.{index}",
+                    }
+                )
+        production = run_request(
+            {
+                "protocolVersion": "0.16.0",
+                "requestId": "request.paired-equivalence.reference",
+                "projectId": "project.reference",
+                "analysisId": "analysis.paired-equivalence.reference",
+                "templateId": "D02",
+                "templateVersion": "0.2.0",
+                "method": "paired_tost",
+                "comparisonId": "first:second",
+                "contrastConditionIds": ["condition.first", "condition.second"],
+                "equivalencePlan": {
+                    "schemaVersion": "0.1.0",
+                    "margin": {
+                        "scale": "raw_difference",
+                        "lowerBound": -0.2,
+                        "upperBound": 0.2,
+                        "unit": "AU",
+                        "declaredAsPrespecified": True,
+                    },
+                    "alpha": 0.05,
+                    "claimMode": "single_primary_comparison",
+                    "primaryComparisonId": "first:second",
+                },
+                "excludedIncompletePairIds": [],
+                "observations": observations,
+                "options": {
+                    "alternative": "two_sided",
+                    "confidenceLevel": 0.9,
+                    "multiplicityMethod": None,
+                },
+            }
+        )
+        reference = DescrStatsW(differences)
+        tost_p, lower_test, upper_test = reference.ttost_mean(-0.2, 0.2)
+        lower_ci, upper_ci = reference.tconfint_mean(alpha=0.1)
+        comparison = production["equivalence"]["comparisons"][0]
+
+        self.assertAlmostEqual(comparison["tostPValue"], tost_p, places=12)
+        self.assertAlmostEqual(comparison["lowerOneSidedPValue"], lower_test[1], places=12)
+        self.assertAlmostEqual(comparison["upperOneSidedPValue"], upper_test[1], places=12)
+        self.assertAlmostEqual(comparison["lowerConfidenceBound"], lower_ci, places=12)
+        self.assertAlmostEqual(comparison["upperConfidenceBound"], upper_ci, places=12)
+
 
 if __name__ == "__main__":
     unittest.main()

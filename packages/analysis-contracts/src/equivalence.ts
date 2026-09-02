@@ -123,16 +123,10 @@ export function assessEquivalenceInterval(
 ): EquivalenceConclusion {
   const evidence = EquivalenceIntervalEvidenceSchema.parse(input);
   const { lowerBound, upperBound } = evidence.plan.margin;
-  if (
-    evidence.lowerConfidenceBound > lowerBound &&
-    evidence.upperConfidenceBound < upperBound
-  ) {
+  if (evidence.lowerConfidenceBound > lowerBound && evidence.upperConfidenceBound < upperBound) {
     return "equivalence_supported";
   }
-  if (
-    evidence.upperConfidenceBound < lowerBound ||
-    evidence.lowerConfidenceBound > upperBound
-  ) {
+  if (evidence.upperConfidenceBound < lowerBound || evidence.lowerConfidenceBound > upperBound) {
     return "meaningful_difference_supported";
   }
   return "inconclusive";
@@ -150,6 +144,12 @@ export const EquivalenceComparisonResultSchema = z
     upperOneSidedPValue: z.number().min(0).max(1),
     tostPValue: z.number().min(0).max(1),
     conclusion: EquivalenceConclusionSchema,
+    analysisSet: z
+      .object({
+        completePairCount: z.number().int().min(2),
+        excludedIncompletePairIds: z.array(z.string().trim().min(1)),
+      })
+      .optional(),
   })
   .superRefine((comparison, context) => {
     const expectedTostPValue = Math.max(
@@ -218,7 +218,5 @@ export const EquivalenceAnalysisResultSchema = z
     }
   });
 
-export type EquivalenceComparisonResult = z.infer<
-  typeof EquivalenceComparisonResultSchema
->;
+export type EquivalenceComparisonResult = z.infer<typeof EquivalenceComparisonResultSchema>;
 export type EquivalenceAnalysisResult = z.infer<typeof EquivalenceAnalysisResultSchema>;

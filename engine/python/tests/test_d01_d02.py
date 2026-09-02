@@ -23,6 +23,165 @@ def request(template_id, method, observations):
 
 
 class D01D02EngineTests(unittest.TestCase):
+    def paired_equivalence_request(self):
+        differences = [0.10, -0.05, 0.05, 0.00, 0.08, -0.02]
+        observations = []
+        for index, difference in enumerate(differences):
+            pair_id = f"pair.{index + 1}"
+            observations.extend(
+                [
+                    {
+                        "observationId": f"{pair_id}.first",
+                        "conditionId": "condition.first",
+                        "value": 1.0,
+                        "experimentalUnitId": pair_id,
+                        "pairId": pair_id,
+                    },
+                    {
+                        "observationId": f"{pair_id}.second",
+                        "conditionId": "condition.second",
+                        "value": 1.0 + difference,
+                        "experimentalUnitId": pair_id,
+                        "pairId": pair_id,
+                    },
+                ]
+            )
+        return {
+            "protocolVersion": "0.16.0",
+            "requestId": "request.paired-equivalence",
+            "projectId": "project.paired-equivalence",
+            "analysisId": "analysis.paired-equivalence",
+            "templateId": "D02",
+            "templateVersion": "0.2.0",
+            "method": "paired_tost",
+            "comparisonId": "first:second",
+            "contrastConditionIds": ["condition.first", "condition.second"],
+            "equivalencePlan": {
+                "schemaVersion": "0.1.0",
+                "margin": {
+                    "scale": "raw_difference",
+                    "lowerBound": -0.20,
+                    "upperBound": 0.20,
+                    "unit": "AU",
+                    "declaredAsPrespecified": True,
+                },
+                "alpha": 0.05,
+                "claimMode": "single_primary_comparison",
+                "primaryComparisonId": "first:second",
+            },
+            "observations": observations,
+            "options": {
+                "alternative": "two_sided",
+                "confidenceLevel": 0.9,
+                "multiplicityMethod": None,
+            },
+        }
+
+    def test_paired_tost_matches_frozen_second_minus_first_reference(self):
+        result = run_request(self.paired_equivalence_request())
+        comparison = result["equivalence"]["comparisons"][0]
+
+        self.assertAlmostEqual(comparison["estimate"], 0.02666666666666667, places=14)
+        self.assertAlmostEqual(comparison["standardError"], 0.024175285819291664, places=14)
+        self.assertAlmostEqual(comparison["lowerConfidenceBound"], -0.022047703698357905, places=14)
+        self.assertAlmostEqual(comparison["upperConfidenceBound"], 0.07538103703169124, places=14)
+        self.assertAlmostEqual(comparison["lowerOneSidedPValue"], 0.00011632342948540773, places=14)
+        self.assertAlmostEqual(comparison["upperOneSidedPValue"], 0.00041040541050611746, places=14)
+        self.assertEqual(comparison["conclusion"], "equivalence_supported")
+        self.assertEqual(
+            comparison["analysisSet"],
+            {"completePairCount": 6, "excludedIncompletePairIds": []},
+        )
+
+    def test_paired_tost_excludes_and_reports_each_incomplete_pair(self):
+        paired_request = self.paired_equivalence_request()
+        paired_request["observations"].extend(
+            [
+                {
+                    "observationId": "pair.incomplete-first.first",
+                    "conditionId": "condition.first",
+                    "value": 1.2,
+                    "experimentalUnitId": "pair.incomplete-first",
+                    "pairId": "pair.incomplete-first",
+                },
+                {
+                    "observationId": "pair.incomplete-second.second",
+                    "conditionId": "condition.second",
+                    "value": 1.2,
+                    "experimentalUnitId": "pair.incomplete-second",
+                    "pairId": "pair.incomplete-second",
+                },
+            ]
+        )
+
+        result = run_request(paired_request)
+        analysis_set = result["equivalence"]["comparisons"][0]["analysisSet"]
+        self.assertEqual(analysis_set["completePairCount"], 6)
+        self.assertEqual(
+            analysis_set["excludedIncompletePairIds"],
+            ["pair.incomplete-first", "pair.incomplete-second"],
+        )
+        diagnostic = next(
+            item for item in result["diagnostics"]
+            if item["code"] == "paired_tost_incomplete_pairs_excluded"
+        )
+        self.assertIn("pair.incomplete-first", diagnostic["message"])
+        self.assertIn("pair.incomplete-second", diagnostic["message"])
+
+    def test_paired_tost_reversal_negates_estimate_with_transformed_bounds(self):
+        forward = self.paired_equivalence_request()
+        forward["equivalencePlan"]["margin"]["lowerBound"] = -0.15
+        forward["equivalencePlan"]["margin"]["upperBound"] = 0.20
+        reverse = self.paired_equivalence_request()
+        reverse["contrastConditionIds"] = ["condition.second", "condition.first"]
+        reverse["comparisonId"] = "second:first"
+        reverse["equivalencePlan"]["primaryComparisonId"] = "second:first"
+        reverse["equivalencePlan"]["margin"]["lowerBound"] = -0.20
+        reverse["equivalencePlan"]["margin"]["upperBound"] = 0.15
+
+        forward_comparison = run_request(forward)["equivalence"]["comparisons"][0]
+        reverse_comparison = run_request(reverse)["equivalence"]["comparisons"][0]
+        self.assertAlmostEqual(reverse_comparison["estimate"], -forward_comparison["estimate"], places=14)
+        self.assertAlmostEqual(
+            reverse_comparison["lowerConfidenceBound"],
+            -forward_comparison["upperConfidenceBound"],
+            places=14,
+        )
+        self.assertAlmostEqual(
+            reverse_comparison["tostPValue"], forward_comparison["tostPValue"], places=14
+        )
+
+    def test_paired_tost_is_invariant_to_observation_order(self):
+        ordered = self.paired_equivalence_request()
+        shuffled = self.paired_equivalence_request()
+        shuffled["observations"] = list(reversed(shuffled["observations"]))
+        ordered_comparison = run_request(ordered)["equivalence"]["comparisons"][0]
+        shuffled_comparison = run_request(shuffled)["equivalence"]["comparisons"][0]
+        self.assertEqual(shuffled_comparison, ordered_comparison)
+
+    def test_paired_tost_rejects_duplicate_pair_condition_and_zero_variance(self):
+        duplicate = self.paired_equivalence_request()
+        duplicate["observations"].append(dict(duplicate["observations"][0]))
+        duplicate["observations"][-1]["observationId"] = "duplicate"
+        with self.assertRaisesRegex(ValueError, "duplicate observations"):
+            run_request(duplicate)
+
+        zero_variance = self.paired_equivalence_request()
+        for observation in zero_variance["observations"]:
+            observation["value"] = 1.0
+        with self.assertRaisesRegex(ValueError, "zero variance"):
+            run_request(zero_variance)
+
+        missing_pair_id = self.paired_equivalence_request()
+        del missing_pair_id["observations"][0]["pairId"]
+        with self.assertRaisesRegex(ValueError, "stable pairId"):
+            run_request(missing_pair_id)
+
+        too_few = self.paired_equivalence_request()
+        too_few["observations"] = too_few["observations"][:2]
+        with self.assertRaisesRegex(ValueError, "at least two complete pairs"):
+            run_request(too_few)
+
     def test_welch_tost_equivalent_fixture(self):
         observations = []
         for condition, values in (

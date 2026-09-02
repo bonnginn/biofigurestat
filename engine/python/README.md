@@ -24,8 +24,8 @@ The initial engine pins NumPy 2.3.5 and SciPy 1.18.0. Engine and package version
 
 ## Current scope
 
-- D01: two independent groups using Welch's two-sample t-test;
-- D02: complete matched units using a paired t-test;
+- D01: two independent groups using Welch's two-sample t-test, plus one prespecified-primary-comparison Welch TOST route for continuous equivalence;
+- D02: complete matched units using a paired t-test, plus paired TOST on second-minus-first differences; incomplete pair IDs are retained as explicit exclusion provenance;
 - D03 engine foundation: three or more independent groups using Welch ANOVA and Games-Howell all-pairs comparisons;
 - D04 complete repeated groups using one-factor repeated-measures ANOVA, Holm-adjusted paired comparisons, and Bonferroni simultaneous pairwise intervals;
 - D05 complete independent two-factor designs using sum-coded Type III interaction/main-effect tests and Holm-adjusted all-cell comparisons;
@@ -38,7 +38,7 @@ The initial engine pins NumPy 2.3.5 and SciPy 1.18.0. Engine and package version
 - D16 ordinary least-squares simple linear regression with slope, intercept, R², slope confidence interval/test, and fitted-line confidence band;
 - two-sided or directional alternatives;
 - estimate, standard error, confidence interval, t statistic, degrees of freedom, p-value, and effect size;
-- explicit rejection of incomplete pairs, non-finite inputs, undefined zero-variance cases, duplicate independent units, and undeclared multi-group observations.
+- explicit handling or rejection of incomplete pairs according to each method contract, plus rejection of non-finite inputs, undefined zero-variance cases, duplicate independent units, and undeclared multi-group observations.
 
 Statsmodels 0.14.6 is a pinned production dependency for Type III, repeated-measures reference
 work and planned-comparison multiplicity adjustment. Release golden fixtures must retain expected

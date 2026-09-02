@@ -77,6 +77,13 @@ def d01_equivalence_request() -> dict[str, Any]:
     return json.loads(fixture.read_text(encoding="utf-8"))
 
 
+def d02_equivalence_request() -> dict[str, Any]:
+    fixture = Path(__file__).resolve().parent / "smoke_fixtures" / (
+        "paired-tost-equivalence-supported-request.json"
+    )
+    return json.loads(fixture.read_text(encoding="utf-8"))
+
+
 def execute(executable: Path, request: dict[str, Any]) -> dict[str, Any]:
     completed = subprocess.run(
         [str(executable)],
@@ -102,6 +109,7 @@ def smoke_requests() -> list[dict[str, Any]]:
         {**independent, "requestId": "request.d01.mann-whitney", "method": "mann_whitney"},
         d01_equivalence_request(),
         paired,
+        d02_equivalence_request(),
         {**paired, "requestId": "request.d02.wilcoxon", "method": "wilcoxon_signed_rank"},
         d03_request(),
         d03_request(
@@ -154,6 +162,13 @@ def main() -> int:
             comparison = (result.get("equivalence") or {}).get("comparisons", [{}])[0]
             if comparison.get("conclusion") != "equivalence_supported":
                 raise RuntimeError("D01 Welch TOST smoke did not preserve its expected conclusion")
+        if request["protocolVersion"] == "0.16.0":
+            comparison = (result.get("equivalence") or {}).get("comparisons", [{}])[0]
+            if comparison.get("conclusion") != "equivalence_supported":
+                raise RuntimeError("D02 paired TOST smoke did not preserve its expected conclusion")
+            analysis_set = comparison.get("analysisSet", {})
+            if analysis_set.get("excludedIncompletePairIds") != ["pair.incomplete"]:
+                raise RuntimeError("D02 paired TOST smoke lost incomplete-pair provenance")
         engine = result.get("engine", {})
         units = {item.get("experimentalUnitId") for item in request.get("observations", [])}
         pairs = {item.get("pairId") for item in request.get("observations", []) if item.get("pairId")}

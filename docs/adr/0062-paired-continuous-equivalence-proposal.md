@@ -2,7 +2,7 @@
 
 Date: 2026-09-02
 
-Status: Proposed; execution remains disabled
+Status: Accepted
 
 ## Context
 
@@ -19,7 +19,7 @@ implementations.
 
 Primary methodological reference:
 
-- Lakens D. *Equivalence Tests: A Practical Primer for t Tests, Correlations, and Meta-Analyses.*
+- Lakens D. _Equivalence Tests: A Practical Primer for t Tests, Correlations, and Meta-Analyses._
   Social Psychological and Personality Science. 2017;8(4):355–362.
   <https://doi.org/10.1177/1948550617697177>
 
@@ -27,9 +27,9 @@ Independent implementation used only as a numerical cross-check:
 
 - statsmodels `stats.weightstats.ttost_paired`, version 0.14.6.
 
-## Proposed executable boundary
+## Executable boundary
 
-Execution would be enabled only when all of the following are true:
+Execution is enabled only when all of the following are true:
 
 - the design is the existing D02 matched/paired continuous route;
 - exactly two distinct conditions form one explicitly selected primary comparison;
@@ -42,12 +42,13 @@ Execution would be enabled only when all of the following are true:
 - there is no block-only, shared-run-only, nested, proportion, survival, ordered-X/Y, or nonlinear
   reinterpretation.
 
-The difference direction must follow the stored `contrastConditionIds`: first condition minus
-second condition. Pair order in the worksheet must not affect the result.
+The difference direction follows the stored `contrastConditionIds`: second condition minus first
+condition. This matches the product's researcher-facing `condition.2_minus_condition.1` contrast
+direction. Pair order in the worksheet must not affect the result.
 
-## Proposed calculation
+## Calculation
 
-For complete-pair differences `d_i = y_first,i - y_second,i`, use:
+For complete-pair differences `d_i = y_second,i - y_first,i`, use:
 
 - estimate: `mean(d)`;
 - standard error: `sd(d, ddof=1) / sqrt(n_complete)`;
@@ -61,39 +62,34 @@ The existing three-state conclusion contract remains unchanged. Equivalence is s
 when the entire CI is strictly inside the bounds. A CI wholly beyond either bound supports a
 meaningful difference; all overlap cases are inconclusive.
 
-## Incomplete pairs: decision still required
+## Incomplete pairs
 
-No imputation, ordinal row pairing, or substitution from condition means is allowed. Before this
-route is enabled, product review must choose one explicit policy:
-
-1. analyze complete pairs and report both the complete-pair count and every excluded incomplete
-   pair as a diagnostic; or
-2. fail closed whenever any selected pair is incomplete.
-
-The existing ordinary paired analysis can describe a complete-pair analysis set, but equivalence
-is a separate scientific claim. This proposal therefore does not silently inherit that policy.
+No imputation, ordinal row pairing, or substitution from condition means is allowed. The accepted
+policy is to analyze complete pairs and report both the complete-pair count and every excluded
+incomplete pair as structured result metadata and a diagnostic. Incomplete values remain in Data
+and Graph. They are never reinterpreted as independent observations.
 
 ## Frozen reference vector for implementation review
 
 Using paired differences `[0.10, -0.05, 0.05, 0.00, 0.08, -0.02]` and bounds `[-0.20, 0.20]`:
 
-| Quantity | Expected value |
-| --- | ---: |
-| complete pairs | 6 |
-| mean difference | 0.02666666666666667 |
-| sample SD of differences | 0.059217114643206545 |
-| standard error | 0.024175285819291664 |
-| df | 5 |
-| lower-bound t | 9.375966363375472 |
-| upper-bound t | -7.169856630816537 |
-| lower one-sided p | 0.00011632342948540773 |
-| upper one-sided p | 0.00041040541050611746 |
-| TOST p | 0.00041040541050611746 |
-| 90% CI | [-0.022047703698357905, 0.07538103703169124] |
-| conclusion | `equivalence_supported` |
+| Quantity                 |                               Expected value |
+| ------------------------ | -------------------------------------------: |
+| complete pairs           |                                            6 |
+| mean difference          |                          0.02666666666666667 |
+| sample SD of differences |                         0.059217114643206545 |
+| standard error           |                         0.024175285819291664 |
+| df                       |                                            5 |
+| lower-bound t            |                            9.375966363375472 |
+| upper-bound t            |                           -7.169856630816537 |
+| lower one-sided p        |                       0.00011632342948540773 |
+| upper one-sided p        |                       0.00041040541050611746 |
+| TOST p                   |                       0.00041040541050611746 |
+| 90% CI                   | [-0.022047703698357905, 0.07538103703169124] |
+| conclusion               |                      `equivalence_supported` |
 
 The values were independently reproduced by SciPy 1.18.0 and statsmodels 0.14.6
-`ttost_paired` using the same first-minus-second direction.
+`ttost_paired` after arranging its inputs to use the same second-minus-first direction.
 
 ## Required tests before acceptance
 
@@ -112,6 +108,6 @@ The values were independently reproduced by SciPy 1.18.0 and statsmodels 0.14.6
 
 ## Consequence
 
-No production schema, engine protocol, or UI execution path changes under this proposed ADR. The
-paired route remains safely disabled until the incomplete-pair policy and comparison-direction
-wording are reviewed and this ADR is accepted.
+A dedicated paired-equivalence request protocol is added. Existing independent-equivalence and
+ordinary paired-analysis protocols are not changed. Saved projects without a paired-equivalence
+plan continue to open without migration or inferred scientific claims.

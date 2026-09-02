@@ -1,3 +1,3 @@
 """Versioned local analysis engine."""
 
-ENGINE_VERSION = "0.14.0"
+ENGINE_VERSION = "0.15.0"
