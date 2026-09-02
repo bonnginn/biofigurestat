@@ -78,19 +78,27 @@ test("drives only the exact spawned process native Save dialog with encoded path
   assert.deepEqual(saveCommand.slice(0, 2), ["-NoProfile", "-NonInteractive"]);
   assert.match(saveCommand.at(-1), /\$processId = 4242/);
   assert.match(saveCommand.at(-1), /UIAutomationClient/);
+  assert.match(saveCommand.at(-1), /System\.Drawing/);
   assert.match(saveCommand.at(-1), /BioFigureStatNativeWindowOwner/);
   assert.match(saveCommand.at(-1), /ownerProcessId -eq \$processId/);
   assert.match(saveCommand.at(-1), /spawned BioFigureStat window is not visible/);
   assert.match(saveCommand.at(-1), /FromBase64String/);
   assert.doesNotMatch(saveCommand.at(-1), /日本語|quote/);
-  assert.match(saveCommand.at(-1), /AutomationIdProperty,\s*\n\s*'1001'/);
-  assert.match(saveCommand.at(-1), /pattern\.SetValue\(\$target\)/);
-  assert.match(saveCommand.at(-1), /handle-less file name input/);
+  assert.match(saveCommand.at(-1), /FocusFileNameInput/);
+  assert.match(saveCommand.at(-1), /Unicode keyboard input failed/);
+  assert.match(saveCommand.at(-1), /ReplaceFocusedText/);
+  assert.match(saveCommand.at(-1), /Key\(0x12, 0, 0\)/);
+  assert.match(saveCommand.at(-1), /Key\(0x4E, 0, 0\)/);
+  assert.match(saveCommand.at(-1), /PressEnter/);
+  assert.match(saveCommand.at(-1), /dialogEvidencePath/);
+  assert.match(saveCommand.at(-1), /AttachThreadInput/);
+  assert.match(saveCommand.at(-1), /FocusWindow\(\$dialogHandle\)/);
+  assert.match(saveCommand.at(-1), /SendInput/);
+  assert.match(saveCommand.at(-1), /AltNUnicodeKeyboard/);
+  assert.doesNotMatch(saveCommand.at(-1), /pattern\.SetValue/);
   assert.match(saveCommand.at(-1), /PostMessage/);
-  assert.match(saveCommand.at(-1), /SendMessageTimeout/);
-  assert.match(saveCommand.at(-1), /0x000C/);
   assert.match(saveCommand.at(-1), /0x0100/);
-  assert.match(saveCommand.at(-1), /\[IntPtr\]13/);
+  assert.match(saveCommand.at(-1), /Key\(0x0D, 0, 0\)/);
 
   const cancelCommand = windowsFileDialogCommand(4242, "cancel");
   assert.match(cancelCommand.at(-1), /\[IntPtr\]27/);
@@ -191,11 +199,13 @@ test("builds a bounded macOS Accessibility typing action without interpolating u
   assert.match(script, /keystroke\(replacement\)/);
 });
 
-test("audits visible text and accessibility attributes while allowing the language selector", () => {
+test("audits application copy while allowing language controls and user paths", () => {
   const expression = japaneseUiAuditExpression();
   assert.match(expression, /aria-label/);
   assert.match(expression, /placeholder/);
   assert.match(expression, /日本語/);
+  assert.match(expression, /looksLikeUserPath/);
+  assert.match(expression, /\^\[A-Za-z\]/);
   assert.match(expression, /SHOW_TEXT/);
 });
 

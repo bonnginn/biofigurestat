@@ -20,7 +20,7 @@
 | 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
 | ---- | ---- | ---- | ------------ | -------- |
 | 1 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
-| 2 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Windows OpenとSVG/PNG/CSV Export Cancelはpackaged PASS。次に保存先指定、Save Asと`.lsa`関連付けを再現 |
+| 2 | 🟡 | installed `.lsa` file associationの自動確認 | installerとOS関連付けの確認時のみ | 同じexeへのpath指定再起動はpackaged PASS。次にinstaller経由のdouble-clickを再現 |
 | 3 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | 通常Graph previewの軸contextは実装済み。Kaplan–Meierの軸・凡例設定、Graph-only表示差と最終的な見た目を実機で確認 |
 | 4 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
 
@@ -69,8 +69,8 @@
 | ✅   | Windows WebView2起動・接続             | transient blank targetを待機し、このhostの最新packaged exeでscenario全体がPASS                 |
 | ✅   | Graph-only Statistics validation       | 実表入力からGraph/Statisticsへ進み、未回答項目の英語alert表示とfocusをnativeで検査             |
 | ✅   | Welch TOST native実行                  | `951b3b7-beta.20260902.win-preview10`でexact executable harnessが実Tauri `run_analysis`→同梱engine→JSON IPCを通過し、protocol `0.15.0`、`ok`、`equivalence_supported`を確認。sidecar、Rust製品process境界、native harnessは同一request fixtureを使用 |
-| 🟡   | native file dialog自動操作             | Windows実OpenとSVG/PNG/CSV Save画面のCancelをpackaged PASS、自己test 12/12。保存先指定はhandle-lessなmodern filename controlへUI Automation `ValuePattern`を使い、古いWin32欄だけ`WM_SETTEXT`へfallbackするよう修正。実験flagのpackaged実証待ち |
-| 🟡   | `.lsa` file association自動確認        | project保存→同じexeへpathを渡す再起動scenarioは実装済み。保存先自動入力BLOCK解消後にpackaged実証し、installed double-clickへ拡張 |
+| ✅   | native file dialog自動操作             | Windows実Open、SVG/PNG/CSV Cancel、SVG任意パス保存、project `.lsa`任意パス保存をpackaged PASS。標準Alt+Nでmodern/classic双方のfilename欄へ移動し、UTF-16 `SendInput`で絶対pathを入力。自己test 13/13、証拠は`.tmp/native-ui-regression/win-preview10-save-targets-alt-n4/` |
+| 🟡   | `.lsa` file association自動確認        | project保存→同じexeへpathを渡す再起動、Data保持、保存済みGraph、Graph/Statistics有効化はpackaged PASS。installer登録後のdouble-clickのみ未確認 |
 | 🟡   | macOS adapter                          | Accessibilityで入力、Command+Q、Cancel保持、破棄終了を同じreport schemaへ実装。Mac実行証拠待ち |
 | ⏸    | 人間の見た目判断                       | graph品質、clipping、font、余白、高DPIは最終的に人間が確認                                     |
 

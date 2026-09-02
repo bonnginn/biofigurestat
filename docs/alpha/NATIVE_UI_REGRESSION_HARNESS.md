@@ -73,11 +73,14 @@ normal scenario, with current evidence in
 
 An explicit `--native-file-dialog-save-targets` experimental flag also contains bounded logic for
 an absolute SVG target, project Save, and command-line `.lsa` reopen. It is not part of the normal
-gate yet. The adapter now writes a handle-less modern filename field through UI Automation
-`ValuePattern.SetValue` and uses `WM_SETTEXT` only as a fallback for a classic Win32 field with a
-native handle. The first packaged proof of the revised path is still pending; an unavailable UI
-Automation provider remains `HARNESS_INFRASTRUCTURE_BLOCKED`, not a product failure. Target paths
-remain UTF-16/Base64 encoded and are never interpolated as PowerShell source.
+gate yet. The adapter focuses the standard Windows filename field with its Alt+N accelerator, then
+uses Unicode `SendInput`; this avoids synchronous UI Automation provider calls that hang on the
+handle-less Windows 11 control and also works with the classic dialog. Target paths remain
+UTF-16/Base64 encoded and are never interpolated as PowerShell source. The packaged
+`951b3b7-beta.20260902.win-preview10` application passed SVG target selection, project Save,
+same-executable `.lsa` reopen, editable-data restoration, and enabled Graph/Statistics in
+`.tmp/native-ui-regression/win-preview10-save-targets-alt-n4/`. Installed double-click association
+remains a separate installer-level check.
 
 ## First implementation evidence
 

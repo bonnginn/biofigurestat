@@ -117,6 +117,8 @@ export function japaneseUiAuditExpression() {
       element instanceof HTMLElement &&
       element.tagName === "BUTTON" &&
       element.textContent?.trim() === "日本語";
+    const looksLikeUserPath = (value) =>
+      /^[A-Za-z]:[\\\\/]/u.test(value) || /^\\\\\\\\/u.test(value) || /^\//u.test(value);
     const findings = [];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
@@ -130,7 +132,7 @@ export function japaneseUiAuditExpression() {
     for (const element of document.querySelectorAll("[aria-label], [title], [placeholder], [alt]")) {
       for (const attribute of ["aria-label", "title", "placeholder", "alt"]) {
         const value = element.getAttribute(attribute)?.trim() ?? "";
-        if (!value || !pattern.test(value)) continue;
+        if (!value || !pattern.test(value) || looksLikeUserPath(value)) continue;
         findings.push({ kind: attribute, value: value.slice(0, 160), tag: element.tagName });
       }
     }
@@ -234,26 +236,118 @@ $ErrorActionPreference = 'Stop'
 try {
   Add-Type -AssemblyName UIAutomationClient
   Add-Type -AssemblyName UIAutomationTypes
+  Add-Type -AssemblyName System.Drawing
   Add-Type @'
 using System;
 using System.Runtime.InteropServices;
 public static class BioFigureStatNativeWindowOwner {
+  [StructLayout(LayoutKind.Sequential)]
+  public struct KeyboardInput {
+    public ushort virtualKey;
+    public ushort scanCode;
+    public uint flags;
+    public uint time;
+    public IntPtr extraInfo;
+  }
+  [StructLayout(LayoutKind.Explicit)]
+  public struct InputUnion {
+    [FieldOffset(0)] public KeyboardInput keyboard;
+  }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct Input {
+    public uint type;
+    public InputUnion data;
+  }
   [DllImport("user32.dll")]
   public static extern IntPtr GetWindow(IntPtr window, uint command);
   [DllImport("user32.dll")]
   public static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
   [DllImport("user32.dll")]
   public static extern bool PostMessage(IntPtr window, uint message, IntPtr word, IntPtr data);
-  [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-  public static extern IntPtr SendMessageTimeout(
-    IntPtr window,
-    uint message,
-    IntPtr word,
-    string data,
-    uint flags,
-    uint timeout,
-    out IntPtr result
-  );
+  [DllImport("user32.dll")]
+  public static extern bool SetForegroundWindow(IntPtr window);
+  [DllImport("user32.dll")]
+  public static extern bool BringWindowToTop(IntPtr window);
+  [DllImport("kernel32.dll")]
+  public static extern uint GetCurrentThreadId();
+  [DllImport("user32.dll")]
+  public static extern bool AttachThreadInput(uint sourceThread, uint targetThread, bool attach);
+  [DllImport("user32.dll", SetLastError = true)]
+  public static extern uint SendInput(uint count, Input[] inputs, int size);
+
+  private static Input Key(ushort virtualKey, ushort scanCode, uint flags) {
+    return new Input {
+      type = 1,
+      data = new InputUnion {
+        keyboard = new KeyboardInput {
+          virtualKey = virtualKey,
+          scanCode = scanCode,
+          flags = flags,
+          time = 0,
+          extraInfo = IntPtr.Zero
+        }
+      }
+    };
+  }
+
+  public static void ReplaceFocusedText(string value) {
+    const uint keyUp = 0x0002;
+    const uint unicode = 0x0004;
+    var inputs = new System.Collections.Generic.List<Input>();
+    inputs.Add(Key(0x11, 0, 0));
+    inputs.Add(Key(0x41, 0, 0));
+    inputs.Add(Key(0x41, 0, keyUp));
+    inputs.Add(Key(0x11, 0, keyUp));
+    foreach (char character in value) {
+      inputs.Add(Key(0, character, unicode));
+      inputs.Add(Key(0, character, unicode | keyUp));
+    }
+    var array = inputs.ToArray();
+    var sent = SendInput((uint)array.Length, array, Marshal.SizeOf(typeof(Input)));
+    if (sent != (uint)array.Length) {
+      throw new InvalidOperationException("SendInput accepted " + sent + " of " + array.Length + " events");
+    }
+  }
+
+  public static void FocusFileNameInput() {
+    const uint keyUp = 0x0002;
+    var inputs = new Input[] {
+      Key(0x12, 0, 0),
+      Key(0x4E, 0, 0),
+      Key(0x4E, 0, keyUp),
+      Key(0x12, 0, keyUp)
+    };
+    var sent = SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(Input)));
+    if (sent != (uint)inputs.Length) {
+      throw new InvalidOperationException("SendInput accepted " + sent + " of " + inputs.Length + " accelerator events");
+    }
+  }
+
+  public static void PressEnter() {
+    const uint keyUp = 0x0002;
+    var inputs = new Input[] {
+      Key(0x0D, 0, 0),
+      Key(0x0D, 0, keyUp)
+    };
+    var sent = SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(Input)));
+    if (sent != (uint)inputs.Length) {
+      throw new InvalidOperationException("SendInput accepted " + sent + " of " + inputs.Length + " Enter events");
+    }
+  }
+
+  public static bool FocusWindow(IntPtr window) {
+    uint processId;
+    var targetThread = GetWindowThreadProcessId(window, out processId);
+    var currentThread = GetCurrentThreadId();
+    var attached = targetThread != 0 && targetThread != currentThread &&
+      AttachThreadInput(currentThread, targetThread, true);
+    try {
+      BringWindowToTop(window);
+      return SetForegroundWindow(window);
+    } finally {
+      if (attached) AttachThreadInput(currentThread, targetThread, false);
+    }
+  }
 }
 '@
 } catch {
@@ -332,83 +426,49 @@ if ($action -eq 'cancel') {
   )
   Start-Sleep -Milliseconds 250
 } else {
-  $fileNameId = [Windows.Automation.PropertyCondition]::new(
-    [Windows.Automation.AutomationElement]::AutomationIdProperty,
-    '1001'
-  )
-  $edit = $dialog.FindFirst(
-    [Windows.Automation.TreeScope]::Descendants,
-    $fileNameId
-  )
-  $editType = [Windows.Automation.PropertyCondition]::new(
-    [Windows.Automation.AutomationElement]::ControlTypeProperty,
-    [Windows.Automation.ControlType]::Edit
-  )
-  $editCandidates = @()
-  $focused = [Windows.Automation.AutomationElement]::FocusedElement
-  if ($null -ne $focused) { $editCandidates += $focused }
-  if ($null -ne $edit) { $editCandidates += $edit }
-  $editCandidates += @($dialog.FindAll([Windows.Automation.TreeScope]::Descendants, $editType))
-  $editable = @()
-  for ($candidateIndex = 0; $candidateIndex -lt $editCandidates.Count; $candidateIndex += 1) {
-    $candidate = $editCandidates[$candidateIndex]
-    $pattern = $null
-    if ($candidate.TryGetCurrentPattern([Windows.Automation.ValuePattern]::Pattern, [ref]$pattern) -and -not $pattern.Current.IsReadOnly) {
-      $isSearch = $candidate.Current.AutomationId -match 'Search' -or $candidate.Current.Name -match 'Search|検索'
-      $editable += @{
-        element = $candidate
-        pattern = $pattern
-        isSearch = $isSearch
-        preferred = -not $isSearch -and ($candidate.Current.AutomationId -eq '1001' -or $candidate.Current.Name -match 'File name|ファイル名')
-      }
-    }
-  }
-  $selectedEdit = @($editable | Where-Object { $_.preferred } | Select-Object -First 1)[0]
-  if ($null -eq $selectedEdit) {
-    $selectedEdit = @($editable | Where-Object { -not $_.isSearch } | Select-Object -Last 1)[0]
-  }
-  if ($null -eq $selectedEdit) { throw 'FILE_DIALOG_CONTROL_NOT_FOUND: writable file name input' }
-  $selectedEditName = $selectedEdit.element.Current.Name
-  $selectedEditId = $selectedEdit.element.Current.AutomationId
-  $selectedEditHandle = [IntPtr]$selectedEdit.element.Current.NativeWindowHandle
-  $fileNameInputMethod = 'ValuePattern'
+  $dialogHandle = [IntPtr]$dialog.Current.NativeWindowHandle
+  $foregroundAccepted = $null
+  $fileNameInputMethod = 'AltNUnicodeKeyboard'
+  $inputStage = 'focus'
   try {
-    $selectedEdit.pattern.SetValue($target)
+    $foregroundAccepted = [BioFigureStatNativeWindowOwner]::FocusWindow($dialogHandle)
+    $inputStage = 'accelerator'
+    [BioFigureStatNativeWindowOwner]::FocusFileNameInput()
+    Start-Sleep -Milliseconds 100
+    $selectedEdit = [Windows.Automation.AutomationElement]::FocusedElement
+    $selectedEditName = if ($null -ne $selectedEdit) { $selectedEdit.Current.Name } else { '' }
+    $selectedEditId = if ($null -ne $selectedEdit) { $selectedEdit.Current.AutomationId } else { '' }
+    $selectedEditBounds = if ($null -ne $selectedEdit) { $selectedEdit.Current.BoundingRectangle } else { $null }
+    $inputStage = 'text'
+    [BioFigureStatNativeWindowOwner]::ReplaceFocusedText($target)
+    Start-Sleep -Milliseconds 100
   } catch {
-    if ($selectedEditHandle -eq [IntPtr]::Zero) {
-      throw ('HARNESS_FILE_DIALOG_AUTOMATION: ValuePattern failed for handle-less file name input ' + $selectedEditId + ': ' + $_.Exception.Message)
+    $innerHResult = if ($null -ne $_.Exception.InnerException) {
+      $_.Exception.InnerException.HResult
+    } else {
+      0
     }
-    $fileNameInputMethod = 'WM_SETTEXT'
-    try {
-      $messageResult = [IntPtr]::Zero
-      $sent = [BioFigureStatNativeWindowOwner]::SendMessageTimeout(
-        $selectedEditHandle,
-        0x000C,
-        [IntPtr]::Zero,
-        $target,
-        0x0002,
-        2000,
-        [ref]$messageResult
-      )
-      if ($sent -eq [IntPtr]::Zero) { throw 'WM_SETTEXT timed out or failed' }
-    } catch {
-      throw ('HARNESS_FILE_DIALOG_AUTOMATION: filename input failed for ' + $selectedEditId + ': ' + $_.Exception.Message)
-    }
+    throw ('HARNESS_FILE_DIALOG_AUTOMATION: Unicode keyboard input failed;stage=' + $inputStage + ';hresult=' + $_.Exception.HResult + ';innerHResult=' + $innerHResult + ';control=' + $selectedEditId)
+  }
+  $dialogEvidencePath = $target + '.dialog.png'
+  $dialogBounds = $dialog.Current.BoundingRectangle
+  $bitmap = [Drawing.Bitmap]::new([int]$dialogBounds.Width, [int]$dialogBounds.Height)
+  $graphics = [Drawing.Graphics]::FromImage($bitmap)
+  try {
+    $graphics.CopyFromScreen(
+      [int]$dialogBounds.X,
+      [int]$dialogBounds.Y,
+      0,
+      0,
+      $bitmap.Size
+    )
+    $bitmap.Save($dialogEvidencePath, [Drawing.Imaging.ImageFormat]::Png)
+  } finally {
+    $graphics.Dispose()
+    $bitmap.Dispose()
   }
   try {
-    $selectedEdit.element.SetFocus()
-    [void][BioFigureStatNativeWindowOwner]::PostMessage(
-      [IntPtr]$dialog.Current.NativeWindowHandle,
-      0x0100,
-      [IntPtr]13,
-      [IntPtr]0
-    )
-    [void][BioFigureStatNativeWindowOwner]::PostMessage(
-      [IntPtr]$dialog.Current.NativeWindowHandle,
-      0x0101,
-      [IntPtr]13,
-      [IntPtr]0
-    )
+    [BioFigureStatNativeWindowOwner]::PressEnter()
     Start-Sleep -Milliseconds 250
   } catch {
     throw ('FILE_DIALOG_CONTROL_NOT_FOUND: Save Enter failed: ' + $_.Exception.Message)
@@ -419,6 +479,16 @@ if ($action -eq 'save') {
   $result.fileNameControl = $selectedEditName
   $result.fileNameAutomationId = $selectedEditId
   $result.fileNameInputMethod = $fileNameInputMethod
+  $result.foregroundAccepted = $foregroundAccepted
+  if ($null -ne $selectedEditBounds) {
+    $result.fileNameBounds = @{
+      x = $selectedEditBounds.X
+      y = $selectedEditBounds.Y
+      width = $selectedEditBounds.Width
+      height = $selectedEditBounds.Height
+    }
+  }
+  $result.dialogEvidenceFile = [IO.Path]::GetFileName($dialogEvidencePath)
 }
 [Console]::Out.Write((ConvertTo-Json $result -Compress))
 `;
@@ -1202,8 +1272,10 @@ async function runWindowsScenario({
           associationClient,
           `(() => {
             const value = document.querySelector('[data-testid="graph-only-cell-1-0"]')?.value;
-            const tabs = [...document.querySelectorAll('[role="tab"]')];
-            const enabled = (name) => tabs.some((tab) => tab.textContent?.trim() === name && !tab.disabled);
+            const workspaceTabs = [...document.querySelectorAll('button, [role="tab"]')];
+            const enabled = (name) => workspaceTabs.some(
+              (tab) => tab.textContent?.trim() === name && !tab.disabled,
+            );
             return value === "Vehicle" && enabled("Graph") && enabled("Statistics");
           })()`,
           ".lsa command-line open with editable data and enabled Graph/Statistics",
@@ -1214,6 +1286,33 @@ async function runWindowsScenario({
           join(outputDirectory, "lsa-command-line-open.png"),
         );
         return { target: associationProjectTarget, restoredValue: "Vehicle" };
+      } catch (error) {
+        if (associationClient) {
+          try {
+            await captureScreenshot(
+              associationClient,
+              join(outputDirectory, "lsa-command-line-open-failure.png"),
+            );
+            const state = await associationClient.evaluate(`({
+              body: document.body?.innerText ?? "",
+              href: location.href,
+              title: document.title,
+              graphOnlyValue: document.querySelector('[data-testid="graph-only-cell-1-0"]')?.value ?? null,
+              tabs: [...document.querySelectorAll('[role="tab"]')].map((tab) => ({
+                text: tab.textContent?.trim() ?? "",
+                disabled: Boolean(tab.disabled),
+              })),
+            })`);
+            await writeFile(
+              join(outputDirectory, "lsa-command-line-open-failure.json"),
+              `${JSON.stringify(state, null, 2)}\n`,
+              "utf8",
+            );
+          } catch {
+            // Preserve the command-line open failure if diagnostic capture also fails.
+          }
+        }
+        throw error;
       } finally {
         associationClient?.close();
         if (associationChild.exitCode === null && !associationChild.killed) associationChild.kill();
