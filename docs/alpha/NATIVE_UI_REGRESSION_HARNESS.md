@@ -15,6 +15,7 @@ The first Windows gate covers:
 - connection to the actual WebView2 instance over a loopback-only inspection port;
 - an isolated English session without telemetry participation;
 - native architecture IPC;
+- Welch TOSTを同じTauri `run_analysis` IPCから実行し、protocol、status、3状態結論を検証;
 - visible and accessible application-copy scan for unexpected Japanese text;
 - native export command and exact byte verification;
 - the real Windows project Open plus SVG, PNG, and CSV Save dialogs, including Cancel without losing the app;
@@ -102,6 +103,13 @@ is no longer required to demonstrate the first complete Windows packaged-app PAS
 
 A CDP-connection failure remains `HARNESS_INFRASTRUCTURE_BLOCKED`; it must never be reported as a
 BioFigureStat product regression without product-level evidence.
+
+The Windows scenario also sends a deterministic independent two-group Welch TOST request through
+the packaged application's actual `run_analysis` command. It requires protocol `0.15.0`, an `ok`
+result, and `equivalence_supported` for the fixed synthetic margin fixture. This is intentionally
+separate from the frozen-sidecar smoke: it covers Tauri resource resolution, child-process pipes,
+JSON decoding, and IPC result transport. If WebView2 inspection is unavailable, this step remains
+environment-blocked even when the sidecar smoke passes.
 
 ## macOS usage
 

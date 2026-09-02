@@ -19,11 +19,12 @@
 
 | 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
 | ---- | ---- | ---- | ------------ | -------- |
-| 1 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
-| 2 | 🟡 | 多条件Statisticsの応答時間 | 最終的な待ち時間の許容判断 | 5条件Games–Howellは現行Windows packaged engineで約3.2–3.3秒。近似化せず、engine起動と同一計算の重複を安全に減らす |
-| 3 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Windows OpenとSVG/PNG/CSV Export Cancelはpackaged PASS。次に保存先指定、Save Asと`.lsa`関連付けを再現 |
-| 4 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | 通常Graph previewの軸contextは実装済み。Kaplan–Meierの軸・凡例設定、Graph-only表示差と最終的な見た目を実機で確認 |
-| 5 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
+| 1 | 🟡 | Windows native Welch TOST境界不具合 | `win-preview9`で失敗時の固定分類を1件確認 | 保存済みsynthetic `.lsa`、source/sidecar、`CREATE_NO_WINDOW`直接実行はすべてPASS。Tauri UI経路だけで出るinvalid JSONを安全な分類で特定し、同じ`.lsa`で実行完了 |
+| 2 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
+| 3 | 🟡 | 多条件Statisticsの応答時間 | 最終的な待ち時間の許容判断 | 5条件Games–Howellは現行Windows packaged engineで約3.2–3.3秒。近似化せず、engine起動と同一計算の重複を安全に減らす |
+| 4 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Windows OpenとSVG/PNG/CSV Export Cancelはpackaged PASS。次に保存先指定、Save Asと`.lsa`関連付けを再現 |
+| 5 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | 通常Graph previewの軸contextは実装済み。Kaplan–Meierの軸・凡例設定、Graph-only表示差と最終的な見た目を実機で確認 |
+| 6 | ⏸ | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする |
 
 ## 公開・運用
 
@@ -69,6 +70,7 @@
 | ✅   | 製品FAILとharness環境FAILの分離        | `PRODUCT_REGRESSION`と`HARNESS_INFRASTRUCTURE_BLOCKED`を区別                                   |
 | ✅   | Windows WebView2起動・接続             | transient blank targetを待機し、このhostの最新packaged exeでscenario全体がPASS                 |
 | ✅   | Graph-only Statistics validation       | 実表入力からGraph/Statisticsへ進み、未回答項目の英語alert表示とfocusをnativeで検査             |
+| 🟡   | Welch TOST native実行                  | frozen sidecar smokeと保存済みsynthetic `.lsa`再構築はPASS。Tauri IPC直結stepをharnessへ追加し、WebView2接続可能hostでの実証待ち |
 | 🟡   | native file dialog自動操作             | Windows実OpenとSVG/PNG/CSV Save画面のCancelをpackaged PASS、自己test 12/12。保存先指定はmodern filename controlの環境BLOCKで実験flagへ隔離 |
 | 🟡   | `.lsa` file association自動確認        | project保存→同じexeへpathを渡す再起動scenarioは実装済み。保存先自動入力BLOCK解消後にpackaged実証し、installed double-clickへ拡張 |
 | 🟡   | macOS adapter                          | Accessibilityで入力、Command+Q、Cancel保持、破棄終了を同じreport schemaへ実装。Mac実行証拠待ち |
@@ -76,6 +78,7 @@
 
 ### 人の操作が必要な保留項目
 
+- `0488a52-beta.20260902.win-preview9`で保存済みsynthetic equivalence projectを1回実行し、失敗時は`technicalErrors[].detail`の固定分類だけを記録。
 - 最新Windows candidateの日本語・英語の用語、文字切れ、余白の短い確認。
 - permission済みMacでmacOS adapterを1回実行し、同じdirty終了scenarioを記録。
 
