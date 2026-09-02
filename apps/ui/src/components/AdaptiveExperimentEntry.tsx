@@ -11,6 +11,7 @@ import {
 } from "@lsaa/adaptive-input";
 import { adaptiveSurvivalPaste, createAdaptiveWorkspace } from "../app/adaptiveWorkspace";
 import { localizedFailureMessage } from "../app/appLocale";
+import { adaptiveConfirmationReason } from "../app/adaptiveConfirmationMessages";
 import type { ExperimentCellMap, ExperimentSetDraft } from "../app/experimentDraft";
 import "./AdaptiveExperimentEntry.css";
 
@@ -494,7 +495,7 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
               });
             }}
           />
-          <span>{confirmation.reason}</span>
+          <span>{adaptiveConfirmationReason(locale, confirmation)}</span>
         </label>
       ))}
       {importConfirmations.map((key) => (
