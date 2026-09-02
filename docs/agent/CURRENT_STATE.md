@@ -118,6 +118,18 @@ scenario, including Open/Export Cancel, Graph-only Statistics handoff, and dirty
 also passed; evidence is under `.tmp/native-ui-regression/win-preview10-cdp-diagnostics/`. No schema,
 margin, comparison identity, or TOST conclusion rule was changed during the investigation.
 
+Windows candidate `37bf58f-beta.20260902.win-preview11` extends the same boundary evidence to paired
+TOST without changing its calculation. The rebuilt packaged sidecar passes all 18 smoke cases. The
+Rust packaged-process test and exact-executable native harness each execute both the independent
+`0.15.0` and paired `0.16.0` fixtures; the paired result additionally preserves six complete pairs
+and the excluded incomplete ID `pair.incomplete`. UI focused tests pass 79 cases, the project
+`.lsa` round-trip suite passes nine cases, and UI/project typechecks pass. Windows bundle and release
+verification pass. The first sandboxed native run was correctly classified as
+`HARNESS_INFRASTRUCTURE_BLOCKED` when localhost WebView2 inspection was unavailable; the single
+unrestricted rerun passed the full scenario, with evidence under
+`.tmp/native-ui-regression/win-preview11-paired-tost-unsandboxed/`. This candidate is a local review
+build and has not been published.
+
 The import workflow also bundles a constrained bilingual Excel template with separate sheets for
 independent groups, paired/repeated observations, Survival, and ordered X/Y data. The in-app recipe
 links to that workbook and states that IDs/dates retain provenance but do not prove pairing or
