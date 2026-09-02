@@ -182,7 +182,7 @@ describe("Graph-only production workspace", () => {
   });
 
   it("keeps Data, Graph, and Statistics as separate workspace tabs", async () => {
-    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
+    const { container } = render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
     expect(screen.getByRole("button", { name: "データ" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("button", { name: "グラフ" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "統計" })).toBeDisabled();
@@ -190,6 +190,7 @@ describe("Graph-only production workspace", () => {
     pasteTable();
     mapColumns({ id: "3" });
     const workbench = await openGraph();
+    expect(container.querySelector(".graph-only--workspace-active")).not.toBeNull();
     expect(screen.getByRole("button", { name: "グラフ" })).toHaveAttribute("aria-current", "page");
     expect(within(workbench).getByRole("region", { name: "グラフプレビュー" })).toBeVisible();
     expect(within(workbench).getByRole("button", { name: "グラフをコピー" })).toBeEnabled();

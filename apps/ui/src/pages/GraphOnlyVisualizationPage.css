@@ -117,7 +117,87 @@
 }
 
 .graph-only--workspace-active .graph-only__result {
-  padding-top: 0.75rem;
+  padding: 0.65rem 0.75rem 0.8rem;
+}
+
+/* Keep the exported figure at its configured size. Only compact the editing
+ * chrome around it, so a desktop viewport exposes more controls without
+ * reducing legibility or changing any saved presentation value. */
+.graph-only--workspace-active .graph-only__workspace-tabs {
+  padding: 0.2rem;
+}
+
+.graph-only--workspace-active .graph-only__workspace-tabs button {
+  min-width: 6.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.graph-only--workspace-active .graph-only__title-field {
+  grid-template-columns: max-content minmax(14rem, 28rem);
+  margin: 0 0 0.5rem;
+}
+
+.graph-only--workspace-active .experiment-graph-workbench {
+  gap: 8px;
+  padding: 8px;
+  font-size: 15px;
+}
+
+.graph-only--workspace-active .experiment-graph-workbench-header,
+.graph-only--workspace-active .experiment-graph-canvas-heading {
+  gap: 12px;
+}
+
+.graph-only--workspace-active .experiment-graph-subtitle {
+  margin-top: 3px;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.graph-only--workspace-active .experiment-graph-canvas-panel {
+  padding: 8px;
+}
+
+.graph-only--workspace-active .experiment-graph-inspector-target {
+  padding: 9px 10px;
+}
+
+.graph-only--workspace-active .experiment-graph-layer-shortcuts {
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.graph-only--workspace-active .experiment-graph-inspector-section {
+  gap: 9px;
+  padding: 11px;
+}
+
+.graph-only--workspace-active .experiment-graph-subsection {
+  gap: 8px;
+  padding: 9px;
+}
+
+.graph-only--workspace-active .experiment-graph-field,
+.graph-only--workspace-active .experiment-graph-checkbox,
+.graph-only--workspace-active .experiment-graph-color-field,
+.graph-only--workspace-active .experiment-graph-condition-fieldset legend {
+  font-size: 0.94rem;
+}
+
+.graph-only--workspace-active .experiment-graph-field select,
+.graph-only--workspace-active .experiment-graph-field input[type="text"],
+.graph-only--workspace-active .experiment-graph-field input[type="number"] {
+  min-height: 36px;
+  padding: 5px 8px;
+}
+
+.graph-only--workspace-active .experiment-graph-color-presets {
+  gap: 6px;
+}
+
+.graph-only--workspace-active .experiment-graph-color-preset {
+  width: 28px;
+  height: 28px;
 }
 
 .graph-only__section-heading,
