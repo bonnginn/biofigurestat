@@ -19,7 +19,7 @@
 
 | 順位 | 状態 | 作業 | ユーザー確認 | 完了条件 |
 | ---- | ---- | ---- | ------------ | -------- |
-| 1 | 🟡 | Windows native Welch TOST境界不具合 | `win-preview9`で失敗時の固定分類を1件確認 | 保存済みsynthetic `.lsa`、source/sidecar、`CREATE_NO_WINDOW`直接実行はすべてPASS。Tauri UI経路だけで出るinvalid JSONを安全な分類で特定し、同じ`.lsa`で実行完了 |
+| 1 | 🟡 | Windows native Welch TOST境界不具合 | `win-preview10`で保存済み`.lsa`を1回実行 | 保存済みsynthetic `.lsa`、source/sidecar、packaged engineをRust製品境界から呼ぶ回帰はすべてPASS。Tauri UI経路だけで出たinvalid JSONを固定分類し、同じ`.lsa`で実行完了 |
 | 2 | 🟡 | 正式な同等性解析の次の実行method | paired、shared-run、positive/totalの科学レビュー | 独立2群continuousの単一主比較は完了。次はreview済みのdesignだけ段階的に有効化 |
 | 3 | 🟡 | native file dialog / file associationの自動範囲拡張 | OS権限が必要な場合のみ | Windows OpenとSVG/PNG/CSV Export Cancelはpackaged PASS。次に保存先指定、Save Asと`.lsa`関連付けを再現 |
 | 4 | 🟡 | 残るBeta視覚調整 | 最終的な見た目のみ | 通常Graph previewの軸contextは実装済み。Kaplan–Meierの軸・凡例設定、Graph-only表示差と最終的な見た目を実機で確認 |
@@ -77,7 +77,7 @@
 
 ### 人の操作が必要な保留項目
 
-- `0488a52-beta.20260902.win-preview9`で保存済みsynthetic equivalence projectを1回実行し、失敗時は`technicalErrors[].detail`の固定分類だけを記録。
+- `951b3b7-beta.20260902.win-preview10`で保存済みsynthetic equivalence projectを1回実行し、成功／失敗を確認。失敗時は`technicalErrors[].detail`の固定分類だけを記録。
 - 最新Windows candidateの日本語・英語の用語、文字切れ、余白の短い確認。
 - permission済みMacでmacOS adapterを1回実行し、同じdirty終了scenarioを記録。
 
