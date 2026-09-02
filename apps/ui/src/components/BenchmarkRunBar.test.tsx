@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../app/evaluationMode", () => ({
@@ -228,21 +228,25 @@ describe("BenchmarkRunBar case initialization", () => {
 
     await screen.findByText(/Blind benchmark batch: Case 1 \/ 6/);
     await waitFor(() => expect(currentBenchmarkRun().identity?.runId).toBe(first.current.runId));
-    expect(beginDefaultGraphCapture("2026-08-23T00:00:00.000Z")).toBe(true);
-    completeDefaultGraphCapture({
-      graphStateFingerprint: "first-default",
-      analysisStateFingerprint: "first-analysis",
-      svgSha256: "first-default-svg",
-      pngSha256: "first-default-png",
+    let captureStarted = false;
+    act(() => {
+      captureStarted = beginDefaultGraphCapture("2026-08-23T00:00:00.000Z");
+      completeDefaultGraphCapture({
+        graphStateFingerprint: "first-default",
+        analysisStateFingerprint: "first-analysis",
+        svgSha256: "first-default-svg",
+        pngSha256: "first-default-png",
+      });
+      recordFinalGraphCapture({
+        capturedAt: "2026-08-23T00:01:00.000Z",
+        graphStateFingerprint: "first-final",
+        analysisStateFingerprint: "first-final-analysis",
+        svgSha256: "first-final-svg",
+        pngSha256: "first-final-png",
+      });
+      setBenchmarkOutcome("completed");
     });
-    recordFinalGraphCapture({
-      capturedAt: "2026-08-23T00:01:00.000Z",
-      graphStateFingerprint: "first-final",
-      analysisStateFingerprint: "first-final-analysis",
-      svgSha256: "first-final-svg",
-      pngSha256: "first-final-png",
-    });
-    setBenchmarkOutcome("completed");
+    expect(captureStarted).toBe(true);
     fireEvent.click(await screen.findByRole("button", { name: "次のケース" }));
 
     await waitFor(() => expect(currentBenchmarkRun().identity?.runId).toBe(second.current.runId));

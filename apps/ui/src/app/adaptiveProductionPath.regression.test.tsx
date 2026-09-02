@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { AnalysisEngineResult } from "@lsaa/analysis-contracts";
 
@@ -197,7 +197,7 @@ describe("adaptive production path regressions", () => {
     // Capture the canonical IDs before the researcher-facing identity is edited. The
     // display identity is allowed to change; the internal observation identity is not.
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const beforeIdentityEdit = saveProject.mock.calls[0]![0];
     const savedSessionIds = beforeIdentityEdit.experimentWorkspace!.experimentSessions.map(
       ({ id }) => id,
@@ -253,7 +253,7 @@ describe("adaptive production path regressions", () => {
     ).toHaveValue("101");
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(2));
     const saved = saveProject.mock.calls[1]![0];
     expect(saved.adaptiveInput?.canonicalObservations).toHaveLength(5);
     expect(
@@ -332,7 +332,7 @@ describe("adaptive production path regressions", () => {
     );
     expect(screen.queryByText(/表上の空欄または無効な値/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
-    await vi.waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(1));
     expect(analysisRunner.mock.calls[0]![0]).toMatchObject({
       templateId: "D01",
       method: "welch_t",
@@ -397,7 +397,7 @@ describe("adaptive production path regressions", () => {
     ).toHaveValue("999");
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const saved = saveProject.mock.calls[0]![0];
     expect(saved.adaptiveInput?.canonicalObservations).toHaveLength(1);
     expect(saved.adaptiveInput?.canonicalObservations[0]).toMatchObject({
@@ -594,7 +594,7 @@ describe("adaptive production path regressions", () => {
     expect(within(expanded).getAllByRole("textbox").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const saved = saveProject.mock.calls[0]![0];
     expect(saved.adaptiveInput?.mapping).toEqual(mapping);
     expect(saved.adaptiveInput?.rawLineage?.rawText).toBe(lineage.rawText);
@@ -647,13 +647,13 @@ describe("adaptive production path regressions", () => {
     fireEvent.change(screen.getByLabelText("CSV / TSV / TXTファイルを読み込む"), {
       target: { files: [file] },
     });
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(screen.getByText(/generated\.csvを読み込みました/)).toBeVisible(),
     );
     expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("4件の測定値");
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const saved = saveProject.mock.calls[0]![0];
     expect(saved.adaptiveInput?.mapping).toMatchObject({
       sourceLabel: "generated.csv",
@@ -720,13 +720,13 @@ describe("adaptive production path regressions", () => {
     const firstFile = new File([firstText], "first.csv", { type: "text/csv" });
     Object.defineProperty(firstFile, "text", { value: async () => firstText });
     fireEvent.change(fileInput, { target: { files: [firstFile] } });
-    await vi.waitFor(() => expect(screen.getByText(/first\.csvを読み込みました/)).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/first\.csvを読み込みました/)).toBeVisible());
     expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("4件の測定値");
 
     const secondFile = new File([secondText], "second.csv", { type: "text/csv" });
     Object.defineProperty(secondFile, "text", { value: async () => secondText });
     fireEvent.change(fileInput, { target: { files: [secondFile] } });
-    await vi.waitFor(() =>
+    await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent(
         "複数のファイルを同じ入力表へ統合する機能はまだ利用できません",
       ),
@@ -737,7 +737,7 @@ describe("adaptive production path regressions", () => {
     expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("4件の測定値");
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const saved = saveProject.mock.calls[0]![0];
     expect(saved.adaptiveInput?.rawLineage).toMatchObject({
       sourceLabel: "first.csv",
@@ -908,7 +908,7 @@ describe("adaptive production path regressions", () => {
     ).toEqual(["2", "3", "4"]);
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const saved = saveProject.mock.calls[0]![0];
     expect(saved.adaptiveInput?.canonicalObservations).toEqual(observations);
     expect(saved.adaptiveInput?.mapping).toEqual(mapping);
@@ -1214,7 +1214,7 @@ describe("adaptive production path regressions", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const saved = saveProject.mock.calls[0]![0];
     expect(
       saved.adaptiveInput?.canonicalObservations.map(

@@ -546,9 +546,11 @@ After these Graph relationship and Spreadsheet lifecycle increments, the complet
 192 files / 1,305 tests. UI typecheck, full lint, and the production build pass; the initial chunk
 remains 264.32 kB (gzip 81.16 kB) with no build advisory. Locale-reset warnings in four suites and
 post-save warnings in the progressive sparse workflow were removed without deleting assertions.
-The remaining React scheduling warnings are isolated to the broad adaptive production-path suite
-and the evaluation-only run bar. They are retained as explicit test-harness debt rather than being
-silenced globally or used as a reason to remove persistence, lineage, or Statistics coverage.
+The broad adaptive production-path suite now waits through React Testing Library's `waitFor`
+instead of Vitest's scheduler-unaware poller, and the evaluation-only run bar wraps its external
+store transition in `act`. Their combined 23 tests pass without React scheduling warnings, with UI
+typecheck and focused lint also passing. Persistence, lineage, and Statistics assertions were not
+removed or weakened.
 
 Graph and Statistics readout selection now use one state transition. Previously the Graph data
 editor updated the default Y-axis title while the Statistics analysis-set editor changed the
