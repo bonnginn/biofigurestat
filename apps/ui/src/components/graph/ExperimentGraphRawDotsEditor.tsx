@@ -3,6 +3,11 @@ import type { Dispatch, SetStateAction } from "react";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import type { ReadoutDraft } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import {
+  ExperimentGraphColorControl,
+  ExperimentGraphRangeControl,
+  ExperimentGraphVisibilityControl,
+} from "./ExperimentGraphControlPrimitives";
 
 type LayerState = WorkspaceGraphState["layers"];
 type GraphAppearance = WorkspaceGraphState["appearance"];
@@ -34,80 +39,50 @@ export function ExperimentGraphRawDotsEditor({
           ? t("細胞・ROIの生データ", "Raw cell/ROI data")
           : t("実験単位の点", "Experimental-unit points")}
       </h3>
-      <label className="experiment-graph-checkbox">
-        <input
-          type="checkbox"
-          checked={layers[layer]}
-          aria-label={
-            nested
-              ? t("生データの点を表示", "Show raw-data points")
-              : t("実験単位の点を表示", "Show experimental-unit points")
-          }
-          onChange={(event) =>
-            setLayers((current) => ({ ...current, [layer]: event.target.checked }))
-          }
-        />
-        <span>
-          {nested
+      <ExperimentGraphVisibilityControl
+        label={
+          nested
             ? t("細胞・ROIの生データ", "Raw cell/ROI data")
-            : t("実験単位の点", "Experimental-unit points")}
-        </span>
-      </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("点の大きさ：", "Point size: ")}
-          {appearance.pointSize}px
-        </span>
-        <input
-          aria-label={t("生データ点の大きさ", "Raw-data point size")}
-          type="range"
-          min="4"
-          max="10"
-          step="1"
-          value={appearance.pointSize}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              pointSize: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("横方向のばらし幅：", "Horizontal jitter: ")}
-          {appearance.jitter}px
-        </span>
-        <input
-          aria-label={t("生データ点のjitter", "Raw-data point jitter")}
-          type="range"
-          min="0"
-          max="24"
-          step="1"
-          value={appearance.jitter}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              jitter: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
+            : t("実験単位の点", "Experimental-unit points")
+        }
+        ariaLabel={
+          nested
+            ? t("生データの点を表示", "Show raw-data points")
+            : t("実験単位の点を表示", "Show experimental-unit points")
+        }
+        checked={layers[layer]}
+        onChange={(visible) => setLayers((current) => ({ ...current, [layer]: visible }))}
+      />
+      <ExperimentGraphRangeControl
+        label={t("点の大きさ", "Point size")}
+        ariaLabel={t("生データ点の大きさ", "Raw-data point size")}
+        value={appearance.pointSize}
+        min={4}
+        max={10}
+        step={1}
+        suffix="px"
+        separator={t("：", ": ")}
+        onChange={(pointSize) => setAppearance((current) => ({ ...current, pointSize }))}
+      />
+      <ExperimentGraphRangeControl
+        label={t("横方向のばらし幅", "Horizontal jitter")}
+        ariaLabel={t("生データ点のjitter", "Raw-data point jitter")}
+        value={appearance.jitter}
+        min={0}
+        max={24}
+        step={1}
+        suffix="px"
+        separator={t("：", ": ")}
+        onChange={(jitter) => setAppearance((current) => ({ ...current, jitter }))}
+      />
       {nested ? (
-        <label className="experiment-graph-color-field">
-          <span>{t("生データ点の色", "Raw-data point color")}</span>
-          <input
-            type="color"
-            aria-label={t("生データ点の色", "Raw-data point color")}
-            value={appearance.rawPointColor}
-            onChange={(event) =>
-              setAppearance((current) => ({
-                ...current,
-                rawPointColor: event.target.value,
-              }))
-            }
-          />
-        </label>
+        <ExperimentGraphColorControl
+          label={t("生データ点の色", "Raw-data point color")}
+          ariaLabel={t("生データ点の色", "Raw-data point color")}
+          value={appearance.rawPointColor}
+          showPresets
+          onChange={(rawPointColor) => setAppearance((current) => ({ ...current, rawPointColor }))}
+        />
       ) : null}
       <p className="experiment-graph-help">
         {t(
