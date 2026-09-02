@@ -70,6 +70,12 @@ import {
   type WorkspaceGraphState,
 } from "../app/experimentWorkspaceProject";
 import {
+  graphReferencesRemainStable,
+  invalidateGraphAnalysis,
+  isSameCanonicalWorksheetIngress,
+  stableWorkspaceCoordinate,
+} from "../app/experimentWorkspaceGraphIntegrity";
+import {
   actionErrorMessage,
   type OpenedProject,
   type SaveProjectAction,
@@ -164,119 +170,6 @@ type TableRow = {
   conditionLabel: string;
   timePoint: TimePointDraft | null;
 };
-
-const stableCoordinate = (value: unknown): string => {
-  const normalize = (candidate: unknown): unknown =>
-    Array.isArray(candidate)
-      ? candidate.map(normalize)
-      : candidate && typeof candidate === "object"
-        ? Object.fromEntries(
-            Object.entries(candidate)
-              .sort(([left], [right]) => left.localeCompare(right))
-              .map(([key, entry]) => [key, normalize(entry)]),
-          )
-        : candidate;
-  return JSON.stringify(normalize(value));
-};
-
-function isSameCanonicalWorksheetIngress(
-  existing: Readonly<{
-    mapping: CanonicalWorksheetFileCommit["mapping"] | null;
-    rawLineage: CanonicalWorksheetFileCommit["rawLineage"];
-  }>,
-  incoming: Pick<CanonicalWorksheetFileCommit, "mapping" | "rawLineage">,
-): boolean {
-  if (!existing.mapping) return false;
-  const mappingSignature = (mapping: CanonicalWorksheetFileCommit["mapping"]) =>
-    stableCoordinate({
-      schemaVersion: mapping.schemaVersion,
-      sourceLabel: mapping.sourceLabel,
-      delimiter: mapping.delimiter,
-      headerRow: mapping.headerRow,
-      columns: mapping.columns,
-    });
-  return (
-    existing.rawLineage.sourceKind === incoming.rawLineage.sourceKind &&
-    existing.rawLineage.sourceLabel === incoming.rawLineage.sourceLabel &&
-    existing.rawLineage.rawText === incoming.rawLineage.rawText &&
-    mappingSignature(existing.mapping) === mappingSignature(incoming.mapping)
-  );
-}
-
-function graphReferencesRemainStable(
-  before: ExperimentSetDraft,
-  after: ExperimentSetDraft,
-  graph: WorkspaceGraphState,
-): boolean {
-  const oldConditions = new Map(before.conditions.map((condition) => [condition.id, condition]));
-  const newConditions = new Map(after.conditions.map((condition) => [condition.id, condition]));
-  const conditionIds = new Set([
-    ...graph.selectedConditionIds,
-    ...(graph.analysisConditionIds ?? []),
-    ...(graph.dataSets?.displaySet.conditionIds ?? []),
-    ...(graph.dataSets?.analysisSet.conditionIds ?? []),
-  ]);
-  if (
-    [...conditionIds].some(
-      (id) =>
-        !oldConditions.has(id) ||
-        !newConditions.has(id) ||
-        stableCoordinate(oldConditions.get(id)?.attributes) !==
-          stableCoordinate(newConditions.get(id)?.attributes),
-    )
-  )
-    return false;
-
-  const oldReadout = before.readouts.find(({ id }) => id === graph.selectedReadoutId);
-  const newReadout = after.readouts.find(({ id }) => id === graph.selectedReadoutId);
-  if (!oldReadout || !newReadout || oldReadout.shape !== newReadout.shape) return false;
-
-  const oldPoints = new Map(before.time.points.map((point) => [point.id, point.value]));
-  const newPoints = new Map(after.time.points.map((point) => [point.id, point.value]));
-  const timePointIds = new Set([
-    ...graph.selectedTimePointIds,
-    ...(graph.analysisTimePointId ? [graph.analysisTimePointId] : []),
-    ...(graph.dataSets?.displaySet.timePointIds ?? []),
-    ...(graph.dataSets?.analysisSet.timePointIds ?? []),
-  ]);
-  if (
-    [...timePointIds].some(
-      (id) => !oldPoints.has(id) || !newPoints.has(id) || oldPoints.get(id) !== newPoints.get(id),
-    )
-  )
-    return false;
-
-  const oldFactorIds = new Set(before.attributes.map(({ id }) => id));
-  const newFactorIds = new Set(after.attributes.map(({ id }) => id));
-  const referencedFactorIds = [
-    ...(graph.grouping?.x.factorIds ?? []),
-    ...(graph.grouping?.x.factorId ? [graph.grouping.x.factorId] : []),
-    ...(graph.grouping?.series.factorId ? [graph.grouping.series.factorId] : []),
-    ...(graph.grouping?.color?.factorId ? [graph.grouping.color.factorId] : []),
-    ...(graph.grouping?.shape?.factorId ? [graph.grouping.shape.factorId] : []),
-    ...(graph.grouping?.facet?.factorId ? [graph.grouping.facet.factorId] : []),
-  ];
-  return referencedFactorIds.every((id) => oldFactorIds.has(id) && newFactorIds.has(id));
-}
-
-function invalidateGraphAnalysis(graph: WorkspaceGraphState): WorkspaceGraphState {
-  return {
-    ...graph,
-    analysisRunId: null,
-    analysis: null,
-    statisticsAnnotation: { mode: "hidden", testIndex: 0 },
-    statisticsAnnotations: [],
-    ...(graph.dataSets
-      ? {
-          dataSets: {
-            ...graph.dataSets,
-            comparisonSet: [],
-            annotationSet: [],
-          },
-        }
-      : {}),
-  };
-}
 
 function timePointsFor(draft: ExperimentSetDraft): Array<TimePointDraft | null> {
   return draft.time.points.length > 0 ? [...draft.time.points] : [null];
@@ -2759,7 +2652,8 @@ export function ExperimentWorkspace({
           importedProvenance,
         );
         const unchangedObservations =
-          stableCoordinate(snapshot.canonicalObservations) === stableCoordinate(observations);
+          stableWorkspaceCoordinate(snapshot.canonicalObservations) ===
+          stableWorkspaceCoordinate(observations);
         if (sameIngress && unchangedObservations) return;
         throw new Error(
           "この入力表にはすでにファイル由来のデータがあります。複数のファイルを同じ入力表へ統合する機能はまだ利用できません。既存の値と元ファイル情報は変更していません。",
