@@ -70,7 +70,7 @@
 | ✅   | Windows WebView2起動・接続             | transient blank targetを待機し、このhostの最新packaged exeでscenario全体がPASS                 |
 | ✅   | Graph-only Statistics validation       | 実表入力からGraph/Statisticsへ進み、未回答項目の英語alert表示とfocusをnativeで検査             |
 | 🟡   | Welch TOST native実行                  | frozen sidecar smoke、保存済みsynthetic `.lsa`再構築、packaged engineをRust製品境界（pipe、`CREATE_NO_WINDOW`、timeout監視、JSON parse）から呼ぶ回帰はPASS。Tauri IPC直結stepはharnessへ追加済みで、WebView2接続可能hostでの実証待ち |
-| 🟡   | native file dialog自動操作             | Windows実OpenとSVG/PNG/CSV Save画面のCancelをpackaged PASS、自己test 12/12。保存先指定はmodern filename controlの環境BLOCKで実験flagへ隔離 |
+| 🟡   | native file dialog自動操作             | Windows実OpenとSVG/PNG/CSV Save画面のCancelをpackaged PASS、自己test 12/12。保存先指定はhandle-lessなmodern filename controlへUI Automation `ValuePattern`を使い、古いWin32欄だけ`WM_SETTEXT`へfallbackするよう修正。実験flagのpackaged実証待ち |
 | 🟡   | `.lsa` file association自動確認        | project保存→同じexeへpathを渡す再起動scenarioは実装済み。保存先自動入力BLOCK解消後にpackaged実証し、installed double-clickへ拡張 |
 | 🟡   | macOS adapter                          | Accessibilityで入力、Command+Q、Cancel保持、破棄終了を同じreport schemaへ実装。Mac実行証拠待ち |
 | ⏸    | 人間の見た目判断                       | graph品質、clipping、font、余白、高DPIは最終的に人間が確認                                     |

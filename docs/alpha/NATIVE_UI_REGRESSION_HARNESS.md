@@ -73,10 +73,11 @@ normal scenario, with current evidence in
 
 An explicit `--native-file-dialog-save-targets` experimental flag also contains bounded logic for
 an absolute SVG target, project Save, and command-line `.lsa` reopen. It is not part of the normal
-gate yet: this host exposes the writable filename field as `System.ItemNameDisplay` without a
-native handle, and synchronous provider calls block. That result is
-`HARNESS_INFRASTRUCTURE_BLOCKED`, not a product failure. Target paths remain UTF-16/Base64 encoded
-and are never interpolated as PowerShell source.
+gate yet. The adapter now writes a handle-less modern filename field through UI Automation
+`ValuePattern.SetValue` and uses `WM_SETTEXT` only as a fallback for a classic Win32 field with a
+native handle. The first packaged proof of the revised path is still pending; an unavailable UI
+Automation provider remains `HARNESS_INFRASTRUCTURE_BLOCKED`, not a product failure. Target paths
+remain UTF-16/Base64 encoded and are never interpolated as PowerShell source.
 
 ## First implementation evidence
 
