@@ -862,6 +862,12 @@ project-package tests cover both executable routes and save/reopen compatibility
   explanations. The reviewed bilingual native release is published as `v0.1.0-alpha.2`.
 - Beta work includes Graph-preview parity, compact workspace chrome, editable experiment metadata,
   and Kaplan–Meier appearance-control parity while preserving censoring and risk-table semantics.
+  Graph-only now offers an initial Graph-type choice after column mapping, then continues to use
+  the same shared editor. Its active Graph/Statistics workspace hides the oversized introductory
+  card and duplicate result heading, and uses a viewport-aware canvas minimum height to reduce
+  unnecessary vertical scrolling. Saved editor presentation still takes precedence, so older
+  `.lsa` Graph appearance is unchanged. Focused Graph-only tests, UI typecheck, and targeted lint
+  pass; native visual confirmation is reserved for the next Windows candidate.
   Kaplan–Meier now supports saved/reopened curve colors, overall and legend font sizes, legend
   positions (`hidden`, `top`, `right`, `inside`), minor-tick visibility, tick direction, and axis
   titles. The optional GraphSpec fields preserve older `.lsa` parsing and the read-only legacy path

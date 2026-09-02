@@ -32,6 +32,7 @@ import {
 } from "../app/graphOnlyTableSemantics";
 import { createGraphOnlyWorkbenchModel } from "../app/graphOnlyWorkbenchAdapter";
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
+import { experimentGraphTypeLabel } from "../components/graph/experimentGraphTypeLabel";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 import {
   localizedFailureMessage,
@@ -48,6 +49,9 @@ const ExperimentGraphWorkbench = lazy(() =>
 );
 
 type ColumnIndex = number | "";
+type GraphType = WorkspaceGraphState["graphType"];
+
+const GRAPH_ONLY_GRAPH_TYPES: readonly GraphType[] = ["dot", "box", "violin", "bar", "line"];
 
 type ParsedVisualizationInput = Readonly<{
   parsed: ParsedAdaptiveInput;
@@ -329,6 +333,7 @@ function graphOnlyLifecycleSnapshot(
     idColumn: ColumnIndex;
     identityDecision: UnresolvedVisualizationIdentityDecision;
     sourceRowUnitDecision: UnresolvedVisualizationSourceRowUnitDecision;
+    preferredGraphType: GraphType;
     presentation: GraphOnlyPresentation;
     editorPresentation?: GraphEditorPresentation;
   }>,
@@ -495,6 +500,9 @@ export function GraphOnlyVisualizationPage({
   const [graphPresentation, setGraphPresentation] = useState<GraphOnlyPresentation>(() =>
     initialGraphOnlyPresentation(compatibleInitialState, locale),
   );
+  const [preferredGraphType, setPreferredGraphType] = useState<GraphType>(
+    activeGraphFor(compatibleInitialState)?.editorPresentation?.graphType ?? "dot",
+  );
   const [error, setError] = useState<string | null>(initialIntentError);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [statisticsMessage, setStatisticsMessage] = useState<string | null>(null);
@@ -521,6 +529,7 @@ export function GraphOnlyVisualizationPage({
     idColumn,
     identityDecision,
     sourceRowUnitDecision,
+    preferredGraphType,
     presentation: graphPresentation,
     editorPresentation:
       editorPresentationFromWorkspaceState(workspaceGraphState) ??
@@ -771,6 +780,7 @@ export function GraphOnlyVisualizationPage({
     setSourceRowUnitDecision(initialSourceRowUnitDecision(state));
     const loadedPresentation = initialGraphOnlyPresentation(state, locale);
     setGraphPresentation(loadedPresentation);
+    setPreferredGraphType(activeGraphFor(state)?.editorPresentation?.graphType ?? "dot");
     setWorkspaceGraphState(null);
     setAllowUniqueSeries(Boolean(state.activeGraphId));
     setWorkspaceTab(state.activeGraphId ? "graph" : "data");
@@ -794,6 +804,7 @@ export function GraphOnlyVisualizationPage({
       idColumn: initialColumn(state, "id"),
       identityDecision: initialIdentityDecision(state),
       sourceRowUnitDecision: initialSourceRowUnitDecision(state),
+      preferredGraphType: activeGraphFor(state)?.editorPresentation?.graphType ?? "dot",
       presentation: loadedPresentation,
       editorPresentation: activeGraphFor(state)?.editorPresentation,
     });
@@ -864,7 +875,9 @@ export function GraphOnlyVisualizationPage({
   };
 
   return (
-    <div className="page-stack graph-only graph-only--workspace">
+    <div
+      className={`page-stack graph-only graph-only--workspace${workspaceTab === "data" ? "" : " graph-only--workspace-active"}`}
+    >
       <button
         className="back-link"
         type="button"
@@ -1171,6 +1184,29 @@ export function GraphOnlyVisualizationPage({
                 )}
               </small>
             </label>
+            <label className="experiment-start__field">
+              <span>{t("最初に表示するグラフ", "Initial Graph type")}</span>
+              <select
+                aria-label={t("最初に表示するグラフ", "Initial Graph type")}
+                value={preferredGraphType}
+                onChange={(event) => {
+                  setPreferredGraphType(event.target.value as GraphType);
+                  setWorkspaceGraphState(null);
+                }}
+              >
+                {GRAPH_ONLY_GRAPH_TYPES.map((graphType) => (
+                  <option key={graphType} value={graphType}>
+                    {experimentGraphTypeLabel(graphType, locale)}
+                  </option>
+                ))}
+              </select>
+              <small>
+                {t(
+                  "Graph editorを開いた後も「グラフ全体」から変更できます。",
+                  "You can also change this under Entire Graph after opening the Graph editor.",
+                )}
+              </small>
+            </label>
           </div>
           {duplicateMapping ? (
             <p className="graph-only__error" role="alert">
@@ -1272,12 +1308,20 @@ export function GraphOnlyVisualizationPage({
               }
             >
               <ExperimentGraphWorkbench
-                key={JSON.stringify({ text, xColumn, yColumn, seriesColumn, idColumn })}
+                key={JSON.stringify({
+                  text,
+                  xColumn,
+                  yColumn,
+                  seriesColumn,
+                  idColumn,
+                  preferredGraphType,
+                })}
                 draft={{ ...workbenchModel.draft, name: graphPresentation.title }}
                 cells={workbenchModel.cells}
                 workspaceMode="graph"
                 analysisAvailable={false}
                 semanticReadiness="unresolved_descriptive"
+                initialGraphType={preferredGraphType}
                 initialState={workspaceGraphState ?? loadedEditorState}
                 onStateChange={setWorkspaceGraphState}
                 onClose={() => setWorkspaceTab("data")}

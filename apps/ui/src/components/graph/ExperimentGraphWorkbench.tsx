@@ -65,6 +65,8 @@ export type ExperimentGraphWorkbenchProps = Readonly<{
   analysisAvailable?: boolean;
   /** Render imported rows descriptively without declaring them biological n. */
   semanticReadiness?: "resolved" | "unresolved_descriptive";
+  /** Optional first Graph type for entry surfaces that ask before opening the editor. */
+  initialGraphType?: WorkspaceGraphState["graphType"];
   initialState?: Omit<WorkspaceGraphState, "id" | "displayName">;
   onStateChange?: (state: Omit<WorkspaceGraphState, "id" | "displayName">) => void;
   onAnalysisCorrection?: (correction: DraftAnalysisCorrection) => void;
@@ -78,6 +80,7 @@ export function ExperimentGraphWorkbench({
   analysisRunner = defaultAnalysisRunner,
   analysisAvailable = true,
   semanticReadiness = "resolved",
+  initialGraphType,
   initialState,
   onStateChange,
   onAnalysisCorrection,
@@ -124,6 +127,7 @@ export function ExperimentGraphWorkbench({
   } = useExperimentGraphPresentationState({
     draft,
     initialState,
+    initialGraphType,
     semanticReadiness,
     workspaceMode,
   });
@@ -717,7 +721,9 @@ export function ExperimentGraphWorkbench({
                       equivalenceMarginUnit:
                         readout?.shape === "proportion"
                           ? t("パーセントポイント", "percentage points")
-                          : readout?.unit?.trim() || readout?.label || t("測定単位", "readout units"),
+                          : readout?.unit?.trim() ||
+                            readout?.label ||
+                            t("測定単位", "readout units"),
                       onEquivalencePlanChange: changeEquivalencePlan,
                       equivalenceSupportKind: classifyEquivalenceSupport({
                         readoutShape: readout?.shape,

@@ -199,6 +199,25 @@ describe("Graph-only production workspace", () => {
     expect(within(workbench).getByRole("heading", { name: "元表の行" })).toBeVisible();
   });
 
+  it("lets the researcher choose the initial Graph type before opening the editor", async () => {
+    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
+    pasteTable();
+    mapColumns();
+
+    const initialGraphType = screen.getByRole("combobox", {
+      name: "最初に表示するグラフ",
+    });
+    expect(initialGraphType).toHaveValue("dot");
+    fireEvent.change(initialGraphType, { target: { value: "bar" } });
+
+    const workbench = await openGraph();
+    expect(within(workbench).getByRole("heading", { name: /棒（平均）/ })).toBeVisible();
+    fireEvent.change(within(workbench).getByRole("combobox", { name: "編集対象" }), {
+      target: { value: "background" },
+    });
+    expect(within(workbench).getByRole("combobox", { name: "グラフの基本形" })).toHaveValue("bar");
+  });
+
   it("uses an ID column only as a row label and never as a legend series", async () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
     pasteTable();

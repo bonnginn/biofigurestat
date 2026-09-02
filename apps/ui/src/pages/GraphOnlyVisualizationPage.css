@@ -1,5 +1,5 @@
 .graph-only {
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .graph-only--workspace {
@@ -81,6 +81,43 @@
 .graph-only__subtle {
   color: #5d6e6b;
   font-size: 0.9rem;
+}
+
+.graph-only__header {
+  display: grid;
+  gap: 0.25rem;
+  padding-block: 0.7rem;
+}
+
+.graph-only__header h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 1.7rem);
+  line-height: 1.2;
+}
+
+.graph-only__header .experiment-start__eyebrow {
+  font-size: 0.82rem;
+}
+
+.graph-only__header p:last-child {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.graph-only .experiment-graph-canvas-panel {
+  min-height: clamp(420px, calc(100vh - 390px), 600px);
+}
+
+/* Once the researcher is editing the Graph, the tab and workbench already
+ * identify the route. Remove the duplicated entry banner and result heading
+ * so an ordinary desktop viewport is spent on the Graph rather than chrome. */
+.graph-only--workspace-active .graph-only__header,
+.graph-only--workspace-active .graph-only__result-heading {
+  display: none;
+}
+
+.graph-only--workspace-active .graph-only__result {
+  padding-top: 0.75rem;
 }
 
 .graph-only__section-heading,

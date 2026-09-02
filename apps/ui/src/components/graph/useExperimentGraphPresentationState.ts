@@ -70,10 +70,12 @@ export const DEFAULT_GRAPH_APPEARANCE: WorkspaceGraphState["appearance"] = {
 export function useExperimentGraphPresentationState(input: {
   draft: ExperimentSetDraft;
   initialState?: InitialState;
+  initialGraphType?: WorkspaceGraphState["graphType"];
   semanticReadiness: "resolved" | "unresolved_descriptive";
   workspaceMode: "graph" | "statistics" | "combined";
 }) {
   const { draft, initialState, semanticReadiness, workspaceMode } = input;
+  const initialGraphType = initialState?.graphType ?? input.initialGraphType ?? "dot";
   const proposedInitialGrouping = useMemo(
     () =>
       normalizeGraphGroupingChannels(initialState?.grouping ?? createInitialGraphGrouping(draft)),
@@ -83,7 +85,7 @@ export function useExperimentGraphPresentationState(input: {
     if (initialState?.layers) return initialState.layers;
     if (semanticReadiness !== "unresolved_descriptive") return DEFAULT_GRAPH_LAYERS;
     return {
-      ...defaultLayersForGraphType("dot", draft.readouts[0]?.shape ?? "proportion"),
+      ...defaultLayersForGraphType(initialGraphType, draft.readouts[0]?.shape ?? "proportion"),
       // Source rows remain descriptive until their experimental-unit meaning is confirmed.
       overall: false,
       errorBar: false,
@@ -96,9 +98,7 @@ export function useExperimentGraphPresentationState(input: {
       : {}),
     ...initialState?.appearance,
   });
-  const [graphType, setGraphType] = useState<WorkspaceGraphState["graphType"]>(
-    initialState?.graphType ?? "dot",
-  );
+  const [graphType, setGraphType] = useState<WorkspaceGraphState["graphType"]>(initialGraphType);
   const [grouping, setGrouping] = useState(proposedInitialGrouping);
   const [axes, setAxes] = useState<WorkspaceGraphState["axes"]>(
     initialState?.axes ?? {
