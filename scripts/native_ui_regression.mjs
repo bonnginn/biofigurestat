@@ -599,17 +599,16 @@ async function waitForTarget(port, timeoutMs, child) {
 
 async function connectToStableWebview(port, initialTarget, timeoutMs, child) {
   const deadline = Date.now() + timeoutMs;
-  const attemptedTargetIds = new Set();
   let target = initialTarget;
-  let lastError;
+  let lastConnectionError;
+  let lastDiscoveryError;
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
       throw new Error(
         `Native application exited before WebView inspection (code ${child.exitCode})`,
       );
     }
-    if (target && !attemptedTargetIds.has(target.id)) {
-      attemptedTargetIds.add(target.id);
+    if (target) {
       const candidate = new CdpClient(target.webSocketDebuggerUrl);
       try {
         await candidate.connect();
@@ -639,7 +638,7 @@ async function connectToStableWebview(port, initialTarget, timeoutMs, child) {
         }
         return { client: candidate, target };
       } catch (error) {
-        lastError = error;
+        lastConnectionError = error;
         candidate.close();
       }
     }
@@ -647,16 +646,18 @@ async function connectToStableWebview(port, initialTarget, timeoutMs, child) {
       const response = await fetch(`http://127.0.0.1:${port}/json/list`);
       if (response.ok) {
         const targets = await response.json();
-        target = selectWebviewTarget(
-          targets.filter((candidate) => !attemptedTargetIds.has(candidate.id)),
-        );
+        target = selectWebviewTarget(targets);
+      } else {
+        lastDiscoveryError = new Error(`CDP discovery returned HTTP ${response.status}`);
       }
     } catch (error) {
-      lastError = error;
+      lastDiscoveryError = error;
     }
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 150));
   }
-  throw new Error(`WebView2 CDP target never became stable: ${String(lastError)}`);
+  throw new Error(
+    `WebView2 CDP target never became stable; connection=${String(lastConnectionError)}; discovery=${String(lastDiscoveryError)}`,
+  );
 }
 
 async function waitFor(client, expression, label, timeoutMs) {
