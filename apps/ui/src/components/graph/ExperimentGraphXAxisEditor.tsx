@@ -3,6 +3,10 @@ import type { Dispatch, SetStateAction } from "react";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import type { ExperimentSetDraft } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import {
+  ExperimentGraphRangeControl,
+  ExperimentGraphVisibilityControl,
+} from "./ExperimentGraphControlPrimitives";
 
 type AxisSettings = WorkspaceGraphState["axes"];
 type GraphAppearance = WorkspaceGraphState["appearance"];
@@ -187,59 +191,40 @@ export function ExperimentGraphXAxisEditor({
                   />
                 </label>
               ) : null}
-              <label className="experiment-graph-checkbox">
-                <input
-                  type="checkbox"
-                  checked={axes.showMinorTicks ?? true}
-                  aria-label={t("補助目盛を表示", "Show minor ticks")}
-                  onChange={(event) =>
-                    setAxes((current) => ({
-                      ...current,
-                      showMinorTicks: event.target.checked,
-                    }))
-                  }
-                />
-                <span>
-                  {t("補助目盛を表示（グリッド線なし）", "Show minor ticks (without grid lines)")}
-                </span>
-              </label>
+              <ExperimentGraphVisibilityControl
+                label={t(
+                  "補助目盛を表示（グリッド線なし）",
+                  "Show minor ticks (without grid lines)",
+                )}
+                ariaLabel={t("補助目盛を表示", "Show minor ticks")}
+                checked={axes.showMinorTicks ?? true}
+                onChange={(showMinorTicks) =>
+                  setAxes((current) => ({ ...current, showMinorTicks }))
+                }
+              />
             </>
           ) : null}
         </>
       ) : null}
-      <label className="experiment-graph-checkbox">
-        <input
-          type="checkbox"
-          checked={appearance.hierarchicalLabels}
-          aria-label={t("条件属性を階層表示", "Show condition attributes as hierarchy")}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              hierarchicalLabels: event.target.checked,
-            }))
-          }
-        />
-        <span>
-          {t(
-            "条件属性を個別の階層として表示",
-            "Show condition attributes as separate hierarchy levels",
-          )}
-        </span>
-      </label>
-      <label className="experiment-graph-checkbox">
-        <input
-          type="checkbox"
-          checked={axes.showCategoryLabels}
-          aria-label={t("カテゴリラベルを表示", "Show category labels")}
-          onChange={(event) =>
-            setAxes((current) => ({
-              ...current,
-              showCategoryLabels: event.target.checked,
-            }))
-          }
-        />
-        <span>{t("カテゴリと階層ラベルを表示", "Show category and hierarchy labels")}</span>
-      </label>
+      <ExperimentGraphVisibilityControl
+        label={t(
+          "条件属性を個別の階層として表示",
+          "Show condition attributes as separate hierarchy levels",
+        )}
+        ariaLabel={t("条件属性を階層表示", "Show condition attributes as hierarchy")}
+        checked={appearance.hierarchicalLabels}
+        onChange={(hierarchicalLabels) =>
+          setAppearance((current) => ({ ...current, hierarchicalLabels }))
+        }
+      />
+      <ExperimentGraphVisibilityControl
+        label={t("カテゴリと階層ラベルを表示", "Show category and hierarchy labels")}
+        ariaLabel={t("カテゴリラベルを表示", "Show category labels")}
+        checked={axes.showCategoryLabels}
+        onChange={(showCategoryLabels) =>
+          setAxes((current) => ({ ...current, showCategoryLabels }))
+        }
+      />
       <label className="experiment-graph-field">
         <span>{t("軸目盛の向き", "Tick direction")}</span>
         <select
@@ -257,20 +242,13 @@ export function ExperimentGraphXAxisEditor({
         </select>
       </label>
       {axes.xSemantic === "categorical" && groupingXSource === "factor" ? (
-        <label className="experiment-graph-checkbox">
-          <input
-            type="checkbox"
-            checked={axes.showCategoryGroupSeparators ?? false}
-            aria-label={t("X軸のグループ境界を表示", "Show X-axis group boundaries")}
-            onChange={(event) =>
-              setAxes((current) => ({
-                ...current,
-                showCategoryGroupSeparators: event.target.checked,
-              }))
-            }
-          />
-          <span>{t("X軸のグループ境界を表示", "Show X-axis group boundaries")}</span>
-        </label>
+        <ExperimentGraphVisibilityControl
+          label={t("X軸のグループ境界を表示", "Show X-axis group boundaries")}
+          checked={axes.showCategoryGroupSeparators ?? false}
+          onChange={(showCategoryGroupSeparators) =>
+            setAxes((current) => ({ ...current, showCategoryGroupSeparators }))
+          }
+        />
       ) : null}
       <label className="experiment-graph-field">
         <span>{t("カテゴリラベル角度", "Category-label angle")}</span>
@@ -291,85 +269,56 @@ export function ExperimentGraphXAxisEditor({
           <option value="minus_90">−90°</option>
         </select>
       </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("カテゴリ間隔：", "Category spacing: ")}
-          {axes.spacing.toFixed(1)}
-        </span>
-        <input
-          aria-label={t("カテゴリ間隔", "Category spacing")}
-          type="range"
-          min="0.7"
-          max="1.6"
-          step="0.1"
-          value={axes.spacing}
-          onChange={(event) =>
-            setAxes((current) => ({
-              ...current,
-              spacing: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("系列内：", "Within series: ")}
-          {appearance.withinGroupSpacing.toFixed(2)}
-        </span>
-        <input
-          aria-label={t("系列内の間隔", "Within-series spacing")}
-          type="range"
-          min="0.4"
-          max="1.4"
-          step="0.05"
-          value={appearance.withinGroupSpacing}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              withinGroupSpacing: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("X群間：", "Between X groups: ")}
-          {appearance.betweenGroupSpacing.toFixed(2)}
-        </span>
-        <input
-          aria-label={t("X群間の間隔", "Between-X-group spacing")}
-          type="range"
-          min="0.8"
-          max="2.4"
-          step="0.05"
-          value={appearance.betweenGroupSpacing}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              betweenGroupSpacing: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("階層ラベル文字：", "Hierarchy-label text: ")}
-          {appearance.hierarchyFontSize}px
-        </span>
-        <input
-          type="range"
-          min="9"
-          max="24"
-          aria-label={t("階層ラベルの文字サイズ", "Hierarchy-label font size")}
-          value={appearance.hierarchyFontSize}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              hierarchyFontSize: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
+      <ExperimentGraphRangeControl
+        label={t("カテゴリ間隔", "Category spacing")}
+        ariaLabel={t("カテゴリ間隔", "Category spacing")}
+        value={axes.spacing}
+        min={0.7}
+        max={1.6}
+        step={0.1}
+        separator={t("：", ": ")}
+        formatValue={(value) => value.toFixed(1)}
+        onChange={(spacing) => setAxes((current) => ({ ...current, spacing }))}
+      />
+      <ExperimentGraphRangeControl
+        label={t("系列内", "Within series")}
+        ariaLabel={t("系列内の間隔", "Within-series spacing")}
+        value={appearance.withinGroupSpacing}
+        min={0.4}
+        max={1.4}
+        step={0.05}
+        separator={t("：", ": ")}
+        formatValue={(value) => value.toFixed(2)}
+        onChange={(withinGroupSpacing) =>
+          setAppearance((current) => ({ ...current, withinGroupSpacing }))
+        }
+      />
+      <ExperimentGraphRangeControl
+        label={t("X群間", "Between X groups")}
+        ariaLabel={t("X群間の間隔", "Between-X-group spacing")}
+        value={appearance.betweenGroupSpacing}
+        min={0.8}
+        max={2.4}
+        step={0.05}
+        separator={t("：", ": ")}
+        formatValue={(value) => value.toFixed(2)}
+        onChange={(betweenGroupSpacing) =>
+          setAppearance((current) => ({ ...current, betweenGroupSpacing }))
+        }
+      />
+      <ExperimentGraphRangeControl
+        label={t("階層ラベル文字", "Hierarchy-label text")}
+        ariaLabel={t("階層ラベルの文字サイズ", "Hierarchy-label font size")}
+        value={appearance.hierarchyFontSize}
+        min={9}
+        max={24}
+        step={1}
+        suffix="px"
+        separator={t("：", ": ")}
+        onChange={(hierarchyFontSize) =>
+          setAppearance((current) => ({ ...current, hierarchyFontSize }))
+        }
+      />
       <div className="experiment-graph-hierarchy-order">
         <strong>{t("階層の順序", "Hierarchy order")}</strong>
         {(axes.hierarchyOrder.length > 0

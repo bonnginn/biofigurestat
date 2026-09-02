@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { ExperimentGraphRangeControl } from "./ExperimentGraphControlPrimitives";
 
 type GraphAppearance = WorkspaceGraphState["appearance"];
 
@@ -42,25 +43,17 @@ export function ExperimentGraphLegendEditor({
           <option value="inside">{t("内側", "Inside")}</option>
         </select>
       </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("文字：", "Text: ")}
-          {appearance.legendFontSize}px
-        </span>
-        <input
-          type="range"
-          min="9"
-          max="24"
-          aria-label={t("凡例の文字サイズ", "Legend font size")}
-          value={appearance.legendFontSize}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              legendFontSize: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
+      <ExperimentGraphRangeControl
+        label={t("文字", "Text")}
+        ariaLabel={t("凡例の文字サイズ", "Legend font size")}
+        value={appearance.legendFontSize}
+        min={9}
+        max={24}
+        step={1}
+        suffix="px"
+        separator={t("：", ": ")}
+        onChange={(legendFontSize) => setAppearance((current) => ({ ...current, legendFontSize }))}
+      />
     </section>
   );
 }

@@ -5,6 +5,10 @@ import type { ExperimentSetDraft, ReadoutDraft } from "../../app/experimentDraft
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
 import { GRAPH_PALETTES, type GraphPaletteMode } from "./graphAppearance";
 import { ExperimentGraphBarAppearanceEditor } from "./ExperimentGraphBarAppearanceEditor";
+import {
+  ExperimentGraphColorControl,
+  ExperimentGraphRangeControl,
+} from "./ExperimentGraphControlPrimitives";
 import { experimentGraphTypeLabel } from "./experimentGraphTypeLabel";
 
 type AxisSettings = WorkspaceGraphState["axes"];
@@ -125,28 +129,23 @@ export function ExperimentGraphAppearanceEditor({
         <details className="experiment-graph-color-details">
           <summary>{t("条件ごとの色", "Colors by condition")}</summary>
           {activeConditions.map((condition, index) => (
-            <label className="experiment-graph-color-field" key={condition.id}>
-              <span>{condition.label}</span>
-              <input
-                type="color"
-                aria-label={t(`${condition.label}の色`, `${condition.label} color`)}
-                value={
-                  appearance.seriesColors[condition.id] ??
-                  GRAPH_PALETTES[appearance.palette][
-                    index % GRAPH_PALETTES[appearance.palette].length
-                  ]
-                }
-                onChange={(event) =>
-                  setAppearance((current) => ({
-                    ...current,
-                    seriesColors: {
-                      ...current.seriesColors,
-                      [condition.id]: event.target.value,
-                    },
-                  }))
-                }
-              />
-            </label>
+            <ExperimentGraphColorControl
+              key={condition.id}
+              label={condition.label}
+              ariaLabel={t(`${condition.label}の色`, `${condition.label} color`)}
+              value={
+                appearance.seriesColors[condition.id] ??
+                GRAPH_PALETTES[appearance.palette][
+                  index % GRAPH_PALETTES[appearance.palette].length
+                ]
+              }
+              onChange={(color) =>
+                setAppearance((current) => ({
+                  ...current,
+                  seriesColors: { ...current.seriesColors, [condition.id]: color },
+                }))
+              }
+            />
           ))}
           <button
             type="button"
@@ -176,25 +175,19 @@ export function ExperimentGraphAppearanceEditor({
           <option value="system">System Sans Serif</option>
         </select>
       </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("グラフタイトル：", "Graph title: ")}
-          {appearance.graphTitleFontSize}px
-        </span>
-        <input
-          aria-label={t("グラフタイトルの文字サイズ", "Graph-title font size")}
-          type="range"
-          min="12"
-          max="32"
-          value={appearance.graphTitleFontSize}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              graphTitleFontSize: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
+      <ExperimentGraphRangeControl
+        label={t("グラフタイトル", "Graph title")}
+        ariaLabel={t("グラフタイトルの文字サイズ", "Graph-title font size")}
+        value={appearance.graphTitleFontSize}
+        min={12}
+        max={32}
+        step={1}
+        suffix="px"
+        separator={t("：", ": ")}
+        onChange={(graphTitleFontSize) =>
+          setAppearance((current) => ({ ...current, graphTitleFontSize }))
+        }
+      />
       <label className="experiment-graph-field">
         <span>{t("キャンバス", "Canvas")}</span>
         <select
@@ -212,46 +205,29 @@ export function ExperimentGraphAppearanceEditor({
           <option value="wide">Wide</option>
         </select>
       </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("左右の余白：", "Side padding: ")}
-          {appearance.sidePadding}px
-        </span>
-        <input
-          aria-label={t("グラフ左右の余白", "Graph side padding")}
-          type="range"
-          min="56"
-          max="180"
-          step="4"
-          value={appearance.sidePadding}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              sidePadding: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("軸線：", "Axis line: ")}
-          {appearance.axisLineWidth.toFixed(1)}px
-        </span>
-        <input
-          aria-label={t("軸線の太さ", "Axis-line width")}
-          type="range"
-          min="0.8"
-          max="2.4"
-          step="0.2"
-          value={appearance.axisLineWidth}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              axisLineWidth: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
+      <ExperimentGraphRangeControl
+        label={t("左右の余白", "Side padding")}
+        ariaLabel={t("グラフ左右の余白", "Graph side padding")}
+        value={appearance.sidePadding}
+        min={56}
+        max={180}
+        step={4}
+        suffix="px"
+        separator={t("：", ": ")}
+        onChange={(sidePadding) => setAppearance((current) => ({ ...current, sidePadding }))}
+      />
+      <ExperimentGraphRangeControl
+        label={t("軸線", "Axis line")}
+        ariaLabel={t("軸線の太さ", "Axis-line width")}
+        value={appearance.axisLineWidth}
+        min={0.8}
+        max={2.4}
+        step={0.2}
+        suffix="px"
+        separator={t("：", ": ")}
+        formatValue={(value) => value.toFixed(1)}
+        onChange={(axisLineWidth) => setAppearance((current) => ({ ...current, axisLineWidth }))}
+      />
       <button
         type="button"
         className="experiment-graph-reset-layout"

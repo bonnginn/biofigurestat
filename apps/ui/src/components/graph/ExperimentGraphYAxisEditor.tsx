@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { localizedText, useAppLocale } from "../../app/appLocale";
 import type { ReadoutDraft } from "../../app/experimentDraft";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
+import { ExperimentGraphRangeControl } from "./ExperimentGraphControlPrimitives";
 
 type AxisSettings = WorkspaceGraphState["axes"];
 type GraphAppearance = WorkspaceGraphState["appearance"];
@@ -36,44 +37,30 @@ export function ExperimentGraphYAxisEditor({
           onChange={(event) => setAxes((current) => ({ ...current, yTitle: event.target.value }))}
         />
       </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("軸タイトル文字：", "Axis-title text: ")}
-          {appearance.axisTitleFontSize}px
-        </span>
-        <input
-          type="range"
-          min="10"
-          max="28"
-          aria-label={t("軸タイトルの文字サイズ", "Axis-title font size")}
-          value={appearance.axisTitleFontSize}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              axisTitleFontSize: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
-      <label className="experiment-graph-field">
-        <span>
-          {t("目盛文字：", "Tick text: ")}
-          {appearance.tickFontSize}px
-        </span>
-        <input
-          type="range"
-          min="9"
-          max="24"
-          aria-label={t("目盛ラベルの文字サイズ", "Tick-label font size")}
-          value={appearance.tickFontSize}
-          onChange={(event) =>
-            setAppearance((current) => ({
-              ...current,
-              tickFontSize: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
+      <ExperimentGraphRangeControl
+        label={t("軸タイトル文字", "Axis-title text")}
+        ariaLabel={t("軸タイトルの文字サイズ", "Axis-title font size")}
+        value={appearance.axisTitleFontSize}
+        min={10}
+        max={28}
+        step={1}
+        suffix="px"
+        separator={t("：", ": ")}
+        onChange={(axisTitleFontSize) =>
+          setAppearance((current) => ({ ...current, axisTitleFontSize }))
+        }
+      />
+      <ExperimentGraphRangeControl
+        label={t("目盛文字", "Tick text")}
+        ariaLabel={t("目盛ラベルの文字サイズ", "Tick-label font size")}
+        value={appearance.tickFontSize}
+        min={9}
+        max={24}
+        step={1}
+        suffix="px"
+        separator={t("：", ": ")}
+        onChange={(tickFontSize) => setAppearance((current) => ({ ...current, tickFontSize }))}
+      />
       <label className="experiment-graph-field">
         <span>{t("範囲", "Range")}</span>
         <select

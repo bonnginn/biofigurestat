@@ -71,26 +71,17 @@ export function ExperimentGraphErrorBarEditor({
         </select>
       </label>
       {(appearance.uncertaintyStyle ?? "error_bars") === "ribbon" ? (
-        <label className="experiment-graph-field">
-          <span>
-            {t("リボン透明度：", "Ribbon opacity: ")}
-            {(appearance.ribbonOpacity ?? 0.18).toFixed(2)}
-          </span>
-          <input
-            type="range"
-            min="0.05"
-            max="0.6"
-            step="0.01"
-            aria-label={t("リボン透明度", "Ribbon opacity")}
-            value={appearance.ribbonOpacity ?? 0.18}
-            onChange={(event) =>
-              setAppearance((current) => ({
-                ...current,
-                ribbonOpacity: Number(event.target.value),
-              }))
-            }
-          />
-        </label>
+        <ExperimentGraphRangeControl
+          label={t("リボン透明度", "Ribbon opacity")}
+          ariaLabel={t("リボン透明度", "Ribbon opacity")}
+          value={appearance.ribbonOpacity ?? 0.18}
+          min={0.05}
+          max={0.6}
+          step={0.01}
+          separator={t("：", ": ")}
+          formatValue={(value) => value.toFixed(2)}
+          onChange={(ribbonOpacity) => setAppearance((current) => ({ ...current, ribbonOpacity }))}
+        />
       ) : null}
       <ExperimentGraphRangeControl
         label={t("線幅", "Line width")}
