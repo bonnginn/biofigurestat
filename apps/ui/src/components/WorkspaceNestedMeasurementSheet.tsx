@@ -392,7 +392,9 @@ export function WorkspaceNestedMeasurementSheet({
       );
     } catch (cause) {
       setPasteMessage(
-        `${cause instanceof Error ? cause.message : t("貼り付けた値を適用できませんでした。", "The pasted values could not be applied.")} ${t("既存の値は変更していません。", "Existing values were not changed.")}`,
+        locale === "ja"
+          ? `${cause instanceof Error ? cause.message : "貼り付けた値を適用できませんでした。"} 既存の値は変更していません。`
+          : "The pasted values could not be applied. Existing values were not changed.",
       );
     }
   };

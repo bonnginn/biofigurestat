@@ -115,6 +115,40 @@ describe("WorkspaceNestedMeasurementSheet", () => {
     );
     expectNoJapaneseUi(view.container);
   });
+  it("does not expose a Japanese parent error after expanded paste in English mode", () => {
+    setAppLocale("en");
+    const data = fixture();
+    const draft = {
+      ...data.draft,
+      conditionAssignment: { ...data.draft.conditionAssignment, unitLabel: "Experimental unit" },
+      attributes: data.draft.attributes.map((attribute) => ({ ...attribute, label: "Condition" })),
+      readouts: data.draft.readouts.map((readout) => ({
+        ...readout,
+        label: "Fluorescence intensity",
+      })),
+    };
+    const view = render(
+      <WorkspaceNestedMeasurementSheet
+        draft={draft}
+        cells={data.cells}
+        mode="expanded"
+        onModeChange={() => undefined}
+        onCellChange={() => {
+          throw new Error("保存済みの測定値を更新できませんでした");
+        }}
+      />,
+    );
+
+    fireEvent.paste(
+      screen.getByRole("textbox", { name: "Control, Exp 1, measurement 1 value" }),
+      { clipboardData: { getData: () => "11\tCell-1" } },
+    );
+
+    expect(
+      screen.getByText("The pasted values could not be applied. Existing values were not changed."),
+    ).toBeVisible();
+    expectNoJapaneseUi(view.container);
+  });
   it("edits unequal condition lists without padding or creating positional pairing", () => {
     const data = fixture();
     render(<Harness initialCells={data.cells} />);

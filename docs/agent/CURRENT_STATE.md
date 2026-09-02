@@ -138,8 +138,12 @@ production build are covered; final visual judgment remains a Beta manual-review
 The English-UI residue assertion now inspects current input/textarea values and
 `aria-description`, in addition to visible text, labels, titles, placeholders, and alt text. This
 closes the class of leak where a generated Japanese default remains only inside an editable field.
-All 34 suites that use the assertion pass (347 tests) with English fixtures; researcher-entered
-content remains data and is not translated.
+All 35 suites that use the assertion pass (352 tests) with English fixtures; researcher-entered
+content remains data and is not translated. `pnpm test:ui:english` now discovers those suites from
+actual assertion use and runs them as a focused localization gate; the measured run completed in
+65.34 seconds. Expanded nested-value paste also replaces a Japanese exception from its parent
+update callback with an English safe fallback. Japanese mode retains diagnostic detail, and entered
+values remain unchanged.
 
 The final source gate ran the 193-file / 1,304-test UI suite once. It produced 1,303 passes and one
 stale test expectation for the Japanese `概要` tab; the corrected focused workflow passes. Full
