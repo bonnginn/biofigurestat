@@ -514,7 +514,14 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     expect(screen.getByRole("textbox", { name: "行 1 列 3" })).toHaveFocus();
 
     fireEvent.click(screen.getByRole("button", { name: "処理・群分け 1に行を追加" }));
-    fireEvent.keyDown(screen.getByRole("textbox", { name: "行 1 列 4" }), { key: "Enter" });
+    const rowOne = [1, 2, 3, 4].map((column) =>
+      screen.getByRole("textbox", { name: `行 1 列 ${column}` }),
+    );
+    rowOne[0]!.focus();
+    rowOne.slice(0, -1).forEach((cell) => fireEvent.keyDown(cell, { key: "Tab" }));
+    const fourth = screen.getByRole("textbox", { name: "行 1 列 4" });
+    expect(fourth).toHaveFocus();
+    fireEvent.keyDown(fourth, { key: "Enter" });
     expect(screen.getByRole("textbox", { name: "行 2 列 1" })).toHaveFocus();
   });
 

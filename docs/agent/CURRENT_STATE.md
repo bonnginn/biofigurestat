@@ -737,6 +737,11 @@ shared-package TypeScript/CSS (`pnpm test:ui:related --base <known-good-commit>`
 use selected two test files and ran 23 tests in 12.37 seconds, instead of repeating the roughly
 four-minute full UI milestone gate. The selector has direct Node tests. Schema, scientific-routing,
 persistence, native, and release changes still require their explicit package or milestone gates.
+One JSON-profiled milestone run took 256.61 seconds across 202 files / 1,369 tests and exposed two
+stale expectations rather than product failures: a keyboard case skipped the required left-to-right
+Tab sequence before contextual Enter, and an idempotence case still expected the new explicit
+experiment-session link to be absent. Both corrected focused tests pass; the complete milestone
+suite has not been repeated solely to replace those two already-isolated failures.
 
 ## Known bounded gaps
 

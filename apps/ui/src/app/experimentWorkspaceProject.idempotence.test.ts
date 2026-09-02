@@ -312,8 +312,15 @@ describe("adaptive workspace scientific revision idempotence", () => {
       graphs: [],
       now: firstSaveAt,
     });
+    const experimentSessionIds = new Set(
+      fixture.workspace.draft!.experiments.map(({ id }) => id),
+    );
     expect(
-      initial.unitInstances.every(({ metadata }) => metadata.experimentSessionId === undefined),
+      initial.unitInstances.every(
+        ({ metadata }) =>
+          typeof metadata.experimentSessionId === "string" &&
+          experimentSessionIds.has(metadata.experimentSessionId),
+      ),
     ).toBe(true);
     const reopened = rehydrateExperimentWorkspace(initial)!;
     const derivedGraph = analyzedGraph(fixture);
