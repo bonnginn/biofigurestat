@@ -45,6 +45,9 @@ const initialAxes: AxisSettings = {
 const initialAppearance = {
   hierarchicalLabels: true,
   barOutline: true,
+  barOutlineMode: "series",
+  barOutlineColor: "#111111",
+  barOutlineWidth: 1.2,
   barMeanMarker: false,
   barWidth: 0.72,
   withinGroupSpacing: 0.72,
@@ -114,6 +117,15 @@ describe("ExperimentGraphXAxisEditor", () => {
 
     rerender(<Harness graphType="bar" />);
     expect(screen.getByLabelText("棒の輪郭線を表示")).toBeEnabled();
+    expect(screen.getByLabelText("棒の外枠色")).toHaveValue("series");
+    fireEvent.change(screen.getByLabelText("棒の外枠色"), { target: { value: "custom" } });
+    expect(screen.getByLabelText("棒の外枠の任意色")).toHaveValue("#111111");
+    fireEvent.change(screen.getByLabelText("棒の外枠の任意色"), {
+      target: { value: "#cc3311" },
+    });
+    expect(screen.getByLabelText("棒の外枠の任意色")).toHaveValue("#cc3311");
+    fireEvent.change(screen.getByLabelText("棒の外枠の太さ"), { target: { value: "2.4" } });
+    expect(screen.getByLabelText("棒の外枠の太さ")).toHaveValue("2.4");
     expect(screen.getByLabelText("棒の幅")).toBeEnabled();
   });
 

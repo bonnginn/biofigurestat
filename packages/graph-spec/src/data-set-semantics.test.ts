@@ -62,4 +62,23 @@ describe("GraphSpec data-set semantics", () => {
     });
     expect(parsed.axes.showMinorTicks).toBe(true);
   });
+
+  it("preserves optional Bar outline color and width without changing legacy defaults", () => {
+    const parsed = GraphSpecSchema.parse({
+      ...baseSpec,
+      appearance: {
+        ...baseSpec.appearance,
+        barOutlineMode: "custom",
+        barOutlineColor: "#cc3311",
+        barOutlineWidth: 2.4,
+      },
+    });
+    const roundTrip = GraphSpecSchema.parse(JSON.parse(JSON.stringify(parsed)));
+    expect(roundTrip.appearance).toMatchObject({
+      barOutline: true,
+      barOutlineMode: "custom",
+      barOutlineColor: "#cc3311",
+      barOutlineWidth: 2.4,
+    });
+  });
 });

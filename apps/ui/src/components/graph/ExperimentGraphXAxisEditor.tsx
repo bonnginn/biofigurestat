@@ -308,6 +308,65 @@ export function ExperimentGraphXAxisEditor({
         />
         <span>{t("棒の輪郭線を表示", "Show bar outlines")}</span>
       </label>
+      {graphType === "bar" && (appearance.barOutline ?? true) ? (
+        <>
+          <label className="experiment-graph-field">
+            <span>{t("棒の外枠色", "Bar outline color")}</span>
+            <select
+              aria-label={t("棒の外枠色", "Bar outline color")}
+              value={appearance.barOutlineMode ?? "series"}
+              onChange={(event) =>
+                setAppearance((current) => ({
+                  ...current,
+                  barOutlineMode: event.target.value as NonNullable<
+                    GraphAppearance["barOutlineMode"]
+                  >,
+                }))
+              }
+            >
+              <option value="series">{t("塗り色に合わせる", "Match fill color")}</option>
+              <option value="black">{t("黒", "Black")}</option>
+              <option value="custom">{t("任意色", "Custom color")}</option>
+            </select>
+          </label>
+          {appearance.barOutlineMode === "custom" ? (
+            <label className="experiment-graph-color-field">
+              <span>{t("棒の外枠の任意色", "Custom bar outline color")}</span>
+              <input
+                type="color"
+                aria-label={t("棒の外枠の任意色", "Custom bar outline color")}
+                value={appearance.barOutlineColor ?? "#111111"}
+                onChange={(event) =>
+                  setAppearance((current) => ({
+                    ...current,
+                    barOutlineColor: event.target.value,
+                  }))
+                }
+              />
+            </label>
+          ) : null}
+          <label className="experiment-graph-field">
+            <span>
+              {t("棒の外枠の太さ：", "Bar outline width: ")}
+              {(appearance.barOutlineWidth ?? appearance.distributionLineWidth ?? 1.2).toFixed(1)}px
+            </span>
+            <input
+              type="range"
+              min="0.5"
+              max="4"
+              step="0.1"
+              aria-label={t("棒の外枠の太さ", "Bar outline width")}
+              value={appearance.barOutlineWidth ?? appearance.distributionLineWidth ?? 1.2}
+              onChange={(event) =>
+                setAppearance((current) => ({
+                  ...current,
+                  barOutlineWidth: Number(event.target.value),
+                }))
+              }
+            />
+          </label>
+        </>
+      ) : null}
       <label className="experiment-graph-checkbox">
         <input
           type="checkbox"

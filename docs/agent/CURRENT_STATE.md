@@ -873,9 +873,10 @@ project-package tests cover both executable routes and save/reopen compatibility
   roughly 80–85% of the present chrome spacing and control height without shrinking readable text
   or pointer targets indiscriminately.
   The Bar-outline checkbox now controls the actual rectangle outline in both the live and exported
-  SVG: enabled uses a black outer stroke and disabled uses no stroke. Previously a shared CSS rule
-  overrode both states, making the checkbox appear ineffective. This change adds no saved field and
-  therefore does not change `.lsa` compatibility.
+  SVG. Previously a shared CSS rule overrode both states, making the checkbox appear ineffective.
+  Bar outlines can now be disabled or use the full-opacity fill color, black, or a custom color,
+  with an independent width. New optional appearance fields preserve these settings; older `.lsa`
+  files remain valid and use the compatible fill-color outline default.
   Kaplan–Meier now supports saved/reopened curve colors, overall and legend font sizes, legend
   positions (`hidden`, `top`, `right`, `inside`), minor-tick visibility, tick direction, and axis
   titles. The optional GraphSpec fields preserve older `.lsa` parsing and the read-only legacy path

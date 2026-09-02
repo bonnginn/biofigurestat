@@ -109,6 +109,38 @@ describe("experiment-workspace graph channel persistence", () => {
     expect(parsed.graphs[0]?.axes.showCategoryGroupSeparators).toBeUndefined();
   });
 
+  it("round-trips optional Bar outline appearance while legacy Graphs remain valid", () => {
+    const legacy = ExperimentWorkspaceStateSchema.parse(workspace);
+    expect(legacy.graphs[0]?.appearance.barOutlineMode).toBeUndefined();
+
+    const customized = {
+      ...structuredClone(workspace),
+      graphs: workspace.graphs.map((graph, index) =>
+        index === 0
+          ? {
+              ...graph,
+              appearance: {
+                ...graph.appearance,
+                barOutline: true,
+                barOutlineMode: "custom" as const,
+                barOutlineColor: "#cc3311",
+                barOutlineWidth: 2.4,
+              },
+            }
+          : graph,
+      ),
+    };
+    const reopened = ExperimentWorkspaceStateSchema.parse(
+      JSON.parse(JSON.stringify(ExperimentWorkspaceStateSchema.parse(customized))),
+    );
+    expect(reopened.graphs[0]?.appearance).toMatchObject({
+      barOutline: true,
+      barOutlineMode: "custom",
+      barOutlineColor: "#cc3311",
+      barOutlineWidth: 2.4,
+    });
+  });
+
   it("keeps the scientific comparison goal optional for legacy projects and round-trips equivalence", () => {
     const legacy = ExperimentWorkspaceStateSchema.parse(workspace);
     expect(legacy.graphs[0]?.comparisonGoal).toBeUndefined();

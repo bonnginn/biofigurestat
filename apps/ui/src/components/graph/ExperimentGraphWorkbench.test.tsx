@@ -1535,7 +1535,7 @@ describe("ExperimentGraphWorkbench", () => {
       expect(Number(bar.getAttribute("height"))).toBeGreaterThan(0);
       expect(Number(bar.dataset.summaryValue)).toBeGreaterThan(0);
       expect(bar).toHaveAttribute("opacity", "0.24");
-      expect(bar.style.stroke).toBe("#111111");
+      expect(bar.style.stroke).toBe("#245c8a");
     });
     expect(svg.querySelectorAll('[data-graph-layer="proportion-experiment"]')).toHaveLength(9);
     expect(svg.querySelectorAll(".experiment-graph-error-line")).toHaveLength(3);
@@ -1544,10 +1544,27 @@ describe("ExperimentGraphWorkbench", () => {
     const serialized = serializeGraphSvg(svg);
     expect(serialized).toContain('data-graph-layer="bar"');
     expect(serialized).toContain('class="experiment-graph-bar"');
-    expect(serialized).toContain("stroke: #111111");
+    expect(serialized).toContain("stroke: #245c8a");
     expect(serialized.match(/<rect[^>]+data-graph-layer="bar"/g)).toHaveLength(3);
 
     selectInspectorTarget("x-axis");
+    fireEvent.change(screen.getByRole("combobox", { name: "棒の外枠色" }), {
+      target: { value: "black" },
+    });
+    bars.forEach((bar) => expect(bar.style.stroke).toBe("#111111"));
+    fireEvent.change(screen.getByRole("combobox", { name: "棒の外枠色" }), {
+      target: { value: "custom" },
+    });
+    fireEvent.change(screen.getByLabelText("棒の外枠の任意色"), {
+      target: { value: "#cc3311" },
+    });
+    fireEvent.change(screen.getByLabelText("棒の外枠の太さ"), {
+      target: { value: "2.4" },
+    });
+    bars.forEach((bar) => {
+      expect(bar.style.stroke).toBe("#cc3311");
+      expect(bar.style.strokeWidth).toBe("2.4");
+    });
     fireEvent.click(screen.getByRole("checkbox", { name: "棒の輪郭線を表示" }));
     bars.forEach((bar) => expect(bar.style.stroke).toBe("none"));
 

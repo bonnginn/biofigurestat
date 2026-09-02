@@ -86,7 +86,7 @@
 | ✅   | workspace上部をcompact化               | compact headerと安全な概要導線を実装・回帰test済み                                                                                                                                                                                                                                                                                                                                                                                    |
 | ✅   | 実験metadataの再編集                   | 既存のstructure revision経路から実験名・条件・測定項目を安全に修正可能                                                                                                                                                                                                                                                                                                                                                                |
 | ✅   | Kaplan–Meier外観設定の共通化           | 系列色、全体font size、凡例位置・凡例font size、補助目盛、目盛方向、軸titleを保存・再読込対応。旧`.lsa`は従来defaultで表示。生存確率0–1・linearとfollow-up全域は科学的表示を守るため固定                                                                                                                                                                                                                                              |
-| 🟡   | 棒Graphの外観設定                      | 条件別の塗り色は既存editorで変更可能。棒の外周ON/OFFがCSSに上書きされる不具合を修正し、ONは黒い外枠、OFFは外枠なしとしてlive SVG・export SVGへ共通反映。次のnative候補で見た目確認待ち                                                                                                                                                                                                                                                |
+| 🟡   | 棒Graphの外観設定                      | 条件別の塗り色に加え、外枠なし・塗り色に合わせる・黒・任意色と外枠幅を独立編集し、live SVG・export SVG・save/reopenへ共通反映。旧`.lsa`では新設定を補完。次のnative候補で見た目確認待ち                                                                                                                                                                                                                                               |
 | ✅   | Statistics結果一覧の改善               | 対照群比較を選択でき、調整済み比較familyをStatistics上で展開可能                                                                                                                                                                                                                                                                                                                                                                      |
 | 🟡   | 同等性／「意味のある差がない」解析     | 独立2群のWelch TOSTと対応あり2条件のpaired TOSTをengine/UI/Methods/save-reopenまで実装。pairedは完全組だけを第2条件−第1条件で解析し、不完全組をData/Graphに保持してIDを結果へ記録。positive/total、shared-run、複数claim、specialist outcomeは科学レビューまで安全停止                                                                                                                                                                |
 | ✅   | 途中行からの入力と実験回・日付の保持   | 空行を挟んだ入力を同じ行に保持し、canonical observationと実験回・日付を明示的に連結。保存・再読込・Graph・Statisticsで回帰確認済み。日付からpairingは推定しない                                                                                                                                                                                                                                                                       |
@@ -103,6 +103,16 @@
 | ✅   | 共同研究者向け解析レビューセット       | 実行済みrunに限り、Graph、群別n、推定値・CI、検定、警告、Methods、表示データCSV、run IDを読取専用HTMLへ一括出力。日英表示とnative保存境界を回帰test済み                                                                                                                                                                                                                                                                               |
 | ✅   | IT・データ取扱い概要                   | local解析、`.lsa`とexportの保存先、任意telemetry、不具合報告、権限、署名、更新、導入checklistを実装根拠付きの日英1文書に整理しREADMEから案内                                                                                                                                                                                                                                                                                          |
 | ✅   | 保存済みGraphの簡易パネルSVG           | 2件以上の保存済みGraphを再解析せず2列配置し、A/B…label、Graph ID・表示名metadata、個別SVG styleを保持してnative-aware SVG保存。panel layout自体は`.lsa` schemaへ追加しない                                                                                                                                                                                                                                                            |
+
+### Graph編集機能の段階的拡張
+
+Prism相当の研究図編集能力を目標にするが、画面の模倣や一括rewriteは行わない。共通appearance
+state、保存互換性、画面とSVG/PNGの一致を保ちながら、利用頻度の高い順に追加する。
+
+1. 塗り、外枠、点、線、error bar、軸、凡例の色・太さ・表示をGraph間で揃える。
+2. 棒、box/violin、paired、ordered X/Y、Kaplan–Meier固有の妥当な設定を追加する。
+3. 複数系列への一括適用、設定copy、preset、整列など反復操作を減らす。
+4. 各段階で旧`.lsa`、save/reopen、SVG/PNG、日英表示をfocused regressionで確認する。
 
 ## コード整理・堅牢化
 

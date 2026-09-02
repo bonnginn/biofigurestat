@@ -1306,9 +1306,18 @@ export function ExperimentGraphSvg({
                 style={{
                   // Keep this inline so both the live stylesheet and the SVG export stylesheet
                   // respect the researcher's explicit outline toggle.
-                  stroke: appearance.barOutline === false ? "none" : "#111111",
+                  stroke:
+                    appearance.barOutline === false
+                      ? "none"
+                      : appearance.barOutlineMode === "black"
+                        ? "#111111"
+                        : appearance.barOutlineMode === "custom"
+                          ? (appearance.barOutlineColor ?? "#111111")
+                          : color,
                   strokeWidth:
-                    appearance.barOutline === false ? 0 : appearance.distributionLineWidth,
+                    appearance.barOutline === false
+                      ? 0
+                      : (appearance.barOutlineWidth ?? appearance.distributionLineWidth),
                 }}
                 className="experiment-graph-bar"
                 data-graph-layer="bar"
