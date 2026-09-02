@@ -167,6 +167,13 @@ function safeErrorKind(error: unknown): string {
     if (/missing from application resources/iu.test(error)) return "EngineResourceMissing";
     if (/Could not start the local analysis engine/iu.test(error)) return "EngineProcessLaunchError";
     if (/local analysis engine failed/iu.test(error)) return "EngineProcessFailure";
+    if (/ENGINE_OUTPUT_INVALID_JSON:empty/iu.test(error)) return "EngineInvalidJsonEmpty";
+    if (/ENGINE_OUTPUT_INVALID_JSON:utf8_bom/iu.test(error)) return "EngineInvalidJsonUtf8Bom";
+    if (/ENGINE_OUTPUT_INVALID_JSON:non_finite/iu.test(error)) return "EngineInvalidJsonNonFinite";
+    if (/ENGINE_OUTPUT_INVALID_JSON:eof/iu.test(error)) return "EngineInvalidJsonEof";
+    if (/ENGINE_OUTPUT_INVALID_JSON:syntax/iu.test(error)) return "EngineInvalidJsonSyntax";
+    if (/ENGINE_OUTPUT_INVALID_JSON:data/iu.test(error)) return "EngineInvalidJsonData";
+    if (/ENGINE_OUTPUT_INVALID_JSON:io/iu.test(error)) return "EngineInvalidJsonIo";
     if (/analysis engine returned invalid JSON/iu.test(error)) return "EngineInvalidJson";
     return "NonErrorThrow";
   }

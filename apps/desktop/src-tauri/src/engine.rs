@@ -207,8 +207,37 @@ fn execute_engine_process(
             detail.trim()
         ));
     }
-    serde_json::from_slice(&stdout)
-        .map_err(|error| format!("The analysis engine returned invalid JSON: {error}"))
+    serde_json::from_slice(&stdout).map_err(|error| {
+        let category = if stdout.is_empty() {
+            "empty"
+        } else if stdout.starts_with(&[0xef, 0xbb, 0xbf]) {
+            "utf8_bom"
+        } else if stdout.windows(3).any(|bytes| bytes == b"NaN")
+            || stdout.windows(8).any(|bytes| bytes == b"Infinity")
+        {
+            "non_finite"
+        } else {
+            match error.classify() {
+                serde_json::error::Category::Io => "io",
+                serde_json::error::Category::Syntax => "syntax",
+                serde_json::error::Category::Data => "data",
+                serde_json::error::Category::Eof => "eof",
+            }
+        };
+        let starts_with_object = stdout
+            .iter()
+            .find(|byte| !byte.is_ascii_whitespace())
+            .is_some_and(|byte| *byte == b'{');
+        let ends_with_object = stdout
+            .iter()
+            .rev()
+            .find(|byte| !byte.is_ascii_whitespace())
+            .is_some_and(|byte| *byte == b'}');
+        format!(
+            "ENGINE_OUTPUT_INVALID_JSON:{category}:bytes={}:starts_object={starts_with_object}:ends_object={ends_with_object}",
+            stdout.len()
+        )
+    })
 }
 
 fn execute_engine(

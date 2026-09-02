@@ -222,6 +222,10 @@ describe("privacy-safe diagnostic reports", () => {
       "ENGINE_EXECUTION_FAILED",
       Object.assign(new Error("raw value 12.345 failed schema parsing"), { name: "ZodError" }),
     );
+    recordDiagnosticError(
+      "ENGINE_EXECUTION_FAILED",
+      "ENGINE_OUTPUT_INVALID_JSON:eof:bytes=1042:starts_object=true:ends_object=false",
+    );
 
     const expanded = createDiagnosticReport({
       route: "new-experiment",
@@ -232,6 +236,7 @@ describe("privacy-safe diagnostic reports", () => {
     expect(expanded.technicalErrors?.map(({ detail }) => detail)).toEqual([
       "EngineProcessFailure",
       "EngineResponseValidationError",
+      "EngineInvalidJsonEof",
     ]);
     expect(text).not.toContain("Secret Study");
     expect(text).not.toContain("12.345");
