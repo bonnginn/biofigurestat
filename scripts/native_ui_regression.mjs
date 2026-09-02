@@ -878,6 +878,69 @@ async function runWindowsScenario({
         throw new Error("Architecture IPC returned no value");
       return { architecture };
     });
+    await runStep("native_welch_tost_ipc", async () => {
+      const comparisonId = "equivalence:condition.control:condition.treatment";
+      const observations = [
+        ...[1.0, 1.02, 0.98, 1.01, 0.99].map((value, index) => ({
+          observationId: `observation.control.${index + 1}`,
+          conditionId: "condition.control",
+          value,
+          experimentalUnitId: `unit.control.${index + 1}`,
+        })),
+        ...[1.01, 1.03, 0.99, 1.02, 1.0].map((value, index) => ({
+          observationId: `observation.treatment.${index + 1}`,
+          conditionId: "condition.treatment",
+          value,
+          experimentalUnitId: `unit.treatment.${index + 1}`,
+        })),
+      ];
+      const request = {
+        protocolVersion: "0.15.0",
+        requestId: "request.native-regression.welch-tost",
+        projectId: "project.native-regression",
+        analysisId: "analysis.native-regression.welch-tost",
+        templateId: "D01",
+        templateVersion: "0.2.0",
+        method: "welch_tost",
+        comparisonId,
+        contrastConditionIds: ["condition.control", "condition.treatment"],
+        equivalencePlan: {
+          schemaVersion: "0.1.0",
+          margin: {
+            scale: "raw_difference",
+            lowerBound: -0.1,
+            upperBound: 0.1,
+            unit: "Relative activity",
+            declaredAsPrespecified: true,
+          },
+          alpha: 0.05,
+          claimMode: "single_primary_comparison",
+          primaryComparisonId: comparisonId,
+        },
+        observations,
+        options: {
+          alternative: "two_sided",
+          confidenceLevel: 0.9,
+          multiplicityMethod: null,
+        },
+      };
+      const result = await client.evaluate(
+        `window.__TAURI_INTERNALS__.invoke("run_analysis", ${JSON.stringify({ request })})`,
+      );
+      const comparison = result?.equivalence?.comparisons?.[0];
+      if (
+        result?.status !== "ok" ||
+        result?.protocolVersion !== "0.15.0" ||
+        comparison?.conclusion !== "equivalence_supported"
+      ) {
+        throw new Error("Native Welch TOST IPC returned an unexpected result");
+      }
+      return {
+        protocolVersion: result.protocolVersion,
+        status: result.status,
+        conclusion: comparison.conclusion,
+      };
+    });
     await runStep("home_has_no_japanese_application_copy", async () => {
       const findings = await client.evaluate(japaneseUiAuditExpression());
       if (findings.length)
