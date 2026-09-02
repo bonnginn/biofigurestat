@@ -8,6 +8,8 @@ opening broad documents.
 
 - Short current snapshot: `docs/agent/CURRENT_STATE.md`
 - Regression-test retention and rationalization: `docs/agent/REGRESSION_TEST_POLICY.md`
+- Unusual-input debug results and research-backed method/Graph priorities:
+  `docs/agent/EXPLORATORY_DEBUG_AND_METHOD_RESEARCH_2026-09-03.md`
 - Public release behavior and limitations: `docs/alpha/RELEASE_NOTES_0.1.0-alpha.2.md`,
   `docs/alpha/QUICK_START.md`, and `docs/alpha/KNOWN_LIMITATIONS.md`
 - Next Public Alpha timing and go/no-go boundary:
