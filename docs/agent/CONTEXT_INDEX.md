@@ -11,7 +11,8 @@ opening broad documents.
 - Public release behavior and limitations: `docs/alpha/RELEASE_NOTES_0.1.0-alpha.2.md`,
   `docs/alpha/QUICK_START.md`, and `docs/alpha/KNOWN_LIMITATIONS.md`
 - Public/private source relationship:
-  `docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md`
+  `docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md` and
+  `docs/alpha/BILINGUAL_ALPHA_UPDATE_READINESS_2026-09-01.md`
 
 Historical handoffs, external reviews, benchmark outputs, and sealed evaluation material are kept
 in the private archive and are not public product authority.
@@ -75,7 +76,8 @@ Open older Graph ADRs only when the current ones explicitly depend on them.
 - Known limitations: `docs/alpha/KNOWN_LIMITATIONS.md`
 - Diagnostics: `docs/alpha/DIAGNOSTICS_AND_ERROR_ARCHITECTURE.md`
 - Windows development setup: `docs/WINDOWS_BENCHMARK_DEVELOPMENT_SETUP.md`
-- Public artifact provenance: `docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md`
+- Public artifact provenance: `docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md` and
+  `docs/alpha/BILINGUAL_ALPHA_UPDATE_READINESS_2026-09-01.md`
 
 Browser preview is not evidence for native engine execution, save/open, packaging, signing, or
 migration. Keep those evidence types separate.
