@@ -55,3 +55,12 @@ listed in the context index. Record a new ADR only when the decision changes a d
 
 Common commands are in `package.json`. The repository uses pnpm; Python engine commands should run
 through `scripts/run_with_engine_python.mjs` via the package scripts.
+
+## Before asking for native manual verification
+
+Do not guide the researcher from memory or from an old screenshot. Before giving the first manual
+step, follow `docs/agent/MANUAL_VERIFICATION_PROTOCOL.md`: identify the exact build, trace the
+current route and feature gate in source, confirm the visible button and heading text in the
+rendered component or a current test, and state the starting screen explicitly. Use the exact
+current UI label rather than a convenient shorthand. If the visible state cannot be established,
+ask what heading is on screen before giving another click instruction.

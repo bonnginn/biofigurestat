@@ -75,6 +75,7 @@ Open older Graph ADRs only when the current ones explicitly depend on them.
 - Institutional IT and data-handling summary: `docs/IT_DATA_HANDLING_OVERVIEW.md`
 - Known limitations: `docs/alpha/KNOWN_LIMITATIONS.md`
 - Diagnostics: `docs/alpha/DIAGNOSTICS_AND_ERROR_ARCHITECTURE.md`
+- User-operated native checks: `docs/agent/MANUAL_VERIFICATION_PROTOCOL.md`
 - Windows development setup: `docs/WINDOWS_BENCHMARK_DEVELOPMENT_SETUP.md`
 - Public artifact provenance: `docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md` and
   `docs/alpha/BILINGUAL_ALPHA_UPDATE_READINESS_2026-09-01.md`
