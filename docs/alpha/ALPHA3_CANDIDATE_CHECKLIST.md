@@ -2,7 +2,7 @@
 
 Updated: 2026-09-03 (JST)
 
-Status: automated product-source gate passed at `2d9fba6`; reference-gate tooling is prepared at
+Status: automated product-source gate passed through `e2cc364`; reference-gate tooling is prepared at
 `35e3431`; no candidate artifact or release has been authorized.
 
 Use this checklist only for the maintenance Alpha described in
@@ -13,7 +13,7 @@ earlier release and must not be silently reinterpreted as current evidence.
 
 - [x] Record the clean product-source branch and commit SHA: branch
       `codex/native-ui-regression-automation-2026-08-31`, product source
-      `2d9fba652b79e69e98aec623f534c2d8e9a59a39`.
+      `e2cc364`.
 - [ ] Confirm the public-source tree and private release-build tree relationship without copying
       sealed evaluation material into the public repository.
 - [ ] Record the application version, engine version, build revision, license, and build date.
@@ -93,7 +93,7 @@ expected cases were appended and all existing cases remained unchanged, then run
 
 ## Final verdict
 
-- Candidate source: product source gate passed at `2d9fba6`; artifact nomination pending
+- Candidate source: product source gate passed through `e2cc364`; artifact nomination pending
 - Windows artifact: `TBD`
 - macOS artifact: `TBD`
 - Product failures: `TBD`

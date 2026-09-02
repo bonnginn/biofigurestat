@@ -49,6 +49,13 @@ English UI. Switching to Japanese opens the unchanged legacy editor; no project 
 Structural simplification is proceeding as small behavior-preserving commits. It does not change
 the published Alpha artifacts, scientific semantics, or the project schema.
 
+The current refactor source gate passes through `e2cc364`. Common Coverage now keeps ordered X/Y
+parsing, explicit missingness, stable Unit/Series identity, legacy restoration, and raw-revision
+construction in one pure workflow module instead of the route component. Its 41 route tests,
+UI typecheck, focused lint, production build, and release verifier pass. The full 1,400-test UI
+milestone was already run once earlier in this batch and was not repeated after this bounded
+extraction.
+
 Graph appearance editors now share checked-state, numeric-range, and color-control primitives.
 Bar, uncertainty, connecting-line, raw-point, distribution, summary, and visual-series editors use
 the same event normalization and named-color foundation while retaining their existing appearance
