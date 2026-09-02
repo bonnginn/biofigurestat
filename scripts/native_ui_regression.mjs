@@ -361,23 +361,29 @@ if ($action -eq 'cancel') {
   $selectedEditName = $selectedEdit.element.Current.Name
   $selectedEditId = $selectedEdit.element.Current.AutomationId
   $selectedEditHandle = [IntPtr]$selectedEdit.element.Current.NativeWindowHandle
-  if ($selectedEditHandle -eq [IntPtr]::Zero) {
-    throw ('HARNESS_FILE_DIALOG_AUTOMATION: writable file name input has no native handle: ' + $selectedEditId)
-  }
+  $fileNameInputMethod = 'ValuePattern'
   try {
-    $messageResult = [IntPtr]::Zero
-    $sent = [BioFigureStatNativeWindowOwner]::SendMessageTimeout(
-      $selectedEditHandle,
-      0x000C,
-      [IntPtr]::Zero,
-      $target,
-      0x0002,
-      2000,
-      [ref]$messageResult
-    )
-    if ($sent -eq [IntPtr]::Zero) { throw 'WM_SETTEXT timed out or failed' }
+    $selectedEdit.pattern.SetValue($target)
   } catch {
-    throw ('HARNESS_FILE_DIALOG_AUTOMATION: WM_SETTEXT failed for ' + $selectedEditId + ': ' + $_.Exception.Message)
+    if ($selectedEditHandle -eq [IntPtr]::Zero) {
+      throw ('HARNESS_FILE_DIALOG_AUTOMATION: ValuePattern failed for handle-less file name input ' + $selectedEditId + ': ' + $_.Exception.Message)
+    }
+    $fileNameInputMethod = 'WM_SETTEXT'
+    try {
+      $messageResult = [IntPtr]::Zero
+      $sent = [BioFigureStatNativeWindowOwner]::SendMessageTimeout(
+        $selectedEditHandle,
+        0x000C,
+        [IntPtr]::Zero,
+        $target,
+        0x0002,
+        2000,
+        [ref]$messageResult
+      )
+      if ($sent -eq [IntPtr]::Zero) { throw 'WM_SETTEXT timed out or failed' }
+    } catch {
+      throw ('HARNESS_FILE_DIALOG_AUTOMATION: filename input failed for ' + $selectedEditId + ': ' + $_.Exception.Message)
+    }
   }
   try {
     $selectedEdit.element.SetFocus()
@@ -402,6 +408,7 @@ $result = @{ ok = $true; action = $action; dialog = $dialog.Current.Name }
 if ($action -eq 'save') {
   $result.fileNameControl = $selectedEditName
   $result.fileNameAutomationId = $selectedEditId
+  $result.fileNameInputMethod = $fileNameInputMethod
 }
 [Console]::Out.Write((ConvertTo-Json $result -Compress))
 `;

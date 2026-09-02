@@ -83,6 +83,8 @@ test("drives only the exact spawned process native Save dialog with encoded path
   assert.match(saveCommand.at(-1), /FromBase64String/);
   assert.doesNotMatch(saveCommand.at(-1), /日本語|quote/);
   assert.match(saveCommand.at(-1), /AutomationIdProperty,\s*\n\s*'1001'/);
+  assert.match(saveCommand.at(-1), /pattern\.SetValue\(\$target\)/);
+  assert.match(saveCommand.at(-1), /handle-less file name input/);
   assert.match(saveCommand.at(-1), /PostMessage/);
   assert.match(saveCommand.at(-1), /SendMessageTimeout/);
   assert.match(saveCommand.at(-1), /0x000C/);
