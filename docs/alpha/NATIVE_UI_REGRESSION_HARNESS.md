@@ -15,7 +15,7 @@ The first Windows gate covers:
 - connection to the actual WebView2 instance over a loopback-only inspection port;
 - an isolated English session without telemetry participation;
 - native architecture IPC;
-- Welch TOSTを同じTauri `run_analysis` IPCから実行し、protocol、status、3状態結論を検証;
+- Welch／paired TOSTを同じTauri `run_analysis` IPCから実行し、protocol、status、3状態結論、paired analysis setを検証;
 - visible and accessible application-copy scan for unexpected Japanese text;
 - native export command and exact byte verification;
 - the real Windows project Open plus SVG, PNG, and CSV Save dialogs, including Cancel without losing the app;
@@ -56,6 +56,20 @@ node scripts/native_ui_regression.mjs `
   --executable C:\absolute\path\to\lifescience-analysis-app.exe `
   --output C:\absolute\evidence\directory
 ```
+
+After installing a reviewed NSIS candidate, verify the real Windows Shell `.lsa` association with
+an existing synthetic project and the installed executable:
+
+```powershell
+node scripts/native_ui_regression.mjs --platform windows `
+  --executable "$env:LOCALAPPDATA\BioFigureStat\lifescience-analysis-app.exe" `
+  --association-project "C:\absolute\synthetic-project.lsa"
+```
+
+This dedicated mode does not pass the project path directly to a known executable. Windows Shell
+resolves the registered association, and the harness refuses a process whose executable differs
+from `--executable`. It then verifies restored Data, enabled Graph/Statistics tabs, the saved Graph,
+and SVG/PNG/CSV controls. A fresh-profile usage-information prompt is declined before inspection.
 
 The harness uses a temporary WebView2 user-data folder so it does not change the researcher's real
 locale, consent choice, recent projects, favorites, or project tabs. It starts and terminates only

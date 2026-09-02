@@ -130,6 +130,17 @@ unrestricted rerun passed the full scenario, with evidence under
 `.tmp/native-ui-regression/win-preview11-paired-tost-unsandboxed/`. This candidate is a local review
 build and has not been published.
 
+The same `37bf58f-beta.20260902.win-preview11` NSIS artifact was installed in current-user mode and
+registered `.lsa` to the installed executable under `%LOCALAPPDATA%/BioFigureStat`. A dedicated
+native association scenario launches an existing synthetic `.lsa` through Windows Shell rather
+than passing it directly to a known executable. It verifies the resolved installed executable,
+restored `Vehicle` data, enabled Graph and Statistics tabs, the saved Graph, and enabled SVG/PNG/CSV
+controls. A fresh-profile usage-information prompt is explicitly declined before inspection, so
+the scenario sends no research data. The dedicated run passed under
+`.tmp/native-ui-regression/win-preview11-installed-association-final/`. The earlier combined attempt
+stopped at native Save-dialog keyboard automation and remains correctly classified as harness
+infrastructure evidence, not a product or association failure.
+
 The import workflow also bundles a constrained bilingual Excel template with separate sheets for
 independent groups, paired/repeated observations, Survival, and ordered X/Y data. The in-app recipe
 links to that workbook and states that IDs/dates retain provenance but do not prove pairing or

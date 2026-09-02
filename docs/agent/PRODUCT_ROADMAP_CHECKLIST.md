@@ -17,11 +17,10 @@
 
 完了した作業はこの表から外し、下の各分野に証拠を残します。
 
-| 順位 | 状態 | 作業                                        | ユーザー確認                      | 完了条件                                                                                                |
-| ---- | ---- | ------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 1    | 🟡   | installed `.lsa` file associationの自動確認 | installerとOS関連付けの確認時のみ | 同じexeへのpath指定再起動はpackaged PASS。次にinstaller経由のdouble-clickを再現                         |
-| 2    | 🟡   | 残るBeta視覚調整                            | 最終的な見た目のみ                | 通常Graph previewとKaplan–Meierの安全な外観設定は実装済み。Graph-only表示差と最終的な見た目を実機で確認 |
-| 3    | ⏸    | 独立性確認文の短文化                        | 科学表現の承認が必要              | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする                                      |
+| 順位 | 状態 | 作業                 | ユーザー確認         | 完了条件                                                                                                |
+| ---- | ---- | -------------------- | -------------------- | ------------------------------------------------------------------------------------------------------- |
+| 1    | 🟡   | 残るBeta視覚調整     | 最終的な見た目のみ   | 通常Graph previewとKaplan–Meierの安全な外観設定は実装済み。Graph-only表示差と最終的な見た目を実機で確認 |
+| 2    | ⏸    | 独立性確認文の短文化 | 科学表現の承認が必要 | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする                                      |
 
 ## 公開・運用
 
@@ -68,9 +67,9 @@
 | ✅   | Windows WebView2起動・接続             | transient blank targetを待機し、このhostの最新packaged exeでscenario全体がPASS                                                                                                                                                                                                                                                      |
 | ✅   | Graph-only Statistics validation       | 実表入力からGraph/Statisticsへ進み、未回答項目の英語alert表示とfocusをnativeで検査                                                                                                                                                                                                                                                  |
 | ✅   | native英語表示漏れ監査                 | visible text・属性に加え、編集欄の現在値と`aria-description`も検査。言語切替ボタンとユーザーpathだけを明示除外し、自己test 13/13 PASS                                                                                                                                                                                               |
-| ✅   | Welch／paired TOST native実行          | `37bf58f-beta.20260902.win-preview11`でexact executable harnessが実Tauri `run_analysis`→同梱engine→JSON IPCを通過。Welch `0.15.0`とpaired `0.16.0`がともに`ok`／`equivalence_supported`を返し、pairedの完全組6組と除外IDも保持。sidecar、Rust製品process境界、native harnessは同一request fixtureを使用。harness自己test 14/14 PASS |
+| ✅   | Welch／paired TOST native実行          | `37bf58f-beta.20260902.win-preview11`でexact executable harnessが実Tauri `run_analysis`→同梱engine→JSON IPCを通過。Welch `0.15.0`とpaired `0.16.0`がともに`ok`／`equivalence_supported`を返し、pairedの完全組6組と除外IDも保持。sidecar、Rust製品process境界、native harnessは同一request fixtureを使用。harness自己test 16/16 PASS |
 | ✅   | native file dialog自動操作             | Windows実Open、SVG/PNG/CSV Cancel、SVG任意パス保存、project `.lsa`任意パス保存をpackaged PASS。標準Alt+Nでmodern/classic双方のfilename欄へ移動し、UTF-16 `SendInput`で絶対pathを入力。自己test 13/13、証拠は`.tmp/native-ui-regression/win-preview10-save-targets-alt-n4/`                                                          |
-| 🟡   | `.lsa` file association自動確認        | project保存→同じexeへpathを渡す再起動、Data保持、保存済みGraph、Graph/Statistics有効化はpackaged PASS。installer登録後のdouble-clickのみ未確認                                                                                                                                                                                      |
+| ✅   | `.lsa` file association自動確認        | `37bf58f-beta.20260902.win-preview11` installerをcurrent-user installし、Windows Shell関連付けから合成`.lsa`を起動。インストール先exe、Data値、Graph/Statistics有効化、保存済みGraph、SVG/PNG/CSV controlsを専用native harnessで確認。初回利用情報はopt-outし、研究データ送信なし                                                   |
 | 🟡   | macOS adapter                          | Accessibilityで入力、Command+Q、Cancel保持、破棄終了を同じreport schemaへ実装。Mac実行証拠待ち                                                                                                                                                                                                                                      |
 | ⏸    | 人間の見た目判断                       | graph品質、clipping、font、余白、高DPIは最終的に人間が確認                                                                                                                                                                                                                                                                          |
 

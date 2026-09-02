@@ -12,6 +12,7 @@ import {
   selectWebviewTarget,
   summarizeWebviewTargets,
   validateEquivalenceBoundaryResult,
+  windowsAssociationLaunchCommand,
   windowsCloseCommand,
   windowsFileDialogCommand,
   windowsFileDialogFailure,
@@ -89,6 +90,7 @@ test("parses a bounded Windows native regression invocation", () => {
       output: "C:\\evidence",
       timeoutMs: 30000,
       nativeFileDialogSaveTargets: false,
+      associationProject: undefined,
     },
   );
 });
@@ -98,6 +100,28 @@ test("enables experimental native Save-target and .lsa reopen checks explicitly"
     parseNativeRegressionArguments(["--native-file-dialog-save-targets"])
       .nativeFileDialogSaveTargets,
     true,
+  );
+});
+
+test("launches an absolute .lsa through Windows Shell without interpolating its path", () => {
+  const projectPath = "C:\\evidence\\日本語 ' quote\\project.lsa";
+  const command = windowsAssociationLaunchCommand(projectPath);
+  assert.deepEqual(command.slice(0, 2), ["-NoProfile", "-NonInteractive"]);
+  assert.match(command.at(-1), /Start-Process -FilePath \$projectPath -PassThru/);
+  assert.match(command.at(-1), /FromBase64String/);
+  assert.doesNotMatch(command.at(-1), /日本語|quote/);
+  assert.throws(() => windowsAssociationLaunchCommand("relative-project.lsa"), /must be absolute/);
+});
+
+test("accepts only an absolute project path for the dedicated association scenario", () => {
+  const projectPath = "C:\\evidence\\project.lsa";
+  assert.equal(
+    parseNativeRegressionArguments(["--association-project", projectPath]).associationProject,
+    projectPath,
+  );
+  assert.throws(
+    () => parseNativeRegressionArguments(["--association-project", "project.lsa"]),
+    /must be an absolute path/,
   );
 });
 

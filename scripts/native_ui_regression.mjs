@@ -42,6 +42,7 @@ export function parseNativeRegressionArguments(argv) {
     output: undefined,
     timeoutMs: 20_000,
     nativeFileDialogSaveTargets: false,
+    associationProject: undefined,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -60,6 +61,9 @@ export function parseNativeRegressionArguments(argv) {
       index += 1;
     } else if (argument === "--native-file-dialog-save-targets") {
       parsed.nativeFileDialogSaveTargets = true;
+    } else if (argument === "--association-project" && value) {
+      parsed.associationProject = value;
+      index += 1;
     } else {
       throw new Error(`Unknown or incomplete argument: ${argument}`);
     }
@@ -73,6 +77,9 @@ export function parseNativeRegressionArguments(argv) {
   }
   if (!new Set(["windows", "macos"]).has(parsed.platform)) {
     throw new Error(`Unsupported native regression platform: ${parsed.platform}`);
+  }
+  if (parsed.associationProject && !isAbsolute(parsed.associationProject)) {
+    throw new Error("--association-project must be an absolute path");
   }
   return parsed;
 }
@@ -249,6 +256,24 @@ export function windowsCloseCommand(processId) {
     "-NonInteractive",
     "-Command",
     `if (-not (Get-Process -Id ${processId} -ErrorAction Stop).CloseMainWindow()) { throw 'Native window did not accept WM_CLOSE' }`,
+  ];
+}
+
+export function windowsAssociationLaunchCommand(projectPath) {
+  if (!isAbsolute(projectPath)) throw new Error("Association project path must be absolute");
+  const encodedPath = Buffer.from(projectPath, "utf8").toString("base64");
+  return [
+    "-NoProfile",
+    "-NonInteractive",
+    "-Command",
+    `
+$projectPath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${encodedPath}'))
+$launched = Start-Process -FilePath $projectPath -PassThru
+Start-Sleep -Milliseconds 500
+$launched.Refresh()
+if ($launched.HasExited) { throw 'Associated application exited during launch' }
+[PSCustomObject]@{ pid = $launched.Id; path = $launched.Path } | ConvertTo-Json -Compress
+`,
   ];
 }
 
@@ -1281,13 +1306,14 @@ async function runWindowsScenario({
       await runStep("windows_lsa_command_line_open", async () => {
         const associationPort = await reservePort();
         const associationOutput = [];
+        const associationEnvironment = {
+          ...process.env,
+          WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${associationPort} --remote-allow-origins=*`,
+          WEBVIEW2_USER_DATA_FOLDER: profileDirectory,
+        };
         const associationChild = spawn(executable, [associationProjectTarget], {
           cwd: ROOT,
-          env: {
-            ...process.env,
-            WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${associationPort} --remote-allow-origins=*`,
-            WEBVIEW2_USER_DATA_FOLDER: profileDirectory,
-          },
+          env: associationEnvironment,
           windowsHide: true,
           stdio: ["ignore", "pipe", "pipe"],
         });
@@ -1321,7 +1347,10 @@ async function runWindowsScenario({
             associationClient,
             join(outputDirectory, "lsa-command-line-open.png"),
           );
-          return { target: associationProjectTarget, restoredValue: "Vehicle" };
+          return {
+            target: associationProjectTarget,
+            restoredValue: "Vehicle",
+          };
         } catch (error) {
           if (associationClient) {
             try {
@@ -1351,8 +1380,9 @@ async function runWindowsScenario({
           throw error;
         } finally {
           associationClient?.close();
-          if (associationChild.exitCode === null && !associationChild.killed)
+          if (associationChild.exitCode === null && !associationChild.killed) {
             associationChild.kill();
+          }
           const output = associationOutput.join("");
           if (output) {
             await writeFile(
@@ -1382,6 +1412,179 @@ async function runWindowsScenario({
     if (child.exitCode === null && !child.killed) child.kill();
   }
   return { steps, profileDirectory, exportTarget, dialogExportTarget, associationProjectTarget };
+}
+
+async function runWindowsInstalledAssociationScenario({
+  executable,
+  projectPath,
+  outputDirectory,
+  timeoutMs,
+}) {
+  const steps = [];
+  const runStep = async (name, action) => {
+    const startedAt = Date.now();
+    try {
+      const detail = await action();
+      steps.push({ name, status: "pass", durationMs: Date.now() - startedAt, detail });
+      return detail;
+    } catch (error) {
+      steps.push({
+        name,
+        status: "fail",
+        durationMs: Date.now() - startedAt,
+        detail: String(error),
+      });
+      if (error && typeof error === "object") error.nativeSteps = steps;
+      throw error;
+    }
+  };
+  const port = await reservePort();
+  const profileDirectory = await mkdtemp(
+    join(tmpdir(), "biofigurestat-installed-association-profile-"),
+  );
+  const associationEnvironment = {
+    ...process.env,
+    WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port} --remote-allow-origins=*`,
+    WEBVIEW2_USER_DATA_FOLDER: profileDirectory,
+  };
+  let associatedProcessId;
+  let client;
+  try {
+    const launch = await runStep("windows_lsa_shell_launch", async () => {
+      const { stdout } = await execFileAsync(
+        "powershell.exe",
+        windowsAssociationLaunchCommand(projectPath),
+        {
+          cwd: ROOT,
+          env: associationEnvironment,
+          timeout: Math.min(timeoutMs, 20_000),
+          windowsHide: true,
+        },
+      );
+      const detail = JSON.parse(stdout.trim());
+      associatedProcessId = Number(detail.pid);
+      const launchedExecutable = resolve(String(detail.path));
+      if (
+        !Number.isInteger(associatedProcessId) ||
+        associatedProcessId <= 0 ||
+        launchedExecutable.toLowerCase() !== resolve(executable).toLowerCase()
+      ) {
+        throw new Error(`Windows .lsa association launched an unexpected target: ${stdout}`);
+      }
+      return {
+        processId: associatedProcessId,
+        executable: launchedExecutable,
+        projectPath,
+        launchMode: "windows_shell_association",
+      };
+    });
+    const processProbe = { exitCode: null };
+    const target = await runStep("windows_lsa_webview_launch", () =>
+      waitForTarget(port, timeoutMs, processProbe),
+    );
+    const connection = await runStep("windows_lsa_webview_connect", () =>
+      connectToStableWebview(port, target, timeoutMs, processProbe),
+    );
+    client = connection.client;
+    await runStep("windows_lsa_first_use_consent_dismissed", async () => {
+      const dismissed = await client.evaluate(`(() => {
+        const labels = new Set(["協力しない", "Don't participate"]);
+        const button = [...document.querySelectorAll('button')].find(
+          (candidate) => labels.has(candidate.textContent?.trim() ?? ""),
+        );
+        if (!button) return false;
+        button.click();
+        return true;
+      })()`);
+      if (dismissed) {
+        await waitFor(
+          client,
+          `![...document.querySelectorAll('button')].some((button) => ["協力しない", "Don't participate"].includes(button.textContent?.trim() ?? ""))`,
+          "first-use consent dismissal",
+          timeoutMs,
+        );
+      }
+      return { shown: dismissed, choice: dismissed ? "opted_out" : "already_recorded" };
+    });
+    await runStep("windows_lsa_data_and_tabs_restored", async () => {
+      await client.evaluate(`(() => {
+        const labels = new Set(["Data", "データ"]);
+        const tab = [...document.querySelectorAll('button, [role="tab"]')].find(
+          (candidate) => labels.has(candidate.textContent?.trim() ?? ""),
+        );
+        tab?.click();
+      })()`);
+      await waitFor(
+        client,
+        `(() => {
+          const value = document.querySelector('[data-testid="graph-only-cell-1-0"]')?.value;
+          const tabs = [...document.querySelectorAll('button, [role="tab"]')];
+          const enabled = (names) => tabs.some(
+            (tab) => names.includes(tab.textContent?.trim() ?? "") && !tab.disabled,
+          );
+          return value === "Vehicle" &&
+            enabled(["Graph", "グラフ"]) &&
+            enabled(["Statistics", "統計"]);
+        })()`,
+        "installed .lsa data and enabled Graph/Statistics tabs",
+        timeoutMs,
+      );
+      return { restoredValue: "Vehicle", tabs: ["Graph", "Statistics"] };
+    });
+    await runStep("windows_lsa_saved_graph_restored", async () => {
+      await client.evaluate(`(() => {
+        const labels = new Set(["Graph", "グラフ"]);
+        const tab = [...document.querySelectorAll('button, [role="tab"]')].find(
+          (candidate) => labels.has(candidate.textContent?.trim() ?? ""),
+        );
+        if (!tab) throw new Error("Graph tab was not found after association open");
+        tab.click();
+      })()`);
+      await waitFor(
+        client,
+        `(() => {
+          const exportButtons = [...document.querySelectorAll('button')];
+          return document.querySelector('svg') !== null &&
+            ["SVG", "PNG", "CSV"].every((name) => exportButtons.some(
+              (button) => button.textContent?.trim() === name && !button.disabled,
+            ));
+        })()`,
+        "saved Graph and export controls after installed association open",
+        timeoutMs,
+      );
+      await captureScreenshot(client, join(outputDirectory, "installed-lsa-graph.png"));
+      return { graphRestored: true, exportControls: ["SVG", "PNG", "CSV"] };
+    });
+    return { steps, profileDirectory, launch };
+  } catch (error) {
+    if (client) {
+      try {
+        await captureScreenshot(client, join(outputDirectory, "installed-lsa-failure.png"));
+      } catch {
+        // Preserve the association failure if screenshot capture also fails.
+      }
+    }
+    if (error && typeof error === "object") error.nativeSteps = steps;
+    throw error;
+  } finally {
+    client?.close();
+    if (associatedProcessId) {
+      try {
+        await execFileAsync(
+          "powershell.exe",
+          [
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            `$process = Get-Process -Id ${associatedProcessId} -ErrorAction Stop; if ($process.CloseMainWindow()) { Wait-Process -Id ${associatedProcessId} -Timeout 15 -ErrorAction Stop }`,
+          ],
+          { timeout: 20_000, windowsHide: true },
+        );
+      } catch {
+        // Report the inspection result; never terminate an unrelated process as fallback.
+      }
+    }
+  }
 }
 
 async function runMacAccessibility(action, names = [], value = "") {
@@ -1567,12 +1770,24 @@ export async function runNativeUiRegression(options) {
   try {
     executable = await resolveNativeExecutable(options.platform, options.executable);
     if (!isAbsolute(executable)) throw new Error("Native executable path must be absolute");
-    result = await (options.platform === "macos" ? runMacScenario : runWindowsScenario)({
-      executable,
-      outputDirectory,
-      timeoutMs: options.timeoutMs,
-      nativeFileDialogSaveTargets: options.nativeFileDialogSaveTargets,
-    });
+    if (options.associationProject) {
+      if (options.platform !== "windows") {
+        throw new Error("--association-project is currently supported only on Windows");
+      }
+      result = await runWindowsInstalledAssociationScenario({
+        executable,
+        projectPath: resolve(options.associationProject),
+        outputDirectory,
+        timeoutMs: options.timeoutMs,
+      });
+    } else {
+      result = await (options.platform === "macos" ? runMacScenario : runWindowsScenario)({
+        executable,
+        outputDirectory,
+        timeoutMs: options.timeoutMs,
+        nativeFileDialogSaveTargets: options.nativeFileDialogSaveTargets,
+      });
+    }
   } catch (error) {
     failure = error;
   }
