@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { biologicalWorkspaceStopMessage, NewExperimentPage } from "./NewExperimentPage";
+import { biologicalWorkspaceStopMessage } from "../app/newExperimentMessages";
+import { NewExperimentPage } from "./NewExperimentPage";
 
 function startCellCountStructureStep() {
   render(<NewExperimentPage onNavigate={() => undefined} />);

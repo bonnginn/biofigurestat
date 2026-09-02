@@ -72,6 +72,10 @@ import {
 } from "../app/dedicatedEntryIntent";
 import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import { recordUsageEntry, recordUsageMilestone } from "../app/usageTelemetry";
+import {
+  biologicalHandoffStopMessage,
+  biologicalWorkspaceStopMessage,
+} from "../app/newExperimentMessages";
 
 const ExperimentWorkspace = lazy(() =>
   import("./ExperimentWorkspace").then(({ ExperimentWorkspace: Workspace }) => ({
@@ -130,25 +134,6 @@ type ExplicitStructureAnswers = Readonly<{
   axisSampling: boolean;
   sharedSourceSplit: boolean;
 }>;
-
-export function biologicalWorkspaceStopMessage(diagnostics: readonly string[]): string {
-  const mixedGrain = diagnostics.some((diagnostic) =>
-    diagnostic.includes("heterogeneous_readout_grains"),
-  );
-  const mixedAxis = diagnostics.some((diagnostic) =>
-    diagnostic.includes("heterogeneous_readout_axes"),
-  );
-  if (mixedGrain && mixedAxis) {
-    return "測定項目ごとに、Cell・ROIなど個別の値か試料全体の値か、また時間・距離の系列で測ったかが異なります。現在の入力画面は違いを1つの表へ強制せず、ここで停止しました。回答と条件表は保持されています。";
-  }
-  if (mixedGrain) {
-    return "測定項目ごとに、Cell・ROIなど個別の値か試料全体の値かが異なります。現在の入力画面は違いを1つの表へ強制せず、ここで停止しました。回答と条件表は保持されています。";
-  }
-  if (mixedAxis) {
-    return "時間・距離の系列で測った項目と、系列の最後などで1回だけ測った項目が混在しています。現在の入力画面は違いを1つの表へ強制せず、ここで停止しました。回答と条件表は保持されています。";
-  }
-  return "この実験内容は現在の入力画面へ安全に変換できません。入力内容は保持されています。";
-}
 
 function graphOnlyBiologicalInitial(
   state: UnresolvedVisualizationProjectState,
@@ -2948,9 +2933,7 @@ export function NewExperimentPage({
                 const presentation = createBiologicalSetupPresentation(result);
                 if (presentation.status === "stopped") {
                   recordUsageMilestone("new-experiment", "safe_stop");
-                  setBiologicalHandoffError(
-                    "条件表と実験構造の対応を安全に確認できませんでした。入力内容は保持されています。",
-                  );
+                  setBiologicalHandoffError(biologicalHandoffStopMessage(locale, "presentation"));
                   return false;
                 }
                 const { contract } = result;
@@ -2959,7 +2942,9 @@ export function NewExperimentPage({
                   : null;
                 if (promoted?.status === "stopped") {
                   recordUsageMilestone("new-experiment", "safe_stop");
-                  setBiologicalHandoffError(promoted.reason);
+                  setBiologicalHandoffError(
+                    biologicalHandoffStopMessage(locale, "table_promotion", promoted.reason),
+                  );
                   return false;
                 }
                 const workspace = createAdaptiveWorkspace({
@@ -2971,7 +2956,9 @@ export function NewExperimentPage({
                 });
                 if (workspace.status !== "ready" || !workspace.draft) {
                   recordUsageMilestone("new-experiment", "safe_stop");
-                  setBiologicalHandoffError(biologicalWorkspaceStopMessage(workspace.diagnostics));
+                  setBiologicalHandoffError(
+                    biologicalWorkspaceStopMessage(workspace.diagnostics, locale),
+                  );
                   return false;
                 }
                 const reboundGraphs = pendingGraphOnlyState
@@ -2983,7 +2970,9 @@ export function NewExperimentPage({
                   : ({ status: "ready", graphs: [] } as const);
                 if (reboundGraphs.status === "stopped") {
                   recordUsageMilestone("new-experiment", "safe_stop");
-                  setBiologicalHandoffError(reboundGraphs.reason);
+                  setBiologicalHandoffError(
+                    biologicalHandoffStopMessage(locale, "graph_rebind", reboundGraphs.reason),
+                  );
                   return false;
                 }
                 const promotedDraft = pendingGraphOnlyState
@@ -3011,9 +3000,7 @@ export function NewExperimentPage({
                 return true;
               } catch {
                 recordUsageMilestone("new-experiment", "safe_stop");
-                setBiologicalHandoffError(
-                  "入力画面の準備中に実験内容を確認できませんでした。入力内容は保持されています。",
-                );
+                setBiologicalHandoffError(biologicalHandoffStopMessage(locale, "unexpected"));
                 return false;
               }
             }}
