@@ -79,14 +79,8 @@ import {
   writeBenchmarkArtifacts,
 } from "../app/benchmarkEvaluation";
 import { evaluationMode } from "../app/evaluationMode";
-import {
-  copyGraphToClipboard,
-  ExportCancelledError,
-  exportGraphPng as saveGraphPng,
-  saveExportText,
-  serializeGraphSvg,
-  svgToPngBlob,
-} from "../app/graphExport";
+import { copyGraphToClipboard, serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
+import { saveGraphPngExport, saveGraphSvgExport } from "../app/graphExportController";
 import { generateCommonCoverageMethods } from "../app/commonCoverageMethods";
 import { generateMethodsText } from "../app/methodsText";
 import {
@@ -2416,22 +2410,15 @@ export function CommonCoveragePage({
   const exportGraphSvg = async () => {
     const svg = svgRef.current;
     if (!svg) return;
-    try {
-      const result = await saveExportText(
-        serializeGraphSvg(svg),
-        `${mode}.svg`,
-        "image/svg+xml;charset=utf-8",
+    const result = await saveGraphSvgExport(svg, `${mode}.svg`);
+    if (result.status === "saved") {
+      setMessage(
+        t(
+          "表示中のGraphと同じ内容をSVGで書き出しました。",
+          "Exported an SVG matching the displayed Graph.",
+        ),
       );
-      if (result === "saved") {
-        setMessage(
-          t(
-            "表示中のGraphと同じ内容をSVGで書き出しました。",
-            "Exported an SVG matching the displayed Graph.",
-          ),
-        );
-      }
-    } catch (error) {
-      if (error instanceof ExportCancelledError) return;
+    } else if (result.status === "failed") {
       setMessage(
         t(
           "SVGを書き出せませんでした。Graphは画面に保持されています。",
@@ -2443,17 +2430,16 @@ export function CommonCoveragePage({
   const exportGraphPng = async () => {
     const svg = svgRef.current;
     if (!svg) return;
-    try {
-      await saveGraphPng(svg, `${mode}.png`);
+    const result = await saveGraphPngExport(svg, `${mode}.png`);
+    if (result.status === "saved") {
       setMessage(
         t(
           "表示中のGraphと同じ内容をPNGで書き出しました。",
           "Exported a PNG matching the displayed Graph.",
         ),
       );
-    } catch (error) {
-      if (error instanceof ExportCancelledError) return;
-      const detail = localizedFailureDetail(locale, error);
+    } else if (result.status === "failed") {
+      const detail = localizedFailureDetail(locale, result.error);
       setMessage(
         t(
           `PNGを書き出せませんでした。GraphとSVG書き出しは利用できます。${detail}`,
@@ -2475,12 +2461,7 @@ export function CommonCoveragePage({
       );
     } catch (error) {
       const detail = localizedFailureDetail(locale, error);
-      setMessage(
-        t(
-          `Graphをコピーできませんでした。${detail}`,
-          "The Graph could not be copied.",
-        ),
-      );
+      setMessage(t(`Graphをコピーできませんでした。${detail}`, "The Graph could not be copied."));
     }
   };
   const graphExportButton = (
