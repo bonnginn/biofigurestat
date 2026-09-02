@@ -129,12 +129,17 @@ export function japaneseUiAuditExpression() {
       if (parent && getComputedStyle(parent).display === "none") continue;
       findings.push({ kind: "text", value: text.slice(0, 160), tag: parent?.tagName ?? "" });
     }
-    for (const element of document.querySelectorAll("[aria-label], [title], [placeholder], [alt]")) {
-      for (const attribute of ["aria-label", "title", "placeholder", "alt"]) {
+    for (const element of document.querySelectorAll("[aria-label], [aria-description], [title], [placeholder], [alt]")) {
+      for (const attribute of ["aria-label", "aria-description", "title", "placeholder", "alt"]) {
         const value = element.getAttribute(attribute)?.trim() ?? "";
         if (!value || !pattern.test(value) || looksLikeUserPath(value)) continue;
         findings.push({ kind: attribute, value: value.slice(0, 160), tag: element.tagName });
       }
+    }
+    for (const element of document.querySelectorAll("input:not([type='hidden']), textarea")) {
+      const value = element.value?.trim() ?? "";
+      if (!value || !pattern.test(value) || looksLikeUserPath(value)) continue;
+      findings.push({ kind: "editable-value", value: value.slice(0, 160), tag: element.tagName });
     }
     return findings;
   })()`;

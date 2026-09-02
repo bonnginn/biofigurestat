@@ -68,6 +68,7 @@
 | ✅   | 製品FAILとharness環境FAILの分離        | `PRODUCT_REGRESSION`と`HARNESS_INFRASTRUCTURE_BLOCKED`を区別                                   |
 | ✅   | Windows WebView2起動・接続             | transient blank targetを待機し、このhostの最新packaged exeでscenario全体がPASS                 |
 | ✅   | Graph-only Statistics validation       | 実表入力からGraph/Statisticsへ進み、未回答項目の英語alert表示とfocusをnativeで検査             |
+| ✅   | native英語表示漏れ監査                | visible text・属性に加え、編集欄の現在値と`aria-description`も検査。言語切替ボタンとユーザーpathだけを明示除外し、自己test 13/13 PASS |
 | ✅   | Welch TOST native実行                  | `951b3b7-beta.20260902.win-preview10`でexact executable harnessが実Tauri `run_analysis`→同梱engine→JSON IPCを通過し、protocol `0.15.0`、`ok`、`equivalence_supported`を確認。sidecar、Rust製品process境界、native harnessは同一request fixtureを使用 |
 | ✅   | native file dialog自動操作             | Windows実Open、SVG/PNG/CSV Cancel、SVG任意パス保存、project `.lsa`任意パス保存をpackaged PASS。標準Alt+Nでmodern/classic双方のfilename欄へ移動し、UTF-16 `SendInput`で絶対pathを入力。自己test 13/13、証拠は`.tmp/native-ui-regression/win-preview10-save-targets-alt-n4/` |
 | 🟡   | `.lsa` file association自動確認        | project保存→同じexeへpathを渡す再起動、Data保持、保存済みGraph、Graph/Statistics有効化はpackaged PASS。installer登録後のdouble-clickのみ未確認 |

@@ -202,7 +202,10 @@ test("builds a bounded macOS Accessibility typing action without interpolating u
 test("audits application copy while allowing language controls and user paths", () => {
   const expression = japaneseUiAuditExpression();
   assert.match(expression, /aria-label/);
+  assert.match(expression, /aria-description/);
   assert.match(expression, /placeholder/);
+  assert.match(expression, /input:not\(\[type='hidden'\]\), textarea/);
+  assert.match(expression, /editable-value/);
   assert.match(expression, /日本語/);
   assert.match(expression, /looksLikeUserPath/);
   assert.match(expression, /\^\[A-Za-z\]/);

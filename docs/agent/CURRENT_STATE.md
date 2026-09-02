@@ -839,6 +839,11 @@ direction wording still require review; Welch TOST is not reused for paired data
 - Windows native UI regression passes against the current exact packaged executable. Clean-runner
   repetition is desirable, and the implemented macOS Accessibility adapter still needs its first
   permissioned `.app` PASS. Human review remains for scientific usability and visual judgment.
+  The packaged English-session audit now checks current input/textarea values and
+  `aria-description` as well as visible text, labels, titles, placeholders, and alt text. This
+  closes the native-only blind spot for a Japanese generated default that appears only inside an
+  editor or accessibility description. The native-harness self-suite remains 13/13 PASS; a
+  packaged rerun is reserved for the next candidate.
 
 ## Working-tree rule
 
