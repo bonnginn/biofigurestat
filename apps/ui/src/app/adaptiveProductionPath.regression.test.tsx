@@ -1147,7 +1147,7 @@ describe("adaptive production path regressions", () => {
     }
   });
 
-  it("persists an edited shared experimental-run ID and its optional date through save/open", () => {
+  it("persists an edited shared experimental-run ID and its optional date through save/open", async () => {
     const contract = biologicalContract({
       title: "Independent dishes within experimental runs",
       measurement: "Signal",
@@ -1187,11 +1187,16 @@ describe("adaptive production path regressions", () => {
       now,
     });
     expect(workspace.status).toBe("ready");
+    const saveProject = vi.fn(async (state: ProjectState, target?: string) => ({
+      state,
+      target: target ?? "/tmp/shared-run-date.lsa",
+    }));
     render(
       <ExperimentWorkspace
         initialDraft={workspace.draft!}
         initialCells={workspace.cells}
         onBack={vi.fn()}
+        saveProject={saveProject}
       />,
     );
 
@@ -1208,32 +1213,9 @@ describe("adaptive production path regressions", () => {
       "任意・行内の全条件が同じ日の場合のみ。日付から対応関係は決めません",
     );
 
-    const renamedObservations = observations.map((row) =>
-      CanonicalAdaptiveObservationSchema.parse({
-        ...row,
-        identities: { ...row.identities, [sourceIdentity!.key]: "Run Alpha" },
-      }),
-    );
-    const persistedWorkspace = createAdaptiveWorkspace({
-      contract,
-      observations: renamedObservations,
-      mapping: null,
-      lineage: null,
-      now,
-    });
-    expect(persistedWorkspace.status).toBe("ready");
-    const persistedDraft = {
-      ...persistedWorkspace.draft!,
-      experiments: persistedWorkspace.draft!.experiments.map((experiment, index) =>
-        index === 0 ? { ...experiment, date: "2026-08-28" } : experiment,
-      ),
-    };
-    const saved = createExperimentWorkspaceProject({
-      draft: persistedDraft,
-      cells: persistedWorkspace.cells,
-      graphs: [],
-      now,
-    });
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const saved = saveProject.mock.calls[0]![0];
     expect(
       saved.adaptiveInput?.canonicalObservations.map(
         ({ identities }) => identities[sourceIdentity!.key],
