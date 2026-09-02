@@ -125,7 +125,9 @@ function conditionLabels(input: MethodsTextInput): string {
     input.design.conditions.map((condition) => [condition.id, condition.label]),
   );
   const contrastIds =
-    input.request.protocolVersion === "0.1.0" || input.request.protocolVersion === "0.15.0"
+    input.request.protocolVersion === "0.1.0" ||
+    input.request.protocolVersion === "0.15.0" ||
+    input.request.protocolVersion === "0.16.0"
       ? input.request.contrastConditionIds
       : input.request.protocolVersion === "0.9.0"
         ? [input.request.conditionId]
@@ -153,7 +155,9 @@ function allConditionLabels(input: MethodsTextInput): string {
     input.design.conditions.map((condition) => [condition.id, condition.label]),
   );
   const conditionIds =
-    input.request.protocolVersion === "0.1.0" || input.request.protocolVersion === "0.15.0"
+    input.request.protocolVersion === "0.1.0" ||
+    input.request.protocolVersion === "0.15.0" ||
+    input.request.protocolVersion === "0.16.0"
       ? input.request.contrastConditionIds
       : input.request.protocolVersion === "0.9.0"
         ? [input.request.conditionId]
@@ -295,9 +299,14 @@ function pairwiseResultLines(input: MethodsTextInput, testOffset: number): strin
 
 function executedResultLines(input: MethodsTextInput): string[] {
   const { recommendation, result, design } = input;
-  if (input.request.protocolVersion === "0.15.0" && result.equivalence) {
+  if (
+    (input.request.protocolVersion === "0.15.0" || input.request.protocolVersion === "0.16.0") &&
+    result.equivalence
+  ) {
     const comparison = result.equivalence.comparisons[0];
     const margin = result.equivalence.plan.margin;
+    const paired = input.request.protocolVersion === "0.16.0";
+    const analysisSet = comparison?.analysisSet;
     const conclusion =
       comparison?.conclusion === "equivalence_supported"
         ? "事前指定した範囲内の同等性を支持"
@@ -306,7 +315,17 @@ function executedResultLines(input: MethodsTextInput): string[] {
           : "同等とも意味のある差とも結論できない";
     return [
       `結果：${result.status === "ok" ? "完了" : result.status}`,
-      `推定対象：独立2群の平均差（${conditionLabels(input)}）`,
+      paired
+        ? `推定対象：完全な対応組における平均対応差（第2条件−第1条件：${conditionLabels(input)}）`
+        : `推定対象：独立2群の平均差（${conditionLabels(input)}）`,
+      ...(paired && analysisSet
+        ? [
+            `解析対象：完全な対応組 ${analysisSet.completePairCount}組。`,
+            analysisSet.excludedIncompletePairIds.length > 0
+              ? `解析から除外した不完全な対応組：${analysisSet.excludedIncompletePairIds.join("、")}（入力値はDataとGraphに保持）。`
+              : "解析から除外した不完全な対応組：なし。",
+          ]
+        : []),
       `事前指定した同等性範囲：${numberLabel(margin.lowerBound)}～${numberLabel(margin.upperBound)} ${margin.unit}（raw difference）`,
       `平均差：${numberLabel(comparison?.estimate)}（SE=${numberLabel(comparison?.standardError)}、${numberLabel(comparison?.confidenceLevel ? comparison.confidenceLevel * 100 : null)}%信頼区間 ${numberLabel(comparison?.lowerConfidenceBound)}～${numberLabel(comparison?.upperConfidenceBound)}）`,
       `TOST：下限側片側p=${pValueLabel(comparison?.lowerOneSidedPValue)}、上限側片側p=${pValueLabel(comparison?.upperOneSidedPValue)}、TOST p=${pValueLabel(comparison?.tostPValue)}`,
@@ -331,11 +350,10 @@ function executedResultLines(input: MethodsTextInput): string[] {
       `model選択理由：${result.nonlinearFit.selectionRationale}`,
       ...result.nonlinearFit.series.flatMap((series) => [
         `・${series.seriesId}：${series.parameters
-          .map(
-            (parameter) =>
-              descriptiveOnly
-                ? `${nonlinearParameterLabel(modelId, parameter.name)}${nonlinearParameterLabel(modelId, parameter.name) === parameter.name ? "" : `（${parameter.name}）`}=${numberLabel(parameter.value)}（記述的点推定）`
-                : `${nonlinearParameterLabel(modelId, parameter.name)}${nonlinearParameterLabel(modelId, parameter.name) === parameter.name ? "" : `（${parameter.name}）`}=${numberLabel(parameter.value)}（SE=${numberLabel(parameter.standardError)}、${intervalText(parameter)}）`,
+          .map((parameter) =>
+            descriptiveOnly
+              ? `${nonlinearParameterLabel(modelId, parameter.name)}${nonlinearParameterLabel(modelId, parameter.name) === parameter.name ? "" : `（${parameter.name}）`}=${numberLabel(parameter.value)}（記述的点推定）`
+              : `${nonlinearParameterLabel(modelId, parameter.name)}${nonlinearParameterLabel(modelId, parameter.name) === parameter.name ? "" : `（${parameter.name}）`}=${numberLabel(parameter.value)}（SE=${numberLabel(parameter.standardError)}、${intervalText(parameter)}）`,
           )
           .join("、")}`,
         descriptiveOnly
@@ -451,27 +469,27 @@ export function generateMethodsText(input: MethodsTextInput): string {
   const resultLines = executedResultLines(input);
   const multiplicityNote = request.options.multiplicityMethod
     ? `多重性補正：${request.options.multiplicityMethod}を指定。`
-    : request.protocolVersion === "0.15.0"
+    : request.protocolVersion === "0.15.0" || request.protocolVersion === "0.16.0"
       ? "多重性補正：事前指定した単一主比較だけを評価したため指定なし。"
       : request.protocolVersion === "0.14.0"
-      ? request.fitInterpretation === "descriptive_point_estimate_only"
-        ? "多重性補正：記述的curve fitのみで、仮説検定・SE・信頼区間を生成していないため対象外。"
-        : "多重性補正：parameter estimationをseriesごとに独立して行い、仮説検定のp値を生成していないため指定なし。"
-      : request.protocolVersion === "0.6.0"
-        ? `多重性補正：条件×${repeatedAxisLabel(input)}、条件、${repeatedAxisLabel(input)}の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
-        : request.protocolVersion === "0.7.0"
-          ? `多重性補正：独立条件×${repeatedAxisLabel(input)}の3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
-          : request.protocolVersion === "0.10.0"
-            ? `多重性補正：条件×${repeatedAxisLabel(input)}の3つの事前指定omnibus効果のみを報告し、事後比較は実行していないため指定なし。`
-            : request.protocolVersion === "0.5.0"
-              ? "多重性補正：単一の相関係数を評価したため指定なし。"
-              : request.protocolVersion === "0.8.0"
-                ? "多重性補正：事前指定した単一のlog-rank全体検定のため指定なし。"
-                : request.protocolVersion === "0.9.0"
-                  ? "多重性補正：明示した単一の基準値との比較のため指定なし。"
-                  : request.protocolVersion === "0.2.0"
-                    ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
-                    : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
+        ? request.fitInterpretation === "descriptive_point_estimate_only"
+          ? "多重性補正：記述的curve fitのみで、仮説検定・SE・信頼区間を生成していないため対象外。"
+          : "多重性補正：parameter estimationをseriesごとに独立して行い、仮説検定のp値を生成していないため指定なし。"
+        : request.protocolVersion === "0.6.0"
+          ? `多重性補正：条件×${repeatedAxisLabel(input)}、条件、${repeatedAxisLabel(input)}の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
+          : request.protocolVersion === "0.7.0"
+            ? `多重性補正：独立条件×${repeatedAxisLabel(input)}の3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
+            : request.protocolVersion === "0.10.0"
+              ? `多重性補正：条件×${repeatedAxisLabel(input)}の3つの事前指定omnibus効果のみを報告し、事後比較は実行していないため指定なし。`
+              : request.protocolVersion === "0.5.0"
+                ? "多重性補正：単一の相関係数を評価したため指定なし。"
+                : request.protocolVersion === "0.8.0"
+                  ? "多重性補正：事前指定した単一のlog-rank全体検定のため指定なし。"
+                  : request.protocolVersion === "0.9.0"
+                    ? "多重性補正：明示した単一の基準値との比較のため指定なし。"
+                    : request.protocolVersion === "0.2.0"
+                      ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
+                      : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
   const warnings = [
     "除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。",
     normalizationWarning(design),

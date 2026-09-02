@@ -67,6 +67,7 @@ const DIAGNOSTIC_STATISTICAL_METHODS = [
   "mcnemar_exact",
   "simple_linear_regression",
   "nonlinear_xy_fit",
+  "paired_tost",
 ] as const;
 const DIAGNOSTIC_PROTOCOL_VERSIONS = [
   "0.1.0",
@@ -84,6 +85,7 @@ const DIAGNOSTIC_PROTOCOL_VERSIONS = [
   "0.13.0",
   "0.14.0",
   "0.15.0",
+  "0.16.0",
 ] as const;
 const DIAGNOSTIC_PROJECT_IO_STAGES = [
   "checksum",
@@ -165,7 +167,8 @@ function safeErrorKind(error: unknown): string {
     if (/ENGINE_PROCESS_TIMEOUT/u.test(error)) return "EngineProcessTimeout";
     if (/ENGINE_PROCESS_CANCELLED/u.test(error)) return "EngineProcessCancelled";
     if (/missing from application resources/iu.test(error)) return "EngineResourceMissing";
-    if (/Could not start the local analysis engine/iu.test(error)) return "EngineProcessLaunchError";
+    if (/Could not start the local analysis engine/iu.test(error))
+      return "EngineProcessLaunchError";
     if (/local analysis engine failed/iu.test(error)) return "EngineProcessFailure";
     if (/ENGINE_OUTPUT_INVALID_JSON:empty/iu.test(error)) return "EngineInvalidJsonEmpty";
     if (/ENGINE_OUTPUT_INVALID_JSON:utf8_bom/iu.test(error)) return "EngineInvalidJsonUtf8Bom";

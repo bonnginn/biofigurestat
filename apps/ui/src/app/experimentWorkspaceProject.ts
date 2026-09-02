@@ -1412,7 +1412,7 @@ function prepareWorkspaceAnalyses(input: {
         : {}),
     });
     const canonicalRecommendation =
-      request.protocolVersion === "0.15.0"
+      request.protocolVersion === "0.15.0" || request.protocolVersion === "0.16.0"
         ? graph.analysis?.recommendation
         : requireAnalysisRequestRecommendation(input.design, request, {
             outcomeId: graph.selectedReadoutId,

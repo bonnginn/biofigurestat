@@ -52,16 +52,18 @@ export function createGraphStatisticsRelationshipContext(
   };
 }
 
-export function createGraphAnalysisContextKey(input: Readonly<{
-  draft: ExperimentSetDraft;
-  readoutId: string;
-  sourceMode: WorkspaceGraphState["sourceMode"];
-  conditionIds: readonly string[];
-  displayedTimePointIds: readonly string[];
-  analysisTimePointId: string | null;
-  plannedContrastConditionIds: readonly (readonly [string, string])[];
-  timeAnalysis: TimeAnalysisPlan;
-}>): string {
+export function createGraphAnalysisContextKey(
+  input: Readonly<{
+    draft: ExperimentSetDraft;
+    readoutId: string;
+    sourceMode: WorkspaceGraphState["sourceMode"];
+    conditionIds: readonly string[];
+    displayedTimePointIds: readonly string[];
+    analysisTimePointId: string | null;
+    plannedContrastConditionIds: readonly (readonly [string, string])[];
+    timeAnalysis: TimeAnalysisPlan;
+  }>,
+): string {
   return JSON.stringify({
     readoutId: input.readoutId,
     sourceMode: input.sourceMode,
@@ -87,9 +89,7 @@ export function varyingGraphAnalysisAttributes(
   return draft.attributes.filter(
     (attribute) =>
       new Set(
-        conditions
-          .map((condition) => condition.attributes[attribute.id]?.trim())
-          .filter(Boolean),
+        conditions.map((condition) => condition.attributes[attribute.id]?.trim()).filter(Boolean),
       ).size > 1,
   );
 }
@@ -102,23 +102,25 @@ export function statisticalMethodForContrastIntent(
   return "one_way_anova";
 }
 
-export function createExperimentGraphMethodsText(input: Readonly<{
-  analysis: WorkspaceGraphAnalysis | null;
-  draft: ExperimentSetDraft;
-  selectedReadoutId: string;
-  layers: LayerState;
-  appearance: GraphAppearance;
-  axes: AxisSettings;
-  graphType: GraphType;
-  timeAnalysis: TimeAnalysisPlan;
-}>): string | null {
+export function createExperimentGraphMethodsText(
+  input: Readonly<{
+    analysis: WorkspaceGraphAnalysis | null;
+    draft: ExperimentSetDraft;
+    selectedReadoutId: string;
+    layers: LayerState;
+    appearance: GraphAppearance;
+    axes: AxisSettings;
+    graphType: GraphType;
+    timeAnalysis: TimeAnalysisPlan;
+  }>,
+): string | null {
   const { analysis, draft, selectedReadoutId, layers, appearance, axes, graphType, timeAnalysis } =
     input;
   if (!analysis || analysis.result.status !== "ok") return null;
 
   const design = createExperimentWorkspaceDesign(draft, analysis.result.completedAt);
   const canonicalRecommendation =
-    analysis.request.protocolVersion === "0.15.0"
+    analysis.request.protocolVersion === "0.15.0" || analysis.request.protocolVersion === "0.16.0"
       ? analysis.recommendation
       : requireAnalysisRequestRecommendation(design, analysis.request, {
           outcomeId: selectedReadoutId,

@@ -45,6 +45,7 @@ import { localizedText, useAppLocale, type AppLocale } from "../../app/appLocale
 import { EquivalencePlanEditor } from "./EquivalencePlanEditor";
 import { EquivalenceResultPanel } from "./EquivalenceResultPanel";
 import { createIndependentContinuousEquivalenceRequest } from "./independentContinuousEquivalenceRequest";
+import { createPairedContinuousEquivalenceRequest } from "./pairedContinuousEquivalenceRequest";
 import type { EquivalenceSupportKind } from "./equivalenceSupportPresentation";
 
 type MatchedRelationship =
@@ -174,6 +175,7 @@ function estimateDisplayLabel(name: string, conditionOptions: readonly Condition
 
 const ENGLISH_METHOD_LABELS: Readonly<Record<string, string>> = {
   welch_tost: "Welch TOST for equivalence",
+  paired_tost: "Paired TOST for equivalence",
   welch_t: "Welch's t-test",
   student_t: "Student's t-test",
   paired_t: "Paired t-test",
@@ -208,6 +210,12 @@ function diagnosticLabel(
         : "Wilcoxon evaluates the signs and ranks of within-unit differences matched by stable IDs.";
     if (code === "paired_difference_distribution")
       return "The analysis calculates the between-condition difference for each matched experimental unit and evaluates the distribution of those differences. It does not test the two original condition distributions as independent groups.";
+    if (code === "paired_tost_complete_pairs")
+      return "Paired TOST evaluates second-condition minus first-condition differences from complete stable-ID pairs.";
+    if (code === "paired_tost_incomplete_pairs_excluded")
+      return "Incomplete pairs were retained in Data and Graph but excluded from paired TOST; their IDs are reported with the equivalence result.";
+    if (code === "equivalence_margin_prespecified")
+      return "The equivalence bounds came from the saved prespecified plan and were not estimated from these observations.";
     if (code === "omnibus_only_no_posthoc")
       return "Only the overall difference was evaluated. Unrequested pairwise comparisons were not generated.";
     if (code === "planned_pairwise_no_simultaneous_ci")
@@ -236,6 +244,15 @@ function diagnosticLabel(
   }
   if (code === "paired_difference_distribution") {
     return "対応する各実験単位について条件間の差を計算し、その差の分布を評価します。元の2条件それぞれの分布を独立群として検定するものではありません。";
+  }
+  if (code === "paired_tost_complete_pairs") {
+    return "安定IDでそろった完全な対応組について、第2条件−第1条件の差を対応のあるTOSTで評価しました。";
+  }
+  if (code === "paired_tost_incomplete_pairs_excluded") {
+    return "不完全な対応組はDataとGraphに保持し、対応のあるTOSTから除外しました。除外IDは同等性解析結果に表示します。";
+  }
+  if (code === "equivalence_margin_prespecified") {
+    return "同等性の上下限は保存済みの事前計画から使用し、観測データから推定していません。";
   }
   if (code === "omnibus_only_no_posthoc") {
     return "全体差のみを評価しました。未検証の条件間比較は自動生成していません。";
@@ -340,14 +357,25 @@ export function GraphStatisticsPanel({
     label: `${first.label} vs ${second.label}`,
   }));
   const equivalenceRequest =
-    equivalenceSupportKind === "continuous_independent" &&
-    equivalenceComparisonOptions.length === 1
-      ? createIndependentContinuousEquivalenceRequest({
-          baseRequest: assessment.request,
-          plan: equivalencePlan,
-          comparisonId: equivalenceComparisonOptions[0]?.id,
-        })
-      : null;
+    equivalenceComparisonOptions.length !== 1
+      ? null
+      : equivalenceSupportKind === "continuous_independent"
+        ? createIndependentContinuousEquivalenceRequest({
+            baseRequest: assessment.request,
+            plan: equivalencePlan,
+            comparisonId: equivalenceComparisonOptions[0]?.id,
+          })
+        : equivalenceSupportKind === "continuous_matched"
+          ? createPairedContinuousEquivalenceRequest({
+              baseRequest: assessment.request,
+              plan: equivalencePlan,
+              comparisonId: equivalenceComparisonOptions[0]?.id,
+              excludedIncompletePairIds:
+                assessment.inputDiagnostics?.flatMap((diagnostic) =>
+                  diagnostic.incompleteMatchedSets.map(({ pairId }) => pairId),
+                ) ?? [],
+            })
+          : null;
   const plannedComparisonsMissing =
     effectiveContrastIntent === "planned_comparisons" && executablePlannedPairCount === 0;
   const executedRef = useRef(Boolean(initialAnalysis));
@@ -366,7 +394,8 @@ export function GraphStatisticsPanel({
       setRunningRequestId(request.requestId);
       setError(null);
       try {
-        const isEquivalenceRequest = request.protocolVersion === "0.15.0";
+        const isEquivalenceRequest =
+          request.protocolVersion === "0.15.0" || request.protocolVersion === "0.16.0";
         const coreRecommendationOwned =
           !isEquivalenceRequest &&
           (CORE_WORKSPACE_RECOMMENDATION_TEMPLATES as readonly string[]).includes(
@@ -402,44 +431,49 @@ export function GraphStatisticsPanel({
           ? {
               templateId: request.templateId,
               templateVersion: request.templateVersion,
-              recommendedMethod: "welch_tost",
+              recommendedMethod: request.method,
               alternativeMethods: [],
-              reasonCode: "prespecified_independent_continuous_equivalence",
+              reasonCode:
+                request.protocolVersion === "0.16.0"
+                  ? "prespecified_paired_continuous_equivalence"
+                  : "prespecified_independent_continuous_equivalence",
               explanation:
-                "Two independent continuous-outcome groups are evaluated against one prespecified raw-difference equivalence margin using Welch TOST and its corresponding 90% confidence interval.",
+                request.protocolVersion === "0.16.0"
+                  ? "Complete within-pair differences (second condition minus first condition) are evaluated against one prespecified raw-difference equivalence margin using paired TOST and its corresponding 90% confidence interval."
+                  : "Two independent continuous-outcome groups are evaluated against one prespecified raw-difference equivalence margin using Welch TOST and its corresponding 90% confidence interval.",
               statisticalNDefinition:
                 assessment.statisticalNDefinition ??
                 assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join(", "),
               multiplicityMethod: null,
-              decision: { kind: "accepted", selectedMethod: "welch_tost" },
+              decision: { kind: "accepted", selectedMethod: request.method },
             }
           : canonicalMatch?.matched
-          ? {
-              ...canonicalMatch.recommendation,
-              ...(recommendationDecisionRef.current
-                ? { decision: recommendationDecisionRef.current }
-                : {}),
-            }
-          : {
-              templateId: request.templateId,
-              templateVersion: request.templateVersion,
-              recommendedMethod: assessment.recommendedMethod ?? request.method,
-              alternativeMethods:
-                assessment.methodChoices
-                  ?.filter(
-                    ({ method }) => method !== (assessment.recommendedMethod ?? request.method),
-                  )
-                  .map(({ method }) => method) ?? [],
-              reasonCode: `draft_${request.templateId.toLowerCase()}_design_assessment`,
-              explanation: assessment.reason,
-              statisticalNDefinition:
-                assessment.statisticalNDefinition ??
-                assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join(", "),
-              multiplicityMethod: request.options.multiplicityMethod,
-              ...(recommendationDecisionRef.current
-                ? { decision: recommendationDecisionRef.current }
-                : {}),
-            };
+            ? {
+                ...canonicalMatch.recommendation,
+                ...(recommendationDecisionRef.current
+                  ? { decision: recommendationDecisionRef.current }
+                  : {}),
+              }
+            : {
+                templateId: request.templateId,
+                templateVersion: request.templateVersion,
+                recommendedMethod: assessment.recommendedMethod ?? request.method,
+                alternativeMethods:
+                  assessment.methodChoices
+                    ?.filter(
+                      ({ method }) => method !== (assessment.recommendedMethod ?? request.method),
+                    )
+                    .map(({ method }) => method) ?? [],
+                reasonCode: `draft_${request.templateId.toLowerCase()}_design_assessment`,
+                explanation: assessment.reason,
+                statisticalNDefinition:
+                  assessment.statisticalNDefinition ??
+                  assessment.nByCondition.map(({ label, n }) => `${label} n=${n}`).join(", "),
+                multiplicityMethod: request.options.multiplicityMethod,
+                ...(recommendationDecisionRef.current
+                  ? { decision: recommendationDecisionRef.current }
+                  : {}),
+              };
         const nextResult = await analysisRunner(request);
         if (executionGenerationRef.current !== generation) return;
         setResult(nextResult);
@@ -502,34 +536,34 @@ export function GraphStatisticsPanel({
             recommendationSelectedMethod:
               canonicalRecommendation.decision?.selectedMethod ?? request.method,
             contrast:
-              request.protocolVersion === "0.15.0"
+              request.protocolVersion === "0.15.0" || request.protocolVersion === "0.16.0"
                 ? `${request.comparisonId}:${request.contrastConditionIds.join("|")}`
                 : request.protocolVersion === "0.2.0"
-                ? request.contrastIntent === "planned_comparisons"
-                  ? `${request.contrastIntent}:${(request.plannedContrastConditionIds ?? [])
-                      .map(([firstId, secondId]) => `${firstId}:${secondId}`)
-                      .join("|")}`
-                  : request.contrastIntent
-                : request.protocolVersion === "0.1.0"
-                  ? request.contrastConditionIds.join("|")
-                  : request.protocolVersion === "0.5.0"
-                    ? request.variableConditionIds.join("|")
-                    : request.protocolVersion === "0.11.0"
-                      ? `${request.rowCategoryIds.join("|")}::${request.columnCategoryIds.join("|")}`
-                      : request.protocolVersion === "0.12.0"
-                        ? request.conditionIds.join("|")
-                        : request.protocolVersion === "0.13.0"
-                          ? `${request.xLabel}|${request.yLabel}`
-                          : request.protocolVersion === "0.14.0"
-                            ? `${request.seriesIds.join("|")}|model:${request.modelId}`
-                            : request.protocolVersion === "0.6.0" ||
-                                request.protocolVersion === "0.7.0" ||
-                                request.protocolVersion === "0.8.0" ||
-                                request.protocolVersion === "0.10.0"
-                              ? request.conditionIds.join("|")
-                              : request.protocolVersion === "0.9.0"
-                                ? `${request.conditionId}|reference:${request.nullValue}`
-                                : request.primaryContrastConditionIds.join("|"),
+                  ? request.contrastIntent === "planned_comparisons"
+                    ? `${request.contrastIntent}:${(request.plannedContrastConditionIds ?? [])
+                        .map(([firstId, secondId]) => `${firstId}:${secondId}`)
+                        .join("|")}`
+                    : request.contrastIntent
+                  : request.protocolVersion === "0.1.0"
+                    ? request.contrastConditionIds.join("|")
+                    : request.protocolVersion === "0.5.0"
+                      ? request.variableConditionIds.join("|")
+                      : request.protocolVersion === "0.11.0"
+                        ? `${request.rowCategoryIds.join("|")}::${request.columnCategoryIds.join("|")}`
+                        : request.protocolVersion === "0.12.0"
+                          ? request.conditionIds.join("|")
+                          : request.protocolVersion === "0.13.0"
+                            ? `${request.xLabel}|${request.yLabel}`
+                            : request.protocolVersion === "0.14.0"
+                              ? `${request.seriesIds.join("|")}|model:${request.modelId}`
+                              : request.protocolVersion === "0.6.0" ||
+                                  request.protocolVersion === "0.7.0" ||
+                                  request.protocolVersion === "0.8.0" ||
+                                  request.protocolVersion === "0.10.0"
+                                ? request.conditionIds.join("|")
+                                : request.protocolVersion === "0.9.0"
+                                  ? `${request.conditionId}|reference:${request.nullValue}`
+                                  : request.primaryContrastConditionIds.join("|"),
             correction: request.options.multiplicityMethod,
             protocolVersion: request.protocolVersion,
             mode,
@@ -692,7 +726,9 @@ export function GraphStatisticsPanel({
       : assessment.title.replace(/を推奨$/, "");
   const equivalenceExecutable = equivalenceRequest !== null;
   const equivalenceUnsupportedTitle = equivalenceExecutable
-    ? t("Welch TOSTによる同等性解析", "Equivalence analysis using Welch TOST")
+    ? equivalenceSupportKind === "continuous_matched"
+      ? t("対応のあるTOSTによる同等性解析", "Equivalence analysis using paired TOST")
+      : t("Welch TOSTによる同等性解析", "Equivalence analysis using Welch TOST")
     : t("この同等性解析は現在未サポートです", "This equivalence analysis is currently unsupported");
   const equivalenceUnsupportedReason = t(
     "この目的には、データを見る前に科学的に定めた許容差と、実験構造に対応したequivalence analysisが必要です。通常のANOVAやt検定でp > 0.05となっても、同等性や影響がないことを示したことにはなりません。入力データと記述的グラフは保持します。",
@@ -708,10 +744,15 @@ export function GraphStatisticsPanel({
           "独立2群の連続量では実行できます。raw differenceの上下限を指定し、事前指定の確認を完了してください。",
           "This route is executable for two independent continuous groups. Enter lower and upper raw-difference bounds and confirm that they were prespecified.",
         ),
-    continuous_matched: t(
-      "対応差に対するTOST／信頼区間methodと、不完全な対応組の扱いがまだ未実装です。",
-      "TOST/confidence-interval analysis of paired differences and the incomplete-pair policy are not yet implemented.",
-    ),
+    continuous_matched: equivalenceExecutable
+      ? t(
+          "完全な対応組について、第2条件−第1条件の対応差を事前指定したraw difference marginに対する2つの片側検定と90%信頼区間で評価します。不完全な組はDataとGraphに残し、解析から除外したIDを結果に明示します。",
+          "For complete pairs, second-condition minus first-condition differences are evaluated using two one-sided tests and a 90% confidence interval against the prespecified raw-difference margin. Incomplete pairs remain in Data and Graph, and their excluded IDs are reported.",
+        )
+      : t(
+          "対応のある2条件の連続量では実行できます。raw differenceの上下限を指定し、事前指定の確認を完了してください。",
+          "This route is executable for two matched continuous conditions. Enter lower and upper raw-difference bounds and confirm that they were prespecified.",
+        ),
     continuous_shared_source: t(
       "同じ実験回・由来は対応測定とはみなしません。runを扱うblock modelと自由度の方針が未確定です。",
       "A shared run or source is not treated as pairing. The block model and degrees-of-freedom policy for run effects are not yet defined.",
@@ -849,10 +890,7 @@ export function GraphStatisticsPanel({
               }}
             />
             <span>
-              {t(
-                "実質的に同等か調べる",
-                "Test for equivalence / no meaningful difference",
-              )}
+              {t("実質的に同等か調べる", "Test for equivalence / no meaningful difference")}
             </span>
           </label>
         </fieldset>
@@ -865,11 +903,13 @@ export function GraphStatisticsPanel({
             <p role="note">{equivalenceDesignReason[equivalenceSupportKind]}</p>
             <p>
               {t(
-                equivalenceSupportKind === "continuous_independent"
-                  ? "Equivalence marginはBioFigureStatが観測データから自動生成しません。独立2群の単一主比較では、事前計画を完成すると検証済みWelch TOSTを実行できます。"
+                equivalenceSupportKind === "continuous_independent" ||
+                  equivalenceSupportKind === "continuous_matched"
+                  ? `Equivalence marginはBioFigureStatが観測データから自動生成しません。単一主比較の事前計画を完成すると、検証済み${equivalenceSupportKind === "continuous_matched" ? "対応のあるTOST" : "Welch TOST"}を実行できます。`
                   : "Equivalence marginはBioFigureStatが観測データから自動生成しません。ここで事前計画を保存できますが、この実験構造では正式な解析を実行しません。",
-                equivalenceSupportKind === "continuous_independent"
-                  ? "BioFigureStat will not derive an equivalence margin from the observed data. For one primary comparison between two independent groups, completing this plan enables the validated Welch TOST."
+                equivalenceSupportKind === "continuous_independent" ||
+                  equivalenceSupportKind === "continuous_matched"
+                  ? `BioFigureStat will not derive an equivalence margin from the observed data. Completing the single-primary-comparison plan enables the validated ${equivalenceSupportKind === "continuous_matched" ? "paired TOST" : "Welch TOST"}.`
                   : "BioFigureStat will not derive an equivalence margin from the observed data. You can save the prespecified plan here, but formal analysis is not run for this experimental structure.",
               )}
             </p>
@@ -925,11 +965,18 @@ export function GraphStatisticsPanel({
         <div className="experiment-graph-equivalence-execution">
           {relationshipAlreadyDeclared ? (
             <p className="experiment-graph-confirmation is-declared" role="status">
-              <strong>{t("実験の組み立てで回答済み", "Already declared in experiment setup")}:</strong>{" "}
-              {t(
-                "条件ごとに別々の実験単位を扱います。",
-                "Each condition uses separate experimental units.",
-              )}
+              <strong>
+                {t("実験の組み立てで回答済み", "Already declared in experiment setup")}:
+              </strong>{" "}
+              {equivalenceSupportKind === "continuous_matched"
+                ? t(
+                    "同じ実験単位を2条件で対応づけます。",
+                    "The same experimental units are matched across two conditions.",
+                  )
+                : t(
+                    "条件ごとに別々の実験単位を扱います。",
+                    "Each condition uses separate experimental units.",
+                  )}
             </p>
           ) : (
             <label className="experiment-graph-confirmation">
@@ -939,22 +986,31 @@ export function GraphStatisticsPanel({
                 onChange={(event) => setIndependenceConfirmed(event.target.checked)}
               />
               <span>
-                {t(
-                  "条件間で実験単位が独立していることを確認しました。",
-                  "I confirmed that experimental units are independent across conditions.",
-                )}
+                {equivalenceSupportKind === "continuous_matched"
+                  ? t(
+                      "安定したIDで同じ実験単位を2条件間で対応づけたことを確認しました。",
+                      "I confirmed that stable IDs match the same experimental units across conditions.",
+                    )
+                  : t(
+                      "条件間で実験単位が独立していることを確認しました。",
+                      "I confirmed that experimental units are independent across conditions.",
+                    )}
               </span>
             </label>
           )}
           <button
             className="experiment-graph-run-analysis"
             type="button"
-            disabled={!analysisAvailable || !independenceConfirmed || !equivalenceExecutable || running}
+            disabled={
+              !analysisAvailable || !independenceConfirmed || !equivalenceExecutable || running
+            }
             onClick={run}
           >
             {running
               ? t("ローカルで解析中…", "Running locally…")
-              : t("Welch TOSTを実行", "Run Welch TOST")}
+              : equivalenceSupportKind === "continuous_matched"
+                ? t("対応のあるTOSTを実行", "Run paired TOST")
+                : t("Welch TOSTを実行", "Run Welch TOST")}
           </button>
           {!equivalenceExecutable ? (
             <p className="experiment-graph-help" role="note">
@@ -1550,7 +1606,9 @@ export function GraphStatisticsPanel({
             <dl>
               <div>
                 <dt>{t("検定・モデル", "Test or model")}</dt>
-                <dd>{humanMethodLabel(assessment.method)}</dd>
+                <dd>
+                  {humanMethodLabel(lastExecutedRequestRef.current?.method ?? assessment.method)}
+                </dd>
               </div>
               <div>
                 <dt>{t("エンジン", "Engine")}</dt>
@@ -1574,12 +1632,18 @@ export function GraphStatisticsPanel({
               </div>
               <div>
                 <dt>{t("多重性の調整", "Multiplicity adjustment")}</dt>
-                <dd>{assessment.request?.options.multiplicityMethod ?? t("なし", "None")}</dd>
+                <dd>
+                  {lastExecutedRequestRef.current?.options.multiplicityMethod ??
+                    assessment.request?.options.multiplicityMethod ??
+                    t("なし", "None")}
+                </dd>
               </div>
               <div>
                 <dt>{t("実行リクエスト", "Execution request")}</dt>
                 <dd>
-                  {assessment.request?.templateId} / {assessment.request?.templateVersion}
+                  {lastExecutedRequestRef.current?.templateId ?? assessment.request?.templateId} /{" "}
+                  {lastExecutedRequestRef.current?.templateVersion ??
+                    assessment.request?.templateVersion}
                 </dd>
               </div>
             </dl>

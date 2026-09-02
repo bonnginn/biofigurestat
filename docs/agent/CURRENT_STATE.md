@@ -55,9 +55,18 @@ between two independent groups with a continuous outcome and a raw-difference ma
 90% confidence interval, emits the three ADR 0061 conclusions, generates Methods text, and
 round-trips the request/result through the existing `.lsa` analysis-run container. Its asymmetric
 reference fixture agrees with Statsmodels' unequal-variance TOST and confidence interval.
-Matched, shared-run, positive/total, multiple-claim, and specialist routes continue to stop safely;
+Shared-run, positive/total, multiple-claim, and specialist routes continue to stop safely;
 in particular, the user's positive/total shared-run multi-clone example is not reinterpreted as
 independent continuous percentages.
+
+Paired continuous equivalence is now a second, separate executable route under accepted ADR 0062.
+Protocol `0.16.0` runs a one-sample TOST on complete stable-ID differences in the explicit
+second-condition-minus-first-condition direction. Incomplete pairs remain in Data and Graph; every
+excluded pair ID and the complete-pair count are stored in the result and reported in the UI and
+Methods. Block-only metadata, missing pair IDs, duplicate pair/condition observations, fewer than
+two complete pairs, and zero-variance differences fail closed. The frozen vector agrees with an
+independent Statsmodels one-sample TOST calculation, and paired request/result provenance
+round-trips through `.lsa` without changing the existing schema.
 
 The bounded post-Alpha items 1–4 are now implemented and recorded in
 `docs/agent/POST_ALPHA_ITEMS_1_4_COMPLETION_2026-09-01.md`. This includes public alpha.2 guidance
@@ -775,30 +784,15 @@ Alpha `.lsa` observations without the field retain their dense-order fallback un
 Graph/Statistics production-path tests cover the change.
 
 Equivalence / “no meaningful difference” is represented as a separate saved scientific goal, not
-as an ordinary contrast or engine method. A Graph can now store a prespecified finite lower/upper
-margin, its scale/unit and rationale, alpha 0.05, and the intended claim across comparisons. The
-pure interval contract reports `equivalence_supported`, `meaningful_difference_supported`, or
-`inconclusive` from the corresponding equal-tail 90% confidence interval. The Statistics UI still
-safe-stops before engine execution, never derives a margin from observed data, and warns that a
-non-significant difference test does not establish equivalence. Public Alpha `.lsa` files remain
-valid because the plan is optional. ADR 0061 fixes the primary-source rationale and the executable
-support boundary: continuous independent and paired routes await method review; shared-run and
-typed positive/total routes cannot be coerced into naive continuous percentage TOST. Focused
-contract, UI, state-selector, and project-schema tests cover validation, goal transitions, engine
-non-execution, bilingual plan entry, stale-result clearing, and save/reopen compatibility.
-Multiple-comparison planning can record all-selected, separate-claim, or one explicitly selected
-primary-comparison intent without guessing a correction. The optional result envelope rejects a
-TOST p-value that is not the larger one-sided p-value, a conclusion that disagrees with the 90% CI
-and bounds, duplicate comparison IDs, or a primary result that does not match the prespecified ID.
-An interval-centered result component is ready to display estimate, CI, margin, both one-sided
-tests, and the three-state conclusion once a reviewed engine route is enabled. No equivalence
-engine route is enabled by these foundation changes.
-
-Paired continuous equivalence has a bounded, non-executable implementation proposal in ADR 0062.
-It specifies a one-sample TOST on stable-ID difference scores, first-condition-minus-second
-direction, raw prespecified bounds, a frozen SciPy/statsmodels reference vector, and explicit
-failure cases. Production remains safely stopped because the incomplete-pair policy and displayed
-direction wording still require review; Welch TOST is not reused for paired data.
+as a non-significant ordinary difference test. A Graph stores a prespecified finite lower/upper
+margin, its scale/unit and rationale, alpha 0.05, and one explicit primary comparison. The result
+contract reports `equivalence_supported`, `meaningful_difference_supported`, or `inconclusive`
+from the corresponding equal-tail 90% confidence interval. Public Alpha `.lsa` files remain valid
+because the plan and equivalence result fields are additive and optional. ADR 0061 governs the
+independent Welch TOST route; accepted ADR 0062 governs the separate paired TOST route. Shared-run,
+typed positive/total, multiple-claim, and specialist routes still safe-stop rather than being
+coerced into naive continuous TOST. Focused contract, engine-reference, UI, Methods, state, and
+project-package tests cover both executable routes and save/reopen compatibility.
 
 - `ExperimentGraphWorkbench` remains large and still mixes rendering, editor UI, analysis
   integration, diagnostics, and benchmark capture. Native export and persisted-state projection

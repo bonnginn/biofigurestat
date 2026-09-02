@@ -2,6 +2,7 @@ import type { AnalysisRecommendation } from "@lsaa/analysis-contracts";
 
 const METHOD_LABELS: Record<AnalysisRecommendation["recommendedMethod"], string> = {
   welch_tost: "Welch TOST（同等性検定）",
+  paired_tost: "対応のあるTOST（同等性検定）",
   welch_t: "Welchの2標本t検定",
   student_t: "Studentの2標本t検定",
   mann_whitney: "Mann–WhitneyのU検定",

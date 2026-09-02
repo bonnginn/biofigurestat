@@ -276,13 +276,145 @@ it("runs only the supported independent two-group equivalence request", async ()
   expect(await screen.findByText("同等性を支持")).toBeVisible();
 });
 
-it("retains privacy-safe local engine guidance instead of replacing it with a generic error", async () => {
-  const analysisRunner = vi.fn().mockRejectedValue(
-    new AnalysisClientError(
-      "ENGINE_EXECUTION_FAILED",
-      "ローカル統計エンジンの出力を検証できませんでした。診断情報を保存してください。",
-    ),
+it("runs paired TOST with complete pairs and reports excluded incomplete pair IDs", async () => {
+  const comparisonId = "equivalence:condition.vehicle:condition.drug";
+  const equivalencePlan = {
+    schemaVersion: "0.1.0" as const,
+    margin: {
+      scale: "raw_difference" as const,
+      lowerBound: -0.3,
+      upperBound: 0.3,
+      unit: "AU",
+      declaredAsPrespecified: true as const,
+    },
+    alpha: 0.05 as const,
+    claimMode: "single_primary_comparison" as const,
+    primaryComparisonId: comparisonId,
+  };
+  const pairedBaseRequest = AnalysisEngineRequestSchema.parse({
+    ...request,
+    templateId: "D02",
+    method: "paired_t",
+    observations: [
+      {
+        observationId: "o.v1",
+        conditionId: "condition.vehicle",
+        experimentalUnitId: "pair.1",
+        pairId: "pair.1",
+        value: 1,
+      },
+      {
+        observationId: "o.d1",
+        conditionId: "condition.drug",
+        experimentalUnitId: "pair.1",
+        pairId: "pair.1",
+        value: 1.1,
+      },
+      {
+        observationId: "o.v2",
+        conditionId: "condition.vehicle",
+        experimentalUnitId: "pair.2",
+        pairId: "pair.2",
+        value: 2,
+      },
+      {
+        observationId: "o.d2",
+        conditionId: "condition.drug",
+        experimentalUnitId: "pair.2",
+        pairId: "pair.2",
+        value: 2.2,
+      },
+    ],
+  });
+  const pairedAssessment: DraftAnalysisAssessment = {
+    ...readyAssessment,
+    title: "対応のあるt検定を推奨",
+    method: "paired_t",
+    recommendedMethod: "paired_t",
+    request: pairedBaseRequest,
+    inputDiagnostics: [
+      {
+        code: "INCOMPLETE_MATCHED_SET",
+        title: "対応がそろっていない組が1組あります",
+        message: "完全な組だけを解析します。",
+        incompleteMatchedSets: [
+          {
+            pairId: "pair.missing",
+            experimentId: "experiment.missing",
+            experimentLabel: "Animal missing",
+            missingConditions: [{ conditionId: "condition.drug", label: "Drug" }],
+          },
+        ],
+      },
+    ],
+  };
+  const result = AnalysisEngineResultSchema.parse({
+    protocolVersion: "0.16.0",
+    requestId: `${pairedBaseRequest.requestId}:paired-eq`,
+    status: "ok",
+    engine: { name: "lsaa-python", version: "test", packages: {} },
+    estimates: [],
+    tests: [],
+    equivalence: {
+      resultVersion: "0.1.0",
+      plan: equivalencePlan,
+      comparisons: [
+        {
+          comparisonId,
+          estimate: 0.15,
+          standardError: 0.05,
+          lowerConfidenceBound: 0.05,
+          upperConfidenceBound: 0.25,
+          confidenceLevel: 0.9,
+          lowerOneSidedPValue: 0.001,
+          upperOneSidedPValue: 0.02,
+          tostPValue: 0.02,
+          conclusion: "equivalence_supported",
+          analysisSet: { completePairCount: 2, excludedIncompletePairIds: ["pair.missing"] },
+        },
+      ],
+    },
+    diagnostics: [],
+    warnings: [],
+    completedAt: "2026-09-02T00:00:00.000Z",
+  });
+  const analysisRunner = vi.fn().mockResolvedValue(result);
+  render(
+    <GraphStatisticsPanel
+      assessment={pairedAssessment}
+      design={panelDesign()}
+      analysisRunner={analysisRunner}
+      comparisonGoal="equivalence"
+      equivalencePlan={equivalencePlan}
+      equivalenceSupportKind="continuous_matched"
+      conditionOptions={defaultConditionOptions}
+      relationshipAlreadyDeclared
+    />,
   );
+
+  expect(screen.getByText("対応のあるTOSTによる同等性解析")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "対応のあるTOSTを実行" }));
+  await waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(1));
+  expect(analysisRunner.mock.calls[0]?.[0]).toMatchObject({
+    protocolVersion: "0.16.0",
+    method: "paired_tost",
+    excludedIncompletePairIds: ["pair.missing"],
+  });
+  expect(await screen.findByText("同等性を支持")).toBeVisible();
+  const resultRegion = screen.getByRole("region", { name: "同等性解析結果" });
+  expect(within(resultRegion).getByText(/完全な対応組/)).toHaveTextContent("2");
+  expect(within(resultRegion).getByText(/pair\.missing/)).toBeVisible();
+});
+
+it("retains privacy-safe local engine guidance instead of replacing it with a generic error", async () => {
+  const analysisRunner = vi
+    .fn()
+    .mockRejectedValue(
+      new AnalysisClientError(
+        "ENGINE_EXECUTION_FAILED",
+        "ローカル統計エンジンの出力を検証できませんでした。診断情報を保存してください。",
+      ),
+    );
   render(
     <GraphStatisticsPanel
       assessment={readyAssessment}

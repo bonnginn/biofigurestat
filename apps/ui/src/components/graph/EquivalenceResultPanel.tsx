@@ -17,10 +17,7 @@ export function EquivalenceResultPanel({ result, comparisonLabels = {} }: Props)
   const { lowerBound, upperBound, unit } = result.plan.margin;
   const conclusionLabels = {
     equivalence_supported: t("同等性を支持", "Equivalence supported"),
-    meaningful_difference_supported: t(
-      "意味のある差を支持",
-      "Meaningful difference supported",
-    ),
+    meaningful_difference_supported: t("意味のある差を支持", "Meaningful difference supported"),
     inconclusive: t("結論不確定", "Inconclusive"),
   } as const;
 
@@ -36,17 +33,30 @@ export function EquivalenceResultPanel({ result, comparisonLabels = {} }: Props)
         const maximum = Math.max(upperBound, comparison.upperConfidenceBound, 0);
         const span = maximum - minimum || 1;
         const x = (value: number) => 24 + ((value - minimum) / span) * 592;
-        const label = comparisonLabels[comparison.comparisonId] ??
+        const label =
+          comparisonLabels[comparison.comparisonId] ??
           t(`比較 ${index + 1}`, `Comparison ${index + 1}`);
         return (
           <article key={comparison.comparisonId}>
             <h4>{label}</h4>
             <strong>{conclusionLabels[comparison.conclusion]}</strong>
             <p>
-              {t("推定差", "Estimated difference")} {format(comparison.estimate)} {unit}; {" "}
+              {t("推定差", "Estimated difference")} {format(comparison.estimate)} {unit};{" "}
               {comparison.confidenceLevel * 100}% CI {format(comparison.lowerConfidenceBound)}–
-              {format(comparison.upperConfidenceBound)} {unit}; TOST p = {format(comparison.tostPValue)}
+              {format(comparison.upperConfidenceBound)} {unit}; TOST p ={" "}
+              {format(comparison.tostPValue)}
             </p>
+            {comparison.analysisSet ? (
+              <p>
+                {t("完全な対応組", "Complete pairs")}: {comparison.analysisSet.completePairCount}
+                {comparison.analysisSet.excludedIncompletePairIds.length > 0
+                  ? t(
+                      `。解析から除外した不完全な組：${comparison.analysisSet.excludedIncompletePairIds.join("、")}（DataとGraphには保持）`,
+                      `. Incomplete pairs excluded from analysis: ${comparison.analysisSet.excludedIncompletePairIds.join(", ")} (retained in Data and Graph)`,
+                    )
+                  : t("。不完全な組の除外なし", ". No incomplete pairs were excluded")}
+              </p>
+            ) : null}
             <svg
               viewBox="0 0 640 76"
               role="img"

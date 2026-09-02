@@ -259,8 +259,11 @@ async function savePublicAlphaV02Fixture(input: {
   state: ProjectState;
   rawExport: string;
 }) {
-  const { experimentWorkspace: _workspace, adaptiveInput: _adaptiveInput, ...legacyState } =
-    input.state;
+  const {
+    experimentWorkspace: _workspace,
+    adaptiveInput: _adaptiveInput,
+    ...legacyState
+  } = input.state;
   const alphaState = { ...legacyState, schemaVersion: "0.2.0" };
   const database = new TextEncoder().encode(JSON.stringify(alphaState));
   const rawExport = new TextEncoder().encode(input.rawExport);
@@ -310,6 +313,185 @@ async function savePublicAlphaV02Fixture(input: {
 }
 
 describe("populated project round trip", () => {
+  it("round-trips paired TOST direction and incomplete-pair provenance", async () => {
+    const storage = new MemoryStorage();
+    const base = fixtureState();
+    const baseDesign = base.designRevisions.at(-1)!.design;
+    const design = {
+      ...baseDesign,
+      id: "design.paired-equivalence",
+      name: "Matched equivalence",
+      pairing: {
+        kind: "matched" as const,
+        matchLevelId: "unit-level.dish",
+        completePairsRequired: true,
+      },
+    };
+    const unitInstances = [
+      {
+        id: "unit.pair.1",
+        levelId: "unit-level.dish",
+        parentUnitId: null,
+        label: "Pair 1",
+        metadata: {},
+      },
+      {
+        id: "unit.pair.2",
+        levelId: "unit-level.dish",
+        parentUnitId: null,
+        label: "Pair 2",
+        metadata: {},
+      },
+    ];
+    const observations = unitInstances.flatMap((unit, index) => [
+      {
+        id: `observation.pair.${index + 1}.dark`,
+        rawRevisionId: "raw.1",
+        unitInstanceId: unit.id,
+        conditionId: "condition.dark",
+        outcomeId: "outcome.wb",
+        measurement: { kind: "scalar" as const, value: 1 + index },
+      },
+      {
+        id: `observation.pair.${index + 1}.light`,
+        rawRevisionId: "raw.1",
+        unitInstanceId: unit.id,
+        conditionId: "condition.light",
+        outcomeId: "outcome.wb",
+        measurement: { kind: "scalar" as const, value: 1.1 + index },
+      },
+    ]);
+    const comparisonId = "equivalence:condition.dark:condition.light";
+    const plan = {
+      schemaVersion: "0.1.0" as const,
+      margin: {
+        scale: "raw_difference" as const,
+        lowerBound: -0.25,
+        upperBound: 0.25,
+        unit: "AU",
+        declaredAsPrespecified: true as const,
+      },
+      alpha: 0.05 as const,
+      claimMode: "single_primary_comparison" as const,
+      primaryComparisonId: comparisonId,
+    };
+    const request = {
+      protocolVersion: "0.16.0" as const,
+      requestId: "request.paired-equivalence",
+      projectId: base.metadata.projectId,
+      analysisId: "analysis.paired-equivalence",
+      templateId: "D02" as const,
+      templateVersion: "0.2.0" as const,
+      method: "paired_tost" as const,
+      comparisonId,
+      contrastConditionIds: ["condition.dark", "condition.light"] as [string, string],
+      equivalencePlan: plan,
+      excludedIncompletePairIds: ["unit.pair.incomplete"],
+      observations: observations.map((observation) => ({
+        observationId: observation.id,
+        conditionId: observation.conditionId,
+        experimentalUnitId: observation.unitInstanceId,
+        pairId: observation.unitInstanceId,
+        value: observation.measurement.value,
+      })),
+      options: {
+        alternative: "two_sided" as const,
+        confidenceLevel: 0.9 as const,
+        multiplicityMethod: null,
+      },
+    };
+    const result = {
+      protocolVersion: "0.16.0" as const,
+      requestId: request.requestId,
+      status: "ok" as const,
+      engine: { name: "fixture", version: "0.16.0", packages: {} },
+      estimates: [],
+      tests: [],
+      equivalence: {
+        resultVersion: "0.1.0" as const,
+        plan,
+        comparisons: [
+          {
+            comparisonId,
+            estimate: 0.1,
+            standardError: 0.04,
+            lowerConfidenceBound: 0.02,
+            upperConfidenceBound: 0.18,
+            confidenceLevel: 0.9,
+            lowerOneSidedPValue: 0.001,
+            upperOneSidedPValue: 0.02,
+            tostPValue: 0.02,
+            conclusion: "equivalence_supported" as const,
+            analysisSet: {
+              completePairCount: 2,
+              excludedIncompletePairIds: ["unit.pair.incomplete"],
+            },
+          },
+        ],
+      },
+      diagnostics: [],
+      warnings: [],
+      completedAt: "2026-09-02T00:30:00Z",
+    };
+    const recommendation = {
+      templateId: "D02" as const,
+      templateVersion: "0.2.0",
+      recommendedMethod: "paired_tost" as const,
+      alternativeMethods: [],
+      reasonCode: "prespecified_paired_continuous_equivalence",
+      explanation: "Complete paired differences, second condition minus first condition.",
+      statisticalNDefinition: "Complete stable-ID pairs",
+      multiplicityMethod: null,
+    };
+    const graphSpec = createCoreTwoConditionGraphSpec({
+      graphId: "graph.paired-equivalence",
+      templateId: "D02",
+      dataSource: { kind: "analysis_result", id: request.analysisId, revision: request.requestId },
+      analysisResultId: request.requestId,
+      yLabel: "Normalized WB intensity",
+      yStartAtZero: true,
+    });
+    const state = createInitialProjectState({
+      metadata: base.metadata,
+      design,
+      rawRevision: base.rawRevisions.at(-1)!,
+      unitInstances,
+      observations,
+      actor: "researcher",
+      analysis: { recommendation, request, result, graphSpec },
+    });
+
+    const saved = await saveProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/paired-equivalence.lsa",
+      state,
+      sha256,
+      appVersion: "0.1.0-beta",
+      savedAt: "2026-09-02T01:00:00Z",
+    });
+    const reopened = await openProjectStatePackage({
+      storage,
+      databaseCodec: jsonCodec,
+      target: "/projects/paired-equivalence.lsa",
+      sha256,
+    });
+
+    expect(reopened).toEqual(saved);
+    expect(reopened.analysisRuns[0]?.request).toMatchObject({
+      protocolVersion: "0.16.0",
+      method: "paired_tost",
+      contrastConditionIds: ["condition.dark", "condition.light"],
+      excludedIncompletePairIds: ["unit.pair.incomplete"],
+    });
+    expect(reopened.analysisRuns[0]?.result.equivalence?.comparisons[0]).toMatchObject({
+      analysisSet: {
+        completePairCount: 2,
+        excludedIncompletePairIds: ["unit.pair.incomplete"],
+      },
+    });
+  });
+
   it("round-trips an executed independent Welch TOST without changing its margin or conclusion", async () => {
     const storage = new MemoryStorage();
     const source = analyzedFixtureState();
@@ -709,15 +891,13 @@ describe("populated project round trip", () => {
         measurement,
       })),
     ).toEqual(
-      orderedState.observations.map(
-        ({ id, unitInstanceId, conditionId, time, measurement }) => ({
-          id,
-          unitInstanceId,
-          conditionId,
-          time,
-          measurement,
-        }),
-      ),
+      orderedState.observations.map(({ id, unitInstanceId, conditionId, time, measurement }) => ({
+        id,
+        unitInstanceId,
+        conditionId,
+        time,
+        measurement,
+      })),
     );
   });
 

@@ -12,7 +12,7 @@ import {
 import { PRODUCT_IDENTITY } from "../../app/productIdentity";
 
 export function benchmarkContrastForRequest(request: AnalysisEngineRequest): unknown {
-  if (request.protocolVersion === "0.15.0") {
+  if (request.protocolVersion === "0.15.0" || request.protocolVersion === "0.16.0") {
     return {
       comparisonId: request.comparisonId,
       conditionIds: request.contrastConditionIds,
@@ -91,7 +91,7 @@ export function createBenchmarkStatisticsArtifact(
   }
 
   const recommendation =
-    analysis.request.protocolVersion === "0.15.0"
+    analysis.request.protocolVersion === "0.15.0" || analysis.request.protocolVersion === "0.16.0"
       ? analysis.recommendation
       : requireAnalysisRequestRecommendation(
           createExperimentWorkspaceDesign(draft, analysis.result.completedAt),
@@ -108,9 +108,7 @@ export function createBenchmarkStatisticsArtifact(
     statisticalUnit: draft.conditionAssignment.unitLabel,
     recommendation: {
       ...recommendation,
-      ...(analysis.recommendation?.decision
-        ? { decision: analysis.recommendation.decision }
-        : {}),
+      ...(analysis.recommendation?.decision ? { decision: analysis.recommendation.decision } : {}),
     },
     recommendedMethod: recommendation.recommendedMethod,
     selectedMethod: analysis.request.method,

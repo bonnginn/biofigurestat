@@ -221,6 +221,94 @@ describe("Japanese Methods generation", () => {
     expect(text).toContain("事前指定した単一主比較だけを評価したため指定なし");
   });
 
+  it("records paired TOST direction, complete-pair n, and every excluded incomplete pair", () => {
+    const comparisonId = "equivalence:condition.control:condition.treatment";
+    const pairedPlan = {
+      schemaVersion: "0.1.0" as const,
+      margin: {
+        scale: "raw_difference" as const,
+        lowerBound: -0.2,
+        upperBound: 0.2,
+        unit: "AU",
+        declaredAsPrespecified: true as const,
+      },
+      alpha: 0.05 as const,
+      claimMode: "single_primary_comparison" as const,
+      primaryComparisonId: comparisonId,
+    };
+    const pairedRequest: AnalysisEngineRequest = {
+      protocolVersion: "0.16.0",
+      requestId: "request.methods:paired-eq",
+      projectId: "project.methods",
+      analysisId: "analysis.methods:paired-eq",
+      templateId: "D02",
+      templateVersion: "0.2.0",
+      method: "paired_tost",
+      comparisonId,
+      contrastConditionIds: ["condition.control", "condition.treatment"],
+      equivalencePlan: pairedPlan,
+      excludedIncompletePairIds: ["animal.7", "animal.9"],
+      observations: request.observations.map((observation, index) => ({
+        ...observation,
+        experimentalUnitId: `pair.${Math.floor(index / 2) + 1}`,
+        pairId: `pair.${Math.floor(index / 2) + 1}`,
+      })),
+      options: { alternative: "two_sided", confidenceLevel: 0.9, multiplicityMethod: null },
+    };
+    const pairedResult: AnalysisEngineResult = {
+      ...result,
+      protocolVersion: "0.16.0",
+      requestId: pairedRequest.requestId,
+      estimates: [],
+      tests: [],
+      equivalence: {
+        resultVersion: "0.1.0",
+        plan: pairedPlan,
+        comparisons: [
+          {
+            comparisonId,
+            estimate: 0.05,
+            standardError: 0.02,
+            lowerConfidenceBound: 0.01,
+            upperConfidenceBound: 0.09,
+            confidenceLevel: 0.9,
+            lowerOneSidedPValue: 0.001,
+            upperOneSidedPValue: 0.002,
+            tostPValue: 0.002,
+            conclusion: "equivalence_supported",
+            analysisSet: {
+              completePairCount: 4,
+              excludedIncompletePairIds: ["animal.7", "animal.9"],
+            },
+          },
+        ],
+      },
+    };
+    const pairedRecommendation: AnalysisRecommendation = {
+      templateId: "D02",
+      templateVersion: "0.2.0",
+      recommendedMethod: "paired_tost",
+      alternativeMethods: [],
+      reasonCode: "prespecified_paired_continuous_equivalence",
+      explanation: "Prespecified paired TOST",
+      statisticalNDefinition: "Complete pairs",
+      multiplicityMethod: null,
+    };
+
+    const text = generateMethodsText({
+      design,
+      recommendation: pairedRecommendation,
+      request: pairedRequest,
+      result: pairedResult,
+    });
+
+    expect(text).toContain("実行手法：対応のあるTOST（同等性検定）");
+    expect(text).toContain("第2条件−第1条件");
+    expect(text).toContain("完全な対応組 4組");
+    expect(text).toContain("animal.7、animal.9");
+    expect(text).toContain("入力値はDataとGraphに保持");
+  });
+
   it("includes design, execution, result, graph, and explicit caveats", () => {
     const graphSpec = createCoreTwoConditionGraphSpec({
       graphId: "graph.methods",
