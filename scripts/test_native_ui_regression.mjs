@@ -11,10 +11,65 @@ import {
   resolveNativeExecutable,
   selectWebviewTarget,
   summarizeWebviewTargets,
+  validateEquivalenceBoundaryResult,
   windowsCloseCommand,
   windowsFileDialogCommand,
   windowsFileDialogFailure,
 } from "./native_ui_regression.mjs";
+
+test("validates both independent and paired equivalence native boundaries", () => {
+  const baseResult = {
+    status: "ok",
+    protocolVersion: "0.16.0",
+    equivalence: {
+      comparisons: [
+        {
+          conclusion: "equivalence_supported",
+          analysisSet: {
+            completePairCount: 6,
+            excludedIncompletePairIds: ["pair.incomplete"],
+          },
+        },
+      ],
+    },
+  };
+  assert.deepEqual(
+    validateEquivalenceBoundaryResult(baseResult, {
+      label: "paired TOST",
+      protocolVersion: "0.16.0",
+      analysisSet: {
+        completePairCount: 6,
+        excludedIncompletePairIds: ["pair.incomplete"],
+      },
+    }),
+    {
+      protocolVersion: "0.16.0",
+      status: "ok",
+      conclusion: "equivalence_supported",
+      analysisSet: {
+        completePairCount: 6,
+        excludedIncompletePairIds: ["pair.incomplete"],
+      },
+    },
+  );
+  assert.throws(
+    () =>
+      validateEquivalenceBoundaryResult(baseResult, {
+        label: "paired TOST",
+        protocolVersion: "0.16.0",
+        analysisSet: { completePairCount: 5, excludedIncompletePairIds: [] },
+      }),
+    /changed the paired analysis set/,
+  );
+  assert.throws(
+    () =>
+      validateEquivalenceBoundaryResult(
+        { ...baseResult, protocolVersion: "0.15.0" },
+        { label: "paired TOST", protocolVersion: "0.16.0" },
+      ),
+    /unexpected result/,
+  );
+});
 
 test("parses a bounded Windows native regression invocation", () => {
   assert.deepEqual(
@@ -265,10 +320,9 @@ test("separates a missing WebView inspection channel from a product regression",
     "PRODUCT_REGRESSION",
   );
   assert.equal(
-    classifyNativeRegressionFailure(
-      new Error("Native WebView did not expose a CDP target"),
-      [{ name: "windows_lsa_command_line_open", status: "fail" }],
-    ),
+    classifyNativeRegressionFailure(new Error("Native WebView did not expose a CDP target"), [
+      { name: "windows_lsa_command_line_open", status: "fail" },
+    ]),
     "HARNESS_INFRASTRUCTURE_BLOCKED",
   );
   assert.equal(

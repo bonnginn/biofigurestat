@@ -501,7 +501,7 @@ mod tests {
     #[test]
     #[ignore = "requires the locally built packaged Windows engine"]
     #[cfg(target_os = "windows")]
-    fn packaged_windows_engine_round_trip_returns_welch_tost_json() {
+    fn packaged_windows_engine_round_trip_returns_equivalence_json() {
         let repository_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .ancestors()
             .nth(3)
@@ -511,22 +511,54 @@ mod tests {
             "engine/python/dist/windows-amd64/lsaa-engine.exe/lsaa-engine.exe",
         );
         assert!(executable.is_file(), "build the packaged Windows engine first");
-        let request: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../../engine/python/smoke_fixtures/welch-tost-equivalence-supported-request.json"
-        ))
-        .expect("shared Welch TOST boundary fixture");
-
-        let result = execute_engine_process(
-            EngineLaunch::PackagedBinary { executable },
-            request,
-            &EngineProcessRegistry::default(),
-        )
-        .expect("packaged Welch TOST round trip");
-        assert_eq!(result["protocolVersion"], "0.15.0");
-        assert_eq!(result["status"], "ok");
-        assert_eq!(
-            result["equivalence"]["comparisons"][0]["conclusion"],
-            "equivalence_supported"
-        );
+        let cases = [
+            (
+                "Welch TOST",
+                "0.15.0",
+                include_str!(
+                    "../../../../engine/python/smoke_fixtures/welch-tost-equivalence-supported-request.json"
+                ),
+            ),
+            (
+                "paired TOST",
+                "0.16.0",
+                include_str!(
+                    "../../../../engine/python/smoke_fixtures/paired-tost-equivalence-supported-request.json"
+                ),
+            ),
+        ];
+        for (label, protocol_version, request_json) in cases {
+            let request: serde_json::Value =
+                serde_json::from_str(request_json).expect("shared equivalence boundary fixture");
+            let result = execute_engine_process(
+                EngineLaunch::PackagedBinary {
+                    executable: executable.clone(),
+                },
+                request,
+                &EngineProcessRegistry::default(),
+            )
+            .unwrap_or_else(|error| panic!("packaged {label} round trip: {error}"));
+            assert_eq!(result["protocolVersion"], protocol_version, "{label}");
+            assert_eq!(result["status"], "ok", "{label}");
+            assert_eq!(
+                result["equivalence"]["comparisons"][0]["conclusion"],
+                "equivalence_supported",
+                "{label}"
+            );
+            if protocol_version == "0.16.0" {
+                assert_eq!(
+                    result["equivalence"]["comparisons"][0]["analysisSet"]
+                        ["completePairCount"],
+                    6,
+                    "{label}"
+                );
+                assert_eq!(
+                    result["equivalence"]["comparisons"][0]["analysisSet"]
+                        ["excludedIncompletePairIds"],
+                    json!(["pair.incomplete"]),
+                    "{label}"
+                );
+            }
+        }
     }
 }

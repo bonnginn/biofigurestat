@@ -112,14 +112,16 @@ cannot overrun the scenario deadline indefinitely. Failure evidence records only
 transitions (`id`, URL, and whether a WebSocket endpoint existed), making a persistent blank target,
 target replacement, and discovery-channel loss distinguishable without collecting page content.
 
-The Windows scenario also sends a deterministic independent two-group Welch TOST request through
-the packaged application's actual `run_analysis` command. It requires protocol `0.15.0`, an `ok`
-result, and `equivalence_supported` for the fixed synthetic margin fixture. The harness, frozen
-sidecar smoke, and Rust packaged-process test read the same request JSON, so observations, margin,
-comparison identity, and expected protocol cannot drift between boundaries. The executions remain
-intentionally separate: the native step covers Tauri resource resolution, child-process pipes,
-JSON decoding, and IPC result transport. If WebView2 inspection is unavailable, this step remains
-environment-blocked even when the sidecar and Rust process boundaries pass.
+The Windows scenario also sends deterministic independent-group Welch TOST and matched-pair TOST
+requests through the packaged application's actual `run_analysis` command. It requires protocols
+`0.15.0` and `0.16.0`, `ok` results, and `equivalence_supported` for both fixed synthetic margin
+fixtures. For paired TOST it additionally requires six complete pairs and the preserved excluded
+ID `pair.incomplete`. The harness, frozen sidecar smoke, and Rust packaged-process test read the
+same request JSON, so observations, margin, comparison identity, analysis-set provenance, and
+expected protocol cannot drift between boundaries. The executions remain intentionally separate:
+the native step covers Tauri resource resolution, child-process pipes, JSON decoding, and IPC
+result transport. If WebView2 inspection is unavailable, this step remains environment-blocked
+even when the sidecar and Rust process boundaries pass.
 
 ## macOS usage
 

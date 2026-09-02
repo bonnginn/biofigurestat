@@ -82,6 +82,33 @@ export function defaultNativeExecutable(platform) {
   return DEFAULT_MAC_APP;
 }
 
+export function validateEquivalenceBoundaryResult(result, expected) {
+  const comparison = result?.equivalence?.comparisons?.[0];
+  if (
+    result?.status !== "ok" ||
+    result?.protocolVersion !== expected.protocolVersion ||
+    comparison?.conclusion !== "equivalence_supported"
+  ) {
+    throw new Error(`Native ${expected.label} IPC returned an unexpected result`);
+  }
+  if (expected.analysisSet) {
+    const analysisSet = comparison?.analysisSet;
+    if (
+      analysisSet?.completePairCount !== expected.analysisSet.completePairCount ||
+      JSON.stringify(analysisSet?.excludedIncompletePairIds) !==
+        JSON.stringify(expected.analysisSet.excludedIncompletePairIds)
+    ) {
+      throw new Error(`Native ${expected.label} IPC changed the paired analysis set`);
+    }
+  }
+  return {
+    protocolVersion: result.protocolVersion,
+    status: result.status,
+    conclusion: comparison.conclusion,
+    ...(expected.analysisSet ? { analysisSet: comparison.analysisSet } : {}),
+  };
+}
+
 export function macBundleExecutableFromPlist(plist) {
   const match = plist.match(
     /<key>\s*CFBundleExecutable\s*<\/key>\s*<string>\s*([^<]+?)\s*<\/string>/u,
@@ -904,10 +931,7 @@ async function runWindowsScenario({
     join(tmpdir(), "biofigurestat-native-regression-profile-"),
   );
   const exportTarget = join(outputDirectory, "native-command-export.svg");
-  const dialogExportTarget = join(
-    outputDirectory,
-    `native-save-dialog-export-${Date.now()}.svg`,
-  );
+  const dialogExportTarget = join(outputDirectory, `native-save-dialog-export-${Date.now()}.svg`);
   const associationProjectTarget = join(
     outputDirectory,
     `native-file-association-${Date.now()}.lsa`,
@@ -999,36 +1023,38 @@ async function runWindowsScenario({
         throw new Error("Architecture IPC returned no value");
       return { architecture };
     });
-    await runStep("native_welch_tost_ipc", async () => {
-      const request = JSON.parse(
-        await readFile(
-          join(
-            ROOT,
-            "engine",
-            "python",
-            "smoke_fixtures",
-            "welch-tost-equivalence-supported-request.json",
+    const equivalenceBoundaryCases = [
+      {
+        step: "native_welch_tost_ipc",
+        label: "Welch TOST",
+        fixture: "welch-tost-equivalence-supported-request.json",
+        protocolVersion: "0.15.0",
+      },
+      {
+        step: "native_paired_tost_ipc",
+        label: "paired TOST",
+        fixture: "paired-tost-equivalence-supported-request.json",
+        protocolVersion: "0.16.0",
+        analysisSet: {
+          completePairCount: 6,
+          excludedIncompletePairIds: ["pair.incomplete"],
+        },
+      },
+    ];
+    for (const boundaryCase of equivalenceBoundaryCases) {
+      await runStep(boundaryCase.step, async () => {
+        const request = JSON.parse(
+          await readFile(
+            join(ROOT, "engine", "python", "smoke_fixtures", boundaryCase.fixture),
+            "utf8",
           ),
-          "utf8",
-        ),
-      );
-      const result = await client.evaluate(
-        `window.__TAURI_INTERNALS__.invoke("run_analysis", ${JSON.stringify({ request })})`,
-      );
-      const comparison = result?.equivalence?.comparisons?.[0];
-      if (
-        result?.status !== "ok" ||
-        result?.protocolVersion !== "0.15.0" ||
-        comparison?.conclusion !== "equivalence_supported"
-      ) {
-        throw new Error("Native Welch TOST IPC returned an unexpected result");
-      }
-      return {
-        protocolVersion: result.protocolVersion,
-        status: result.status,
-        conclusion: comparison.conclusion,
-      };
-    });
+        );
+        const result = await client.evaluate(
+          `window.__TAURI_INTERNALS__.invoke("run_analysis", ${JSON.stringify({ request })})`,
+        );
+        return validateEquivalenceBoundaryResult(result, boundaryCase);
+      });
+    }
     await runStep("home_has_no_japanese_application_copy", async () => {
       const findings = await client.evaluate(japaneseUiAuditExpression());
       if (findings.length)
@@ -1036,7 +1062,9 @@ async function runWindowsScenario({
       return { findings: 0 };
     });
     await runStep("native_project_open_dialog_cancel", async () => {
-      await client.evaluate(`document.querySelector('[data-primary-route="open-project"]')?.click()`);
+      await client.evaluate(
+        `document.querySelector('[data-primary-route="open-project"]')?.click()`,
+      );
       const detail = await driveFileDialog("cancel");
       return { ...detail, retainedApplication: true };
     });
@@ -1116,36 +1144,38 @@ async function runWindowsScenario({
           return { ...detail, control, retainedApplication: true };
         });
       }
-      if (nativeFileDialogSaveTargets) await runStep("native_svg_save_dialog_writes_selected_target", async () => {
-        await client.evaluate(pageAction(clickByText, "SVG"));
-        const detail = await driveFileDialog("save", dialogExportTarget);
-        let written;
-        try {
-          written = await waitForReadableFile(
-            dialogExportTarget,
-            "SVG selected in the native Save dialog",
+      if (nativeFileDialogSaveTargets)
+        await runStep("native_svg_save_dialog_writes_selected_target", async () => {
+          await client.evaluate(pageAction(clickByText, "SVG"));
+          const detail = await driveFileDialog("save", dialogExportTarget);
+          let written;
+          try {
+            written = await waitForReadableFile(
+              dialogExportTarget,
+              "SVG selected in the native Save dialog",
+              timeoutMs,
+              "utf8",
+            );
+          } catch (error) {
+            throw new Error(`${String(error)}; dialog=${JSON.stringify(detail)}`);
+          }
+          if (!written.includes("<svg")) throw new Error("Native Save dialog wrote invalid SVG");
+          return { ...detail, target: dialogExportTarget, bytes: Buffer.byteLength(written) };
+        });
+      if (nativeFileDialogSaveTargets)
+        await runStep("native_project_save_dialog_writes_lsa", async () => {
+          await client.evaluate(pageAction(clickByText, "Save"));
+          const detail = await driveFileDialog("save", associationProjectTarget);
+          const written = await waitForReadableFile(
+            associationProjectTarget,
+            ".lsa selected in the native Save dialog",
             timeoutMs,
-            "utf8",
           );
-        } catch (error) {
-          throw new Error(`${String(error)}; dialog=${JSON.stringify(detail)}`);
-        }
-        if (!written.includes("<svg")) throw new Error("Native Save dialog wrote invalid SVG");
-        return { ...detail, target: dialogExportTarget, bytes: Buffer.byteLength(written) };
-      });
-      if (nativeFileDialogSaveTargets) await runStep("native_project_save_dialog_writes_lsa", async () => {
-        await client.evaluate(pageAction(clickByText, "Save"));
-        const detail = await driveFileDialog("save", associationProjectTarget);
-        const written = await waitForReadableFile(
-          associationProjectTarget,
-          ".lsa selected in the native Save dialog",
-          timeoutMs,
-        );
-        if (written.byteLength < 1_024) {
-          throw new Error("Native project Save dialog wrote an unexpectedly small .lsa package");
-        }
-        return { ...detail, target: associationProjectTarget, bytes: written.byteLength };
-      });
+          if (written.byteLength < 1_024) {
+            throw new Error("Native project Save dialog wrote an unexpectedly small .lsa package");
+          }
+          return { ...detail, target: associationProjectTarget, bytes: written.byteLength };
+        });
       await client.evaluate(pageAction(clickByText, "Review statistics"));
       await waitFor(
         client,
@@ -1247,35 +1277,36 @@ async function runWindowsScenario({
       });
       return { exited: true };
     });
-    if (nativeFileDialogSaveTargets) await runStep("windows_lsa_command_line_open", async () => {
-      const associationPort = await reservePort();
-      const associationOutput = [];
-      const associationChild = spawn(executable, [associationProjectTarget], {
-        cwd: ROOT,
-        env: {
-          ...process.env,
-          WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${associationPort} --remote-allow-origins=*`,
-          WEBVIEW2_USER_DATA_FOLDER: profileDirectory,
-        },
-        windowsHide: true,
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      const collectAssociationOutput = (chunk) => associationOutput.push(String(chunk));
-      associationChild.stdout?.on("data", collectAssociationOutput);
-      associationChild.stderr?.on("data", collectAssociationOutput);
-      let associationClient;
-      try {
-        const target = await waitForTarget(associationPort, timeoutMs, associationChild);
-        const connection = await connectToStableWebview(
-          associationPort,
-          target,
-          timeoutMs,
-          associationChild,
-        );
-        associationClient = connection.client;
-        await waitFor(
-          associationClient,
-          `(() => {
+    if (nativeFileDialogSaveTargets)
+      await runStep("windows_lsa_command_line_open", async () => {
+        const associationPort = await reservePort();
+        const associationOutput = [];
+        const associationChild = spawn(executable, [associationProjectTarget], {
+          cwd: ROOT,
+          env: {
+            ...process.env,
+            WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${associationPort} --remote-allow-origins=*`,
+            WEBVIEW2_USER_DATA_FOLDER: profileDirectory,
+          },
+          windowsHide: true,
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        const collectAssociationOutput = (chunk) => associationOutput.push(String(chunk));
+        associationChild.stdout?.on("data", collectAssociationOutput);
+        associationChild.stderr?.on("data", collectAssociationOutput);
+        let associationClient;
+        try {
+          const target = await waitForTarget(associationPort, timeoutMs, associationChild);
+          const connection = await connectToStableWebview(
+            associationPort,
+            target,
+            timeoutMs,
+            associationChild,
+          );
+          associationClient = connection.client;
+          await waitFor(
+            associationClient,
+            `(() => {
             const value = document.querySelector('[data-testid="graph-only-cell-1-0"]')?.value;
             const workspaceTabs = [...document.querySelectorAll('button, [role="tab"]')];
             const enabled = (name) => workspaceTabs.some(
@@ -1283,22 +1314,22 @@ async function runWindowsScenario({
             );
             return value === "Vehicle" && enabled("Graph") && enabled("Statistics");
           })()`,
-          ".lsa command-line open with editable data and enabled Graph/Statistics",
-          timeoutMs,
-        );
-        await captureScreenshot(
-          associationClient,
-          join(outputDirectory, "lsa-command-line-open.png"),
-        );
-        return { target: associationProjectTarget, restoredValue: "Vehicle" };
-      } catch (error) {
-        if (associationClient) {
-          try {
-            await captureScreenshot(
-              associationClient,
-              join(outputDirectory, "lsa-command-line-open-failure.png"),
-            );
-            const state = await associationClient.evaluate(`({
+            ".lsa command-line open with editable data and enabled Graph/Statistics",
+            timeoutMs,
+          );
+          await captureScreenshot(
+            associationClient,
+            join(outputDirectory, "lsa-command-line-open.png"),
+          );
+          return { target: associationProjectTarget, restoredValue: "Vehicle" };
+        } catch (error) {
+          if (associationClient) {
+            try {
+              await captureScreenshot(
+                associationClient,
+                join(outputDirectory, "lsa-command-line-open-failure.png"),
+              );
+              const state = await associationClient.evaluate(`({
               body: document.body?.innerText ?? "",
               href: location.href,
               title: document.title,
@@ -1308,25 +1339,30 @@ async function runWindowsScenario({
                 disabled: Boolean(tab.disabled),
               })),
             })`);
+              await writeFile(
+                join(outputDirectory, "lsa-command-line-open-failure.json"),
+                `${JSON.stringify(state, null, 2)}\n`,
+                "utf8",
+              );
+            } catch {
+              // Preserve the command-line open failure if diagnostic capture also fails.
+            }
+          }
+          throw error;
+        } finally {
+          associationClient?.close();
+          if (associationChild.exitCode === null && !associationChild.killed)
+            associationChild.kill();
+          const output = associationOutput.join("");
+          if (output) {
             await writeFile(
-              join(outputDirectory, "lsa-command-line-open-failure.json"),
-              `${JSON.stringify(state, null, 2)}\n`,
+              join(outputDirectory, "lsa-command-line-open-output.txt"),
+              output,
               "utf8",
             );
-          } catch {
-            // Preserve the command-line open failure if diagnostic capture also fails.
           }
         }
-        throw error;
-      } finally {
-        associationClient?.close();
-        if (associationChild.exitCode === null && !associationChild.killed) associationChild.kill();
-        const output = associationOutput.join("");
-        if (output) {
-          await writeFile(join(outputDirectory, "lsa-command-line-open-output.txt"), output, "utf8");
-        }
-      }
-    });
+      });
   } catch (error) {
     const output = nativeOutput.join("");
     if (output) await writeFile(join(outputDirectory, "native-output.txt"), output, "utf8");
