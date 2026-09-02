@@ -2,7 +2,8 @@
 
 This report records the maintenance/refactor batch based on product source commit
 `ecdb2748314153cb83e159efb60d662b53883c88` and ending at product source commit
-`2d9fba652b79e69e98aec623f534c2d8e9a59a39`. It does not nominate or publish a release artifact.
+`2d9fba652b79e69e98aec623f534c2d8e9a59a39`. Reference coverage tooling continues through
+`35e3431`. This report does not nominate or publish a release artifact.
 
 ## 1. BASELINE
 
@@ -132,7 +133,8 @@ the approximately five-minute milestone test was not repeated after every extrac
 1. Stop structural extraction for this batch and cut an `alpha.3` candidate from a clean recorded
    source commit; do not add the broader Beta Excel/panel/Prism roadmap to this maintenance release.
 2. Add reviewed frozen Welch TOST and paired TOST cross-platform reference cases without changing
-   engine output or fitting expected values to the implementation.
+   engine output or fitting expected values to the implementation. Use the Darwin-arm64-only
+   append-missing command so the existing 14 results cannot be silently replaced.
 3. After `alpha.3`, isolate one Common Coverage workflow controller at a time, beginning with
    ordered X/Y because it already has explicit input, readiness, provenance, and renderer
    boundaries.

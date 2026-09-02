@@ -2,8 +2,8 @@
 
 Updated: 2026-09-03 (JST)
 
-Status: automated product-source gate passed at `2d9fba6`; no candidate artifact or release has
-been authorized.
+Status: automated product-source gate passed at `2d9fba6`; reference-gate tooling is prepared at
+`35e3431`; no candidate artifact or release has been authorized.
 
 Use this checklist only for the maintenance Alpha described in
 `PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`. The historical Alpha checklist remains a record of the
@@ -37,9 +37,9 @@ The engine unit suite (75), analysis-contract suite (55), existing Windows sidec
 existing frozen 14-case reference suite pass. `pnpm engine:reference:coverage` intentionally stops
 and reports four missing Darwin-arm64 cases: Welch TOST, paired TOST, Survival, and D17. The
 combined reference item above remains open rather than overstating the evidence. On the reviewed
-Darwin-arm64 host, run `verify_engine_reference.py --write-reference`, review that only the four
-expected cases are added or numerically refreshed, then run the complete coverage gate on both
-hosts. The writer refuses to run on another platform.
+Darwin-arm64 host, run `pnpm engine:reference:append-missing:mac`, review that exactly the four
+expected cases were appended and all existing cases remained unchanged, then run
+`pnpm engine:reference:coverage` on both hosts. Both write modes refuse to run on another platform.
 
 ## Windows artifact gate
 

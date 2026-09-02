@@ -951,6 +951,11 @@ Reference writing is mechanically restricted to Darwin-arm64 so Windows output c
 replace the cross-platform authority. This is a remaining Alpha candidate gate, not an engine
 result mismatch.
 
+The safe refresh path is `pnpm engine:reference:append-missing:mac`. It executes only the missing
+requests and appends their results, preserving all existing cases verbatim; its direct comparator,
+coverage, append-only, and platform-guard tests pass 5/5. The read-only completeness check is
+`pnpm engine:reference:coverage`.
+
 `v0.1.0-alpha.3` is now appropriate as the next maintenance candidate after reviewed frozen TOST
 reference cases and same-source Windows/macOS artifact gates. Broader Excel, panel-layout, and
 Prism-level appearance work remains Beta scope and should not be pulled into this release boundary.
