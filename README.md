@@ -91,10 +91,16 @@ engine. Development and contribution instructions start in [AGENTS.md](AGENTS.md
 
 ```text
 pnpm install --frozen-lockfile
-pnpm test
+pnpm test:ui:related
 pnpm typecheck
 pnpm lint
 ```
+
+During development, `test:ui:related` follows the import graph from uncommitted UI/shared-package
+changes and runs the affected UI tests. Use `test:ui:english` for application-copy changes. The
+complete `pnpm test` remains the milestone, handoff, and release gate rather than a per-edit loop;
+the focused commands do not replace package/schema, scientific-routing, persistence, or native
+checks required by the changed contract.
 
 Sealed evaluation pools, third-party reference figures, and historical benchmark outputs are not
 distributed in this public source repository.
