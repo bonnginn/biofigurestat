@@ -2,9 +2,9 @@
 
 Updated: 2026-09-03 (JST)
 
-Status: scope frozen on `codex/alpha3-candidate-20260903`; product code is frozen through
-`5ba1a92`; reference-gate tooling is prepared at `35e3431`; no candidate artifact or release has
-been authorized.
+Status: scope frozen and the broad source gate passed on `codex/alpha3-candidate-20260903`;
+product code is frozen through `5ba1a92`; reference-gate tooling is prepared at `35e3431`; no
+candidate artifact or release has been authorized.
 
 Use this checklist only for the maintenance Alpha described in
 `PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`. The historical Alpha checklist remains a record of the
@@ -26,8 +26,9 @@ earlier release and must not be silently reinterpreted as current evidence.
 - [x] Focused tests for every changed responsibility pass.
 - [x] Project migration tests pass for Public Alpha continuous, Survival, and ordered X/Y fixtures
       (9 files / 73 tests).
-- [ ] Analysis-contract and engine reference/smoke tests pass for Welch TOST, paired TOST, and
-      multi-condition Games–Howell.
+- [x] Analysis-contract tests and engine unit tests pass for Welch TOST, paired TOST, and
+      multi-condition Games–Howell. Cross-platform reference completeness remains a separate
+      macOS artifact gate below.
 - [x] UI English-residue gate passes without translating researcher-entered labels (39 files / 362
       tests).
 - [x] Workspace typecheck and lint pass.
@@ -35,13 +36,24 @@ earlier release and must not be silently reinterpreted as current evidence.
       stale-test, or flaky disposition before a single bounded rerun.
 - [x] Production UI build and release verifier pass with zero forbidden evaluation markers.
 
-The engine unit suite (75), analysis-contract suite (55), existing Windows sidecar smoke (18), and
-existing frozen 14-case reference suite pass. `pnpm engine:reference:coverage` intentionally stops
-and reports four missing Darwin-arm64 cases: Welch TOST, paired TOST, Survival, and D17. The
-combined reference item above remains open rather than overstating the evidence. On the reviewed
-Darwin-arm64 host, run `pnpm engine:reference:append-missing:mac`, review that exactly the four
-expected cases were appended and all existing cases remained unchanged, then run
-`pnpm engine:reference:coverage` on both hosts. Both write modes refuse to run on another platform.
+The 2026-09-03 final source gate passed the engine unit suite (75), analysis-contract suite (14
+files / 55 tests), all other non-UI workspace suites (34 files / 241 tests), and the full UI suite
+(211 files / 1,403 tests). TypeScript checks passed for the UI, telemetry worker, and all seven
+packages; UI lint, production UI build, and the release verifier also passed. In total, the
+JavaScript/TypeScript test milestone covered 259 files / 1,699 tests. Existing Windows sidecar smoke
+(18) and the frozen 14-case reference suite also pass.
+
+Complete cross-platform reference coverage intentionally stops and reports four missing
+Darwin-arm64 cases: Welch TOST, paired TOST, Survival, and D17. This is an evidence gap, not a
+numerical mismatch. On the reviewed Darwin-arm64 host, run
+`pnpm engine:reference:append-missing:mac`, review that exactly the four expected cases were
+appended and all existing cases remained unchanged, then run `pnpm engine:reference:coverage` on
+both hosts. Both write modes refuse to run on another platform.
+
+The workspace package-manager wrapper requested an interactive modules-directory reinstall in this
+non-interactive checkout. No dependencies were changed. The source gate therefore invoked the
+already-installed Vitest, TypeScript, ESLint, and Vite entry points directly; all product checks
+listed above completed successfully.
 
 The final input-integrity follow-up adds three focused corrections after the earlier `82ac3af`
 source gate: rectangular paste retains matching lexical numeric text, simple-group condition names
@@ -103,10 +115,10 @@ results do not replace the single final package/full gate.
 
 ## Final verdict
 
-- Candidate source: scope frozen through product code `5ba1a92`; final same-source artifact commit
-  and broad source gate pending
+- Candidate source: broad source gate `PASS`; scope frozen through product code `5ba1a92`; final
+  same-source artifact commit will be the checklist-evidence commit created after this gate
 - Windows artifact: `TBD`
 - macOS artifact: `TBD`
 - Product failures: `TBD`
-- Environment blocks: `TBD`
-- Verdict: `NOT YET EVALUATED`
+- Environment blocks: four Darwin-arm64 reference records pending on the macOS artifact host
+- Verdict: `SOURCE GATE PASS — ARTIFACT GATES PENDING`
