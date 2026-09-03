@@ -226,6 +226,10 @@ describe("privacy-safe diagnostic reports", () => {
       "ENGINE_EXECUTION_FAILED",
       "ENGINE_OUTPUT_INVALID_JSON:eof:bytes=1042:starts_object=true:ends_object=false",
     );
+    recordDiagnosticError(
+      "ENGINE_EXECUTION_FAILED",
+      "ENGINE_OUTPUT_INVALID_JSON:syntax:bytes=2077:starts_object=false:ends_object=true",
+    );
 
     const expanded = createDiagnosticReport({
       route: "new-experiment",
@@ -237,6 +241,7 @@ describe("privacy-safe diagnostic reports", () => {
       "EngineProcessFailure",
       "EngineResponseValidationError",
       "EngineInvalidJsonEof",
+      "EngineInvalidJsonSyntax(bytes=2077,startsObject=false,endsObject=true)",
     ]);
     expect(text).not.toContain("Secret Study");
     expect(text).not.toContain("12.345");

@@ -174,6 +174,12 @@ function safeErrorKind(error: unknown): string {
     if (/ENGINE_OUTPUT_INVALID_JSON:utf8_bom/iu.test(error)) return "EngineInvalidJsonUtf8Bom";
     if (/ENGINE_OUTPUT_INVALID_JSON:non_finite/iu.test(error)) return "EngineInvalidJsonNonFinite";
     if (/ENGINE_OUTPUT_INVALID_JSON:eof/iu.test(error)) return "EngineInvalidJsonEof";
+    const syntaxShape = error.match(
+      /^ENGINE_OUTPUT_INVALID_JSON:syntax:bytes=(\d{1,9}):starts_object=(true|false):ends_object=(true|false)$/iu,
+    );
+    if (syntaxShape) {
+      return `EngineInvalidJsonSyntax(bytes=${syntaxShape[1]},startsObject=${syntaxShape[2]},endsObject=${syntaxShape[3]})`;
+    }
     if (/ENGINE_OUTPUT_INVALID_JSON:syntax/iu.test(error)) return "EngineInvalidJsonSyntax";
     if (/ENGINE_OUTPUT_INVALID_JSON:data/iu.test(error)) return "EngineInvalidJsonData";
     if (/ENGINE_OUTPUT_INVALID_JSON:io/iu.test(error)) return "EngineInvalidJsonIo";

@@ -40,6 +40,44 @@ enum EngineLaunch {
     PackagedBinary { executable: PathBuf },
 }
 
+fn parse_engine_stdout(stdout: &[u8]) -> Result<Value, serde_json::Error> {
+    match serde_json::from_slice(stdout) {
+        Ok(value) => return Ok(value),
+        Err(original_error) => {
+            // Some native numerical runtimes can write directly to the inherited OS stdout
+            // descriptor, bypassing Python's sys.stdout redirection. Recover only when there is
+            // exactly one complete JSON object at the end of the stream. Internal corruption,
+            // trailing output, and multiple complete objects still fail closed.
+            let mut recovered = None;
+            for (start, byte) in stdout.iter().enumerate() {
+                if *byte != b'{' {
+                    continue;
+                }
+                if stdout[..start]
+                    .iter()
+                    .any(|prefix_byte| matches!(*prefix_byte, b'{' | b'}'))
+                {
+                    continue;
+                }
+                let mut values =
+                    serde_json::Deserializer::from_slice(&stdout[start..]).into_iter::<Value>();
+                let Some(Ok(value)) = values.next() else {
+                    continue;
+                };
+                let end = start + values.byte_offset();
+                if !stdout[end..].iter().all(u8::is_ascii_whitespace) {
+                    continue;
+                }
+                if recovered.is_some() {
+                    return Err(original_error);
+                }
+                recovered = Some(value);
+            }
+            recovered.ok_or(original_error)
+        }
+    }
+}
+
 fn wait_for_engine_process(
     active: &ActiveEngineProcess,
     timeout: Duration,
@@ -207,7 +245,7 @@ fn execute_engine_process(
             detail.trim()
         ));
     }
-    serde_json::from_slice(&stdout).map_err(|error| {
+    parse_engine_stdout(&stdout).map_err(|error| {
         let category = if stdout.is_empty() {
             "empty"
         } else if stdout.starts_with(&[0xef, 0xbb, 0xbf]) {
@@ -289,8 +327,8 @@ pub fn cancel_analysis(
 #[cfg(test)]
 mod tests {
     use super::{
-        execute_engine_process, wait_for_engine_process, ActiveEngineProcess, EngineLaunch,
-        EngineProcessRegistry, EngineWaitOutcome,
+        execute_engine_process, parse_engine_stdout, wait_for_engine_process, ActiveEngineProcess,
+        EngineLaunch, EngineProcessRegistry, EngineWaitOutcome,
     };
     use serde_json::json;
     use std::path::PathBuf;
@@ -300,6 +338,22 @@ mod tests {
         Mutex,
     };
     use std::time::Duration;
+
+    #[test]
+    fn engine_stdout_accepts_exact_json_and_one_noise_prefixed_final_object() {
+        assert_eq!(parse_engine_stdout(br#"{"status":"ok"}"#).unwrap()["status"], "ok");
+        assert_eq!(
+            parse_engine_stdout(b"native runtime notice\r\n{\"status\":\"ok\"}\r\n")
+                .unwrap()["status"],
+            "ok"
+        );
+    }
+
+    #[test]
+    fn engine_stdout_rejects_trailing_noise_and_multiple_json_objects() {
+        assert!(parse_engine_stdout(b"{\"status\":\"ok\"}\ntrailing noise").is_err());
+        assert!(parse_engine_stdout(b"{\"first\":true}\n{\"second\":true}\n").is_err());
+    }
 
     #[test]
     fn timeout_terminates_an_unresponsive_process() {
