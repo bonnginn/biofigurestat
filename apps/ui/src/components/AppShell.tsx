@@ -127,17 +127,19 @@ export function AppShell({
             type="button"
             className={ja ? "is-active" : ""}
             aria-pressed={ja}
+            aria-label={ja ? "日本語" : "Japanese"}
             onClick={() => setAppLocale("ja")}
           >
-            日本語
+            JP
           </button>
           <button
             type="button"
             className={!ja ? "is-active" : ""}
             aria-pressed={!ja}
+            aria-label="English"
             onClick={() => setAppLocale("en")}
           >
-            English
+            EN
           </button>
         </div>
         <ContextualHelp
