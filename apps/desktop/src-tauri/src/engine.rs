@@ -40,23 +40,20 @@ enum EngineLaunch {
     PackagedBinary { executable: PathBuf },
 }
 
-fn parse_engine_stdout(stdout: &[u8]) -> Result<Value, serde_json::Error> {
+fn parse_engine_stdout(
+    stdout: &[u8],
+    expected_request_id: &str,
+) -> Result<Value, serde_json::Error> {
     match serde_json::from_slice(stdout) {
         Ok(value) => return Ok(value),
         Err(original_error) => {
             // Some native numerical runtimes can write directly to the inherited OS stdout
-            // descriptor, bypassing Python's sys.stdout redirection. Recover only when there is
-            // exactly one complete JSON object at the end of the stream. Internal corruption,
-            // trailing output, and multiple complete objects still fail closed.
+            // descriptor, bypassing Python's sys.stdout redirection. Recover only a complete
+            // final JSON object that carries the exact request ID sent to this process. Internal
+            // corruption, trailing output, and an unrelated final object still fail closed.
             let mut recovered = None;
             for (start, byte) in stdout.iter().enumerate() {
                 if *byte != b'{' {
-                    continue;
-                }
-                if stdout[..start]
-                    .iter()
-                    .any(|prefix_byte| matches!(*prefix_byte, b'{' | b'}'))
-                {
                     continue;
                 }
                 let mut values =
@@ -66,6 +63,9 @@ fn parse_engine_stdout(stdout: &[u8]) -> Result<Value, serde_json::Error> {
                 };
                 let end = start + values.byte_offset();
                 if !stdout[end..].iter().all(u8::is_ascii_whitespace) {
+                    continue;
+                }
+                if value.get("requestId").and_then(Value::as_str) != Some(expected_request_id) {
                     continue;
                 }
                 if recovered.is_some() {
@@ -245,7 +245,7 @@ fn execute_engine_process(
             detail.trim()
         ));
     }
-    parse_engine_stdout(&stdout).map_err(|error| {
+    parse_engine_stdout(&stdout, &request_id).map_err(|error| {
         let category = if stdout.is_empty() {
             "empty"
         } else if stdout.starts_with(&[0xef, 0xbb, 0xbf]) {
@@ -341,18 +341,41 @@ mod tests {
 
     #[test]
     fn engine_stdout_accepts_exact_json_and_one_noise_prefixed_final_object() {
-        assert_eq!(parse_engine_stdout(br#"{"status":"ok"}"#).unwrap()["status"], "ok");
         assert_eq!(
-            parse_engine_stdout(b"native runtime notice\r\n{\"status\":\"ok\"}\r\n")
+            parse_engine_stdout(br#"{"requestId":"request.1","status":"ok"}"#, "request.1")
                 .unwrap()["status"],
+            "ok"
+        );
+        assert_eq!(
+            parse_engine_stdout(
+                b"native runtime notice\r\n{\"requestId\":\"request.1\",\"status\":\"ok\"}\r\n",
+                "request.1",
+            )
+            .unwrap()["status"],
+            "ok"
+        );
+        assert_eq!(
+            parse_engine_stdout(
+                b"{\"kind\":\"native-notice\"}\r\n{\"requestId\":\"request.1\",\"status\":\"ok\"}\r\n",
+                "request.1",
+            )
+            .unwrap()["status"],
             "ok"
         );
     }
 
     #[test]
     fn engine_stdout_rejects_trailing_noise_and_multiple_json_objects() {
-        assert!(parse_engine_stdout(b"{\"status\":\"ok\"}\ntrailing noise").is_err());
-        assert!(parse_engine_stdout(b"{\"first\":true}\n{\"second\":true}\n").is_err());
+        assert!(parse_engine_stdout(
+            b"{\"requestId\":\"request.1\",\"status\":\"ok\"}\ntrailing noise",
+            "request.1",
+        )
+        .is_err());
+        assert!(parse_engine_stdout(
+            b"{\"first\":true}\n{\"requestId\":\"request.other\",\"second\":true}\n",
+            "request.1",
+        )
+        .is_err());
     }
 
     #[test]
