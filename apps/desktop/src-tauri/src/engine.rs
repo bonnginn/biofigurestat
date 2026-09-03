@@ -637,5 +637,25 @@ mod tests {
                 );
             }
         }
+
+        let mut localized_request: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../engine/python/smoke_fixtures/welch-tost-equivalence-supported-request.json"
+        ))
+        .expect("shared Welch TOST fixture");
+        localized_request["requestId"] = json!("request.localized-round-trip");
+        localized_request["analysisId"] = json!("analysis.localized-round-trip");
+        localized_request["equivalencePlan"]["margin"]["rationale"] =
+            json!("観測値から決めず事前指定");
+        let localized_result = execute_engine_process(
+            EngineLaunch::PackagedBinary { executable },
+            localized_request,
+            &EngineProcessRegistry::default(),
+        )
+        .expect("localized packaged Welch TOST round trip");
+        assert_eq!(localized_result["status"], "ok");
+        assert_eq!(
+            localized_result["equivalence"]["plan"]["margin"]["rationale"],
+            "観測値から決めず事前指定"
+        );
     }
 }
