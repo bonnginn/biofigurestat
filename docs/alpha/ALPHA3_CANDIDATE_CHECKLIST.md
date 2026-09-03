@@ -1,10 +1,11 @@
 # BioFigureStat v0.1.0-alpha.3 candidate checklist
 
-Updated: 2026-09-03 (JST)
+Updated: 2026-09-04 (JST)
 
-Status: scope frozen and the broad source gate passed on `codex/alpha3-candidate-20260903`;
-product code is frozen through `5ba1a92`; reference-gate tooling is prepared at `35e3431`; no
-candidate artifact or release has been authorized.
+Status: scope frozen and the broad source gate passed on `codex/alpha3-candidate-20260903`.
+The reviewed product candidate is `90c83ce`; the Windows R5 artifact verified the UTF-8 engine
+protocol correction with Japanese Welch TOST input. Four Darwin-arm64 reference records and the
+same-final-commit Windows/macOS artifacts remain before a release candidate can be finalized.
 
 Use this checklist only for the maintenance Alpha described in
 `PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`. The historical Alpha checklist remains a record of the
@@ -19,8 +20,8 @@ earlier release and must not be silently reinterpreted as current evidence.
       commit directly from `https://github.com/bonnginn/biofigurestat.git`. The older private
       development tree is not release authority, and sealed evaluation material is not copied.
 - [x] Record the application version, engine version, build revision, license, and build date for
-      the Windows candidate: application `0.1.0`, engine `0.15.0`, build
-      `d535836-alpha.20260903.win-alpha3`, MIT, 2026-09-03 JST.
+      the latest Windows validation candidate: application `0.1.0`, engine `0.15.0`, build
+      `90c83ce-alpha.20260903.win-alpha3-r5`, MIT, 2026-09-03 JST.
 - [ ] Confirm that Windows and macOS artifacts use the same candidate source tree.
 
 ## Automated source gate
@@ -67,23 +68,32 @@ results do not replace the single final package/full gate.
 
 ## Windows artifact gate
 
-- [x] Build the x64 sidecar and NSIS installer from source commit `d535836`.
+- [x] Build the x64 sidecar and NSIS installer from source commit `90c83ce` for R5 validation.
 - [x] Bundle verifier, 18-case packaged-engine smoke, and release verifier pass.
 - [ ] Exact-executable native harness passes once; do not hide or repeatedly retry the first
       failure.
 - [ ] Installed `.lsa` association opens the expected executable and preserves the saved Graph.
 - [x] Record artifact filename, byte size, SHA-256, architecture, and build revision.
 
-Windows candidate artifact:
+Windows R5 validation artifact:
 
-- File: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe`
-- Bytes: `48,021,270`
-- SHA-256: `f425e7b53059561fbd6596a72b9f8972467e579329577e94637d28eb10015d4b`
+- File: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup-r5.exe`
+- Bytes: `48,015,788`
+- SHA-256: `96A59D5CE20211B26F13ED5E8BA949EDDE867A27965A8C5180F8A18B12FD86B2`
 - Architecture: `x64`
 - Signature: unsigned
-- Build revision: `d535836-alpha.20260903.win-alpha3`
+- Build revision: `90c83ce-alpha.20260903.win-alpha3-r5`
 
-The one permitted native harness run found the WebView2 page target but could not establish a
+R5 corrected the locale-dependent process boundary that produced syntactically invalid JSON when
+Japanese text was included in an equivalence rationale. The engine CLI now consumes binary stdin
+and emits UTF-8 bytes on stdout. Engine unit tests include a Japanese round trip and the Rust
+packaged-engine boundary includes Japanese rationale text. On the packaged Windows application,
+the researcher confirmed Welch TOST completed with Vehicle n=5 and Drug A n=5, prespecified bounds
+`-0.1` to `0.1`, mean difference `-0.01`, 90% CI `-0.0285955` to `0.00859548`, and TOST
+`p=0.00000926559`. The conclusion was equivalence supported. This closes the reported product
+failure but does not replace the final same-source artifact gate.
+
+The earlier one permitted native harness run found the WebView2 page target but could not establish a
 stable CDP connection. It stopped as `HARNESS_INFRASTRUCTURE_BLOCKED`, not a product failure, and
 was not retried. Evidence is in
 `.tmp/native-ui-regression/2026-09-03T11-51-45.296Z/report.json`. The installed association and
@@ -96,6 +106,8 @@ present in the production UI, then passed both verifiers.
 
 ## Apple Silicon macOS artifact gate
 
+- [ ] On Darwin arm64, append and review exactly the four missing reference cases (Welch TOST,
+      paired TOST, Survival, and D17), then commit them to establish the final candidate SHA.
 - [ ] Build the arm64 sidecar and `.app` from the same candidate source.
 - [ ] Bundle verifier, strict codesign verification, and release verifier pass.
 - [ ] Native harness passes once where Accessibility policy permits it. Otherwise record
@@ -137,10 +149,10 @@ present in the production UI, then passed both verifiers.
 
 ## Final verdict
 
-- Candidate source: broad source gate `PASS`; product code frozen through `5ba1a92`; exact artifact
-  source commit `d535836`
-- Windows artifact: automated bundle gate `PASS`; native harness environment-blocked; installed
-  association and human checks pending
+- Candidate source: broad source gate `PASS`; reviewed product candidate `90c83ce`; final artifact
+  source SHA pending four reviewed Darwin-arm64 reference records
+- Windows artifact: R5 automated bundle gate and Japanese Welch TOST product path `PASS`; final
+  same-source rebuild, installed association, and bounded human checks pending
 - macOS artifact: `TBD`
 - Product failures: none detected
 - Environment blocks: Windows WebView2 CDP connection; four Darwin-arm64 reference records pending

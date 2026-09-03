@@ -19,6 +19,8 @@ BioFigureStat Public Alphaの保守更新候補です。実験データをロー
   1〜100の整数に限定
 - 事前指定したraw-difference marginによる独立2群Welch TOSTと、完全な対応組によるpaired
   TOSTを追加
+- 日本語の科学的根拠を含む解析要求も、desktopと同梱engineの間でUTF-8として明示的に
+  受け渡し
 - Graph-only経路でGraph種類を事前選択でき、編集時の不要な見出しと余白を縮小
 - 棒の塗り、外枠色・太さ・非表示、quick colorを追加し、画面・SVG・PNG・保存再表示で共有
 - Graphの色・線・表示controlを共通化し、今後の修正が各Graph経路へ反映されやすい構造へ整理
@@ -58,6 +60,8 @@ local processing and backward compatibility for `.lsa` projects.
   Unicode variants, and constrain the initial row count to the displayed integer from 1 to 100.
 - Add prespecified raw-difference Welch TOST for two independent groups and paired TOST using only
   complete explicit pairs.
+- Make the desktop-to-engine protocol explicitly UTF-8 so analysis requests can safely include
+  Japanese scientific rationale text.
 - Let Graph-only workflows choose an initial Graph type and reduce redundant editing chrome.
 - Add Bar fill, outline color/width/off controls, and quick colors shared by the live Graph, SVG,
   PNG, and saved presentation.

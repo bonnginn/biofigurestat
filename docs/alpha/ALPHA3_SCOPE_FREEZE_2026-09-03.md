@@ -1,6 +1,6 @@
 # BioFigureStat v0.1.0-alpha.3 scope freeze
 
-Updated: 2026-09-03 (JST)
+Updated: 2026-09-04 (JST)
 
 ## Source authority
 
@@ -9,6 +9,7 @@ Updated: 2026-09-03 (JST)
 - Published baseline: tag `v0.1.0-alpha.2`
 - Frozen product-code anchor: `5ba1a9247e2c7a44209e1cd1cc40ab1b36149165`
 - Candidate-preparation base: `2d2fc001dec7556fdfccc61b920a2078abe07840`
+- Current reviewed product candidate: `90c83ce700791b648613ea99d3258a29ad931b89`
 - Application version: `0.1.0`
 - Analysis engine version: `0.15.0`
 - Highest accepted analysis protocol in this candidate: `0.16.0`
@@ -18,10 +19,13 @@ this public repository. The older private development repository is not an Alpha
 No sealed evaluation data, historical benchmark output, or private corpus is copied into this
 repository or release bundle.
 
-The exact final candidate commit, build revision, build date, filenames, sizes, architectures,
-signing states, and SHA-256 digests remain unset until the source gate passes. A documentation-only
-commit after the product-code anchor is allowed, but both platforms must use the same resulting
-final commit.
+The reviewed Windows R5 product candidate is `90c83ce`. It corrects the desktop engine protocol to
+read and write UTF-8 bytes explicitly; a Japanese equivalence rationale now completes Welch TOST
+through the packaged Windows engine. R5 is validation evidence, not yet the final release artifact.
+The exact final candidate commit remains unset until the four Darwin-arm64 reference records are
+generated and reviewed. Once those evidence-only records are committed, both Windows and macOS
+release artifacts must be rebuilt from that same final commit. A documentation-only commit after
+the product-code anchor is allowed, but it must not create mismatched artifact source authority.
 
 ## Included product scope
 

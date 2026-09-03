@@ -78,6 +78,10 @@ Open older Graph ADRs only when the current ones explicitly depend on them.
   `docs/adr/0056-explicit-public-alpha-problem-reporting.md`
 - Public Alpha source and bundle licensing: `docs/adr/0058-mit-public-alpha-license.md`
 - Release checklist: `docs/alpha/ALPHA_RELEASE_CHECKLIST.md`
+- Public Alpha 3 scope, executable checklist, and prepared macOS handoff:
+  `docs/alpha/ALPHA3_SCOPE_FREEZE_2026-09-03.md`,
+  `docs/alpha/ALPHA3_CANDIDATE_CHECKLIST.md`, and
+  `docs/alpha/MACOS_ALPHA3_CANDIDATE_HANDOFF_2026-09-04.md`
 - Privacy: `docs/alpha/PRIVACY.md`
 - Institutional IT and data-handling summary: `docs/IT_DATA_HANDLING_OVERVIEW.md`
 - Known limitations: `docs/alpha/KNOWN_LIMITATIONS.md`

@@ -1,11 +1,21 @@
 # Current Working State
 
-Updated: 2026-09-03 (Public Alpha published; current Windows Beta preview reviewed)
+Updated: 2026-09-04 (Public Alpha 3 Windows R5 reviewed; macOS final-source gate prepared)
 
 This is the short operational snapshot. Accepted ADRs, schemas, method references, and tests remain
 the authority for durable behavior.
 
 ## Product phase
+
+Public Alpha 3 is now in a frozen cross-platform candidate gate. The current reviewed product
+candidate is `90c83ce700791b648613ea99d3258a29ad931b89`. Its Windows R5 bundle passes the automated
+engine/bundle/release checks, and packaged native use confirmed that Japanese scientific rationale
+text now crosses the desktop-engine protocol as UTF-8 and completes Welch TOST. The validated R5
+artifact is evidence only: the final release SHA still requires four reviewed Darwin-arm64
+reference records (Welch TOST, paired TOST, Survival, and D17). After those evidence-only records
+are committed, Windows and macOS artifacts must each be built once from that exact final commit.
+The prepared Mac sequence and bounded manual checks are in
+`docs/alpha/MACOS_ALPHA3_CANDIDATE_HANDOFF_2026-09-04.md`.
 
 BioFigureStat `0.1.0-alpha.2` is publicly available as a GitHub Pre-release under the MIT License at
 `https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.2`.
