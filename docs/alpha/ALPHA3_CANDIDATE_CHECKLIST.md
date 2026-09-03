@@ -18,7 +18,9 @@ earlier release and must not be silently reinterpreted as current evidence.
 - [x] Confirm the release-build relationship: Alpha 3 Windows and macOS builds use the same final
       commit directly from `https://github.com/bonnginn/biofigurestat.git`. The older private
       development tree is not release authority, and sealed evaluation material is not copied.
-- [ ] Record the application version, engine version, build revision, license, and build date.
+- [x] Record the application version, engine version, build revision, license, and build date for
+      the Windows candidate: application `0.1.0`, engine `0.15.0`, build
+      `d535836-alpha.20260903.win-alpha3`, MIT, 2026-09-03 JST.
 - [ ] Confirm that Windows and macOS artifacts use the same candidate source tree.
 
 ## Automated source gate
@@ -65,12 +67,32 @@ results do not replace the single final package/full gate.
 
 ## Windows artifact gate
 
-- [ ] Build the x64 sidecar and NSIS installer from the recorded candidate source.
-- [ ] Bundle verifier and release verifier pass.
+- [x] Build the x64 sidecar and NSIS installer from source commit `d535836`.
+- [x] Bundle verifier, 18-case packaged-engine smoke, and release verifier pass.
 - [ ] Exact-executable native harness passes once; do not hide or repeatedly retry the first
       failure.
 - [ ] Installed `.lsa` association opens the expected executable and preserves the saved Graph.
-- [ ] Record artifact filename, byte size, SHA-256, architecture, and build revision.
+- [x] Record artifact filename, byte size, SHA-256, architecture, and build revision.
+
+Windows candidate artifact:
+
+- File: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe`
+- Bytes: `48,021,270`
+- SHA-256: `f425e7b53059561fbd6596a72b9f8972467e579329577e94637d28eb10015d4b`
+- Architecture: `x64`
+- Signature: unsigned
+- Build revision: `d535836-alpha.20260903.win-alpha3`
+
+The one permitted native harness run found the WebView2 page target but could not establish a
+stable CDP connection. It stopped as `HARNESS_INFRASTRUCTURE_BLOCKED`, not a product failure, and
+was not retried. Evidence is in
+`.tmp/native-ui-regression/2026-09-03T11-51-45.296Z/report.json`. The installed association and
+bounded human behavior checks therefore remain open.
+
+An earlier local bundle was rejected before gate completion because the UI had been built before
+the build-revision environment value was injected. It was overwritten, never staged for release,
+and its digest is not release evidence. The artifact recorded above was rebuilt with the revision
+present in the production UI, then passed both verifiers.
 
 ## Apple Silicon macOS artifact gate
 
@@ -115,10 +137,12 @@ results do not replace the single final package/full gate.
 
 ## Final verdict
 
-- Candidate source: broad source gate `PASS`; scope frozen through product code `5ba1a92`; final
-  same-source artifact commit will be the checklist-evidence commit created after this gate
-- Windows artifact: `TBD`
+- Candidate source: broad source gate `PASS`; product code frozen through `5ba1a92`; exact artifact
+  source commit `d535836`
+- Windows artifact: automated bundle gate `PASS`; native harness environment-blocked; installed
+  association and human checks pending
 - macOS artifact: `TBD`
-- Product failures: `TBD`
-- Environment blocks: four Darwin-arm64 reference records pending on the macOS artifact host
-- Verdict: `SOURCE GATE PASS — ARTIFACT GATES PENDING`
+- Product failures: none detected
+- Environment blocks: Windows WebView2 CDP connection; four Darwin-arm64 reference records pending
+  on the macOS artifact host
+- Verdict: `SOURCE + WINDOWS AUTOMATED BUNDLE GATES PASS — HUMAN AND MACOS GATES PENDING`
