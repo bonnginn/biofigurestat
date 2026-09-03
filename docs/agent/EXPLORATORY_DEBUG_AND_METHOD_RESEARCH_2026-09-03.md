@@ -86,6 +86,16 @@
 - 画面値と生成行数が常に同じ整数であることを検証する。
 - ブラウザのnative validationだけに依存せず、create境界でも整数を保証する。
 
+## Follow-up修正状況
+
+同日、上記3件を製品実装と恒久focused regressionで修正した。
+
+- D1: `e7e1a9a`。矩形貼り付けと単一セル入力のlexical textをworksheet内で保持し、対応するcanonical numberが変わった場合は古い表記を採用しない。保存schemaは変更していない。
+- D2: `b313b3e`。前後空白を除いた結果が同じ条件名を、worksheet作成前に日本語／英語の説明付きで拒否する。
+- D3: `b313b3e`。初期行数へ整数stepを設定し、state境界でも1〜100の整数へ正規化する。画面値と生成行数を同じ値にした。
+
+検証は修正対象2 test fileの35/35 PASS、対象lint PASS、UI typecheck PASS。native UI、full test、release bundleはこの局所修正では実行していない。
+
 ## 追加探索の優先順
 
 次回の非native探索は、次の順が費用対効果に優れる。
@@ -143,4 +153,4 @@ mixed modelは「繰り返し測定を欠けた組ごと捨てずに扱いたい
 
 今回の範囲では、懸念された「3行目の入力が1行目に入る」回帰は見つからず、row/session identity境界は強化後のテストに耐えた。一方、異例だが妥当な入力から3件のvalidation／表示整合性問題を再現した。いずれも今回修正せず、再現条件と追加すべきfocused regressionを固定した。
 
-次の実装修正は D1、D2、D3 の順が安全である。統計・Graphの次期開発は、estimation plotを小さな独立sliceとして先行し、mixed-effects modelは設計・独立照合・保存contractを含む別のTier B計画として扱う。
+D1〜D3は同日のfollow-upで修正済み。統計・Graphの次期開発は、estimation plotを小さな独立sliceとして先行し、mixed-effects modelは設計・独立照合・保存contractを含む別のTier B計画として扱う。
