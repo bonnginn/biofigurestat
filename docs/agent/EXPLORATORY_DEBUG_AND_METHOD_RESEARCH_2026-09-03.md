@@ -91,10 +91,10 @@
 同日、上記3件を製品実装と恒久focused regressionで修正した。
 
 - D1: `e7e1a9a`。矩形貼り付けと単一セル入力のlexical textをworksheet内で保持し、対応するcanonical numberが変わった場合は古い表記を採用しない。保存schemaは変更していない。
-- D2: `b313b3e`。前後空白を除いた結果が同じ条件名を、worksheet作成前に日本語／英語の説明付きで拒否する。
+- D2: `b313b3e`、`5ba1a92`。前後空白とNFKC Unicode正規化の結果が同じ条件名を、worksheet作成前に日本語／英語の説明付きで拒否する。ASCIIの `Vehicle` と全角の `Ｖｅｈｉｃｌｅ` も同名として扱う。
 - D3: `b313b3e`。初期行数へ整数stepを設定し、state境界でも1〜100の整数へ正規化する。画面値と生成行数を同じ値にした。
 
-検証は修正対象2 test fileの35/35 PASS、対象lint PASS、UI typecheck PASS。native UI、full test、release bundleはこの局所修正では実行していない。
+検証は修正対象2 test fileの35/35 PASS、対象lint PASS、UI typecheck PASS。さらにundo/redo、save/reopen、5条件以上、CSV/XLSX、実験日・実験回を含む関連7 test file、113件もPASSした。Unicode正規化追加後の5件も再度PASS。native UI、full test、release bundleはこの局所修正では実行していない。
 
 ## 追加探索の優先順
 
