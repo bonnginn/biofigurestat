@@ -56,6 +56,7 @@ export function SimpleGroupExperimentEntry({
     [conditionLabels],
   );
   const populatedConditions = populatedConditionEntries.map(({ label }) => label);
+  const normalizedConditionLabels = populatedConditions.map((label) => label.normalize("NFKC"));
 
   const createWorksheet = () => {
     if (!factorName.trim()) {
@@ -72,7 +73,7 @@ export function SimpleGroupExperimentEntry({
       );
       return;
     }
-    if (new Set(populatedConditions).size !== populatedConditions.length) {
+    if (new Set(normalizedConditionLabels).size !== normalizedConditionLabels.length) {
       setMessage(
         ja
           ? "同じ条件名が複数あります。条件ごとに異なる名前を入力してください。"

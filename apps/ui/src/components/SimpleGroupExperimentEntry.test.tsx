@@ -78,7 +78,7 @@ describe("SimpleGroupExperimentEntry", () => {
     expect(onReady.mock.calls[0]?.[0].conditions[4]).toMatchObject({ label: "Drug D" });
   });
 
-  it("rejects condition names that become identical after trimming", () => {
+  it("rejects condition names that become identical after trimming and Unicode normalization", () => {
     const onReady = vi.fn();
     render(<SimpleGroupExperimentEntry onBack={vi.fn()} onReady={onReady} />);
 
@@ -86,7 +86,7 @@ describe("SimpleGroupExperimentEntry", () => {
       target: { value: "Vehicle" },
     });
     fireEvent.change(screen.getByLabelText("単純な群比較の条件 2"), {
-      target: { value: " Vehicle " },
+      target: { value: " Ｖｅｈｉｃｌｅ " },
     });
     fireEvent.change(screen.getByPlaceholderText("例：Relative protein amount"), {
       target: { value: "Relative protein amount" },
