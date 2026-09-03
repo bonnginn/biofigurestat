@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from contextlib import redirect_stdout
 from datetime import datetime, timezone
 from typing import Any
 
@@ -32,13 +33,18 @@ def _error_result(request: dict[str, Any], message: str) -> dict[str, Any]:
 
 def main() -> int:
     request: dict[str, Any] = {}
-    try:
-        request = json.load(sys.stdin)
-        result = run_request(request)
-        result["completedAt"] = datetime.now(timezone.utc).isoformat()
-    except (KeyError, TypeError, ValueError) as exc:
-        result = _error_result(request, str(exc))
-    json.dump(result, sys.stdout, separators=(",", ":"), allow_nan=False)
+    # stdout is the versioned JSON protocol channel. Keep incidental output from numerical
+    # libraries and future analysis helpers on stderr so one harmless print cannot corrupt the
+    # desktop IPC response. Serialize completely before writing to avoid exposing partial JSON.
+    with redirect_stdout(sys.stderr):
+        try:
+            request = json.load(sys.stdin)
+            result = run_request(request)
+            result["completedAt"] = datetime.now(timezone.utc).isoformat()
+        except (KeyError, TypeError, ValueError) as exc:
+            result = _error_result(request, str(exc))
+    encoded = json.dumps(result, separators=(",", ":"), allow_nan=False)
+    sys.stdout.write(encoded)
     sys.stdout.write("\n")
     return 0
 
