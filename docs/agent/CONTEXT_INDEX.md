@@ -15,7 +15,7 @@ opening broad documents.
 - Next Public Alpha timing and go/no-go boundary:
   `docs/alpha/PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`
 - Next Public Alpha candidate execution and draft communication:
-  `docs/alpha/ALPHA3_CANDIDATE_CHECKLIST.md` and
+  `docs/alpha/ALPHA3_SCOPE_FREEZE_2026-09-03.md`, `docs/alpha/ALPHA3_CANDIDATE_CHECKLIST.md`, and
   `docs/alpha/RELEASE_NOTES_0.1.0-alpha.3-DRAFT.md`
 - Public/private source relationship:
   `docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md` and

@@ -23,6 +23,11 @@ Broader Excel workflows, panel composition beyond the current bounded export, an
 Prism-level appearance expansion are Beta work. They should not delay a maintenance Alpha unless
 they are already part of the candidate and have equivalent evidence.
 
+The Alpha 3 scope is frozen in `ALPHA3_SCOPE_FREEZE_2026-09-03.md`. Mixed-effects models and
+estimation plots are explicitly excluded. The existing independent and paired TOST routes do not
+depend on either: TOST conclusions remain based on the prespecified margin, two one-sided tests,
+and the corresponding 90% confidence interval.
+
 ## Go criteria
 
 Create the release candidate only from a clean, explicitly recorded commit. Publish only when all

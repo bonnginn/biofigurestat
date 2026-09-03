@@ -2,8 +2,9 @@
 
 Updated: 2026-09-03 (JST)
 
-Status: automated product-source gate passed through `82ac3af`; reference-gate tooling is prepared at
-`35e3431`; no candidate artifact or release has been authorized.
+Status: scope frozen on `codex/alpha3-candidate-20260903`; product code is frozen through
+`5ba1a92`; reference-gate tooling is prepared at `35e3431`; no candidate artifact or release has
+been authorized.
 
 Use this checklist only for the maintenance Alpha described in
 `PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`. The historical Alpha checklist remains a record of the
@@ -11,11 +12,12 @@ earlier release and must not be silently reinterpreted as current evidence.
 
 ## Source authority
 
-- [x] Record the clean product-source branch and commit SHA: branch
-      `codex/native-ui-regression-automation-2026-08-31`, product source
-      `82ac3af`.
-- [ ] Confirm the public-source tree and private release-build tree relationship without copying
-      sealed evaluation material into the public repository.
+- [x] Record the clean product-source branch and commit SHA: candidate branch
+      `codex/alpha3-candidate-20260903`, frozen product code `5ba1a92`, preparation base
+      `2d2fc00`.
+- [x] Confirm the release-build relationship: Alpha 3 Windows and macOS builds use the same final
+      commit directly from `https://github.com/bonnginn/biofigurestat.git`. The older private
+      development tree is not release authority, and sealed evaluation material is not copied.
 - [ ] Record the application version, engine version, build revision, license, and build date.
 - [ ] Confirm that Windows and macOS artifacts use the same candidate source tree.
 
@@ -40,6 +42,14 @@ combined reference item above remains open rather than overstating the evidence.
 Darwin-arm64 host, run `pnpm engine:reference:append-missing:mac`, review that exactly the four
 expected cases were appended and all existing cases remained unchanged, then run
 `pnpm engine:reference:coverage` on both hosts. Both write modes refuse to run on another platform.
+
+The final input-integrity follow-up adds three focused corrections after the earlier `82ac3af`
+source gate: rectangular paste retains matching lexical numeric text, simple-group condition names
+cannot collide after trim/NFKC normalization, and fractional initial row counts are normalized to
+the displayed integer. The two directly affected suites pass 35/35 tests; a further seven related
+files pass 113/113 tests across undo/redo, save/open, five-condition entry, CSV/XLSX import,
+experiment date, and experiment-session identity. UI typecheck and focused lint pass. These focused
+results do not replace the single final package/full gate.
 
 ## Windows artifact gate
 
@@ -93,7 +103,8 @@ expected cases were appended and all existing cases remained unchanged, then run
 
 ## Final verdict
 
-- Candidate source: product source gate passed through `82ac3af`; artifact nomination pending
+- Candidate source: scope frozen through product code `5ba1a92`; final same-source artifact commit
+  and broad source gate pending
 - Windows artifact: `TBD`
 - macOS artifact: `TBD`
 - Product failures: `TBD`

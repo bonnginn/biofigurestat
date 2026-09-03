@@ -73,6 +73,13 @@ Public Alpha `.lsa` compatibility gates. It should not wait for every Beta featu
 replace the existing `alpha.2` assets. The decision boundary is recorded in
 `docs/alpha/PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`.
 
+Alpha 3 scope is now frozen on `codex/alpha3-candidate-20260903`, with product code through
+`5ba1a92`. Windows and Apple Silicon macOS artifacts will be built directly from the same final
+commit in the public `bonnginn/biofigurestat` repository; the older private development tree is not
+build authority. Mixed-effects models and estimation plots are deferred to Beta and are not Alpha
+3 gates. The exact final candidate SHA remains pending the one-pass source gate and evidence-only
+documentation updates.
+
 The 2026-09-03 Graph-control/density batch passes 22 focused editor-control tests, all 16
 Graph-only page tests, UI typecheck, focused lint, the production UI build, and the release bundle
 verifier. The related selector then exercised 33 files / 421 tests: 415 passed immediately, five

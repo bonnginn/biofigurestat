@@ -15,11 +15,17 @@ BioFigureStat Public Alphaの保守更新候補です。実験データをロー
 - `1.00`など入力した表示桁を保ちながら、解析・書き出しには同じcanonical数値を使用
 - 矢印、Enter、Tabによる表入力をExcelに近い移動へ修正
 - 単純な独立群実験で5条件以上を追加可能にし、多条件Games–Howellの同じ厳密計算を高速化
+- 同名条件を前後空白・全角半角の違いも含めて作成前に検出し、最初の行数を表示どおりの
+  1〜100の整数に限定
 - 事前指定したraw-difference marginによる独立2群Welch TOSTと、完全な対応組によるpaired
   TOSTを追加
 - Graph-only経路でGraph種類を事前選択でき、編集時の不要な見出しと余白を縮小
 - 棒の塗り、外枠色・太さ・非表示、quick colorを追加し、画面・SVG・PNG・保存再表示で共有
 - Graphの色・線・表示controlを共通化し、今後の修正が各Graph経路へ反映されやすい構造へ整理
+- Excelの表範囲、1〜3段見出し、複数fileを明示的に選んで取り込み、source provenanceを保持
+- HomeからData→Graph→Statistics→Methodsをたどる人工データの5分ガイドを追加
+- 保存済み解析をGraph、群別n、推定値・CI、警告、Methods、表示データと一緒にreview HTMLへ出力
+- 保存済みGraphを再計算せず2列に並べる、限定的なpanel SVG書き出しを追加
 
 同等性marginは観測結果から自動生成しません。positive/total、shared-run、複数の主比較、
 未対応のspecialist outcomeは通常のANOVAやt検定へ置き換えず安全に停止します。実験日や
@@ -48,12 +54,20 @@ local processing and backward compatibility for `.lsa` projects.
 - Correct Arrow, Enter, and Tab movement for a more spreadsheet-like entry workflow.
 - Allow more than four conditions in simple independent-group experiments and accelerate the same
   exact Games–Howell calculation for multiple groups.
+- Detect duplicate condition names before worksheet creation, including whitespace and full-width
+  Unicode variants, and constrain the initial row count to the displayed integer from 1 to 100.
 - Add prespecified raw-difference Welch TOST for two independent groups and paired TOST using only
   complete explicit pairs.
 - Let Graph-only workflows choose an initial Graph type and reduce redundant editing chrome.
 - Add Bar fill, outline color/width/off controls, and quick colors shared by the live Graph, SVG,
   PNG, and saved presentation.
 - Consolidate Graph color, line, and visibility controls so later fixes propagate consistently.
+- Import explicit Excel ranges, one to three header rows, and multiple selected files while
+  retaining source provenance.
+- Add a five-minute artificial-data guide from Home through Data, Graph, Statistics, and Methods.
+- Export a saved analysis as self-contained review HTML containing the Graph, per-group n,
+  estimates and CIs, warnings, Methods, and displayed data.
+- Export saved Graphs as a bounded two-column panel SVG without recalculating data or statistics.
 
 BioFigureStat does not derive an equivalence margin from the observed result. Positive/total,
 shared-run, multiple-primary-comparison, and unsupported specialist outcomes stop safely rather
