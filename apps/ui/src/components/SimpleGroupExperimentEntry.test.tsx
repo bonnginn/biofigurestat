@@ -77,4 +77,56 @@ describe("SimpleGroupExperimentEntry", () => {
     expect(onReady.mock.calls[0]?.[0].conditions).toHaveLength(5);
     expect(onReady.mock.calls[0]?.[0].conditions[4]).toMatchObject({ label: "Drug D" });
   });
+
+  it("rejects condition names that become identical after trimming", () => {
+    const onReady = vi.fn();
+    render(<SimpleGroupExperimentEntry onBack={vi.fn()} onReady={onReady} />);
+
+    fireEvent.change(screen.getByLabelText("単純な群比較の条件 1"), {
+      target: { value: "Vehicle" },
+    });
+    fireEvent.change(screen.getByLabelText("単純な群比較の条件 2"), {
+      target: { value: " Vehicle " },
+    });
+    fireEvent.change(screen.getByPlaceholderText("例：Relative protein amount"), {
+      target: { value: "Relative protein amount" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("例：culture dish、mouse"), {
+      target: { value: "culture dish" },
+    });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "条件別スプレッドシートを作る" }));
+
+    expect(onReady).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "同じ条件名が複数あります。条件ごとに異なる名前を入力してください。",
+    );
+  });
+
+  it("normalizes a fractional initial row count to the displayed integer before creation", () => {
+    const onReady = vi.fn();
+    render(<SimpleGroupExperimentEntry onBack={vi.fn()} onReady={onReady} />);
+
+    const rowCount = screen.getByLabelText("最初に表示する行数／条件");
+    fireEvent.change(rowCount, { target: { value: "2.7" } });
+    expect(rowCount).toHaveValue(2);
+
+    fireEvent.change(screen.getByLabelText("単純な群比較の条件 1"), {
+      target: { value: "Vehicle" },
+    });
+    fireEvent.change(screen.getByLabelText("単純な群比較の条件 2"), {
+      target: { value: "Drug" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("例：Relative protein amount"), {
+      target: { value: "Relative protein amount" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("例：culture dish、mouse"), {
+      target: { value: "culture dish" },
+    });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "条件別スプレッドシートを作る" }));
+
+    expect(onReady).toHaveBeenCalledOnce();
+    expect(onReady.mock.calls[0]?.[0].experiments).toHaveLength(2);
+  });
 });

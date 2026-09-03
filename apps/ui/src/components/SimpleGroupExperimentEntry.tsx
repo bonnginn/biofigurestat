@@ -72,6 +72,14 @@ export function SimpleGroupExperimentEntry({
       );
       return;
     }
+    if (new Set(populatedConditions).size !== populatedConditions.length) {
+      setMessage(
+        ja
+          ? "同じ条件名が複数あります。条件ごとに異なる名前を入力してください。"
+          : "Condition names must be unique.",
+      );
+      return;
+    }
     if (!readoutLabel.trim()) {
       setMessage(ja ? "測定項目を入力してください。" : "Enter the measured readout.");
       return;
@@ -288,10 +296,11 @@ export function SimpleGroupExperimentEntry({
             type="number"
             min={1}
             max={100}
+            step={1}
             value={initialUnitCount}
             onChange={(event) =>
               setInitialUnitCount(
-                Math.min(100, Math.max(1, Number(event.currentTarget.value) || 1)),
+                Math.min(100, Math.max(1, Math.trunc(Number(event.currentTarget.value) || 1))),
               )
             }
           />
