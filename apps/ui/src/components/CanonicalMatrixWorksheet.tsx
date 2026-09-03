@@ -984,6 +984,25 @@ function displayValue(observation: CanonicalAdaptiveObservation | null, valueKey
   return value === null || value === undefined ? "" : String(value);
 }
 
+function matrixDraftKey(column: MatrixColumn, rowIndex: number): string {
+  return `${column.key}\u0000${rowIndex}`;
+}
+
+function matchingLexicalValue(
+  draft: string | undefined,
+  observation: CanonicalAdaptiveObservation | null,
+  valueKey: string,
+): string | undefined {
+  if (draft === undefined) return undefined;
+  const parsed = parseOptionalSpreadsheetNumber(draft.trim());
+  const canonical = observation?.values[valueKey];
+  if (parsed.kind === "empty" && (canonical === null || canonical === undefined)) return draft;
+  if (parsed.kind === "value" && typeof canonical === "number" && parsed.value === canonical) {
+    return draft;
+  }
+  return undefined;
+}
+
 function displayColumnValue(
   contract: StructureContract,
   observation: CanonicalAdaptiveObservation | null,
@@ -1017,6 +1036,8 @@ function MatrixCell({
   onObservationsChange,
   onMatrixPaste,
   conditionStatus,
+  lexicalDraft,
+  onLexicalCommit,
 }: Readonly<{
   contract: StructureContract;
   observations: readonly CanonicalAdaptiveObservation[];
@@ -1032,6 +1053,8 @@ function MatrixCell({
   onObservationsChange: Props["onObservationsChange"];
   onMatrixPaste: (event: ClipboardEvent<HTMLInputElement>, row: number, column: number) => void;
   conditionStatus: CanonicalMatrixConditionCombination["status"];
+  lexicalDraft?: string;
+  onLexicalCommit: (text: string) => void;
 }>) {
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
@@ -1044,6 +1067,10 @@ function MatrixCell({
     experimentSessionId,
   });
   const canonicalValue = displayColumnValue(contract, observation, column);
+  const displayedValue = column.coordinate.valueKey
+    ? (matchingLexicalValue(lexicalDraft, observation, column.coordinate.valueKey) ??
+      canonicalValue)
+    : canonicalValue;
   const factorLabel = contract.factors
     .map((factor) => column.coordinate.factors[factor.key])
     .filter(Boolean)
@@ -1089,7 +1116,7 @@ function MatrixCell({
   return (
     <SpreadsheetDraftTextCell
       wrapperClassName="canonical-matrix-worksheet__cell"
-      canonicalText={canonicalValue}
+      canonicalText={displayedValue}
       aria-label={inputLabel}
       data-spreadsheet-row={rowIndex}
       data-spreadsheet-column={gridColumn}
@@ -1115,6 +1142,7 @@ function MatrixCell({
           });
           validateTypedValues(contract, next);
           onObservationsChange(next);
+          onLexicalCommit(draftText);
           return null;
         } catch (cause) {
           return locale === "ja" && cause instanceof Error
@@ -1215,6 +1243,7 @@ export function CanonicalMatrixWorksheet({
   const [fileBusy, setFileBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [identityDrafts, setIdentityDrafts] = useState<Record<string, string>>({});
+  const [lexicalDrafts, setLexicalDrafts] = useState<Record<string, string>>({});
   const fileLayout = useMemo(
     () => canonicalWorksheetFileLayout(contract, observations, showExperimentDate),
     [contract, observations, showExperimentDate],
@@ -1347,6 +1376,7 @@ export function CanonicalMatrixWorksheet({
         ),
       }));
     let next = observations;
+    const acceptedDrafts: Record<string, string> = {};
     try {
       pasted.forEach((pastedRow, rowOffset) => {
         pastedRow.forEach((token, columnOffset) => {
@@ -1390,10 +1420,12 @@ export function CanonicalMatrixWorksheet({
             nextObservationId,
             nextExperimentalUnitIdentity,
           });
+          acceptedDrafts[matrixDraftKey(target.column, startRow + rowOffset)] = trimmed;
         });
       });
       validateTypedValues(contract, next);
       onObservationsChange(next);
+      setLexicalDrafts((previous) => ({ ...previous, ...acceptedDrafts }));
       setPasteError(null);
     } catch (cause) {
       setPasteError(
@@ -1954,6 +1986,13 @@ export function CanonicalMatrixWorksheet({
                           onObservationsChange={onObservationsChange}
                           onMatrixPaste={pasteMatrix}
                           conditionStatus={conditionStatus}
+                          lexicalDraft={lexicalDrafts[matrixDraftKey(column, rowIndex)]}
+                          onLexicalCommit={(text) =>
+                            setLexicalDrafts((previous) => ({
+                              ...previous,
+                              [matrixDraftKey(column, rowIndex)]: text,
+                            }))
+                          }
                         />
                       </td>
                     );

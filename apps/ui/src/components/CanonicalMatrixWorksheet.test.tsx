@@ -480,6 +480,37 @@ describe("CanonicalMatrixWorksheet", () => {
     );
   });
 
+  it("keeps pasted decimal and exponent text visible without changing canonical numbers or rows", () => {
+    const rows: readonly CanonicalWorksheetRow[] = Array.from({ length: 4 }, (_, index) => ({
+      key: `experiment.${index + 1}`,
+      label: `Run ${index + 1}`,
+      date: "",
+    }));
+    render(<WorksheetHarness initialObservations={[]} rows={rows} />);
+
+    fireEvent.paste(screen.getByRole("textbox", { name: "入力行 3・control・Response" }), {
+      clipboardData: { getData: () => "1.00\t2.50\n3e-2\t-4.00" },
+    });
+
+    expect(screen.getByRole("textbox", { name: "入力行 1・control・Response" })).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "入力行 3・control・Response" })).toHaveValue(
+      "1.00",
+    );
+    expect(screen.getByRole("textbox", { name: "入力行 3・drug・Response" })).toHaveValue("2.50");
+    expect(screen.getByRole("textbox", { name: "入力行 4・control・Response" })).toHaveValue(
+      "3e-2",
+    );
+    expect(screen.getByRole("textbox", { name: "入力行 4・drug・Response" })).toHaveValue("-4.00");
+    expect(currentObservations()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ experimentSessionId: "experiment.3", values: { value: 1 } }),
+        expect.objectContaining({ experimentSessionId: "experiment.3", values: { value: 2.5 } }),
+        expect.objectContaining({ experimentSessionId: "experiment.4", values: { value: 0.03 } }),
+        expect.objectContaining({ experimentSessionId: "experiment.4", values: { value: -4 } }),
+      ]),
+    );
+  });
+
   it("keeps an out-of-order independent entry on its experiment-session row", () => {
     const rows: readonly CanonicalWorksheetRow[] = Array.from({ length: 4 }, (_, index) => ({
       key: `experiment.${index + 1}`,
