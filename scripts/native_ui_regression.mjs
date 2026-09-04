@@ -622,6 +622,7 @@ if (action === "snapshot") {
     try { target.element.focused = true; } catch (_) {}
     se.keystroke("a", { using: ["command down"] });
     se.keystroke(replacement);
+    se.keyCode(48);
   } else {
     throw new Error("Unsupported accessibility action: " + action);
   }
@@ -1629,6 +1630,16 @@ export function macSnapshotContains(snapshot, candidates) {
   return candidates.some((candidate) => text.includes(candidate));
 }
 
+export function macSnapshotEditableHasValue(snapshot, candidates) {
+  const editableRoles = new Set(["AXTextField", "AXTextArea", "AXComboBox", "AXSearchField"]);
+  return snapshot.elements.some(
+    (element) =>
+      editableRoles.has(element.role) &&
+      candidates.includes(element.name) &&
+      String(element.value ?? "").trim().length > 0,
+  );
+}
+
 export function macUnsavedGuardIsDismissed(snapshot) {
   return !macSnapshotContains(snapshot, ["Discard changes and continue", "変更を破棄して続ける"]);
 }
@@ -1705,12 +1716,23 @@ async function runMacScenario({ executable, outputDirectory, timeoutMs }) {
         ["Experiment title", "実験タイトル", "実験タイトル（任意）"],
         "Native macOS regression experiment",
       );
-      // WKWebView text fields do not consistently expose their current value through macOS
-      // Accessibility even when the keystrokes reached React. The product contract under test is
-      // the dirty lifecycle, so confirm the edit through the native quit guard in the next steps
-      // instead of treating an AX value-read limitation as a product failure.
-      await new Promise((resolvePromise) => setTimeout(resolvePromise, 250));
-      return { typingTarget, confirmation: "native_unsaved_guard" };
+      const confirmed = await waitForMacSnapshot(
+        (snapshot) =>
+          macSnapshotEditableHasValue(snapshot, [
+            "Experiment title",
+            "実験タイトル",
+            "実験タイトル（任意）",
+          ]),
+        "committed experiment title value",
+        timeoutMs,
+        child,
+      );
+      const confirmedField = confirmed.elements.find(
+        (element) =>
+          ["Experiment title", "実験タイトル", "実験タイトル（任意）"].includes(element.name) &&
+          String(element.value ?? "").trim().length > 0,
+      );
+      return { typingTarget, confirmedValue: confirmedField?.value };
     });
     await runStep("macos_quit_guard_cancel_retains_work", async () => {
       await runMacAccessibility("quit");

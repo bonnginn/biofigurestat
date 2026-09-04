@@ -7,6 +7,7 @@ import {
   japaneseUiAuditExpression,
   macBundleExecutableFromPlist,
   macAccessibilityScript,
+  macSnapshotEditableHasValue,
   macSnapshotContains,
   macUnsavedGuardIsDismissed,
   parseNativeRegressionArguments,
@@ -34,6 +35,29 @@ test("waits for the macOS unsaved guard to disappear instead of seeing its backg
   assert.equal(macSnapshotContains(backgroundAndGuard, ["Experiment title"]), true);
   assert.equal(macUnsavedGuardIsDismissed(backgroundAndGuard), false);
   assert.equal(macUnsavedGuardIsDismissed(returnedWorkspace), true);
+});
+
+test("requires a committed non-empty macOS Accessibility edit value", () => {
+  const candidates = ["Experiment title", "実験タイトル（任意）"];
+  assert.equal(
+    macSnapshotEditableHasValue(
+      { elements: [{ role: "AXTextField", name: "Experiment title", value: "" }] },
+      candidates,
+    ),
+    false,
+  );
+  assert.equal(
+    macSnapshotEditableHasValue(
+      {
+        elements: [
+          { role: "AXStaticText", name: "Experiment title", value: "not an input" },
+          { role: "AXTextField", name: "Experiment title", value: "Native regression" },
+        ],
+      },
+      candidates,
+    ),
+    true,
+  );
 });
 
 test("validates both independent and paired equivalence native boundaries", () => {
@@ -294,6 +318,7 @@ test("builds a bounded macOS Accessibility typing action without interpolating u
   assert.match(script, /se\.click\(\{ at: typingPoint \}\)/);
   assert.match(script, /keystroke\("a", \{ using: \["command down"\] \}\)/);
   assert.match(script, /keystroke\(replacement\)/);
+  assert.match(script, /keyCode\(48\)/);
 });
 
 test("builds a macOS quit action with a JXA modifier array", () => {
