@@ -1622,11 +1622,15 @@ async function waitForMacSnapshot(predicate, label, timeoutMs, child) {
   );
 }
 
-function macSnapshotContains(snapshot, candidates) {
+export function macSnapshotContains(snapshot, candidates) {
   const text = snapshot.elements
     .flatMap((element) => [element.name, element.value, element.description])
     .join("\n");
   return candidates.some((candidate) => text.includes(candidate));
+}
+
+export function macUnsavedGuardIsDismissed(snapshot) {
+  return !macSnapshotContains(snapshot, ["Discard changes and continue", "変更を破棄して続ける"]);
 }
 
 async function runMacScenario({ executable, outputDirectory, timeoutMs }) {
@@ -1717,12 +1721,20 @@ async function runMacScenario({ executable, outputDirectory, timeoutMs }) {
         child,
       );
       await runMacAccessibility("click", ["Cancel", "キャンセル"]);
-      return waitForMacSnapshot(
-        (snapshot) => macSnapshotContains(snapshot, ["Experiment title", "実験タイトル"]),
+      const snapshot = await waitForMacSnapshot(
+        (candidate) =>
+          macSnapshotContains(candidate, ["Experiment title", "実験タイトル"]) &&
+          macUnsavedGuardIsDismissed(candidate),
         "experiment entry after guard cancellation",
         timeoutMs,
         child,
       );
+      // The title field remains exposed behind the modal, so it cannot by itself prove that
+      // cancellation completed. The predicate above waits for the dialog-only discard action to
+      // disappear; one further snapshot restores the app as the frontmost process before Cmd+Q.
+      await runMacAccessibility("snapshot");
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 250));
+      return snapshot;
     });
     await runStep("macos_quit_guard_discard_exits", async () => {
       await runMacAccessibility("quit");

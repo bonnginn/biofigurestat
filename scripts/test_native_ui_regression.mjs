@@ -7,6 +7,8 @@ import {
   japaneseUiAuditExpression,
   macBundleExecutableFromPlist,
   macAccessibilityScript,
+  macSnapshotContains,
+  macUnsavedGuardIsDismissed,
   parseNativeRegressionArguments,
   resolveNativeExecutable,
   selectWebviewTarget,
@@ -17,6 +19,22 @@ import {
   windowsFileDialogCommand,
   windowsFileDialogFailure,
 } from "./native_ui_regression.mjs";
+
+test("waits for the macOS unsaved guard to disappear instead of seeing its background field", () => {
+  const backgroundAndGuard = {
+    elements: [
+      { role: "AXTextField", name: "Experiment title", value: "Native regression" },
+      { role: "AXButton", name: "Discard changes and continue" },
+    ],
+  };
+  const returnedWorkspace = {
+    elements: [{ role: "AXTextField", name: "Experiment title", value: "Native regression" }],
+  };
+
+  assert.equal(macSnapshotContains(backgroundAndGuard, ["Experiment title"]), true);
+  assert.equal(macUnsavedGuardIsDismissed(backgroundAndGuard), false);
+  assert.equal(macUnsavedGuardIsDismissed(returnedWorkspace), true);
+});
 
 test("validates both independent and paired equivalence native boundaries", () => {
   const baseResult = {
