@@ -292,8 +292,14 @@ test("builds a bounded macOS Accessibility typing action without interpolating u
   assert.match(script, /AXTextField/);
   assert.match(script, /matchingNodes\.find\(\(node\) => editableRoles\.has\(node\.role\)\)/);
   assert.match(script, /se\.click\(\{ at: typingPoint \}\)/);
-  assert.match(script, /keystroke\("a", \{ using: "command down" \}\)/);
+  assert.match(script, /keystroke\("a", \{ using: \["command down"\] \}\)/);
   assert.match(script, /keystroke\(replacement\)/);
+});
+
+test("builds a macOS quit action with a JXA modifier array", () => {
+  const script = macAccessibilityScript("quit");
+  assert.match(script, /keystroke\("q", \{ using: \["command down"\] \}\)/);
+  assert.doesNotMatch(script, /using: "command down"/);
 });
 
 test("audits application copy while allowing language controls and user paths", () => {

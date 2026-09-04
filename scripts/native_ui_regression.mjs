@@ -593,7 +593,7 @@ const matches = (node) => wanted.some((candidate) =>
 if (action === "snapshot") {
   JSON.stringify({ count: nodes.length, elements: nodes.map(({ role, name, value, description }) => ({ role, name, value, description })) });
 } else if (action === "quit") {
-  se.keystroke("q", { using: "command down" });
+  se.keystroke("q", { using: ["command down"] });
   JSON.stringify({ ok: true });
 } else {
   const matchingNodes = nodes.filter(matches);
@@ -620,7 +620,7 @@ if (action === "snapshot") {
       try { target.element.actions.byName("AXPress").perform(); } catch (_) {}
     }
     try { target.element.focused = true; } catch (_) {}
-    se.keystroke("a", { using: "command down" });
+    se.keystroke("a", { using: ["command down"] });
     se.keystroke(replacement);
   } else {
     throw new Error("Unsupported accessibility action: " + action);
