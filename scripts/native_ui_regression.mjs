@@ -2,7 +2,7 @@ import { execFile, spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve, win32 } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
@@ -78,7 +78,7 @@ export function parseNativeRegressionArguments(argv) {
   if (!new Set(["windows", "macos"]).has(parsed.platform)) {
     throw new Error(`Unsupported native regression platform: ${parsed.platform}`);
   }
-  if (parsed.associationProject && !isAbsolute(parsed.associationProject)) {
+  if (parsed.associationProject && !win32.isAbsolute(parsed.associationProject)) {
     throw new Error("--association-project must be an absolute path");
   }
   return parsed;
@@ -260,7 +260,9 @@ export function windowsCloseCommand(processId) {
 }
 
 export function windowsAssociationLaunchCommand(projectPath) {
-  if (!isAbsolute(projectPath)) throw new Error("Association project path must be absolute");
+  if (!win32.isAbsolute(projectPath)) {
+    throw new Error("Association project path must be absolute");
+  }
   const encodedPath = Buffer.from(projectPath, "utf8").toString("base64");
   return [
     "-NoProfile",
@@ -284,7 +286,7 @@ export function windowsFileDialogCommand(processId, action, target = "") {
   if (!new Set(["cancel", "save"]).has(action)) {
     throw new Error(`Unsupported Windows file-dialog action: ${action}`);
   }
-  if (action === "save" && !isAbsolute(target)) {
+  if (action === "save" && !win32.isAbsolute(target)) {
     throw new Error("Windows file-dialog save target must be absolute");
   }
   const encodedTarget = Buffer.from(target, "utf16le").toString("base64");
