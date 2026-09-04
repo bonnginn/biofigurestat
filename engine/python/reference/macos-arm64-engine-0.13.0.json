@@ -17,7 +17,10 @@
         "templateId": "D01",
         "templateVersion": "0.1.0",
         "method": "welch_t",
-        "contrastConditionIds": ["condition.control", "condition.treatment"],
+        "contrastConditionIds": [
+          "condition.control",
+          "condition.treatment"
+        ],
         "observations": [
           {
             "observationId": "observation.condition.control.0",
@@ -103,7 +106,9 @@
             "name": "welch_two_sample_t_test",
             "statisticName": "t",
             "statistic": -3.7128827734559553,
-            "degreesOfFreedom": [5.815236814635267],
+            "degreesOfFreedom": [
+              5.815236814635267
+            ],
             "pValue": 0.010513608369054,
             "adjustedPValue": null,
             "effectSizeName": "hedges_g",
@@ -129,7 +134,10 @@
         "templateId": "D01",
         "templateVersion": "0.1.0",
         "method": "student_t",
-        "contrastConditionIds": ["condition.control", "condition.treatment"],
+        "contrastConditionIds": [
+          "condition.control",
+          "condition.treatment"
+        ],
         "observations": [
           {
             "observationId": "observation.condition.control.0",
@@ -215,7 +223,9 @@
             "name": "student_two_sample_t_test",
             "statisticName": "t",
             "statistic": -3.7128827734559553,
-            "degreesOfFreedom": [6.0],
+            "degreesOfFreedom": [
+              6.0
+            ],
             "pValue": 0.009935646418705521,
             "adjustedPValue": null,
             "effectSizeName": "hedges_g",
@@ -241,7 +251,10 @@
         "templateId": "D01",
         "templateVersion": "0.1.0",
         "method": "mann_whitney",
-        "contrastConditionIds": ["condition.control", "condition.treatment"],
+        "contrastConditionIds": [
+          "condition.control",
+          "condition.treatment"
+        ],
         "observations": [
           {
             "observationId": "observation.condition.control.0",
@@ -349,7 +362,10 @@
         "templateId": "D02",
         "templateVersion": "0.1.0",
         "method": "paired_t",
-        "contrastConditionIds": ["condition.control", "condition.treatment"],
+        "contrastConditionIds": [
+          "condition.control",
+          "condition.treatment"
+        ],
         "observations": [
           {
             "observationId": "observation.condition.control.0",
@@ -443,7 +459,9 @@
             "name": "paired_t_test",
             "statisticName": "t",
             "statistic": -4.242640687119285,
-            "degreesOfFreedom": [3.0],
+            "degreesOfFreedom": [
+              3.0
+            ],
             "pValue": 0.023981199790656674,
             "adjustedPValue": null,
             "effectSizeName": "cohen_dz",
@@ -469,7 +487,10 @@
         "templateId": "D02",
         "templateVersion": "0.1.0",
         "method": "wilcoxon_signed_rank",
-        "contrastConditionIds": ["condition.control", "condition.treatment"],
+        "contrastConditionIds": [
+          "condition.control",
+          "condition.treatment"
+        ],
         "observations": [
           {
             "observationId": "observation.condition.control.0",
@@ -585,10 +606,17 @@
         "templateId": "D03",
         "templateVersion": "0.1.0",
         "method": "welch_anova",
-        "conditionIds": ["condition.control", "condition.low", "condition.high"],
+        "conditionIds": [
+          "condition.control",
+          "condition.low",
+          "condition.high"
+        ],
         "controlConditionId": "condition.control",
         "contrastIntent": "all_pairs",
-        "primaryContrastConditionIds": ["condition.control", "condition.high"],
+        "primaryContrastConditionIds": [
+          "condition.control",
+          "condition.high"
+        ],
         "observations": [
           {
             "observationId": "observation.0.0",
@@ -706,7 +734,10 @@
             "name": "welch_one_way_anova",
             "statisticName": "F",
             "statistic": 9.348454289965282,
-            "degreesOfFreedom": [2.0, 4.240447797517644],
+            "degreesOfFreedom": [
+              2.0,
+              4.240447797517644
+            ],
             "pValue": 0.02789952270433744,
             "adjustedPValue": null,
             "effectSizeName": "cohen_f_welch",
@@ -716,7 +747,9 @@
             "name": "games_howell:condition.control:condition.low",
             "statisticName": "t",
             "statistic": -1.5491933384829668,
-            "degreesOfFreedom": [2.9411764705882346],
+            "degreesOfFreedom": [
+              2.9411764705882346
+            ],
             "pValue": 0.22088084049409584,
             "adjustedPValue": 0.3903529029357252,
             "effectSizeName": "hedges_g",
@@ -726,7 +759,9 @@
             "name": "games_howell:condition.control:condition.high",
             "statisticName": "t",
             "statistic": -4.6291004988627575,
-            "degreesOfFreedom": [4.741935483870968],
+            "degreesOfFreedom": [
+              4.741935483870968
+            ],
             "pValue": 0.006489932475971997,
             "adjustedPValue": 0.014674577598076888,
             "effectSizeName": "hedges_g",
@@ -736,7 +771,9 @@
             "name": "games_howell:condition.low:condition.high",
             "statisticName": "t",
             "statistic": -2.0380986614602725,
-            "degreesOfFreedom": [4.190082644628099],
+            "degreesOfFreedom": [
+              4.190082644628099
+            ],
             "pValue": 0.10800039788551784,
             "adjustedPValue": 0.21416052703039734,
             "effectSizeName": "hedges_g",
@@ -762,10 +799,17 @@
         "templateId": "D03",
         "templateVersion": "0.1.0",
         "method": "one_way_anova",
-        "conditionIds": ["condition.control", "condition.low", "condition.high"],
+        "conditionIds": [
+          "condition.control",
+          "condition.low",
+          "condition.high"
+        ],
         "controlConditionId": "condition.control",
         "contrastIntent": "all_pairs",
-        "primaryContrastConditionIds": ["condition.control", "condition.high"],
+        "primaryContrastConditionIds": [
+          "condition.control",
+          "condition.high"
+        ],
         "observations": [
           {
             "observationId": "observation.0.0",
@@ -883,7 +927,10 @@
             "name": "classical_one_way_anova",
             "statisticName": "F",
             "statistic": 7.770000000000002,
-            "degreesOfFreedom": [2.0, 7.0],
+            "degreesOfFreedom": [
+              2.0,
+              7.0
+            ],
             "pValue": 0.016691849068375467,
             "adjustedPValue": null,
             "effectSizeName": null,
@@ -893,7 +940,9 @@
             "name": "tukey_hsd:condition.control:condition.low",
             "statisticName": "q",
             "statistic": -2.0,
-            "degreesOfFreedom": [7.0],
+            "degreesOfFreedom": [
+              7.0
+            ],
             "pValue": 0.3691313698337263,
             "adjustedPValue": 0.3691313698337263,
             "effectSizeName": "hedges_g",
@@ -903,7 +952,9 @@
             "name": "tukey_hsd:condition.control:condition.high",
             "statisticName": "q",
             "statistic": -5.0,
-            "degreesOfFreedom": [7.0],
+            "degreesOfFreedom": [
+              7.0
+            ],
             "pValue": 0.01473975687033302,
             "adjustedPValue": 0.01473975687033302,
             "effectSizeName": "hedges_g",
@@ -913,7 +964,9 @@
             "name": "tukey_hsd:condition.low:condition.high",
             "statisticName": "q",
             "statistic": -3.0,
-            "degreesOfFreedom": [7.0],
+            "degreesOfFreedom": [
+              7.0
+            ],
             "pValue": 0.11739236116051444,
             "adjustedPValue": 0.11739236116051444,
             "effectSizeName": "hedges_g",
@@ -939,10 +992,17 @@
         "templateId": "D03",
         "templateVersion": "0.1.0",
         "method": "one_way_anova",
-        "conditionIds": ["condition.control", "condition.low", "condition.high"],
+        "conditionIds": [
+          "condition.control",
+          "condition.low",
+          "condition.high"
+        ],
         "controlConditionId": "condition.control",
         "contrastIntent": "control_vs_many",
-        "primaryContrastConditionIds": ["condition.control", "condition.high"],
+        "primaryContrastConditionIds": [
+          "condition.control",
+          "condition.high"
+        ],
         "observations": [
           {
             "observationId": "observation.0.0",
@@ -1050,7 +1110,10 @@
             "name": "classical_one_way_anova",
             "statisticName": "F",
             "statistic": 7.770000000000002,
-            "degreesOfFreedom": [2.0, 7.0],
+            "degreesOfFreedom": [
+              2.0,
+              7.0
+            ],
             "pValue": 0.016691849068375467,
             "adjustedPValue": null,
             "effectSizeName": null,
@@ -1060,7 +1123,9 @@
             "name": "dunnett:condition.low:condition.control",
             "statisticName": "t",
             "statistic": 1.4491376746189437,
-            "degreesOfFreedom": [7.0],
+            "degreesOfFreedom": [
+              7.0
+            ],
             "pValue": 0.30617527458067584,
             "adjustedPValue": 0.30617527458067584,
             "effectSizeName": "hedges_g",
@@ -1070,7 +1135,9 @@
             "name": "dunnett:condition.high:condition.control",
             "statisticName": "t",
             "statistic": 3.8729833462074175,
-            "degreesOfFreedom": [7.0],
+            "degreesOfFreedom": [
+              7.0
+            ],
             "pValue": 0.011097236221757512,
             "adjustedPValue": 0.011097236221757512,
             "effectSizeName": "hedges_g",
@@ -1096,10 +1163,17 @@
         "templateId": "D03",
         "templateVersion": "0.1.0",
         "method": "one_way_anova",
-        "conditionIds": ["condition.control", "condition.low", "condition.high"],
+        "conditionIds": [
+          "condition.control",
+          "condition.low",
+          "condition.high"
+        ],
         "controlConditionId": "condition.control",
         "contrastIntent": "planned_comparisons",
-        "primaryContrastConditionIds": ["condition.control", "condition.high"],
+        "primaryContrastConditionIds": [
+          "condition.control",
+          "condition.high"
+        ],
         "observations": [
           {
             "observationId": "observation.0.0",
@@ -1168,8 +1242,14 @@
           "multiplicityMethod": "holm_planned_comparisons"
         },
         "plannedContrastConditionIds": [
-          ["condition.control", "condition.low"],
-          ["condition.control", "condition.high"]
+          [
+            "condition.control",
+            "condition.low"
+          ],
+          [
+            "condition.control",
+            "condition.high"
+          ]
         ]
       },
       "result": {
@@ -1204,7 +1284,10 @@
             "name": "classical_one_way_anova",
             "statisticName": "F",
             "statistic": 7.770000000000002,
-            "degreesOfFreedom": [2.0, 7.0],
+            "degreesOfFreedom": [
+              2.0,
+              7.0
+            ],
             "pValue": 0.016691849068375467,
             "adjustedPValue": null,
             "effectSizeName": null,
@@ -1214,7 +1297,9 @@
             "name": "planned_holm:condition.control:condition.low",
             "statisticName": "t",
             "statistic": -1.4491376746189437,
-            "degreesOfFreedom": [7.0],
+            "degreesOfFreedom": [
+              7.0
+            ],
             "pValue": 0.19057315090779597,
             "adjustedPValue": 0.19057315090779597,
             "effectSizeName": "hedges_g",
@@ -1224,7 +1309,9 @@
             "name": "planned_holm:condition.control:condition.high",
             "statisticName": "t",
             "statistic": -3.872983346207417,
-            "degreesOfFreedom": [7.0],
+            "degreesOfFreedom": [
+              7.0
+            ],
             "pValue": 0.006108090476886746,
             "adjustedPValue": 0.012216180953773493,
             "effectSizeName": "hedges_g",
@@ -1254,10 +1341,17 @@
         "templateId": "D03",
         "templateVersion": "0.1.0",
         "method": "kruskal_wallis",
-        "conditionIds": ["condition.control", "condition.low", "condition.high"],
+        "conditionIds": [
+          "condition.control",
+          "condition.low",
+          "condition.high"
+        ],
         "controlConditionId": "condition.control",
         "contrastIntent": "omnibus_only",
-        "primaryContrastConditionIds": ["condition.control", "condition.high"],
+        "primaryContrastConditionIds": [
+          "condition.control",
+          "condition.high"
+        ],
         "observations": [
           {
             "observationId": "observation.0.0",
@@ -1344,7 +1438,9 @@
             "name": "kruskal_wallis_test",
             "statisticName": "H",
             "statistic": 6.108128834355825,
-            "degreesOfFreedom": [2.0],
+            "degreesOfFreedom": [
+              2.0
+            ],
             "pValue": 0.047166828608461144,
             "adjustedPValue": null,
             "effectSizeName": null,
@@ -1370,8 +1466,15 @@
         "templateId": "D04",
         "templateVersion": "0.1.0",
         "method": "repeated_measures_anova",
-        "conditionIds": ["condition.before", "condition.middle", "condition.after"],
-        "primaryContrastConditionIds": ["condition.before", "condition.after"],
+        "conditionIds": [
+          "condition.before",
+          "condition.middle",
+          "condition.after"
+        ],
+        "primaryContrastConditionIds": [
+          "condition.before",
+          "condition.after"
+        ],
         "observations": [
           {
             "observationId": "observation.0.0",
@@ -1513,7 +1616,10 @@
             "name": "one_way_repeated_measures_anova",
             "statisticName": "F",
             "statistic": 19.25641025641027,
-            "degreesOfFreedom": [2.0, 6.0],
+            "degreesOfFreedom": [
+              2.0,
+              6.0
+            ],
             "pValue": 0.002449054273929557,
             "adjustedPValue": null,
             "effectSizeName": "partial_eta_squared",
@@ -1523,7 +1629,9 @@
             "name": "holm_paired:condition.before:condition.middle",
             "statisticName": "t",
             "statistic": -1.4638501094227998,
-            "degreesOfFreedom": [3.0],
+            "degreesOfFreedom": [
+              3.0
+            ],
             "pValue": 0.23944259863600298,
             "adjustedPValue": 0.23944259863600298,
             "effectSizeName": "cohen_dz",
@@ -1533,7 +1641,9 @@
             "name": "holm_paired:condition.before:condition.after",
             "statisticName": "t",
             "statistic": -9.075870678421358,
-            "degreesOfFreedom": [3.0],
+            "degreesOfFreedom": [
+              3.0
+            ],
             "pValue": 0.00282581442905462,
             "adjustedPValue": 0.00847744328716386,
             "effectSizeName": "cohen_dz",
@@ -1543,7 +1653,9 @@
             "name": "holm_paired:condition.middle:condition.after",
             "statisticName": "t",
             "statistic": -4.735369976417822,
-            "degreesOfFreedom": [3.0],
+            "degreesOfFreedom": [
+              3.0
+            ],
             "pValue": 0.01785401645484527,
             "adjustedPValue": 0.03570803290969054,
             "effectSizeName": "cohen_dz",
@@ -1580,11 +1692,17 @@
         "factors": [
           {
             "factorId": "factor.a",
-            "levelIds": ["a.control", "a.target"]
+            "levelIds": [
+              "a.control",
+              "a.target"
+            ]
           },
           {
             "factorId": "factor.b",
-            "levelIds": ["b.dark", "b.lit"]
+            "levelIds": [
+              "b.dark",
+              "b.lit"
+            ]
           }
         ],
         "conditions": [
@@ -1609,7 +1727,10 @@
             "factorBLevelId": "b.lit"
           }
         ],
-        "primaryContrastConditionIds": ["condition.control-dark", "condition.target-lit"],
+        "primaryContrastConditionIds": [
+          "condition.control-dark",
+          "condition.target-lit"
+        ],
         "observations": [
           {
             "observationId": "observation.0.0",
@@ -1769,7 +1890,10 @@
             "name": "type3_interaction",
             "statisticName": "F",
             "statistic": 15.606936416184976,
-            "degreesOfFreedom": [1.0, 8.0],
+            "degreesOfFreedom": [
+              1.0,
+              8.0
+            ],
             "pValue": 0.004232682289427547,
             "adjustedPValue": null,
             "effectSizeName": "partial_eta_squared",
@@ -1779,7 +1903,10 @@
             "name": "type3_factor_a",
             "statisticName": "F",
             "statistic": 30.58959537572255,
-            "degreesOfFreedom": [1.0, 8.0],
+            "degreesOfFreedom": [
+              1.0,
+              8.0
+            ],
             "pValue": 0.0005533172616011807,
             "adjustedPValue": null,
             "effectSizeName": "partial_eta_squared",
@@ -1789,7 +1916,10 @@
             "name": "type3_factor_b",
             "statisticName": "F",
             "statistic": 46.89017341040462,
-            "degreesOfFreedom": [1.0, 8.0],
+            "degreesOfFreedom": [
+              1.0,
+              8.0
+            ],
             "pValue": 0.00013130330937942528,
             "adjustedPValue": null,
             "effectSizeName": "partial_eta_squared",
@@ -1799,7 +1929,9 @@
             "name": "holm_welch:condition.control-dark:condition.control-lit",
             "statisticName": "t",
             "statistic": -2.9755097944025266,
-            "degreesOfFreedom": [3.8161180476730983],
+            "degreesOfFreedom": [
+              3.8161180476730983
+            ],
             "pValue": 0.04342098057049898,
             "adjustedPValue": 0.13026294171149694,
             "effectSizeName": "hedges_g",
@@ -1809,7 +1941,9 @@
             "name": "holm_welch:condition.control-dark:condition.target-dark",
             "statisticName": "t",
             "statistic": -1.708484392354498,
-            "degreesOfFreedom": [3.9282639885222386],
+            "degreesOfFreedom": [
+              3.9282639885222386
+            ],
             "pValue": 0.16403458584182043,
             "adjustedPValue": 0.32806917168364086,
             "effectSizeName": "hedges_g",
@@ -1819,7 +1953,9 @@
             "name": "holm_welch:condition.control-dark:condition.target-lit",
             "statisticName": "t",
             "statistic": -7.223648826057694,
-            "degreesOfFreedom": [2.564840582014789],
+            "degreesOfFreedom": [
+              2.564840582014789
+            ],
             "pValue": 0.009059807271951213,
             "adjustedPValue": 0.054358843631707274,
             "effectSizeName": "hedges_g",
@@ -1829,7 +1965,9 @@
             "name": "holm_welch:condition.control-lit:condition.target-dark",
             "statisticName": "t",
             "statistic": 1.276884796138123,
-            "degreesOfFreedom": [3.9699812382739212],
+            "degreesOfFreedom": [
+              3.9699812382739212
+            ],
             "pValue": 0.2712141072305156,
             "adjustedPValue": 0.32806917168364086,
             "effectSizeName": "hedges_g",
@@ -1839,7 +1977,9 @@
             "name": "holm_welch:condition.control-lit:condition.target-lit",
             "statisticName": "t",
             "statistic": -5.346796732074041,
-            "degreesOfFreedom": [2.8574076934960604],
+            "degreesOfFreedom": [
+              2.8574076934960604
+            ],
             "pValue": 0.014473005207158107,
             "adjustedPValue": 0.05789202082863243,
             "effectSizeName": "hedges_g",
@@ -1849,7 +1989,9 @@
             "name": "holm_welch:condition.target-dark:condition.target-lit",
             "statisticName": "t",
             "statistic": -6.180982563844153,
-            "degreesOfFreedom": [2.730606488011284],
+            "degreesOfFreedom": [
+              2.730606488011284
+            ],
             "pValue": 0.011169633188184053,
             "adjustedPValue": 0.055848165940920264,
             "effectSizeName": "hedges_g",
@@ -1879,7 +2021,10 @@
         "templateId": "D09",
         "templateVersion": "0.1.0",
         "method": "pearson",
-        "variableConditionIds": ["condition.x", "condition.y"],
+        "variableConditionIds": [
+          "condition.x",
+          "condition.y"
+        ],
         "observations": [
           {
             "observationId": "observation.1.condition.x",
@@ -1987,7 +2132,9 @@
             "name": "pearson_correlation",
             "statisticName": "r",
             "statistic": 0.9853541913582685,
-            "degreesOfFreedom": [3.0],
+            "degreesOfFreedom": [
+              3.0
+            ],
             "pValue": 0.0021229877979470546,
             "adjustedPValue": null,
             "effectSizeName": "r",
@@ -2013,7 +2160,10 @@
         "templateId": "D09",
         "templateVersion": "0.1.0",
         "method": "spearman",
-        "variableConditionIds": ["condition.x", "condition.y"],
+        "variableConditionIds": [
+          "condition.x",
+          "condition.y"
+        ],
         "observations": [
           {
             "observationId": "observation.1.condition.x",
@@ -2117,7 +2267,9 @@
             "name": "spearman_correlation",
             "statisticName": "rho",
             "statistic": 0.9999999999999999,
-            "degreesOfFreedom": [3.0],
+            "degreesOfFreedom": [
+              3.0
+            ],
             "pValue": 1.4042654220543602e-24,
             "adjustedPValue": null,
             "effectSizeName": "rho",
@@ -2136,6 +2288,1867 @@
             "message": "The first Core Spearman implementation does not report a confidence interval."
           }
         ]
+      }
+    },
+    {
+      "caseId": "D01:welch_tost:default:request.boundary.welch-tost",
+      "request": {
+        "protocolVersion": "0.15.0",
+        "requestId": "request.boundary.welch-tost",
+        "projectId": "project.boundary.welch-tost",
+        "analysisId": "analysis.boundary.welch-tost",
+        "templateId": "D01",
+        "templateVersion": "0.2.0",
+        "method": "welch_tost",
+        "comparisonId": "equivalence:condition.control:condition.treatment",
+        "contrastConditionIds": [
+          "condition.control",
+          "condition.treatment"
+        ],
+        "equivalencePlan": {
+          "schemaVersion": "0.1.0",
+          "margin": {
+            "scale": "raw_difference",
+            "lowerBound": -0.1,
+            "upperBound": 0.1,
+            "unit": "Relative activity",
+            "declaredAsPrespecified": true
+          },
+          "alpha": 0.05,
+          "claimMode": "single_primary_comparison",
+          "primaryComparisonId": "equivalence:condition.control:condition.treatment"
+        },
+        "observations": [
+          {
+            "observationId": "control.1",
+            "conditionId": "condition.control",
+            "value": 1.0,
+            "experimentalUnitId": "unit.control.1"
+          },
+          {
+            "observationId": "control.2",
+            "conditionId": "condition.control",
+            "value": 1.02,
+            "experimentalUnitId": "unit.control.2"
+          },
+          {
+            "observationId": "control.3",
+            "conditionId": "condition.control",
+            "value": 0.98,
+            "experimentalUnitId": "unit.control.3"
+          },
+          {
+            "observationId": "control.4",
+            "conditionId": "condition.control",
+            "value": 1.01,
+            "experimentalUnitId": "unit.control.4"
+          },
+          {
+            "observationId": "control.5",
+            "conditionId": "condition.control",
+            "value": 0.99,
+            "experimentalUnitId": "unit.control.5"
+          },
+          {
+            "observationId": "treatment.1",
+            "conditionId": "condition.treatment",
+            "value": 1.01,
+            "experimentalUnitId": "unit.treatment.1"
+          },
+          {
+            "observationId": "treatment.2",
+            "conditionId": "condition.treatment",
+            "value": 1.03,
+            "experimentalUnitId": "unit.treatment.2"
+          },
+          {
+            "observationId": "treatment.3",
+            "conditionId": "condition.treatment",
+            "value": 0.99,
+            "experimentalUnitId": "unit.treatment.3"
+          },
+          {
+            "observationId": "treatment.4",
+            "conditionId": "condition.treatment",
+            "value": 1.02,
+            "experimentalUnitId": "unit.treatment.4"
+          },
+          {
+            "observationId": "treatment.5",
+            "conditionId": "condition.treatment",
+            "value": 1.0,
+            "experimentalUnitId": "unit.treatment.5"
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.9,
+          "multiplicityMethod": null
+        }
+      },
+      "result": {
+        "protocolVersion": "0.15.0",
+        "requestId": "request.boundary.welch-tost",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.15.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0"
+          }
+        },
+        "estimates": [
+          {
+            "name": "mean_difference",
+            "value": -0.010000000000000231,
+            "standardError": 0.010000000000000009,
+            "confidenceInterval": {
+              "level": 0.9,
+              "lower": -0.02859548037530922,
+              "upper": 0.008595480375308759
+            }
+          }
+        ],
+        "tests": [
+          {
+            "name": "welch_tost_lower_bound",
+            "statisticName": "t",
+            "statistic": 8.99999999999997,
+            "degreesOfFreedom": [
+              8.0
+            ],
+            "pValue": 9.265592148215261e-06,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          },
+          {
+            "name": "welch_tost_upper_bound",
+            "statisticName": "t",
+            "statistic": -11.000000000000014,
+            "degreesOfFreedom": [
+              8.0
+            ],
+            "pValue": 2.074422100190137e-06,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "equivalence_margin_prespecified",
+            "message": "The equivalence bounds were supplied by the saved prespecified plan and were not estimated from these observations."
+          },
+          {
+            "code": "welch_tost_independent_units",
+            "message": "The two one-sided tests and confidence interval use unequal-variance Welch standard errors for independent experimental units."
+          }
+        ],
+        "warnings": [],
+        "equivalence": {
+          "resultVersion": "0.1.0",
+          "plan": {
+            "schemaVersion": "0.1.0",
+            "margin": {
+              "scale": "raw_difference",
+              "lowerBound": -0.1,
+              "upperBound": 0.1,
+              "unit": "Relative activity",
+              "declaredAsPrespecified": true
+            },
+            "alpha": 0.05,
+            "claimMode": "single_primary_comparison",
+            "primaryComparisonId": "equivalence:condition.control:condition.treatment"
+          },
+          "comparisons": [
+            {
+              "comparisonId": "equivalence:condition.control:condition.treatment",
+              "estimate": -0.010000000000000231,
+              "standardError": 0.010000000000000009,
+              "lowerConfidenceBound": -0.02859548037530922,
+              "upperConfidenceBound": 0.008595480375308759,
+              "confidenceLevel": 0.9,
+              "lowerOneSidedPValue": 9.265592148215261e-06,
+              "upperOneSidedPValue": 2.074422100190137e-06,
+              "tostPValue": 9.265592148215261e-06,
+              "conclusion": "equivalence_supported"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "caseId": "D02:paired_tost:default:request.paired-equivalence.smoke",
+      "request": {
+        "protocolVersion": "0.16.0",
+        "requestId": "request.paired-equivalence.smoke",
+        "projectId": "project.paired-equivalence.smoke",
+        "analysisId": "analysis.paired-equivalence.smoke",
+        "templateId": "D02",
+        "templateVersion": "0.2.0",
+        "method": "paired_tost",
+        "comparisonId": "first:second",
+        "contrastConditionIds": [
+          "condition.first",
+          "condition.second"
+        ],
+        "equivalencePlan": {
+          "schemaVersion": "0.1.0",
+          "margin": {
+            "scale": "raw_difference",
+            "lowerBound": -0.2,
+            "upperBound": 0.2,
+            "unit": "AU",
+            "declaredAsPrespecified": true
+          },
+          "alpha": 0.05,
+          "claimMode": "single_primary_comparison",
+          "primaryComparisonId": "first:second"
+        },
+        "excludedIncompletePairIds": [
+          "pair.incomplete"
+        ],
+        "observations": [
+          {
+            "observationId": "o.1a",
+            "conditionId": "condition.first",
+            "value": 1.0,
+            "experimentalUnitId": "pair.1",
+            "pairId": "pair.1"
+          },
+          {
+            "observationId": "o.1b",
+            "conditionId": "condition.second",
+            "value": 1.1,
+            "experimentalUnitId": "pair.1",
+            "pairId": "pair.1"
+          },
+          {
+            "observationId": "o.2a",
+            "conditionId": "condition.first",
+            "value": 1.0,
+            "experimentalUnitId": "pair.2",
+            "pairId": "pair.2"
+          },
+          {
+            "observationId": "o.2b",
+            "conditionId": "condition.second",
+            "value": 0.95,
+            "experimentalUnitId": "pair.2",
+            "pairId": "pair.2"
+          },
+          {
+            "observationId": "o.3a",
+            "conditionId": "condition.first",
+            "value": 1.0,
+            "experimentalUnitId": "pair.3",
+            "pairId": "pair.3"
+          },
+          {
+            "observationId": "o.3b",
+            "conditionId": "condition.second",
+            "value": 1.05,
+            "experimentalUnitId": "pair.3",
+            "pairId": "pair.3"
+          },
+          {
+            "observationId": "o.4a",
+            "conditionId": "condition.first",
+            "value": 1.0,
+            "experimentalUnitId": "pair.4",
+            "pairId": "pair.4"
+          },
+          {
+            "observationId": "o.4b",
+            "conditionId": "condition.second",
+            "value": 1.0,
+            "experimentalUnitId": "pair.4",
+            "pairId": "pair.4"
+          },
+          {
+            "observationId": "o.5a",
+            "conditionId": "condition.first",
+            "value": 1.0,
+            "experimentalUnitId": "pair.5",
+            "pairId": "pair.5"
+          },
+          {
+            "observationId": "o.5b",
+            "conditionId": "condition.second",
+            "value": 1.08,
+            "experimentalUnitId": "pair.5",
+            "pairId": "pair.5"
+          },
+          {
+            "observationId": "o.6a",
+            "conditionId": "condition.first",
+            "value": 1.0,
+            "experimentalUnitId": "pair.6",
+            "pairId": "pair.6"
+          },
+          {
+            "observationId": "o.6b",
+            "conditionId": "condition.second",
+            "value": 0.98,
+            "experimentalUnitId": "pair.6",
+            "pairId": "pair.6"
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.9,
+          "multiplicityMethod": null
+        }
+      },
+      "result": {
+        "protocolVersion": "0.16.0",
+        "requestId": "request.paired-equivalence.smoke",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.15.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0"
+          }
+        },
+        "estimates": [
+          {
+            "name": "condition.second_minus_condition.first",
+            "value": 0.02666666666666669,
+            "standardError": 0.024175285819291684,
+            "confidenceInterval": {
+              "level": 0.9,
+              "lower": -0.02204770369835791,
+              "upper": 0.07538103703169129
+            }
+          }
+        ],
+        "tests": [
+          {
+            "name": "paired_tost_lower_bound",
+            "statisticName": "t",
+            "statistic": 9.375966363375465,
+            "degreesOfFreedom": [
+              5.0
+            ],
+            "pValue": 0.00011632342948540818,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          },
+          {
+            "name": "paired_tost_upper_bound",
+            "statisticName": "t",
+            "statistic": -7.16985663081653,
+            "degreesOfFreedom": [
+              5.0
+            ],
+            "pValue": 0.00041040541050611925,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "equivalence_margin_prespecified",
+            "message": "The equivalence bounds were supplied by the saved prespecified plan and were not estimated from these observations."
+          },
+          {
+            "code": "paired_tost_complete_pairs",
+            "message": "Paired TOST used 6 complete pairs with second-condition minus first-condition differences."
+          },
+          {
+            "code": "paired_tost_incomplete_pairs_excluded",
+            "message": "Incomplete pairs excluded from paired TOST (retained in Data and Graph): pair.incomplete"
+          }
+        ],
+        "warnings": [],
+        "equivalence": {
+          "resultVersion": "0.1.0",
+          "plan": {
+            "schemaVersion": "0.1.0",
+            "margin": {
+              "scale": "raw_difference",
+              "lowerBound": -0.2,
+              "upperBound": 0.2,
+              "unit": "AU",
+              "declaredAsPrespecified": true
+            },
+            "alpha": 0.05,
+            "claimMode": "single_primary_comparison",
+            "primaryComparisonId": "first:second"
+          },
+          "comparisons": [
+            {
+              "comparisonId": "first:second",
+              "estimate": 0.02666666666666669,
+              "standardError": 0.024175285819291684,
+              "lowerConfidenceBound": -0.02204770369835791,
+              "upperConfidenceBound": 0.07538103703169129,
+              "confidenceLevel": 0.9,
+              "lowerOneSidedPValue": 0.00011632342948540818,
+              "upperOneSidedPValue": 0.00041040541050611925,
+              "tostPValue": 0.00041040541050611925,
+              "conclusion": "equivalence_supported",
+              "analysisSet": {
+                "completePairCount": 6,
+                "excludedIncompletePairIds": [
+                  "pair.incomplete"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "caseId": "D11:log_rank:default:request.d11",
+      "request": {
+        "protocolVersion": "0.8.0",
+        "requestId": "request.d11",
+        "projectId": "project.d11",
+        "analysisId": "analysis.d11",
+        "templateId": "D11",
+        "templateVersion": "0.1.0",
+        "method": "log_rank",
+        "conditionIds": [
+          "control",
+          "treatment"
+        ],
+        "observations": [
+          {
+            "observationId": "obs.control.1",
+            "conditionId": "control",
+            "experimentalUnitId": "unit.control.1",
+            "followUpTime": 2,
+            "eventObserved": true
+          },
+          {
+            "observationId": "obs.control.2",
+            "conditionId": "control",
+            "experimentalUnitId": "unit.control.2",
+            "followUpTime": 3,
+            "eventObserved": true
+          },
+          {
+            "observationId": "obs.control.3",
+            "conditionId": "control",
+            "experimentalUnitId": "unit.control.3",
+            "followUpTime": 5,
+            "eventObserved": false
+          },
+          {
+            "observationId": "obs.control.4",
+            "conditionId": "control",
+            "experimentalUnitId": "unit.control.4",
+            "followUpTime": 7,
+            "eventObserved": true
+          },
+          {
+            "observationId": "obs.treatment.1",
+            "conditionId": "treatment",
+            "experimentalUnitId": "unit.treatment.1",
+            "followUpTime": 4,
+            "eventObserved": false
+          },
+          {
+            "observationId": "obs.treatment.2",
+            "conditionId": "treatment",
+            "experimentalUnitId": "unit.treatment.2",
+            "followUpTime": 6,
+            "eventObserved": true
+          },
+          {
+            "observationId": "obs.treatment.3",
+            "conditionId": "treatment",
+            "experimentalUnitId": "unit.treatment.3",
+            "followUpTime": 8,
+            "eventObserved": false
+          },
+          {
+            "observationId": "obs.treatment.4",
+            "conditionId": "treatment",
+            "experimentalUnitId": "unit.treatment.4",
+            "followUpTime": 9,
+            "eventObserved": true
+          }
+        ],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.95,
+          "multiplicityMethod": null
+        }
+      },
+      "result": {
+        "protocolVersion": "0.8.0",
+        "requestId": "request.d11",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.15.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0"
+          }
+        },
+        "estimates": [],
+        "tests": [
+          {
+            "name": "log_rank_test",
+            "statisticName": "chi_square",
+            "statistic": 2.4479085069716437,
+            "degreesOfFreedom": [
+              1.0
+            ],
+            "pValue": 0.11768157659075457,
+            "adjustedPValue": null,
+            "effectSizeName": null,
+            "effectSize": null
+          }
+        ],
+        "diagnostics": [
+          {
+            "code": "survival_censoring_preserved",
+            "message": "Censored units contributed to risk sets and were not treated as missing observations."
+          }
+        ],
+        "warnings": [],
+        "survival": {
+          "groups": [
+            {
+              "conditionId": "control",
+              "n": 4,
+              "events": 3,
+              "censored": 1,
+              "curve": [
+                {
+                  "time": 0.0,
+                  "survival": 1.0,
+                  "atRisk": 4,
+                  "events": 0,
+                  "censored": 0
+                },
+                {
+                  "time": 2.0,
+                  "survival": 0.75,
+                  "atRisk": 4,
+                  "events": 1,
+                  "censored": 0
+                },
+                {
+                  "time": 3.0,
+                  "survival": 0.5,
+                  "atRisk": 3,
+                  "events": 1,
+                  "censored": 0
+                },
+                {
+                  "time": 5.0,
+                  "survival": 0.5,
+                  "atRisk": 2,
+                  "events": 0,
+                  "censored": 1
+                },
+                {
+                  "time": 7.0,
+                  "survival": 0.0,
+                  "atRisk": 1,
+                  "events": 1,
+                  "censored": 0
+                }
+              ],
+              "censorTimes": [
+                5.0
+              ]
+            },
+            {
+              "conditionId": "treatment",
+              "n": 4,
+              "events": 2,
+              "censored": 2,
+              "curve": [
+                {
+                  "time": 0.0,
+                  "survival": 1.0,
+                  "atRisk": 4,
+                  "events": 0,
+                  "censored": 0
+                },
+                {
+                  "time": 4.0,
+                  "survival": 1.0,
+                  "atRisk": 4,
+                  "events": 0,
+                  "censored": 1
+                },
+                {
+                  "time": 6.0,
+                  "survival": 0.6666666666666667,
+                  "atRisk": 3,
+                  "events": 1,
+                  "censored": 0
+                },
+                {
+                  "time": 8.0,
+                  "survival": 0.6666666666666667,
+                  "atRisk": 2,
+                  "events": 0,
+                  "censored": 1
+                },
+                {
+                  "time": 9.0,
+                  "survival": 0.0,
+                  "atRisk": 1,
+                  "events": 1,
+                  "censored": 0
+                }
+              ],
+              "censorTimes": [
+                4.0,
+                8.0
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "caseId": "D17:nonlinear_xy_fit:default:request.d17",
+      "request": {
+        "protocolVersion": "0.14.0",
+        "requestId": "request.d17",
+        "projectId": "project.d17",
+        "analysisId": "analysis.d17",
+        "templateId": "D17",
+        "templateVersion": "0.1.0",
+        "method": "nonlinear_xy_fit",
+        "modelId": "zero_baseline_association",
+        "modelSelectionRationale": "A monotone saturating time-course is the simplest justified kinetic model.",
+        "xLabel": "Time",
+        "yLabel": "Product",
+        "xUnit": "min",
+        "yUnit": "mol/mol",
+        "seriesIds": [
+          "Mutant",
+          "WT"
+        ],
+        "points": [
+          {
+            "observationId": "WT.0.0",
+            "experimentalUnitId": "u.0",
+            "seriesId": "WT",
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "observationId": "WT.0.1",
+            "experimentalUnitId": "u.0",
+            "seriesId": "WT",
+            "x": 15.0,
+            "y": 0.55
+          },
+          {
+            "observationId": "WT.0.2",
+            "experimentalUnitId": "u.0",
+            "seriesId": "WT",
+            "x": 30.0,
+            "y": 0.95
+          },
+          {
+            "observationId": "WT.0.3",
+            "experimentalUnitId": "u.0",
+            "seriesId": "WT",
+            "x": 60.0,
+            "y": 1.3
+          },
+          {
+            "observationId": "WT.0.4",
+            "experimentalUnitId": "u.0",
+            "seriesId": "WT",
+            "x": 120.0,
+            "y": 1.52
+          },
+          {
+            "observationId": "Mutant.0.0",
+            "experimentalUnitId": "u.0",
+            "seriesId": "Mutant",
+            "x": 0.0,
+            "y": 0.0
+          },
+          {
+            "observationId": "Mutant.0.1",
+            "experimentalUnitId": "u.0",
+            "seriesId": "Mutant",
+            "x": 15.0,
+            "y": 0.55
+          },
+          {
+            "observationId": "Mutant.0.2",
+            "experimentalUnitId": "u.0",
+            "seriesId": "Mutant",
+            "x": 30.0,
+            "y": 0.95
+          },
+          {
+            "observationId": "Mutant.0.3",
+            "experimentalUnitId": "u.0",
+            "seriesId": "Mutant",
+            "x": 60.0,
+            "y": 1.3
+          },
+          {
+            "observationId": "Mutant.0.4",
+            "experimentalUnitId": "u.0",
+            "seriesId": "Mutant",
+            "x": 120.0,
+            "y": 1.52
+          }
+        ],
+        "initialValues": {},
+        "bounds": {},
+        "observations": [],
+        "options": {
+          "alternative": "two_sided",
+          "confidenceLevel": 0.95,
+          "multiplicityMethod": null
+        }
+      },
+      "result": {
+        "protocolVersion": "0.14.0",
+        "requestId": "request.d17",
+        "status": "ok",
+        "engine": {
+          "name": "lsaa-python",
+          "version": "0.15.0",
+          "packages": {
+            "numpy": "2.3.5",
+            "scipy": "1.18.0"
+          }
+        },
+        "estimates": [
+          {
+            "name": "Mutant.plateau",
+            "value": 1.561324862996764,
+            "standardError": 0.01889286476386854,
+            "confidenceInterval": {
+              "level": 0.95,
+              "lower": 1.5011993353327657,
+              "upper": 1.6214503906607622
+            }
+          },
+          {
+            "name": "Mutant.rate",
+            "value": 0.0301974614300928,
+            "standardError": 0.0009529199205224837,
+            "confidenceInterval": {
+              "level": 0.95,
+              "lower": 0.027164844949794778,
+              "upper": 0.03323007791039082
+            }
+          },
+          {
+            "name": "WT.plateau",
+            "value": 1.561324862996764,
+            "standardError": 0.01889286476386854,
+            "confidenceInterval": {
+              "level": 0.95,
+              "lower": 1.5011993353327657,
+              "upper": 1.6214503906607622
+            }
+          },
+          {
+            "name": "WT.rate",
+            "value": 0.0301974614300928,
+            "standardError": 0.0009529199205224837,
+            "confidenceInterval": {
+              "level": 0.95,
+              "lower": 0.027164844949794778,
+              "upper": 0.03323007791039082
+            }
+          }
+        ],
+        "tests": [],
+        "diagnostics": [
+          {
+            "code": "nonlinear_fit_authority",
+            "message": "Fitted curves and parameters were computed by the deterministic local SciPy engine and persisted as the authoritative analysis result."
+          }
+        ],
+        "warnings": [],
+        "nonlinearFit": {
+          "modelId": "zero_baseline_association",
+          "modelVersion": "0.1.0",
+          "modelFormula": "plateau * (1 - exp(-rate * x))",
+          "selectionRationale": "A monotone saturating time-course is the simplest justified kinetic model.",
+          "series": [
+            {
+              "seriesId": "Mutant",
+              "converged": true,
+              "parameters": [
+                {
+                  "name": "Mutant.plateau",
+                  "value": 1.561324862996764,
+                  "standardError": 0.01889286476386854,
+                  "confidenceInterval": {
+                    "level": 0.95,
+                    "lower": 1.5011993353327657,
+                    "upper": 1.6214503906607622
+                  }
+                },
+                {
+                  "name": "Mutant.rate",
+                  "value": 0.0301974614300928,
+                  "standardError": 0.0009529199205224837,
+                  "confidenceInterval": {
+                    "level": 0.95,
+                    "lower": 0.027164844949794778,
+                    "upper": 0.03323007791039082
+                  }
+                }
+              ],
+              "diagnostics": {
+                "n": 5,
+                "distinctX": 5,
+                "residualDegreesOfFreedom": 3,
+                "rss": 0.0007787612988468922,
+                "rmse": 0.016111706911920622,
+                "rSquared": 0.9994712806541789,
+                "aic": -39.83621945724648
+              },
+              "initialValues": {
+                "plateau": 1.52,
+                "rate": 0.016666666666666666
+              },
+              "bounds": {
+                "plateau": {
+                  "lower": 0.0,
+                  "upper": 6.08
+                },
+                "rate": {
+                  "lower": 1e-12,
+                  "upper": 0.8333333333333334
+                }
+              },
+              "fittedCurve": [
+                {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "x": 1.0084033613445378,
+                  "y": 0.04682765135348604
+                },
+                {
+                  "x": 2.0168067226890756,
+                  "y": 0.09225083590877188
+                },
+                {
+                  "x": 3.0252100840336134,
+                  "y": 0.13631167679034098
+                },
+                {
+                  "x": 4.033613445378151,
+                  "y": 0.17905103375524262
+                },
+                {
+                  "x": 5.042016806722689,
+                  "y": 0.22050854108432702
+                },
+                {
+                  "x": 6.050420168067227,
+                  "y": 0.2607226443370397
+                },
+                {
+                  "x": 7.0588235294117645,
+                  "y": 0.299730636003854
+                },
+                {
+                  "x": 8.067226890756302,
+                  "y": 0.33756869008940993
+                },
+                {
+                  "x": 9.07563025210084,
+                  "y": 0.37427189565842345
+                },
+                {
+                  "x": 10.084033613445378,
+                  "y": 0.4098742893754805
+                },
+                {
+                  "x": 11.092436974789916,
+                  "y": 0.4444088870688888
+                },
+                {
+                  "x": 12.100840336134453,
+                  "y": 0.4779077143478581
+                },
+                {
+                  "x": 13.109243697478991,
+                  "y": 0.5104018363014032
+                },
+                {
+                  "x": 14.117647058823529,
+                  "y": 0.5419213863065084
+                },
+                {
+                  "x": 15.126050420168067,
+                  "y": 0.5724955939722721
+                },
+                {
+                  "x": 16.134453781512605,
+                  "y": 0.6021528122459412
+                },
+                {
+                  "x": 17.142857142857142,
+                  "y": 0.6309205437059767
+                },
+                {
+                  "x": 18.15126050420168,
+                  "y": 0.6588254660665303
+                },
+                {
+                  "x": 19.159663865546218,
+                  "y": 0.6858934569169828
+                },
+                {
+                  "x": 20.168067226890756,
+                  "y": 0.7121496177194904
+                },
+                {
+                  "x": 21.176470588235293,
+                  "y": 0.7376182970867884
+                },
+                {
+                  "x": 22.18487394957983,
+                  "y": 0.7623231133618428
+                },
+                {
+                  "x": 23.19327731092437,
+                  "y": 0.786286976520286
+                },
+                {
+                  "x": 24.201680672268907,
+                  "y": 0.8095321094159493
+                },
+                {
+                  "x": 25.210084033613445,
+                  "y": 0.8320800683891951
+                },
+                {
+                  "x": 26.218487394957982,
+                  "y": 0.8539517632571572
+                },
+                {
+                  "x": 27.22689075630252,
+                  "y": 0.8751674767044296
+                },
+                {
+                  "x": 28.235294117647058,
+                  "y": 0.8957468830921848
+                },
+                {
+                  "x": 29.243697478991596,
+                  "y": 0.9157090667031647
+                },
+                {
+                  "x": 30.252100840336134,
+                  "y": 0.9350725394394612
+                },
+                {
+                  "x": 31.26050420168067,
+                  "y": 0.9538552579895037
+                },
+                {
+                  "x": 32.26890756302521,
+                  "y": 0.9720746404801666
+                },
+                {
+                  "x": 33.27731092436974,
+                  "y": 0.9897475826294447
+                },
+                {
+                  "x": 34.285714285714285,
+                  "y": 1.0068904734146726
+                },
+                {
+                  "x": 35.294117647058826,
+                  "y": 1.02351921027082
+                },
+                {
+                  "x": 36.30252100840336,
+                  "y": 1.0396492138329525
+                },
+                {
+                  "x": 37.310924369747895,
+                  "y": 1.0552954422365395
+                },
+                {
+                  "x": 38.319327731092436,
+                  "y": 1.0704724049888554
+                },
+                {
+                  "x": 39.32773109243698,
+                  "y": 1.0851941764243518
+                },
+                {
+                  "x": 40.33613445378151,
+                  "y": 1.0994744087564716
+                },
+                {
+                  "x": 41.344537815126046,
+                  "y": 1.1133263447380086
+                },
+                {
+                  "x": 42.35294117647059,
+                  "y": 1.1267628299417565
+                },
+                {
+                  "x": 43.36134453781513,
+                  "y": 1.1397963246728298
+                },
+                {
+                  "x": 44.36974789915966,
+                  "y": 1.1524389155237118
+                },
+                {
+                  "x": 45.3781512605042,
+                  "y": 1.1647023265827385
+                },
+                {
+                  "x": 46.38655462184874,
+                  "y": 1.1765979303064138
+                },
+                {
+                  "x": 47.39495798319328,
+                  "y": 1.188136758065642
+                },
+                {
+                  "x": 48.403361344537814,
+                  "y": 1.1993295103756516
+                },
+                {
+                  "x": 49.41176470588235,
+                  "y": 1.2101865668191056
+                },
+                {
+                  "x": 50.42016806722689,
+                  "y": 1.2207179956715895
+                },
+                {
+                  "x": 51.42857142857143,
+                  "y": 1.230933563238414
+                },
+                {
+                  "x": 52.436974789915965,
+                  "y": 1.2408427429113833
+                },
+                {
+                  "x": 53.4453781512605,
+                  "y": 1.2504547239539314
+                },
+                {
+                  "x": 54.45378151260504,
+                  "y": 1.259778420022773
+                },
+                {
+                  "x": 55.46218487394958,
+                  "y": 1.2688224774339687
+                },
+                {
+                  "x": 56.470588235294116,
+                  "y": 1.2775952831810746
+                },
+                {
+                  "x": 57.47899159663865,
+                  "y": 1.2861049727128089
+                },
+                {
+                  "x": 58.48739495798319,
+                  "y": 1.294359437477448
+                },
+                {
+                  "x": 59.49579831932773,
+                  "y": 1.3023663322409498
+                },
+                {
+                  "x": 60.50420168067227,
+                  "y": 1.3101330821855892
+                },
+                {
+                  "x": 61.5126050420168,
+                  "y": 1.3176668897956914
+                },
+                {
+                  "x": 62.52100840336134,
+                  "y": 1.3249747415368447
+                },
+                {
+                  "x": 63.529411764705884,
+                  "y": 1.3320634143347891
+                },
+                {
+                  "x": 64.53781512605042,
+                  "y": 1.3389394818599882
+                },
+                {
+                  "x": 65.54621848739495,
+                  "y": 1.3456093206237143
+                },
+                {
+                  "x": 66.55462184873949,
+                  "y": 1.3520791158912955
+                },
+                {
+                  "x": 67.56302521008404,
+                  "y": 1.3583548674180135
+                },
+                {
+                  "x": 68.57142857142857,
+                  "y": 1.3644423950129672
+                },
+                {
+                  "x": 69.5798319327731,
+                  "y": 1.3703473439360654
+                },
+                {
+                  "x": 70.58823529411765,
+                  "y": 1.376075190133149
+                },
+                {
+                  "x": 71.59663865546219,
+                  "y": 1.3816312453141026
+                },
+                {
+                  "x": 72.60504201680672,
+                  "y": 1.38702066187866
+                },
+                {
+                  "x": 73.61344537815125,
+                  "y": 1.392248437694476
+                },
+                {
+                  "x": 74.62184873949579,
+                  "y": 1.3973194207318897
+                },
+                {
+                  "x": 75.63025210084034,
+                  "y": 1.4022383135596856
+                },
+                {
+                  "x": 76.63865546218487,
+                  "y": 1.4070096777060106
+                },
+                {
+                  "x": 77.6470588235294,
+                  "y": 1.4116379378885033
+                },
+                {
+                  "x": 78.65546218487395,
+                  "y": 1.4161273861175485
+                },
+                {
+                  "x": 79.66386554621849,
+                  "y": 1.4204821856764664
+                },
+                {
+                  "x": 80.67226890756302,
+                  "y": 1.4247063749823279
+                },
+                {
+                  "x": 81.68067226890756,
+                  "y": 1.4288038713309745
+                },
+                {
+                  "x": 82.68907563025209,
+                  "y": 1.4327784745297174
+                },
+                {
+                  "x": 83.69747899159664,
+                  "y": 1.436633870421083
+                },
+                {
+                  "x": 84.70588235294117,
+                  "y": 1.4403736343008735
+                },
+                {
+                  "x": 85.71428571428571,
+                  "y": 1.4440012342337123
+                },
+                {
+                  "x": 86.72268907563026,
+                  "y": 1.4475200342691497
+                },
+                {
+                  "x": 87.73109243697479,
+                  "y": 1.4509332975613072
+                },
+                {
+                  "x": 88.73949579831933,
+                  "y": 1.4542441893949614
+                },
+                {
+                  "x": 89.74789915966386,
+                  "y": 1.457455780120864
+                },
+                {
+                  "x": 90.7563025210084,
+                  "y": 1.4605710480030287
+                },
+                {
+                  "x": 91.76470588235294,
+                  "y": 1.4635928819806192
+                },
+                {
+                  "x": 92.77310924369748,
+                  "y": 1.4665240843470027
+                },
+                {
+                  "x": 93.78151260504201,
+                  "y": 1.4693673733484534
+                },
+                {
+                  "x": 94.78991596638656,
+                  "y": 1.472125385704913
+                },
+                {
+                  "x": 95.7983193277311,
+                  "y": 1.4748006790551507
+                },
+                {
+                  "x": 96.80672268907563,
+                  "y": 1.4773957343285842
+                },
+                {
+                  "x": 97.81512605042016,
+                  "y": 1.4799129580459676
+                },
+                {
+                  "x": 98.8235294117647,
+                  "y": 1.4823546845510727
+                },
+                {
+                  "x": 99.83193277310924,
+                  "y": 1.4847231781754422
+                },
+                {
+                  "x": 100.84033613445378,
+                  "y": 1.487020635338212
+                },
+                {
+                  "x": 101.84873949579831,
+                  "y": 1.4892491865829582
+                },
+                {
+                  "x": 102.85714285714286,
+                  "y": 1.4914108985534538
+                },
+                {
+                  "x": 103.8655462184874,
+                  "y": 1.493507775910167
+                },
+                {
+                  "x": 104.87394957983193,
+                  "y": 1.4955417631892813
+                },
+                {
+                  "x": 105.88235294117646,
+                  "y": 1.497514746605957
+                },
+                {
+                  "x": 106.890756302521,
+                  "y": 1.4994285558035119
+                },
+                {
+                  "x": 107.89915966386555,
+                  "y": 1.5012849655501361
+                },
+                {
+                  "x": 108.90756302521008,
+                  "y": 1.5030856973847226
+                },
+                {
+                  "x": 109.91596638655462,
+                  "y": 1.504832421213333
+                },
+                {
+                  "x": 110.92436974789916,
+                  "y": 1.5065267568577834
+                },
+                {
+                  "x": 111.9327731092437,
+                  "y": 1.5081702755577815
+                },
+                {
+                  "x": 112.94117647058823,
+                  "y": 1.509764501428017
+                },
+                {
+                  "x": 113.94957983193277,
+                  "y": 1.5113109128715436
+                },
+                {
+                  "x": 114.9579831932773,
+                  "y": 1.5128109439507766
+                },
+                {
+                  "x": 115.96638655462185,
+                  "y": 1.5142659857173675
+                },
+                {
+                  "x": 116.97478991596638,
+                  "y": 1.515677387502193
+                },
+                {
+                  "x": 117.98319327731092,
+                  "y": 1.5170464581666565
+                },
+                {
+                  "x": 118.99159663865547,
+                  "y": 1.5183744673164583
+                },
+                {
+                  "x": 120.0,
+                  "y": 1.5196626464789622
+                }
+              ]
+            },
+            {
+              "seriesId": "WT",
+              "converged": true,
+              "parameters": [
+                {
+                  "name": "WT.plateau",
+                  "value": 1.561324862996764,
+                  "standardError": 0.01889286476386854,
+                  "confidenceInterval": {
+                    "level": 0.95,
+                    "lower": 1.5011993353327657,
+                    "upper": 1.6214503906607622
+                  }
+                },
+                {
+                  "name": "WT.rate",
+                  "value": 0.0301974614300928,
+                  "standardError": 0.0009529199205224837,
+                  "confidenceInterval": {
+                    "level": 0.95,
+                    "lower": 0.027164844949794778,
+                    "upper": 0.03323007791039082
+                  }
+                }
+              ],
+              "diagnostics": {
+                "n": 5,
+                "distinctX": 5,
+                "residualDegreesOfFreedom": 3,
+                "rss": 0.0007787612988468922,
+                "rmse": 0.016111706911920622,
+                "rSquared": 0.9994712806541789,
+                "aic": -39.83621945724648
+              },
+              "initialValues": {
+                "plateau": 1.52,
+                "rate": 0.016666666666666666
+              },
+              "bounds": {
+                "plateau": {
+                  "lower": 0.0,
+                  "upper": 6.08
+                },
+                "rate": {
+                  "lower": 1e-12,
+                  "upper": 0.8333333333333334
+                }
+              },
+              "fittedCurve": [
+                {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                {
+                  "x": 1.0084033613445378,
+                  "y": 0.04682765135348604
+                },
+                {
+                  "x": 2.0168067226890756,
+                  "y": 0.09225083590877188
+                },
+                {
+                  "x": 3.0252100840336134,
+                  "y": 0.13631167679034098
+                },
+                {
+                  "x": 4.033613445378151,
+                  "y": 0.17905103375524262
+                },
+                {
+                  "x": 5.042016806722689,
+                  "y": 0.22050854108432702
+                },
+                {
+                  "x": 6.050420168067227,
+                  "y": 0.2607226443370397
+                },
+                {
+                  "x": 7.0588235294117645,
+                  "y": 0.299730636003854
+                },
+                {
+                  "x": 8.067226890756302,
+                  "y": 0.33756869008940993
+                },
+                {
+                  "x": 9.07563025210084,
+                  "y": 0.37427189565842345
+                },
+                {
+                  "x": 10.084033613445378,
+                  "y": 0.4098742893754805
+                },
+                {
+                  "x": 11.092436974789916,
+                  "y": 0.4444088870688888
+                },
+                {
+                  "x": 12.100840336134453,
+                  "y": 0.4779077143478581
+                },
+                {
+                  "x": 13.109243697478991,
+                  "y": 0.5104018363014032
+                },
+                {
+                  "x": 14.117647058823529,
+                  "y": 0.5419213863065084
+                },
+                {
+                  "x": 15.126050420168067,
+                  "y": 0.5724955939722721
+                },
+                {
+                  "x": 16.134453781512605,
+                  "y": 0.6021528122459412
+                },
+                {
+                  "x": 17.142857142857142,
+                  "y": 0.6309205437059767
+                },
+                {
+                  "x": 18.15126050420168,
+                  "y": 0.6588254660665303
+                },
+                {
+                  "x": 19.159663865546218,
+                  "y": 0.6858934569169828
+                },
+                {
+                  "x": 20.168067226890756,
+                  "y": 0.7121496177194904
+                },
+                {
+                  "x": 21.176470588235293,
+                  "y": 0.7376182970867884
+                },
+                {
+                  "x": 22.18487394957983,
+                  "y": 0.7623231133618428
+                },
+                {
+                  "x": 23.19327731092437,
+                  "y": 0.786286976520286
+                },
+                {
+                  "x": 24.201680672268907,
+                  "y": 0.8095321094159493
+                },
+                {
+                  "x": 25.210084033613445,
+                  "y": 0.8320800683891951
+                },
+                {
+                  "x": 26.218487394957982,
+                  "y": 0.8539517632571572
+                },
+                {
+                  "x": 27.22689075630252,
+                  "y": 0.8751674767044296
+                },
+                {
+                  "x": 28.235294117647058,
+                  "y": 0.8957468830921848
+                },
+                {
+                  "x": 29.243697478991596,
+                  "y": 0.9157090667031647
+                },
+                {
+                  "x": 30.252100840336134,
+                  "y": 0.9350725394394612
+                },
+                {
+                  "x": 31.26050420168067,
+                  "y": 0.9538552579895037
+                },
+                {
+                  "x": 32.26890756302521,
+                  "y": 0.9720746404801666
+                },
+                {
+                  "x": 33.27731092436974,
+                  "y": 0.9897475826294447
+                },
+                {
+                  "x": 34.285714285714285,
+                  "y": 1.0068904734146726
+                },
+                {
+                  "x": 35.294117647058826,
+                  "y": 1.02351921027082
+                },
+                {
+                  "x": 36.30252100840336,
+                  "y": 1.0396492138329525
+                },
+                {
+                  "x": 37.310924369747895,
+                  "y": 1.0552954422365395
+                },
+                {
+                  "x": 38.319327731092436,
+                  "y": 1.0704724049888554
+                },
+                {
+                  "x": 39.32773109243698,
+                  "y": 1.0851941764243518
+                },
+                {
+                  "x": 40.33613445378151,
+                  "y": 1.0994744087564716
+                },
+                {
+                  "x": 41.344537815126046,
+                  "y": 1.1133263447380086
+                },
+                {
+                  "x": 42.35294117647059,
+                  "y": 1.1267628299417565
+                },
+                {
+                  "x": 43.36134453781513,
+                  "y": 1.1397963246728298
+                },
+                {
+                  "x": 44.36974789915966,
+                  "y": 1.1524389155237118
+                },
+                {
+                  "x": 45.3781512605042,
+                  "y": 1.1647023265827385
+                },
+                {
+                  "x": 46.38655462184874,
+                  "y": 1.1765979303064138
+                },
+                {
+                  "x": 47.39495798319328,
+                  "y": 1.188136758065642
+                },
+                {
+                  "x": 48.403361344537814,
+                  "y": 1.1993295103756516
+                },
+                {
+                  "x": 49.41176470588235,
+                  "y": 1.2101865668191056
+                },
+                {
+                  "x": 50.42016806722689,
+                  "y": 1.2207179956715895
+                },
+                {
+                  "x": 51.42857142857143,
+                  "y": 1.230933563238414
+                },
+                {
+                  "x": 52.436974789915965,
+                  "y": 1.2408427429113833
+                },
+                {
+                  "x": 53.4453781512605,
+                  "y": 1.2504547239539314
+                },
+                {
+                  "x": 54.45378151260504,
+                  "y": 1.259778420022773
+                },
+                {
+                  "x": 55.46218487394958,
+                  "y": 1.2688224774339687
+                },
+                {
+                  "x": 56.470588235294116,
+                  "y": 1.2775952831810746
+                },
+                {
+                  "x": 57.47899159663865,
+                  "y": 1.2861049727128089
+                },
+                {
+                  "x": 58.48739495798319,
+                  "y": 1.294359437477448
+                },
+                {
+                  "x": 59.49579831932773,
+                  "y": 1.3023663322409498
+                },
+                {
+                  "x": 60.50420168067227,
+                  "y": 1.3101330821855892
+                },
+                {
+                  "x": 61.5126050420168,
+                  "y": 1.3176668897956914
+                },
+                {
+                  "x": 62.52100840336134,
+                  "y": 1.3249747415368447
+                },
+                {
+                  "x": 63.529411764705884,
+                  "y": 1.3320634143347891
+                },
+                {
+                  "x": 64.53781512605042,
+                  "y": 1.3389394818599882
+                },
+                {
+                  "x": 65.54621848739495,
+                  "y": 1.3456093206237143
+                },
+                {
+                  "x": 66.55462184873949,
+                  "y": 1.3520791158912955
+                },
+                {
+                  "x": 67.56302521008404,
+                  "y": 1.3583548674180135
+                },
+                {
+                  "x": 68.57142857142857,
+                  "y": 1.3644423950129672
+                },
+                {
+                  "x": 69.5798319327731,
+                  "y": 1.3703473439360654
+                },
+                {
+                  "x": 70.58823529411765,
+                  "y": 1.376075190133149
+                },
+                {
+                  "x": 71.59663865546219,
+                  "y": 1.3816312453141026
+                },
+                {
+                  "x": 72.60504201680672,
+                  "y": 1.38702066187866
+                },
+                {
+                  "x": 73.61344537815125,
+                  "y": 1.392248437694476
+                },
+                {
+                  "x": 74.62184873949579,
+                  "y": 1.3973194207318897
+                },
+                {
+                  "x": 75.63025210084034,
+                  "y": 1.4022383135596856
+                },
+                {
+                  "x": 76.63865546218487,
+                  "y": 1.4070096777060106
+                },
+                {
+                  "x": 77.6470588235294,
+                  "y": 1.4116379378885033
+                },
+                {
+                  "x": 78.65546218487395,
+                  "y": 1.4161273861175485
+                },
+                {
+                  "x": 79.66386554621849,
+                  "y": 1.4204821856764664
+                },
+                {
+                  "x": 80.67226890756302,
+                  "y": 1.4247063749823279
+                },
+                {
+                  "x": 81.68067226890756,
+                  "y": 1.4288038713309745
+                },
+                {
+                  "x": 82.68907563025209,
+                  "y": 1.4327784745297174
+                },
+                {
+                  "x": 83.69747899159664,
+                  "y": 1.436633870421083
+                },
+                {
+                  "x": 84.70588235294117,
+                  "y": 1.4403736343008735
+                },
+                {
+                  "x": 85.71428571428571,
+                  "y": 1.4440012342337123
+                },
+                {
+                  "x": 86.72268907563026,
+                  "y": 1.4475200342691497
+                },
+                {
+                  "x": 87.73109243697479,
+                  "y": 1.4509332975613072
+                },
+                {
+                  "x": 88.73949579831933,
+                  "y": 1.4542441893949614
+                },
+                {
+                  "x": 89.74789915966386,
+                  "y": 1.457455780120864
+                },
+                {
+                  "x": 90.7563025210084,
+                  "y": 1.4605710480030287
+                },
+                {
+                  "x": 91.76470588235294,
+                  "y": 1.4635928819806192
+                },
+                {
+                  "x": 92.77310924369748,
+                  "y": 1.4665240843470027
+                },
+                {
+                  "x": 93.78151260504201,
+                  "y": 1.4693673733484534
+                },
+                {
+                  "x": 94.78991596638656,
+                  "y": 1.472125385704913
+                },
+                {
+                  "x": 95.7983193277311,
+                  "y": 1.4748006790551507
+                },
+                {
+                  "x": 96.80672268907563,
+                  "y": 1.4773957343285842
+                },
+                {
+                  "x": 97.81512605042016,
+                  "y": 1.4799129580459676
+                },
+                {
+                  "x": 98.8235294117647,
+                  "y": 1.4823546845510727
+                },
+                {
+                  "x": 99.83193277310924,
+                  "y": 1.4847231781754422
+                },
+                {
+                  "x": 100.84033613445378,
+                  "y": 1.487020635338212
+                },
+                {
+                  "x": 101.84873949579831,
+                  "y": 1.4892491865829582
+                },
+                {
+                  "x": 102.85714285714286,
+                  "y": 1.4914108985534538
+                },
+                {
+                  "x": 103.8655462184874,
+                  "y": 1.493507775910167
+                },
+                {
+                  "x": 104.87394957983193,
+                  "y": 1.4955417631892813
+                },
+                {
+                  "x": 105.88235294117646,
+                  "y": 1.497514746605957
+                },
+                {
+                  "x": 106.890756302521,
+                  "y": 1.4994285558035119
+                },
+                {
+                  "x": 107.89915966386555,
+                  "y": 1.5012849655501361
+                },
+                {
+                  "x": 108.90756302521008,
+                  "y": 1.5030856973847226
+                },
+                {
+                  "x": 109.91596638655462,
+                  "y": 1.504832421213333
+                },
+                {
+                  "x": 110.92436974789916,
+                  "y": 1.5065267568577834
+                },
+                {
+                  "x": 111.9327731092437,
+                  "y": 1.5081702755577815
+                },
+                {
+                  "x": 112.94117647058823,
+                  "y": 1.509764501428017
+                },
+                {
+                  "x": 113.94957983193277,
+                  "y": 1.5113109128715436
+                },
+                {
+                  "x": 114.9579831932773,
+                  "y": 1.5128109439507766
+                },
+                {
+                  "x": 115.96638655462185,
+                  "y": 1.5142659857173675
+                },
+                {
+                  "x": 116.97478991596638,
+                  "y": 1.515677387502193
+                },
+                {
+                  "x": 117.98319327731092,
+                  "y": 1.5170464581666565
+                },
+                {
+                  "x": 118.99159663865547,
+                  "y": 1.5183744673164583
+                },
+                {
+                  "x": 120.0,
+                  "y": 1.5196626464789622
+                }
+              ]
+            }
+          ]
+        }
       }
     }
   ]
