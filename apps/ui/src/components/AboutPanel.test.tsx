@@ -43,5 +43,6 @@ describe("AboutPanel", () => {
     fireEvent.click(screen.getByText("Build・ライセンス情報"));
 
     expect(screen.getByText("MIT License")).toBeVisible();
+    expect(screen.getByText("統計engine 0.15.0")).toBeVisible();
   });
 });
