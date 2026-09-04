@@ -19,7 +19,7 @@
 
 | 順位 | 状態 | 作業                   | ユーザー確認             | 完了条件                                                                                                                                                               |
 | ---- | ---- | ---------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | 🟡   | Public Alpha 3候補gate | Windows実機確認と公開承認 | 同一product source `8b58727`からWindows/macOS artifactを作成し、bundle・release・engine・最終native harnessは両OSでPASS。残りはWindows installer導入とShell `.lsa`関連付け、限定的な人の互換・見た目確認、draft upload後のremote digest照合、公開承認。詳細は`ALPHA3_CANDIDATE_CHECKLIST.md` |
+| 1    | 🟡   | Public Alpha 3候補gate | Mac再build、Windows実機確認、公開承認 | Aboutのengine版表示を`0.15.0`へ合わせたproduct source `de71d14`でWindows artifactと自動gateはPASS。残りは同じsourceのmacOS再build、Windows installer導入とShell `.lsa`関連付け、限定的人確認、draft upload照合、公開承認。詳細は`ALPHA3_CANDIDATE_CHECKLIST.md` |
 | 2    | ⏸    | 独立性確認文の短文化   | 科学表現の承認が必要     | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする                                                                                                     |
 
 ## 公開・運用
@@ -34,7 +34,7 @@
 | ✅   | GitHub release説明の日本語・英語併記 | release pageへ反映済み                                                                                                        |
 | ✅   | READMEの日本語・英語案内             | `biofigurestat`のREADME先頭に日英説明、Download導線、両OSの直接asset link、checksumを掲載                                     |
 | ✅   | alpha.2公開リンク・checksum整合      | README、final release notes、versioned Help URLを更新し、release/guide/両assetを匿名HTTP確認                                  |
-| 🟡   | 次のPublic Alpha保守更新             | `alpha.3`の同一source両OSartifactと自動gateは完了。Windows install/association、限定的人確認、draft upload照合、公開承認を残す。既存`alpha.2` assetは置換しない |
+| 🟡   | 次のPublic Alpha保守更新             | About engine版修正後のWindows artifactは完了。macOSを同じ`de71d14`から再buildし、Windows install/association、限定的人確認、draft upload照合、公開承認を残す。既存`alpha.2` assetは置換しない |
 | ✅   | opt-in利用情報収集                   | 研究データを含めない同意式送信、停止、診断書き出しを実装済み                                                                  |
 | ✅   | 不具合報告                           | 確認後送信、Worker/D1、rate limit、保持期限、report IDを実装済み                                                              |
 | ✅   | 不具合報告の日次triage               | 別タスクで毎日1回のread-only分類・提案運用を設定済み                                                                          |

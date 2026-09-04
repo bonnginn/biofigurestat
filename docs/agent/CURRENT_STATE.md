@@ -1,6 +1,6 @@
 # Current Working State
 
-Updated: 2026-09-04 (Alpha 3 same-source artifact gates passed; release remains unpublished)
+Updated: 2026-09-04 (Alpha 3 corrected Windows gate passed; macOS rebuild pending)
 
 This is the short operational snapshot. Accepted ADRs, schemas, method references, and tests remain
 the authority for durable behavior.
@@ -67,12 +67,13 @@ chrome modifier to workspace spacing, headings, Inspector sections, and ordinary
 resizing the rendered Graph or changing saved presentation values. These changes are source-only;
 their next native viewport review belongs to the `alpha.3` candidate gate.
 
-The next public update is a maintenance `v0.1.0-alpha.3`. Its Windows x64 and Apple Silicon macOS
-artifacts were built directly from the same product commit,
-`8b587275cc35dc8fe30737851796ab3b9e737f7a`, in the public `bonnginn/biofigurestat` repository.
-Both automated bundle gates and both final native harness runs pass. The macOS harness-only history
-continues through `e055553` without changing the packaged product source. Artifact identity and
-remaining release work are recorded in `docs/alpha/ALPHA3_ARTIFACT_EVIDENCE_2026-09-04.md` and
+The next public update is a maintenance `v0.1.0-alpha.3`. A release audit found that the otherwise
+validated `8b58727` artifacts displayed engine `0.14.0` in About while packaging engine `0.15.0`.
+Product commit `de71d140bae95f899c05ce8d18c516cf7a09f6e9` corrects that display and adds a
+focused assertion. The corrected Windows x64 artifact passes its bundle, 18-protocol engine,
+release, embedded-identity, and single final native gates. The earlier macOS zip is preserved as
+superseded evidence and must be rebuilt from `de71d14`. Artifact identity and remaining release work
+are recorded in `docs/alpha/ALPHA3_ARTIFACT_EVIDENCE_2026-09-04.md` and
 `docs/alpha/ALPHA3_CANDIDATE_CHECKLIST.md`.
 
 The release remains unpublished. The exact Windows installation/association scenario and bounded

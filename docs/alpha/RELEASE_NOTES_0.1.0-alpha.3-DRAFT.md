@@ -3,8 +3,8 @@
 Draft only. Exact contents, artifacts, checksums, and publication remain subject to the candidate
 gate and explicit approval.
 
-Candidate source: `8b587275cc35dc8fe30737851796ab3b9e737f7a` (same product source for Windows
-and macOS).
+Candidate source: `de71d140bae95f899c05ce8d18c516cf7a09f6e9`. The Windows artifact is ready;
+the Apple Silicon artifact and its checksum remain pending a same-source rebuild.
 
 ## 日本語
 
@@ -48,9 +48,8 @@ BioFigureStat Public Alphaの保守更新候補です。実験データをロー
 ### 候補ファイル
 
 - Windows x64: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe`
-  - SHA-256: `2209f333b843c0152e619ef91a5e73d19dff5bdb52990fc6e93977fed932e116`
-- macOS Apple Silicon: `BioFigureStat-0.1.0-alpha.3-macOS-Apple-Silicon.zip`
-  - SHA-256: `b7f512c80d43061523852eeffec1f3c2028b2fa60933b80a1281cd2e7e8bc496`
+  - SHA-256: `b5650d3af710ad7bfa9e34264a2d11a4ec0703ab1dd485b9b3130770ba9c6fe5`
+- macOS Apple Silicon: same-source rebuild pending
 
 ## English
 
@@ -102,6 +101,5 @@ pairing.
 ### Candidate files
 
 - Windows x64: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe`
-  - SHA-256: `2209f333b843c0152e619ef91a5e73d19dff5bdb52990fc6e93977fed932e116`
-- macOS Apple Silicon: `BioFigureStat-0.1.0-alpha.3-macOS-Apple-Silicon.zip`
-  - SHA-256: `b7f512c80d43061523852eeffec1f3c2028b2fa60933b80a1281cd2e7e8bc496`
+  - SHA-256: `b5650d3af710ad7bfa9e34264a2d11a4ec0703ab1dd485b9b3130770ba9c6fe5`
+- macOS Apple Silicon: same-source rebuild pending

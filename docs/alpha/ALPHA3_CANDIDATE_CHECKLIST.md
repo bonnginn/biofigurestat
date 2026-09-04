@@ -2,9 +2,10 @@
 
 Updated: 2026-09-04 (JST)
 
-Status: same-source Windows and Apple Silicon artifacts have passed their automated bundle and
-native gates. Product source is frozen at `8b587275cc35dc8fe30737851796ab3b9e737f7a`;
-release upload and publication are not authorized.
+Status: the corrected Windows artifact has passed its automated bundle and native gates. Final
+product source is `de71d140bae95f899c05ce8d18c516cf7a09f6e9`; the Apple Silicon artifact must be
+rebuilt from that commit because the otherwise validated earlier build displayed a stale engine
+version in About. Release upload and publication are not authorized.
 
 Use this checklist only for the maintenance Alpha described in
 `PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`. The historical Alpha checklist remains a record of the
@@ -12,16 +13,17 @@ earlier release and must not be silently reinterpreted as current evidence.
 
 ## Source authority
 
-- [x] Record the clean product-source branch and commit SHA: final artifact source
-      `8b587275cc35dc8fe30737851796ab3b9e737f7a`; macOS harness evidence continues through
-      `e055553210efe62c7c21e412b743fa2967ac3ae3` without changing the packaged product source.
-- [x] Confirm the release-build relationship: Alpha 3 Windows and macOS builds use the same final
-      commit directly from `https://github.com/bonnginn/biofigurestat.git`. The older private
-      development tree is not release authority, and sealed evaluation material is not copied.
+- [x] Record the clean product-source branch and commit SHA: final intended artifact source
+      `de71d140bae95f899c05ce8d18c516cf7a09f6e9`; macOS harness corrections are available
+      separately through `e055553210efe62c7c21e412b743fa2967ac3ae3`.
+- [ ] Confirm the release-build relationship after the macOS rebuild: Alpha 3 Windows and macOS
+      artifacts use the same final product commit from
+      `https://github.com/bonnginn/biofigurestat.git`. The older private development tree is not
+      release authority, and sealed evaluation material is not copied.
 - [x] Record the application version, engine version, build revision, license, and build date for
       both candidates: application `0.1.0`, engine `0.15.0`, MIT, 2026-09-04 JST; platform build
       revisions are recorded below.
-- [x] Confirm that Windows and macOS artifacts use the same product source commit `8b58727`.
+- [ ] Confirm that the corrected Windows and rebuilt macOS artifacts use product source `de71d14`.
 
 ## Automated source gate
 
@@ -64,7 +66,7 @@ results do not replace the single final package/full gate.
 
 ## Windows artifact gate
 
-- [x] Build the x64 sidecar and NSIS installer from source commit `8b58727`.
+- [x] Build the x64 sidecar and NSIS installer from source commit `de71d14`.
 - [x] Bundle verifier, 18-case packaged-engine smoke, and release verifier pass.
 - [x] Exact-executable native harness passes once; do not hide or repeatedly retry the first
       failure.
@@ -74,14 +76,14 @@ results do not replace the single final package/full gate.
 Windows candidate artifact:
 
 - File: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe`
-- Bytes: `48,083,576`
-- SHA-256: `2209f333b843c0152e619ef91a5e73d19dff5bdb52990fc6e93977fed932e116`
+- Bytes: `48,088,866`
+- SHA-256: `b5650d3af710ad7bfa9e34264a2d11a4ec0703ab1dd485b9b3130770ba9c6fe5`
 - Architecture: `x64`
 - Signature: unsigned
-- Build revision: `8b58727-alpha.20260904.win-alpha3-quitfix1`
+- Build revision: `de71d14-alpha.20260904.win-alpha3-enginefix1`
 
 The final exact-executable native harness passed on its single run. Evidence is in
-`.tmp/native-ui-regression/2026-09-04T05-09-32.013Z/report.json`. Installation and the dedicated
+`.tmp/native-ui-regression/2026-09-04T05-18-03.869Z/report.json`. Installation and the dedicated
 Windows Shell `.lsa` association scenario remain pending because they intentionally change the
 current-user installation state.
 
@@ -92,14 +94,14 @@ present in the production UI, then passed both verifiers.
 
 ## Apple Silicon macOS artifact gate
 
-- [x] Build the arm64 sidecar and `.app` from the same candidate source.
-- [x] Bundle verifier, strict codesign verification, and release verifier pass.
-- [x] Native harness passes once where Accessibility policy permits it. Otherwise record
+- [ ] Build the arm64 sidecar and `.app` from corrected source `de71d14`.
+- [ ] Bundle verifier, strict codesign verification, and release verifier pass for the rebuilt app.
+- [ ] Native harness passes once where Accessibility policy permits it. Otherwise record
       `HARNESS_INFRASTRUCTURE_BLOCKED` and perform only the equivalent bounded manual checks.
-- [x] Zip the already verified `.app`, test extraction, and verify the extracted signature again.
-- [x] Record artifact filename, byte size, SHA-256, architecture, signing state, and build revision.
+- [ ] Zip the rebuilt verified `.app`, test extraction, and verify the extracted signature again.
+- [ ] Record the final artifact filename, byte size, SHA-256, architecture, signing state, and build revision.
 
-macOS candidate artifact:
+Superseded macOS evidence (do not upload):
 
 - File: `BioFigureStat-0.1.0-alpha.3-macOS-Apple-Silicon.zip`
 - Bytes: `47,908,904`
@@ -111,7 +113,10 @@ macOS candidate artifact:
 The corrected macOS harness self-suite passed 19/19. Its single final native run passed the dirty
 edit, first Quit guard, Cancel retention, second Quit request, and explicit Discard exit. The local
 evidence path on the build host was
-`.tmp/native-ui-regression/2026-09-04T02-06-34.869Z/report.json`.
+`.tmp/native-ui-regression/2026-09-04T02-06-34.869Z/report.json`. The product calculation and quit
+guard passed, but this build came from `8b58727`, whose About panel still declared engine `0.14.0`
+instead of the packaged `0.15.0`. Preserve it as diagnostic evidence only and rebuild from
+`de71d14` before release.
 
 ## Representative compatibility and behavior
 
@@ -147,10 +152,10 @@ evidence path on the build host was
 
 ## Final verdict
 
-- Candidate source: broad source gate `PASS`; exact artifact source commit `8b58727`
+- Candidate source: broad source gate `PASS`; corrected artifact source commit `de71d14`
 - Windows artifact: automated bundle and exact-executable native gates `PASS`; installed
   association and bounded human checks pending
-- macOS artifact: automated bundle, codesign, native harness, and zip gates `PASS`
+- macOS artifact: earlier `8b58727` build superseded by About metadata correction; rebuild pending
 - Product failures: none detected
-- Environment blocks: none in the final automated artifact gates
-- Verdict: `SAME-SOURCE ARTIFACT GATES PASS — WINDOWS INSTALL/ASSOCIATION AND BOUNDED HUMAN REVIEW PENDING`
+- Environment blocks: none
+- Verdict: `CORRECTED WINDOWS ARTIFACT PASS — MACOS REBUILD, WINDOWS INSTALL/ASSOCIATION, AND BOUNDED HUMAN REVIEW PENDING`

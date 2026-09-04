@@ -7,10 +7,10 @@
 
 ## 対象build
 
-- product source: `8b587275cc35dc8fe30737851796ab3b9e737f7a`
-- About表示: `8b58727-alpha.20260904.win-alpha3-quitfix1`
+- product source: `de71d140bae95f899c05ce8d18c516cf7a09f6e9`
+- About表示: `de71d14-alpha.20260904.win-alpha3-enginefix1`
 - installer: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe`
-- SHA-256: `2209f333b843c0152e619ef91a5e73d19dff5bdb52990fc6e93977fed932e116`
+- SHA-256: `b5650d3af710ad7bfa9e34264a2d11a4ec0703ab1dd485b9b3130770ba9c6fe5`
 
 Aboutのbuild revisionが一致しなければ、その時点で停止する。
 

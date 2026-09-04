@@ -2,48 +2,57 @@
 
 Recorded: 2026-09-04 JST
 
-This record separates the immutable product source used for both artifacts from later
-harness-only corrections. It is evidence for a draft candidate, not publication approval.
+This record distinguishes the current Windows candidate from the superseded same-day artifacts.
+It is evidence for a draft candidate, not publication approval.
 
 ## Source relationship
 
-- Product source for both artifacts:
-  `8b587275cc35dc8fe30737851796ab3b9e737f7a`
+- Corrected product source for final artifacts:
+  `de71d140bae95f899c05ce8d18c516cf7a09f6e9`
+- The correction changes only the About engine declaration from stale `0.14.0` to packaged
+  `0.15.0`, with a focused UI assertion.
 - macOS harness evidence head:
   `e055553210efe62c7c21e412b743fa2967ac3ae3`
-- The commits after `8b58727` change only native-harness behavior and are not part of either
-  packaged product. A direct name-only diff contains only
-  `scripts/native_ui_regression.mjs` and `scripts/test_native_ui_regression.mjs`.
+- The macOS harness commits after the earlier product source `8b58727` change only
+  `scripts/native_ui_regression.mjs` and `scripts/test_native_ui_regression.mjs`. They remain
+  separate from the packaged product correction.
 - Repository: `https://github.com/bonnginn/biofigurestat.git`
 
 ## Artifact identity
 
 | Platform | File | Build revision | Bytes | SHA-256 | Signing |
 | --- | --- | --- | ---: | --- | --- |
-| Windows 11 x64 | `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe` | `8b58727-alpha.20260904.win-alpha3-quitfix1` | 48,083,576 | `2209f333b843c0152e619ef91a5e73d19dff5bdb52990fc6e93977fed932e116` | unsigned |
-| macOS Apple Silicon | `BioFigureStat-0.1.0-alpha.3-macOS-Apple-Silicon.zip` | `8b58727-alpha.20260904.mac-alpha3-quitfix1` | 47,908,904 | `b7f512c80d43061523852eeffec1f3c2028b2fa60933b80a1281cd2e7e8bc496` | ad-hoc; not notarized |
+| Windows 11 x64 | `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe` | `de71d14-alpha.20260904.win-alpha3-enginefix1` | 48,088,866 | `b5650d3af710ad7bfa9e34264a2d11a4ec0703ab1dd485b9b3130770ba9c6fe5` | unsigned |
+
+Final Apple Silicon identity is pending a rebuild from `de71d14`. The earlier zip is superseded
+and must not be uploaded:
+
+| Platform | Superseded build revision | Bytes | SHA-256 | Reason |
+| --- | --- | ---: | --- | --- |
+| macOS Apple Silicon | `8b58727-alpha.20260904.mac-alpha3-quitfix1` | 47,908,904 | `b7f512c80d43061523852eeffec1f3c2028b2fa60933b80a1281cd2e7e8bc496` | About displayed engine `0.14.0` instead of packaged `0.15.0` |
 
 ## Automated evidence
 
 Windows:
 
 - the final production bundle contains the exact About revision
-  `8b58727-alpha.20260904.win-alpha3-quitfix1`;
-- focused UI quit-lifecycle tests: 66 passed;
+  `de71d14-alpha.20260904.win-alpha3-enginefix1` and engine `0.15.0`;
+- focused About/diagnostic tests: 11 passed;
+- related UI gate: 54 files / 639 tests passed;
 - Rust application-exit approval test: passed;
 - packaged engine smoke: 18 protocols passed;
 - Windows bundle verifier: passed;
 - production release verifier: passed;
 - native-harness self-tests: 17/17 passed;
 - exact-executable native harness: passed on the one final run;
-- local report: `.tmp/native-ui-regression/2026-09-04T05-09-32.013Z/report.json`.
+- local report: `.tmp/native-ui-regression/2026-09-04T05-18-03.869Z/report.json`.
 
 An earlier same-source local installer used the wrong build-time environment-variable name, so its
 About revision would have been `unavailable`. A post-build string check rejected it before install
 or upload. The file was overwritten by the final correctly injected build; its digest is not
 release evidence.
 
-macOS:
+Superseded macOS evidence:
 
 - engine build and smoke: passed;
 - `.app` build and bundle verifier: passed;
@@ -55,18 +64,23 @@ macOS:
 - `unzip -t`: passed;
 - build-host report: `.tmp/native-ui-regression/2026-09-04T02-06-34.869Z/report.json`.
 
+These checks remain valid evidence for the quit-guard implementation, but the artifact itself is
+not a release candidate because its About engine declaration is stale. Repeat the build, bundle,
+release, strict codesign, native, zip-extraction, and digest gates from `de71d14`.
+
 ## Remaining release boundary
 
-The final automated artifact gates found no product failure. The following actions remain
+The corrected Windows automated artifact gate found no product failure. The following actions remain
 deliberately separate:
 
-1. install the exact Windows candidate and run the dedicated Windows Shell `.lsa` association
+1. build and validate Apple Silicon macOS from product source `de71d14`;
+2. install the exact Windows candidate and run the dedicated Windows Shell `.lsa` association
    scenario;
-2. perform the bounded human compatibility and visual review still unchecked in
+3. perform the bounded human compatibility and visual review still unchecked in
    `ALPHA3_CANDIDATE_CHECKLIST.md`;
-3. verify the final Japanese and English release text against those results;
-4. upload both assets to a draft release and compare the remote size and digest;
-5. obtain explicit approval before publishing the GitHub Pre-release.
+4. verify the final Japanese and English release text against those results;
+5. upload both assets to a draft release and compare the remote size and digest;
+6. obtain explicit approval before publishing the GitHub Pre-release.
 
 Neither artifact has been uploaded or published as part of this evidence record.
 
