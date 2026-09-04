@@ -321,10 +321,14 @@ test("builds a bounded macOS Accessibility typing action without interpolating u
   assert.match(script, /keyCode\(48\)/);
 });
 
-test("builds a macOS quit action with a JXA modifier array", () => {
+test("presses the BioFigureStat Command+Q menu item through macOS Accessibility", () => {
   const script = macAccessibilityScript("quit");
-  assert.match(script, /keystroke\("q", \{ using: \["command down"\] \}\)/);
-  assert.doesNotMatch(script, /using: "command down"/);
+  assert.match(script, /process\.menuBars\(\)/);
+  assert.match(script, /AXMenuItemCmdChar/);
+  assert.match(script, /commandCharacter\.toUpperCase\(\) === "Q"/);
+  assert.match(script, /name\.includes\("BioFigureStat"\)/);
+  assert.match(script, /quitItem\.actions\.byName\("AXPress"\)\.perform\(\)/);
+  assert.doesNotMatch(script, /keystroke\("q"/);
 });
 
 test("audits application copy while allowing language controls and user paths", () => {

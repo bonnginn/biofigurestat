@@ -593,8 +593,30 @@ const matches = (node) => wanted.some((candidate) =>
 if (action === "snapshot") {
   JSON.stringify({ count: nodes.length, elements: nodes.map(({ role, name, value, description }) => ({ role, name, value, description })) });
 } else if (action === "quit") {
-  se.keystroke("q", { using: ["command down"] });
-  JSON.stringify({ ok: true });
+  const menuQueue = [];
+  try { menuQueue.push(...process.menuBars()); } catch (_) {}
+  let quitItem = null;
+  while (menuQueue.length && !quitItem) {
+    const element = menuQueue.shift();
+    let role = "", name = "", commandCharacter = "";
+    try { role = String(element.role()); } catch (_) {}
+    try { name = String(element.name()); } catch (_) {}
+    try { commandCharacter = String(element.attributes.byName("AXMenuItemCmdChar").value()); } catch (_) {}
+    if (
+      role === "AXMenuItem" &&
+      commandCharacter.toUpperCase() === "Q" &&
+      name.includes("BioFigureStat") &&
+      (name.includes("Quit") || name.includes("終了"))
+    ) {
+      quitItem = element;
+      break;
+    }
+    try { menuQueue.push(...element.uiElements()); } catch (_) {}
+  }
+  if (!quitItem) throw new Error("BioFigureStat Command+Q menu item was not found");
+  const quitItemName = String(quitItem.name());
+  quitItem.actions.byName("AXPress").perform();
+  JSON.stringify({ ok: true, quitItemName, commandCharacter: "Q" });
 } else {
   const matchingNodes = nodes.filter(matches);
   const editableRoles = new Set(["AXTextField", "AXTextArea", "AXComboBox", "AXSearchField"]);
@@ -1729,6 +1751,7 @@ async function runMacScenario({ executable, outputDirectory, timeoutMs }) {
       );
       const confirmedField = confirmed.elements.find(
         (element) =>
+          ["AXTextField", "AXTextArea", "AXComboBox", "AXSearchField"].includes(element.role) &&
           ["Experiment title", "実験タイトル", "実験タイトル（任意）"].includes(element.name) &&
           String(element.value ?? "").trim().length > 0,
       );
