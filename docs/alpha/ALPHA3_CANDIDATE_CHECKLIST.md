@@ -39,6 +39,8 @@ earlier release and must not be silently reinterpreted as current evidence.
 - [x] One full package/UI milestone gate passes, or every isolated failure has an explicit product,
       stale-test, or flaky disposition before a single bounded rerun.
 - [x] Production UI build and release verifier pass with zero forbidden evaluation markers.
+- [x] Release identity preflight rejects a stale About engine version or the wrong build-revision
+      environment-variable name and confirms the current source declarations are aligned.
 
 The 2026-09-03 final source gate passed the engine unit suite (75), analysis-contract suite (14
 files / 55 tests), all other non-UI workspace suites (34 files / 241 tests), and the full UI suite

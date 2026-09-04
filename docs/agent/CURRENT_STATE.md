@@ -76,6 +76,11 @@ superseded evidence and must be rebuilt from `de71d14`. Artifact identity and re
 are recorded in `docs/alpha/ALPHA3_ARTIFACT_EVIDENCE_2026-09-04.md` and
 `docs/alpha/ALPHA3_CANDIDATE_CHECKLIST.md`.
 
+The release verifier now also cross-checks the application version, product name, license, About
+engine version, engine declaration, and the exact `VITE_LSAA_BUILD_REVISION` variable before
+accepting a production bundle. This prevents the two metadata mistakes found during the Alpha 3
+artifact audit from silently recurring.
+
 The release remains unpublished. The exact Windows installation/association scenario and bounded
 human compatibility/visual review are still pending; asset upload and publication require explicit
 approval. Existing `alpha.2` assets must not be replaced. Mixed-effects models and estimation plots

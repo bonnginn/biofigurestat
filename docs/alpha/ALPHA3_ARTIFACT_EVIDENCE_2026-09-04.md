@@ -39,6 +39,8 @@ Windows:
   `de71d14-alpha.20260904.win-alpha3-enginefix1` and engine `0.15.0`;
 - focused About/diagnostic tests: 11 passed;
 - related UI gate: 54 files / 639 tests passed;
+- release-identity verifier self-tests: 5 passed, including stale engine and wrong revision-variable
+  rejection;
 - Rust application-exit approval test: passed;
 - packaged engine smoke: 18 protocols passed;
 - Windows bundle verifier: passed;
