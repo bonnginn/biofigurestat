@@ -23,12 +23,24 @@ export function parseBaseArgument(arguments_) {
   throw new Error("Usage: pnpm test:ui:related [--base <git-ref>]");
 }
 
+export function repositoryGitArguments(arguments_) {
+  return ["-c", `safe.directory=${ROOT}`, ...arguments_];
+}
+
 function run() {
   const base = parseBaseArgument(process.argv.slice(2));
   const diff = spawnSync(
     "git",
-    ["diff", "--name-only", "--diff-filter=ACMRT", base, "--", "apps/ui/src", "packages"],
-    { encoding: "utf8", shell: false },
+    repositoryGitArguments([
+      "diff",
+      "--name-only",
+      "--diff-filter=ACMRT",
+      base,
+      "--",
+      "apps/ui/src",
+      "packages",
+    ]),
+    { cwd: ROOT, encoding: "utf8", shell: false },
   );
   if (diff.status !== 0) {
     process.stderr.write(diff.stderr || `git diff failed with exit code ${diff.status}\n`);
@@ -36,8 +48,16 @@ function run() {
   }
   const deleted = spawnSync(
     "git",
-    ["diff", "--name-only", "--diff-filter=D", base, "--", "apps/ui/src", "packages"],
-    { encoding: "utf8", shell: false },
+    repositoryGitArguments([
+      "diff",
+      "--name-only",
+      "--diff-filter=D",
+      base,
+      "--",
+      "apps/ui/src",
+      "packages",
+    ]),
+    { cwd: ROOT, encoding: "utf8", shell: false },
   );
   if (deleted.status !== 0) {
     process.stderr.write(deleted.stderr || `git diff failed with exit code ${deleted.status}\n`);
@@ -52,8 +72,15 @@ function run() {
   }
   const untracked = spawnSync(
     "git",
-    ["ls-files", "--others", "--exclude-standard", "--", "apps/ui/src", "packages"],
-    { encoding: "utf8", shell: false },
+    repositoryGitArguments([
+      "ls-files",
+      "--others",
+      "--exclude-standard",
+      "--",
+      "apps/ui/src",
+      "packages",
+    ]),
+    { cwd: ROOT, encoding: "utf8", shell: false },
   );
   if (untracked.status !== 0) {
     process.stderr.write(untracked.stderr || `git ls-files failed with exit code ${untracked.status}\n`);
