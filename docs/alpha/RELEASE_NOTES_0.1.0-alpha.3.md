@@ -1,0 +1,110 @@
+# BioFigureStat 0.1.0-alpha.3
+
+Candidate source: `de71d140bae95f899c05ce8d18c516cf7a09f6e9`. The Windows x64 and Apple Silicon
+artifacts passed their same-source release gates.
+
+## 日本語
+
+BioFigureStat Public Alphaの保守更新です。実験データをローカルで扱う方針と`.lsa`
+保存互換性を維持しながら、実データ入力、限定された同等性解析、複数条件の解析、Graph
+編集を改善します。
+
+### 主な更新
+
+- 表の途中行から入力しても行の対応を保持し、実験回・実験日をprovenanceとして保存
+- 現在のworksheetを編集中は`1.00`など入力した表示桁を保ちながら、解析・書き出しには同じ
+  canonical数値を使用
+- 矢印、Enter、Tabによる表入力をExcelに近い移動へ修正
+- 単純な独立群実験で5条件以上を追加可能にし、多条件Games–Howellの同じ厳密計算を高速化
+- 同名条件を前後空白・全角半角の違いも含めて作成前に検出し、最初の行数を表示どおりの
+  1〜100の整数に限定
+- 事前指定したraw-difference marginによる独立2群Welch TOSTと、完全な対応組によるpaired
+  TOSTを追加
+- Graph-only経路でGraph種類を事前選択でき、編集時の不要な見出しと余白を縮小
+- 棒の塗り、外枠色・太さ・非表示、quick colorを追加し、画面・SVG・PNG・保存再表示で共有
+- Graphの色・線・表示controlを共通化し、今後の修正が各Graph経路へ反映されやすい構造へ整理
+- Excelの表範囲、1〜3段見出し、複数fileを明示的に選んで取り込み、source provenanceを保持
+- HomeからData→Graph→Statistics→Methodsをたどる人工データの5分ガイドを追加
+- 保存済み解析をGraph、群別n、推定値・CI、警告、Methods、表示データと一緒にreview HTMLへ出力
+- 保存済みGraphを再計算せず2列に並べる、限定的なpanel SVG書き出しを追加
+
+同等性marginは観測結果から自動生成しません。positive/total、shared-run、複数の主比較、
+未対応のspecialist outcomeは通常のANOVAやt検定へ置き換えず安全に停止します。実験日や
+同じrun名からpairingを推定することもありません。
+
+### Alpha版の注意
+
+- 研究データと`.lsa`は必ず別の場所にもバックアップしてください。
+- 実験単位、biological `n`、対応・入れ子構造、比較範囲、打ち切りを確認してください。
+- 同等性marginはデータを見る前の科学的根拠に基づいて指定してください。
+- 保存したprojectを再度開き、Graphと解析結果を書き出し前に確認してください。
+- macOS版はad-hoc署名でnotarizeされていません。Windows版installerは未署名です。そのため、
+  OSによる提供元確認が表示される場合があります。
+- WindowsでBioFigureStatの起動中に`.lsa`をダブルクリックすると、既存windowのtabではなく
+  別windowで開く場合があります。既存windowへ追加する場合はアプリ内のproject openを使います。
+- canonical matrixで入力した`1.00`や指数表記は現在のworksheet session中は保持されますが、
+  保存した`.lsa`を再度開くと同じ数値の標準表記（例：`1`）へ戻ります。解析値は変わりません。
+
+### ファイル
+
+- Windows x64: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe`
+  - SHA-256: `b5650d3af710ad7bfa9e34264a2d11a4ec0703ab1dd485b9b3130770ba9c6fe5`
+- macOS Apple Silicon: `BioFigureStat-0.1.0-alpha.3-macOS-Apple-Silicon.zip`
+  - SHA-256: `5061c536c6111fe9bbc5a34ff8a5576fbb4d47554bd6e27f2b8be20bcc04f117`
+
+## English
+
+This is a maintenance update for the BioFigureStat Public Alpha. It improves real-data entry,
+bounded equivalence analysis, multi-condition analysis, and Graph editing while preserving local
+processing and backward compatibility for `.lsa` projects.
+
+### Highlights
+
+- Preserve row identity when entry begins below the first row, and store experiment session/date as
+  provenance.
+- Retain entered lexical precision such as `1.00` while editing the current worksheet, while using
+  the same canonical numeric value for analysis and export.
+- Correct Arrow, Enter, and Tab movement for a more spreadsheet-like entry workflow.
+- Allow more than four conditions in simple independent-group experiments and accelerate the same
+  exact Games–Howell calculation for multiple groups.
+- Detect duplicate condition names before worksheet creation, including whitespace and full-width
+  Unicode variants, and constrain the initial row count to the displayed integer from 1 to 100.
+- Add prespecified raw-difference Welch TOST for two independent groups and paired TOST using only
+  complete explicit pairs.
+- Let Graph-only workflows choose an initial Graph type and reduce redundant editing chrome.
+- Add Bar fill, outline color/width/off controls, and quick colors shared by the live Graph, SVG,
+  PNG, and saved presentation.
+- Consolidate Graph color, line, and visibility controls so later fixes propagate consistently.
+- Import explicit Excel ranges, one to three header rows, and multiple selected files while
+  retaining source provenance.
+- Add a five-minute artificial-data guide from Home through Data, Graph, Statistics, and Methods.
+- Export a saved analysis as self-contained review HTML containing the Graph, per-group n,
+  estimates and CIs, warnings, Methods, and displayed data.
+- Export saved Graphs as a bounded two-column panel SVG without recalculating data or statistics.
+
+BioFigureStat does not derive an equivalence margin from the observed result. Positive/total,
+shared-run, multiple-primary-comparison, and unsupported specialist outcomes stop safely rather
+than being substituted with an ordinary ANOVA or t test. A shared date or run label does not imply
+pairing.
+
+### Alpha cautions
+
+- Keep an independent backup of research data and every `.lsa` project.
+- Confirm the experimental unit, biological `n`, pairing/nesting, comparison scope, and censoring.
+- Prespecify equivalence margins from scientific justification before examining the result.
+- Reopen saved projects and inspect Graphs and analysis results before relying on exports.
+- The macOS build is ad-hoc signed and is not notarized. The Windows installer is unsigned, so the
+  operating system may display an unverified-publisher warning.
+- Double-clicking a `.lsa` while BioFigureStat is already running on Windows can open another
+  window instead of adding a tab to the existing window. Use the in-app project-open action when
+  an existing-window tab is required.
+- Text formatting entered in the canonical matrix, such as `1.00` or exponent notation, is retained
+  during the current worksheet session but returns to the equivalent canonical display (for
+  example, `1`) after saving and reopening a `.lsa`. The analyzed value is unchanged.
+
+### Files
+
+- Windows x64: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe`
+  - SHA-256: `b5650d3af710ad7bfa9e34264a2d11a4ec0703ab1dd485b9b3130770ba9c6fe5`
+- macOS Apple Silicon: `BioFigureStat-0.1.0-alpha.3-macOS-Apple-Silicon.zip`
+  - SHA-256: `5061c536c6111fe9bbc5a34ff8a5576fbb4d47554bd6e27f2b8be20bcc04f117`

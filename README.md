@@ -14,16 +14,21 @@ a superficially similar analysis.
 
 ### Download
 
-BioFigureStat `0.1.0-alpha.1` is available from the
-[Public Alpha release page](https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.1).
+BioFigureStat `0.1.0-alpha.3` is available from the
+[Public Alpha release page](https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.3).
 
-- [Windows 11 x64 installer](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.1/BioFigureStat_0.1.0_x64-setup.exe)
-- [Apple Silicon macOS app (zip)](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.1/BioFigureStat-0.1.0-macOS-Apple-Silicon.zip)
+- [Windows 11 x64 installer](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.3/BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe)
+- [Apple Silicon macOS app (zip)](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.3/BioFigureStat-0.1.0-alpha.3-macOS-Apple-Silicon.zip)
 
 Windows builds are currently unsigned. The macOS build is ad-hoc signed; it does not have an
 Apple-verified Developer ID signature and is not notarized by Apple. Your operating system may
 therefore show a security warning. Download installers only from the official GitHub Release. The
 SHA-256 digest for each file is provided on its release page and by GitHub's release-asset metadata.
+
+| Platform | SHA-256 |
+| --- | --- |
+| Windows 11 x64 | `B5650D3AF710AD7BFA9E34264A2D11A4EC0703AB1DD485B9B3130770BA9C6FE5` |
+| Apple Silicon macOS | `5061C536C6111FE9BBC5A34FF8A5576FBB4D47554BD6E27F2B8BE20BCC04F117` |
 
 Run the installer on Windows.
 
@@ -56,7 +61,7 @@ Key boundaries:
 - Unsupported workflows remain visible as safe stops and are listed in the known limitations.
 
 See the [Alpha Quick Start](docs/alpha/QUICK_START.md),
-[release notes](docs/alpha/RELEASE_NOTES_0.1.0-alpha.md),
+[release notes](docs/alpha/RELEASE_NOTES_0.1.0-alpha.3.md),
 [privacy notice](docs/alpha/PRIVACY.md), and
 [known limitations](docs/alpha/KNOWN_LIMITATIONS.md). The relationship between this clean public
 source snapshot and the validated native artifacts is recorded in the
@@ -68,8 +73,8 @@ If you use BioFigureStat in research, please cite the version you used. Citation
 available in [`CITATION.cff`](CITATION.cff).
 
 ```text
-Inaba, H. (2026). BioFigureStat (Version 0.1.0-alpha.1) [Computer software].
-https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.1
+Inaba, H. (2026). BioFigureStat (Version 0.1.0-alpha.3) [Computer software].
+https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.3
 ```
 
 ### Development
@@ -110,16 +115,21 @@ biological `n`、対応、階層、反復測定における同一性、変換、
 
 ### ダウンロード
 
-BioFigureStat `0.1.0-alpha.1`は、
-[Public Alphaのリリースページ](https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.1)からダウンロードできます。
+BioFigureStat `0.1.0-alpha.3`は、
+[Public Alphaのリリースページ](https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.3)からダウンロードできます。
 
-- [Windows 11 x64 installer](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.1/BioFigureStat_0.1.0_x64-setup.exe)
-- [Apple Silicon macOS app (zip)](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.1/BioFigureStat-0.1.0-macOS-Apple-Silicon.zip)
+- [Windows 11 x64 installer](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.3/BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe)
+- [Apple Silicon macOS app (zip)](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.3/BioFigureStat-0.1.0-alpha.3-macOS-Apple-Silicon.zip)
 
 Windows版は現在未署名です。macOS版はad-hoc署名ですが、Appleが確認したDeveloper ID署名はなく、
 Appleのnotarization（公証）も受けていません。そのため、OSのセキュリティ警告が表示されることが
 あります。インストーラーは必ず公式GitHub Releaseからダウンロードしてください。各ファイルの
 SHA-256は、リリースページとGitHubのリリースアセット情報で確認できます。
+
+| Platform | SHA-256 |
+| --- | --- |
+| Windows 11 x64 | `B5650D3AF710AD7BFA9E34264A2D11A4EC0703AB1DD485B9B3130770BA9C6FE5` |
+| Apple Silicon macOS | `5061C536C6111FE9BBC5A34FF8A5576FBB4D47554BD6E27F2B8BE20BCC04F117` |
 
 Windowsではインストーラーを実行してください。
 
@@ -153,7 +163,7 @@ Methods、書き出したファイルを確認してください。
 - 未対応のワークフローは安全停止として明示され、既知の制限に記載されます。
 
 詳細は、[Alphaクイックスタート](docs/alpha/QUICK_START.md)、
-[リリースノート](docs/alpha/RELEASE_NOTES_0.1.0-alpha.md)、
+[リリースノート](docs/alpha/RELEASE_NOTES_0.1.0-alpha.3.md)、
 [プライバシー説明](docs/alpha/PRIVACY.md)、
 [既知の制限](docs/alpha/KNOWN_LIMITATIONS.md)を参照してください。この公開用ソーススナップショットと、
 検証済みネイティブ成果物の関係は、
@@ -165,8 +175,8 @@ BioFigureStatを研究で使用した場合は、使用したversionを引用し
 [`CITATION.cff`](CITATION.cff)にも記載しています。
 
 ```text
-Inaba, H. (2026). BioFigureStat (Version 0.1.0-alpha.1) [Computer software].
-https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.1
+Inaba, H. (2026). BioFigureStat (Version 0.1.0-alpha.3) [Computer software].
+https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.3
 ```
 
 ### 開発
