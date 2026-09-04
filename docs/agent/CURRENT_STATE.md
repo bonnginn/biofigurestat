@@ -1,6 +1,6 @@
 # Current Working State
 
-Updated: 2026-09-03 (Public Alpha published; current Windows Beta preview reviewed)
+Updated: 2026-09-04 (Alpha 3 same-source artifact gates passed; release remains unpublished)
 
 This is the short operational snapshot. Accepted ADRs, schemas, method references, and tests remain
 the authority for durable behavior.
@@ -67,18 +67,18 @@ chrome modifier to workspace spacing, headings, Inspector sections, and ordinary
 resizing the rendered Graph or changing saved presentation values. These changes are source-only;
 their next native viewport review belongs to the `alpha.3` candidate gate.
 
-The recommended next public update is a maintenance `v0.1.0-alpha.3` after one same-source Windows
-and macOS candidate passes the release, native/manual, localization, export, and representative
-Public Alpha `.lsa` compatibility gates. It should not wait for every Beta feature, and it must not
-replace the existing `alpha.2` assets. The decision boundary is recorded in
-`docs/alpha/PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`.
+The next public update is a maintenance `v0.1.0-alpha.3`. Its Windows x64 and Apple Silicon macOS
+artifacts were built directly from the same product commit,
+`8b587275cc35dc8fe30737851796ab3b9e737f7a`, in the public `bonnginn/biofigurestat` repository.
+Both automated bundle gates and both final native harness runs pass. The macOS harness-only history
+continues through `e055553` without changing the packaged product source. Artifact identity and
+remaining release work are recorded in `docs/alpha/ALPHA3_ARTIFACT_EVIDENCE_2026-09-04.md` and
+`docs/alpha/ALPHA3_CANDIDATE_CHECKLIST.md`.
 
-Alpha 3 scope is now frozen on `codex/alpha3-candidate-20260903`, with product code through
-`5ba1a92`. Windows and Apple Silicon macOS artifacts will be built directly from the same final
-commit in the public `bonnginn/biofigurestat` repository; the older private development tree is not
-build authority. Mixed-effects models and estimation plots are deferred to Beta and are not Alpha
-3 gates. The exact final candidate SHA remains pending the one-pass source gate and evidence-only
-documentation updates.
+The release remains unpublished. The exact Windows installation/association scenario and bounded
+human compatibility/visual review are still pending; asset upload and publication require explicit
+approval. Existing `alpha.2` assets must not be replaced. Mixed-effects models and estimation plots
+remain deferred to Beta and are not Alpha 3 gates.
 
 The 2026-09-03 Graph-control/density batch passes 22 focused editor-control tests, all 16
 Graph-only page tests, UI typecheck, focused lint, the production UI build, and the release bundle

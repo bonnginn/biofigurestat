@@ -9,4 +9,5 @@
 - BioFigureStat is released under the MIT License. The existing bundle identifier is retained for `.lsa` compatibility; this is not a trademark-clearance claim.
 - The Public Alpha macOS build is ad-hoc signed and not Apple-notarized. Gatekeeper may require an explicit user approval to open it.
 - The Public Alpha Windows x64 NSIS installer is unsigned. Windows SmartScreen may show an unknown-publisher warning.
+- Opening a `.lsa` from Windows Shell while BioFigureStat is already running can open another application window instead of adding a tab to the existing window. Use the in-app project-open action when an existing-window tab is required.
 - Expanded benchmark Rounds 1–3, unseen Pool C validation, and the 35-case context-rich Graph audit are complete. Pool D remains sealed. Passing Alpha gates does not establish comprehensive validation for unsupported workflows.

@@ -1,10 +1,10 @@
 # BioFigureStat v0.1.0-alpha.3 candidate checklist
 
-Updated: 2026-09-03 (JST)
+Updated: 2026-09-04 (JST)
 
-Status: scope frozen and the broad source gate passed on `codex/alpha3-candidate-20260903`;
-product code is frozen through `5ba1a92`; reference-gate tooling is prepared at `35e3431`; no
-candidate artifact or release has been authorized.
+Status: same-source Windows and Apple Silicon artifacts have passed their automated bundle and
+native gates. Product source is frozen at `8b587275cc35dc8fe30737851796ab3b9e737f7a`;
+release upload and publication are not authorized.
 
 Use this checklist only for the maintenance Alpha described in
 `PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md`. The historical Alpha checklist remains a record of the
@@ -12,16 +12,16 @@ earlier release and must not be silently reinterpreted as current evidence.
 
 ## Source authority
 
-- [x] Record the clean product-source branch and commit SHA: candidate branch
-      `codex/alpha3-candidate-20260903`, frozen product code `5ba1a92`, preparation base
-      `2d2fc00`.
+- [x] Record the clean product-source branch and commit SHA: final artifact source
+      `8b587275cc35dc8fe30737851796ab3b9e737f7a`; macOS harness evidence continues through
+      `e055553210efe62c7c21e412b743fa2967ac3ae3` without changing the packaged product source.
 - [x] Confirm the release-build relationship: Alpha 3 Windows and macOS builds use the same final
       commit directly from `https://github.com/bonnginn/biofigurestat.git`. The older private
       development tree is not release authority, and sealed evaluation material is not copied.
 - [x] Record the application version, engine version, build revision, license, and build date for
-      the Windows candidate: application `0.1.0`, engine `0.15.0`, build
-      `d535836-alpha.20260903.win-alpha3`, MIT, 2026-09-03 JST.
-- [ ] Confirm that Windows and macOS artifacts use the same candidate source tree.
+      both candidates: application `0.1.0`, engine `0.15.0`, MIT, 2026-09-04 JST; platform build
+      revisions are recorded below.
+- [x] Confirm that Windows and macOS artifacts use the same product source commit `8b58727`.
 
 ## Automated source gate
 
@@ -45,12 +45,9 @@ packages; UI lint, production UI build, and the release verifier also passed. In
 JavaScript/TypeScript test milestone covered 259 files / 1,699 tests. Existing Windows sidecar smoke
 (18) and the frozen 14-case reference suite also pass.
 
-Complete cross-platform reference coverage intentionally stops and reports four missing
-Darwin-arm64 cases: Welch TOST, paired TOST, Survival, and D17. This is an evidence gap, not a
-numerical mismatch. On the reviewed Darwin-arm64 host, run
-`pnpm engine:reference:append-missing:mac`, review that exactly the four expected cases were
-appended and all existing cases remained unchanged, then run `pnpm engine:reference:coverage` on
-both hosts. Both write modes refuse to run on another platform.
+The reviewed Darwin-arm64 host appended exactly the four previously missing cases—Welch TOST,
+paired TOST, Survival, and D17—without changing the existing 14 cases. Reference coverage passes
+18/18 at source commit `3c05b36`, which is an ancestor of the final artifact source.
 
 The workspace package-manager wrapper requested an interactive modules-directory reinstall in this
 non-interactive checkout. No dependencies were changed. The source gate therefore invoked the
@@ -67,9 +64,9 @@ results do not replace the single final package/full gate.
 
 ## Windows artifact gate
 
-- [x] Build the x64 sidecar and NSIS installer from source commit `d535836`.
+- [x] Build the x64 sidecar and NSIS installer from source commit `8b58727`.
 - [x] Bundle verifier, 18-case packaged-engine smoke, and release verifier pass.
-- [ ] Exact-executable native harness passes once; do not hide or repeatedly retry the first
+- [x] Exact-executable native harness passes once; do not hide or repeatedly retry the first
       failure.
 - [ ] Installed `.lsa` association opens the expected executable and preserves the saved Graph.
 - [x] Record artifact filename, byte size, SHA-256, architecture, and build revision.
@@ -77,17 +74,16 @@ results do not replace the single final package/full gate.
 Windows candidate artifact:
 
 - File: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe`
-- Bytes: `48,021,270`
-- SHA-256: `f425e7b53059561fbd6596a72b9f8972467e579329577e94637d28eb10015d4b`
+- Bytes: `48,083,576`
+- SHA-256: `2209f333b843c0152e619ef91a5e73d19dff5bdb52990fc6e93977fed932e116`
 - Architecture: `x64`
 - Signature: unsigned
-- Build revision: `d535836-alpha.20260903.win-alpha3`
+- Build revision: `8b58727-alpha.20260904.win-alpha3-quitfix1`
 
-The one permitted native harness run found the WebView2 page target but could not establish a
-stable CDP connection. It stopped as `HARNESS_INFRASTRUCTURE_BLOCKED`, not a product failure, and
-was not retried. Evidence is in
-`.tmp/native-ui-regression/2026-09-03T11-51-45.296Z/report.json`. The installed association and
-bounded human behavior checks therefore remain open.
+The final exact-executable native harness passed on its single run. Evidence is in
+`.tmp/native-ui-regression/2026-09-04T05-09-32.013Z/report.json`. Installation and the dedicated
+Windows Shell `.lsa` association scenario remain pending because they intentionally change the
+current-user installation state.
 
 An earlier local bundle was rejected before gate completion because the UI had been built before
 the build-revision environment value was injected. It was overwritten, never staged for release,
@@ -96,12 +92,26 @@ present in the production UI, then passed both verifiers.
 
 ## Apple Silicon macOS artifact gate
 
-- [ ] Build the arm64 sidecar and `.app` from the same candidate source.
-- [ ] Bundle verifier, strict codesign verification, and release verifier pass.
-- [ ] Native harness passes once where Accessibility policy permits it. Otherwise record
+- [x] Build the arm64 sidecar and `.app` from the same candidate source.
+- [x] Bundle verifier, strict codesign verification, and release verifier pass.
+- [x] Native harness passes once where Accessibility policy permits it. Otherwise record
       `HARNESS_INFRASTRUCTURE_BLOCKED` and perform only the equivalent bounded manual checks.
-- [ ] Zip the already verified `.app`, test extraction, and verify the extracted signature again.
-- [ ] Record artifact filename, byte size, SHA-256, architecture, signing state, and build revision.
+- [x] Zip the already verified `.app`, test extraction, and verify the extracted signature again.
+- [x] Record artifact filename, byte size, SHA-256, architecture, signing state, and build revision.
+
+macOS candidate artifact:
+
+- File: `BioFigureStat-0.1.0-alpha.3-macOS-Apple-Silicon.zip`
+- Bytes: `47,908,904`
+- SHA-256: `b7f512c80d43061523852eeffec1f3c2028b2fa60933b80a1281cd2e7e8bc496`
+- Architecture: Apple Silicon `arm64`
+- Signature: ad-hoc; strict verification passed before and after zip extraction; not notarized
+- Build revision: `8b58727-alpha.20260904.mac-alpha3-quitfix1`
+
+The corrected macOS harness self-suite passed 19/19. Its single final native run passed the dirty
+edit, first Quit guard, Cancel retention, second Quit request, and explicit Discard exit. The local
+evidence path on the build host was
+`.tmp/native-ui-regression/2026-09-04T02-06-34.869Z/report.json`.
 
 ## Representative compatibility and behavior
 
@@ -137,12 +147,10 @@ present in the production UI, then passed both verifiers.
 
 ## Final verdict
 
-- Candidate source: broad source gate `PASS`; product code frozen through `5ba1a92`; exact artifact
-  source commit `d535836`
-- Windows artifact: automated bundle gate `PASS`; native harness environment-blocked; installed
-  association and human checks pending
-- macOS artifact: `TBD`
+- Candidate source: broad source gate `PASS`; exact artifact source commit `8b58727`
+- Windows artifact: automated bundle and exact-executable native gates `PASS`; installed
+  association and bounded human checks pending
+- macOS artifact: automated bundle, codesign, native harness, and zip gates `PASS`
 - Product failures: none detected
-- Environment blocks: Windows WebView2 CDP connection; four Darwin-arm64 reference records pending
-  on the macOS artifact host
-- Verdict: `SOURCE + WINDOWS AUTOMATED BUNDLE GATES PASS — HUMAN AND MACOS GATES PENDING`
+- Environment blocks: none in the final automated artifact gates
+- Verdict: `SAME-SOURCE ARTIFACT GATES PASS — WINDOWS INSTALL/ASSOCIATION AND BOUNDED HUMAN REVIEW PENDING`

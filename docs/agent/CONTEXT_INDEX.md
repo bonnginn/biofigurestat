@@ -17,6 +17,9 @@ opening broad documents.
 - Next Public Alpha candidate execution and draft communication:
   `docs/alpha/ALPHA3_SCOPE_FREEZE_2026-09-03.md`, `docs/alpha/ALPHA3_CANDIDATE_CHECKLIST.md`, and
   `docs/alpha/RELEASE_NOTES_0.1.0-alpha.3-DRAFT.md`
+- Alpha 3 final artifact identity and the remaining Windows human gate:
+  `docs/alpha/ALPHA3_ARTIFACT_EVIDENCE_2026-09-04.md` and
+  `docs/alpha/ALPHA3_WINDOWS_NIGHT_REVIEW.md`
 - Public/private source relationship:
   `docs/alpha/PUBLIC_SOURCE_PROVENANCE_0.1.0-alpha.1.md` and
   `docs/alpha/BILINGUAL_ALPHA_UPDATE_READINESS_2026-09-01.md`

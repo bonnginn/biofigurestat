@@ -1,6 +1,6 @@
 # BioFigureStat 今後の作業一覧
 
-更新日: 2026-09-03 (JST)
+更新日: 2026-09-04 (JST)
 
 この文書は、今後の作業と完了状況を一か所で確認するための一覧です。
 実装や検証が終わるたびに状態と証拠を更新します。
@@ -19,7 +19,7 @@
 
 | 順位 | 状態 | 作業                   | ユーザー確認             | 完了条件                                                                                                                                                               |
 | ---- | ---- | ---------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | 🟡   | Public Alpha 3候補gate | 最終的な見た目と公開承認 | product source `2d9fba6`でfocused、英語362件、project 73件、full UI 1,400件、typecheck、lint、build、release verifierまでPASS。Windows sidecarは18 protocol PASS。残りはDarwin-arm64固定参照4件（TOST 2件、Survival、D17）、同一commitのWindows/macOS artifact、native/manual確認。詳細は`PUBLIC_ALPHA_UPDATE_STRATEGY_2026-09-03.md` |
+| 1    | 🟡   | Public Alpha 3候補gate | Windows実機確認と公開承認 | 同一product source `8b58727`からWindows/macOS artifactを作成し、bundle・release・engine・最終native harnessは両OSでPASS。残りはWindows installer導入とShell `.lsa`関連付け、限定的な人の互換・見た目確認、draft upload後のremote digest照合、公開承認。詳細は`ALPHA3_CANDIDATE_CHECKLIST.md` |
 | 2    | ⏸    | 独立性確認文の短文化   | 科学表現の承認が必要     | biological nを曖昧にせず、単純実験で過度に厳しく見えない文面へする                                                                                                     |
 
 ## 公開・運用
@@ -34,7 +34,7 @@
 | ✅   | GitHub release説明の日本語・英語併記 | release pageへ反映済み                                                                                                        |
 | ✅   | READMEの日本語・英語案内             | `biofigurestat`のREADME先頭に日英説明、Download導線、両OSの直接asset link、checksumを掲載                                     |
 | ✅   | alpha.2公開リンク・checksum整合      | README、final release notes、versioned Help URLを更新し、release/guide/両assetを匿名HTTP確認                                  |
-| 🟡   | 次のPublic Alpha保守更新             | `alpha.3`は現在の入力・TOST・多条件・Graph改善を一括し、同一sourceの両OS候補gate後に公開する。既存`alpha.2` assetは置換しない |
+| 🟡   | 次のPublic Alpha保守更新             | `alpha.3`の同一source両OSartifactと自動gateは完了。Windows install/association、限定的人確認、draft upload照合、公開承認を残す。既存`alpha.2` assetは置換しない |
 | ✅   | opt-in利用情報収集                   | 研究データを含めない同意式送信、停止、診断書き出しを実装済み                                                                  |
 | ✅   | 不具合報告                           | 確認後送信、Worker/D1、rate limit、保持期限、report IDを実装済み                                                              |
 | ✅   | 不具合報告の日次triage               | 別タスクで毎日1回のread-only分類・提案運用を設定済み                                                                          |
@@ -71,13 +71,12 @@
 | ✅   | Welch／paired TOST native実行          | `37bf58f-beta.20260902.win-preview11`でexact executable harnessが実Tauri `run_analysis`→同梱engine→JSON IPCを通過。Welch `0.15.0`とpaired `0.16.0`がともに`ok`／`equivalence_supported`を返し、pairedの完全組6組と除外IDも保持。sidecar、Rust製品process境界、native harnessは同一request fixtureを使用。harness自己test 16/16 PASS |
 | ✅   | native file dialog自動操作             | Windows実Open、SVG/PNG/CSV Cancel、SVG任意パス保存、project `.lsa`任意パス保存をpackaged PASS。標準Alt+Nでmodern/classic双方のfilename欄へ移動し、UTF-16 `SendInput`で絶対pathを入力。自己test 13/13、証拠は`.tmp/native-ui-regression/win-preview10-save-targets-alt-n4/`                                                          |
 | ✅   | `.lsa` file association自動確認        | `37bf58f-beta.20260902.win-preview11` installerをcurrent-user installし、Windows Shell関連付けから合成`.lsa`を起動。インストール先exe、Data値、Graph/Statistics有効化、保存済みGraph、SVG/PNG/CSV controlsを専用native harnessで確認。初回利用情報はopt-outし、研究データ送信なし                                                   |
-| 🟡   | macOS adapter                          | Accessibilityで入力、Command+Q、Cancel保持、破棄終了を同じreport schemaへ実装。Mac実行証拠待ち                                                                                                                                                                                                                                      |
+| ✅   | macOS adapter                          | Accessibilityで入力、Command+Q、Cancel保持、2回目のQuit要求、破棄終了を検査。修正版自己test 19/19と`8b58727` buildのfinal native runがPASS                                                                                                                                                                                          |
 | ⏸    | 人間の見た目判断                       | graph品質、clipping、font、余白、高DPIは最終的に人間が確認                                                                                                                                                                                                                                                                          |
 
 ### 人の操作が必要な保留項目
 
-- 最新Windows candidateの日本語・英語の用語、文字切れ、余白の短い確認。
-- permission済みMacでmacOS adapterを1回実行し、同じdirty終了scenarioを記録。
+- 最新Windows candidateのinstall、`.lsa`関連付け、日本語・英語の用語、文字切れ、余白の短い確認。
 
 ## BetaまでのUI/UX改善
 
@@ -98,6 +97,7 @@
 | ✅   | SpreadsheetのUndo/Redo                 | bounded canonical履歴を共通化し、Ctrl/Cmd+Z・redo・外部置換時clearを回帰test済み                                                                                                                                                                                                                                                                                                                                                      |
 | 🟡   | Graph-onlyの通常workspace統合          | 共通editorに入る前に基本形を選択可能にし、編集時は大きな導入cardと重複見出しを隠す。入力解釈、保存state、列mapping、Statistics handoffを別責務へ分割し、route本体を1,660行から979行へ縮小。Graph本体・保存値・biological nの未確定状態は不変。16件のfocused test、英語gate、full UI、typecheck、lint、production buildはPASSし、次のnative候補でviewportの最終確認待ち                                                                                 |
 | ✅   | 複数projectのタブ管理                  | 同一windowで保持、再Open、dirty checkpointを回帰test済み                                                                                                                                                                                                                                                                                                                                                                              |
+| ⬜   | Windows Shell openの既存window統合     | BioFigureStat起動中に`.lsa`をダブルクリックした場合、新規process/windowを増やさず既存windowへ安全にhandoffし、重複projectは既存tabを選択する。dirty stateとfile associationを壊さずnative testを追加                                                                                                                                                                                                                                      |
 | ✅   | 現実的なExcel workbook取込             | `.xls/.xlsx/.xlsm/.xlsb`、複数file、sheet、A1範囲、1–3段見出し、Expとしてstack、source file provenanceを実装・回帰test済み。file数を統計上の`n`にはしない                                                                                                                                                                                                                                                                             |
 | ✅   | 制約付きExcelテンプレート＋取込レシピ  | 独立群、対応・反復、Survival、ordered X/Yを別sheetに分け、ID・実験回・日付・missing・censoringの意味を日英READMEと画面内手順へ固定。native readerとbundle同梱を検証済み                                                                                                                                                                                                                                                               |
 | ✅   | Homeから始まる5分ガイド                | 1つの合成デモでData→Graph→Statistics→Methodsを順に案内し、日英表示と遷移を回帰test済み                                                                                                                                                                                                                                                                                                                                                |

@@ -3,6 +3,9 @@
 Draft only. Exact contents, artifacts, checksums, and publication remain subject to the candidate
 gate and explicit approval.
 
+Candidate source: `8b587275cc35dc8fe30737851796ab3b9e737f7a` (same product source for Windows
+and macOS).
+
 ## 日本語
 
 BioFigureStat Public Alphaの保守更新候補です。実験データをローカルで扱う方針と`.lsa`
@@ -37,7 +40,17 @@ BioFigureStat Public Alphaの保守更新候補です。実験データをロー
 - 実験単位、biological `n`、対応・入れ子構造、比較範囲、打ち切りを確認してください。
 - 同等性marginはデータを見る前の科学的根拠に基づいて指定してください。
 - 保存したprojectを再度開き、Graphと解析結果を書き出し前に確認してください。
-- macOS版のnotarizationとWindows版のcode signing状態はcandidate確定時に記載します。
+- macOS版はad-hoc署名でnotarizeされていません。Windows版installerは未署名です。そのため、
+  OSによる提供元確認が表示される場合があります。
+- WindowsでBioFigureStatの起動中に`.lsa`をダブルクリックすると、既存windowのtabではなく
+  別windowで開く場合があります。既存windowへ追加する場合はアプリ内のproject openを使います。
+
+### 候補ファイル
+
+- Windows x64: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe`
+  - SHA-256: `2209f333b843c0152e619ef91a5e73d19dff5bdb52990fc6e93977fed932e116`
+- macOS Apple Silicon: `BioFigureStat-0.1.0-alpha.3-macOS-Apple-Silicon.zip`
+  - SHA-256: `b7f512c80d43061523852eeffec1f3c2028b2fa60933b80a1281cd2e7e8bc496`
 
 ## English
 
@@ -80,5 +93,15 @@ pairing.
 - Confirm the experimental unit, biological `n`, pairing/nesting, comparison scope, and censoring.
 - Prespecify equivalence margins from scientific justification before examining the result.
 - Reopen saved projects and inspect Graphs and analysis results before relying on exports.
-- The exact macOS notarization and Windows code-signing status will be stated when the candidate is
-  finalized.
+- The macOS build is ad-hoc signed and is not notarized. The Windows installer is unsigned, so the
+  operating system may display an unverified-publisher warning.
+- Double-clicking a `.lsa` while BioFigureStat is already running on Windows can open another
+  window instead of adding a tab to the existing window. Use the in-app project-open action when
+  an existing-window tab is required.
+
+### Candidate files
+
+- Windows x64: `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe`
+  - SHA-256: `2209f333b843c0152e619ef91a5e73d19dff5bdb52990fc6e93977fed932e116`
+- macOS Apple Silicon: `BioFigureStat-0.1.0-alpha.3-macOS-Apple-Silicon.zip`
+  - SHA-256: `b7f512c80d43061523852eeffec1f3c2028b2fa60933b80a1281cd2e7e8bc496`
