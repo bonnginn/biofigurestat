@@ -56,6 +56,21 @@ class ReleaseBundleVerifierTests(unittest.TestCase):
             self.assertTrue(any("engine version mismatch" in failure for failure in failures))
             self.assertTrue(any("VITE_LSAA_BUILD_REVISION" in failure for failure in failures))
 
+    def test_rejects_application_name_version_and_license_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_identity_fixture(root)
+            (root / "apps/ui/package.json").write_text(
+                '{"version":"0.2.0","license":"Apache-2.0"}', encoding="utf-8"
+            )
+            (root / "apps/desktop/src-tauri/tauri.conf.json").write_text(
+                '{"productName":"Old Product","version":"0.1.0"}', encoding="utf-8"
+            )
+            failures = verify_source_identity(root)
+            self.assertTrue(any("application version mismatch" in failure for failure in failures))
+            self.assertTrue(any("product name mismatch" in failure for failure in failures))
+            self.assertTrue(any("license mismatch" in failure for failure in failures))
+
     def test_accepts_minimal_clean_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             bundle = Path(directory)
