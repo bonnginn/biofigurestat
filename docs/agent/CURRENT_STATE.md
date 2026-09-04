@@ -17,6 +17,12 @@ are committed, Windows and macOS artifacts must each be built once from that exa
 The prepared Mac sequence and bounded manual checks are in
 `docs/alpha/MACOS_ALPHA3_CANDIDATE_HANDOFF_2026-09-04.md`.
 
+Post-Alpha work is isolated on `codex/post-alpha-graph-style-workflow-20260904` and is not part of
+the frozen Alpha 3 candidate. Its first bounded Graph-editing step lets a researcher apply one
+series' effective color, line style, line width, and point symbol to all visual series while
+preserving every series' legend label, order, and visibility. It changes no GraphSpec or project
+schema and does not touch analysis state.
+
 BioFigureStat `0.1.0-alpha.2` is publicly available as a GitHub Pre-release under the MIT License at
 `https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.2`.
 The repository and release are anonymously accessible. The bilingual release contains:

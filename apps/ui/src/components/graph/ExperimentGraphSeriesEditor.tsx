@@ -108,6 +108,31 @@ export function ExperimentGraphSeriesEditor({
                   },
                 },
               }));
+            const applyAppearanceToAllSeries = () =>
+              setAppearance((current) => {
+                const currentStyle = current.seriesStyles[item.visualSeriesKey] ?? {};
+                const sourceAppearance = {
+                  color:
+                    currentStyle.color ??
+                    GRAPH_PALETTES[current.palette][index % GRAPH_PALETTES[current.palette].length],
+                  lineStyle: currentStyle.lineStyle ?? "solid",
+                  lineWidth: currentStyle.lineWidth ?? current.summaryLineWidth,
+                  pointStyle: currentStyle.pointStyle ?? "circle",
+                } as const;
+                return {
+                  ...current,
+                  seriesStyles: visualSeriesOptions.reduce(
+                    (styles, option) => ({
+                      ...styles,
+                      [option.visualSeriesKey]: {
+                        ...styles[option.visualSeriesKey],
+                        ...sourceAppearance,
+                      },
+                    }),
+                    { ...current.seriesStyles },
+                  ),
+                };
+              });
             return (
               <fieldset className="experiment-graph-condition-fieldset" key={item.visualSeriesKey}>
                 <legend>{item.visualSeriesLabel}</legend>
@@ -209,6 +234,11 @@ export function ExperimentGraphSeriesEditor({
                     onChange={(event) => updateStyle({ order: Number(event.target.value) })}
                   />
                 </label>
+                {visualSeriesOptions.length > 1 ? (
+                  <button type="button" onClick={applyAppearanceToAllSeries}>
+                    {t("この見た目を全系列へ適用", "Apply this appearance to all series")}
+                  </button>
+                ) : null}
               </fieldset>
             );
           })
