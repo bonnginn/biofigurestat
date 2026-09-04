@@ -40,6 +40,10 @@ fn exit_requires_workspace_guard(approved: bool) -> bool {
     !approved
 }
 
+fn consume_approved_application_exit(approved: &AtomicBool) -> bool {
+    approved.swap(false, Ordering::SeqCst)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
@@ -124,9 +128,11 @@ pub fn run() {
                 let _ = app.emit("project-save-request", true);
             }
             "app-exit" => {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.close();
-                }
+                // Command+Q is an application-exit request, not a window-close request.
+                // Routing it through `window.close()` on macOS races the Rust
+                // `CloseRequested` handler with the WebView close listener and can lose the
+                // only event that opens the shared Save / Cancel / discard guard.
+                let _ = app.emit("app-exit-request", ());
             }
             _ => {}
         })
@@ -154,10 +160,8 @@ pub fn run() {
 
     app.run(|app_handle, event| {
         if let tauri::RunEvent::ExitRequested { api, .. } = &event {
-            let approved = app_handle
-                .state::<ApprovedApplicationExit>()
-                .0
-                .swap(false, Ordering::SeqCst);
+            let approved =
+                consume_approved_application_exit(&app_handle.state::<ApprovedApplicationExit>().0);
             if exit_requires_workspace_guard(approved) {
                 api.prevent_exit();
                 let _ = app_handle.emit("app-exit-request", ());
@@ -196,7 +200,8 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::exit_requires_workspace_guard;
+    use super::{consume_approved_application_exit, exit_requires_workspace_guard};
+    use std::sync::atomic::{AtomicBool, Ordering};
 
     #[test]
     fn all_unapproved_exit_routes_require_the_workspace_guard() {
@@ -206,5 +211,14 @@ mod tests {
     #[test]
     fn explicitly_approved_programmatic_exit_is_not_guarded_twice() {
         assert!(!exit_requires_workspace_guard(true));
+    }
+
+    #[test]
+    fn application_exit_approval_is_consumed_exactly_once() {
+        let approved = AtomicBool::new(false);
+        approved.store(true, Ordering::SeqCst);
+
+        assert!(consume_approved_application_exit(&approved));
+        assert!(!consume_approved_application_exit(&approved));
     }
 }

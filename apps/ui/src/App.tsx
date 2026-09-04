@@ -5,7 +5,6 @@ import {
   type OpenedProject,
 } from "./app/projectActions";
 import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { AppShell } from "./components/AppShell";
 import type { ProjectTab } from "./components/ProjectTabBar";
@@ -56,6 +55,7 @@ import {
   type DedicatedEntryIntent,
 } from "./app/dedicatedEntryIntent";
 import { adaptiveInputFeatureEnabled } from "./app/adaptiveInputFeature";
+import { coalesceWorkspaceExitRequest } from "./app/workspaceLifecycle";
 import type {
   RegisterWorkspaceSaveHandler,
   RequestWorkspaceExit,
@@ -420,12 +420,15 @@ export default function App({
     };
   }, [browserPreview, executeRegisteredWorkspaceSave]);
   const requestWorkspaceExit = useCallback<RequestWorkspaceExit>((request) => {
-    if (approvedWorkspaceExitRef.current || !workspaceDirtyRef.current) {
+    // A native quit can surface through more than one platform callback. Once the user has
+    // approved an in-flight exit, ignore duplicates instead of invoking the exit command twice.
+    if (approvedWorkspaceExitRef.current) return;
+    if (!workspaceDirtyRef.current) {
       void request.proceed();
       return;
     }
     setWorkspaceExitError(null);
-    setPendingWorkspaceExit((current) => current ?? request);
+    setPendingWorkspaceExit((current) => coalesceWorkspaceExitRequest(current, request));
   }, []);
   useEffect(() => {
     requestWorkspaceExitRef.current = requestWorkspaceExit;
@@ -443,9 +446,7 @@ export default function App({
   useEffect(() => {
     if (!isTauri()) return;
     let disposed = false;
-    let stopListeningForClose: (() => void) | undefined;
     let stopListeningForAppExit: (() => void) | undefined;
-    const appWindow = getCurrentWindow();
     const requestNativeApplicationExit = () => {
       requestWorkspaceExitRef.current({
         actionLabel: "アプリを終了する",
@@ -454,22 +455,15 @@ export default function App({
         },
       });
     };
-    void appWindow
-      .onCloseRequested((event) => {
-        event.preventDefault();
-        requestNativeApplicationExit();
-      })
-      .then((unlisten) => {
-        if (disposed) unlisten();
-        else stopListeningForClose = unlisten;
-      });
+    // Rust owns title-bar CloseRequested and emits the same application-level request used by
+    // Command+Q and the RunEvent fallback. A second WebView close listener duplicates that request
+    // and reintroduces a race with native window destruction on macOS.
     void listen("app-exit-request", requestNativeApplicationExit).then((unlisten) => {
       if (disposed) unlisten();
       else stopListeningForAppExit = unlisten;
     });
     return () => {
       disposed = true;
-      stopListeningForClose?.();
       stopListeningForAppExit?.();
     };
   }, []);

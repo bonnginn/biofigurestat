@@ -643,13 +643,13 @@ describe("workspace home", () => {
     expect(screen.getByRole("heading", { name: "Simple linear regression" })).toBeVisible();
   });
 
-  it("専門解析を切り替えたときに別familyの入力状態を持ち越さない", () => {
+  it("専門解析を切り替えたときに別familyの入力状態を持ち越さない", async () => {
     render(<App developmentAnalysisRouteSwitcher />);
 
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
-    fireEvent.click(screen.getByText("既存の解析用データを直接入力する"));
+    fireEvent.click(await screen.findByText("既存の解析用データを直接入力する"));
     fireEvent.click(screen.getByRole("button", { name: /単回帰/ }));
-    fireEvent.change(screen.getByRole("textbox", { name: "X label" }), {
+    fireEvent.change(await screen.findByRole("textbox", { name: "X label" }), {
       target: { value: "前の解析のX" },
     });
 
@@ -661,15 +661,16 @@ describe("workspace home", () => {
     expect(screen.getByText(/別の専門解析へ切り替える/)).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
 
-    expect(screen.getByRole("heading", { name: "濃度–反応・酵素反応" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "濃度–反応・酵素反応" })).toBeVisible();
     expect(screen.getByRole("textbox", { name: "X label" })).toHaveValue("X");
     expect(screen.queryByDisplayValue("前の解析のX")).toBeNull();
 
     fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
       target: { value: "regression" },
     });
+    fireEvent.click(await screen.findByRole("button", { name: "変更を破棄して続ける" }));
 
-    expect(screen.getByRole("heading", { name: "Simple linear regression" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Simple linear regression" })).toBeVisible();
     expect(screen.getByRole("textbox", { name: "X label" })).toHaveValue("前の解析のX");
   });
 

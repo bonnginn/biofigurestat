@@ -22,3 +22,10 @@ export type WorkspaceExitRequest = Readonly<{
 }>;
 
 export type RequestWorkspaceExit = (request: WorkspaceExitRequest) => void;
+
+export function coalesceWorkspaceExitRequest(
+  current: WorkspaceExitRequest | null,
+  incoming: WorkspaceExitRequest,
+): WorkspaceExitRequest {
+  return current ?? incoming;
+}
