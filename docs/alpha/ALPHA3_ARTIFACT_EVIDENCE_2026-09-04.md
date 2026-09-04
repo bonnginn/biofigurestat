@@ -20,15 +20,15 @@ It is evidence for a draft candidate, not publication approval.
 
 ## Artifact identity
 
-| Platform | File | Build revision | Bytes | SHA-256 | Signing |
-| --- | --- | --- | ---: | --- | --- |
+| Platform       | File                                                | Build revision                                 |      Bytes | SHA-256                                                            | Signing  |
+| -------------- | --------------------------------------------------- | ---------------------------------------------- | ---------: | ------------------------------------------------------------------ | -------- |
 | Windows 11 x64 | `BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup.exe` | `de71d14-alpha.20260904.win-alpha3-enginefix1` | 48,088,866 | `b5650d3af710ad7bfa9e34264a2d11a4ec0703ab1dd485b9b3130770ba9c6fe5` | unsigned |
 
 Final Apple Silicon identity is pending a rebuild from `de71d14`. The earlier zip is superseded
 and must not be uploaded:
 
-| Platform | Superseded build revision | Bytes | SHA-256 | Reason |
-| --- | --- | ---: | --- | --- |
+| Platform            | Superseded build revision                    |      Bytes | SHA-256                                                            | Reason                                                       |
+| ------------------- | -------------------------------------------- | ---------: | ------------------------------------------------------------------ | ------------------------------------------------------------ |
 | macOS Apple Silicon | `8b58727-alpha.20260904.mac-alpha3-quitfix1` | 47,908,904 | `b7f512c80d43061523852eeffec1f3c2028b2fa60933b80a1281cd2e7e8bc496` | About displayed engine `0.14.0` instead of packaged `0.15.0` |
 
 ## Automated evidence
@@ -51,6 +51,13 @@ An earlier same-source local installer used the wrong build-time environment-var
 About revision would have been `unavailable`. A post-build string check rejected it before install
 or upload. The file was overwritten by the final correctly injected build; its digest is not
 release evidence.
+
+The local staging directory also contains
+`BioFigureStat-0.1.0-alpha.3-Windows-x64-Setup-r5.exe` (48,015,788 bytes,
+SHA-256 `96a59d5ce20211b26f13ed5e8ba949edde867a27965a8c5180f8a18b12fd86b2`). It predates the
+corrected candidate, is retained only as local historical output, and must not be installed or
+uploaded. Release selection must use the exact unsuffixed filename and digest in the artifact table
+above.
 
 Superseded macOS evidence:
 
