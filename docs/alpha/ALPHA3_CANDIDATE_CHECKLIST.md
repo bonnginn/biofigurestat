@@ -94,6 +94,17 @@ present in the production UI, then passed both verifiers.
 
 ## Apple Silicon macOS artifact gate
 
+Before starting, make `de71d140bae95f899c05ce8d18c516cf7a09f6e9` available on the Mac and confirm
+that the product worktree is clean at that exact commit. Build with
+`VITE_LSAA_BUILD_REVISION=de71d14-alpha.20260904.mac-alpha3-enginefix1` and
+`VITE_EXPERIMENT_FIRST_ADAPTIVE_INPUT=1`. The production UI must contain both that exact revision
+and `Statistical engine 0.15.0` / `統計engine 0.15.0`; a missing revision or `0.14.0` stops the gate.
+
+Use the corrected harness at `e055553210efe62c7c21e412b743fa2967ac3ae3` from a separate clean
+worktree. Run its 19 self-tests first, then pass the rebuilt product `.app` explicitly with
+`--platform macos --executable <absolute BioFigureStat.app path>`. Run the native scenario once
+only. The first new failure stops the gate; do not turn repeated retries into release evidence.
+
 - [ ] Build the arm64 sidecar and `.app` from corrected source `de71d14`.
 - [ ] Bundle verifier, strict codesign verification, and release verifier pass for the rebuilt app.
 - [ ] Native harness passes once where Accessibility policy permits it. Otherwise record

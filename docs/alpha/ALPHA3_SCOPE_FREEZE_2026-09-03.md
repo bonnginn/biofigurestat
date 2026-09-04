@@ -23,6 +23,15 @@ signing states, and SHA-256 digests remain unset until the source gate passes. A
 commit after the product-code anchor is allowed, but both platforms must use the same resulting
 final commit.
 
+### 2026-09-04 release-gate amendment
+
+The allowed macOS Quit-guard correction advanced the product source to `8b58727`. A subsequent
+release audit found a visible metadata mismatch: About declared engine `0.14.0` while the packaged
+engine declared `0.15.0`. Under change-control rule 2, product commit
+`de71d140bae95f899c05ce8d18c516cf7a09f6e9` corrects the declaration and is the final intended
+artifact source. The corrected Windows artifact has passed its automated gate. The earlier macOS
+artifact is superseded and must be rebuilt from `de71d14`; it must not be uploaded.
+
 ## Included product scope
 
 Alpha 3 is a maintenance Public Alpha. It contains the already-integrated work between the
