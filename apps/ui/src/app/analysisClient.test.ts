@@ -76,6 +76,14 @@ describe("evaluation analysis client", () => {
 });
 
 describe("local engine failure guidance", () => {
+  it("does not mislabel an arbitrary process failure as nonlinear nonconvergence", () => {
+    const message = localEngineFailureMessage(
+      "The local analysis engine failed: ZeroDivisionError",
+    );
+    expect(message).not.toContain("非線形fit");
+    expect(message).toContain("入力したデータは保持されています");
+  });
+
   it("explains a bounded engine timeout without exposing an internal process code", () => {
     const message = localEngineFailureMessage("ENGINE_PROCESS_TIMEOUT");
     expect(message).toContain("制限時間内に完了しなかった");

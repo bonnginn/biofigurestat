@@ -1209,8 +1209,9 @@ describe("adaptive production path regressions", () => {
     expect(date).toHaveValue("");
     fireEvent.change(date, { target: { value: "2026-08-28" } });
     expect(date).toHaveValue("2026-08-28");
-    expect(screen.getByRole("columnheader", { name: /この組に共通する実験日/ })).toHaveTextContent(
-      "任意・行内の全条件が同じ日の場合のみ。日付から対応関係は決めません",
+    expect(screen.getByRole("columnheader", { name: "実験日*" })).toBeVisible();
+    expect(date).toHaveAccessibleDescription(
+      /任意・行内の全条件が同じ日の場合のみ。日付から対応関係は決めません/,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));

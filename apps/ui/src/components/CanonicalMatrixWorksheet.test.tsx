@@ -1152,12 +1152,13 @@ describe("CanonicalMatrixWorksheet", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("columnheader", { name: /この組に共通する実験日/ }),
-    ).toHaveTextContent(
-      "任意・行内の全条件が同じ日の場合のみ。日付から対応関係は決めません",
+    expect(screen.getByRole("columnheader", { name: "実験日*" })).toHaveTextContent("実験日*");
+    const note = screen.getByText(
+      /任意・行内の全条件が同じ日の場合のみ。日付から対応関係は決めません/,
     );
+    expect(note.closest("table")).toBeNull();
     const date = screen.getByLabelText("run-1のこの組に共通する実験日");
+    expect(date).toHaveAttribute("aria-describedby", note.id);
     expect(date).toHaveValue("2026-08-21");
     fireEvent.change(date, { target: { value: "2026-08-29" } });
     expect(onRowChange).toHaveBeenCalledWith(0, { date: "2026-08-29" });

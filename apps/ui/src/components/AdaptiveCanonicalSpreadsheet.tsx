@@ -40,6 +40,7 @@ import {
   type CanonicalWorksheetFileCommit,
   type CanonicalMatrixConditionCombination,
   type CanonicalWorksheetRow,
+  type CanonicalMatrixConditionBlock,
 } from "./CanonicalMatrixWorksheet";
 import {
   buildAdaptiveRecordEntryObservation,
@@ -78,6 +79,7 @@ export type AdaptiveCanonicalSpreadsheetProps = Readonly<{
   /** Production worksheet rows. Their order is presentation only unless the contract declares matching. */
   worksheetRows?: readonly CanonicalWorksheetRow[];
   conditionCombinations?: readonly CanonicalMatrixConditionCombination[];
+  conditionBlocks?: readonly CanonicalMatrixConditionBlock[];
   showExperimentDate?: boolean;
   onWorksheetRowChange?: (rowIndex: number, patch: Partial<CanonicalWorksheetRow>) => void;
 }>;
@@ -1078,8 +1080,7 @@ function ExpandedAppendValueEditor({
   const errorId = useId();
   const locale = useAppLocale();
   const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const { text, dirty, error, edit, accept, reportError, clearError } =
-    useSpreadsheetCellDraft("");
+  const { text, dirty, error, edit, accept, reportError, clearError } = useSpreadsheetCellDraft("");
 
   const commit = () => {
     if (!dirty) return;
@@ -1498,6 +1499,7 @@ export function AdaptiveCanonicalSpreadsheet({
   readOnly = false,
   worksheetRows,
   conditionCombinations = [],
+  conditionBlocks,
   showExperimentDate = false,
   onWorksheetRowChange,
 }: AdaptiveCanonicalSpreadsheetProps) {
@@ -1819,6 +1821,7 @@ export function AdaptiveCanonicalSpreadsheet({
         {effectiveMode === "compact" ? (
           continuousWorksheet && !compactEntryActive ? (
             <CanonicalMatrixWorksheet
+              conditionBlocks={conditionBlocks}
               tableId={tableId}
               contract={contract}
               observations={observations}

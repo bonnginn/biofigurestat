@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lsaa-analysis-engine"
-version = "0.7.0"
+version = "0.15.1"
 description = "Pinned local statistical engine for Life Science Analysis App"
 license = "MIT"
 requires-python = ">=3.12,<3.15"

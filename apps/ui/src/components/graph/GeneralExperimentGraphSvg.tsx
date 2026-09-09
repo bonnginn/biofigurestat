@@ -195,6 +195,7 @@ export function ExperimentGraphSvg({
     continuousXValues.length > 1;
   const gapWeights = axisLabels.slice(1).map((label, index) => {
     const previous = axisLabels[index];
+    if (label.levels.some((level) => level.id.endsWith(".member"))) return 1;
     if (series[index]?.xGroupKey === series[index + 1]?.xGroupKey)
       return appearance.withinGroupSpacing;
     if (previous?.conditionId === label.conditionId) return appearance.withinGroupSpacing;
@@ -232,7 +233,11 @@ export function ExperimentGraphSvg({
     spacing: axes.spacing,
     sidePadding: appearance.sidePadding,
     canvasPreset: appearance.canvasPreset,
-    requiredSlotWidths,
+    requiredSlotWidths: axisLabels.some((label) =>
+      label.levels.some((level) => level.id.endsWith(".member")),
+    )
+      ? requiredSlotWidths.map(() => Math.max(...requiredSlotWidths))
+      : requiredSlotWidths,
   });
   const legendConditions = series.filter(
     (item, index) =>
@@ -308,7 +313,10 @@ export function ExperimentGraphSvg({
     showLegend && appearance.legendPosition === "top" ? Math.ceil(legendConditions.length / 3) : 0;
   const topLegendHeight = topLegendRows * Math.max(34, appearance.legendFontSize * 2);
   const singleCategoricalFactorTitle =
-    axes.xSemantic === "categorical" && (axisLabels[0]?.levels.length ?? 0) === 1
+    axes.xSemantic === "categorical" &&
+    ((axisLabels[0]?.levels.length ?? 0) === 1 ||
+      (axisLabels[0]?.levels.length === 2 &&
+        axisLabels[0]?.levels[1]?.id === `${axisLabels[0]?.levels[0]?.id}.member`))
       ? axisLabels[0]?.levels[0]?.label?.trim()
       : "";
   const xAxisTitle =
@@ -1170,8 +1178,8 @@ export function ExperimentGraphSvg({
                       <line
                         x1={xFor(group.start) - 8}
                         x2={xFor(group.end) + 8}
-                        y1={rowY - 15}
-                        y2={rowY - 15}
+                        y1={rowY - appearance.hierarchyFontSize - 6}
+                        y2={rowY - appearance.hierarchyFontSize - 6}
                         className={`experiment-graph-hierarchy-line ${levelIndex === 0 ? "experiment-graph-hierarchy-line--parent" : ""}`}
                       />
                     ) : null}

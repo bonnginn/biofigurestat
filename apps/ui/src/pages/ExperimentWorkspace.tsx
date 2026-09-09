@@ -11,6 +11,7 @@ import {
 import type { KeyboardEvent, Ref } from "react";
 import type { CompactScalarObservationIdFactoryContext } from "@lsaa/data-sheet";
 import type { CanonicalAdaptiveObservation } from "@lsaa/domain";
+import type { CanonicalMatrixConditionBlock } from "../components/CanonicalMatrixWorksheet";
 
 import {
   continuousSummary,
@@ -18,6 +19,7 @@ import {
   categoricalTotal,
   cellIsNotPlanned,
   createExperimentSession,
+  updateWorksheetRowMetadata,
   experimentCellKey,
   normalizeWithinExperiment,
   nextExperimentSessionIndex,
@@ -687,6 +689,7 @@ function OverviewPanel({
     readOnly: boolean;
     showExperimentDate: boolean;
     worksheetRows: readonly Readonly<{ key: string; label: string; date: string }>[];
+    conditionBlocks?: readonly CanonicalMatrixConditionBlock[];
     conditionCombinations?: readonly Readonly<{
       labels: readonly string[];
       displayLabel: string;
@@ -799,6 +802,7 @@ function OverviewPanel({
           readOnly={canonicalSpreadsheet.readOnly}
           worksheetRows={canonicalSpreadsheet.worksheetRows}
           conditionCombinations={canonicalSpreadsheet.conditionCombinations}
+          conditionBlocks={canonicalSpreadsheet.conditionBlocks}
           showExperimentDate={canonicalSpreadsheet.showExperimentDate}
           onWorksheetRowChange={canonicalSpreadsheet.onWorksheetRowChange}
           onFileImport={canonicalSpreadsheet.onFileImport}
@@ -4980,13 +4984,11 @@ export function ExperimentWorkspace({
                         })),
                         conditionCombinations:
                           draft.adaptiveInput.biologicalSetup?.conditionCombinations,
+                        conditionBlocks: draft.adaptiveInput.biologicalSetup?.conditionBlocks,
                         onWorksheetRowChange: (rowIndex, patch) => {
-                          const experiment = draft.experiments[rowIndex];
-                          if (!experiment) return;
-                          updateExperiment(experiment.id, {
-                            ...(patch.label !== undefined ? { label: patch.label } : {}),
-                            ...(patch.date !== undefined ? { date: patch.date } : {}),
-                          });
+                          setDraft((previous) =>
+                            updateWorksheetRowMetadata(previous, rowIndex, patch),
+                          );
                         },
                       }
                     : undefined

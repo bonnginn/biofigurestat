@@ -73,6 +73,8 @@ function restoreFocusAfterCommit(
  * Returning false leaves native focus movement in place at the edge of a grid.
  */
 export function moveSpreadsheetFocus(event: KeyboardEvent<SpreadsheetControl>): boolean {
+  // Candidate selection/confirmation belongs to the IME, not cell navigation or blur-commit.
+  if (event.nativeEvent.isComposing) return false;
   if (event.altKey || event.ctrlKey || event.metaKey) return false;
   const current = event.currentTarget;
   const currentCoordinate = coordinate(current);

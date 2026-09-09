@@ -18,6 +18,9 @@ import { violinDensityPath } from "./graphGeometry";
 import { createNiceTicks, createPlotRectangle, yAxisTitlePosition } from "./graphLayout";
 
 import "./graph-creation-preview.css";
+import { createInitialGraphGrouping } from "../../app/graphGrouping";
+import { buildConditionAxisLabels } from "./experimentGraphPresentation";
+import { buildHierarchyGroups } from "./graphSemantics";
 
 export type CreatableGraphType = Extract<
   WorkspaceGraphState["graphType"],
@@ -82,13 +85,7 @@ function PreviewYTicks({
     const y = yFor(tick);
     return (
       <g key={`y-tick-${tick}`} data-preview-y-tick={tick}>
-        <line
-          className="graph-current-preview__tick"
-          x1={axisX - 5}
-          x2={axisX}
-          y1={y}
-          y2={y}
-        />
+        <line className="graph-current-preview__tick" x1={axisX - 5} x2={axisX} y1={y} y2={y} />
         <text
           className="graph-current-preview__tick-label"
           x={axisX - 9}
@@ -117,13 +114,7 @@ function PreviewXTicks({
     const x = xFor(tick);
     return (
       <g key={`x-tick-${tick}`} data-preview-x-tick={tick}>
-        <line
-          className="graph-current-preview__tick"
-          x1={x}
-          x2={x}
-          y1={axisY}
-          y2={axisY + 5}
-        />
+        <line className="graph-current-preview__tick" x1={x} x2={x} y1={axisY} y2={axisY + 5} />
         <text
           className="graph-current-preview__tick-label"
           x={x}
@@ -400,9 +391,7 @@ export function CurrentDataGraphPreview({
               })}
               <text x={x + 19} y={previewPlot.bottom + 21} textAnchor="middle">
                 <title>{condition.label}</title>
-                {condition.label.length > 12
-                  ? `${condition.label.slice(0, 11)}…`
-                  : condition.label}
+                {condition.label.length > 12 ? `${condition.label.slice(0, 11)}…` : condition.label}
               </text>
             </g>
           );
@@ -582,11 +571,30 @@ export function CurrentDataGraphPreview({
   // Keep a short axis for ordinary two- or three-group previews. Wider designs
   // still grow horizontally and remain scrollable instead of compressing labels.
   const width = Math.max(320, 100 + groups.length * 72);
-  const height = 300;
+  const categoryLabels =
+    draft.time.sampling === "none"
+      ? buildConditionAxisLabels({
+          draft,
+          series: groups.map((group) => ({
+            conditionId: group.conditionId,
+            conditionLabel: group.label,
+          })),
+          hierarchyOrder: draft.attributes.map(({ id }) => id),
+          grouping: createInitialGraphGrouping(draft),
+        })
+      : [];
+  const groupedCategories = categoryLabels.some(({ levels }) =>
+    levels.some(({ id }) => id.endsWith(".member")),
+  );
+  const categoryDepth = groupedCategories
+    ? Math.max(...categoryLabels.map(({ levels }) => levels.length))
+    : 1;
+  const extraCategoryHeight = (categoryDepth - 1) * 22;
+  const height = 300 + extraCategoryHeight;
   const previewPlot = createPlotRectangle(width, height, {
     top: 22,
     right: 20,
-    bottom: 78,
+    bottom: 78 + extraCategoryHeight,
     left: 70,
   });
   const observedMin = Math.min(...allValues);
@@ -816,17 +824,36 @@ export function CurrentDataGraphPreview({
                   y2={yFor(average - error)}
                 />
               ) : null}
-              <text x={x} y={previewPlot.bottom + 21} textAnchor="middle">
-                <title>{group.label}</title>
-                {group.label.length > 12 ? `${group.label.slice(0, 11)}…` : group.label}
-              </text>
+              {!groupedCategories ? (
+                <text x={x} y={previewPlot.bottom + 21} textAnchor="middle">
+                  <title>{group.label}</title>
+                  {group.label.length > 12 ? `${group.label.slice(0, 11)}…` : group.label}
+                </text>
+              ) : null}
             </g>
           );
         })}
+        {groupedCategories
+          ? buildHierarchyGroups(categoryLabels).flatMap((levelGroups, levelIndex) =>
+              levelGroups
+                .filter(({ label }) => label.trim())
+                .map((group) => (
+                  <text
+                    key={`${levelIndex}:${group.key}`}
+                    x={(xFor(group.start) + xFor(group.end)) / 2}
+                    y={previewPlot.bottom + 21 + (categoryDepth - 1 - levelIndex) * 22}
+                    textAnchor="middle"
+                    data-preview-category-label={group.label}
+                  >
+                    {group.label}
+                  </text>
+                )),
+            )
+          : null}
         <text
           className="graph-current-preview__axis-title"
           x={previewPlot.left + previewPlot.width / 2}
-          y={previewPlot.bottom + 58}
+          y={previewPlot.bottom + 58 + extraCategoryHeight}
           textAnchor="middle"
         >
           {xAxisTitle}

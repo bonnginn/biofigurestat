@@ -70,6 +70,21 @@ function ScrollableGrid() {
 }
 
 describe("spreadsheet grid interaction", () => {
+  it("leaves composition keys to the IME without moving focus or causing a blur commit", () => {
+    render(<Grid />);
+    const first = screen.getByRole("textbox", { name: "0:0" });
+    const blurred = vi.fn();
+    first.addEventListener("blur", blurred);
+    first.focus();
+    for (const key of ["Enter", "Tab", "ArrowRight", "ArrowDown"]) {
+      expect(fireEvent.keyDown(first, { key, isComposing: true })).toBe(true);
+      expect(first).toHaveFocus();
+    }
+    expect(blurred).not.toHaveBeenCalled();
+    fireEvent.keyDown(first, { key: "Enter", isComposing: false });
+    expect(screen.getByRole("textbox", { name: "1:0" })).toHaveFocus();
+    expect(blurred).toHaveBeenCalledOnce();
+  });
   it("preserves rectangular cells and interior blanks from clipboard text", () => {
     expect(parseClipboardMatrix("1\t\n3\t4\n")).toEqual([
       ["1", ""],

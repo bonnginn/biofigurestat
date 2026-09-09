@@ -26,12 +26,35 @@ export type GraphFacetGroup = Readonly<{
 export function buildConditionAxisLabels(
   input: Readonly<{
     draft: ExperimentSetDraft;
-    series: readonly GraphSeries[];
+    series: readonly Pick<GraphSeries, "conditionId" | "conditionLabel" | "timeLabel">[];
     hierarchyOrder: readonly string[];
     grouping: GraphGrouping;
   }>,
 ): readonly ConditionAxisLabel[] {
   const { draft, series, hierarchyOrder, grouping } = input;
+  const expandSavedGroups = (levels: ConditionAxisLabel["levels"]) =>
+    levels.flatMap((level) => {
+      const blocks =
+        draft.adaptiveInput?.biologicalSetup?.conditionBlocks.filter(
+          (block) => block.name === level.label && block.showGroups,
+        ) ?? [];
+      if (blocks.length !== 1) return [level];
+      const block = blocks[0];
+      const matches = block.values.flatMap((children, groupIndex) =>
+        children.flatMap((child) => {
+          const parent = block.groupLabels[groupIndex]?.trim() ?? "";
+          const value = child.trim();
+          return value && (parent ? `${parent} / ${value}` : value) === level.value
+            ? [{ parent, child: value }]
+            : [];
+        }),
+      );
+      if (matches.length !== 1) return [level];
+      return [
+        { ...level, value: matches[0].parent },
+        { id: `${level.id}.member`, label: "", value: matches[0].child },
+      ];
+    });
   const seriesFactorId = grouping.series.source === "factor" ? grouping.series.factorId : undefined;
   const orderedAttributes = [
     ...hierarchyOrder.flatMap((attributeId) => {
@@ -58,7 +81,7 @@ export function buildConditionAxisLabels(
     }));
     return {
       conditionId: item.conditionId,
-      levels:
+      levels: expandSavedGroups(
         normalizedGrouping.x.source === "factor" && xFactorIds.length > 0
           ? xFactorIds.map((factorId) => {
               const attribute = draft.attributes.find(({ id }) => id === factorId);
@@ -71,6 +94,7 @@ export function buildConditionAxisLabels(
           : levels.length > 0
             ? levels
             : [{ id: "condition", label: "条件", value: condition?.label || item.conditionLabel }],
+      ),
       timeLabel: grouping.series.source === "time" ? "" : (item.timeLabel ?? ""),
     };
   });

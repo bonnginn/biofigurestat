@@ -13,7 +13,7 @@ from . import ENGINE_VERSION
 from .d01_d02 import run_request
 
 
-def _error_result(request: dict[str, Any], message: str) -> dict[str, Any]:
+def _error_result(request: dict[str, Any], message: str, code: str = "invalid_request") -> dict[str, Any]:
     return {
         "protocolVersion": request.get("protocolVersion", "0.1.0"),
         "requestId": request.get("requestId", "request.unknown"),
@@ -25,7 +25,7 @@ def _error_result(request: dict[str, Any], message: str) -> dict[str, Any]:
         },
         "estimates": [],
         "tests": [],
-        "diagnostics": [{"code": "invalid_request", "message": message}],
+        "diagnostics": [{"code": code, "message": message}],
         "warnings": [],
         "completedAt": datetime.now(timezone.utc).isoformat(),
     }
@@ -63,12 +63,28 @@ def main() -> int:
     # desktop IPC response. Serialize completely before writing to avoid exposing partial JSON.
     with redirect_stdout(sys.stderr):
         try:
-            request = _read_request()
+            parsed = _read_request()
+            if not isinstance(parsed, dict):
+                raise ValueError("The analysis request must be a JSON object")
+            request = parsed
             result = run_request(request)
             result["completedAt"] = datetime.now(timezone.utc).isoformat()
         except (KeyError, TypeError, ValueError) as exc:
             result = _error_result(request, str(exc))
-    _write_result(result)
+        except ArithmeticError:
+            result = _error_result(
+                request, "The calculation is undefined for these inputs.", "undefined_calculation"
+            )
+    # Encoding is atomic and must stay outside stdout redirection. A numerical library can
+    # return NaN/Infinity without raising; never emit these as a successful protocol result.
+    try:
+        _write_result(result)
+    except (ValueError, TypeError, OverflowError):
+        _write_result(_error_result(
+            request,
+            "The calculation did not produce a finite, serializable result.",
+            "invalid_numerical_result",
+        ))
     return 0
 
 

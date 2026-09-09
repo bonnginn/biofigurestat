@@ -66,7 +66,15 @@ export type CanonicalWorksheetFileCommit = Readonly<{
   rawLineage: AdaptiveRawLineage;
 }>;
 
+export type CanonicalMatrixConditionBlock = Readonly<{
+  name: string;
+  showGroups: boolean;
+  groupLabels: readonly string[];
+  values: readonly (readonly string[])[];
+}>;
+
 type Props = Readonly<{
+  conditionBlocks?: readonly CanonicalMatrixConditionBlock[];
   contract: StructureContract;
   observations: readonly CanonicalAdaptiveObservation[];
   rows?: readonly CanonicalWorksheetRow[];
@@ -496,8 +504,7 @@ function independentUnitIdentityAt(
   if (experimentSessionId) {
     const candidates = observations.filter((candidate) => recordsMatch(candidate.factors, factors));
     const observation = candidates.find(
-      (candidate) =>
-        candidate.experimentSessionId === experimentSessionId,
+      (candidate) => candidate.experimentSessionId === experimentSessionId,
     );
     if (observation) {
       return identityKey
@@ -1202,6 +1209,7 @@ export function CanonicalMatrixWorksheet({
   observations,
   rows = [],
   conditionCombinations = [],
+  conditionBlocks = [],
   showExperimentDate = false,
   onRowChange,
   onObservationsChange,
@@ -1236,7 +1244,37 @@ export function CanonicalMatrixWorksheet({
   const showComponentHeaders = columns.some(
     ({ componentLabel: component, readoutLabel }) => component !== readoutLabel,
   );
-  const headerDepth = contract.factors.length + (showComponentHeaders ? 2 : 1);
+  // Presentation only: match saved parent/child metadata; never split arbitrary labels.
+  const headerFactor = contract.factors.length === 1 ? contract.factors[0] : undefined;
+  const matchingBlocks = conditionBlocks.filter(
+    (block) => block.showGroups && block.name === headerFactor?.label,
+  );
+  const savedHeaders = new Map<string, { parent: string; child: string }>();
+  if (headerFactor && matchingBlocks.length === 1) {
+    const block = matchingBlocks[0];
+    for (const level of headerFactor.levels) {
+      const matches = block.values.flatMap((children, index) =>
+        children.flatMap((child) => {
+          const parent = block.groupLabels[index]?.trim() ?? "";
+          const value = child.trim();
+          return value && (parent ? `${parent} / ${value}` : value) === level
+            ? [{ parent, child: value }]
+            : [];
+        }),
+      );
+      if (matches.length === 1) savedHeaders.set(level, matches[0]);
+    }
+  }
+  const groupedHeaders =
+    headerFactor &&
+    savedHeaders.size === headerFactor.levels.length &&
+    [...savedHeaders.values()].some((header) => header.parent)
+      ? savedHeaders
+      : undefined;
+  const columnHeader = (column: MatrixDisplayColumn) =>
+    groupedHeaders!.get(column.coordinate.factors[headerFactor!.key])!;
+  const headerDepth =
+    contract.factors.length + (groupedHeaders ? 1 : 0) + (showComponentHeaders ? 2 : 1);
   const [pasteError, setPasteError] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileStatus, setFileStatus] = useState<string | null>(null);
@@ -1269,13 +1307,8 @@ export function CanonicalMatrixWorksheet({
     const draftKey = independentIdentityDraftKey(factors, rowIndex);
     const identity = rawIdentity.trim();
     const canonicalIdentity =
-      independentUnitIdentityAt(
-        contract,
-        observations,
-        factors,
-        rowIndex,
-        experimentSessionId,
-      ) ?? "";
+      independentUnitIdentityAt(contract, observations, factors, rowIndex, experimentSessionId) ??
+      "";
     const reject = (message: string): string => message;
     if (!identity) {
       if (canonicalIdentity)
@@ -1306,8 +1339,7 @@ export function CanonicalMatrixWorksheet({
         .filter(
           (observation) =>
             recordsMatch(observation.factors, factors) &&
-            (!experimentSessionId ||
-              observation.experimentSessionId === experimentSessionId) &&
+            (!experimentSessionId || observation.experimentSessionId === experimentSessionId) &&
             normalizedLabel(observation.identities[independentIdentityKey] ?? "") ===
               normalizedLabel(previousIdentity),
         )
@@ -1718,7 +1750,10 @@ export function CanonicalMatrixWorksheet({
           </button>
         ) : null}
       </div>
-      <div className="adaptive-canonical-spreadsheet__table-wrap canonical-matrix-worksheet">
+      <div
+        className="adaptive-canonical-spreadsheet__table-wrap canonical-matrix-worksheet"
+        data-row-numbers={contract.matching.kind !== "matched" || undefined}
+      >
         <table
           id={tableId}
           aria-label={
@@ -1729,42 +1764,81 @@ export function CanonicalMatrixWorksheet({
         >
           <caption>{t("条件別シート", "Sheet by condition")}</caption>
           <thead>
-            {contract.factors.map((factor, factorIndex) => (
-              <tr key={factor.key}>
-                <th scope="row" className="canonical-matrix-worksheet__factor-label">
-                  {factor.label}
-                </th>
-                {factorIndex === 0 && showDate ? (
-                  <th
-                    scope="col"
-                    rowSpan={headerDepth}
-                    className="canonical-matrix-worksheet__date-heading"
-                  >
-                    {t(SHARED_EXPERIMENT_DATE_LABEL, "Experiment date shared by this row")}
-                    <small>
-                      {t(
-                        SHARED_EXPERIMENT_DATE_HELP,
-                        "Optional; use only when every condition in the row was run on the same date. Dates do not determine matching.",
-                      )}
-                    </small>
+            {groupedHeaders ? (
+              <>
+                <tr>
+                  <th scope="row" rowSpan={2} className="canonical-matrix-worksheet__factor-label">
+                    {headerFactor!.label}
                   </th>
-                ) : null}
-                {headerRuns(
-                  displayColumns,
-                  (column) =>
-                    JSON.stringify(
-                      contract.factors
-                        .slice(0, factorIndex + 1)
-                        .map(({ key }) => column.coordinate.factors[key] ?? "—"),
-                    ),
-                  (column) => column.coordinate.factors[factor.key] ?? "—",
-                ).map((run) => (
-                  <th scope="colgroup" colSpan={run.span} key={run.key}>
-                    {run.label}
+                  {showDate ? (
+                    <th
+                      scope="col"
+                      rowSpan={headerDepth}
+                      className="canonical-matrix-worksheet__date-heading"
+                    >
+                      {t("実験日", "Experiment date")}*
+                    </th>
+                  ) : null}
+                  {headerRuns(
+                    displayColumns,
+                    (column) =>
+                      `${columnHeader(column).parent ? "parent" : "single"}:${columnHeader(column).parent || columnHeader(column).child}`,
+                    (column) => columnHeader(column).parent || columnHeader(column).child,
+                  ).map((run) => (
+                    <th
+                      scope="colgroup"
+                      key={run.key}
+                      colSpan={run.span}
+                      rowSpan={columnHeader(displayColumns[parseInt(run.key, 10)]).parent ? 1 : 2}
+                    >
+                      {run.label}
+                    </th>
+                  ))}
+                </tr>
+                <tr>
+                  {headerRuns(
+                    displayColumns.filter((column) => columnHeader(column).parent),
+                    (column) => column.coordinate.factors[headerFactor!.key],
+                    (column) => columnHeader(column).child,
+                  ).map((run) => (
+                    <th scope="colgroup" key={run.key} colSpan={run.span}>
+                      {run.label}
+                    </th>
+                  ))}
+                </tr>
+              </>
+            ) : (
+              contract.factors.map((factor, factorIndex) => (
+                <tr key={factor.key}>
+                  <th scope="row" className="canonical-matrix-worksheet__factor-label">
+                    {factor.label}
                   </th>
-                ))}
-              </tr>
-            ))}
+                  {factorIndex === 0 && showDate ? (
+                    <th
+                      scope="col"
+                      rowSpan={headerDepth}
+                      className="canonical-matrix-worksheet__date-heading"
+                    >
+                      {t("実験日", "Experiment date")}*
+                    </th>
+                  ) : null}
+                  {headerRuns(
+                    displayColumns,
+                    (column) =>
+                      JSON.stringify(
+                        contract.factors
+                          .slice(0, factorIndex + 1)
+                          .map(({ key }) => column.coordinate.factors[key] ?? "—"),
+                      ),
+                    (column) => column.coordinate.factors[factor.key] ?? "—",
+                  ).map((run) => (
+                    <th scope="colgroup" colSpan={run.span} key={run.key}>
+                      {run.label}
+                    </th>
+                  ))}
+                </tr>
+              ))
+            )}
             {showComponentHeaders ? (
               <tr>
                 <th scope="row" className="canonical-matrix-worksheet__factor-label">
@@ -1772,13 +1846,7 @@ export function CanonicalMatrixWorksheet({
                 </th>
                 {contract.factors.length === 0 && showDate ? (
                   <th scope="col" rowSpan={2} className="canonical-matrix-worksheet__date-heading">
-                    {t(SHARED_EXPERIMENT_DATE_LABEL, "Experiment date shared by this row")}
-                    <small>
-                      {t(
-                        SHARED_EXPERIMENT_DATE_HELP,
-                        "Optional; use only when every condition in the row was run on the same date. Dates do not determine matching.",
-                      )}
-                    </small>
+                    {t("実験日", "Experiment date")}*
                   </th>
                 ) : null}
                 {displayColumns.map((column) =>
@@ -1808,13 +1876,7 @@ export function CanonicalMatrixWorksheet({
               </th>
               {contract.factors.length === 0 && !showComponentHeaders && showDate ? (
                 <th scope="col" className="canonical-matrix-worksheet__date-heading">
-                  {t(SHARED_EXPERIMENT_DATE_LABEL, "Experiment date shared by this row")}
-                  <small>
-                    {t(
-                      SHARED_EXPERIMENT_DATE_HELP,
-                      "Optional; use only when every condition in the row was run on the same date. Dates do not determine matching.",
-                    )}
-                  </small>
+                  {t("実験日", "Experiment date")}*
                 </th>
               ) : null}
               {displayColumns.map((column) => {
@@ -1879,9 +1941,10 @@ export function CanonicalMatrixWorksheet({
                             ? `${rowIdentity}の${SHARED_EXPERIMENT_DATE_LABEL}`
                             : `${rowIdentity} experiment date shared by this row`
                         }
+                        aria-describedby={`${tableId}-date-note`}
                         type="date"
                         value={rows[rowIndex]?.date ?? ""}
-                        disabled={!rows[rowIndex] || !onRowChange}
+                        disabled={!editable || !onRowChange}
                         data-spreadsheet-cell="true"
                         data-spreadsheet-row={rowIndex}
                         data-spreadsheet-column={0}
@@ -2003,6 +2066,15 @@ export function CanonicalMatrixWorksheet({
           </tbody>
         </table>
       </div>
+      {showDate ? (
+        <p id={`${tableId}-date-note`} className="canonical-matrix-worksheet__date-note">
+          *{" "}
+          {t(
+            SHARED_EXPERIMENT_DATE_HELP,
+            "Optional; use only when all conditions in the row were run on the same date. Dates do not establish matching.",
+          )}
+        </p>
+      ) : null}
       {readOnly ? (
         <p className="adaptive-canonical-spreadsheet__mode-note" role="note">
           {t(

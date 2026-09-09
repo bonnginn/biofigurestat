@@ -432,6 +432,21 @@ export function createExperimentSession(index: number): ExperimentSessionDraft {
  * for the first added row as well.  The graph could still draw both rows, but
  * D01/D02 correctly rejected the duplicate biological-unit identity.
  */
+export function updateWorksheetRowMetadata(
+  draft: ExperimentSetDraft,
+  rowIndex: number,
+  patch: Readonly<{ label?: string; date?: string }>,
+): ExperimentSetDraft {
+  if (!Number.isSafeInteger(rowIndex) || rowIndex < 0) return draft;
+  const experiments = [...draft.experiments];
+  while (experiments.length <= rowIndex) {
+    const created = createExperimentSession(nextExperimentSessionIndex(experiments));
+    experiments.push({ ...created, label: `入力行 ${experiments.length + 1}`, date: "" });
+  }
+  experiments[rowIndex] = { ...experiments[rowIndex], ...patch };
+  return { ...draft, experiments };
+}
+
 export function nextExperimentSessionIndex(experiments: readonly ExperimentSessionDraft[]): number {
   const usedExperimentIds = new Set(experiments.map(({ id }) => id));
   const usedSessionIds = new Set(experiments.map(({ sessionId }) => sessionId).filter(Boolean));

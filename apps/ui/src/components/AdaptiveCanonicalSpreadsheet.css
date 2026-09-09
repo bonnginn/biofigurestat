@@ -429,7 +429,36 @@
 }
 
 .canonical-matrix-worksheet {
+  width: fit-content;
+  --matrix-row-height: 1.8rem;
+  --matrix-value-width: 5.75rem;
+  --matrix-identity-width: 6rem;
   background: white;
+}
+
+.canonical-matrix-worksheet th {
+  padding: 0.2rem 0.35rem;
+}
+
+.canonical-matrix-worksheet[data-row-numbers] {
+  --matrix-identity-width: 3.5rem;
+}
+
+.canonical-matrix-worksheet[data-row-numbers] thead th:first-child,
+.canonical-matrix-worksheet[data-row-numbers] tbody th {
+  box-sizing: border-box;
+  width: var(--matrix-identity-width);
+}
+
+.canonical-matrix-worksheet .canonical-matrix-worksheet__date input {
+  width: 8rem;
+}
+
+.canonical-matrix-worksheet__date-note {
+  color: var(--adaptive-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0.25rem 0 0;
 }
 
 .canonical-matrix-worksheet__file-import {
@@ -464,16 +493,17 @@
 }
 
 .canonical-matrix-worksheet thead th {
-  min-width: 7.5rem;
+  min-width: var(--matrix-value-width);
   text-align: center;
   vertical-align: middle;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .canonical-matrix-worksheet thead th:first-child,
 .canonical-matrix-worksheet tbody th {
   left: 0;
-  min-width: 7rem;
+  min-width: var(--matrix-identity-width);
   position: sticky;
   z-index: 4;
 }
@@ -484,7 +514,7 @@
 
 .canonical-matrix-worksheet thead th.canonical-matrix-worksheet__date-heading,
 .canonical-matrix-worksheet tbody td.canonical-matrix-worksheet__date {
-  left: 7rem;
+  left: var(--matrix-identity-width);
   min-width: 8rem;
   position: sticky;
   z-index: 3;
@@ -510,9 +540,10 @@
 }
 
 .canonical-matrix-worksheet__row-identity {
+  width: var(--matrix-identity-width);
   display: grid;
   gap: 0.15rem;
-  min-width: 7rem;
+  min-width: var(--matrix-identity-width);
 }
 
 .canonical-matrix-worksheet__row-identity input {
@@ -523,9 +554,9 @@
   color: var(--adaptive-ink);
   font: inherit;
   font-weight: 650;
-  height: 2.4rem;
+  height: var(--matrix-row-height);
   min-width: 0;
-  padding: 0.35rem 0.5rem;
+  padding: 0.15rem 0.35rem;
   width: 100%;
 }
 
@@ -550,13 +581,14 @@
 
 .canonical-matrix-worksheet td {
   background: white;
-  height: 2.4rem;
-  min-width: 7.5rem;
+  height: var(--matrix-row-height);
+  min-width: var(--matrix-value-width);
   padding: 0;
 }
 
 .canonical-matrix-worksheet__cell {
-  min-width: 7.5rem;
+  width: var(--matrix-value-width);
+  min-width: var(--matrix-value-width);
   position: relative;
 }
 
@@ -568,21 +600,22 @@
   box-sizing: border-box;
   color: var(--adaptive-ink);
   font: inherit;
-  height: 2.4rem;
+  height: var(--matrix-row-height);
   min-width: 0;
-  padding: 0.35rem 0.5rem;
+  padding: 0.15rem 0.35rem;
   width: 100%;
 }
 
 .canonical-matrix-worksheet__derived {
+  box-sizing: border-box;
   align-items: center;
   background: #f3f7f6;
   color: var(--adaptive-muted);
   display: flex;
   font-variant-numeric: tabular-nums;
-  height: 2.4rem;
+  height: var(--matrix-row-height);
   justify-content: flex-end;
-  padding: 0.35rem 0.5rem;
+  padding: 0.15rem 0.35rem;
 }
 
 .canonical-matrix-worksheet__unavailable {

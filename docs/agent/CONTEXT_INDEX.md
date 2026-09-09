@@ -6,6 +6,9 @@ opening broad documents.
 
 ## Current state and prioritization
 
+- In this isolated maintenance worktree, start with
+  `docs/alpha/ALPHA4_MAINTENANCE_SCOPE_2026-09-09.md`; older Alpha 3 documents are historical.
+
 - Short current snapshot: `docs/agent/CURRENT_STATE.md`
 - Regression-test retention and rationalization: `docs/agent/REGRESSION_TEST_POLICY.md`
 - Unusual-input debug results and research-backed method/Graph priorities:

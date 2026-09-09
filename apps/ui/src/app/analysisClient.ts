@@ -105,7 +105,7 @@ export function localEngineFailureMessage(error: unknown): string {
   if (/initial .* bounds|bound .* lower < upper/i.test(detail)) {
     return "非線形fitの初期値またはboundsが不正です。model設定を確認してください。入力したデータは保持されています。";
   }
-  if (/failed:/i.test(detail)) {
+  if (/(?:fit|optimization|least.squares).*failed:/i.test(detail)) {
     return "非線形fitが収束しませんでした。model、初期値、bounds、測定時点を確認してください。入力したデータは保持されています。";
   }
   return "ローカル解析エンジンが有効な結果を返せませんでした。入力したデータは保持されています。診断画面で「詳細を記録」を有効にすると原因を確認できます。";

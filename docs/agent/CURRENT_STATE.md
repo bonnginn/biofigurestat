@@ -1,5 +1,14 @@
 # Current Working State
 
+## Active maintenance worktree — 2026-09-10
+
+This worktree starts from published Alpha 3 authority `de71d140bae95f899c05ce8d18c516cf7a09f6e9`.
+Only the selected date, grouped Graph/worksheet, compact-sheet and error-safety fixes are included.
+The compact/merged-header proposal is user-approved. Beta development remains in a separate tree.
+Current scope and unfinished release gates: `docs/alpha/ALPHA4_MAINTENANCE_SCOPE_2026-09-09.md`.
+No frozen Alpha 4 source, distributable, upload or publication is established yet.
+The dated snapshot below is inherited history, not the current maintenance release verdict.
+
 Updated: 2026-09-03 (Public Alpha published; current Windows Beta preview reviewed)
 
 This is the short operational snapshot. Accepted ADRs, schemas, method references, and tests remain

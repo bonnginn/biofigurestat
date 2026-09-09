@@ -8,6 +8,7 @@ export function formatGraphPercentage(value: number | null): string {
 }
 
 export function graphSignificanceSymbol(pValue: number): string {
+  if (!Number.isFinite(pValue) || pValue < 0 || pValue > 1) return "—";
   if (pValue < 0.0001) return "****";
   if (pValue < 0.001) return "***";
   if (pValue < 0.01) return "**";
