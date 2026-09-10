@@ -1244,6 +1244,9 @@ export function CanonicalMatrixWorksheet({
   const showComponentHeaders = columns.some(
     ({ componentLabel: component, readoutLabel }) => component !== readoutLabel,
   );
+  const compactCountReadout =
+    contract.readouts.length === 1 && contract.readouts[0]?.representation === "proportion_counts";
+  const showReadoutHeaders = showComponentHeaders && !compactCountReadout;
   // Presentation only: match saved parent/child metadata; never split arbitrary labels.
   const headerFactor = contract.factors.length === 1 ? contract.factors[0] : undefined;
   const matchingBlocks = conditionBlocks.filter(
@@ -1274,7 +1277,7 @@ export function CanonicalMatrixWorksheet({
   const columnHeader = (column: MatrixDisplayColumn) =>
     groupedHeaders!.get(column.coordinate.factors[headerFactor!.key])!;
   const headerDepth =
-    contract.factors.length + (groupedHeaders ? 1 : 0) + (showComponentHeaders ? 2 : 1);
+    contract.factors.length + (groupedHeaders ? 1 : 0) + (showReadoutHeaders ? 2 : 1);
   const [pasteError, setPasteError] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileStatus, setFileStatus] = useState<string | null>(null);
@@ -1762,7 +1765,10 @@ export function CanonicalMatrixWorksheet({
               : t("条件別連続表示表", "Continuous data by condition")
           }
         >
-          <caption>{t("条件別シート", "Sheet by condition")}</caption>
+          <caption>
+            {t("条件別シート", "Sheet by condition")}
+            {compactCountReadout ? ` — ${contract.readouts[0]?.label ?? ""}` : ""}
+          </caption>
           <thead>
             {groupedHeaders ? (
               <>
@@ -1839,7 +1845,7 @@ export function CanonicalMatrixWorksheet({
                 </tr>
               ))
             )}
-            {showComponentHeaders ? (
+            {showReadoutHeaders ? (
               <tr>
                 <th scope="row" className="canonical-matrix-worksheet__factor-label">
                   {t("測定項目", "Measured value")}
@@ -1874,13 +1880,13 @@ export function CanonicalMatrixWorksheet({
                   </small>
                 ) : null}
               </th>
-              {contract.factors.length === 0 && !showComponentHeaders && showDate ? (
+              {contract.factors.length === 0 && !showReadoutHeaders && showDate ? (
                 <th scope="col" className="canonical-matrix-worksheet__date-heading">
                   {t("実験日", "Experiment date")}*
                 </th>
               ) : null}
               {displayColumns.map((column) => {
-                if (showComponentHeaders && column.role === "identity") return null;
+                if (showReadoutHeaders && column.role === "identity") return null;
                 return (
                   <th scope="col" key={column.key}>
                     {showComponentHeaders ? column.componentLabel : column.readoutLabel}

@@ -45,6 +45,10 @@ it("retains all six categories at equal spacing with parent clearance", () => {
   );
   xs.slice(1).forEach((x, i) => expect(x - xs[i]).toBeCloseTo(xs[1] - xs[0]));
   const line = parent.parentElement!.querySelector("line")!;
+  const child = svg.querySelector('[data-condition-level-label="#2"]')!;
+  expect(Number(line.getAttribute("y1")) - Number(child.getAttribute("y"))).toBeGreaterThanOrEqual(
+    14,
+  );
   expect(Number(parent.getAttribute("y")) - Number(line.getAttribute("y1"))).toBeGreaterThanOrEqual(
     20,
   );
@@ -129,7 +133,10 @@ it("keeps grouped count columns aligned when dates and explicit IDs are shown", 
   );
   expect(screen.getByRole("columnheader", { name: "Tagged" })).toHaveAttribute("colspan", "12");
   expect(screen.getByRole("columnheader", { name: "WT" })).toHaveAttribute("colspan", "3");
-  expect(screen.getByRole("columnheader", { name: "実験日*" })).toHaveAttribute("rowspan", "4");
+  expect(screen.getByRole("columnheader", { name: "実験日*" })).toHaveAttribute("rowspan", "3");
+  expect(screen.queryByRole("rowheader", { name: "測定項目" })).toBeNull();
+  expect(screen.getByText("条件別シート — Positive cells")).toBeVisible();
+  expect(screen.queryAllByRole("columnheader", { name: "Positive cells" })).toHaveLength(0);
   expect(screen.getAllByRole("columnheader", { name: "該当数" })).toHaveLength(6);
   expect(screen.getAllByRole("columnheader", { name: "総数" })).toHaveLength(6);
   expect(screen.getAllByRole("columnheader", { name: "計算値 (%)" })).toHaveLength(6);

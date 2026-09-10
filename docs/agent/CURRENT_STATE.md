@@ -1,5 +1,15 @@
 # Current Working State
 
+## September 10 review follow-up — source edits, not rebuilt
+
+Windows review1 About confirmed by user. User requested a compact single-count-readout header
+and more space between clone labels and the parent rule. Single proportion-count readout name
+now appears once in the caption instead of a repeated header row; component headers remain.
+Graph hierarchy spacing increases with font size, preserving rule-to-parent clearance.
+Focused worksheet/hierarchy35 PASS. Existing review1 binaries remain unchanged; rebuild both OS
+artifacts before treating these display changes as release evidence. Windows persistence/export
+manual gate remains incomplete; do not infer PASS from the About confirmation.
+
 ## Active maintenance worktree — 2026-09-10
 
 This worktree starts from published Alpha 3 authority `de71d140bae95f899c05ce8d18c516cf7a09f6e9`.

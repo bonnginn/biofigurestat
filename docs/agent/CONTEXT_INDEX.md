@@ -6,6 +6,9 @@ opening broad documents.
 
 ## Current state and prioritization
 
+- September 10 user visual follow-up: CURRENT_STATE records unbuilt compact count headers and
+  Graph hierarchy clearance changes. Review1 binaries do not contain these follow-up edits.
+
 - In this isolated maintenance worktree, start with
   `docs/alpha/ALPHA4_MAINTENANCE_SCOPE_2026-09-09.md`; older Alpha 3 documents are historical.
 

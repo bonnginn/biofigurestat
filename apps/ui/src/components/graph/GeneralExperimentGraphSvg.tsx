@@ -365,7 +365,8 @@ export function ExperimentGraphSvg({
   };
   const graphInnerWidth = continuousLine ? 720 : categoryLayout.innerWidth;
   const width = margin.left + margin.right + graphInnerWidth;
-  const extraLabelHeight = Math.max(0, hierarchyDepth - 1) * 27;
+  const hierarchyRowSpacing = Math.max(35, appearance.hierarchyFontSize + 20);
+  const extraLabelHeight = Math.max(0, hierarchyDepth - 1) * hierarchyRowSpacing;
   const xAxisTitleHeight = renderedXAxisTitle ? 34 : 0;
   const statisticsLegendLabels = [
     ...new Set(
@@ -1139,7 +1140,9 @@ export function ExperimentGraphSvg({
       {axes.showCategoryLabels
         ? hierarchyGroups.flatMap((groups, levelIndex) => {
             const rowY =
-              plot.bottom + (hasTimeLabels ? 52 : 34) + (hierarchyDepth - 1 - levelIndex) * 27;
+              plot.bottom +
+              (hasTimeLabels ? 52 : 34) +
+              (hierarchyDepth - 1 - levelIndex) * hierarchyRowSpacing;
             const heading = axisLabels[0]?.levels[levelIndex]?.label;
             return [
               heading &&
