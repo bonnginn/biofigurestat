@@ -17,29 +17,22 @@ a superficially similar analysis.
 
 ## Download / ダウンロード
 
-BioFigureStat `0.1.0-alpha.2`は、次の
-[Public Alphaリリースページ](https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.2)
-からダウンロードできます。BioFigureStat `0.1.0-alpha.2` is available from the same release page.
+BioFigureStat **0.1.1-alpha.1** は [Public Alphaリリースページ](https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.1-alpha.1)からダウンロードできます。
 
-- [Windows 11 x64 installer](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.2/BioFigureStat-0.1.0-alpha.2-Windows-x64-setup.exe)
-- [Apple Silicon macOS app (zip)](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.0-alpha.2/BioFigureStat-0.1.0-alpha.2-macOS-Apple-Silicon.zip)
+- [Windows 11 x64 installer](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.1-alpha.1/BioFigureStat-0.1.1-alpha.1-Windows-x64-Setup.exe)
+- [Apple Silicon macOS 11以降 / arm64 ZIP](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.1-alpha.1/BioFigureStat-0.1.1-alpha.1-macOS-Apple-Silicon.zip)
+- [SHA256SUMS](https://github.com/bonnginn/biofigurestat/releases/download/v0.1.1-alpha.1/SHA256SUMS.txt)
 
-Windows版は現在未署名です。macOS版はad-hoc署名で、Appleのnotarizationは受けていません。
-そのためOSのセキュリティ警告が表示されることがあります。上記Releaseページ以外からは
-ダウンロードせず、起動前にSHA-256が一致することを確認してください。
-
-Windows builds are currently unsigned. The macOS build is ad-hoc signed and not Apple-notarized.
-Your operating system may therefore show a security warning. Download only from the release page
-above and compare the SHA-256 digest before opening the file.
+Windowsは未署名、Macはad-hoc署名でApple notarizationなしです。OSの警告が出ることがあります。公式配布物のSHAを確認してください。Macの実要件はmacOS11以降です（Info.plistの10.13表記を対応保証として使いません）。
 
 | Platform | SHA-256 |
 | --- | --- |
-| Windows 11 x64 | `F7064981BE4A36EB809C6B6C6F18C974E974771BBE001BEB5D37410C3EF85747` |
-| Apple Silicon macOS | `4EE4734D57F703845C38EB00BB8A859D1CB54A2C019E7875F5841D5DFA888722` |
+| Windows x64 Setup | `055d2f3ded00e8f0d46b52153e165c554c6433b5998e69bc3c8f20415fb173db` |
+| Apple Silicon macOS ZIP | `a86a5e9e5d67038863a19b1b999c3d2d0c13e7cf21ea150801722e3523b6d8ce` |
 
-Windowsではinstallerを実行してください。macOSではzipを展開して`BioFigureStat.app`を開きます。
-警告が表示された場合は、ファイル名とSHA-256を確認したうえでOSの「開く」または
-「このまま開く」を明示的に選択してください。
+Usage telemetry remains opt-in. Problem reports require their own full preview and explicit send action; research files and measurements are not automatically attached. See the release notes for the bounded checks and remaining validation limits.
+
+[今回の変更・確認範囲](docs/alpha/RELEASE_NOTES_0.1.1-alpha.1.md)。[旧alpha.4 / rollback](https://github.com/bonnginn/biofigurestat/releases/tag/v0.1.0-alpha.4)は保全しています。
 
 ## Public Alpha / パブリックAlpha
 
