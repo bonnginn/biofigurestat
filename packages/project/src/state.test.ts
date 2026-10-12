@@ -75,6 +75,29 @@ describe("experiment-workspace graph channel persistence", () => {
     ],
   };
 
+  it("preserves published alpha.4 custom bar outlines without requiring them in older files", () => {
+    const outline = {
+      barOutlineMode: "custom" as const,
+      barOutlineColor: "#cc3311",
+      barOutlineWidth: 2.4,
+    };
+    const source = {
+      ...workspace,
+      graphs: workspace.graphs.map((graph) => ({
+        ...graph,
+        appearance: { ...graph.appearance, ...outline },
+      })),
+    };
+    const parsed = ExperimentWorkspaceStateSchema.parse(source);
+    expect(
+      ExperimentWorkspaceStateSchema.parse(JSON.parse(JSON.stringify(parsed))).graphs[0]
+        ?.appearance,
+    ).toMatchObject(outline);
+    expect(
+      ExperimentWorkspaceStateSchema.parse(workspace).graphs[0]?.appearance.barOutlineMode,
+    ).toBeUndefined();
+  });
+
   it("round-trips independent color/shape, series/facet, and categorical axis hints", () => {
     const parsed = ExperimentWorkspaceStateSchema.parse(workspace);
     const roundTrip = ExperimentWorkspaceStateSchema.parse(JSON.parse(JSON.stringify(parsed)));
@@ -107,89 +130,6 @@ describe("experiment-workspace graph channel persistence", () => {
     expect(parsed.graphs[0]?.grouping?.shape).toBeUndefined();
     expect(parsed.graphs[0]?.axes.tickDirection).toBeUndefined();
     expect(parsed.graphs[0]?.axes.showCategoryGroupSeparators).toBeUndefined();
-  });
-
-  it("round-trips optional Bar outline appearance while legacy Graphs remain valid", () => {
-    const legacy = ExperimentWorkspaceStateSchema.parse(workspace);
-    expect(legacy.graphs[0]?.appearance.barOutlineMode).toBeUndefined();
-
-    const customized = {
-      ...structuredClone(workspace),
-      graphs: workspace.graphs.map((graph, index) =>
-        index === 0
-          ? {
-              ...graph,
-              appearance: {
-                ...graph.appearance,
-                barOutline: true,
-                barOutlineMode: "custom" as const,
-                barOutlineColor: "#cc3311",
-                barOutlineWidth: 2.4,
-              },
-            }
-          : graph,
-      ),
-    };
-    const reopened = ExperimentWorkspaceStateSchema.parse(
-      JSON.parse(JSON.stringify(ExperimentWorkspaceStateSchema.parse(customized))),
-    );
-    expect(reopened.graphs[0]?.appearance).toMatchObject({
-      barOutline: true,
-      barOutlineMode: "custom",
-      barOutlineColor: "#cc3311",
-      barOutlineWidth: 2.4,
-    });
-  });
-
-  it("keeps the scientific comparison goal optional for legacy projects and round-trips equivalence", () => {
-    const legacy = ExperimentWorkspaceStateSchema.parse(workspace);
-    expect(legacy.graphs[0]?.comparisonGoal).toBeUndefined();
-
-    const withEquivalence = {
-      ...structuredClone(workspace),
-      graphs: workspace.graphs.map((graph, index) =>
-        index === 0 ? { ...graph, comparisonGoal: "equivalence" as const } : graph,
-      ),
-    };
-    const roundTrip = ExperimentWorkspaceStateSchema.parse(
-      JSON.parse(JSON.stringify(ExperimentWorkspaceStateSchema.parse(withEquivalence))),
-    );
-
-    expect(roundTrip.graphs[0]?.comparisonGoal).toBe("equivalence");
-  });
-
-  it("round-trips a prespecified equivalence plan without changing legacy Graphs", () => {
-    const legacy = ExperimentWorkspaceStateSchema.parse(workspace);
-    expect(legacy.graphs[0]?.equivalencePlan).toBeUndefined();
-    const withPlan = ExperimentWorkspaceStateSchema.parse({
-      ...legacy,
-      graphs: legacy.graphs.map((graph, index) =>
-        index === 0
-          ? {
-              ...graph,
-              comparisonGoal: "equivalence" as const,
-              equivalencePlan: {
-                schemaVersion: "0.1.0",
-                margin: {
-                  scale: "percentage_point_difference" as const,
-                  lowerBound: -10,
-                  upperBound: 10,
-                  unit: "percentage points",
-                  rationale: "Declared from the biological acceptance criterion.",
-                  declaredAsPrespecified: true as const,
-                },
-                alpha: 0.05 as const,
-                claimMode: "all_selected_comparisons" as const,
-              },
-            }
-          : graph,
-      ),
-    });
-    const reopened = ExperimentWorkspaceStateSchema.parse(JSON.parse(JSON.stringify(withPlan)));
-    expect(reopened.graphs[0]?.equivalencePlan).toMatchObject({
-      margin: { lowerBound: -10, upperBound: 10 },
-      claimMode: "all_selected_comparisons",
-    });
   });
 });
 

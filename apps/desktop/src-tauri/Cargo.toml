@@ -1,9 +1,8 @@
 [package]
 name = "lifescience-analysis-app"
-version = "0.1.0"
+version = "0.1.1"
 description = "Local-first desktop shell for BioFigureStat"
 authors = ["BioFigureStat contributors"]
-license = "MIT"
 edition = "2021"
 rust-version = "1.77.2"
 
@@ -23,3 +22,6 @@ tauri-plugin-dialog = "=2.7.2"
 rusqlite = { version = "=0.40.2", features = ["bundled"] }
 calamine = { version = "=0.26.1", features = ["dates"] }
 png = "=0.17.16"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "=0.61.3", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }

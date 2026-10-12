@@ -19,9 +19,19 @@ export function useWorkspaceDirtyBaseline(
   const researcherInteractionRef = useRef(false);
   const lastReportedDirtyRef = useRef<boolean | undefined>(undefined);
   const onDirtyChangeRef = useRef(onDirtyChange);
+  const mountedRef = useRef(true);
+  const saveGenerationRef = useRef(0);
   onDirtyChangeRef.current = onDirtyChange;
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      saveGenerationRef.current += 1;
+    };
+  }, []);
 
   const reportDirty = useCallback((dirty: boolean) => {
+    if (!mountedRef.current) return;
     if (lastReportedDirtyRef.current === dirty) return;
     lastReportedDirtyRef.current = dirty;
     onDirtyChangeRef.current?.(dirty);
@@ -41,13 +51,26 @@ export function useWorkspaceDirtyBaseline(
   }, []);
 
   const adoptCurrentAsBaseline = useCallback(() => {
+    saveGenerationRef.current += 1;
     baselineRef.current = latestSnapshotRef.current;
     researcherInteractionRef.current = false;
     reportDirty(false);
   }, [reportDirty]);
 
+  const captureSaveBaseline = useCallback(() => {
+    const savedSnapshot = latestSnapshotRef.current;
+    const generation = ++saveGenerationRef.current;
+    return () => {
+      if (!mountedRef.current || generation !== saveGenerationRef.current) return;
+      baselineRef.current = savedSnapshot;
+      researcherInteractionRef.current = true;
+      reportDirty(latestSnapshotRef.current !== savedSnapshot);
+    };
+  }, [reportDirty]);
+
   return {
     adoptCurrentAsBaseline,
+    captureSaveBaseline,
     interactionCaptureProps: {
       onChangeCapture: markResearcherInteraction,
       onClickCapture: markResearcherInteraction,

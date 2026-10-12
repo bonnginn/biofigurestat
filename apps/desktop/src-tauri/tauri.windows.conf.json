@@ -1,14 +1,25 @@
 {
+  "app": {
+    "windows": [
+      {
+        "title": "BioFigureStat",
+        "width": 1280,
+        "height": 900,
+        "minWidth": 900,
+        "minHeight": 640,
+        "resizable": true,
+        "visible": false
+      }
+    ]
+  },
   "build": {
-    "beforeBuildCommand": "pnpm --dir ../.. engine:build:win && pnpm --filter @lsaa/ui run build"
+    "beforeBuildCommand": "node ../../scripts/require_windows_candidate_build.mjs"
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
-    "resources": {
-      "../../../engine/python/dist/windows-amd64/lsaa-engine.exe/": "engine/",
-      "../../../LICENSE": "LICENSE",
-      "../../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md"
-    }
+    "targets": [
+      "nsis"
+    ],
+    "resources": {}
   }
 }

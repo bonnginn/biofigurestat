@@ -26,7 +26,6 @@ describe("SurvivalGraph", () => {
         timeLabel="Days after treatment"
         probabilityLabel="Tumor-free probability"
         palette={["#123456"]}
-        fontSize={16}
       />,
     );
 
@@ -38,11 +37,6 @@ describe("SurvivalGraph", () => {
     expect(svg.querySelector('[data-graph-layer="survival-curve"]')).toHaveAttribute(
       "stroke",
       "#123456",
-    );
-    expect(svg.querySelector('[data-axis-tick-label="y"]')).toHaveAttribute("font-size", "16");
-    expect(svg.querySelector('[data-graph-layer="series-legend"] text')).toHaveAttribute(
-      "font-size",
-      "17",
     );
     expect(model.groups[0]?.steps).toEqual(originalSteps);
   });
@@ -167,53 +161,6 @@ describe("SurvivalGraph", () => {
     ).toBe("p = 0.272");
   });
 
-  it("positions, sizes, and hides the legend without changing survival data", () => {
-    const model = createKaplanMeierGraphModel(
-      [{ id: "control", label: "Control" }],
-      [
-        {
-          observationId: "control.1",
-          experimentalUnitId: "mouse.control.1",
-          conditionId: "control",
-          followUpTime: 4,
-          eventObserved: true,
-        },
-      ],
-    );
-    const { rerender } = render(
-      <SurvivalGraph
-        model={model}
-        legendPosition="inside"
-        legendFontSize={18}
-        showMinorTicks={false}
-        tickDirection="inside"
-      />,
-    );
-    const legend = screen
-      .getByRole("img", { name: "Kaplan–Meier survival graph" })
-      .querySelector('[data-graph-layer="series-legend"]');
-    expect(legend).toHaveAttribute("data-legend-position", "inside");
-    expect(legend?.querySelector("text")).toHaveAttribute("font-size", "18");
-    expect(
-      screen
-        .getByRole("img", { name: "Kaplan–Meier survival graph" })
-        .querySelectorAll('[data-axis-tick$="minor"]'),
-    ).toHaveLength(0);
-    const yTick = screen
-      .getByRole("img", { name: "Kaplan–Meier survival graph" })
-      .querySelector<SVGLineElement>('[data-axis-tick="y"]')!;
-    expect(yTick).toHaveAttribute("data-tick-direction", "inside");
-    expect(Number(yTick.getAttribute("x2"))).toBeGreaterThan(Number(yTick.getAttribute("x1")));
-
-    rerender(<SurvivalGraph model={model} legendPosition="hidden" />);
-    expect(
-      screen
-        .getByRole("img", { name: "Kaplan–Meier survival graph" })
-        .querySelector('[data-graph-layer="series-legend"]'),
-    ).toBeNull();
-    expect(model.groups[0]).toMatchObject({ n: 1, events: 1, censored: 0 });
-  });
-
   it("separates the risk title, a time-zero header, and the first group row", () => {
     const model = createKaplanMeierGraphModel(
       [{ id: "control", label: "Control" }],
@@ -261,5 +208,54 @@ describe("SurvivalGraph", () => {
         ?.textContent,
     ).toBe("0");
     expect(exportedSvg.querySelectorAll('[data-graph-layer="risk-group-label"]')).toHaveLength(1);
+  });
+  it("preserves published font, legend and tick options in export without changing estimates", () => {
+    const model = createKaplanMeierGraphModel(
+      [{ id: "control", label: "Control" }],
+      [
+        {
+          observationId: "control.1",
+          experimentalUnitId: "mouse.1",
+          conditionId: "control",
+          followUpTime: 4,
+          eventObserved: true,
+        },
+      ],
+    );
+    const originalModel = structuredClone(model);
+    const { rerender } = render(
+      <SurvivalGraph
+        model={model}
+        fontSize={18}
+        legendFontSize={20}
+        legendPosition="inside"
+        showMinorTicks={false}
+        tickDirection="inside"
+      />,
+    );
+    const svg = screen.getByRole("img", {
+      name: "Kaplan–Meier survival graph",
+    }) as unknown as SVGSVGElement;
+    expect(svg.querySelector('[data-axis-tick-label="y"]')).toHaveAttribute("font-size", "18");
+    expect(svg.querySelector('[data-graph-layer="series-legend"]')).toHaveAttribute(
+      "data-legend-position",
+      "inside",
+    );
+    expect(svg.querySelector('[data-graph-layer="series-legend"] text')).toHaveAttribute(
+      "font-size",
+      "20",
+    );
+    expect(svg.querySelector('[data-axis-tick="y-minor"]')).toBeNull();
+    const tick = svg.querySelector('[data-axis-tick="y"]')!;
+    expect(Number(tick.getAttribute("x2"))).toBeGreaterThan(Number(tick.getAttribute("x1")));
+    const exported = new DOMParser().parseFromString(serializeGraphSvg(svg), "image/svg+xml");
+    expect(
+      exported
+        .querySelector('[data-graph-layer="series-legend"]')
+        ?.getAttribute("data-legend-position"),
+    ).toBe("inside");
+    rerender(<SurvivalGraph model={model} legendPosition="hidden" />);
+    expect(svg.querySelector('[data-graph-layer="series-legend"]')).toBeNull();
+    expect(model).toEqual(originalModel);
   });
 });

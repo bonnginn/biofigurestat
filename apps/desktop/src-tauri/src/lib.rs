@@ -9,6 +9,8 @@ mod project_database;
 mod project_open;
 mod project_storage;
 mod spreadsheet_import;
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+mod window_geometry;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{
@@ -24,6 +26,8 @@ fn exit_application(app: tauri::AppHandle, approved: tauri::State<'_, ApprovedAp
     // The UI invokes this only after its shared unsaved-workspace guard has completed.
     // Keeping final process termination in Rust avoids depending on WebView window-destroy ACLs.
     approved.0.store(true, Ordering::SeqCst);
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    window_geometry::persist(&app);
     app.exit(0);
 }
 
@@ -33,15 +37,38 @@ fn native_architecture() -> &'static str {
 }
 
 fn exit_requires_workspace_guard(approved: bool) -> bool {
-    // Both Command+Q and a programmatic app.exit(0) may carry an explicit exit
-    // code on macOS.  The exit code therefore cannot establish that the UI's
+    // A programmatic exit may carry an explicit exit code. The code cannot
+    // establish that the UI's
     // Save / Cancel / discard guard ran.  Only the one-shot approval set by the
     // guarded `exit_application` command may allow process termination.
     !approved
 }
 
-fn consume_approved_application_exit(approved: &AtomicBool) -> bool {
-    approved.swap(false, Ordering::SeqCst)
+// Kept type-checked on Windows too; only macOS installs this application menu.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn replace_native_application_quit<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    menu: &Menu<R>,
+) -> tauri::Result<()> {
+    use tauri::menu::MenuItemKind;
+    // In pinned Tauri 2.11.4, the first macOS submenu is the application menu
+    // and its last item is native Quit. Preserve About, Services and Hide items.
+    let menus = menu.items()?;
+    let Some(MenuItemKind::Submenu(application_menu)) = menus.first() else {
+        return Err(std::io::Error::other("Application menu is missing").into());
+    };
+    let items = application_menu.items()?;
+    let Some(MenuItemKind::Predefined(native_quit)) = items.last() else {
+        return Err(std::io::Error::other("Default application Quit is missing").into());
+    };
+    let guarded_quit = MenuItemBuilder::with_id("app-exit", native_quit.text()?)
+        .accelerator("CmdOrCtrl+Q")
+        .build(app)?;
+    // Muda's native Quit invokes NSApplication terminate: directly. It does not
+    // wait for our asynchronous workspace guard/exit_application persistence.
+    application_menu.remove(native_quit)?;
+    application_menu.append(&guarded_quit)?;
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -53,6 +80,17 @@ pub fn run() {
         .manage(engine::EngineProcessRegistry::default())
         .manage(ApprovedApplicationExit::default())
         .on_window_event(|window, event| {
+            #[cfg(target_os = "macos")]
+            if window.label() == "main"
+                && matches!(
+                    event,
+                    tauri::WindowEvent::Moved(_)
+                        | tauri::WindowEvent::Resized(_)
+                        | tauri::WindowEvent::ScaleFactorChanged { .. }
+                )
+            {
+                window_geometry::observe(window.app_handle());
+            }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 // Intercept the native title-bar close before Windows destroys the
                 // WebView.  The JavaScript close listener is useful as a secondary
@@ -73,10 +111,6 @@ pub fn run() {
             let save_as = MenuItemBuilder::with_id("project-save-as", "Save As…")
                 .accelerator("CmdOrCtrl+Shift+S")
                 .build(app)?;
-            #[cfg(target_os = "macos")]
-            let exit = MenuItemBuilder::with_id("app-exit", "Quit BioFigureStat")
-                .accelerator("Cmd+Q")
-                .build(app)?;
             #[cfg(not(target_os = "macos"))]
             let exit = MenuItemBuilder::with_id("app-exit", "終了").build(app)?;
             let file_menu_builder = SubmenuBuilder::new(app, "File")
@@ -87,25 +121,8 @@ pub fn run() {
             let file_menu_builder = file_menu_builder.separator().item(&exit);
             let file_menu = file_menu_builder.build()?;
             let menu = Menu::default(app.handle())?;
-            // The predefined macOS Quit item invokes NSApplication termination directly.
-            // Replace it with our own Cmd+Q item so every quit request takes the same
-            // window-close -> UI Save / Cancel / discard lifecycle as the title-bar close.
             #[cfg(target_os = "macos")]
-            {
-                let app_menu = SubmenuBuilder::new(app, "BioFigureStat")
-                    .about(None)
-                    .separator()
-                    .services()
-                    .separator()
-                    .hide()
-                    .hide_others()
-                    .show_all()
-                    .separator()
-                    .item(&exit)
-                    .build()?;
-                menu.remove_at(0)?;
-                menu.insert(&app_menu, 0)?;
-            }
+            replace_native_application_quit(app.handle(), &menu)?;
             // Replace Tauri's default File menu instead of prepending a second File menu.
             // macOS has an application menu before File; Windows does not.
             #[cfg(target_os = "macos")]
@@ -115,6 +132,8 @@ pub fn run() {
             menu.remove_at(file_menu_position)?;
             menu.insert(&file_menu, file_menu_position)?;
             app.set_menu(menu)?;
+            #[cfg(any(target_os = "windows", target_os = "macos"))]
+            window_geometry::initialize(app)?;
             Ok(())
         })
         .on_menu_event(|app, event| match event.id().as_ref() {
@@ -128,10 +147,8 @@ pub fn run() {
                 let _ = app.emit("project-save-request", true);
             }
             "app-exit" => {
-                // Command+Q is an application-exit request, not a window-close request.
-                // Routing it through `window.close()` on macOS races the Rust
-                // `CloseRequested` handler with the WebView close listener and can lose the
-                // only event that opens the shared Save / Cancel / discard guard.
+                // Menu Quit needs one guard request, not both native close
+                // listeners. The approved UI command performs final termination.
                 let _ = app.emit("app-exit-request", ());
             }
             _ => {}
@@ -160,8 +177,10 @@ pub fn run() {
 
     app.run(|app_handle, event| {
         if let tauri::RunEvent::ExitRequested { api, .. } = &event {
-            let approved =
-                consume_approved_application_exit(&app_handle.state::<ApprovedApplicationExit>().0);
+            let approved = app_handle
+                .state::<ApprovedApplicationExit>()
+                .0
+                .swap(false, Ordering::SeqCst);
             if exit_requires_workspace_guard(approved) {
                 api.prevent_exit();
                 let _ = app_handle.emit("app-exit-request", ());
@@ -171,6 +190,8 @@ pub fn run() {
         if matches!(event, tauri::RunEvent::Ready) {
             if let Some(window) = app_handle.get_webview_window("main") {
                 let _ = window.show();
+                #[cfg(any(target_os = "windows", target_os = "macos"))]
+                window_geometry::restore_maximized(app_handle);
                 let _ = window.set_focus();
             }
         }
@@ -200,8 +221,7 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{consume_approved_application_exit, exit_requires_workspace_guard};
-    use std::sync::atomic::{AtomicBool, Ordering};
+    use super::exit_requires_workspace_guard;
 
     #[test]
     fn all_unapproved_exit_routes_require_the_workspace_guard() {
@@ -211,14 +231,5 @@ mod tests {
     #[test]
     fn explicitly_approved_programmatic_exit_is_not_guarded_twice() {
         assert!(!exit_requires_workspace_guard(true));
-    }
-
-    #[test]
-    fn application_exit_approval_is_consumed_exactly_once() {
-        let approved = AtomicBool::new(false);
-        approved.store(true, Ordering::SeqCst);
-
-        assert!(consume_approved_application_exit(&approved));
-        assert!(!consume_approved_application_exit(&approved));
     }
 }

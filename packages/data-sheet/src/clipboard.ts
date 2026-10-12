@@ -18,30 +18,56 @@ export type ParsedTabularClipboard = Readonly<{
   rows: string[][];
   columns: ClipboardNumericColumn[];
   recommendedColumnIndex: number | null;
+  parseError?: string;
 }>;
 
-function splitCommaRow(row: string): string[] {
-  const cells: string[] = [];
+function splitDelimitedRows(text: string, delimiter: "\t" | ","): string[][] {
+  const rows: string[][] = [];
+  let cells: string[] = [];
   let cell = "";
   let quoted = false;
-  for (let index = 0; index < row.length; index += 1) {
-    const character = row[index];
-    if (character === '"') {
-      if (quoted && row[index + 1] === '"') {
-        cell += '"';
-        index += 1;
+  let justClosedQuote = false;
+  const pushCell = () => {
+    cells.push(cell.trim());
+    cell = "";
+    justClosedQuote = false;
+  };
+  const pushRow = () => {
+    pushCell();
+    rows.push(cells);
+    cells = [];
+  };
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index]!;
+    if (quoted) {
+      if (character === '"') {
+        if (text[index + 1] === '"') {
+          cell += '"';
+          index += 1;
+        } else {
+          quoted = false;
+          justClosedQuote = true;
+        }
       } else {
-        quoted = !quoted;
+        cell += character;
       }
-    } else if (character === "," && !quoted) {
-      cells.push(cell.trim());
-      cell = "";
+    } else if (character === '"' && cell.trim() === "" && !justClosedQuote) {
+      quoted = true;
+    } else if (character === delimiter) {
+      pushCell();
+    } else if (character === "\n") {
+      pushRow();
+    } else if (justClosedQuote && character.trim() !== "") {
+      throw new Error("引用符の後に区切り文字以外の文字があります。");
     } else {
+      // Quotes within an unquoted cell are literal content. In a numeric
+      // column they remain invalid instead of silently becoming another value.
       cell += character;
     }
   }
-  cells.push(cell.trim());
-  return cells;
+  if (quoted) throw new Error("閉じていない引用符があります。");
+  pushRow();
+  return rows;
 }
 
 function parseNumberCell(value: string): number | null {
@@ -86,26 +112,64 @@ function recommendedColumn(columns: ClipboardNumericColumn[]): number | null {
 
 /** Parses direct clipboard output from ImageJ Results, Excel, or one-value-per-line text. */
 export function parseTabularClipboard(text: string): ParsedTabularClipboard {
-  const lines = text
-    .replace(/\r\n?/g, "\n")
-    .split("\n")
-    .filter((line) => line.trim().length > 0);
+  const sourceLines = text.replace(/\r\n?/g, "\n").split("\n");
+  let firstLine = 0;
+  let lastLine = sourceLines.length;
+  // Outer clipboard padding is harmless; an interior blank is a missing
+  // position and must not shift later values onto another experimental unit.
+  while (firstLine < lastLine && !sourceLines[firstLine]?.trim()) firstLine += 1;
+  while (lastLine > firstLine && !sourceLines[lastLine - 1]?.trim()) lastLine -= 1;
+  const lines = sourceLines.slice(firstLine, lastLine);
   if (lines.length === 0) {
     return { delimiter: "lines", headers: [], rows: [], columns: [], recommendedColumnIndex: null };
   }
-  const delimiter: ClipboardDelimiter = lines.some((line) => line.includes("\t"))
+  const headerLine = lines[0] ?? "";
+  const delimiter: ClipboardDelimiter = headerLine.includes("\t")
     ? "tab"
-    : lines.some((line) => line.includes(","))
+    : headerLine.includes(",")
       ? "comma"
       : "lines";
-  const split = (line: string) =>
-    delimiter === "tab"
-      ? line.split("\t").map((cell) => cell.trim())
-      : delimiter === "comma"
-        ? splitCommaRow(line)
-        : [line.trim()];
-  const matrix = lines.map(split);
+  let matrix: string[][];
+  try {
+    matrix =
+      delimiter === "lines"
+        ? lines.map((line) => [line.trim()])
+        : splitDelimitedRows(lines.join("\n"), delimiter === "tab" ? "\t" : ",");
+  } catch (error) {
+    return {
+      delimiter,
+      headers: [],
+      rows: [],
+      columns: [],
+      recommendedColumnIndex: null,
+      parseError: error instanceof Error ? error.message : "表の引用符を解釈できません。",
+    };
+  }
   const firstRow = matrix[0];
+  if (delimiter === "comma" && matrix.some((row) => row.length !== firstRow.length)) {
+    return {
+      delimiter, headers: [], rows: matrix, columns: [], recommendedColumnIndex: null,
+      parseError: "CSVの列数が行によって異なります。小数・千区切りのカンマと列区切りを区別できません。列名とタブ区切り、小数点のピリオドを確認してください。元の貼り付け内容は変更していません。",
+    };
+  }
+  const firstNumeric = firstRow.filter((cell) => parseNumberCell(cell) !== null).length;
+  const firstText = firstRow.some((cell) => cell.trim() && parseNumberCell(cell) === null);
+  const numericLookingText = firstRow.some((cell) =>
+    parseNumberCell(cell) === null && /^(?:[<>≤≥]=?\s*[+-]?\d|[+-]?\d[\d.,\s]*$)/.test(cell.trim()),
+  );
+  if ((firstNumeric > 0 && firstText) || numericLookingText ||
+      (delimiter === "comma" && firstNumeric === firstRow.length && firstRow.length > 1)) {
+    // Do not discard an ID/value row as a guessed header, or interpret a
+    // decimal/thousands comma as two measurements. Keep the original cells.
+    return {
+      delimiter,
+      headers: [],
+      rows: matrix,
+      columns: [],
+      recommendedColumnIndex: null,
+      parseError: "先頭行またはカンマの意味が曖昧です。明示した列名を付け、数値の小数点はピリオド、列の区切りはタブで入力してください。元の貼り付け内容は変更していません。",
+    };
+  }
   const hasHeader = firstRow.some(
     (cell) => cell.trim().length > 0 && parseNumberCell(cell) === null,
   );

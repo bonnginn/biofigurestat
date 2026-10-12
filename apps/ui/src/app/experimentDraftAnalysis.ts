@@ -9,9 +9,9 @@ import { resolveCanonicalReadoutValue } from "@lsaa/adaptive-input";
 import {
   continuousSummary,
   experimentCellKey,
+  hasSharedSourceConditionUnits,
   normalizeWithinExperiment,
   percentage,
-  sharedSourceConditionTopology,
   wbRatio,
   type ExperimentCellMap,
   type ExperimentSetDraft,
@@ -29,7 +29,6 @@ import {
 type StatisticalMethod = AnalysisRecommendation["recommendedMethod"];
 export type ContrastIntent =
   "all_pairs" | "control_vs_many" | "omnibus_only" | "planned_comparisons";
-export type ScientificComparisonGoal = "difference" | "equivalence";
 
 export type StatisticalMethodChoice = Readonly<{
   method: StatisticalMethod;
@@ -54,10 +53,6 @@ export type DraftAnalysisAssessment = Readonly<{
   statisticalNDefinition?: string;
   analysisSetSummary?: string;
   graphAnalysisSetDifference?: string;
-  matchedAnalysisSet?: Readonly<{
-    completePairCount: number;
-    unmatchedObservationCount: number;
-  }>;
   missingCount: number;
   notPlannedCount: number;
   request: AnalysisEngineRequest | null;
@@ -269,9 +264,12 @@ export function assessDraftGraphAnalysis(input: {
 }): DraftAnalysisAssessment {
   const selected = new Set(input.conditionIds);
   const conditions = input.draft.conditions.filter((condition) => selected.has(condition.id));
-  const sharedSourceTopology = sharedSourceConditionTopology(input.draft);
-  const sharedSource = sharedSourceTopology !== null;
-  const sharedSourceLabel = sharedSourceTopology?.sourceUnitLabel ?? "共有した由来";
+  const sharedSource = hasSharedSourceConditionUnits(input.draft);
+  const sharedSourceLabel =
+    input.draft.conditionAssignment.matchedTopology?.kind ===
+    "distinct_condition_units_shared_source"
+      ? input.draft.conditionAssignment.matchedTopology.sourceUnitLabel
+      : "共有した由来";
   const matchedSetDescription = sharedSource
     ? `同じ${sharedSourceLabel}に由来する条件別${input.draft.conditionAssignment.unitLabel}`
     : `同じ${input.draft.conditionAssignment.unitLabel}`;
@@ -778,10 +776,6 @@ export function assessDraftGraphAnalysis(input: {
             unmatchedObservationCount > 0
               ? "Graphには入力済みの観測を残します。統計解析だけが完全な対応組に限定されます。"
               : "Graphと統計解析は、同じ完全な対応組を使用します。",
-          matchedAnalysisSet: {
-            completePairCount: completePairIds.size,
-            unmatchedObservationCount,
-          },
         }
       : {}),
   };
@@ -1059,7 +1053,10 @@ export function assessDraftGraphAnalysis(input: {
         ? attributeId
         : `factor.${attributeId}`;
     };
-    const canonicalLevelId = (attributeId: string, levelIndex: number): string => {
+    const canonicalLevelId = (
+      attributeId: string,
+      levelIndex: number,
+    ): string => {
       const adaptiveKey = attributeId.startsWith("factor.")
         ? attributeId.slice("factor.".length)
         : "";
@@ -1112,8 +1109,8 @@ export function assessDraftGraphAnalysis(input: {
       method: "two_way_anova",
       factors: varyingAttributes.map((attribute, factorIndex) => ({
         factorId: canonicalFactorId(attribute.id),
-        levelIds: factorLevels[factorIndex].map((_level, levelIndex) =>
-          canonicalLevelId(attribute.id, levelIndex),
+        levelIds: factorLevels[factorIndex].map(
+          (_level, levelIndex) => canonicalLevelId(attribute.id, levelIndex),
         ),
       })),
       conditions: factorialConditions,
@@ -1272,10 +1269,34 @@ export function assessDraftGraphAnalysis(input: {
     };
   }
 
+  if (readout?.withinExperimentNormalization) {
+    return {
+      state: "unsupported",
+      title: "対照で正規化した独立3群以上の解析は未対応です",
+      reason: "実験内の対照で正規化した値は分母を共有し、対照x/xは構成上1になります。この対照を独立群のnや自由度として数える解析は実行しません。入力値とグラフは保持されます。解析仕様の確認が必要です。",
+      method: null,
+      commonAlternative: null,
+      nByCondition: effectiveNByCondition,
+      statisticalNDefinition: "正規化後の独立群推論に使えるnは未確定",
+      missingCount,
+      notPlannedCount,
+      request: null,
+      ...inputDiagnosticProperties,
+    };
+  }
+
   const controlAvailable = conditions.some(({ id }) => id === input.draft.controlConditionId);
   const requestedIntent = input.contrastIntent ?? "all_pairs";
-  const contrastIntent: ContrastIntent =
-    requestedIntent === "control_vs_many" && !controlAvailable ? "all_pairs" : requestedIntent;
+  if (requestedIntent === "control_vs_many" && !controlAvailable) {
+    return {
+      state: "unsupported",
+      title: "指定した対照が解析対象にありません",
+      reason: "対照との比較には、解析対象に含まれる対照条件を明示指定してください。全ペア比較への自動変更は行いません。",
+      method: null, commonAlternative: null, nByCondition: effectiveNByCondition,
+      missingCount, notPlannedCount, request: null, ...inputDiagnosticProperties,
+    };
+  }
+  const contrastIntent: ContrastIntent = requestedIntent;
   const recommendedMethod: StatisticalMethod =
     contrastIntent === "all_pairs" ? "welch_anova" : "one_way_anova";
   const activeConditionIds = new Set(conditions.map(({ id }) => id));

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 
 import type { AtomicProjectWrite, ProjectPackageStorage } from "./package-io";
 import {
@@ -187,6 +189,59 @@ function orderedCurveFixture() {
 }
 
 describe("specialized entry draft persistence", () => {
+  it("opens and resaves the anonymous survival draft actually saved by published alpha.4", async () => {
+    const fixture = JSON.parse(
+      readFileSync(new URL("./fixtures/alpha4-survival-anonymous.json", import.meta.url), "utf8"),
+    ) as { entries: Record<string, string> };
+    const storage = new MemoryStorage();
+    const originalEntries = new Map(
+      Object.entries(fixture.entries).map(([path, text]) => [path, new TextEncoder().encode(text)]),
+    );
+    storage.packages.set("published-alpha4.lsa", originalEntries);
+    const realSha256 = async (bytes: Uint8Array) =>
+      createHash("sha256").update(bytes).digest("hex");
+    const opened = await openSpecializedEntryDraftProjectPackage({
+      storage,
+      target: "published-alpha4.lsa",
+      sha256: realSha256,
+    });
+    expect(opened.rawTable.rows).toEqual([
+      ["A1", "Control", "2", "event"],
+      ["A2", "Control", "4", "censored"],
+      ["A3", "Control", "6", "event"],
+      ["B1", "Drug", "3", "event"],
+      ["B2", "Drug", "5", "censored"],
+      ["B3", "Drug", "7", "event"],
+    ]);
+    expect(opened.answers).toMatchObject({
+      kind: "survival",
+      subjectUnitRelationship: "unknown",
+      followUpUnit: "day",
+    });
+    expect(opened.safeStop.status).toBe("contract_deferred");
+    const saved = await saveSpecializedEntryDraftProjectPackage({
+      storage,
+      target: "upgraded.lsa",
+      state: opened,
+      sha256: realSha256,
+      appVersion: "0.1.1",
+      savedAt: "2026-10-12T10:30:00.000Z",
+    });
+    const reopened = await openSpecializedEntryDraftProjectPackage({
+      storage,
+      target: "upgraded.lsa",
+      sha256: realSha256,
+    });
+    expect(reopened).toEqual(saved);
+    expect(reopened.rawTable).toEqual(opened.rawTable);
+    expect(reopened.rawLineage).toEqual(opened.rawLineage);
+    expect(reopened.entryIntent).toEqual(opened.entryIntent);
+    expect(reopened.answers).toEqual(opened.answers);
+    expect(reopened.safeStop).toEqual(opened.safeStop);
+    expect(reopened.provenanceEvents.slice(0, -1)).toEqual(opened.provenanceEvents);
+    expect(storage.packages.get("published-alpha4.lsa")).toBe(originalEntries);
+    expect(reopened).not.toHaveProperty("analysisRuns");
+  });
   it.each([survivalFixture, orderedCurveFixture])(
     "retains the exact raw text, route, answers, and safe stop in a byte round trip",
     (fixture) => {

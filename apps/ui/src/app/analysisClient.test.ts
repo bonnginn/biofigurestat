@@ -76,14 +76,21 @@ describe("evaluation analysis client", () => {
 });
 
 describe("local engine failure guidance", () => {
-  it("does not mislabel an arbitrary process failure as nonlinear nonconvergence", () => {
-    const message = localEngineFailureMessage(
-      "The local analysis engine failed: ZeroDivisionError",
+  it("distinguishes missing development setup from incomplete installed applications", () => {
+    expect(
+      localEngineFailureMessage(
+        "The pinned development analysis environment is missing. Install engine/python before running analysis.",
+      ),
+    ).toContain("開発版のセットアップ手順");
+    expect(
+      localEngineFailureMessage(
+        "The packaged analysis engine is missing from application resources",
+      ),
+    ).toContain("完全なアプリを再インストール");
+    expect(localEngineFailureMessage("generic engine failure")).toContain(
+      "有効な結果を返せませんでした",
     );
-    expect(message).not.toContain("非線形fit");
-    expect(message).toContain("入力したデータは保持されています");
   });
-
   it("explains a bounded engine timeout without exposing an internal process code", () => {
     const message = localEngineFailureMessage("ENGINE_PROCESS_TIMEOUT");
     expect(message).toContain("制限時間内に完了しなかった");
@@ -94,18 +101,6 @@ describe("local engine failure guidance", () => {
     const message = localEngineFailureMessage("ENGINE_PROCESS_CANCELLED");
     expect(message).toContain("解析を中止しました");
     expect(message).not.toContain("ENGINE_PROCESS_CANCELLED");
-  });
-
-  it.each([
-    ["ENGINE_OUTPUT_INVALID_JSON:empty:bytes=0", "解析結果が返りませんでした"],
-    ["ENGINE_OUTPUT_INVALID_JSON:eof:bytes=1042", "応答が途中で途切れました"],
-    ["ENGINE_OUTPUT_INVALID_JSON:non_finite:bytes=1300", "有限でない数値"],
-    ["ENGINE_OUTPUT_INVALID_JSON:syntax:bytes=24", "応答形式を確認できなかった"],
-  ])("gives privacy-safe guidance for invalid engine output (%s)", (detail, guidance) => {
-    const message = localEngineFailureMessage(detail);
-    expect(message).toContain(guidance);
-    expect(message).not.toContain("ENGINE_OUTPUT_INVALID_JSON");
-    expect(message).toContain("入力したデータは保持されています");
   });
 
   it("distinguishes insufficient nonlinear-fit data from a missing engine", () => {
@@ -120,5 +115,27 @@ describe("local engine failure guidance", () => {
     expect(localEngineFailureMessage("D17 K5 fit is non-identifiable")).toContain(
       "一意に推定できません",
     );
+  });
+
+  it("does not misclassify a generic engine wrapper as a nonlinear-fit failure", () => {
+    const message = localEngineFailureMessage(
+      "The local analysis engine failed: Traceback: ValueError: Out of range float values are not JSON compliant: nan",
+    );
+    expect(message).toContain("有効な結果を返せませんでした");
+    expect(message).not.toContain("非線形fit");
+  });
+
+  it("still explains a D17 convergence failure", () => {
+    expect(
+      localEngineFailureMessage(
+        "The local analysis engine failed: D17 series.1 fit failed: optimal parameters not found",
+      ),
+    ).toContain("収束しませんでした");
+  });
+
+  it("does not treat unrelated flat data text as a nonlinear-fit diagnostic", () => {
+    const message = localEngineFailureMessage("The local analysis engine failed: flat input data");
+    expect(message).toContain("有効な結果を返せませんでした");
+    expect(message).not.toContain("非線形fit");
   });
 });

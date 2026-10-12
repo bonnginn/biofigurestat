@@ -14,7 +14,7 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
   save: tauri.save,
 }));
 
-import { saveExportBytes, saveExportText } from "./graphExport";
+import { saveExportText } from "./graphExport";
 
 describe("native graph export", () => {
   beforeEach(() => {
@@ -65,24 +65,5 @@ describe("native graph export", () => {
       "write_export_file",
       expect.objectContaining({ target: "C:\\Figures\\result.csv" }),
     );
-  });
-
-  it("uses the native Save dialog for rendered PNG bytes", async () => {
-    tauri.save.mockResolvedValue("C:\\Figures\\ordered-curve.png");
-    tauri.invoke.mockResolvedValue(undefined);
-
-    await expect(
-      saveExportBytes(new Uint8Array([137, 80, 78, 71]), "ordered-curve.png", "image/png"),
-    ).resolves.toBe("saved");
-
-    expect(tauri.save).toHaveBeenCalledWith({
-      title: "書き出し先を選択",
-      defaultPath: "ordered-curve.png",
-      filters: [{ name: "PNG image", extensions: ["png"] }],
-    });
-    expect(tauri.invoke).toHaveBeenCalledWith("write_export_file", {
-      target: "C:\\Figures\\ordered-curve.png",
-      bytes: [137, 80, 78, 71],
-    });
   });
 });

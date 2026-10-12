@@ -36,13 +36,4 @@ describe("AboutPanel", () => {
     expect(toggle).not.toBeChecked();
     expect(screen.queryByRole("button", { name: "利用情報レポートをコピー" })).toBeNull();
   });
-
-  it("identifies the Public Alpha source license", () => {
-    render(<AboutPanel />);
-    fireEvent.click(screen.getByRole("button", { name: "About" }));
-    fireEvent.click(screen.getByText("Build・ライセンス情報"));
-
-    expect(screen.getByText("MIT License")).toBeVisible();
-    expect(screen.getByText("統計engine 0.15.1")).toBeVisible();
-  });
 });

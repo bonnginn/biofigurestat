@@ -9,3 +9,4 @@ export * from "./contract-builder";
 export * from "./entry-module-registry";
 export * from "./observation-validator";
 export * from "./observation-values";
+export * from "./delimited-records";

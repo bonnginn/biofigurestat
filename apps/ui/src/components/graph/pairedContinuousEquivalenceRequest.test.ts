@@ -104,3 +104,13 @@ describe("createPairedContinuousEquivalenceRequest", () => {
     ).toBeNull();
   });
 });
+
+it("safe-stops a comparison ID whose order differs from the actual contrast", () => {
+ const reversed = {...baseRequest,contrastConditionIds:[baseRequest.protocolVersion === "0.1.0" ? baseRequest.contrastConditionIds[1] : "invalid",baseRequest.protocolVersion === "0.1.0" ? baseRequest.contrastConditionIds[0] : "invalid"]} as AnalysisEngineRequest;
+ expect(createPairedContinuousEquivalenceRequest({baseRequest:reversed,plan,comparisonId})).toBeNull();
+});
+
+it("deduplicates incomplete-pair provenance without accepting analyzed pairs as excluded", () => {
+ expect(createPairedContinuousEquivalenceRequest({baseRequest,plan,comparisonId,excludedIncompletePairIds:["pair.missing","pair.missing"]})).toMatchObject({excludedIncompletePairIds:["pair.missing"]});
+ expect(createPairedContinuousEquivalenceRequest({baseRequest,plan,comparisonId,excludedIncompletePairIds:["p.1"]})).toBeNull();
+});

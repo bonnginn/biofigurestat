@@ -5,7 +5,7 @@ import type {
   AnalysisEngineResult,
   AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
-import { AnalysisEngineRequestSchema } from "@lsaa/analysis-contracts";
+import { AnalysisEngineRequestSchema, AnalysisEngineResultSchema } from "@lsaa/analysis-contracts";
 import type { ExperimentDesign } from "@lsaa/domain";
 import { createCoreTwoConditionGraphSpec } from "@lsaa/graph-spec";
 
@@ -134,181 +134,6 @@ const result: AnalysisEngineResult = {
 };
 
 describe("Japanese Methods generation", () => {
-  it("records the prespecified margin, 90% interval, both one-sided tests, and conclusion", () => {
-    const comparisonId = "equivalence:condition.control:condition.treatment";
-    const plan = {
-      schemaVersion: "0.1.0" as const,
-      margin: {
-        scale: "raw_difference" as const,
-        lowerBound: -0.5,
-        upperBound: 0.5,
-        unit: "AU",
-        declaredAsPrespecified: true as const,
-      },
-      alpha: 0.05 as const,
-      claimMode: "single_primary_comparison" as const,
-      primaryComparisonId: comparisonId,
-    };
-    const equivalenceRequest: AnalysisEngineRequest = {
-      protocolVersion: "0.15.0",
-      requestId: "request.methods:eq",
-      projectId: "project.methods",
-      analysisId: "analysis.methods:eq",
-      templateId: "D01",
-      templateVersion: "0.2.0",
-      method: "welch_tost",
-      comparisonId,
-      contrastConditionIds: ["condition.control", "condition.treatment"],
-      equivalencePlan: plan,
-      observations: request.observations,
-      options: { alternative: "two_sided", confidenceLevel: 0.9, multiplicityMethod: null },
-    };
-    const equivalenceResult: AnalysisEngineResult = {
-      ...result,
-      protocolVersion: "0.15.0",
-      requestId: equivalenceRequest.requestId,
-      estimates: [
-        {
-          name: "condition.treatment_minus_condition.control",
-          value: 0.1,
-          standardError: 0.1,
-          confidenceInterval: { level: 0.9, lower: -0.1, upper: 0.3 },
-        },
-      ],
-      tests: [],
-      equivalence: {
-        resultVersion: "0.1.0",
-        plan,
-        comparisons: [
-          {
-            comparisonId,
-            estimate: 0.1,
-            standardError: 0.1,
-            lowerConfidenceBound: -0.1,
-            upperConfidenceBound: 0.3,
-            confidenceLevel: 0.9,
-            lowerOneSidedPValue: 0.01,
-            upperOneSidedPValue: 0.02,
-            tostPValue: 0.02,
-            conclusion: "equivalence_supported",
-          },
-        ],
-      },
-    };
-    const equivalenceRecommendation: AnalysisRecommendation = {
-      templateId: "D01",
-      templateVersion: "0.2.0",
-      recommendedMethod: "welch_tost",
-      alternativeMethods: [],
-      reasonCode: "prespecified_independent_continuous_equivalence",
-      explanation: "Prespecified Welch TOST",
-      statisticalNDefinition: "Independent units at level unit.dish",
-      multiplicityMethod: null,
-    };
-
-    const text = generateMethodsText({
-      design,
-      recommendation: equivalenceRecommendation,
-      request: equivalenceRequest,
-      result: equivalenceResult,
-    });
-
-    expect(text).toContain("実行手法：Welch TOST（同等性検定）");
-    expect(text).toContain("事前指定した同等性範囲：-0.5～0.5 AU");
-    expect(text).toContain("90%信頼区間 -0.1～0.3");
-    expect(text).toContain("下限側片側p=0.01、上限側片側p=0.02、TOST p=0.02");
-    expect(text).toContain("同等性の結論：事前指定した範囲内の同等性を支持");
-    expect(text).toContain("事前指定した単一主比較だけを評価したため指定なし");
-  });
-
-  it("records paired TOST direction, complete-pair n, and every excluded incomplete pair", () => {
-    const comparisonId = "equivalence:condition.control:condition.treatment";
-    const pairedPlan = {
-      schemaVersion: "0.1.0" as const,
-      margin: {
-        scale: "raw_difference" as const,
-        lowerBound: -0.2,
-        upperBound: 0.2,
-        unit: "AU",
-        declaredAsPrespecified: true as const,
-      },
-      alpha: 0.05 as const,
-      claimMode: "single_primary_comparison" as const,
-      primaryComparisonId: comparisonId,
-    };
-    const pairedRequest: AnalysisEngineRequest = {
-      protocolVersion: "0.16.0",
-      requestId: "request.methods:paired-eq",
-      projectId: "project.methods",
-      analysisId: "analysis.methods:paired-eq",
-      templateId: "D02",
-      templateVersion: "0.2.0",
-      method: "paired_tost",
-      comparisonId,
-      contrastConditionIds: ["condition.control", "condition.treatment"],
-      equivalencePlan: pairedPlan,
-      excludedIncompletePairIds: ["animal.7", "animal.9"],
-      observations: request.observations.map((observation, index) => ({
-        ...observation,
-        experimentalUnitId: `pair.${Math.floor(index / 2) + 1}`,
-        pairId: `pair.${Math.floor(index / 2) + 1}`,
-      })),
-      options: { alternative: "two_sided", confidenceLevel: 0.9, multiplicityMethod: null },
-    };
-    const pairedResult: AnalysisEngineResult = {
-      ...result,
-      protocolVersion: "0.16.0",
-      requestId: pairedRequest.requestId,
-      estimates: [],
-      tests: [],
-      equivalence: {
-        resultVersion: "0.1.0",
-        plan: pairedPlan,
-        comparisons: [
-          {
-            comparisonId,
-            estimate: 0.05,
-            standardError: 0.02,
-            lowerConfidenceBound: 0.01,
-            upperConfidenceBound: 0.09,
-            confidenceLevel: 0.9,
-            lowerOneSidedPValue: 0.001,
-            upperOneSidedPValue: 0.002,
-            tostPValue: 0.002,
-            conclusion: "equivalence_supported",
-            analysisSet: {
-              completePairCount: 4,
-              excludedIncompletePairIds: ["animal.7", "animal.9"],
-            },
-          },
-        ],
-      },
-    };
-    const pairedRecommendation: AnalysisRecommendation = {
-      templateId: "D02",
-      templateVersion: "0.2.0",
-      recommendedMethod: "paired_tost",
-      alternativeMethods: [],
-      reasonCode: "prespecified_paired_continuous_equivalence",
-      explanation: "Prespecified paired TOST",
-      statisticalNDefinition: "Complete pairs",
-      multiplicityMethod: null,
-    };
-
-    const text = generateMethodsText({
-      design,
-      recommendation: pairedRecommendation,
-      request: pairedRequest,
-      result: pairedResult,
-    });
-
-    expect(text).toContain("実行手法：対応のあるTOST（同等性検定）");
-    expect(text).toContain("第2条件−第1条件");
-    expect(text).toContain("完全な対応組 4組");
-    expect(text).toContain("animal.7、animal.9");
-    expect(text).toContain("入力値はDataとGraphに保持");
-  });
-
   it("includes design, execution, result, graph, and explicit caveats", () => {
     const graphSpec = createCoreTwoConditionGraphSpec({
       graphId: "graph.methods",
@@ -914,4 +739,71 @@ describe("Japanese Methods generation", () => {
     expect(text).toContain("Time（独立セル間）");
     expect(text).not.toContain("反復測定");
   });
+});
+
+it.each(["less", "greater"] as const)(
+  "records %s p direction separately from central CI",
+  (alternative) => {
+    const text = generateMethodsText({
+      design,
+      recommendation,
+      request: { ...request, options: { ...request.options, alternative } },
+      result,
+    });
+    expect(text).toContain("検定方向：片側");
+    expect(text).toContain(alternative === "less" ? "<" : ">");
+    expect(text).toContain("信頼区間（両側）：95%");
+    expect(text).toContain("片側p値と同じ棄却境界を表す区間ではありません");
+  },
+);
+
+it("includes prespecified paired TOST evidence in the review HTML Methods", async () => {
+ const {serializeAnalysisReviewSetHtml}=await import("../components/graph/analysisReviewSet");
+ const plan={schemaVersion:"0.1.0" as const,alpha:0.05 as const,claimMode:"single_primary_comparison" as const,primaryComparisonId:"equivalence:condition.control:condition.treatment",margin:{scale:"raw_difference" as const,lowerBound:-0.3,upperBound:0.4,unit:"AU",declaredAsPrespecified:true as const}};
+ const tostRequest={...request,protocolVersion:"0.16.0",templateId:"D02",method:"paired_tost",equivalencePlan:plan,excludedIncompletePairIds:["missing.pair"]} as AnalysisEngineRequest;
+ const tostResult={...result,protocolVersion:"0.16.0",equivalence:{resultVersion:"0.1.0",plan,comparisons:[{comparisonId:plan.primaryComparisonId,estimate:0.05,standardError:0.01,lowerConfidenceBound:0.02,upperConfidenceBound:0.08,confidenceLevel:0.9,lowerOneSidedPValue:0.001,upperOneSidedPValue:0.002,tostPValue:0.002,conclusion:"equivalence_supported",analysisSet:{completePairCount:4,excludedIncompletePairIds:["missing.pair"]}}]}} as AnalysisEngineResult;
+ const methodsText=generateMethodsText({design,recommendation:{...recommendation,templateId:"D02",recommendedMethod:"paired_tost"},request:tostRequest,result:tostResult,graphSpec:null});
+ const html=serializeAnalysisReviewSetHtml({locale:"ja",projectTitle:"Anonymous",readoutLabel:"Intensity",readoutUnit:"AU",conditionLabels:[],analysis:{request:tostRequest,result:tostResult,recommendation} as import("./experimentWorkspaceProject").WorkspaceGraphAnalysis,methodsText,svgText:"<svg/>",displayedDataCsv:"",statisticalNText:"完全な対応組 n=4組"});
+ for (const expected of ["事前指定した同等性範囲","-0.3～0.4 AU","90%信頼区間","下限側片側p","上限側片側p","TOST p","alpha=0.05","同等性を支持","完全な対応組 4組","missing.pair"]) expect(html).toContain(expected);
+});
+
+
+describe('B02 saved Tukey definition and Methods provenance',()=>{
+ it('preserves current dimensionless q and flags historical q without recalculating',()=>{
+ const test={...result.tests[0],name:'tukey_hsd:condition.control-condition.treatment',statisticName:'q',statistic:5.196152422706632};
+ const current=AnalysisEngineResultSchema.parse({...result,tests:[test],diagnostics:[{code:'tukey_studentized_range_q',message:'q is dimensionless'}]});
+ const restored=AnalysisEngineResultSchema.parse(JSON.parse(JSON.stringify(current)));
+ expect(restored.tests[0].statistic).toBe(test.statistic);expect(restored.diagnostics[0].code).toBe('tukey_studentized_range_q');
+ const text=generateMethodsText({design,recommendation,request,result:restored});expect(text).toContain('q = 5.196');
+ const legacy=AnalysisEngineResultSchema.parse({...result,tests:[{...test,statistic:-3}],diagnostics:[]});
+ const oldText=generateMethodsText({design,recommendation,request,result:legacy});expect(oldText).toContain('旧q表記（統計量の定義未確認） = -3');expect(legacy.tests[0].statistic).toBe(-3);
+ });
+});
+
+// Anonymous results captured from the pinned 0.15.2 packaged CLI.
+describe('B07 saved directional Methods and review export',()=>{
+ const cases=[{"request":{"requestId":"methods.D12.greater","projectId":"synthetic.methods","analysisId":"synthetic.analysis","templateId":"D12","templateVersion":"0.1.0","options":{"confidenceLevel":0.95,"alternative":"greater","multiplicityMethod":null},"protocolVersion":"0.9.0","method":"one_sample_t","conditionId":"c","nullValue":1,"observations":[{"observationId":"o0","experimentalUnitId":"u0","conditionId":"c","value":2},{"observationId":"o1","experimentalUnitId":"u1","conditionId":"c","value":3},{"observationId":"o2","experimentalUnitId":"u2","conditionId":"c","value":4},{"observationId":"o3","experimentalUnitId":"u3","conditionId":"c","value":6}]},"result":{"protocolVersion":"0.9.0","requestId":"methods.D12.greater","status":"ok","engine":{"name":"lsaa-python","version":"0.15.2","packages":{"numpy":"2.3.5","scipy":"1.18.0"}},"estimates":[{"name":"mean_difference_from_reference","value":2.75,"standardError":0.8539125638299665,"confidenceInterval":{"level":0.95,"lower":0.03246911620398496,"upper":5.467530883796015}}],"tests":[{"name":"one_sample_t_test","statisticName":"t","statistic":3.2204702407301595,"degreesOfFreedom":[3],"pValue":0.02428342827990051,"adjustedPValue":null,"effectSizeName":"cohen_dz","effectSize":1.6102351203650798}],"diagnostics":[{"code":"explicit_one_sample_reference","message":"The sample mean was compared with the explicit reference value 1.0."}],"warnings":[],"completedAt":"2026-10-10T11:22:36.236690+00:00"}},{"request":{"requestId":"methods.D12.less","projectId":"synthetic.methods","analysisId":"synthetic.analysis","templateId":"D12","templateVersion":"0.1.0","options":{"confidenceLevel":0.95,"alternative":"less","multiplicityMethod":null},"protocolVersion":"0.9.0","method":"one_sample_t","conditionId":"c","nullValue":1,"observations":[{"observationId":"o0","experimentalUnitId":"u0","conditionId":"c","value":2},{"observationId":"o1","experimentalUnitId":"u1","conditionId":"c","value":3},{"observationId":"o2","experimentalUnitId":"u2","conditionId":"c","value":4},{"observationId":"o3","experimentalUnitId":"u3","conditionId":"c","value":6}]},"result":{"protocolVersion":"0.9.0","requestId":"methods.D12.less","status":"ok","engine":{"name":"lsaa-python","version":"0.15.2","packages":{"numpy":"2.3.5","scipy":"1.18.0"}},"estimates":[{"name":"mean_difference_from_reference","value":2.75,"standardError":0.8539125638299665,"confidenceInterval":{"level":0.95,"lower":0.03246911620398496,"upper":5.467530883796015}}],"tests":[{"name":"one_sample_t_test","statisticName":"t","statistic":3.2204702407301595,"degreesOfFreedom":[3],"pValue":0.9757165717200995,"adjustedPValue":null,"effectSizeName":"cohen_dz","effectSize":1.6102351203650798}],"diagnostics":[{"code":"explicit_one_sample_reference","message":"The sample mean was compared with the explicit reference value 1.0."}],"warnings":[],"completedAt":"2026-10-10T11:22:37.532163+00:00"}},{"request":{"requestId":"methods.D16.greater","projectId":"synthetic.methods","analysisId":"synthetic.analysis","templateId":"D16","templateVersion":"0.1.0","options":{"confidenceLevel":0.95,"alternative":"greater","multiplicityMethod":null},"protocolVersion":"0.13.0","method":"simple_linear_regression","xLabel":"X","yLabel":"Y","xUnit":"","yUnit":"","includeIntercept":true,"points":[{"observationId":"o0","experimentalUnitId":"u0","x":1,"y":2},{"observationId":"o1","experimentalUnitId":"u1","x":2,"y":5},{"observationId":"o2","experimentalUnitId":"u2","x":3,"y":5},{"observationId":"o3","experimentalUnitId":"u3","x":4,"y":9}]},"result":{"protocolVersion":"0.13.0","requestId":"methods.D16.greater","status":"ok","engine":{"name":"lsaa-python","version":"0.15.2","packages":{"numpy":"2.3.5","scipy":"1.18.0"}},"estimates":[{"name":"slope","value":2.0999999999999996,"standardError":0.5196152422706634,"confidenceInterval":{"level":0.95,"lower":-0.13572394057529813,"upper":4.335723940575297}},{"name":"intercept","value":-1.2011804048124553e-15,"standardError":1.423024947075771,"confidenceInterval":null}],"tests":[{"name":"slope_hypothesis_test","statisticName":"t","statistic":4.041451884327379,"degreesOfFreedom":[2],"pValue":0.028060096275730556,"adjustedPValue":null,"effectSizeName":"r_squared","effectSize":0.8909090909090909}],"diagnostics":[{"code":"regression_model","message":"OLS with an estimated intercept; R-squared uses centered total sum of squares; X=X (); Y=Y ()."}],"warnings":[],"regression":{"slope":2.0999999999999996,"intercept":-1.2011804048124553e-15,"rSquared":0.8909090909090909,"xRange":[1,4],"confidenceLevel":0.95,"fittedLine":[{"x":1,"y":2.0999999999999983,"lower":-2.0826564985204548,"upper":6.282656498520451},{"x":1.0379746835443038,"y":2.1797468354430363,"lower":-1.935150315591617,"upper":6.2946439864776895},{"x":1.0759493670886076,"y":2.2594936708860742,"lower":-1.7882906701225951,"upper":6.307278011894743},{"x":1.1139240506329113,"y":2.339240506329112,"lower":-1.6421102578941364,"upper":6.320591270552361},{"x":1.1518987341772151,"y":2.41898734177215,"lower":-1.4966436511830405,"upper":6.334618334727341},{"x":1.189873417721519,"y":2.4987341772151885,"lower":-1.3519273980138813,"upper":6.349395752444258},{"x":1.2278481012658227,"y":2.578481012658226,"lower":-1.2080001228611574,"upper":6.364962148177609},{"x":1.2658227848101267,"y":2.658227848101264,"lower":-1.064902627867427,"upper":6.381358324069955},{"x":1.3037974683544304,"y":2.737974683544302,"lower":-0.9226779934074054,"upper":6.398627360496009},{"x":1.3417721518987342,"y":2.81772151898734,"lower":-0.781371676555771,"upper":6.416814714530451},{"x":1.379746835443038,"y":2.897468354430378,"lower":-0.6410316057052574,"upper":6.435968314566013},{"x":1.4177215189873418,"y":2.977215189873416,"lower":-0.5017082692298787,"upper":6.45613864897671},{"x":1.4556962025316456,"y":3.056962025316454,"lower":-0.36345479569567685,"upper":6.477378846328584},{"x":1.4936708860759493,"y":3.1367088607594917,"lower":-0.22632702269022076,"upper":6.499744744209204},{"x":1.5316455696202533,"y":3.21645569620253,"lower":-0.09038355087649919,"upper":6.5232949432815595},{"x":1.5696202531645569,"y":3.2962025316455676,"lower":0.04431422061485435,"upper":6.548090842676281},{"x":1.6075949367088609,"y":3.375949367088606,"lower":0.17770208184652736,"upper":6.574196652330684},{"x":1.6455696202531644,"y":3.4556962025316436,"lower":0.3097130276811124,"upper":6.601679377382174},{"x":1.6835443037974684,"y":3.535443037974682,"lower":0.4402773066977459,"upper":6.630608769251618},{"x":1.7215189873417722,"y":3.61518987341772,"lower":0.5693225091939076,"upper":6.661057237641533},{"x":1.759493670886076,"y":3.6949367088607574,"lower":0.6967737003569674,"upper":6.6930997173645475},{"x":1.7974683544303798,"y":3.7746835443037954,"lower":0.8225536048496664,"upper":6.726813483757924},{"x":1.8354430379746836,"y":3.8544303797468333,"lower":0.9465828490075503,"upper":6.762277910486116},{"x":1.8734177215189873,"y":3.9341772151898713,"lower":1.0687802665323538,"upper":6.799574163847389},{"x":1.9113924050632911,"y":4.01392405063291,"lower":1.1890632729185038,"upper":6.838784828347316},{"x":1.949367088607595,"y":4.093670886075948,"lower":1.3073483128072274,"upper":6.879993459344669},{"x":1.9873417721518987,"y":4.173417721518986,"lower":1.4235513829693143,"upper":6.9232840600686565},{"x":2.0253164556962027,"y":4.253164556962024,"lower":1.537588631635228,"upper":6.96874048228882},{"x":2.0632911392405067,"y":4.332911392405062,"lower":1.649377032408054,"upper":7.0164457524020705},{"x":2.1012658227848102,"y":4.4126582278481,"lower":1.7588351280355319,"upper":7.066481327660668},{"x":2.1392405063291138,"y":4.492405063291137,"lower":1.8658838359531251,"upper":7.118926290629149},{"x":2.1772151898734178,"y":4.572151898734176,"lower":1.970447303865702,"upper":7.173856493602649},{"x":2.2151898734177218,"y":4.651898734177214,"lower":2.0724537998926222,"upper":7.231343668461806},{"x":2.2531645569620253,"y":4.731645569620252,"lower":2.1718366181949076,"upper":7.291454521045596},{"x":2.291139240506329,"y":4.811392405063289,"lower":2.2685349778109565,"upper":7.354249832315622},{"x":2.329113924050633,"y":4.891139240506328,"lower":2.362494889947802,"upper":7.419783591064853},{"x":2.367088607594937,"y":4.970886075949366,"lower":2.45366996750041,"upper":7.488102184398322},{"x":2.4050632911392404,"y":5.050632911392404,"lower":2.542022150353054,"upper":7.559243672431753},{"x":2.4430379746835444,"y":5.130379746835442,"lower":2.627522321228841,"upper":7.633237172442042},{"x":2.481012658227848,"y":5.2101265822784795,"lower":2.71015078956169,"upper":7.7101023749952695},{"x":2.518987341772152,"y":5.289873417721517,"lower":2.7898976250047274,"upper":7.789849210438307},{"x":2.556962025316456,"y":5.369620253164555,"lower":2.8667628275579546,"upper":7.872477678771157},{"x":2.5949367088607596,"y":5.449367088607593,"lower":2.940756327568243,"upper":7.957977849646943},{"x":2.632911392405063,"y":5.52911392405063,"lower":3.0118978156016745,"upper":8.046330032499586},{"x":2.670886075949367,"y":5.608860759493669,"lower":3.0802164089351427,"upper":8.137505110052196},{"x":2.708860759493671,"y":5.688607594936707,"lower":3.145750167684374,"upper":8.23146502218904},{"x":2.7468354430379747,"y":5.768354430379745,"lower":3.2085454789544006,"upper":8.328163381805089},{"x":2.7848101265822782,"y":5.848101265822782,"lower":3.26865633153819,"upper":8.427546200107376},{"x":2.8227848101265822,"y":5.927848101265821,"lower":3.326143506397347,"upper":8.529552696134294},{"x":2.8607594936708862,"y":6.007594936708859,"lower":3.3810737093708463,"upper":8.634116164046873},{"x":2.89873417721519,"y":6.087341772151897,"lower":3.433518672339329,"upper":8.741164871964466},{"x":2.9367088607594938,"y":6.167088607594935,"lower":3.4835542475979264,"upper":8.850622967591944},{"x":2.9746835443037973,"y":6.2468354430379724,"lower":3.5312595177111765,"upper":8.96241136836477},{"x":3.0126582278481013,"y":6.326582278481011,"lower":3.576715939931339,"upper":9.076448617030682},{"x":3.0506329113924053,"y":6.406329113924049,"lower":3.620006540655328,"upper":9.19265168719277},{"x":3.088607594936709,"y":6.486075949367087,"lower":3.6612151716526804,"upper":9.310936727081494},{"x":3.126582278481013,"y":6.565822784810125,"lower":3.7004258361526072,"upper":9.431219733467643},{"x":3.1645569620253164,"y":6.645569620253163,"lower":3.737722089513879,"upper":9.553417150992447},{"x":3.2025316455696204,"y":6.725316455696201,"lower":3.7731865162420712,"upper":9.67744639515033},{"x":3.240506329113924,"y":6.805063291139239,"lower":3.8069002826354486,"upper":9.803226299643029},{"x":3.278481012658228,"y":6.884810126582277,"lower":3.838942762358464,"upper":9.93067749080609},{"x":3.3164556962025316,"y":6.9645569620253145,"lower":3.8693912307483784,"upper":10.05972269330225},{"x":3.3544303797468356,"y":7.044303797468353,"lower":3.8983206226178218,"upper":10.190286972318884},{"x":3.392405063291139,"y":7.12405063291139,"lower":3.9258033476693113,"upper":10.32229791815347},{"x":3.430379746835443,"y":7.203797468354429,"lower":3.951909157323715,"upper":10.455685779385142},{"x":3.468354430379747,"y":7.283544303797467,"lower":3.976705056718437,"upper":10.590383550876497},{"x":3.5063291139240507,"y":7.363291139240504,"lower":4.00025525579079,"upper":10.726327022690217},{"x":3.5443037974683547,"y":7.443037974683542,"lower":4.022621153671411,"upper":10.863454795695674},{"x":3.5822784810126582,"y":7.52278481012658,"lower":4.043861351023285,"upper":11.001708269229875},{"x":3.6202531645569622,"y":7.602531645569618,"lower":4.0640316854339815,"upper":11.141031605705255},{"x":3.6582278481012658,"y":7.682278481012656,"lower":4.083185285469545,"upper":11.281371676555766},{"x":3.6962025316455698,"y":7.762025316455694,"lower":4.101372639503985,"upper":11.422677993407403},{"x":3.7341772151898733,"y":7.841772151898732,"lower":4.118641675930041,"upper":11.564902627867422},{"x":3.7721518987341773,"y":7.92151898734177,"lower":4.135037851822386,"upper":11.708000122861154},{"x":3.810126582278481,"y":8.001265822784807,"lower":4.150604247555737,"upper":11.851927398013878},{"x":3.848101265822785,"y":8.081012658227845,"lower":4.165381665272654,"upper":11.996643651183035},{"x":3.886075949367089,"y":8.160759493670884,"lower":4.179408729447635,"upper":12.142110257894133},{"x":3.9240506329113924,"y":8.240506329113922,"lower":4.1927219881052515,"upper":12.288290670122592},{"x":3.9620253164556964,"y":8.32025316455696,"lower":4.205356013522305,"upper":12.435150315591613},{"x":4,"y":8.399999999999997,"lower":4.217343501479544,"upper":12.58265649852045}]},"completedAt":"2026-10-10T11:22:38.723453+00:00"}},{"request":{"requestId":"methods.D16.less","projectId":"synthetic.methods","analysisId":"synthetic.analysis","templateId":"D16","templateVersion":"0.1.0","options":{"confidenceLevel":0.95,"alternative":"less","multiplicityMethod":null},"protocolVersion":"0.13.0","method":"simple_linear_regression","xLabel":"X","yLabel":"Y","xUnit":"","yUnit":"","includeIntercept":true,"points":[{"observationId":"o0","experimentalUnitId":"u0","x":1,"y":2},{"observationId":"o1","experimentalUnitId":"u1","x":2,"y":5},{"observationId":"o2","experimentalUnitId":"u2","x":3,"y":5},{"observationId":"o3","experimentalUnitId":"u3","x":4,"y":9}]},"result":{"protocolVersion":"0.13.0","requestId":"methods.D16.less","status":"ok","engine":{"name":"lsaa-python","version":"0.15.2","packages":{"numpy":"2.3.5","scipy":"1.18.0"}},"estimates":[{"name":"slope","value":2.0999999999999996,"standardError":0.5196152422706634,"confidenceInterval":{"level":0.95,"lower":-0.13572394057529813,"upper":4.335723940575297}},{"name":"intercept","value":-1.2011804048124553e-15,"standardError":1.423024947075771,"confidenceInterval":null}],"tests":[{"name":"slope_hypothesis_test","statisticName":"t","statistic":4.041451884327379,"degreesOfFreedom":[2],"pValue":0.9719399037242694,"adjustedPValue":null,"effectSizeName":"r_squared","effectSize":0.8909090909090909}],"diagnostics":[{"code":"regression_model","message":"OLS with an estimated intercept; R-squared uses centered total sum of squares; X=X (); Y=Y ()."}],"warnings":[],"regression":{"slope":2.0999999999999996,"intercept":-1.2011804048124553e-15,"rSquared":0.8909090909090909,"xRange":[1,4],"confidenceLevel":0.95,"fittedLine":[{"x":1,"y":2.0999999999999983,"lower":-2.0826564985204548,"upper":6.282656498520451},{"x":1.0379746835443038,"y":2.1797468354430363,"lower":-1.935150315591617,"upper":6.2946439864776895},{"x":1.0759493670886076,"y":2.2594936708860742,"lower":-1.7882906701225951,"upper":6.307278011894743},{"x":1.1139240506329113,"y":2.339240506329112,"lower":-1.6421102578941364,"upper":6.320591270552361},{"x":1.1518987341772151,"y":2.41898734177215,"lower":-1.4966436511830405,"upper":6.334618334727341},{"x":1.189873417721519,"y":2.4987341772151885,"lower":-1.3519273980138813,"upper":6.349395752444258},{"x":1.2278481012658227,"y":2.578481012658226,"lower":-1.2080001228611574,"upper":6.364962148177609},{"x":1.2658227848101267,"y":2.658227848101264,"lower":-1.064902627867427,"upper":6.381358324069955},{"x":1.3037974683544304,"y":2.737974683544302,"lower":-0.9226779934074054,"upper":6.398627360496009},{"x":1.3417721518987342,"y":2.81772151898734,"lower":-0.781371676555771,"upper":6.416814714530451},{"x":1.379746835443038,"y":2.897468354430378,"lower":-0.6410316057052574,"upper":6.435968314566013},{"x":1.4177215189873418,"y":2.977215189873416,"lower":-0.5017082692298787,"upper":6.45613864897671},{"x":1.4556962025316456,"y":3.056962025316454,"lower":-0.36345479569567685,"upper":6.477378846328584},{"x":1.4936708860759493,"y":3.1367088607594917,"lower":-0.22632702269022076,"upper":6.499744744209204},{"x":1.5316455696202533,"y":3.21645569620253,"lower":-0.09038355087649919,"upper":6.5232949432815595},{"x":1.5696202531645569,"y":3.2962025316455676,"lower":0.04431422061485435,"upper":6.548090842676281},{"x":1.6075949367088609,"y":3.375949367088606,"lower":0.17770208184652736,"upper":6.574196652330684},{"x":1.6455696202531644,"y":3.4556962025316436,"lower":0.3097130276811124,"upper":6.601679377382174},{"x":1.6835443037974684,"y":3.535443037974682,"lower":0.4402773066977459,"upper":6.630608769251618},{"x":1.7215189873417722,"y":3.61518987341772,"lower":0.5693225091939076,"upper":6.661057237641533},{"x":1.759493670886076,"y":3.6949367088607574,"lower":0.6967737003569674,"upper":6.6930997173645475},{"x":1.7974683544303798,"y":3.7746835443037954,"lower":0.8225536048496664,"upper":6.726813483757924},{"x":1.8354430379746836,"y":3.8544303797468333,"lower":0.9465828490075503,"upper":6.762277910486116},{"x":1.8734177215189873,"y":3.9341772151898713,"lower":1.0687802665323538,"upper":6.799574163847389},{"x":1.9113924050632911,"y":4.01392405063291,"lower":1.1890632729185038,"upper":6.838784828347316},{"x":1.949367088607595,"y":4.093670886075948,"lower":1.3073483128072274,"upper":6.879993459344669},{"x":1.9873417721518987,"y":4.173417721518986,"lower":1.4235513829693143,"upper":6.9232840600686565},{"x":2.0253164556962027,"y":4.253164556962024,"lower":1.537588631635228,"upper":6.96874048228882},{"x":2.0632911392405067,"y":4.332911392405062,"lower":1.649377032408054,"upper":7.0164457524020705},{"x":2.1012658227848102,"y":4.4126582278481,"lower":1.7588351280355319,"upper":7.066481327660668},{"x":2.1392405063291138,"y":4.492405063291137,"lower":1.8658838359531251,"upper":7.118926290629149},{"x":2.1772151898734178,"y":4.572151898734176,"lower":1.970447303865702,"upper":7.173856493602649},{"x":2.2151898734177218,"y":4.651898734177214,"lower":2.0724537998926222,"upper":7.231343668461806},{"x":2.2531645569620253,"y":4.731645569620252,"lower":2.1718366181949076,"upper":7.291454521045596},{"x":2.291139240506329,"y":4.811392405063289,"lower":2.2685349778109565,"upper":7.354249832315622},{"x":2.329113924050633,"y":4.891139240506328,"lower":2.362494889947802,"upper":7.419783591064853},{"x":2.367088607594937,"y":4.970886075949366,"lower":2.45366996750041,"upper":7.488102184398322},{"x":2.4050632911392404,"y":5.050632911392404,"lower":2.542022150353054,"upper":7.559243672431753},{"x":2.4430379746835444,"y":5.130379746835442,"lower":2.627522321228841,"upper":7.633237172442042},{"x":2.481012658227848,"y":5.2101265822784795,"lower":2.71015078956169,"upper":7.7101023749952695},{"x":2.518987341772152,"y":5.289873417721517,"lower":2.7898976250047274,"upper":7.789849210438307},{"x":2.556962025316456,"y":5.369620253164555,"lower":2.8667628275579546,"upper":7.872477678771157},{"x":2.5949367088607596,"y":5.449367088607593,"lower":2.940756327568243,"upper":7.957977849646943},{"x":2.632911392405063,"y":5.52911392405063,"lower":3.0118978156016745,"upper":8.046330032499586},{"x":2.670886075949367,"y":5.608860759493669,"lower":3.0802164089351427,"upper":8.137505110052196},{"x":2.708860759493671,"y":5.688607594936707,"lower":3.145750167684374,"upper":8.23146502218904},{"x":2.7468354430379747,"y":5.768354430379745,"lower":3.2085454789544006,"upper":8.328163381805089},{"x":2.7848101265822782,"y":5.848101265822782,"lower":3.26865633153819,"upper":8.427546200107376},{"x":2.8227848101265822,"y":5.927848101265821,"lower":3.326143506397347,"upper":8.529552696134294},{"x":2.8607594936708862,"y":6.007594936708859,"lower":3.3810737093708463,"upper":8.634116164046873},{"x":2.89873417721519,"y":6.087341772151897,"lower":3.433518672339329,"upper":8.741164871964466},{"x":2.9367088607594938,"y":6.167088607594935,"lower":3.4835542475979264,"upper":8.850622967591944},{"x":2.9746835443037973,"y":6.2468354430379724,"lower":3.5312595177111765,"upper":8.96241136836477},{"x":3.0126582278481013,"y":6.326582278481011,"lower":3.576715939931339,"upper":9.076448617030682},{"x":3.0506329113924053,"y":6.406329113924049,"lower":3.620006540655328,"upper":9.19265168719277},{"x":3.088607594936709,"y":6.486075949367087,"lower":3.6612151716526804,"upper":9.310936727081494},{"x":3.126582278481013,"y":6.565822784810125,"lower":3.7004258361526072,"upper":9.431219733467643},{"x":3.1645569620253164,"y":6.645569620253163,"lower":3.737722089513879,"upper":9.553417150992447},{"x":3.2025316455696204,"y":6.725316455696201,"lower":3.7731865162420712,"upper":9.67744639515033},{"x":3.240506329113924,"y":6.805063291139239,"lower":3.8069002826354486,"upper":9.803226299643029},{"x":3.278481012658228,"y":6.884810126582277,"lower":3.838942762358464,"upper":9.93067749080609},{"x":3.3164556962025316,"y":6.9645569620253145,"lower":3.8693912307483784,"upper":10.05972269330225},{"x":3.3544303797468356,"y":7.044303797468353,"lower":3.8983206226178218,"upper":10.190286972318884},{"x":3.392405063291139,"y":7.12405063291139,"lower":3.9258033476693113,"upper":10.32229791815347},{"x":3.430379746835443,"y":7.203797468354429,"lower":3.951909157323715,"upper":10.455685779385142},{"x":3.468354430379747,"y":7.283544303797467,"lower":3.976705056718437,"upper":10.590383550876497},{"x":3.5063291139240507,"y":7.363291139240504,"lower":4.00025525579079,"upper":10.726327022690217},{"x":3.5443037974683547,"y":7.443037974683542,"lower":4.022621153671411,"upper":10.863454795695674},{"x":3.5822784810126582,"y":7.52278481012658,"lower":4.043861351023285,"upper":11.001708269229875},{"x":3.6202531645569622,"y":7.602531645569618,"lower":4.0640316854339815,"upper":11.141031605705255},{"x":3.6582278481012658,"y":7.682278481012656,"lower":4.083185285469545,"upper":11.281371676555766},{"x":3.6962025316455698,"y":7.762025316455694,"lower":4.101372639503985,"upper":11.422677993407403},{"x":3.7341772151898733,"y":7.841772151898732,"lower":4.118641675930041,"upper":11.564902627867422},{"x":3.7721518987341773,"y":7.92151898734177,"lower":4.135037851822386,"upper":11.708000122861154},{"x":3.810126582278481,"y":8.001265822784807,"lower":4.150604247555737,"upper":11.851927398013878},{"x":3.848101265822785,"y":8.081012658227845,"lower":4.165381665272654,"upper":11.996643651183035},{"x":3.886075949367089,"y":8.160759493670884,"lower":4.179408729447635,"upper":12.142110257894133},{"x":3.9240506329113924,"y":8.240506329113922,"lower":4.1927219881052515,"upper":12.288290670122592},{"x":3.9620253164556964,"y":8.32025316455696,"lower":4.205356013522305,"upper":12.435150315591613},{"x":4,"y":8.399999999999997,"lower":4.217343501479544,"upper":12.58265649852045}]},"completedAt":"2026-10-10T11:22:39.802996+00:00"}}];
+ it.each(cases)('preserves $request.templateId $request.options.alternative after serialization',async({request:rawRequest,result:rawResult})=>{
+ const saved=JSON.parse(JSON.stringify({request:rawRequest,result:rawResult}));
+ const parsedRequest=AnalysisEngineRequestSchema.parse(saved.request);
+ const parsedResult=AnalysisEngineResultSchema.parse(saved.result);
+ const chosenRecommendation={...recommendation,templateId:parsedRequest.templateId,recommendedMethod:parsedRequest.method};
+ const methodsText=generateMethodsText({design,recommendation:chosenRecommendation,request:parsedRequest,result:parsedResult});
+ const target=parsedRequest.templateId==='D12'?'基準値 1':'回帰の傾きと0';
+ expect(methodsText).toContain(target);
+ expect(methodsText).toContain(parsedRequest.options.alternative==='greater'?'大きい':'小さい');
+ expect(methodsText).toContain('信頼区間（両側）：95%');
+ expect(methodsText).toContain('片側p値と同じ棄却境界を表す区間ではありません');
+ if(parsedRequest.templateId==='D16'){expect(methodsText).toContain('単一の回帰の傾きと0の比較');expect(methodsText).not.toContain('事前指定した単一の回帰');expect(methodsText).not.toContain('2条件の主比較のため');}
+ const {serializeAnalysisReviewSetHtml}=await import('../components/graph/analysisReviewSet');
+ const html=serializeAnalysisReviewSetHtml({locale:'ja',projectTitle:'Anonymous',readoutLabel:'Synthetic',readoutUnit:'',conditionLabels:[],analysis:{request:parsedRequest,result:parsedResult,recommendation:chosenRecommendation} as import('./experimentWorkspaceProject').WorkspaceGraphAnalysis,methodsText,svgText:'<svg/>',displayedDataCsv:'',statisticalNText:'n=4'});
+ expect(html).toContain('片側p値と同じ棄却境界を表す区間ではありません');
+ expect(html).toContain('信頼区間（両側）：95%');
+ expect(saved.result).toEqual(rawResult);
+ });
+ it.each(['D12','D16'])('%s keeps the central CI while the directional p changes',(template)=>{
+ const [greater,less]=cases.filter(c=>c.request.templateId===template);
+ expect(greater.result.estimates).toEqual(less.result.estimates);
+ expect(greater.result.tests[0].pValue+less.result.tests[0].pValue).toBeCloseTo(1,12);
+ });
 });

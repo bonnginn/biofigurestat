@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { AdaptiveInputSnapshot, StructureContract } from "@lsaa/domain";
 import {
+  ADAPTIVE_SURFACE_GRAMMAR,
   adaptiveMessage,
   buildStructureContract,
   importForSelectedSurface,
@@ -9,9 +10,6 @@ import {
   type AdaptiveLocale,
 } from "@lsaa/adaptive-input";
 import { adaptiveSurvivalPaste, createAdaptiveWorkspace } from "../app/adaptiveWorkspace";
-import { localizedFailureMessage } from "../app/appLocale";
-import { adaptiveConfirmationReason } from "../app/adaptiveConfirmationMessages";
-import { adaptiveSurfaceGrammar, adaptiveSurfaceTitle } from "../app/adaptiveSurfaceMessages";
 import type { ExperimentCellMap, ExperimentSetDraft } from "../app/experimentDraft";
 import "./AdaptiveExperimentEntry.css";
 
@@ -59,8 +57,6 @@ const keyHeaders = (contract: StructureContract): string[] => {
 };
 
 export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalReady }: Props) {
-  const failure = (error: unknown, ja: string, en: string) =>
-    localizedFailureMessage(locale, error, ja, en);
   const [stage, setStage] = useState<"questions" | "input">("questions");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -86,6 +82,35 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
   const [preview, setPreview] = useState<readonly Record<string, unknown>[]>([]);
   const [importConfirmations, setImportConfirmations] = useState<readonly string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const fileGeneration = useRef(0);
+  const inputSnapshot = JSON.stringify({
+    stage,
+    name,
+    description,
+    unit,
+    identity,
+    readout,
+    representation,
+    factor,
+    levels,
+    additionalFactors,
+    matched,
+    axis,
+    axisUnit,
+    axisLevels,
+    nested,
+    contract,
+    text,
+    confirmed: [...confirmed].sort(),
+  });
+  const latestInputSnapshot = useRef(inputSnapshot);
+  latestInputSnapshot.current = inputSnapshot;
+  useEffect(
+    () => () => {
+      fileGeneration.current += 1;
+    },
+    [],
+  );
 
   const selection = useMemo(() => (contract ? selectAdaptiveSurface(contract) : null), [contract]);
   const confirmations = useMemo(
@@ -140,13 +165,7 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
       setMessage(null);
       setStage("input");
     } catch (error) {
-      setMessage(
-        failure(
-          error,
-          "実験構造を作成できませんでした",
-          "The experiment structure could not be created.",
-        ),
-      );
+      setMessage(error instanceof Error ? error.message : "Structure could not be created");
     }
   };
 
@@ -155,6 +174,7 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
     sourceKind: "clipboard" | "csv" | "tsv" | "generic_file",
     sourceLabel: string,
   ) => {
+    fileGeneration.current += 1;
     if (!contract) return;
     try {
       const imported = importForSelectedSurface(contract, rawText, sourceKind, sourceLabel);
@@ -197,13 +217,7 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
       }
       onReady(workspace.draft, workspace.cells);
     } catch (error) {
-      setMessage(
-        failure(
-          error,
-          "入力を対応づけられませんでした",
-          "The input could not be mapped. Your pasted data were retained.",
-        ),
-      );
+      setMessage(error instanceof Error ? error.message : "Input could not be mapped");
     }
   };
 
@@ -431,7 +445,7 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
     );
 
   if (!contract || !selection) return null;
-  const grammar = adaptiveSurfaceGrammar(locale, selection.surfaceId);
+  const grammar = ADAPTIVE_SURFACE_GRAMMAR[selection.surfaceId];
   return (
     <section
       className="adaptive-entry"
@@ -439,7 +453,7 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
       data-adaptive-surface={selection.surfaceId}
     >
       <p className="experiment-start__eyebrow">{adaptiveMessage(locale, "structureSummary")}</p>
-      <h1 id="adaptive-surface-title">{adaptiveSurfaceTitle(locale, selection.surfaceId)}</h1>
+      <h1 id="adaptive-surface-title">{selection.surfaceId}</h1>
       <div className="adaptive-entry__edit-design">
         <p>
           {locale === "ja"
@@ -495,7 +509,7 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
               });
             }}
           />
-          <span>{adaptiveConfirmationReason(locale, confirmation)}</span>
+          <span>{confirmation.reason}</span>
         </label>
       ))}
       {importConfirmations.map((key) => (
@@ -535,18 +549,47 @@ export function AdaptiveExperimentEntry({ locale, onCancel, onReady, onSurvivalR
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];
           if (!file) return;
-          void file.text().then((raw) => {
-            setText(raw);
-            importText(
-              raw,
-              file.name.endsWith(".csv")
-                ? "csv"
-                : file.name.endsWith(".tsv")
-                  ? "tsv"
-                  : "generic_file",
-              file.name,
-            );
-          });
+          const generation = ++fileGeneration.current;
+          const snapshot = inputSnapshot;
+          const lowerName = file.name.toLowerCase();
+          event.currentTarget.value = "";
+          void file
+            .text()
+            .then((raw) => {
+              if (generation !== fileGeneration.current) return;
+              if (snapshot !== latestInputSnapshot.current) {
+                setMessage(
+                  locale === "ja"
+                    ? "読込中の入力・実験構造の変更を保全しました。必要ならファイルを選び直してください。"
+                    : "Changes made while reading were preserved. Select the file again if needed.",
+                );
+                return;
+              }
+              setText(raw);
+              importText(
+                raw,
+                lowerName.endsWith(".csv")
+                  ? "csv"
+                  : lowerName.endsWith(".tsv")
+                    ? "tsv"
+                    : "generic_file",
+                file.name,
+              );
+            })
+            .catch(() => {
+              if (generation !== fileGeneration.current) return;
+              if (snapshot !== latestInputSnapshot.current) {
+                setMessage(
+                  locale === "ja"
+                    ? "ファイルの読込に失敗しました。読込中の入力・実験構造の変更は保全しています。"
+                    : "The file could not be read. Changes made during reading were preserved.",
+                );
+                return;
+              }
+              setMessage(
+                locale === "ja" ? "ファイルを読み込めませんでした。" : "Could not read the file.",
+              );
+            });
         }}
       />
       <div className="adaptive-entry__actions">

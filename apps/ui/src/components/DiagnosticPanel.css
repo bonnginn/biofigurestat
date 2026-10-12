@@ -24,7 +24,7 @@
   display: grid;
   gap: 5px;
 }
-.diagnostic-panel input:not([type="checkbox"]):not([type="radio"]),
+.diagnostic-panel input,
 .diagnostic-panel select,
 .diagnostic-panel textarea {
   width: 100%;
@@ -95,17 +95,6 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  min-width: 0;
-}
-
-.diagnostic-expanded-option input {
-  flex: 0 0 auto;
-  width: auto;
-}
-
-.diagnostic-expanded-option span {
-  min-width: 0;
-  overflow-wrap: anywhere;
 }
 
 .diagnostic-expanded-option small {

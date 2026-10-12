@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
-from typing import Any, NamedTuple
+from typing import Any
 
 import numpy as np
 import statsmodels
@@ -13,17 +13,6 @@ from scipy.special import gammaln
 from statsmodels.stats.multitest import multipletests
 
 from .result_common import base_result, estimate
-
-
-class _GamesHowellComparison(NamedTuple):
-    first_index: int
-    second_index: int
-    difference: float
-    standard_error: float
-    degrees_of_freedom: float
-    adjusted_p_value: float
-    confidence_lower: float
-    confidence_upper: float
 
 
 def _welch_degrees_of_freedom(samples: list[np.ndarray]) -> tuple[float, float]:
@@ -63,73 +52,6 @@ def _pairwise_hedges_g(first: np.ndarray, second: np.ndarray) -> float | None:
         - gammaln((pooled_df - 1.0) / 2.0)
     )
     return float(cohen_d * correction)
-
-
-def _games_howell_upper_triangle(
-    samples: list[np.ndarray], confidence_level: float
-) -> list[_GamesHowellComparison]:
-    """Return SciPy Games-Howell results only for the comparisons we expose."""
-    group_count = len(samples)
-    sample_sizes = np.asarray([len(sample) for sample in samples], dtype=float)
-    means = np.asarray([np.mean(sample) for sample in samples], dtype=float)
-    variance_components = np.asarray(
-        [np.var(sample, ddof=1) for sample in samples], dtype=float
-    ) / sample_sizes
-    pair_inputs: list[tuple[int, int, float, float, float]] = []
-    range_statistics: list[float] = []
-    range_standard_errors: list[float] = []
-    degrees_of_freedom: list[float] = []
-    for first_index in range(group_count):
-        for second_index in range(first_index + 1, group_count):
-            first_component = float(variance_components[first_index])
-            second_component = float(variance_components[second_index])
-            component_sum = first_component + second_component
-            difference = float(means[first_index] - means[second_index])
-            pair_df = component_sum**2 / (
-                first_component**2 / (sample_sizes[first_index] - 1.0)
-                + second_component**2 / (sample_sizes[second_index] - 1.0)
-            )
-            range_standard_error = math.sqrt(component_sum / 2.0)
-            pair_inputs.append(
-                (
-                    first_index,
-                    second_index,
-                    difference,
-                    math.sqrt(component_sum),
-                    float(pair_df),
-                )
-            )
-            range_statistics.append(abs(difference) / range_standard_error)
-            range_standard_errors.append(range_standard_error)
-            degrees_of_freedom.append(float(pair_df))
-
-    pair_df = np.asarray(degrees_of_freedom, dtype=float)
-    adjusted_p_values = stats.studentized_range.sf(
-        np.asarray(range_statistics, dtype=float), group_count, pair_df
-    )
-    unique_df, critical_value_index = np.unique(pair_df, return_inverse=True)
-    unique_critical_values = np.atleast_1d(
-        stats.studentized_range.ppf(confidence_level, group_count, unique_df)
-    )
-    critical_values = unique_critical_values[critical_value_index]
-    confidence_radii = critical_values * np.asarray(range_standard_errors, dtype=float)
-    comparisons: list[_GamesHowellComparison] = []
-    for index, pair_input in enumerate(pair_inputs):
-        first_index, second_index, difference, standard_error, pair_df_value = pair_input
-        radius = float(confidence_radii[index])
-        comparisons.append(
-            _GamesHowellComparison(
-                first_index=first_index,
-                second_index=second_index,
-                difference=difference,
-                standard_error=standard_error,
-                degrees_of_freedom=pair_df_value,
-                adjusted_p_value=float(adjusted_p_values[index]),
-                confidence_lower=difference - radius,
-                confidence_upper=difference + radius,
-            )
-        )
-    return comparisons
 
 
 def run_welch_anova(request: dict[str, Any]) -> dict[str, Any]:
@@ -172,7 +94,8 @@ def run_welch_anova(request: dict[str, Any]) -> dict[str, Any]:
     omnibus = stats.f_oneway(*samples, equal_var=False)
     numerator_df, denominator_df = _welch_degrees_of_freedom(samples)
     confidence_level = float(request["options"]["confidenceLevel"])
-    posthoc_comparisons = _games_howell_upper_triangle(samples, confidence_level)
+    posthoc = stats.tukey_hsd(*samples, equal_var=False)
+    posthoc_interval = posthoc.confidence_interval(confidence_level=confidence_level)
 
     result = base_result(request)
     result["tests"].append(
@@ -188,42 +111,45 @@ def run_welch_anova(request: dict[str, Any]) -> dict[str, Any]:
         }
     )
 
-    for comparison in posthoc_comparisons:
-        first_index = comparison.first_index
-        second_index = comparison.second_index
-        first_id = condition_ids[first_index]
-        second_id = condition_ids[second_index]
-        first = samples[first_index]
-        second = samples[second_index]
-        difference = comparison.difference
-        standard_error = comparison.standard_error
-        degrees_of_freedom = comparison.degrees_of_freedom
-        welch_test = stats.ttest_ind(first, second, equal_var=False)
-        comparison_name = f"{first_id}_minus_{second_id}"
-        result["estimates"].append(
-            estimate(
-                comparison_name,
-                difference,
-                standard_error,
-                {
-                    "level": confidence_level,
-                    "lower": comparison.confidence_lower,
-                    "upper": comparison.confidence_upper,
-                },
+    for first_index, first_id in enumerate(condition_ids):
+        for second_index in range(first_index + 1, len(condition_ids)):
+            second_id = condition_ids[second_index]
+            first = samples[first_index]
+            second = samples[second_index]
+            difference = float(np.mean(first) - np.mean(second))
+            first_component = float(np.var(first, ddof=1)) / len(first)
+            second_component = float(np.var(second, ddof=1)) / len(second)
+            standard_error = math.sqrt(first_component + second_component)
+            degrees_of_freedom = (first_component + second_component) ** 2 / (
+                first_component**2 / (len(first) - 1)
+                + second_component**2 / (len(second) - 1)
             )
-        )
-        result["tests"].append(
-            {
-                "name": f"games_howell:{first_id}:{second_id}",
-                "statisticName": "t",
-                "statistic": float(welch_test.statistic),
-                "degreesOfFreedom": [float(degrees_of_freedom)],
-                "pValue": float(welch_test.pvalue),
-                "adjustedPValue": comparison.adjusted_p_value,
-                "effectSizeName": "hedges_g",
-                "effectSize": _pairwise_hedges_g(first, second),
-            }
-        )
+            welch_test = stats.ttest_ind(first, second, equal_var=False)
+            comparison_name = f"{first_id}_minus_{second_id}"
+            result["estimates"].append(
+                estimate(
+                    comparison_name,
+                    difference,
+                    standard_error,
+                    {
+                        "level": confidence_level,
+                        "lower": float(posthoc_interval.low[first_index, second_index]),
+                        "upper": float(posthoc_interval.high[first_index, second_index]),
+                    },
+                )
+            )
+            result["tests"].append(
+                {
+                    "name": f"games_howell:{first_id}:{second_id}",
+                    "statisticName": "t",
+                    "statistic": float(welch_test.statistic),
+                    "degreesOfFreedom": [float(degrees_of_freedom)],
+                    "pValue": float(welch_test.pvalue),
+                    "adjustedPValue": float(posthoc.pvalue[first_index, second_index]),
+                    "effectSizeName": "hedges_g",
+                    "effectSize": _pairwise_hedges_g(first, second),
+                }
+            )
 
     result["diagnostics"] = [
         {
@@ -275,6 +201,8 @@ def _append_tukey_pairs(
     samples: list[np.ndarray],
     confidence_level: float,
 ) -> None:
+    # SciPy exposes the signed mean difference, not studentized range q.
+    # Tukey-Kramer uses sqrt(MSE * (1/n_i + 1/n_j) / 2).
     posthoc = stats.tukey_hsd(*samples, equal_var=True)
     interval = posthoc.confidence_interval(confidence_level=confidence_level)
     pooled_df = sum(len(sample) for sample in samples) - len(samples)
@@ -304,7 +232,7 @@ def _append_tukey_pairs(
                 {
                     "name": f"tukey_hsd:{first_id}:{second_id}",
                     "statisticName": "q",
-                    "statistic": float(posthoc.statistic[first_index, second_index]),
+                    "statistic": abs(difference) / (standard_error / math.sqrt(2.0)),
                     "degreesOfFreedom": [float(pooled_df)],
                     "pValue": float(posthoc.pvalue[first_index, second_index]),
                     "adjustedPValue": float(posthoc.pvalue[first_index, second_index]),
@@ -495,6 +423,11 @@ def run_classical_one_way(request: dict[str, Any]) -> dict[str, Any]:
             "message": "Conventional one-way ANOVA and its pooled-variance comparisons assume equal population variances.",
         }
     ]
+    if contrast_intent == "all_pairs":
+        result["diagnostics"].append({
+            "code": "tukey_studentized_range_q",
+            "message": "Tukey statistic q = abs(mean difference) / sqrt(MSE * (1/n_i + 1/n_j) / 2); mean differences and simultaneous intervals remain in outcome units.",
+        })
     if contrast_intent == "planned_comparisons":
         result["diagnostics"].append(
             {
@@ -515,6 +448,10 @@ def run_kruskal_wallis(request: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Kruskal-Wallis omnibus-only workflow must not declare post-hoc adjustment")
     if contrast_intent == "all_pairs" and multiplicity != "dunn_holm_all_pairs":
         raise ValueError("Kruskal-Wallis all-pairs workflow requires Dunn comparisons with Holm adjustment")
+    if np.unique(np.concatenate(samples)).size == 1:
+        raise ValueError(
+            "Kruskal-Wallis is undefined when every analyzed value is identical"
+        )
     try:
         test = stats.kruskal(*samples)
     except ValueError as error:
@@ -556,6 +493,10 @@ def run_kruskal_wallis(request: dict[str, Any]) -> dict[str, Any]:
                     rank_variance
                     * (1.0 / len(samples[first_index]) + 1.0 / len(samples[second_index]))
                 )
+                if not math.isfinite(standard_error) or standard_error <= 0:
+                    raise ValueError(
+                        "Dunn comparisons are undefined when pooled rank variance is zero"
+                    )
                 statistic = (mean_ranks[first_index] - mean_ranks[second_index]) / standard_error
                 p_value = float(2.0 * stats.norm.sf(abs(statistic)))
                 pair_results.append((first_id, second_id, float(statistic), p_value))

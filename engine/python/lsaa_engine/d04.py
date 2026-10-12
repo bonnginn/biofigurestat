@@ -25,6 +25,8 @@ def _holm_adjust(p_values: list[float]) -> list[float]:
 
 
 def run_repeated_measures_anova(request: dict[str, Any]) -> dict[str, Any]:
+    if request.get("options", {}).get("alternative", "two_sided") != "two_sided":
+        raise ValueError("D04 currently supports only two_sided; directional inference is not implemented")
     condition_ids = request.get("conditionIds")
     if not isinstance(condition_ids, list) or len(condition_ids) < 3:
         raise ValueError("D04 repeated-measures ANOVA requires at least three conditions")

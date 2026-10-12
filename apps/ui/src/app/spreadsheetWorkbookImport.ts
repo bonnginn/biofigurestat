@@ -1,3 +1,4 @@
+import { encodeDelimitedCell } from "@lsaa/adaptive-input";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
@@ -53,11 +54,11 @@ export function mergeImportedSpreadsheetWorkbooks(
   if (workbooks.length === 1) return workbooks[0]!;
   return {
     fileName: `${workbooks[0]!.fileName} +${workbooks.length - 1}`,
-    sourceFiles: workbooks.map(({ fileName }) => fileName),
-    sheets: workbooks.flatMap((workbook) =>
+    sourceFiles: workbooks.map(({ fileName },index) => workbooks.filter(w=>w.fileName===fileName).length > 1 ? `${fileName} [${index+1}]` : fileName),
+    sheets: workbooks.flatMap((workbook,index) =>
       workbook.sheets.map((sheet) => ({
         ...sheet,
-        name: `${workbook.fileName} / ${sheet.name}`,
+        name: `${workbooks.filter(w=>w.fileName===workbook.fileName).length > 1 ? `${workbook.fileName} [${index+1}]` : workbook.fileName} / ${sheet.name}`,
       })),
     ),
   };
@@ -65,7 +66,7 @@ export function mergeImportedSpreadsheetWorkbooks(
 
 export function spreadsheetRowsToTsv(rows: readonly (readonly string[])[]): string {
   return rows
-    .map((row) => row.map((cell) => cell.replace(/[\t\r\n]/gu, " ")).join("\t"))
+    .map((row) => row.map((cell) => encodeDelimitedCell(cell, "\t")).join("\t"))
     .join("\n");
 }
 

@@ -23,6 +23,11 @@ import {
   type ExperimentSetDraft,
 } from "./experimentDraft";
 import { createAdaptiveWorkspace } from "./adaptiveWorkspace";
+import {
+  canonicalMatrixDisplayTextKey,
+  canonicalMatrixLexicalText,
+  pruneNumericDisplayTexts,
+} from "./canonicalNumericPresentation";
 
 type Coordinate = Readonly<{
   experimentIndex: number;
@@ -110,9 +115,43 @@ function sourceLineageCellFingerprint(cells: ExperimentCellMap): string {
 function adaptiveContract(draft: ExperimentSetDraft): StructureContract | null {
   if (draft.adaptiveInput) return draft.adaptiveInput.contract;
   if (!draft.adaptiveTemplate) return null;
+  const template = draft.adaptiveTemplate.contract;
+  // Reuse carries no observations. Its editable factor descriptors therefore
+  // define the new design, while unit, matching and nesting semantics stay intact.
+  const factors = template.factors.map((factor) => {
+    const attributeId = `factor.${factor.key}`;
+    const levels = [
+      ...new Set(
+        draft.conditions
+          .map(
+            (condition) =>
+              condition.attributes[attributeId] ??
+              (template.factors.length === 1 ? condition.label : ""),
+          )
+          .filter((level) => level.trim() !== ""),
+      ),
+    ];
+    const control = draft.conditions.find(({ id }) => id === draft.controlConditionId);
+    const selectedReference =
+      control?.attributes[attributeId] ??
+      (template.factors.length === 1 ? control?.label : undefined);
+    const resolvedLevels = levels.length ? levels : factor.levels;
+    return {
+      ...factor,
+      label: draft.attributes.find(({ id }) => id === attributeId)?.label ?? factor.label,
+      levels: resolvedLevels,
+      referenceLevel:
+        selectedReference && resolvedLevels.includes(selectedReference)
+          ? selectedReference
+          : factor.referenceLevel && resolvedLevels.includes(factor.referenceLevel)
+            ? factor.referenceLevel
+            : null,
+    };
+  });
   return StructureContractSchema.parse({
-    ...draft.adaptiveTemplate.contract,
+    ...template,
     experimentName: draft.name,
+    factors,
   });
 }
 
@@ -169,9 +208,7 @@ function coordinateForPriorRow(input: {
   const semanticIdentity = row.identities[sessionIdentityKey];
   if (!semanticIdentity) return null;
   const experimentIndex =
-    row.experimentSessionId
-      ? draft.experiments.findIndex(({ id }) => id === row.experimentSessionId)
-      : draft.conditionAssignment.kind === "matched"
+    draft.conditionAssignment.kind === "matched"
       ? draft.experiments.findIndex(
           ({ stableUnitId, label }) =>
             stableUnitId === semanticIdentity || label === semanticIdentity,
@@ -308,8 +345,11 @@ function rowWithValues(input: {
     );
   return CanonicalAdaptiveObservationSchema.parse({
     observationId: base?.observationId ?? nextObservationId(),
-    experimentSessionId:
-      base?.experimentSessionId ?? draft.experiments[coordinate.experimentIndex]?.id,
+    // Published projects may carry a session label as provenance even for
+    // independent units. Retain existing labels without inventing linkage.
+    ...(base?.experimentSessionId !== undefined
+      ? { experimentSessionId: base.experimentSessionId }
+      : {}),
     readoutKey: coordinate.readout.key,
     identities: base?.identities ?? generated.identities,
     factors: base?.factors ?? factors,
@@ -467,6 +507,17 @@ export function synchronizeAdaptiveSnapshot(input: {
     );
     return AdaptiveInputSnapshotSchema.parse({
       ...existingSnapshot,
+      ...(existingSnapshot.numericPresentation
+        ? {
+            numericPresentation: {
+              schemaVersion: "0.1.0",
+              displayTexts: pruneNumericDisplayTexts(
+                existingSnapshot.canonicalObservations,
+                existingSnapshot.numericPresentation.displayTexts,
+              ),
+            },
+          }
+        : {}),
       contract,
       equivalence: assertDualWriteEquivalence(contract, design, input.now),
     });
@@ -588,6 +639,17 @@ export function synchronizeAdaptiveSnapshot(input: {
     ...(input.draft.adaptiveInput?.biologicalSetup !== undefined
       ? { biologicalSetup: input.draft.adaptiveInput.biologicalSetup }
       : {}),
+    ...(input.draft.adaptiveInput?.numericPresentation !== undefined
+      ? {
+          numericPresentation: {
+            schemaVersion: "0.1.0",
+            displayTexts: pruneNumericDisplayTexts(
+              observations,
+              input.draft.adaptiveInput.numericPresentation.displayTexts,
+            ),
+          },
+        }
+      : {}),
   });
 }
 
@@ -600,4 +662,67 @@ export function synchronizeAdaptiveDraft(input: {
   if (!snapshot) return input.draft;
   const { adaptiveTemplate: _template, ...draft } = input.draft;
   return { ...draft, adaptiveInput: snapshot };
+}
+
+/** Restore a published scalar spelling only through the existing exact cell projection.
+ * Multiple observations, missing values and changed numerical values are not guessed.
+ */
+export function restoreLegacyScalarDisplayTexts(
+  draft: ExperimentSetDraft,
+  cells: ExperimentCellMap,
+  texts: Readonly<Record<string, string>>,
+): ExperimentSetDraft {
+  const snapshot = draft.adaptiveInput;
+  if (!snapshot || Object.keys(texts).length === 0) return draft;
+  const identityOrder = priorIdentityOrderByCondition(
+    snapshot.contract,
+    snapshot.canonicalObservations,
+  );
+  const grouped = new Map<
+    string,
+    Array<{ row: CanonicalAdaptiveObservation; coordinate: Coordinate }>
+  >();
+  for (const row of snapshot.canonicalObservations) {
+    const coordinate = coordinateForPriorRow({
+      draft,
+      contract: snapshot.contract,
+      row,
+      identityOrder,
+    });
+    if (!coordinate || coordinate.readout.representation !== "scalar") continue;
+    grouped.set(coordinate.key, [...(grouped.get(coordinate.key) ?? []), { row, coordinate }]);
+  }
+  const displayTexts = { ...snapshot.numericPresentation?.displayTexts };
+  for (const [key, matches] of grouped) {
+    if (matches.length !== 1) continue;
+    const { row, coordinate } = matches[0]!;
+    const cell = cells[key];
+    const valueKey = coordinate.readout.key;
+    const value = row.values[valueKey];
+    const text = texts[key];
+    if (
+      cell?.kind !== "nested_continuous" ||
+      cell.rawValues.length !== 1 ||
+      cellIsNotPlanned(cell) ||
+      typeof value !== "number" ||
+      row.missingness[valueKey] ||
+      cell.rawValues[0] !== value ||
+      typeof text !== "string"
+    )
+      continue;
+    const exact = canonicalMatrixLexicalText(value, text);
+    const displayKey = canonicalMatrixDisplayTextKey(row.observationId, valueKey);
+    if (exact !== null && displayTexts[displayKey] === undefined) displayTexts[displayKey] = exact;
+  }
+  if (Object.keys(displayTexts).length === 0) return draft;
+  return {
+    ...draft,
+    adaptiveInput: {
+      ...snapshot,
+      numericPresentation: {
+        schemaVersion: "0.1.0",
+        displayTexts: pruneNumericDisplayTexts(snapshot.canonicalObservations, displayTexts),
+      },
+    },
+  };
 }

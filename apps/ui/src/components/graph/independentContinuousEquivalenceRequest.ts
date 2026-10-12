@@ -31,6 +31,7 @@ export function createIndependentContinuousEquivalenceRequest({
     plan.margin.scale !== "raw_difference" ||
     plan.claimMode !== "single_primary_comparison" ||
     plan.primaryComparisonId !== comparisonId ||
+    comparisonId !== `equivalence:${encodeURIComponent(baseRequest.contrastConditionIds[0])}:${encodeURIComponent(baseRequest.contrastConditionIds[1])}` ||
     baseRequest.observations.some(
       (observation) => observation.pairId !== undefined || observation.blockId !== undefined,
     )

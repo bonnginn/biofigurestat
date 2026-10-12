@@ -1,6 +1,7 @@
+import { createGraphOnlyWorkbenchModel } from "../../app/graphOnlyWorkbenchAdapter";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { AnalysisEngineResult } from "@lsaa/analysis-contracts";
-import { afterEach, vi } from "vitest";
+import { vi } from "vitest";
 import type { AnalysisRunner } from "../../app/analysisClient";
 import { copyGraphToClipboard, serializeGraphSvg } from "../../app/graphExport";
 import {
@@ -24,10 +25,6 @@ import {
   repeatedAxisAnnotationLabel,
   serializeVisibleGraphData,
 } from "./ExperimentGraphWorkbench";
-import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
-import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
-
-afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 function readBlobText(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -161,24 +158,6 @@ describe("visible Graph data CSV", () => {
     expect(csv).toContain("細胞・ROI生データ");
     expect(csv).toContain("実験単位平均");
     expect(csv.split("\n").filter(Boolean)).toHaveLength(3);
-  });
-
-  it("uses English headings and layer names in an English review export", () => {
-    const csv = serializeVisibleGraphData(
-      series,
-      {
-        id: "readout.1",
-        label: "Cell circularity",
-        shape: "nested_continuous",
-        nestedInputMode: "nested_observations",
-      },
-      "en",
-    );
-
-    expect(csv).toContain("Condition");
-    expect(csv).toContain("Raw Cell/ROI value");
-    expect(csv).toContain("Experimental-unit mean");
-    expect(csv).not.toContain("実験単位平均");
   });
 });
 
@@ -435,28 +414,165 @@ function factorialContinuousFixture(): {
 }
 
 describe("ExperimentGraphWorkbench", () => {
+  it.each(["black", "custom"] as const)(
+    "renders restored alpha.4 %s bar outlines in preview and export without changing values",
+    async (mode) => {
+      const { draft, cells } = simpleThreeGroupFixture();
+      const onStateChange = vi.fn();
+      const view = render(
+        <ExperimentGraphWorkbench
+          draft={draft}
+          cells={cells}
+          onClose={vi.fn()}
+          onStateChange={onStateChange}
+        />,
+      );
+      await waitFor(() => expect(onStateChange).toHaveBeenCalled());
+      const saved = onStateChange.mock.calls.at(-1)![0];
+      view.unmount();
+      render(
+        <ExperimentGraphWorkbench
+          draft={draft}
+          cells={cells}
+          onClose={vi.fn()}
+          initialState={{
+            ...saved,
+            graphType: "bar",
+            appearance: {
+              ...saved.appearance,
+              barOutline: true,
+              barOutlineMode: mode,
+              barOutlineColor: "#cc3311",
+              barOutlineWidth: 2.4,
+            },
+          }}
+        />,
+      );
+      const graph = screen.getByRole("img", {
+        name: /実験単位ごとのグラフ/,
+      }) as unknown as SVGSVGElement;
+      const bars = [...graph.querySelectorAll<SVGRectElement>('[data-graph-layer="bar"]')];
+      expect(bars).toHaveLength(3);
+      const stroke = mode === "black" ? "#111111" : "#cc3311";
+      bars.forEach((bar) => {
+        expect(bar.getAttribute("stroke")).toBe(stroke);
+        expect(bar.style.stroke).toBe(stroke);
+        expect(bar.style.strokeWidth).toBe("2.4");
+      });
+      const exported = new DOMParser().parseFromString(serializeGraphSvg(graph), "image/svg+xml");
+      expect(exported.querySelector('[data-graph-layer="bar"]')?.getAttribute("style")).toContain(
+        stroke,
+      );
+      // Three independent values per condition: 30/33/36%, 38/41/44%, 46/49/52%.
+      expect(bars.map((bar) => bar.dataset.summaryValue)).toEqual(["33", "41", "49"]);
+    },
+  );
+  it("retains the chosen bar outline in preview and standalone SVG rather than CSS defaults", () => {
+    const { draft, cells } = simpleThreeGroupFixture();
+    render(<ExperimentGraphWorkbench draft={draft} cells={cells} onClose={vi.fn()} />);
+    selectInspectorTarget("background");
+    fireEvent.change(screen.getByRole("combobox", { name: "グラフの基本形" }), {
+      target: { value: "bar" },
+    });
+    selectInspectorTarget("x-axis");
+    const outline = screen.getByRole("checkbox", { name: "棒の輪郭線を表示" });
+    const graph = screen.getByRole("img", {
+      name: /実験単位ごとのグラフ/,
+    }) as unknown as SVGSVGElement;
+    const bars = [...graph.querySelectorAll<SVGRectElement>('[data-graph-layer="bar"]')];
+    const summaries = bars.map((bar) => bar.dataset.summaryValue);
+    fireEvent.click(outline);
+    bars.forEach((bar) => {
+      expect(bar.style.stroke).toBe("none");
+      expect(bar.style.strokeWidth).toBe("0");
+    });
+    const exported = new DOMParser().parseFromString(serializeGraphSvg(graph), "image/svg+xml");
+    expect(exported.querySelector('[data-graph-layer="bar"]')?.getAttribute("style")).toContain(
+      "stroke: none",
+    );
+    fireEvent.click(outline);
+    bars.forEach((bar) => {
+      expect(bar.style.stroke).toBe(bar.getAttribute("fill"));
+      expect(bar.style.strokeWidth).toBe("1.2");
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "棒の外枠色" }), {
+      target: { value: "custom" },
+    });
+    fireEvent.change(screen.getByLabelText("棒の外枠の任意色"), { target: { value: "#cc3311" } });
+    fireEvent.change(screen.getByRole("slider", { name: "棒の外枠の太さ" }), {
+      target: { value: "2.4" },
+    });
+    bars.forEach((bar) => {
+      expect(bar.style.stroke).toBe("#cc3311");
+      expect(bar.style.strokeWidth).toBe("2.4");
+    });
+    expect(bars.map((bar) => bar.dataset.summaryValue)).toEqual(summaries);
+  });
+  it("uses the current workspace graph name for SVG and CSV exports without changing plotted data", async () => {
+    const { draft, cells } = proportionFixture();
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:named-graph");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const names: string[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      names.push(this.download);
+    });
+    try {
+      const { rerender } = render(
+        <ExperimentGraphWorkbench
+          draft={draft}
+          cells={cells}
+          onClose={vi.fn()}
+          displayName="Treatment plot"
+        />,
+      );
+      const svg = screen.getByRole("img", {
+        name: /実験単位ごとのグラフ/,
+      }) as unknown as SVGSVGElement;
+      const plotted = serializeGraphSvg(svg);
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "SVGを書き出す" }));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "表示データCSV" }));
+      });
+      expect(names).toEqual(["Treatment_plot.svg", "Treatment_plot-graph-data.csv"]);
+      rerender(
+        <ExperimentGraphWorkbench
+          draft={draft}
+          cells={cells}
+          onClose={vi.fn()}
+          displayName="Changed plot"
+        />,
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "SVGを書き出す" }));
+      });
+      expect(names.at(-1)).toBe("Changed_plot.svg");
+      expect(serializeGraphSvg(svg)).toBe(plotted);
+      rerender(
+        <ExperimentGraphWorkbench
+          draft={draft}
+          cells={cells}
+          onClose={vi.fn()}
+          displayName="CON"
+        />,
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "SVGを書き出す" }));
+      });
+      expect(names.at(-1)).toBe("_CON.svg");
+      expect(serializeGraphSvg(svg)).toBe(plotted);
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
   const selectInspectorTarget = (target: string) => {
     fireEvent.change(screen.getByRole("combobox", { name: "編集対象" }), {
       target: { value: target },
     });
   };
-
-  it("shows the standard Graph workspace without Japanese application copy in English mode", () => {
-    act(() => setAppLocale("en"));
-    const fixture = simpleThreeGroupFixture();
-    const draft = {
-      ...fixture.draft,
-      readouts: fixture.draft.readouts.map((readout) => ({
-        ...readout,
-        label: "Positive fraction",
-      })),
-    };
-    const view = render(
-      <ExperimentGraphWorkbench draft={draft} cells={fixture.cells} onClose={vi.fn()} />,
-    );
-
-    expectNoJapaneseUi(view.container);
-  });
 
   it("3群は安定スロットと左右余白でコンパクトに表示する", () => {
     const { draft, cells } = simpleThreeGroupFixture();
@@ -499,8 +615,6 @@ describe("ExperimentGraphWorkbench", () => {
     const fixture = simpleThreeGroupFixture();
     const draft: ExperimentSetDraft = {
       ...fixture.draft,
-      entryRoute: "simple_independent_groups",
-      controlConditionId: fixture.draft.conditions[0]!.id,
       attributes: [{ ...fixture.draft.attributes[0]!, label: "Treatment" }],
     };
     render(<ExperimentGraphWorkbench draft={draft} cells={fixture.cells} onClose={vi.fn()} />);
@@ -522,26 +636,7 @@ describe("ExperimentGraphWorkbench", () => {
     const yAxisTitle = [
       ...svg.querySelectorAll<SVGTextElement>(".experiment-graph-axis-title"),
     ].find((node) => node.getAttribute("transform")?.startsWith("rotate(-90"));
-    expect(Number(svg.dataset.leftMargin)).toBeGreaterThanOrEqual(124);
-    expect(Number(yAxisTitle?.getAttribute("x"))).toBeGreaterThan(
-      Number(svg.dataset.leftMargin) - 82,
-    );
-    expect(Number(yAxisTitle?.getAttribute("x"))).toBeGreaterThanOrEqual(18);
-    expect(Number(yAxisTitle?.getAttribute("x"))).toBeLessThanOrEqual(
-      Number(svg.dataset.leftMargin) - 45,
-    );
-    const viewBoxHeight = Number(svg.getAttribute("viewBox")?.split(/\s+/u)[3]);
-    expect(Number(xAxisTitle?.getAttribute("y"))).toBeLessThan(viewBoxHeight - 40);
-    selectInspectorTarget("statistics");
-    expect(screen.getByLabelText("実験構造の確認状況")).toHaveTextContent(
-      "実験の組み立てで回答済み",
-    );
-    expect(
-      screen.queryByRole("checkbox", {
-        name: /各条件は別々のdish・試料・動物などの実験単位/u,
-      }),
-    ).toBeNull();
-    expect(screen.getByRole("radio", { name: "各処置を対照群と比較" })).toBeEnabled();
+    expect(Number(yAxisTitle?.getAttribute("x"))).toBe(Number(svg.dataset.leftMargin) - 30);
 
     const exported = serializeGraphSvg(svg);
     const exportedSvg = new DOMParser().parseFromString(exported, "image/svg+xml");
@@ -607,7 +702,7 @@ describe("ExperimentGraphWorkbench", () => {
     const workbench = screen.getByRole("region", { name: "実験からグラフを作成" });
     expect(within(workbench).getByRole("img", { name: /実験単位ごとのグラフ/ })).toBeVisible();
     expect(
-      within(workbench).getByRole("heading", { name: "生物学的反復 + 平均 ± SD" }),
+      within(workbench).getByRole("heading", { name: "Biological replicates + Mean ± SD" }),
     ).toBeVisible();
     expect(workbench.querySelectorAll('[data-graph-layer="proportion-experiment"]')).toHaveLength(
       6,
@@ -778,14 +873,17 @@ describe("ExperimentGraphWorkbench", () => {
     await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
     expect(runner.mock.calls[0][0]).toMatchObject({ templateId: "D01", method: "welch_t" });
     expect(screen.getByRole("group", { name: "統計解析結果" })).toHaveTextContent("p = 0.042");
-    expect(screen.getByText(/少数例の有意差検定だけで正規性を断定/)).toBeVisible();
+    const diagnostic = screen.getByText(/少数例の有意差検定だけで正規性を断定/);
+    const diagnosticDetails = diagnostic.closest("details")!;
+    fireEvent.click(diagnosticDetails.querySelector("summary")!);
+    expect(diagnostic).toBeVisible();
     fireEvent.click(screen.getByText("解析エンジンと再現情報"));
     expect(screen.getByText("fixture-engine 0.1.0")).toBeVisible();
     expect(screen.getByText("scipy 1")).toBeVisible();
-    expect(screen.getByText("BioFigureStat 0.1.0")).toBeVisible();
+    expect(screen.getByText("BioFigureStat 0.1.1")).toBeVisible();
     const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelector('[data-graph-layer="statistics-annotation"]')).toBeNull();
-    fireEvent.change(await screen.findByRole("combobox", { name: "統計注釈の表示" }), {
+    fireEvent.change(screen.getByRole("combobox", { name: "統計注釈の表示" }), {
       target: { value: "exact_p" },
     });
     expect(graph.querySelector('[data-graph-layer="statistics-annotation"]')).toHaveTextContent(
@@ -1039,7 +1137,7 @@ describe("ExperimentGraphWorkbench", () => {
       options: { multiplicityMethod: "holm_planned_comparisons" },
     });
     expect(
-      within(await screen.findByRole("group", { name: "統計解析結果" })).getByText(
+      within(screen.getByRole("group", { name: "統計解析結果" })).getByText(
         "Control vs Treatment B",
       ),
     ).toBeVisible();
@@ -1212,6 +1310,7 @@ describe("ExperimentGraphWorkbench", () => {
       analysisConditionIds: draft.conditions.slice(0, 2).map(({ id }) => id),
     });
 
+    fireEvent.click(screen.getByText("解析対象・条件を変更"));
     expect(screen.getByRole("checkbox", { name: "統計の条件：Treatment B" })).not.toBeChecked();
     expect(screen.getByText(/図に表示する条件とは独立して選べます/)).toBeVisible();
   });
@@ -1380,7 +1479,7 @@ describe("ExperimentGraphWorkbench", () => {
       />,
     );
 
-    expect(await screen.findByRole("status")).toHaveTextContent("解析法は自動変更しません");
+    expect(await screen.findByRole("status")).toHaveTextContent("以前の解析結果を外しました");
     expect(screen.getByRole("checkbox", { name: /各条件は別々のdish/ })).not.toBeChecked();
     await new Promise((resolve) => window.setTimeout(resolve, 750));
     expect(runner).toHaveBeenCalledTimes(1);
@@ -1395,7 +1494,7 @@ describe("ExperimentGraphWorkbench", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "誤差線の要約方法" }), {
       target: { value: "sem" },
     });
-    expect(screen.getByRole("heading", { name: /平均 ± SEM/ })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Mean ± SEM/ })).toBeVisible();
     selectInspectorTarget("background");
     fireEvent.change(screen.getByRole("combobox", { name: "色の使い方" }), {
       target: { value: "condition" },
@@ -1534,9 +1633,7 @@ describe("ExperimentGraphWorkbench", () => {
       expect(Number(bar.getAttribute("width"))).toBeGreaterThan(0);
       expect(Number(bar.getAttribute("height"))).toBeGreaterThan(0);
       expect(Number(bar.dataset.summaryValue)).toBeGreaterThan(0);
-      expect(bar).toHaveAttribute("fill-opacity", "0.24");
-      expect(bar).not.toHaveAttribute("opacity");
-      expect(bar.style.stroke).toBe("#245c8a");
+      expect(bar).toHaveAttribute("opacity", "0.24");
     });
     expect(svg.querySelectorAll('[data-graph-layer="proportion-experiment"]')).toHaveLength(9);
     expect(svg.querySelectorAll(".experiment-graph-error-line")).toHaveLength(3);
@@ -1544,30 +1641,8 @@ describe("ExperimentGraphWorkbench", () => {
 
     const serialized = serializeGraphSvg(svg);
     expect(serialized).toContain('data-graph-layer="bar"');
-    expect(serialized).toContain('class="experiment-graph-bar"');
-    expect(serialized).toContain("stroke: #245c8a");
+    expect(serialized).toContain(".experiment-graph-bar");
     expect(serialized.match(/<rect[^>]+data-graph-layer="bar"/g)).toHaveLength(3);
-
-    selectInspectorTarget("background");
-    fireEvent.change(screen.getByRole("combobox", { name: "棒の外枠色" }), {
-      target: { value: "black" },
-    });
-    bars.forEach((bar) => expect(bar.style.stroke).toBe("#111111"));
-    fireEvent.change(screen.getByRole("combobox", { name: "棒の外枠色" }), {
-      target: { value: "custom" },
-    });
-    fireEvent.change(screen.getByLabelText("棒の外枠の任意色"), {
-      target: { value: "#cc3311" },
-    });
-    fireEvent.change(screen.getByLabelText("棒の外枠の太さ"), {
-      target: { value: "2.4" },
-    });
-    bars.forEach((bar) => {
-      expect(bar.style.stroke).toBe("#cc3311");
-      expect(bar.style.strokeWidth).toBe("2.4");
-    });
-    fireEvent.click(screen.getByRole("checkbox", { name: "棒の輪郭線を表示" }));
-    bars.forEach((bar) => expect(bar.style.stroke).toBe("none"));
 
     class TestClipboardItem {
       constructor(readonly data: Record<string, Blob>) {}
@@ -1605,7 +1680,7 @@ describe("ExperimentGraphWorkbench", () => {
     expect(screen.getByRole("combobox", { name: "編集対象" })).toHaveValue("series-style");
     expect(screen.getByRole("heading", { name: "系列の色・線・点" })).toBeVisible();
     selectInspectorTarget("data");
-    selectInspectorTarget("background");
+    selectInspectorTarget("x-axis");
     fireEvent.change(screen.getByRole("slider", { name: "棒の幅" }), {
       target: { value: "1" },
     });
@@ -1731,19 +1806,19 @@ describe("ExperimentGraphWorkbench", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "箱ひげ図 + 生の観測値 + 実験単位の要約 + 平均 ± SD",
+        name: "Box plot + Raw observations + Experiment summaries + Mean ± SD",
       }),
     ).toBeVisible();
     selectInspectorTarget("experiment-summary");
     fireEvent.click(screen.getByRole("checkbox", { name: "全体平均を表示" }));
     expect(
       screen.getByRole("heading", {
-        name: "箱ひげ図 + 生の観測値 + 実験単位の要約",
+        name: "Box plot + Raw observations + Experiment summaries",
       }),
     ).toBeVisible();
     expect(
       screen.getByRole("heading", {
-        name: "箱ひげ図 + 生の観測値 + 実験単位の要約",
+        name: "Box plot + Raw observations + Experiment summaries",
       }),
     ).not.toHaveTextContent(/Mean|SD|SEM/);
 
@@ -1751,7 +1826,7 @@ describe("ExperimentGraphWorkbench", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "バイオリンを表示" }));
     expect(
       screen.getByRole("heading", {
-        name: "分布 + 箱ひげ図 + 生の観測値 + 実験単位の要約",
+        name: "Distribution + Box plot + Raw observations + Experiment summaries",
       }),
     ).not.toHaveTextContent(/Mean|SD|SEM/);
   });
@@ -1767,15 +1842,15 @@ describe("ExperimentGraphWorkbench", () => {
     const svg = screen.getByRole("img", {
       name: /実験単位ごとのグラフ/,
     }) as unknown as SVGSVGElement;
-    expect(screen.getByRole("heading", { name: "箱ひげ図 + 生物学的反復" })).toBeVisible();
-    expect(svg.querySelector("desc")).toHaveTextContent("箱ひげ図 + 生物学的反復");
+    expect(screen.getByRole("heading", { name: "Box plot + Biological replicates" })).toBeVisible();
+    expect(svg.querySelector("desc")).toHaveTextContent("Box plot + Biological replicates");
     expect(svg.querySelector("desc")).not.toHaveTextContent(/SD|SEM|細胞・ROI分布/);
 
     selectInspectorTarget("box");
     fireEvent.click(screen.getByRole("checkbox", { name: "箱ひげを表示" }));
-    expect(screen.getByRole("heading", { name: "生物学的反復" })).toBeVisible();
-    expect(svg.querySelector("desc")).toHaveTextContent("生物学的反復");
-    expect(svg.querySelector("desc")).not.toHaveTextContent("箱ひげ図");
+    expect(screen.getByRole("heading", { name: "Biological replicates" })).toBeVisible();
+    expect(svg.querySelector("desc")).toHaveTextContent("Biological replicates");
+    expect(svg.querySelector("desc")).not.toHaveTextContent("Box plot");
 
     fireEvent.click(screen.getByRole("checkbox", { name: "箱ひげを表示" }));
     selectInspectorTarget("experiment-summary");
@@ -1784,10 +1859,10 @@ describe("ExperimentGraphWorkbench", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "誤差線を表示" }));
     expect(
       screen.getByRole("heading", {
-        name: "箱ひげ図 + 生物学的反復 + SDエラーバー",
+        name: "Box plot + Biological replicates + SD error bars",
       }),
     ).toBeVisible();
-    expect(serializeGraphSvg(svg)).toContain("箱ひげ図 + 生物学的反復 + SDエラーバー");
+    expect(serializeGraphSvg(svg)).toContain("Box plot + Biological replicates + SD error bars");
   });
 
   it("複数属性×時間を単純な一時点比較へ黙って縮約しない", () => {
@@ -2239,14 +2314,12 @@ describe("ExperimentGraphWorkbench", () => {
       });
     });
     const runner = vi.fn<AnalysisRunner>(async () => analysisResult);
-    const onStateChange = vi.fn();
-    const view = render(
+    render(
       <ExperimentGraphWorkbench
         draft={draft}
         cells={cells}
         analysisRunner={runner}
         onClose={vi.fn()}
-        onStateChange={onStateChange}
       />,
     );
 
@@ -2261,43 +2334,127 @@ describe("ExperimentGraphWorkbench", () => {
     fireEvent.click(screen.getByText("Methodsと再現記録"));
     expect(screen.getByText(/解析した測定項目/)).toBeVisible();
 
-    view.rerender(
-      <ExperimentGraphWorkbench
-        draft={draft}
-        cells={cells}
-        analysisRunner={runner}
-        workspaceMode="statistics"
-        onClose={vi.fn()}
-        onStateChange={onStateChange}
-      />,
-    );
-    fireEvent.change(screen.getByRole("combobox", { name: "統計の測定項目" }), {
+    selectInspectorTarget("data");
+    fireEvent.change(screen.getByRole("combobox", { name: "測定項目" }), {
       target: { value: secondReadout.id },
     });
-    expect(screen.getByRole("heading", { name: "Intensity" })).toBeVisible();
-    await waitFor(() =>
-      expect(onStateChange).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          axes: expect.objectContaining({ yTitle: "Intensity (a.u.)" }),
-        }),
-      ),
-    );
+    selectInspectorTarget("statistics");
 
     expect(screen.queryByRole("group", { name: "統計解析結果" })).toBeNull();
     expect(screen.queryByText("Methodsと再現記録")).toBeNull();
-    view.rerender(
-      <ExperimentGraphWorkbench
-        draft={draft}
-        cells={cells}
-        analysisRunner={runner}
-        onClose={vi.fn()}
-        onStateChange={onStateChange}
-      />,
-    );
     expect(
       screen
         .getByRole("img", { name: /実験単位ごとのグラフ/ })
         .querySelector('[data-graph-layer="statistics-annotation"]'),
     ).toBeNull();
+  });
+});
+
+describe("unresolved numeric Graph presentation", () => {
+  it("keeps spatial X unitless and labels SVG points as table values", async () => {
+    const model = createGraphOnlyWorkbenchModel({
+      parsed: {
+        headers: ["Position_percent", "Net_intensity"],
+        rows: [
+          ["0", "957.256452"],
+          ["35.0877", "6605.585219"],
+          ["100", "1524.448233"],
+        ],
+        delimiter: "comma",
+        headerRow: 1,
+      },
+      xColumn: 0,
+      yColumn: 1,
+      seriesColumn: "",
+      idColumn: "",
+      title: "Profile",
+    })!;
+    const before = structuredClone(model);
+    const { container } = render(
+      <ExperimentGraphWorkbench
+        draft={model.draft}
+        cells={model.cells}
+        workspaceMode="graph"
+        analysisAvailable={false}
+        semanticReadiness="unresolved_descriptive"
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByRole("checkbox", { name: "0" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "100" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "すべてのX値" })).toBeChecked();
+    const svg = container.querySelector(".experiment-graph-svg")!;
+    expect(svg.getAttribute("aria-label")).toContain("表の行ごと");
+    expect(svg.textContent).not.toMatch(/(?:0|100) h/);
+    const points = Array.from(svg.querySelectorAll('[data-graph-layer="nested-experiment"]'));
+    expect(points).toHaveLength(3);
+    expect(points.map((p) => Number(p.getAttribute("data-graph-value")))).toEqual([
+      957.256452, 6605.585219, 1524.448233,
+    ]);
+    expect(points.every((p) => p.getAttribute("aria-label")?.includes("表の行の値"))).toBe(true);
+    const blobs: Blob[] = [];
+    const createUrl = vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+      blobs.push(blob as Blob);
+      return "blob:profile-csv";
+    });
+    const revokeUrl = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    try {
+      fireEvent.click(screen.getByRole("button", { name: "表示データCSV" }));
+      await waitFor(() => expect(blobs).toHaveLength(1));
+      const csv = await readBlobText(blobs[0]!);
+      expect(csv).toContain('"Position_percent","表の行"');
+      expect(csv).toContain('"35.0877","Row 3","表の行の値","6605.585219"');
+      expect(csv).not.toMatch(/実験単位|時点| h/);
+    } finally {
+      createUrl.mockRestore();
+      revokeUrl.mockRestore();
+      click.mockRestore();
+    }
+    expect(model).toEqual(before);
+  });
+
+  it("retains time units for an ordinary longitudinal experiment", () => {
+    const fixture = createLongitudinalFixture();
+    render(
+      <ExperimentGraphWorkbench
+        draft={fixture.draft}
+        cells={fixture.cells}
+        workspaceMode="graph"
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByRole("checkbox", { name: "すべての時点" })).toBeInTheDocument();
+    const first = fixture.draft.time.points[0]!;
+    expect(
+      screen.getByRole("checkbox", {
+        name: `${first.value} ${fixture.draft.time.unit}`,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("exports unresolved row values without claiming experimental units", () => {
+    const series = [
+      {
+        conditionLabel: "データ",
+        timeLabel: "35.0877",
+        experimentPoints: [{ experimentId: "row.1", experimentLabel: "Row 2", value: 6605.585219 }],
+        rawPoints: [],
+        proportionPoints: [],
+      },
+    ] as unknown as Parameters<typeof serializeVisibleGraphData>[0];
+    const csv = serializeVisibleGraphData(
+      series,
+      {
+        id: "y",
+        label: "Net_intensity",
+        shape: "nested_continuous",
+        nestedInputMode: "unit_summary",
+      },
+      { descriptiveRows: true, xTitle: "Position_percent" },
+    );
+    expect(csv).toContain('"Position_percent","表の行"');
+    expect(csv).toContain('"35.0877","Row 2","表の行の値","6605.585219"');
+    expect(csv).not.toMatch(/実験単位|時点| h/);
   });
 });

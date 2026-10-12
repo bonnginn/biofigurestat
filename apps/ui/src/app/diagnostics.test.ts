@@ -213,40 +213,6 @@ describe("privacy-safe diagnostic reports", () => {
     expect(text).not.toContain("unpublished-secret");
   });
 
-  it("classifies native engine failures through a closed privacy-safe vocabulary", () => {
-    recordDiagnosticError(
-      "ENGINE_EXECUTION_FAILED",
-      "The local analysis engine failed: condition Secret Study could not be analyzed",
-    );
-    recordDiagnosticError(
-      "ENGINE_EXECUTION_FAILED",
-      Object.assign(new Error("raw value 12.345 failed schema parsing"), { name: "ZodError" }),
-    );
-    recordDiagnosticError(
-      "ENGINE_EXECUTION_FAILED",
-      "ENGINE_OUTPUT_INVALID_JSON:eof:bytes=1042:starts_object=true:ends_object=false",
-    );
-    recordDiagnosticError(
-      "ENGINE_EXECUTION_FAILED",
-      "ENGINE_OUTPUT_INVALID_JSON:syntax:bytes=2077:starts_object=false:ends_object=true",
-    );
-
-    const expanded = createDiagnosticReport({
-      route: "new-experiment",
-      project: null,
-      includeTechnicalDetails: true,
-    });
-    const text = serializeDiagnosticReport(expanded);
-    expect(expanded.technicalErrors?.map(({ detail }) => detail)).toEqual([
-      "EngineProcessFailure",
-      "EngineResponseValidationError",
-      "EngineInvalidJsonEof",
-      "EngineInvalidJsonSyntax(bytes=2077,startsObject=false,endsObject=true)",
-    ]);
-    expect(text).not.toContain("Secret Study");
-    expect(text).not.toContain("12.345");
-  });
-
   it("creates stable opaque fingerprints without retaining the input", () => {
     const first = diagnosticFingerprint("same structural request");
     expect(first).toBe(diagnosticFingerprint("same structural request"));

@@ -5,6 +5,7 @@ use std::{
 };
 
 const MAX_EXPORT_BYTES: usize = 64 * 1024 * 1024;
+// Standalone read-only analysis reviews use the same user-selected native Save route.
 const ALLOWED_EXPORT_EXTENSIONS: [&str; 6] = ["svg", "png", "csv", "txt", "json", "html"];
 
 #[tauri::command]
@@ -50,6 +51,19 @@ mod tests {
     }
 
     #[test]
+    fn writes_analysis_review_html_without_enabling_executable_extensions() {
+        let unique = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
+        let target = std::env::temp_dir().join(format!("lsaa-review-{}-{}.html", std::process::id(), unique));
+        let review = b"<!doctype html><html><body>Anonymous TOST review</body></html>";
+        write_export_file(target.to_string_lossy().into_owned(), review.to_vec()).unwrap();
+        assert_eq!(std::fs::read(&target).unwrap(), review);
+        let denied = target.with_extension("exe");
+        assert!(write_export_file(denied.to_string_lossy().into_owned(), review.to_vec()).is_err());
+        assert!(!denied.exists());
+        std::fs::remove_file(target).unwrap();
+    }
+
+    #[test]
     fn writes_supported_export() {
         let unique = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -62,23 +76,6 @@ mod tests {
         ));
         write_export_file(target.to_string_lossy().into_owned(), b"<svg/>".to_vec()).unwrap();
         assert_eq!(std::fs::read(&target).unwrap(), b"<svg/>");
-        let _ = std::fs::remove_file(target);
-    }
-
-    #[test]
-    fn writes_self_contained_html_review_export() {
-        let unique = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        let target = std::env::temp_dir().join(format!(
-            "lsaa-review-export-{}-{}.html",
-            std::process::id(),
-            unique
-        ));
-        let content = b"<!doctype html><title>Analysis review set</title>";
-        write_export_file(target.to_string_lossy().into_owned(), content.to_vec()).unwrap();
-        assert_eq!(std::fs::read(&target).unwrap(), content);
         let _ = std::fs::remove_file(target);
     }
 }

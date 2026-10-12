@@ -506,11 +506,11 @@ export function createSurvivalGraphSpec(
     },
     axes: {
       yStartAtZero: true,
+      showMinorTicks: input.showMinorTicks ?? true,
+      tickDirection: input.tickDirection ?? "outside",
       yScale: "linear",
       xLabel: input.timeLabel,
       yLabel: input.probabilityLabel ?? "Survival probability",
-      showMinorTicks: input.showMinorTicks ?? true,
-      tickDirection: input.tickDirection ?? "outside",
     },
   });
 }

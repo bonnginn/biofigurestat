@@ -334,13 +334,18 @@
 }
 
 .experiment-graph-bar {
+  stroke: #274f70;
+  stroke-width: 1;
   cursor: pointer;
-  transition: fill-opacity 120ms ease;
+  transition:
+    opacity 120ms ease,
+    stroke-width 120ms ease;
 }
 
 .experiment-graph-bar:hover,
 .experiment-graph-bar[data-selected="true"] {
-  fill-opacity: 0.34;
+  opacity: 0.34;
+  stroke-width: 2;
 }
 
 [data-inspector-target="experiment-summary"],
@@ -828,47 +833,6 @@
   border: 1px solid #b9c8d8;
   border-radius: 6px;
   background: #fff;
-}
-
-.experiment-graph-subsection {
-  display: grid;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid #d8e2ec;
-  border-radius: 8px;
-  background: #fbfdff;
-}
-
-.experiment-graph-subsection h4 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.experiment-graph-custom-color {
-  display: grid;
-  gap: 8px;
-}
-
-.experiment-graph-color-presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.experiment-graph-color-preset {
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 2px solid #fff;
-  border-radius: 6px;
-  box-shadow: 0 0 0 1px #8ea2b6;
-  cursor: pointer;
-}
-
-.experiment-graph-color-preset[aria-pressed="true"] {
-  box-shadow:
-    0 0 0 2px #fff,
-    0 0 0 4px #2d6fc6;
 }
 
 .experiment-graph-export-actions button:disabled {

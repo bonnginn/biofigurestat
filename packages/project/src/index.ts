@@ -8,3 +8,4 @@ export * from "./progressive-experiment";
 export * from "./specialized-entry-draft";
 export * from "./entry-source-history";
 export * from "./compatibility-error";
+export * from "./table-regression";

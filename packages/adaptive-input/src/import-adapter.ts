@@ -1,3 +1,4 @@
+import { detectRecordDelimiter, parseDelimitedRecords } from "./delimited-records";
 import {
   AdaptiveColumnMappingSchema,
   AdaptiveRawLineageSchema,
@@ -18,38 +19,19 @@ export type ParsedAdaptiveInput = Readonly<{
   headerRow: number;
 }>;
 
-function splitLine(line: string, delimiter: string): string[] {
-  const cells: string[] = [];
-  let value = "";
-  let quoted = false;
-  for (let index = 0; index < line.length; index++) {
-    const character = line[index]!;
-    if (character === '"') {
-      if (quoted && line[index + 1] === '"') { value += '"'; index++; }
-      else quoted = !quoted;
-    } else if (character === delimiter && !quoted) { cells.push(value.trim()); value = ""; }
-    else value += character;
-  }
-  cells.push(value.trim());
-  return cells;
-}
-
-function detectDelimiter(text: string): { character: string; name: ParsedAdaptiveInput["delimiter"] } {
-  const sample = text.split(/\r?\n/).slice(0, 8).join("\n");
-  const candidates = [
-    { character: "\t", name: "tab" as const, count: sample.match(/\t/g)?.length ?? 0 },
-    { character: ",", name: "comma" as const, count: sample.match(/,/g)?.length ?? 0 },
-    { character: ";", name: "semicolon" as const, count: sample.match(/;/g)?.length ?? 0 },
-  ];
-  return candidates.sort((left, right) => right.count - left.count)[0]!;
-}
-
 export function parseAdaptiveDelimited(text: string): ParsedAdaptiveInput {
-  const lines = text.replace(/\r\n/g, "\n").split("\n").filter((line) => line.trim());
-  if (!lines.length) throw new Error("ADAPTIVE_INPUT_EMPTY");
-  const delimiter = detectDelimiter(text);
-  const headers = splitLine(lines[0]!, delimiter.character).map((header) => header.replace(/^\uFEFF/, ""));
-  return { headers, rows: lines.slice(1).map((line) => splitLine(line, delimiter.character)), delimiter: delimiter.name, headerRow: 1 };
+  if (!text.replace(/^\uFEFF/u, "").trim()) throw new Error("ADAPTIVE_INPUT_EMPTY");
+  const delimiter = detectRecordDelimiter(text);
+  const records = parseDelimitedRecords(text, delimiter)
+    .filter((row) => row.length !== 1 || row[0]!.trim() !== "")
+    .map((row) => row.map((cell) => cell.trim()));
+  if (!records.length) throw new Error("ADAPTIVE_INPUT_EMPTY");
+  return {
+    headers: records[0]!,
+    rows: records.slice(1),
+    delimiter: delimiter === "\t" ? "tab" : delimiter === "," ? "comma" : "semicolon",
+    headerRow: 1,
+  };
 }
 
 const normalize = (value: string) => value.normalize("NFKC").trim().toLowerCase().replace(/[^a-z0-9]+/g, "");

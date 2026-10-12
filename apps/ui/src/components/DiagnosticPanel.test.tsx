@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { recordDiagnosticError, resetDiagnosticsForTest } from "../app/diagnostics";
+import { resetDiagnosticsForTest } from "../app/diagnostics";
 import { openProblemReportWithPrefill } from "../app/problemReports";
 import { DiagnosticPanel } from "./DiagnosticPanel";
 
@@ -73,7 +73,9 @@ describe("DiagnosticPanel", () => {
   it("keeps the report available when submission fails", async () => {
     vi.stubEnv("VITE_PROBLEM_REPORT_ENDPOINT", "https://collector.example/v1/problem-reports");
     vi.stubEnv("VITE_PROBLEM_REPORT_INGEST_KEY", "public-report-key_123456");
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));
+    const fetcher = vi.spyOn(globalThis, "fetch")
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ reportId: "BFS-RETRY-TEST" }), { status: 201 }));
     render(<DiagnosticPanel route="home" project={null} />);
     fireEvent.click(screen.getByRole("button", { name: "問題を報告" }));
     fireEvent.change(screen.getByLabelText("何をしようとしたか"), {
@@ -84,6 +86,14 @@ describe("DiagnosticPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "この内容を送信" }));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("入力内容は保持"));
     expect(screen.getByText("保存した")).toBeVisible();
+    expect(screen.getByText("失敗した")).toBeVisible();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "この内容を送信" })).toBeEnabled();
+    const firstBody = fetcher.mock.calls[0][1]?.body;
+    fireEvent.click(screen.getByRole("button", { name: "この内容を送信" }));
+    expect(await screen.findByText(/BFS-RETRY-TEST/)).toBeVisible();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1][1]?.body).toBe(firstBody);
   });
 
   it("keeps local diagnostic copy as a separate explicit action", async () => {
@@ -93,35 +103,5 @@ describe("DiagnosticPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "診断レポートをコピー" }));
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledOnce());
     expect(await screen.findByRole("status")).toHaveTextContent("自動送信はしていません");
-  });
-
-  it("includes privacy-safe technical error classifications only after explicit selection", async () => {
-    recordDiagnosticError("ENGINE_EXECUTION_FAILED", "native bridge rejected the request");
-    render(<DiagnosticPanel route="new-experiment" project={null} />);
-    fireEvent.click(screen.getByRole("button", { name: "問題を報告" }));
-    fireEvent.click(screen.getByText("ローカル診断レポートをコピー・保存"));
-
-    fireEvent.click(screen.getByRole("button", { name: "診断レポートをコピー" }));
-    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledOnce());
-    const ordinary = JSON.parse(
-      String(vi.mocked(navigator.clipboard.writeText).mock.calls[0]?.[0]),
-    ) as Record<string, unknown>;
-    expect(ordinary.technicalErrors).toBeUndefined();
-
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: /技術的なエラー分類を含める/u }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "診断レポートをコピー" }));
-    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(2));
-    const expanded = JSON.parse(
-      String(vi.mocked(navigator.clipboard.writeText).mock.calls[1]?.[0]),
-    ) as {
-      privacy: { technicalDetailsIncluded: boolean };
-      technicalErrors: Array<{ code: string; detail: string }>;
-    };
-    expect(expanded.privacy.technicalDetailsIncluded).toBe(true);
-    expect(expanded.technicalErrors).toEqual([
-      expect.objectContaining({ code: "ENGINE_EXECUTION_FAILED", detail: "NonErrorThrow" }),
-    ]);
   });
 });

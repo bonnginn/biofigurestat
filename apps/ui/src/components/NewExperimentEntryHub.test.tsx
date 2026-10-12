@@ -5,10 +5,9 @@ import { NewExperimentEntryHub, type NewExperimentEntryHubProps } from "./NewExp
 
 function callbacks(): Pick<
   NewExperimentEntryHubProps,
-  "onSimple" | "onGeneral" | "onGraphOnly" | "onSurvival" | "onOrderedCurve" | "onHeatmap"
+  "onGeneral" | "onGraphOnly" | "onSurvival" | "onOrderedCurve" | "onHeatmap"
 > {
   return {
-    onSimple: vi.fn(),
     onGeneral: vi.fn(),
     onGraphOnly: vi.fn(),
     onSurvival: vi.fn(),
@@ -18,13 +17,12 @@ function callbacks(): Pick<
 }
 
 describe("NewExperimentEntryHub", () => {
-  it("shows the bounded simple experiment as a dedicated destination", () => {
+  it("shows task-oriented destinations without simple/complex or import categories", () => {
     render(<NewExperimentEntryHub {...callbacks()} />);
 
     expect(screen.getByRole("heading", { level: 1, name: "何から始めますか？" })).toBeVisible();
     expect(screen.getByRole("button", { name: "実験から始めるを開く" })).toBeVisible();
     expect(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "単純な独立群比較を開く" })).toBeVisible();
     expect(screen.getByRole("button", { name: "生存時間（Kaplan–Meier）を開く" })).toBeVisible();
     expect(screen.getByRole("button", { name: "濃度–反応・酵素反応を開く" })).toBeVisible();
     expect(
@@ -36,13 +34,13 @@ describe("NewExperimentEntryHub", () => {
     expect(screen.getByRole("button", { name: "ヒートマップを開く" })).toBeVisible();
     const primary = screen.getByRole("heading", { name: "主な始め方" }).closest("section");
     const dedicated = screen
-      .getByRole("heading", { name: "入力形式が決まっている実験・データ" })
+      .getByRole("heading", { name: "形式が決まっているデータ" })
       .closest("section");
     expect(primary).not.toBeNull();
     expect(dedicated).not.toBeNull();
     expect(within(primary!).getAllByRole("button")).toHaveLength(2);
-    expect(within(dedicated!).getAllByRole("button")).toHaveLength(4);
-    expect(screen.queryByText(/complex|複雑/i)).toBeNull();
+    expect(within(dedicated!).getAllByRole("button")).toHaveLength(3);
+    expect(screen.queryByText(/simple|complex|単純|複雑/i)).toBeNull();
     expect(screen.queryByText(/特殊/)).toBeNull();
     expect(screen.queryByRole("button", { name: /取込|import/i })).toBeNull();
     expect(screen.queryByText(/D0[1-9]|D1[0-9]/)).toBeNull();
@@ -52,7 +50,7 @@ describe("NewExperimentEntryHub", () => {
     render(<NewExperimentEntryHub {...callbacks()} />);
 
     const cards = document.querySelectorAll<HTMLElement>("[data-entry-id]");
-    expect(cards).toHaveLength(6);
+    expect(cards).toHaveLength(5);
     for (const card of cards) {
       expect(within(card).getAllByRole("button")).toHaveLength(1);
     }

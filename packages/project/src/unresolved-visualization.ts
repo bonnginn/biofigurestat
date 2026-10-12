@@ -6,6 +6,7 @@ import {
   Sha256Schema,
 } from "@lsaa/domain";
 import { GraphSpecSchema, type GraphSpec } from "@lsaa/graph-spec";
+import { TableRegressionWorkspaceSchema, regressionInputsEqual } from "./table-regression";
 
 /**
  * A graph-only project deliberately has no ExperimentDesign, biological n,
@@ -134,10 +135,54 @@ export const UnresolvedVisualizationProjectStateSchema = z
     graphSpecs: z.array(GraphSpecSchema),
     activeGraphId: EntityIdSchema.nullable(),
     statisticsReadiness: UnresolvedVisualizationStatisticsReadinessSchema,
+    regressionWorkspace: TableRegressionWorkspaceSchema.optional(),
     provenanceEvents: z.array(UnresolvedVisualizationProvenanceEventSchema).min(1),
   })
   .strict()
   .superRefine((state, ctx) => {
+    const regression = state.regressionWorkspace;
+    if (regression) {
+      const revisions = new Set(state.dataRevisions.map((r) => r.id));
+      if (
+        !revisions.has(regression.sourceDataRevisionId) ||
+        regression.executions.some((e) => !revisions.has(e.sourceDataRevisionId)) ||
+        regression.draftHistory.some((d) => !revisions.has(d.sourceDataRevisionId))
+      )
+        ctx.addIssue({
+          code: "custom",
+          path: ["regressionWorkspace"],
+          message: "Regression source revision is not retained",
+        });
+      const ids = regression.executions.map((e) => e.request.requestId);
+      if (regression.executions.some((e) => e.request.projectId !== state.metadata.projectId))
+        ctx.addIssue({
+          code: "custom",
+          path: ["regressionWorkspace"],
+          message: "Regression execution belongs to another project",
+        });
+      if (new Set(ids).size !== ids.length)
+        ctx.addIssue({
+          code: "custom",
+          path: ["regressionWorkspace"],
+          message: "Regression execution IDs must be unique",
+        });
+      if (regression.activeRequestId) {
+        const run = regression.executions.find(
+          (e) => e.request.requestId === regression.activeRequestId,
+        );
+        if (
+          !run ||
+          run.sourceDataRevisionId !== state.activeDataRevisionId ||
+          regression.sourceDataRevisionId !== state.activeDataRevisionId ||
+          !regressionInputsEqual(run.draft, regression.draft)
+        )
+          ctx.addIssue({
+            code: "custom",
+            path: ["regressionWorkspace", "activeRequestId"],
+            message: "Upstream changes must stale regression",
+          });
+      }
+    }
     const revisionIds = new Set<string>();
     state.dataRevisions.forEach((revision, index) => {
       if (revisionIds.has(revision.id)) {
@@ -596,6 +641,9 @@ export function appendUnresolvedVisualizationDataRevision(
     mapping: candidate.mapping,
     dataRevisions: [...state.dataRevisions, candidate],
     activeDataRevisionId: candidate.id,
+    ...(state.regressionWorkspace
+      ? { regressionWorkspace: { ...state.regressionWorkspace, activeRequestId: null } }
+      : {}),
     provenanceEvents: [
       ...state.provenanceEvents,
       {

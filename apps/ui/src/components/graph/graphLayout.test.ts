@@ -1,23 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  createCategoryLayout,
-  createNiceTicks,
-  createPlotRectangle,
-  yAxisTitlePosition,
-} from "./graphLayout";
+import { createCategoryLayout, createNiceTicks } from "./graphLayout";
 
 describe("graph layout", () => {
-  it("derives one exact drawable rectangle from canvas margins", () => {
-    expect(createPlotRectangle(720, 520, { top: 44, right: 44, bottom: 88, left: 94 })).toEqual({
-      left: 94,
-      top: 44,
-      right: 676,
-      bottom: 432,
-      width: 582,
-      height: 388,
-    });
-  });
-
   it("keeps three simple categories in stable compact slots", () => {
     const layout = createCategoryLayout({
       gapWeights: [1, 1],
@@ -58,29 +42,5 @@ describe("graph layout", () => {
 
   it("honors a manual tick interval", () => {
     expect(createNiceTicks(0, 30, 5, 5)).toEqual([30, 25, 20, 15, 10, 5, 0]);
-  });
-
-  it("emits one stable tick for a degenerate finite range", () => {
-    expect(createNiceTicks(-5, -5)).toEqual([-5]);
-  });
-
-  it("keeps the Y title close while reserving space for the widest visible tick", () => {
-    const compact = yAxisTitlePosition({
-      axisX: 124,
-      tickLabels: ["0", "0.5", "1", "1.5"],
-      tickFontSize: 17,
-      titleFontSize: 19,
-    });
-    const wide = yAxisTitlePosition({
-      axisX: 124,
-      tickLabels: ["-1000.0", "0", "1000.0"],
-      tickFontSize: 17,
-      titleFontSize: 19,
-    });
-
-    expect(compact).toBeGreaterThan(42);
-    expect(compact).toBeLessThan(78);
-    expect(wide).toBeLessThan(compact);
-    expect(wide).toBeGreaterThanOrEqual(18);
   });
 });

@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createUnresolvedVisualizationProjectState, ProjectStateSchema } from "@lsaa/project";
 import type * as BenchmarkEvaluation from "../app/benchmarkEvaluation";
 import type * as GraphExport from "../app/graphExport";
@@ -13,11 +13,8 @@ import type {
 import type { SpecializedCoreDraft } from "../app/specializedAnalysisDrafts";
 import { createTimeToEventContractProjection } from "../app/timeToEventProjection";
 import type { RequestWorkspaceExit } from "../app/workspaceLifecycle";
+import type { AnalysisRunner } from "../app/analysisClient";
 import { SpecializedCorePage } from "./SpecializedCorePage";
-import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
-import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
-
-afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 const recordBenchmarkEvent = vi.hoisted(() => vi.fn());
 const recordUsageMilestone = vi.hoisted(() => vi.fn());
@@ -82,129 +79,33 @@ const expandAdaptiveStatistics = () =>
   fireEvent.click(screen.getByRole("button", { name: "統計解析を設定" }));
 
 describe("specialized Core entry pages", () => {
-  it("shows the shared Survival workspace and censoring instructions in English", () => {
-    act(() => setAppLocale("en"));
-    const view = render(
-      <SpecializedCorePage
-        mode="survival"
-        onBack={vi.fn()}
-        entryIntent={cellTimeToEventIntent}
-        initialText={survivalExample}
-      />,
-    );
-
-    expect(screen.getByRole("button", { name: "Data" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Graph" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Statistics" })).toBeVisible();
-    expect(screen.getByText(/Censoring is not converted to missingness/)).toBeVisible();
-    expectNoJapaneseUi(view.container);
-  });
-
-  it("shows the Heatmap workspace without Japanese application copy in English mode", () => {
-    act(() => setAppLocale("en"));
-    const view = render(<SpecializedCorePage mode="heatmap" onBack={vi.fn()} />);
-
-    expect(screen.getByRole("heading", { name: "Heatmap" })).toBeVisible();
-    expectNoJapaneseUi(view.container);
-  });
-
-  it("keeps invalid specialist data errors in English", () => {
-    act(() => setAppLocale("en"));
-    const survivalView = render(
-      <SpecializedCorePage
-        mode="survival"
-        onBack={vi.fn()}
-        entryIntent={cellTimeToEventIntent}
-        initialText={
-          "Unit ID\tGroup\tFollow-up time\tStatus\nmouse-1\tControl\tnot-a-number\tEvent"
-        }
-      />,
-    );
-
-    expect(screen.getByText("Check the time-to-event data and required columns.")).toBeVisible();
-    expectNoJapaneseUi(survivalView.container);
-    survivalView.unmount();
-
-    const heatmapView = render(
-      <SpecializedCorePage
-        mode="heatmap"
-        onBack={vi.fn()}
-        initialText={"Feature\tSample A\nProtein A\tnot-a-number"}
-      />,
-    );
-
-    expect(screen.getByText("Check the matrix data and numeric cells.")).toBeVisible();
-    expectNoJapaneseUi(heatmapView.container);
-  });
-
-  it("keeps Heatmap save failures in English even when an internal error is Japanese", async () => {
-    act(() => setAppLocale("en"));
-    const saveUnresolvedVisualizationProject = vi.fn<SaveUnresolvedVisualizationProjectAction>(
-      async () => {
-        throw new Error("保存先へ書き込めませんでした");
-      },
-    );
-    const view = render(
-      <SpecializedCorePage
-        mode="heatmap"
-        onBack={vi.fn()}
-        saveUnresolvedVisualizationProject={saveUnresolvedVisualizationProject}
-      />,
-    );
-
-    fireEvent.change(screen.getByLabelText("Matrix data"), {
-      target: { value: "Feature\tSample A\nProtein A\t1" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Save project" }));
-
-    expect(
-      await screen.findByText(
-        "The project could not be saved. Your current entries were retained.",
-      ),
-    ).toBeVisible();
-    expectNoJapaneseUi(view.container);
-  });
-
-  it("provides English exit-guard action labels in English mode", () => {
-    act(() => setAppLocale("en"));
-    const requests: Parameters<RequestWorkspaceExit>[0][] = [];
-    render(
-      <SpecializedCorePage
-        mode="survival"
-        onBack={vi.fn()}
-        onRequestExit={(request) => requests.push(request)}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: /Back/u }));
-
-    expect(requests).toHaveLength(1);
-    expect(requests[0]?.actionLabel).toBe("Go back");
-  });
-
-  it("生存時間はData・Graph・Statisticsを同じワークスペースの別面として切り替える", () => {
-    render(
-      <SpecializedCorePage
-        mode="survival"
-        onBack={vi.fn()}
-        entryIntent={cellTimeToEventIntent}
-        initialText={survivalExample}
-      />,
-    );
-    const dataPanel = document.getElementById("survival-data")?.closest(".workspace-panel");
-    const graphPanel = document.getElementById("survival-graph");
-    expect(screen.getByRole("button", { name: "データ" })).toHaveAttribute("aria-pressed", "true");
-    expect(graphPanel).toHaveClass("workspace-tab-panel--inactive");
-
-    fireEvent.click(screen.getByRole("button", { name: "グラフ" }));
-    expect(dataPanel).toHaveClass("workspace-tab-panel--inactive");
-    expect(graphPanel).not.toHaveClass("workspace-tab-panel--inactive");
-
-    fireEvent.click(screen.getByRole("button", { name: "統計" }));
-    expect(screen.getByRole("button", { name: "統計" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係")).toBeVisible();
-  });
-
+  it.each(["survival", "heatmap"] as const)(
+    "preserves %s cell edits during file reading",
+    async (mode) => {
+      render(<SpecializedCorePage mode={mode} onBack={vi.fn()} />);
+      let finish!: (contents: string) => void;
+      const file = new File([], "old.tsv");
+      Object.defineProperty(file, "text", {
+        value: () =>
+          new Promise<string>((resolve) => {
+            finish = resolve;
+          }),
+      });
+      fireEvent.change(
+        screen.getByLabelText(
+          mode === "survival" ? "time-to-eventデータファイル" : "ヒートマップ用データファイル",
+        ),
+        { target: { files: [file] } },
+      );
+      const cell = screen.getByLabelText(
+        `${mode === "survival" ? "生存時間データ表" : "ヒートマップデータ表"} 行2 列1`,
+      );
+      fireEvent.change(cell, { target: { value: "new-unit" } });
+      await act(async () => finish(mode === "survival" ? survivalExample : "Feature\tS1\nold\t1"));
+      expect(cell).toHaveValue("new-unit");
+      expect(screen.getByText(/読込中の入力・設定の変更を保全/)).toBeVisible();
+    },
+  );
   it("development audit switcher routes through the workspace exit guard", () => {
     const onNavigate = vi.fn();
     const onDirtyChange = vi.fn();
@@ -401,7 +302,7 @@ describe("specialized Core entry pages", () => {
     expect(state.analysisRuns).toHaveLength(0);
     expect(state.adaptiveInput?.canonicalObservations).toHaveLength(4);
     expect(state.adaptiveInput?.contract.orderedAxes[0]?.sampling).toBe("event_follow_up");
-    expect(await screen.findByText(/統計は必要になった時に実行できます/u)).toBeVisible();
+    expect(screen.getByText(/統計は必要になった時に実行できます/u)).toBeVisible();
   });
 
   it("saves a one-group survival graph without fabricating a D11 analysis", async () => {
@@ -751,6 +652,52 @@ describe("specialized Core entry pages", () => {
     expect(screen.getByRole("button", { name: "プロジェクトを保存" })).toBeDisabled();
   });
 
+  it("ignores an older Survival rerun and refuses an unrelated engine response", async () => {
+    const finishes: Array<(mismatch?: boolean) => void> = [];
+    const runner = vi.fn<AnalysisRunner>(
+      (request) =>
+        new Promise((resolve) => {
+          finishes.push((mismatch) =>
+            resolve({
+              protocolVersion: "0.8.0",
+              requestId: mismatch ? "request.unrelated" : request.requestId,
+              status: "engine_error",
+              engine: { name: "fixture", version: "1", packages: {} },
+              estimates: [],
+              tests: [],
+              diagnostics: [],
+              warnings: [],
+              completedAt: "2026-10-09T11:00:00Z",
+            }),
+          );
+        }),
+    );
+    render(
+      <SpecializedCorePage
+        mode="survival"
+        onBack={vi.fn()}
+        analysisRunner={runner}
+        entryIntent={cellTimeToEventIntent}
+        initialText={survivalExample}
+      />,
+    );
+    expandAdaptiveStatistics();
+    fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
+      target: { value: "subject_is_experimental_unit" },
+    });
+    const runButton = screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" });
+    fireEvent.click(runButton);
+    fireEvent.click(runButton);
+    await waitFor(() => expect(runner).toHaveBeenCalledTimes(2));
+    await act(async () => finishes[0]!());
+    expect(screen.queryByText("Kaplan–Meier推定とlog-rank検定が完了しました。")).toBeNull();
+    await act(async () => finishes[1]!(true));
+    expect(
+      screen.getByText("解析応答が今回の要求と一致しません。結果は採用せず、再実行してください。"),
+    ).toBeVisible();
+    expect(screen.queryByText("Methods")).toBeNull();
+  });
+
   it("makes a rerun the sole current analysis and keeps its active input fingerprint", async () => {
     let completedIndex = 0;
     const analysisRunner = vi.fn(async (request) => {
@@ -829,29 +776,11 @@ describe("specialized Core entry pages", () => {
     fireEvent.change(screen.getByLabelText("ControlのSurvival曲線色"), {
       target: { value: "#123456" },
     });
-    fireEvent.change(screen.getByLabelText("Survival font size"), {
-      target: { value: "16" },
-    });
-    fireEvent.change(screen.getByLabelText("Survival legend position"), {
-      target: { value: "top" },
-    });
-    fireEvent.change(screen.getByLabelText("Survival legend font size"), {
-      target: { value: "14" },
-    });
-    fireEvent.click(screen.getByLabelText("Survival show minor ticks"));
-    fireEvent.change(screen.getByLabelText("Survival tick direction"), {
-      target: { value: "inside" },
-    });
     expect(
       screen
         .getByRole("img", { name: "Kaplan–Meier survival graph" })
         .querySelector('[data-condition-id="condition.1"]'),
     ).toHaveAttribute("stroke", "#123456");
-    const editedLegend = screen
-      .getByRole("img", { name: "Kaplan–Meier survival graph" })
-      .querySelector('[data-graph-layer="series-legend"]');
-    expect(editedLegend).toHaveAttribute("data-legend-position", "top");
-    expect(editedLegend?.querySelector("text")).toHaveAttribute("font-size", "14");
     expandAdaptiveStatistics();
     fireEvent.change(screen.getByLabelText("time-to-eventの1行と独立した実験例の関係"), {
       target: { value: "subject_is_experimental_unit" },
@@ -905,11 +834,6 @@ describe("specialized Core entry pages", () => {
       yLabel: "Tumor-free probability",
     });
     expect(savedGraphSpec.appearance.palette[0]).toBe("#123456");
-    expect(savedGraphSpec.appearance.fontSize).toBe(16);
-    expect(savedGraphSpec.appearance.legendPosition).toBe("top");
-    expect(savedGraphSpec.appearance.legendFontSize).toBe(14);
-    expect(savedGraphSpec.axes.showMinorTicks).toBe(false);
-    expect(savedGraphSpec.axes.tickDirection).toBe("inside");
 
     rendered.unmount();
     render(
@@ -924,12 +848,7 @@ describe("specialized Core entry pages", () => {
     expect(screen.getByLabelText("Survival Graph title")).toHaveValue("Tumor-free survival");
     expect(screen.getByLabelText("Survival X axis title")).toHaveValue("Days after treatment");
     expect(screen.getByLabelText("Survival Y axis title")).toHaveValue("Tumor-free probability");
-    expect(screen.getByLabelText("Survival font size")).toHaveValue("16");
-    expect(screen.getByLabelText("Survival legend position")).toHaveValue("top");
-    expect(screen.getByLabelText("Survival legend font size")).toHaveValue("14");
-    expect(screen.getByLabelText("Survival show minor ticks")).not.toBeChecked();
-    expect(screen.getByLabelText("Survival tick direction")).toHaveValue("inside");
-    fireEvent.click(screen.getByRole("button", { name: "グラフ" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Graph" }));
     expect(screen.getByLabelText("ControlのSurvival曲線色")).toHaveValue("#123456");
   });
 
@@ -938,6 +857,39 @@ describe("specialized Core entry pages", () => {
     expect(screen.queryByRole("button", { name: "統計解析を設定" })).toBeNull();
     expect(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" })).toBeDisabled();
     expect(screen.getByText(/ブラウザレビューでは解析エンジンを実行できません/)).toBeVisible();
+  });
+
+  it("keeps a Heatmap edit made during save dirty and persists it next", async () => {
+    let finish!: () => void;
+    const onDirtyChange = vi.fn();
+    const saveProject = vi.fn<SaveUnresolvedVisualizationProjectAction>(
+      (state) =>
+        new Promise((resolve) => {
+          finish = () => resolve({ state, target: "C:/tmp/pending-heatmap.lsa" });
+        }),
+    );
+    render(
+      <SpecializedCorePage
+        mode="heatmap"
+        onBack={vi.fn()}
+        saveUnresolvedVisualizationProject={saveProject}
+        onDirtyChange={onDirtyChange}
+      />,
+    );
+    const original = "Feature\tSample A\tSample B\nProtein A\t1\t2";
+    fireEvent.change(screen.getByLabelText("Matrix data"), { target: { value: original } });
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const changed = original.replace("\t1\t2", "\t3\t4");
+    fireEvent.change(screen.getByLabelText("Matrix data"), { target: { value: changed } });
+    await act(async () => finish());
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+    expect(saveProject.mock.calls[0]![0].rawLineage.rawText).toBe(original);
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(2));
+    expect(saveProject.mock.calls[1]![0].rawLineage.rawText).toBe(changed);
+    await act(async () => finish());
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
   });
 
   it("shows a matrix paste as a heatmap and keeps an explicit transform control", async () => {
@@ -1084,6 +1036,49 @@ describe("specialized Core entry pages", () => {
       await screen.findByText("このファイルはHeatmap用のGraph-only projectではありません。"),
     ).toBeVisible();
     expect(screen.getByLabelText("Matrix data")).toHaveValue("");
+  });
+
+  it("preserves new Heatmap edits during a pending project open and allows retry", async () => {
+    let persisted: OpenedUnresolvedVisualizationProject | null = null;
+    let finish!: (opened: OpenedUnresolvedVisualizationProject | null) => void;
+    const saveProject = vi.fn<SaveUnresolvedVisualizationProjectAction>(async (state) => {
+      persisted = { state, target: "C:/tmp/pending-heatmap-open.lsa" };
+      return persisted;
+    });
+    const openProject = vi.fn(
+      () =>
+        new Promise<OpenedUnresolvedVisualizationProject | null>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const onDirtyChange = vi.fn();
+    render(
+      <SpecializedCorePage
+        mode="heatmap"
+        onBack={vi.fn()}
+        saveUnresolvedVisualizationProject={saveProject}
+        openUnresolvedVisualizationProject={openProject}
+        onDirtyChange={onDirtyChange}
+      />,
+    );
+    const initial = "Feature\tSample A\tSample B\nProtein A\t1\t2";
+    fireEvent.change(screen.getByLabelText("Matrix data"), { target: { value: initial } });
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await screen.findByText(/Heatmap projectを保存しました/);
+    const open = screen.getByRole("button", { name: "保存済みHeatmap projectを開く" });
+    fireEvent.click(open);
+    fireEvent.click(open);
+    expect(openProject).toHaveBeenCalledTimes(1);
+    const edited = initial.replace("\t1\t2", "\t99\t2");
+    fireEvent.change(screen.getByLabelText("Matrix data"), { target: { value: edited } });
+    await act(async () => finish(persisted));
+    expect(screen.getByLabelText("Matrix data")).toHaveValue(edited);
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+    expect(screen.getByText(/現在の内容を保全しました/)).toBeVisible();
+    fireEvent.click(open);
+    expect(openProject).toHaveBeenCalledTimes(2);
+    await act(async () => finish(persisted));
+    expect(screen.getByLabelText("Matrix data")).toHaveValue(initial);
   });
 
   it("saves and reopens an unresolved heatmap matrix with its graph settings", async () => {

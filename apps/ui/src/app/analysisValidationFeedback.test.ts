@@ -40,16 +40,16 @@ describe("analysisValidationFeedback", () => {
     expect(feedback?.nextAction).toContain("代替法");
   });
 
-  it("returns the same validation route in English without Japanese application copy", () => {
-    const feedback = analysisValidationFeedback(
-      validationResult("Each independent D01 unit can contribute only one analyzed value"),
-      "en",
-    );
+  it.each([
+    "Mann-Whitney U is undefined when every analyzed value is identical",
+    "Kruskal-Wallis is undefined when every analyzed value is identical",
+    "Friedman is undefined when every analyzed value is identical",
+  ])("explains an all-identical rank-test boundary: %s", (message) => {
+    const feedback = analysisValidationFeedback(validationResult(message));
 
-    expect(feedback?.title).toContain("experimental-unit ID is duplicated");
-    expect(feedback?.nextAction).toContain("Dish ID");
-    expect(`${feedback?.title} ${feedback?.message} ${feedback?.nextAction}`).not.toMatch(
-      /[\u3040-\u30ff\u3400-\u9fff]/u,
-    );
+    expect(feedback?.title).toContain("順位検定を計算できません");
+    expect(feedback?.message).toContain("順位差");
+    expect(feedback?.nextAction).toContain("集約単位");
+    expect(feedback?.nextAction).toContain("測定値は保持されています");
   });
 });

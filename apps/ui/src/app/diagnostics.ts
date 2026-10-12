@@ -44,7 +44,6 @@ const DIAGNOSTIC_ANALYSIS_TEMPLATES = [
   "D17",
 ] as const;
 const DIAGNOSTIC_STATISTICAL_METHODS = [
-  "welch_tost",
   "welch_t",
   "student_t",
   "mann_whitney",
@@ -67,6 +66,7 @@ const DIAGNOSTIC_STATISTICAL_METHODS = [
   "mcnemar_exact",
   "simple_linear_regression",
   "nonlinear_xy_fit",
+  "welch_tost",
   "paired_tost",
 ] as const;
 const DIAGNOSTIC_PROTOCOL_VERSIONS = [
@@ -163,31 +163,7 @@ const SAFE_ERROR_KINDS = new Set([
 ]);
 
 function safeErrorKind(error: unknown): string {
-  if (typeof error === "string") {
-    if (/ENGINE_PROCESS_TIMEOUT/u.test(error)) return "EngineProcessTimeout";
-    if (/ENGINE_PROCESS_CANCELLED/u.test(error)) return "EngineProcessCancelled";
-    if (/missing from application resources/iu.test(error)) return "EngineResourceMissing";
-    if (/Could not start the local analysis engine/iu.test(error))
-      return "EngineProcessLaunchError";
-    if (/local analysis engine failed/iu.test(error)) return "EngineProcessFailure";
-    if (/ENGINE_OUTPUT_INVALID_JSON:empty/iu.test(error)) return "EngineInvalidJsonEmpty";
-    if (/ENGINE_OUTPUT_INVALID_JSON:utf8_bom/iu.test(error)) return "EngineInvalidJsonUtf8Bom";
-    if (/ENGINE_OUTPUT_INVALID_JSON:non_finite/iu.test(error)) return "EngineInvalidJsonNonFinite";
-    if (/ENGINE_OUTPUT_INVALID_JSON:eof/iu.test(error)) return "EngineInvalidJsonEof";
-    const syntaxShape = error.match(
-      /^ENGINE_OUTPUT_INVALID_JSON:syntax:bytes=(\d{1,9}):starts_object=(true|false):ends_object=(true|false)$/iu,
-    );
-    if (syntaxShape) {
-      return `EngineInvalidJsonSyntax(bytes=${syntaxShape[1]},startsObject=${syntaxShape[2]},endsObject=${syntaxShape[3]})`;
-    }
-    if (/ENGINE_OUTPUT_INVALID_JSON:syntax/iu.test(error)) return "EngineInvalidJsonSyntax";
-    if (/ENGINE_OUTPUT_INVALID_JSON:data/iu.test(error)) return "EngineInvalidJsonData";
-    if (/ENGINE_OUTPUT_INVALID_JSON:io/iu.test(error)) return "EngineInvalidJsonIo";
-    if (/analysis engine returned invalid JSON/iu.test(error)) return "EngineInvalidJson";
-    return "NonErrorThrow";
-  }
   if (!(error instanceof Error)) return "NonErrorThrow";
-  if (error.name === "ZodError") return "EngineResponseValidationError";
   return SAFE_ERROR_KINDS.has(error.name) ? error.name : "Error";
 }
 

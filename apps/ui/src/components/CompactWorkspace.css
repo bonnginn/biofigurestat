@@ -1,0 +1,599 @@
+/* Common chrome only. Graph/Statistics canvas and export geometry are untouched. */
+.app-shell--compact > .topbar {
+  height: 40px;
+  padding: 0 8px;
+  gap: 8px;
+  flex-wrap: nowrap;
+  backdrop-filter: none;
+  background: #fff;
+}
+.app-shell--compact .brand {
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.app-shell--compact .brand-mark {
+  width: 18px;
+  height: 18px;
+  box-shadow: none;
+}
+.app-shell--compact .brand-title {
+  font-size: 14px;
+}
+.app-shell--compact .topbar-nav {
+  margin: 0 auto 0 4px;
+  gap: 2px;
+}
+.workspace-icon-action {
+  display: inline-flex;
+  vertical-align: middle;
+  flex: 0 0 auto;
+}
+.workspace-icon-button,
+.app-shell--compact .topbar-nav .workspace-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 5px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #355675;
+  cursor: pointer;
+}
+.workspace-icon-button:hover:not(:disabled) {
+  background: #eaf1f8;
+  border-color: #c5d4e4;
+}
+.workspace-icon-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.workspace-icon-button:focus-visible,
+.workspace-utilities > summary:focus-visible {
+  outline: 2px solid #2979d6;
+  outline-offset: 1px;
+}
+.workspace-utilities {
+  position: relative;
+  flex: 0 0 auto;
+  font-size: 13px;
+}
+.workspace-utilities > summary {
+  padding: 5px 9px;
+  min-height: 32px;
+  box-sizing: border-box;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.workspace-utilities__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 3px);
+  width: 260px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #bccbdd;
+  background: white;
+  box-shadow: 0 6px 18px #20364d22;
+}
+.app-shell--compact .workspace-utilities .topbar-status {
+  display: flex;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+.workspace-utilities .contextual-help-trigger,
+.workspace-utilities .about-menu > button,
+.workspace-utilities .diagnostic-menu > button {
+  width: 100%;
+  text-align: left;
+  border-radius: 4px;
+}
+.app-shell--compact > .project-tabs {
+  top: 40px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  gap: 3px;
+  align-items: stretch;
+}
+.app-shell--compact .project-tab {
+  min-width: 100px;
+  border-radius: 3px 3px 0 0;
+  font-size: 13px;
+}
+.app-shell--compact .project-tab__select {
+  padding: 3px 4px 3px 8px;
+}
+.app-shell--compact .project-tab__close {
+  padding: 3px 8px 3px 4px;
+  min-width: 28px;
+}
+.app-shell--compact .shell-body {
+  min-height: calc(100vh - 40px);
+}
+.app-shell--compact .main-content:has(.experiment-workspace) {
+  padding: 0 8px 8px;
+}
+.app-shell--compact .experiment-workspace {
+  width: 100%;
+  min-height: 0;
+}
+.app-shell--compact .experiment-workspace-project-nav {
+  min-height: 38px;
+  height: 38px;
+  padding: 2px 4px;
+  gap: 2px;
+  border-radius: 0;
+  box-shadow: none;
+  flex-wrap: nowrap;
+}
+.app-shell--compact .experiment-workspace-project-nav > button {
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.app-shell--compact .experiment-workspace-project-nav .workspace-icon-button {
+  min-width: 32px;
+  width: 32px;
+  min-height: 32px;
+  padding: 5px;
+}
+.app-shell--compact .experiment-workspace-file-menu > summary {
+  min-height: 32px;
+  padding: 5px 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.app-shell--compact .experiment-workspace-dirty-state {
+  min-width: 45px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.workspace-project-name {
+  min-width: 0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.app-shell--compact:has(> .project-tabs) .workspace-project-name {
+  display: none;
+}
+.app-shell--compact .experiment-workspace-project-nav .experiment-workspace-project-nav-create {
+  margin-left: auto;
+}
+.app-shell--compact .experiment-workspace-save-message {
+  font-size: 13px;
+  padding: 5px 8px;
+  margin-top: 3px;
+}
+.app-shell--compact
+  .experiment-workspace[data-workspace-surface="data"]
+  .experiment-workspace-body {
+  padding-top: 0;
+  gap: 4px;
+}
+.app-shell--compact .experiment-workspace-overview--sheet {
+  padding: 0;
+  border-radius: 2px;
+  box-shadow: none;
+}
+.app-shell--compact .experiment-workspace-overview--sheet > .experiment-workspace-progress {
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.app-shell--compact .experiment-workspace-overview--sheet .experiment-workspace-progress p {
+  margin: 2px 0;
+  font-size: 12px;
+}
+.app-shell--compact .experiment-workspace-overview--sheet .experiment-workspace-condition-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 15px;
+  padding: 0;
+  margin: 2px 0;
+  font-size: 12px;
+}
+.app-shell--compact
+  .experiment-workspace-overview--sheet
+  .experiment-workspace-condition-counts
+  li {
+  display: flex;
+  gap: 5px;
+  padding: 0;
+}
+@media (max-width: 600px) {
+  .app-shell--compact .brand-title {
+    display: none;
+  }
+  .app-shell--compact .experiment-workspace-project-nav > button {
+    padding-inline: 5px;
+  }
+  .app-shell--compact .experiment-workspace-dirty-state {
+    max-width: 65px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .app-shell--compact .experiment-workspace-project-nav-create {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Match the restored chrome heights; project navigation must not scroll behind them. */
+.app-shell--compact .experiment-workspace-project-nav {
+  top: var(--app-sticky-chrome-inset, 40px);
+}
+.workspace-utilities__panel {
+  z-index: 1;
+}
+.topbar-language {
+  display: flex;
+  gap: 4px;
+}
+.topbar-language button {
+  min-height: 32px;
+  min-width: 40px;
+}
+.topbar-language button.is-active {
+  background: #eaf1f8;
+}
+
+/* Approved Mac hierarchy extended to the entire experiment route.
+ * Scope to app chrome/forms; SVG/export dimensions and data cells stay owned
+ * by their existing scientific editors. */
+.app-shell--compact {
+  --workspace-heading: clamp(1rem, 1.35vw, 1.22rem);
+  --workspace-copy: 0.8rem;
+  --workspace-gap: 10px;
+  --workspace-panel-padding: 10px 12px;
+  --workspace-radius: 8px;
+}
+
+.app-shell--compact .main-content:has(.experiment-start),
+.app-shell--compact .main-content:has(.specialized-analysis-page) {
+  padding: 12px 12px 24px;
+}
+
+.app-shell--compact :is(.experiment-start, .new-entry-hub) {
+  gap: var(--workspace-gap);
+}
+
+.app-shell--compact :is(.experiment-start__intro, .experiment-start__confirmation-intro,
+  .experiment-start__form-card, .experiment-start__summary-card,
+  .experiment-start__context-card, .experiment-start__specialized,
+  .experiment-start__expected-analysis, .experiment-start__confirmation-note,
+  .experiment-start__temporary-notice, .existing-data-import) {
+  padding: var(--workspace-panel-padding);
+  gap: 8px;
+  border-radius: var(--workspace-radius);
+}
+
+.app-shell--compact :is(.experiment-start__intro, .experiment-start__confirmation-intro,
+  .new-entry-hub__heading, .biological-setup header) h1 {
+  font-size: var(--workspace-heading);
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+
+.app-shell--compact :is(.experiment-start__section-heading,
+  .experiment-start__expected-analysis, .graph-workspace-frame__header) h2 {
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.app-shell--compact :is(.experiment-start__intro, .experiment-start__confirmation-intro) p,
+.app-shell--compact :is(.experiment-start__helper, .experiment-start__hint,
+  .experiment-start__subtle, .experiment-start__context-note,
+  .experiment-start__expected-analysis small, .new-entry-hub__heading p,
+  .experiment-graph-subtitle, .experiment-graph-help) {
+  font-size: var(--workspace-copy);
+  line-height: 1.45;
+}
+
+.app-shell--compact .experiment-start__eyebrow {
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+}
+
+.app-shell--compact .experiment-start__intro--design {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.app-shell--compact .experiment-start__intro--design > p {
+  flex-basis: 360px;
+}
+
+.app-shell--compact .experiment-start__stepper {
+  position: sticky;
+  top: var(--app-sticky-chrome-inset, 40px);
+  z-index: var(--layer-workspace-toolbar, 20);
+  padding: 4px 0;
+  background: #f5f7fb;
+}
+
+.app-shell--compact .experiment-start__step > button {
+  min-height: 36px;
+  padding: 4px 6px;
+  gap: 6px;
+  font-size: var(--workspace-copy);
+}
+
+.app-shell--compact .experiment-start__step-number {
+  width: 24px;
+  height: 24px;
+  font-size: var(--workspace-copy);
+}
+
+.app-shell--compact :is(.experiment-start__form-actions,
+  .experiment-start__confirmation-actions) {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--layer-workspace-toolbar, 20);
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  background: #f5f7fb;
+  justify-content: space-between;
+}
+
+.app-shell--compact :is(.experiment-start__form-actions,
+  .experiment-start__confirmation-actions) button {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: var(--workspace-copy);
+}
+
+.app-shell--compact .experiment-start__summary-list > div {
+  padding: 8px 10px;
+}
+
+.app-shell--compact :is(.experiment-start__summary-list dt,
+  .experiment-start__summary-readout) {
+  font-size: var(--workspace-copy);
+}
+
+.app-shell--compact .experiment-start__layout-details {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.app-shell--compact .experiment-start__layout-details > summary {
+  padding: 10px 12px;
+  color: #355675;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.app-shell--compact .experiment-start__layout-details > summary:focus-visible {
+  outline: 2px solid #2979d6;
+  outline-offset: -2px;
+}
+
+.app-shell--compact :where(.experiment-start__layout-details) .condition-time-preview {
+  border: 0;
+  padding: 10px 12px;
+}
+
+.app-shell--compact :is(.experiment-graph-workbench,
+  .graph-workspace-frame, .graph-workspace-frame__settings) {
+  gap: var(--workspace-gap);
+}
+
+.app-shell--compact :is(.experiment-graph-workbench,
+  .graph-workspace-frame__inspector, .graph-inspector,
+  .graph-export-panel, .analysis-result-card, .specialized-workspace-panel) {
+  padding: var(--workspace-panel-padding);
+  border-radius: var(--workspace-radius);
+}
+
+.app-shell--compact :is(.experiment-graph-workbench-header,
+  .graph-workspace-frame__header) {
+  gap: var(--workspace-gap);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.app-shell--compact :is(.experiment-graph-analysis-result,
+  .experiment-graph-analysis-stale, .experiment-graph-analysis-error,
+  .experiment-graph-statistics-section, .graph-workspace-frame__inspector) {
+  line-height: 1.45;
+}
+
+.app-shell--compact :is(.about-panel, .diagnostic-panel,
+  .unsaved-changes-dialog, .contextual-help-panel) {
+  border-radius: var(--workspace-radius);
+  font-size: var(--workspace-copy);
+  line-height: 1.45;
+}
+
+.app-shell--compact .biological-setup__rail {
+  top: calc(var(--app-sticky-chrome-inset, 40px) + 8px);
+}
+
+/* Keep keyboard/validation targets clear of the two navigation strips. */
+.app-shell--compact .experiment-start :is(input, select, textarea, button, summary) {
+  scroll-margin-top: calc(var(--app-sticky-chrome-inset, 40px) + 56px);
+  scroll-margin-bottom: 88px;
+}
+
+@media (max-height: 500px) {
+  .app-shell--compact :is(.experiment-start__stepper,
+    .experiment-start__form-actions, .experiment-start__confirmation-actions) {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-shell--compact .experiment-start__stepper {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .app-shell--compact .experiment-start__step {
+    flex: 0 0 auto;
+  }
+  .app-shell--compact .experiment-start__step > button {
+    white-space: nowrap;
+  }
+  .app-shell--compact .experiment-start__section-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .app-shell--compact :is(.experiment-start__hint, .experiment-start__summary-readout) {
+    flex: 0 1 auto;
+    overflow-wrap: anywhere;
+  }
+  .app-shell--compact .biological-setup__rail {
+    position: static;
+  }
+}
+
+/* PRODUCT10 R2: central work surfaces, with scientific warnings kept visible. */
+.app-shell--compact .experiment-workspace-header { padding: 8px 10px; gap: 8px; }
+.app-shell--compact .experiment-workspace-header :is(h1, p) { margin-top: 0; margin-bottom: 3px; }
+.app-shell--compact .experiment-workspace-project-nav { min-height: 38px; padding: 4px 8px; gap: 6px; flex-wrap: wrap; }
+.app-shell--compact .experiment-workspace-project-nav button { min-height: 30px; padding: 4px 9px; }
+.app-shell--compact .experiment-workspace-graph-tabs { padding: 4px 8px; gap: 6px; }
+.app-shell--compact .adaptive-canonical-spreadsheet { gap: 6px; min-width: 0; }
+.app-shell--compact .adaptive-canonical-spreadsheet__table-controls { gap: 6px; align-items: center; }
+.app-shell--compact .adaptive-canonical-spreadsheet :is(button, select) { min-height: 30px; padding-top: 4px; padding-bottom: 4px; }
+.app-shell--compact .adaptive-canonical-spreadsheet__history { gap: 6px; padding: 0; }
+.app-shell--compact .adaptive-canonical-spreadsheet__history-note { margin: 0; padding: 0; background: transparent; border: 0; }
+.app-shell--compact .adaptive-canonical-spreadsheet__history-note summary { cursor: pointer; font-size: .9rem; }
+.app-shell--compact .adaptive-canonical-spreadsheet__mode-note { margin: 0; padding: 6px 8px; font-size: .9rem; line-height: 1.4; }
+.app-shell--compact .canonical-matrix-worksheet__file-import { margin: 0; padding: 0; gap: 8px; align-items: start; }
+.app-shell--compact .canonical-matrix-worksheet__import-details { min-width: 0; flex: 1 1 240px; }
+.app-shell--compact .canonical-matrix-worksheet__import-details summary { cursor: pointer; padding: 4px 0; font-size: .9rem; }
+.app-shell--compact .canonical-matrix-worksheet__import-details[open] :is(label, small) { display: block; margin: 6px 0; }
+.app-shell--compact .adaptive-canonical-spreadsheet__table-wrap { max-height: min(68vh, 46rem); overscroll-behavior: contain; }
+.app-shell--compact .adaptive-canonical-spreadsheet__table-wrap :is(td, th) { padding-top: 5px; padding-bottom: 5px; }
+.app-shell--compact .experiment-graph-workbench-header { gap: 8px; }
+.app-shell--compact .experiment-graph-workbench-header :is(h2, p) { margin: 0 0 4px; }
+.app-shell--compact .experiment-graph-workbench-header .experiment-graph-overline { display: none; }
+.app-shell--compact .experiment-graph-workbench-layout { grid-template-columns: minmax(0, 1fr) minmax(290px, 330px); }
+.app-shell--compact .experiment-graph-workbench--statistics .experiment-graph-workbench-layout { grid-template-columns: minmax(0, 1fr); }
+.app-shell--compact .experiment-graph-workbench--statistics .experiment-graph-inspector { grid-template-columns: minmax(230px, .3fr) minmax(0, 1fr); }
+.app-shell--compact .experiment-graph-statistics-section { gap: 8px; padding: 10px; min-width: 0; }
+.app-shell--compact .experiment-graph-statistics-section :is(p, dl) { margin-top: 4px; margin-bottom: 6px; }
+.app-shell--compact .experiment-graph-statistics-section .experiment-graph-overline { display: none; }
+.app-shell--compact .experiment-graph-analysis-settings > summary { cursor: pointer; font-weight: 700; padding: 8px 0; }
+.app-shell--compact .experiment-graph-analysis-result { gap: 6px; padding: 8px; }
+.app-shell--compact .experiment-start__summary-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.app-shell--compact .experiment-start__summary-list > div { padding: 7px 10px; border-right: 1px solid #e4eaf2; }
+.app-shell--compact .experiment-start__summary-list > div:nth-child(3n) { border-right: 0; }
+.app-shell--compact .experiment-start__intro { padding: 10px 12px; }
+.app-shell--compact .experiment-start__intro :is(h1, p) { margin-top: 3px; margin-bottom: 5px; }
+@media (max-width: 960px) {
+ .app-shell--compact .experiment-graph-workbench--statistics .experiment-graph-inspector { display: block; }
+ .app-shell--compact .experiment-statistics-source { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 6px 10px; }
+ .app-shell--compact .experiment-statistics-source-controls[open] { flex-basis: 100%; }
+ .app-shell--compact .experiment-statistics-source :is(h3, p) { margin: 3px 0; }
+ .app-shell--compact .experiment-statistics-design-summary { display: flex; flex-wrap: wrap; flex-basis: 100%; gap: 4px 16px; margin: 4px 0; }
+ .app-shell--compact .experiment-statistics-design-summary > div { flex: 1 1 180px; }
+ .app-shell--compact .experiment-statistics-design-summary :is(dt, dd) { margin: 0; }
+ .app-shell--compact .experiment-graph-workbench-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+ .app-shell--compact .experiment-start__summary-list { grid-template-columns: minmax(0, 1fr); }
+ .app-shell--compact .experiment-start__summary-list > div { border-right: 0; }
+ .app-shell--compact .adaptive-canonical-spreadsheet__table-controls { flex-wrap: wrap; }
+}
+
+/* Follow-up from native comparison: no padding around spreadsheet editors. */
+.app-shell--compact .canonical-matrix-worksheet td { padding: 0; height: 36px; }
+.app-shell--compact .canonical-matrix-worksheet__cell input { height: 36px; }
+.app-shell--compact .experiment-workspace-header { padding: 4px 10px; align-items: center; }
+.app-shell--compact .experiment-workspace-header > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.app-shell--compact .experiment-workspace-eyebrow { display: none; }
+.app-shell--compact .experiment-workspace-header :is(h1, p) { margin: 0; }
+.app-shell--compact .experiment-graph-workbench-header > div { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.app-shell--compact .experiment-graph-workbench-header :is(h2, p) { margin: 0; }
+.app-shell--compact .experiment-graph-analysis-summary p { font-size: .95rem; }
+.app-shell--compact .empty-page { padding: 20px 24px; margin-top: 16px; }
+.app-shell--compact .empty-page :is(h1, p) { margin-top: 8px; margin-bottom: 8px; }
+
+.app-shell--compact .adaptive-canonical-spreadsheet__table-wrap { max-height: var(--sheet-available-height, calc(100dvh - 20rem)); }
+.app-shell--compact .hero { min-height: 0; padding: 18px 22px; }
+.app-shell--compact .hero h1 { font-size: 1.6rem; margin: 4px 0 8px; }
+.app-shell--compact .hero-lead { margin: 0; }
+.app-shell--compact .hero-orbit { height: 90px; }
+.app-shell--compact .page-stack { gap: 16px; }
+.app-shell--compact .route-card { padding: 16px; min-height: 0; }
+.app-shell--compact .principle-callout { padding: 12px 16px; }
+
+.app-shell--compact .experiment-graph-statistics-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px; }
+.app-shell--compact .experiment-graph-recommendation.has-current-result:empty { display: none; }
+.app-shell--compact .experiment-graph-analysis-summary { display: flex; flex-wrap: wrap; column-gap: 16px; row-gap: 2px; }
+.app-shell--compact .experiment-graph-analysis-summary strong { width: 100%; }
+.app-shell--compact .experiment-graph-analysis-summary p { margin: 0; line-height: 1.4; }
+.app-shell--compact .experiment-graph-analysis-result > dl[aria-label="主要な推定値"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app-shell--compact .experiment-graph-analysis-diagnostics:not(.is-important) { order: 1; }
+@media (max-width: 760px) {
+ .app-shell--compact .experiment-graph-analysis-result > dl[aria-label="主要な推定値"] { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Keep controls inside the workspace at the native minimum width. */
+.app-shell--compact .experiment-statistics-source-controls > summary { cursor: pointer; padding: 5px 0; font-weight: 600; }
+.app-shell--compact .experiment-statistics-source-summary { overflow-wrap: anywhere; }
+.app-shell--compact .adaptive-canonical-spreadsheet__heading { min-width: 0; flex-wrap: wrap; }
+.app-shell--compact .adaptive-canonical-spreadsheet__table-controls { flex: 1 1 auto; min-width: 0; max-width: 100%; justify-content: flex-start; }
+
+/* Additional approved typography pass: HTML workspace text only. Keep the
+ * root rem scale, SVG text/export specifications, sheet zoom and hit areas. */
+.app-shell--compact :is(.experiment-start, .experiment-workspace,
+  .specialized-workspace-panel, .graph-workspace-frame__inspector) {
+  font-size: 16px;
+}
+.app-shell--compact :is(.experiment-workspace-header h1,
+  .adaptive-canonical-spreadsheet__heading h2,
+  .experiment-graph-workbench-header h2,
+  .graph-workspace-frame__header h2,
+  .specialized-workspace-panel > h1) {
+  font-size: 20px;
+  line-height: 1.25;
+}
+.app-shell--compact :is(.experiment-start__section-heading h2,
+  .experiment-start__expected-analysis h2,
+  .experiment-graph-inspector-section h3,
+  .experiment-graph-canvas-heading h3,
+  .experiment-graph-statistics-heading h3) {
+  font-size: 17px;
+  line-height: 1.3;
+}
+.app-shell--compact :is(.experiment-start, .experiment-workspace,
+  .specialized-workspace-panel, .graph-workspace-frame__inspector)
+  :is(button, select, label, summary) {
+  font-size: 14px;
+}
+.app-shell--compact .canonical-matrix-worksheet { font-size: 16px; }
+.app-shell--compact :is(.experiment-start, .experiment-workspace,
+  .specialized-workspace-panel, .graph-workspace-frame__inspector)
+  :is(input, textarea) {
+  font-size: 16px;
+}
+.app-shell--compact :is(.experiment-graph-statistics-section > p,
+  .experiment-graph-analysis-result p,
+  .experiment-graph-analysis-result dt,
+  .experiment-graph-analysis-summary p,
+  .experiment-graph-subtitle, .experiment-graph-caption) {
+  font-size: 15px;
+  line-height: 1.45;
+}
+.app-shell--compact .experiment-graph-analysis-result dd { font-size: 16px; }
+.app-shell--compact :is(.experiment-graph-analysis-stale,
+  .experiment-graph-analysis-error, .experiment-graph-analysis-diagnostics.is-important,
+  .adaptive-canonical-spreadsheet__independence-warning) {
+  font-size: 16px;
+}

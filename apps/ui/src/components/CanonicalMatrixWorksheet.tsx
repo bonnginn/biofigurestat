@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ClipboardEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ClipboardEvent } from "react";
 
 import type { CompactScalarObservationIdFactoryContext } from "@lsaa/data-sheet";
 import {
@@ -14,24 +14,19 @@ import {
   type CanonicalWorksheetFileColumn,
   type CanonicalWorksheetFileLayout,
 } from "./canonicalWorksheetFile";
-import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
-import { LocalizedFileInput } from "./LocalizedFileInput";
-import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
-import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
 import { SpreadsheetDraftTextCell } from "./SpreadsheetDraftTextCell";
+import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
+import {
+  canonicalMatrixDisplayTextKey,
+  canonicalMatrixLexicalText,
+} from "../app/canonicalNumericPresentation";
+export { canonicalMatrixDisplayTextKey } from "../app/canonicalNumericPresentation";
 
 export type CanonicalWorksheetRow = Readonly<{
   key: string;
   label: string;
   date: string;
 }>;
-
-function worksheetExperimentSessionId(
-  rows: readonly CanonicalWorksheetRow[],
-  rowIndex: number,
-): string {
-  return rows[rowIndex]?.key ?? `experiment.worksheet.${rowIndex + 1}`;
-}
 
 export type CanonicalMatrixConditionCombination = Readonly<{
   labels: readonly string[];
@@ -66,15 +61,12 @@ export type CanonicalWorksheetFileCommit = Readonly<{
   rawLineage: AdaptiveRawLineage;
 }>;
 
-export type CanonicalMatrixConditionBlock = Readonly<{
-  name: string;
-  showGroups: boolean;
-  groupLabels: readonly string[];
-  values: readonly (readonly string[])[];
-}>;
-
 type Props = Readonly<{
-  conditionBlocks?: readonly CanonicalMatrixConditionBlock[];
+  displayTexts?: Readonly<Record<string, string>>;
+  onCellsCommit?: (
+    observations: readonly CanonicalAdaptiveObservation[],
+    updates: Readonly<Record<string, string | null>>,
+  ) => void;
   contract: StructureContract;
   observations: readonly CanonicalAdaptiveObservation[];
   rows?: readonly CanonicalWorksheetRow[];
@@ -143,20 +135,17 @@ function scalarValueKey(
   return [readout.key, ...readout.componentKeys].find((key) => present.has(key)) ?? readout.key;
 }
 
-function componentLabel(componentKey: string, ordinal: number, locale: AppLocale = "ja"): string {
+function componentLabel(componentKey: string, ordinal: number): string {
   const normalized = componentKey.toLowerCase();
-  if (["numerator", "positive", "success", "event"].includes(normalized))
-    return localizedText(locale, "該当数", "Positive count");
-  if (["denominator", "total", "eligible", "count"].includes(normalized))
-    return localizedText(locale, "総数", "Total count");
-  return componentKey || (locale === "ja" ? `値 ${ordinal + 1}` : `Value ${ordinal + 1}`);
+  if (["numerator", "positive", "success", "event"].includes(normalized)) return "該当数";
+  if (["denominator", "total", "eligible", "count"].includes(normalized)) return "総数";
+  return componentKey || `値 ${ordinal + 1}`;
 }
 
 function readoutColumns(
   readout: StructureContract["readouts"][number],
   factors: Readonly<Record<string, string>>,
   observations: readonly CanonicalAdaptiveObservation[],
-  locale: AppLocale = "ja",
 ): MatrixColumn[] {
   if (readout.representation === "scalar") {
     const valueKey = scalarValueKey(
@@ -183,7 +172,7 @@ function readoutColumns(
         key: JSON.stringify({ factors, readoutKey: readout.key, valueKey }),
         coordinate: { readoutKey: readout.key, factors, valueKey },
         readoutLabel: readout.label,
-        componentLabel: componentLabel(component, index, locale),
+        componentLabel: componentLabel(component, index),
         derived: null,
       } satisfies MatrixColumn;
     });
@@ -193,7 +182,7 @@ function readoutColumns(
         key: JSON.stringify({ factors, readoutKey: readout.key, derived: "proportion" }),
         coordinate: { readoutKey: readout.key, factors, valueKey: null },
         readoutLabel: readout.label,
-        componentLabel: localizedText(locale, "計算値 (%)", "Calculated value (%)"),
+        componentLabel: "計算値 (%)",
         derived: "proportion",
       },
     ];
@@ -204,10 +193,9 @@ function readoutColumns(
 function matrixColumns(
   contract: StructureContract,
   observations: readonly CanonicalAdaptiveObservation[],
-  locale: AppLocale = "ja",
 ): MatrixColumn[] {
   return factorCombinations(contract).flatMap((factors) =>
-    contract.readouts.flatMap((readout) => readoutColumns(readout, factors, observations, locale)),
+    contract.readouts.flatMap((readout) => readoutColumns(readout, factors, observations)),
   );
 }
 
@@ -493,50 +481,17 @@ function independentUnitIdentities(
   );
 }
 
-function independentUnitIdentityAt(
-  contract: StructureContract,
-  observations: readonly CanonicalAdaptiveObservation[],
-  factors: Readonly<Record<string, string>>,
-  rowIndex: number,
-  experimentSessionId?: string,
-): string | undefined {
-  const identityKey = experimentalIdentityKey(contract);
-  if (experimentSessionId) {
-    const candidates = observations.filter((candidate) => recordsMatch(candidate.factors, factors));
-    const observation = candidates.find(
-      (candidate) => candidate.experimentSessionId === experimentSessionId,
-    );
-    if (observation) {
-      return identityKey
-        ? (observation.identities[identityKey] ?? observation.observationId)
-        : observation.observationId;
-    }
-    if (candidates.some(({ experimentSessionId: linkedSessionId }) => linkedSessionId)) {
-      return undefined;
-    }
-  }
-  return independentUnitIdentities(contract, observations, factors)[rowIndex];
-}
-
 function observationAt(input: {
   contract: StructureContract;
   observations: readonly CanonicalAdaptiveObservation[];
   column: MatrixColumn;
   rowIndex: number;
   identityOverride?: string;
-  experimentSessionId?: string;
 }): CanonicalAdaptiveObservation | null {
   const { contract, observations, column, rowIndex } = input;
   const candidates = observationsForColumn(observations, column);
   const matchingIdentityKey = contract.matching.identityKey;
   const identityOverride = normalizedLabel(input.identityOverride ?? "");
-  if (input.experimentSessionId) {
-    const sessionObservation = candidates.find(
-      ({ experimentSessionId }) => experimentSessionId === input.experimentSessionId,
-    );
-    if (sessionObservation) return sessionObservation;
-    if (candidates.some(({ experimentSessionId }) => experimentSessionId)) return null;
-  }
   if (["matched", "blocked"].includes(contract.matching.kind) && matchingIdentityKey) {
     if (identityOverride) {
       return (
@@ -563,13 +518,9 @@ function observationAt(input: {
       ) ?? null
     );
   }
-  const unitIdentity = independentUnitIdentityAt(
-    contract,
-    observations,
-    column.coordinate.factors,
-    rowIndex,
-    input.experimentSessionId,
-  );
+  const unitIdentity = independentUnitIdentities(contract, observations, column.coordinate.factors)[
+    rowIndex
+  ];
   if (!unitIdentity) return candidates[rowIndex] ?? null;
   return (
     candidates.find(
@@ -674,31 +625,22 @@ function MatchedRowIdentityEditor({
   readOnly: boolean;
   onObservationsChange: Props["onObservationsChange"];
 }>) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const canonicalIdentity = matchedRowIdentities(contract, observations)[rowIndex] ?? "";
-
   return (
     <SpreadsheetDraftTextCell
-      aria-label={`${label} ${rowIndex + 1}`}
-      canonicalText={canonicalIdentity}
       wrapperClassName="canonical-matrix-worksheet__row-identity"
+      canonicalText={canonicalIdentity}
+      aria-label={`${label} ${rowIndex + 1}`}
       disabled={readOnly}
       data-spreadsheet-row={rowIndex}
       data-spreadsheet-column={-1}
       onCommit={(identity) => {
         try {
-          onObservationsChange(
-            renameMatchedRowIdentity({ contract, observations, rowIndex, identity }),
-          );
+          const next = renameMatchedRowIdentity({ contract, observations, rowIndex, identity });
+          if (next !== observations) onObservationsChange(next);
           return null;
         } catch (cause) {
-          return locale === "ja"
-            ? `${cause instanceof Error ? cause.message : "IDを変更できませんでした"}。入力内容は消えていません。`
-            : t(
-                "IDを変更できませんでした。入力内容は消えていません。",
-                "The ID could not be changed. The entered content was retained.",
-              );
+          return `${cause instanceof Error ? cause.message : "IDを変更できませんでした"}。入力内容は消えていません。`;
         }
       }}
     />
@@ -710,18 +652,15 @@ function renameIndependentRowIdentity(input: {
   observations: readonly CanonicalAdaptiveObservation[];
   factors: Readonly<Record<string, string>>;
   rowIndex: number;
-  experimentSessionId?: string;
   identity: string;
 }): readonly CanonicalAdaptiveObservation[] {
   const identityKey = experimentalIdentityKey(input.contract);
   if (!identityKey) throw new Error("この実験では対象・試料を区別するIDを設定できません");
-  const previousIdentity = independentUnitIdentityAt(
+  const previousIdentity = independentUnitIdentities(
     input.contract,
     input.observations,
     input.factors,
-    input.rowIndex,
-    input.experimentSessionId,
-  );
+  )[input.rowIndex];
   const identity = input.identity.trim();
   if (!identity) throw new Error("値を入力した行のIDは空にできません");
   if (identity === previousIdentity) return input.observations;
@@ -731,8 +670,6 @@ function renameIndependentRowIdentity(input: {
       .filter(
         (observation) =>
           recordsMatch(observation.factors, input.factors) &&
-          (!input.experimentSessionId ||
-            observation.experimentSessionId === input.experimentSessionId) &&
           normalizedLabel(observation.identities[identityKey] ?? "") ===
             normalizedLabel(previousIdentity ?? ""),
       )
@@ -776,32 +713,20 @@ function IndependentRowIdentityEditor({
   onDraftChange: (identity: string) => void;
   onCommit: (identity: string) => string | null;
 }>) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
-
   return (
     <SpreadsheetDraftTextCell
-      aria-label={label}
-      canonicalText={initialIdentity}
       wrapperClassName="canonical-matrix-worksheet__row-identity"
-      preserveDirtyOnCanonicalChange
-      placeholder={
-        canonicalIdentity
-          ? undefined
-          : t("値の入力時に自動作成", "Created automatically when a value is entered")
-      }
+      canonicalText={initialIdentity}
+      preserveDirtyOnCanonicalChange={!canonicalIdentity}
+      aria-label={label}
+      placeholder={canonicalIdentity ? undefined : "値の入力時に自動作成"}
       disabled={readOnly}
       data-spreadsheet-row={rowIndex}
       data-spreadsheet-column={gridColumn}
       onDraftChange={(next) => {
         if (!canonicalIdentity) onDraftChange(next);
       }}
-      onCommit={(identity) => {
-        const problem = onCommit(identity);
-        return problem && locale !== "ja"
-          ? t("IDを変更できませんでした", "The ID could not be changed")
-          : problem;
-      }}
+      onCommit={onCommit}
     />
   );
 }
@@ -811,14 +736,12 @@ function updateValue(
   valueKey: string,
   value: number | null,
   sourceRow?: number | null,
-  experimentSessionId?: string,
 ): CanonicalAdaptiveObservation {
   const missingness = { ...observation.missingness };
   if (value === null) missingness[valueKey] ??= "unknown";
   else delete missingness[valueKey];
   return CanonicalAdaptiveObservationSchema.parse({
     ...observation,
-    ...(experimentSessionId ? { experimentSessionId } : {}),
     values: { ...observation.values, [valueKey]: value },
     missingness,
     ...(sourceRow === undefined ? {} : { sourceRow }),
@@ -862,7 +785,6 @@ function applyMatrixValue(input: {
   value: number | null;
   sourceRow?: number | null;
   identityOverride?: string;
-  experimentSessionId?: string;
   nextObservationId: Props["nextObservationId"];
   nextExperimentalUnitIdentity: Props["nextExperimentalUnitIdentity"];
 }): readonly CanonicalAdaptiveObservation[] {
@@ -872,18 +794,17 @@ function applyMatrixValue(input: {
   const valueKey = input.column.coordinate.valueKey;
   const existing = observationAt(input);
   if (existing) {
+    // Leaving an unchanged cell is not a new value edit. In particular, retain
+    // an explicit missingness reason even when this design forbids "unknown".
+    if (input.value === existing.values[valueKey] && input.sourceRow === undefined) {
+      return input.observations;
+    }
     if (input.value === null && !input.contract.allowedMissingness.includes("unknown")) {
       throw new Error("この実験では欠測理由を1測定1行の表で指定してください");
     }
     return input.observations.map((observation) =>
       observation.observationId === existing.observationId
-        ? updateValue(
-            observation,
-            valueKey,
-            input.value,
-            input.sourceRow,
-            input.experimentSessionId,
-          )
+        ? updateValue(observation, valueKey, input.value, input.sourceRow)
         : observation,
     );
   }
@@ -922,13 +843,11 @@ function applyMatrixValue(input: {
   if (unitIdentityKey && unitIdentityKey !== matchingIdentityKey) {
     identities[unitIdentityKey] =
       input.identityOverride?.trim() ??
-      independentUnitIdentityAt(
+      independentUnitIdentities(
         input.contract,
         input.observations,
         input.column.coordinate.factors,
-        input.rowIndex,
-        input.experimentSessionId,
-      ) ??
+      )[input.rowIndex] ??
       input.nextExperimentalUnitIdentity?.({ ...context, observationId }) ??
       observationId;
   } else if (unitIdentityKey && !identities[unitIdentityKey]) {
@@ -968,7 +887,6 @@ function applyMatrixValue(input: {
         );
   const created = CanonicalAdaptiveObservationSchema.parse({
     observationId,
-    ...(input.experimentSessionId ? { experimentSessionId: input.experimentSessionId } : {}),
     readoutKey: input.column.coordinate.readoutKey,
     identities,
     factors: input.column.coordinate.factors,
@@ -991,25 +909,6 @@ function displayValue(observation: CanonicalAdaptiveObservation | null, valueKey
   return value === null || value === undefined ? "" : String(value);
 }
 
-function matrixDraftKey(column: MatrixColumn, rowIndex: number): string {
-  return `${column.key}\u0000${rowIndex}`;
-}
-
-function matchingLexicalValue(
-  draft: string | undefined,
-  observation: CanonicalAdaptiveObservation | null,
-  valueKey: string,
-): string | undefined {
-  if (draft === undefined) return undefined;
-  const parsed = parseOptionalSpreadsheetNumber(draft.trim());
-  const canonical = observation?.values[valueKey];
-  if (parsed.kind === "empty" && (canonical === null || canonical === undefined)) return draft;
-  if (parsed.kind === "value" && typeof canonical === "number" && parsed.value === canonical) {
-    return draft;
-  }
-  return undefined;
-}
-
 function displayColumnValue(
   contract: StructureContract,
   observation: CanonicalAdaptiveObservation | null,
@@ -1029,6 +928,8 @@ function displayColumnValue(
 }
 
 function MatrixCell({
+  displayTexts,
+  onCellsCommit,
   contract,
   observations,
   column,
@@ -1039,13 +940,12 @@ function MatrixCell({
   nextObservationId,
   nextExperimentalUnitIdentity,
   identityOverride,
-  experimentSessionId,
   onObservationsChange,
   onMatrixPaste,
   conditionStatus,
-  lexicalDraft,
-  onLexicalCommit,
 }: Readonly<{
+  displayTexts: Readonly<Record<string, string>>;
+  onCellsCommit: Props["onCellsCommit"];
   contract: StructureContract;
   observations: readonly CanonicalAdaptiveObservation[];
   column: MatrixColumn;
@@ -1056,28 +956,84 @@ function MatrixCell({
   nextObservationId: Props["nextObservationId"];
   nextExperimentalUnitIdentity: Props["nextExperimentalUnitIdentity"];
   identityOverride?: string;
-  experimentSessionId?: string;
   onObservationsChange: Props["onObservationsChange"];
-  onMatrixPaste: (event: ClipboardEvent<HTMLInputElement>, row: number, column: number) => void;
+  onMatrixPaste: (
+    event: ClipboardEvent<HTMLInputElement>,
+    row: number,
+    column: number,
+  ) => string | undefined;
   conditionStatus: CanonicalMatrixConditionCombination["status"];
-  lexicalDraft?: string;
-  onLexicalCommit: (text: string) => void;
 }>) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const observation = observationAt({
     contract,
     observations,
     column,
     rowIndex,
     identityOverride,
-    experimentSessionId,
   });
   const canonicalValue = displayColumnValue(contract, observation, column);
-  const displayedValue = column.coordinate.valueKey
-    ? (matchingLexicalValue(lexicalDraft, observation, column.coordinate.valueKey) ??
-      canonicalValue)
-    : canonicalValue;
+  const valueKey = column.coordinate.valueKey;
+  const lexicalText =
+    observation && valueKey
+      ? displayTexts[canonicalMatrixDisplayTextKey(observation.observationId, valueKey)]
+      : undefined;
+  const matchingLexical =
+    lexicalText !== undefined &&
+    typeof observation?.values[valueKey!] === "number" &&
+    canonicalMatrixLexicalText(observation.values[valueKey!] as number, lexicalText) !== null;
+  const displayedValue = matchingLexical && !column.derived ? lexicalText : canonicalValue;
+  const [text, setText] = useState(displayedValue);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setText(displayedValue);
+    setError(null);
+  }, [displayedValue]);
+
+  const commit = (draftText = text) => {
+    if (column.derived || draftText === displayedValue) return;
+    // Read the value visible in the input at blur time. This avoids a narrow
+    // React render-lag window where the DOM already shows the last keystroke
+    // but the prior render's local state would otherwise be committed.
+    const trimmed = draftText.trim();
+    const value = trimmed === "" ? null : Number(trimmed);
+    if (value !== null && !Number.isFinite(value)) {
+      setError("数値を入力してください");
+      return;
+    }
+    try {
+      const next = applyMatrixValue({
+        contract,
+        observations,
+        column,
+        rowIndex,
+        value,
+        identityOverride,
+        nextObservationId,
+        nextExperimentalUnitIdentity,
+      });
+      validateTypedValues(contract, next);
+      const committed = observationAt({
+        contract,
+        observations: next,
+        column,
+        rowIndex,
+        identityOverride,
+      });
+      if (onCellsCommit && (committed || observation) && valueKey) {
+        onCellsCommit(next, {
+          [canonicalMatrixDisplayTextKey((committed ?? observation)!.observationId, valueKey)]:
+            canonicalMatrixLexicalText(value, draftText),
+        });
+      } else if (next !== observations) onObservationsChange(next);
+      setText(
+        canonicalMatrixLexicalText(value, draftText) ?? (value === null ? "" : String(value)),
+      );
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "値を反映できませんでした");
+    }
+  };
   const factorLabel = contract.factors
     .map((factor) => column.coordinate.factors[factor.key])
     .filter(Boolean)
@@ -1085,19 +1041,13 @@ function MatrixCell({
   const rowLabel =
     contract.matching.kind === "matched"
       ? generatedRowIdentity(contract, observations, rowIndex)
-      : locale === "ja"
-        ? `入力行 ${rowIndex + 1}`
-        : `Entry row ${rowIndex + 1}`;
-  const separator = locale === "ja" ? "・" : ", ";
-  const inputLabel = `${rowLabel}${separator}${factorLabel || t("測定", "Measurement")}${separator}${column.readoutLabel}${
-    column.componentLabel === column.readoutLabel ? "" : `${separator}${column.componentLabel}`
+      : `入力行 ${rowIndex + 1}`;
+  const inputLabel = `${rowLabel}・${factorLabel || "測定"}・${column.readoutLabel}${
+    column.componentLabel === column.readoutLabel ? "" : `・${column.componentLabel}`
   }`;
 
   if (conditionStatus !== "performed") {
-    const statusLabel =
-      conditionStatus === "not_performed"
-        ? t("実施していない", "Not performed")
-        : t("未確認", "Unconfirmed");
+    const statusLabel = conditionStatus === "not_performed" ? "実施していない" : "未確認";
     return (
       <span
         className={`canonical-matrix-worksheet__unavailable is-${conditionStatus}`}
@@ -1113,7 +1063,7 @@ function MatrixCell({
     return (
       <output
         className="canonical-matrix-worksheet__derived"
-        aria-label={`${rowLabel}${separator}${factorLabel || t("測定", "Measurement")}${separator}${column.readoutLabel}${separator}${column.componentLabel}`}
+        aria-label={`${rowLabel}・${factorLabel || "測定"}・${column.readoutLabel}・${column.componentLabel}`}
       >
         {canonicalValue || "—"}
       </output>
@@ -1121,43 +1071,35 @@ function MatrixCell({
   }
 
   return (
-    <SpreadsheetDraftTextCell
-      wrapperClassName="canonical-matrix-worksheet__cell"
-      canonicalText={displayedValue}
-      aria-label={inputLabel}
-      data-spreadsheet-row={rowIndex}
-      data-spreadsheet-column={gridColumn}
-      disabled={readOnly}
-      inputMode="decimal"
-      onPaste={(event) => onMatrixPaste(event, rowIndex, columnIndex)}
-      onCommit={(draftText) => {
-        const parsed = parseOptionalSpreadsheetNumber(draftText);
-        if (parsed.kind === "invalid") {
-          return t("数値を入力してください", "Enter a numeric value");
-        }
-        try {
-          const next = applyMatrixValue({
-            contract,
-            observations,
-            column,
-            rowIndex,
-            value: parsed.kind === "value" ? parsed.value : null,
-            identityOverride,
-            experimentSessionId,
-            nextObservationId,
-            nextExperimentalUnitIdentity,
-          });
-          validateTypedValues(contract, next);
-          onObservationsChange(next);
-          onLexicalCommit(draftText);
-          return null;
-        } catch (cause) {
-          return locale === "ja" && cause instanceof Error
-            ? cause.message
-            : t("値を反映できませんでした", "The value could not be applied");
-        }
-      }}
-    />
+    <div className="canonical-matrix-worksheet__cell">
+      <input
+        aria-label={inputLabel}
+        aria-invalid={error ? "true" : undefined}
+        data-spreadsheet-cell="true"
+        data-spreadsheet-row={rowIndex}
+        data-spreadsheet-column={gridColumn}
+        disabled={readOnly}
+        inputMode="decimal"
+        value={text}
+        onBlur={(event) => commit(event.currentTarget.value)}
+        onChange={(event) => {
+          setText(event.currentTarget.value);
+          setError(null);
+        }}
+        onKeyDown={moveSpreadsheetFocus}
+        onPaste={(event) => {
+          const pastedValue = onMatrixPaste(event, rowIndex, columnIndex);
+          if (pastedValue !== undefined) {
+            // An accepted paste replaces an uncommitted draft even when its
+            // canonical value did not change. Otherwise a later blur would
+            // overwrite the paste with the old local text.
+            setText(pastedValue);
+            setError(null);
+          }
+        }}
+      />
+      {error ? <small role="alert">{error}</small> : null}
+    </div>
   );
 }
 
@@ -1190,26 +1132,20 @@ function independentIdentityOverride(
   drafts: Readonly<Record<string, string>>,
   factors: Readonly<Record<string, string>>,
   rowIndex: number,
-  experimentSessionId?: string,
 ): string | undefined {
   const draft = drafts[independentIdentityDraftKey(factors, rowIndex)];
-  const canonical = independentUnitIdentityAt(
-    contract,
-    observations,
-    factors,
-    rowIndex,
-    experimentSessionId,
-  );
+  const canonical = independentUnitIdentities(contract, observations, factors)[rowIndex];
   const identity = (canonical ?? draft ?? "").trim();
   return identity || undefined;
 }
 
 export function CanonicalMatrixWorksheet({
+  displayTexts = {},
+  onCellsCommit,
   contract,
   observations,
   rows = [],
   conditionCombinations = [],
-  conditionBlocks = [],
   showExperimentDate = false,
   onRowChange,
   onObservationsChange,
@@ -1219,12 +1155,7 @@ export function CanonicalMatrixWorksheet({
   readOnly = false,
   tableId,
 }: Props) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const columns = useMemo(
-    () => matrixColumns(contract, observations, locale),
-    [contract, observations, locale],
-  );
+  const columns = useMemo(() => matrixColumns(contract, observations), [contract, observations]);
   const [showIndependentIdentities, setShowIndependentIdentities] = useState(false);
   const displayColumns = useMemo(
     () => matrixDisplayColumns(contract, columns, showIndependentIdentities),
@@ -1237,54 +1168,41 @@ export function CanonicalMatrixWorksheet({
     ({ key }) => key === contract.matching.identityKey,
   );
   const rowHeaderLabel =
-    contract.matching.kind === "matched"
-      ? (matchingIdentity?.label ?? t("対象ID", "Subject ID"))
-      : t("行", "Row");
-  const showDate = showExperimentDate && Boolean(rows.length || onRowChange);
+    contract.matching.kind === "matched" ? (matchingIdentity?.label ?? "対象ID") : "行";
+  const showDate =
+    contract.matching.kind !== "independent" &&
+    showExperimentDate &&
+    Boolean(rows.length || onRowChange);
   const showComponentHeaders = columns.some(
     ({ componentLabel: component, readoutLabel }) => component !== readoutLabel,
   );
-  const compactCountReadout =
-    contract.readouts.length === 1 && contract.readouts[0]?.representation === "proportion_counts";
-  const showReadoutHeaders = showComponentHeaders && !compactCountReadout;
-  // Presentation only: match saved parent/child metadata; never split arbitrary labels.
-  const headerFactor = contract.factors.length === 1 ? contract.factors[0] : undefined;
-  const matchingBlocks = conditionBlocks.filter(
-    (block) => block.showGroups && block.name === headerFactor?.label,
-  );
-  const savedHeaders = new Map<string, { parent: string; child: string }>();
-  if (headerFactor && matchingBlocks.length === 1) {
-    const block = matchingBlocks[0];
-    for (const level of headerFactor.levels) {
-      const matches = block.values.flatMap((children, index) =>
-        children.flatMap((child) => {
-          const parent = block.groupLabels[index]?.trim() ?? "";
-          const value = child.trim();
-          return value && (parent ? `${parent} / ${value}` : value) === level
-            ? [{ parent, child: value }]
-            : [];
-        }),
-      );
-      if (matches.length === 1) savedHeaders.set(level, matches[0]);
-    }
-  }
-  const groupedHeaders =
-    headerFactor &&
-    savedHeaders.size === headerFactor.levels.length &&
-    [...savedHeaders.values()].some((header) => header.parent)
-      ? savedHeaders
-      : undefined;
-  const columnHeader = (column: MatrixDisplayColumn) =>
-    groupedHeaders!.get(column.coordinate.factors[headerFactor!.key])!;
-  const headerDepth =
-    contract.factors.length + (groupedHeaders ? 1 : 0) + (showReadoutHeaders ? 2 : 1);
+  const headerDepth = contract.factors.length + (showComponentHeaders ? 2 : 1);
   const [pasteError, setPasteError] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileStatus, setFileStatus] = useState<string | null>(null);
   const [fileBusy, setFileBusy] = useState(false);
+  const fileBusyRef = useRef(false);
+  const worksheetEditEpochRef = useRef(0);
+  const fileImportGenerationRef = useRef(0);
+  const fileImportSnapshot = JSON.stringify({
+    contract,
+    observations,
+    rows,
+    conditionCombinations,
+    showExperimentDate,
+    readOnly,
+  });
+  const latestFileImportSnapshotRef = useRef(fileImportSnapshot);
+  latestFileImportSnapshotRef.current = fileImportSnapshot;
+  useEffect(
+    () => () => {
+      fileImportGenerationRef.current += 1;
+    },
+    [],
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputId = useId();
   const [identityDrafts, setIdentityDrafts] = useState<Record<string, string>>({});
-  const [lexicalDrafts, setLexicalDrafts] = useState<Record<string, string>>({});
   const fileLayout = useMemo(
     () => canonicalWorksheetFileLayout(contract, observations, showExperimentDate),
     [contract, observations, showExperimentDate],
@@ -1294,31 +1212,20 @@ export function CanonicalMatrixWorksheet({
   const commitIndependentIdentity = ({
     factors,
     rowIndex,
-    experimentSessionId,
     identity: rawIdentity,
   }: Readonly<{
     factors: Readonly<Record<string, string>>;
     rowIndex: number;
-    experimentSessionId?: string;
     identity: string;
   }>): string | null => {
-    if (!independentIdentityKey)
-      return t(
-        "この実験では対象・試料を区別するIDを設定できません",
-        "This experiment does not define an ID that distinguishes subjects or specimens",
-      );
+    if (!independentIdentityKey) return "この実験では対象・試料を区別するIDを設定できません";
     const draftKey = independentIdentityDraftKey(factors, rowIndex);
     const identity = rawIdentity.trim();
     const canonicalIdentity =
-      independentUnitIdentityAt(contract, observations, factors, rowIndex, experimentSessionId) ??
-      "";
+      independentUnitIdentities(contract, observations, factors)[rowIndex] ?? "";
     const reject = (message: string): string => message;
     if (!identity) {
-      if (canonicalIdentity)
-        return t(
-          "値を入力した行のIDは空にできません",
-          "The ID cannot be blank after values have been entered",
-        );
+      if (canonicalIdentity) return "値を入力した行のIDは空にできません";
       setIdentityDrafts((previous) => ({ ...previous, [draftKey]: "" }));
       return null;
     }
@@ -1329,12 +1236,7 @@ export function CanonicalMatrixWorksheet({
           key !== draftKey && Boolean(value.trim()) && normalizedLabel(value) === normalized,
       )
     ) {
-      return reject(
-        t(
-          "同じIDがすでにあります。条件ごとに異なる対象・試料IDを入力してください",
-          "This ID already exists. Enter a different subject or specimen ID for each condition",
-        ),
-      );
+      return reject("同じIDがすでにあります。条件ごとに異なる対象・試料IDを入力してください");
     }
     const previousIdentity = canonicalIdentity;
     const relatedObservationIds = new Set(
@@ -1342,7 +1244,6 @@ export function CanonicalMatrixWorksheet({
         .filter(
           (observation) =>
             recordsMatch(observation.factors, factors) &&
-            (!experimentSessionId || observation.experimentSessionId === experimentSessionId) &&
             normalizedLabel(observation.identities[independentIdentityKey] ?? "") ===
               normalizedLabel(previousIdentity),
         )
@@ -1355,12 +1256,7 @@ export function CanonicalMatrixWorksheet({
           !relatedObservationIds.has(observation.observationId),
       )
     ) {
-      return reject(
-        t(
-          "同じIDがすでにあります。条件ごとに異なる対象・試料IDを入力してください",
-          "This ID already exists. Enter a different subject or specimen ID for each condition",
-        ),
-      );
+      return reject("同じIDがすでにあります。条件ごとに異なる対象・試料IDを入力してください");
     }
     if (canonicalIdentity) {
       try {
@@ -1370,7 +1266,6 @@ export function CanonicalMatrixWorksheet({
             observations,
             factors,
             rowIndex,
-            experimentSessionId,
             identity,
           }),
         );
@@ -1381,9 +1276,7 @@ export function CanonicalMatrixWorksheet({
         });
         return null;
       } catch (cause) {
-        return locale === "ja" && cause instanceof Error
-          ? cause.message
-          : t("IDを変更できませんでした", "The ID could not be changed");
+        return cause instanceof Error ? cause.message : "IDを変更できませんでした";
       }
     }
     setIdentityDrafts((previous) => ({ ...previous, [draftKey]: identity }));
@@ -1411,7 +1304,7 @@ export function CanonicalMatrixWorksheet({
         ),
       }));
     let next = observations;
-    const acceptedDrafts: Record<string, string> = {};
+    const lexicalUpdates: Record<string, string | null> = {};
     try {
       pasted.forEach((pastedRow, rowOffset) => {
         pastedRow.forEach((token, columnOffset) => {
@@ -1428,11 +1321,10 @@ export function CanonicalMatrixWorksheet({
             }
             return;
           }
-          const parsedValue = parseOptionalSpreadsheetNumber(trimmed);
-          if (parsedValue.kind === "invalid") {
+          const value = trimmed === "" ? null : Number(trimmed);
+          if (value !== null && !Number.isFinite(value)) {
             throw new Error(`数値として読めない値「${trimmed}」があります`);
           }
-          const value = parsedValue.kind === "value" ? parsedValue.value : null;
           const identityOverride =
             contract.matching.kind === "matched"
               ? undefined
@@ -1442,8 +1334,14 @@ export function CanonicalMatrixWorksheet({
                   identityDrafts,
                   target.column.coordinate.factors,
                   startRow + rowOffset,
-                  worksheetExperimentSessionId(rows, startRow + rowOffset),
                 );
+          const previous = observationAt({
+            contract,
+            observations: next,
+            column: target.column,
+            rowIndex: startRow + rowOffset,
+            identityOverride,
+          });
           next = applyMatrixValue({
             contract,
             observations: next,
@@ -1451,33 +1349,63 @@ export function CanonicalMatrixWorksheet({
             rowIndex: startRow + rowOffset,
             value,
             identityOverride,
-            experimentSessionId: worksheetExperimentSessionId(rows, startRow + rowOffset),
             nextObservationId,
             nextExperimentalUnitIdentity,
           });
-          acceptedDrafts[matrixDraftKey(target.column, startRow + rowOffset)] = trimmed;
+          const committed = observationAt({
+            contract,
+            observations: next,
+            column: target.column,
+            rowIndex: startRow + rowOffset,
+            identityOverride,
+          });
+          if ((committed || previous) && target.column.coordinate.valueKey) {
+            lexicalUpdates[
+              canonicalMatrixDisplayTextKey(
+                (committed ?? previous)!.observationId,
+                target.column.coordinate.valueKey,
+              )
+            ] = canonicalMatrixLexicalText(value, token);
+          }
         });
       });
       validateTypedValues(contract, next);
-      onObservationsChange(next);
-      setLexicalDrafts((previous) => ({ ...previous, ...acceptedDrafts }));
+      if (onCellsCommit) onCellsCommit(next, lexicalUpdates);
+      else onObservationsChange(next);
       setPasteError(null);
+      const firstColumn = pasteColumns[0]!.column;
+      return displayColumnValue(
+        contract,
+        observationAt({ contract, observations: next, column: firstColumn, rowIndex: startRow }),
+        firstColumn,
+      );
     } catch (cause) {
       setPasteError(
-        locale === "ja"
-          ? `${cause instanceof Error ? cause.message : "貼り付けた値を反映できませんでした"}。既存の値は変更していません。`
-          : "The pasted values could not be applied. Existing values were not changed.",
+        `${cause instanceof Error ? cause.message : "貼り付けた値を反映できませんでした"}。既存の値は変更していません。`,
       );
     }
   };
 
   const importWorksheetFile = async (file: File) => {
-    if (!editable || fileBusy) return;
+    if (!editable || fileBusyRef.current) return;
+    fileBusyRef.current = true;
+    const generation = ++fileImportGenerationRef.current;
+    const editEpoch = worksheetEditEpochRef.current;
     setFileBusy(true);
     setFileError(null);
     setFileStatus(null);
     try {
       const text = await file.text();
+      if (fileImportGenerationRef.current !== generation) return;
+      if (
+        latestFileImportSnapshotRef.current !== fileImportSnapshot ||
+        worksheetEditEpochRef.current !== editEpoch
+      ) {
+        setFileError(
+          "ファイル読込中に入力表または実験構造が変更されました。現在の値を保全し、読込を中止しました。必要ならファイルをもう一度選択してください。",
+        );
+        return;
+      }
       const parsed = parseCanonicalWorksheetFile({
         text,
         fileName: file.name,
@@ -1644,13 +1572,12 @@ export function CanonicalMatrixWorksheet({
                 : "実施したか未確認の条件に値があります。実験の組み立てを確認してから読み込んでください。",
             );
           }
-          const parsedValue = parseOptionalSpreadsheetNumber(token);
-          if (parsedValue.kind === "invalid") {
+          const value = token === "" ? null : Number(token);
+          if (value !== null && !Number.isFinite(value)) {
             throw new Error(
               `データ行${fileRowIndex + 2}に数値として読めない値「${token}」があります。`,
             );
           }
-          const value = parsedValue.kind === "value" ? parsedValue.value : null;
           const identityOverride =
             matched && identity
               ? identity
@@ -1694,29 +1621,26 @@ export function CanonicalMatrixWorksheet({
       else onObservationsChange(next);
       datePatches.forEach(({ rowIndex, date }) => onRowChange?.(rowIndex, { date }));
       setFileStatus(
-        locale === "ja"
-          ? `${file.name}を読み込みました。${importedValueCount}件の数値を現在の入力表へ反映しました。`
-          : `Loaded ${file.name}. Applied ${importedValueCount} numeric values to the current data table.`,
+        `${file.name}を読み込みました。${importedValueCount}件の数値を現在の入力表へ反映しました。`,
       );
     } catch (cause) {
+      if (fileImportGenerationRef.current !== generation) return;
       setFileError(
-        locale === "ja"
-          ? `${cause instanceof Error ? cause.message : "ファイルを読み込めませんでした"} 既存の値は変更していません。`
-          : "The file could not be loaded. Existing values were not changed.",
+        `${cause instanceof Error ? cause.message : "ファイルを読み込めませんでした"} 既存の値は変更していません。`,
       );
     } finally {
-      setFileBusy(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (fileImportGenerationRef.current === generation) {
+        fileBusyRef.current = false;
+        setFileBusy(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
     }
   };
 
   if (!eligible) {
     return (
       <p className="adaptive-canonical-spreadsheet__mode-note" role="note">
-        {t(
-          "この構造は、対象ID・階層・時間の対応を隠さない1測定1行の表で表示します。",
-          "This structure is shown as one measurement per row so subject IDs, hierarchy, and ordered-axis relationships remain explicit.",
-        )}
+        この構造は、対象ID・階層・時間の対応を隠さない1測定1行の表で表示します。
       </p>
     );
   }
@@ -1724,144 +1648,115 @@ export function CanonicalMatrixWorksheet({
   return (
     <>
       <div className="canonical-matrix-worksheet__file-import">
-        <LocalizedFileInput
-          inputRef={fileInputRef}
-          label={t("CSV / TSV / TXTファイルを読み込む", "Load CSV / TSV / TXT file")}
-          ariaLabel={t("CSV / TSV / TXTファイルを読み込む", "Load CSV / TSV / TXT file")}
-          accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
-          disabled={!editable || fileBusy}
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0];
-            if (file) void importWorksheetFile(file);
-          }}
-        />
-        <small>
-          {t(
-            "1行目はこの表の見出しです。現在の条件列だけに対応し、別の実験構造は作りません。",
-            "The first row contains this table’s headings. Import maps only to the current condition columns and does not create another experiment structure.",
-          )}
+        <details className="canonical-matrix-worksheet__import-details">
+          <summary>データファイルを読み込む</summary>
+        <label htmlFor={fileInputId}>
+          CSV / TSV / TXTファイルを読み込む
+          <input
+            ref={fileInputRef}
+            id={fileInputId}
+            type="file"
+            accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+            aria-label="CSV / TSV / TXTファイルを読み込む"
+            aria-describedby={`${fileInputId}-headers${fileError ? ` ${fileInputId}-error` : ""}`}
+            disabled={!editable || fileBusy}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              if (file) void importWorksheetFile(file);
+            }}
+          />
+        </label>
+        <small id={`${fileInputId}-headers`}>
+          先頭行の各セルに、次の列名をそのまま入力してください：
+          {fileLayout.columns.map(({ key, header, role }, index) => (
+            <span key={key}>
+              {index > 0 ? "、" : " "}
+              <code style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{header}</code>
+              {fileLayout.optionalRowLabel && role === "row_label" ? "（省略可）" : null}
+            </span>
+          ))}
+          。現在の条件列だけに対応し、別の実験構造は作りません。
         </small>
+        </details>
         {contract.matching.kind !== "matched" && independentIdentityKey ? (
           <button
             type="button"
             aria-pressed={showIndependentIdentities}
             onClick={() => setShowIndependentIdentities((visible) => !visible)}
           >
-            {showIndependentIdentities
-              ? t("対象・試料IDを隠す", "Hide subject/specimen IDs")
-              : t("対象・試料IDを表示／編集", "Show/edit subject/specimen IDs")}
+            {showIndependentIdentities ? "対象・試料IDを隠す" : "対象・試料IDを表示／編集"}
           </button>
         ) : null}
       </div>
-      <div
-        className="adaptive-canonical-spreadsheet__table-wrap canonical-matrix-worksheet"
-        data-row-numbers={contract.matching.kind !== "matched" || undefined}
-      >
+      {fileError ? (
+        <p
+          id={`${fileInputId}-error`}
+          className="adaptive-canonical-spreadsheet__paste-error"
+          role="alert"
+        >
+          {fileError}
+        </p>
+      ) : null}
+      <div className="adaptive-canonical-spreadsheet__table-wrap canonical-matrix-worksheet">
         <table
           id={tableId}
-          aria-label={
-            editable
-              ? t("条件別連続入力表", "Continuous data entry by condition")
-              : t("条件別連続表示表", "Continuous data by condition")
-          }
+          aria-label={editable ? "条件別連続入力表" : "条件別連続表示表"}
+          onChangeCapture={() => {
+            worksheetEditEpochRef.current += 1;
+          }}
+          onPasteCapture={() => {
+            worksheetEditEpochRef.current += 1;
+          }}
         >
-          <caption>
-            {t("条件別シート", "Sheet by condition")}
-            {compactCountReadout ? ` — ${contract.readouts[0]?.label ?? ""}` : ""}
-          </caption>
+          <caption>条件別シート</caption>
           <thead>
-            {groupedHeaders ? (
-              <>
-                <tr>
-                  <th scope="row" rowSpan={2} className="canonical-matrix-worksheet__factor-label">
-                    {headerFactor!.label}
+            {contract.factors.map((factor, factorIndex) => (
+              <tr key={factor.key}>
+                <th scope="row" className="canonical-matrix-worksheet__factor-label">
+                  {factor.label}
+                </th>
+                {factorIndex === 0 && showDate ? (
+                  <th
+                    scope="col"
+                    rowSpan={headerDepth}
+                    className="canonical-matrix-worksheet__date-heading"
+                  >
+                    {SHARED_EXPERIMENT_DATE_LABEL}
+                    <small>{SHARED_EXPERIMENT_DATE_HELP}</small>
                   </th>
-                  {showDate ? (
-                    <th
-                      scope="col"
-                      rowSpan={headerDepth}
-                      className="canonical-matrix-worksheet__date-heading"
-                    >
-                      {t("実験日", "Experiment date")}*
-                    </th>
-                  ) : null}
-                  {headerRuns(
-                    displayColumns,
-                    (column) =>
-                      `${columnHeader(column).parent ? "parent" : "single"}:${columnHeader(column).parent || columnHeader(column).child}`,
-                    (column) => columnHeader(column).parent || columnHeader(column).child,
-                  ).map((run) => (
-                    <th
-                      scope="colgroup"
-                      key={run.key}
-                      colSpan={run.span}
-                      rowSpan={columnHeader(displayColumns[parseInt(run.key, 10)]).parent ? 1 : 2}
-                    >
-                      {run.label}
-                    </th>
-                  ))}
-                </tr>
-                <tr>
-                  {headerRuns(
-                    displayColumns.filter((column) => columnHeader(column).parent),
-                    (column) => column.coordinate.factors[headerFactor!.key],
-                    (column) => columnHeader(column).child,
-                  ).map((run) => (
-                    <th scope="colgroup" key={run.key} colSpan={run.span}>
-                      {run.label}
-                    </th>
-                  ))}
-                </tr>
-              </>
-            ) : (
-              contract.factors.map((factor, factorIndex) => (
-                <tr key={factor.key}>
-                  <th scope="row" className="canonical-matrix-worksheet__factor-label">
-                    {factor.label}
+                ) : null}
+                {headerRuns(
+                  displayColumns,
+                  (column) =>
+                    JSON.stringify(
+                      contract.factors
+                        .slice(0, factorIndex + 1)
+                        .map(({ key }) => column.coordinate.factors[key] ?? "—"),
+                    ),
+                  (column) => column.coordinate.factors[factor.key] ?? "—",
+                ).map((run) => (
+                  <th scope="colgroup" colSpan={run.span} key={run.key}>
+                    {run.label}
                   </th>
-                  {factorIndex === 0 && showDate ? (
-                    <th
-                      scope="col"
-                      rowSpan={headerDepth}
-                      className="canonical-matrix-worksheet__date-heading"
-                    >
-                      {t("実験日", "Experiment date")}*
-                    </th>
-                  ) : null}
-                  {headerRuns(
-                    displayColumns,
-                    (column) =>
-                      JSON.stringify(
-                        contract.factors
-                          .slice(0, factorIndex + 1)
-                          .map(({ key }) => column.coordinate.factors[key] ?? "—"),
-                      ),
-                    (column) => column.coordinate.factors[factor.key] ?? "—",
-                  ).map((run) => (
-                    <th scope="colgroup" colSpan={run.span} key={run.key}>
-                      {run.label}
-                    </th>
-                  ))}
-                </tr>
-              ))
-            )}
-            {showReadoutHeaders ? (
+                ))}
+              </tr>
+            ))}
+            {showComponentHeaders ? (
               <tr>
                 <th scope="row" className="canonical-matrix-worksheet__factor-label">
-                  {t("測定項目", "Measured value")}
+                  測定項目
                 </th>
                 {contract.factors.length === 0 && showDate ? (
                   <th scope="col" rowSpan={2} className="canonical-matrix-worksheet__date-heading">
-                    {t("実験日", "Experiment date")}*
+                    {SHARED_EXPERIMENT_DATE_LABEL}
+                    <small>{SHARED_EXPERIMENT_DATE_HELP}</small>
                   </th>
                 ) : null}
                 {displayColumns.map((column) =>
                   column.role === "identity" ? (
                     <th scope="col" rowSpan={2} key={column.key}>
                       {column.readoutLabel}
-                      <small>
-                        {t("条件ごとの対象・試料ID", "Subject/specimen ID for each condition")}
-                      </small>
+                      <small>条件ごとの対象・試料ID</small>
                     </th>
                   ) : (
                     <th scope="col" key={column.key}>
@@ -1874,19 +1769,16 @@ export function CanonicalMatrixWorksheet({
             <tr>
               <th scope="col" className="canonical-matrix-worksheet__row-label-heading">
                 {rowHeaderLabel}
-                {contract.matching.kind === "matched" ? (
-                  <small>
-                    {t("同じIDの条件は対応", "Conditions with the same ID are matched")}
-                  </small>
-                ) : null}
+                {contract.matching.kind === "matched" ? <small>同じIDの条件は対応</small> : null}
               </th>
-              {contract.factors.length === 0 && !showReadoutHeaders && showDate ? (
+              {contract.factors.length === 0 && !showComponentHeaders && showDate ? (
                 <th scope="col" className="canonical-matrix-worksheet__date-heading">
-                  {t("実験日", "Experiment date")}*
+                  {SHARED_EXPERIMENT_DATE_LABEL}
+                  <small>{SHARED_EXPERIMENT_DATE_HELP}</small>
                 </th>
               ) : null}
               {displayColumns.map((column) => {
-                if (showReadoutHeaders && column.role === "identity") return null;
+                if (showComponentHeaders && column.role === "identity") return null;
                 return (
                   <th scope="col" key={column.key}>
                     {showComponentHeaders ? column.componentLabel : column.readoutLabel}
@@ -1901,8 +1793,8 @@ export function CanonicalMatrixWorksheet({
                           column.coordinate.factors,
                           conditionCombinations,
                         ) === "not_performed"
-                          ? t("実施していない", "Not performed")
-                          : t("未確認", "Unconfirmed")}
+                          ? "実施していない"
+                          : "未確認"}
                       </small>
                     ) : null}
                   </th>
@@ -1919,8 +1811,7 @@ export function CanonicalMatrixWorksheet({
               const rowIdentity =
                 contract.matching.kind === "matched"
                   ? generatedRowIdentity(contract, observations, rowIndex)
-                  : rows[rowIndex]?.label ||
-                    (locale === "ja" ? `入力行 ${rowIndex + 1}` : `Entry row ${rowIndex + 1}`);
+                  : rows[rowIndex]?.label || `入力行 ${rowIndex + 1}`;
               const visibleRowLabel =
                 contract.matching.kind === "matched" ? rowIdentity : String(rowIndex + 1);
               return (
@@ -1942,15 +1833,10 @@ export function CanonicalMatrixWorksheet({
                   {showDate ? (
                     <td className="canonical-matrix-worksheet__date">
                       <input
-                        aria-label={
-                          locale === "ja"
-                            ? `${rowIdentity}の${SHARED_EXPERIMENT_DATE_LABEL}`
-                            : `${rowIdentity} experiment date shared by this row`
-                        }
-                        aria-describedby={`${tableId}-date-note`}
+                        aria-label={`${rowIdentity}の${SHARED_EXPERIMENT_DATE_LABEL}`}
                         type="date"
                         value={rows[rowIndex]?.date ?? ""}
-                        disabled={!editable || !onRowChange}
+                        disabled={!rows[rowIndex] || !onRowChange}
                         data-spreadsheet-cell="true"
                         data-spreadsheet-row={rowIndex}
                         data-spreadsheet-column={0}
@@ -1973,13 +1859,11 @@ export function CanonicalMatrixWorksheet({
                         rowIndex,
                       );
                       const canonicalIdentity =
-                        independentUnitIdentityAt(
+                        independentUnitIdentities(
                           contract,
                           observations,
                           column.coordinate.factors,
-                          rowIndex,
-                          worksheetExperimentSessionId(rows, rowIndex),
-                        ) ?? "";
+                        )[rowIndex] ?? "";
                       const draftIdentity = identityDrafts[draftKey];
                       const identity = canonicalIdentity || draftIdentity || "";
                       if (conditionStatus !== "performed") {
@@ -1989,9 +1873,7 @@ export function CanonicalMatrixWorksheet({
                               className={`canonical-matrix-worksheet__unavailable is-${conditionStatus}`}
                               role="note"
                             >
-                              {conditionStatus === "not_performed"
-                                ? t("実施していない", "Not performed")
-                                : t("未確認", "Unconfirmed")}
+                              {conditionStatus === "not_performed" ? "実施していない" : "未確認"}
                             </span>
                           </td>
                         );
@@ -2001,11 +1883,7 @@ export function CanonicalMatrixWorksheet({
                           <IndependentRowIdentityEditor
                             initialIdentity={identity}
                             canonicalIdentity={canonicalIdentity}
-                            label={
-                              locale === "ja"
-                                ? `${rowIdentity}・${column.coordinate.factors ? Object.values(column.coordinate.factors).join("・") : "測定"}・${column.readoutLabel}`
-                                : `${rowIdentity}, ${column.coordinate.factors ? Object.values(column.coordinate.factors).join(", ") : "Measurement"}, ${column.readoutLabel}`
-                            }
+                            label={`${rowIdentity}・${column.coordinate.factors ? Object.values(column.coordinate.factors).join("・") : "測定"}・${column.readoutLabel}`}
                             rowIndex={rowIndex}
                             gridColumn={displayColumnIndex + (showDate ? 1 : 0)}
                             readOnly={!editable}
@@ -2019,7 +1897,6 @@ export function CanonicalMatrixWorksheet({
                               commitIndependentIdentity({
                                 factors: column.coordinate.factors,
                                 rowIndex,
-                                experimentSessionId: worksheetExperimentSessionId(rows, rowIndex),
                                 identity: nextIdentity,
                               })
                             }
@@ -2030,6 +1907,8 @@ export function CanonicalMatrixWorksheet({
                     return (
                       <td key={column.key}>
                         <MatrixCell
+                          displayTexts={displayTexts}
+                          onCellsCommit={onCellsCommit}
                           contract={contract}
                           observations={observations}
                           column={column}
@@ -2046,22 +1925,13 @@ export function CanonicalMatrixWorksheet({
                                   identityDrafts,
                                   column.coordinate.factors,
                                   rowIndex,
-                                  worksheetExperimentSessionId(rows, rowIndex),
                                 )
                           }
                           nextObservationId={nextObservationId}
                           nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
-                          experimentSessionId={worksheetExperimentSessionId(rows, rowIndex)}
                           onObservationsChange={onObservationsChange}
                           onMatrixPaste={pasteMatrix}
                           conditionStatus={conditionStatus}
-                          lexicalDraft={lexicalDrafts[matrixDraftKey(column, rowIndex)]}
-                          onLexicalCommit={(text) =>
-                            setLexicalDrafts((previous) => ({
-                              ...previous,
-                              [matrixDraftKey(column, rowIndex)]: text,
-                            }))
-                          }
                         />
                       </td>
                     );
@@ -2072,31 +1942,14 @@ export function CanonicalMatrixWorksheet({
           </tbody>
         </table>
       </div>
-      {showDate ? (
-        <p id={`${tableId}-date-note`} className="canonical-matrix-worksheet__date-note">
-          *{" "}
-          {t(
-            SHARED_EXPERIMENT_DATE_HELP,
-            "Optional; use only when all conditions in the row were run on the same date. Dates do not establish matching.",
-          )}
-        </p>
-      ) : null}
       {readOnly ? (
         <p className="adaptive-canonical-spreadsheet__mode-note" role="note">
-          {t(
-            "元の表との対応を保つため、この連続表は読み取り専用です。",
-            "This continuous table is read-only to preserve its alignment with the source table.",
-          )}
+          元の表との対応を保つため、この連続表は読み取り専用です。
         </p>
       ) : null}
       {pasteError ? (
         <p className="adaptive-canonical-spreadsheet__paste-error" role="alert">
           {pasteError}
-        </p>
-      ) : null}
-      {fileError ? (
-        <p className="adaptive-canonical-spreadsheet__paste-error" role="alert">
-          {fileError}
         </p>
       ) : null}
       {fileStatus ? (

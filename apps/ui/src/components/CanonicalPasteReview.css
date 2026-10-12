@@ -1,0 +1,63 @@
+.canonical-paste-review__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #15243a80;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+.canonical-paste-review {
+  box-sizing: border-box;
+  width: min(900px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1.25rem;
+  border-radius: 0.6rem;
+  background: #fff;
+  color: #18243a;
+  box-shadow: 0 1rem 3rem #0004;
+}
+.canonical-paste-review h2 {
+  margin-top: 0;
+}
+.canonical-paste-review textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0.5rem 0 1rem;
+  font: inherit;
+}
+.canonical-paste-review__changes {
+  max-height: 45vh;
+  overflow: auto;
+}
+.canonical-paste-review table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.canonical-paste-review td,
+.canonical-paste-review th {
+  border: 1px solid #d0d9e6;
+  padding: 0.5rem;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.canonical-paste-review thead {
+  position: sticky;
+  top: 0;
+  background: #eef3fa;
+}
+.canonical-paste-review__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.canonical-paste-review button {
+  font: inherit;
+  padding: 0.6rem 0.9rem;
+}
+.canonical-paste-review [role="alert"] {
+  color: #8c241f;
+}

@@ -26,10 +26,9 @@ export function SpreadsheetDraftTextCell({
   ...inputProps
 }: SpreadsheetDraftTextCellProps) {
   const errorId = useId();
-  const { text, dirty, error, edit, accept, reportError } = useSpreadsheetCellDraft(
-    canonicalText,
-    { preserveDirtyOnCanonicalChange },
-  );
+  const { text, dirty, error, edit, accept, reportError } = useSpreadsheetCellDraft(canonicalText, {
+    preserveDirtyOnCanonicalChange,
+  });
   const describedBy = [inputProps["aria-describedby"], error ? errorId : null]
     .filter(Boolean)
     .join(" ");
@@ -41,7 +40,7 @@ export function SpreadsheetDraftTextCell({
       reportError(problem);
       return;
     }
-    accept(visibleText);
+    accept();
   };
 
   return (
@@ -51,7 +50,7 @@ export function SpreadsheetDraftTextCell({
         type="text"
         aria-describedby={describedBy || undefined}
         aria-invalid={error ? "true" : inputProps["aria-invalid"]}
-        value={text}
+        value={dirty ? text : canonicalText}
         data-spreadsheet-cell="true"
         data-spreadsheet-dirty={dirty ? "true" : "false"}
         onChange={(event) => {

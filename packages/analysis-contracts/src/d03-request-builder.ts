@@ -42,6 +42,15 @@ export function createD03EngineRequest(input: D03RequestInput): AnalysisEngineRe
   ) {
     throw new Error("D03 requires three or more independent groups under exactly one factor");
   }
+  const analyzedOutcomes = new Set(input.observations.map(({ outcomeId }) => outcomeId));
+  if (input.design.normalizationPlans.some((plan) =>
+    plan.method === "control_equals_one" &&
+    (plan.parameters.outcomeId === undefined || analyzedOutcomes.has(String(plan.parameters.outcomeId))),
+  )) {
+    // This protocol cannot declare shared-denominator lineage. Do not infer
+    // normalization from values, or silently treat structural x/x as a group.
+    throw new Error("D03 does not support control_equals_one normalization with shared-denominator provenance; raw observations are preserved");
+  }
 
   const conditionIds = input.design.conditions.map((condition) => condition.id);
   const allowedConditions = new Set(conditionIds);

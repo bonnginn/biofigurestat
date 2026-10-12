@@ -1,3 +1,5 @@
+import { CanonicalPasteReview, type CanonicalPastePlan } from "./CanonicalPasteReview";
+import { useCanonicalInputHistory } from "./useCanonicalInputHistory";
 import {
   useEffect,
   useId,
@@ -7,7 +9,6 @@ import {
   useState,
   type ClipboardEvent,
   type CSSProperties,
-  type KeyboardEvent,
 } from "react";
 
 import {
@@ -26,13 +27,6 @@ import {
 } from "@lsaa/domain";
 
 import { moveSpreadsheetFocus, parseClipboardMatrix } from "./spreadsheetGrid";
-import { SPREADSHEET_ZOOM_LEVELS, useSpreadsheetZoom } from "./spreadsheetZoom";
-import { getAppLocale, localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
-import { parseOptionalSpreadsheetNumber } from "./spreadsheetValues";
-import { SpreadsheetDraftTextCell } from "./SpreadsheetDraftTextCell";
-import { SpreadsheetDraftTextareaCell } from "./SpreadsheetDraftTextareaCell";
-import { useSpreadsheetCellDraft } from "./useSpreadsheetCellDraft";
-import { useControlledSpreadsheetHistory } from "./useControlledSpreadsheetHistory";
 import {
   CanonicalMatrixWorksheet,
   canEditCanonicalMatrix,
@@ -40,7 +34,6 @@ import {
   type CanonicalWorksheetFileCommit,
   type CanonicalMatrixConditionCombination,
   type CanonicalWorksheetRow,
-  type CanonicalMatrixConditionBlock,
 } from "./CanonicalMatrixWorksheet";
 import {
   buildAdaptiveRecordEntryObservation,
@@ -56,10 +49,17 @@ import {
 } from "./adaptiveRecordEntry";
 import "./AdaptiveCanonicalSpreadsheet.css";
 
+const WORKSHEET_ZOOM_LEVELS = [70, 80, 90, 100, 110, 120, 130] as const;
 const WORKSHEET_ZOOM_STORAGE_KEY = "lsaa.adaptive-worksheet.zoom.v1";
 
-function textForLocale(ja: string, en: string): string {
-  return localizedText(getAppLocale(), ja, en);
+function initialWorksheetZoom(): number {
+  if (typeof window === "undefined") return 100;
+  try {
+    const storedZoom = Number(window.localStorage.getItem(WORKSHEET_ZOOM_STORAGE_KEY));
+    return WORKSHEET_ZOOM_LEVELS.some((level) => level === storedZoom) ? storedZoom : 100;
+  } catch {
+    return 100;
+  }
 }
 
 export type AdaptiveCanonicalSpreadsheetProps = Readonly<{
@@ -68,6 +68,8 @@ export type AdaptiveCanonicalSpreadsheetProps = Readonly<{
   mode: AdaptiveObservationViewMode;
   onModeChange: (mode: AdaptiveObservationViewMode) => void;
   onObservationsChange: (observations: readonly CanonicalAdaptiveObservation[]) => void;
+  numericDisplayTexts?: Readonly<Record<string, string>>;
+  onNumericDisplayTextsChange?: (texts: Readonly<Record<string, string>>) => void;
   /** Complete file import callback for atomic raw-lineage persistence. */
   onFileImport?: (result: CanonicalWorksheetFileCommit) => void;
   nextObservationId: (context: CompactScalarObservationIdFactoryContext) => string;
@@ -79,7 +81,6 @@ export type AdaptiveCanonicalSpreadsheetProps = Readonly<{
   /** Production worksheet rows. Their order is presentation only unless the contract declares matching. */
   worksheetRows?: readonly CanonicalWorksheetRow[];
   conditionCombinations?: readonly CanonicalMatrixConditionCombination[];
-  conditionBlocks?: readonly CanonicalMatrixConditionBlock[];
   showExperimentDate?: boolean;
   onWorksheetRowChange?: (rowIndex: number, patch: Partial<CanonicalWorksheetRow>) => void;
 }>;
@@ -112,8 +113,10 @@ function parseCompactScalarText(text: string): readonly (number | null)[] | null
   if (!normalized.trim()) return [];
   const tokens = normalized.split(/[\n\t]/u);
   const values = tokens.map((token) => {
-    const parsed = parseOptionalSpreadsheetNumber(token);
-    return parsed.kind === "value" ? parsed.value : null;
+    const trimmed = token.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
   });
   return values.some((value, index) => value === null && tokens[index]!.trim() !== "")
     ? null
@@ -149,8 +152,8 @@ function displayCell(cell: SpreadsheetCell): string {
 }
 
 function columnLabel(column: { label: string; role: string }): string {
-  if (column.role === "observation_id") return textForLocale("記録ID", "Record ID");
-  if (column.role === "source_row") return textForLocale("元データ行", "Source row");
+  if (column.role === "observation_id") return "記録ID";
+  if (column.role === "source_row") return "元データ行";
   return column.label;
 }
 
@@ -194,9 +197,7 @@ function experimentalUnitIdentity(
     ({ unitLevelKey }) => unitLevelKey === contract.experimentalUnitLevelKey,
   )?.key;
   const identity = identityKey ? observation.identities[identityKey] : undefined;
-  return (
-    identity?.trim() || textForLocale(`実験単位 ${rowNumber}`, `Experimental unit ${rowNumber}`)
-  );
+  return identity?.trim() || `実験単位 ${rowNumber}`;
 }
 
 function expandedRowAccessibleName(
@@ -205,9 +206,18 @@ function expandedRowAccessibleName(
   rowNumber: number,
   embedded: boolean,
 ): string {
-  return embedded
-    ? experimentalUnitIdentity(contract, observation, rowNumber)
-    : observation.observationId;
+  if (!embedded) return observation.observationId;
+  const details = [
+    ...contract.identities
+      .filter(({ unitLevelKey }) => unitLevelKey !== contract.experimentalUnitLevelKey)
+      .map(({ key, label }) =>
+        observation.identities[key] ? `${label}=${observation.identities[key]}` : null,
+      ),
+    ...contract.orderedAxes.map(({ key, label }) =>
+      observation.axes[key] !== undefined ? `${label}=${observation.axes[key]}` : null,
+    ),
+  ].filter(Boolean);
+  return [experimentalUnitIdentity(contract, observation, rowNumber), ...details].join("・");
 }
 
 function recordValuesMatch(
@@ -280,11 +290,44 @@ function updateExpandedIdentity(input: {
   const identity = input.identity.trim();
   if (!identity) throw new Error("対象・試料を区別する名前を入力してください。");
   const relatedObservationIds = relatedIdentityObservationIds(input);
+  const levelKey = input.contract.identities.find(
+    ({ key }) => key === input.identityKey,
+  )?.unitLevelKey;
+  const ancestorKeys: string[] = [];
+  let ancestor = input.contract.unitLevels.find(({ key }) => key === levelKey)?.parentKey;
+  while (ancestor) {
+    ancestorKeys.push(ancestor);
+    ancestor = input.contract.unitLevels.find(({ key }) => key === ancestor)?.parentKey;
+  }
+  const sameParent = (candidate: CanonicalAdaptiveObservation) =>
+    ancestorKeys.every((key) => {
+      const identities = input.contract.identities.filter(
+        (identity) => identity.unitLevelKey === key,
+      );
+      return identities.length > 0
+        ? identities.every(
+            (identity) =>
+              candidate.identities[identity.key]?.trim() ===
+              input.observation.identities[identity.key]?.trim(),
+          )
+        : String(candidate.hierarchy[key] ?? "") === String(input.observation.hierarchy[key] ?? "");
+    });
+  for (const candidate of input.observations) {
+    if (!relatedObservationIds.has(candidate.observationId) || !levelKey) continue;
+    const hierarchy = candidate.hierarchy[levelKey];
+    if (
+      hierarchy !== undefined &&
+      String(hierarchy).trim() !== candidate.identities[input.identityKey]?.trim()
+    ) {
+      throw new Error("IDと階層情報が一致しません。元の対応を確認してください。");
+    }
+  }
   if (
     input.observations.some(
       (candidate) =>
         !relatedObservationIds.has(candidate.observationId) &&
-        candidate.identities[input.identityKey]?.trim() === identity,
+        candidate.identities[input.identityKey]?.trim() === identity &&
+        sameParent(candidate),
     )
   ) {
     throw new Error("同じ名前がすでにあります。別の対象・試料には異なる名前を付けてください。");
@@ -294,6 +337,10 @@ function updateExpandedIdentity(input: {
       ? CanonicalAdaptiveObservationSchema.parse({
           ...candidate,
           identities: { ...candidate.identities, [input.identityKey]: identity },
+          hierarchy:
+            levelKey && candidate.hierarchy[levelKey] !== undefined
+              ? { ...candidate.hierarchy, [levelKey]: identity }
+              : candidate.hierarchy,
         })
       : candidate,
   );
@@ -343,59 +390,79 @@ function CompactScalarEditor({
   gridColumn: number;
   onRectangularPaste: (group: AdaptiveCompactGroup, text: string) => string | null;
 }>) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
+  const errorId = useId();
   const valueKey = scalarReadoutValueKey(contract, group);
   const initialText = valueKey ? compactText(group, valueKey) : "";
-  if (!valueKey) return <span aria-label={t("測定値なし", "No measured value")}>—</span>;
+  const [text, setText] = useState(initialText);
+  const [dirty, setDirty] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setText(initialText);
+    setDirty(false);
+    setError(null);
+  }, [initialText]);
+
+  if (!valueKey) return <span aria-label="測定値なし">—</span>;
 
   const readoutLabel =
     contract.readouts.find(({ key }) => key === group.coordinates.readoutKey)?.label ??
     group.coordinates.readoutKey;
-  const label = t(
-    `${readoutLabel}・${coordinateLabel(contract, group)}の測定値`,
-    `${readoutLabel}: measured values for ${coordinateLabel(contract, group)}`,
-  );
+  const label = `${readoutLabel}・${coordinateLabel(contract, group)}の測定値`;
+  const commit = () => {
+    if (disabled || !dirty) return;
+    const values = parseCompactScalarText(text);
+    if (!values) {
+      setError("数値を改行またはタブで入力してください。入力内容は消えていません。");
+      return;
+    }
+    try {
+      const result = applyCompactScalarEdit(contract, observations, {
+        targetCoordinates: group.coordinates,
+        values,
+        valueKey,
+        createObservationId: nextObservationId,
+        createExperimentalUnitIdentity: nextExperimentalUnitIdentity,
+      });
+      onObservationsChange(result.observations);
+      setError(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "測定値を適用できませんでした。");
+    }
+  };
+
   return (
-    <SpreadsheetDraftTextareaCell
-      wrapperClassName="adaptive-canonical-spreadsheet__compact-editor"
-      canonicalText={initialText}
-      aria-label={label}
-      disabled={disabled}
-      rows={Math.min(6, Math.max(2, group.observations.length || 2))}
-      data-spreadsheet-row={gridRow}
-      data-spreadsheet-column={gridColumn}
-      onCommit={(text) => {
-        const values = parseCompactScalarText(text);
-        if (!values) {
-          return t(
-            "数値を改行またはタブで入力してください。入力内容は消えていません。",
-            "Enter numeric values separated by new lines or tabs. Your input was retained.",
-          );
-        }
-        try {
-          const result = applyCompactScalarEdit(contract, observations, {
-            targetCoordinates: group.coordinates,
-            values,
-            valueKey,
-            createObservationId: nextObservationId,
-            createExperimentalUnitIdentity: nextExperimentalUnitIdentity,
-          });
-          onObservationsChange(result.observations);
-          return null;
-        } catch (cause) {
-          return locale === "ja" && cause instanceof Error
-            ? cause.message
-            : t("測定値を適用できませんでした。", "The measured values could not be applied.");
-        }
-      }}
-      onStructuredPaste={(pasted) => {
-        const problem = onRectangularPaste(group, pasted);
-        return locale === "ja" || !problem
-          ? problem
-          : "The pasted values could not be applied. Existing values were not changed.";
-      }}
-    />
+    <div className="adaptive-canonical-spreadsheet__compact-editor">
+      <textarea
+        aria-label={label}
+        aria-describedby={error ? errorId : undefined}
+        aria-invalid={error ? "true" : undefined}
+        disabled={disabled}
+        rows={Math.min(6, Math.max(2, group.observations.length || 2))}
+        value={text}
+        data-spreadsheet-cell="true"
+        data-spreadsheet-row={gridRow}
+        data-spreadsheet-column={gridColumn}
+        onBlur={commit}
+        onChange={(event) => {
+          setText(event.currentTarget.value);
+          setDirty(true);
+          setError(null);
+        }}
+        onKeyDown={moveSpreadsheetFocus}
+        onPaste={(event) => {
+          const pasted = event.clipboardData.getData("text");
+          if (!pasted.includes("\t") && !/[\r\n]/u.test(pasted)) return;
+          event.preventDefault();
+          setError(onRectangularPaste(group, pasted));
+        }}
+      />
+      {error ? (
+        <small id={errorId} role="alert">
+          {error}
+        </small>
+      ) : null}
+    </div>
   );
 }
 
@@ -420,10 +487,7 @@ function CompactTable({
   nextExperimentalUnitIdentity: AdaptiveCanonicalSpreadsheetProps["nextExperimentalUnitIdentity"];
   editable: boolean;
 }>) {
-  const locale = useAppLocale();
-  const tableLabel = editable
-    ? localizedText(locale, "条件ごとにまとめて入力", "Enter values by condition")
-    : localizedText(locale, "条件ごとにまとめて表示", "Values grouped by condition");
+  const tableLabel = editable ? "条件ごとにまとめて入力" : "条件ごとにまとめて表示";
   const editableGroups = model.compact.rows.flatMap((row) =>
     columns.flatMap((column) => {
       const group = scalarGroupForValueColumn(contract, row, column);
@@ -439,10 +503,7 @@ function CompactTable({
     const width = Math.max(...matrix.map((row) => row.length));
     const startIndex = editableGroups.findIndex(({ groupKey }) => groupKey === startGroup.groupKey);
     if (startIndex < 0 || startIndex + width > editableGroups.length) {
-      return textForLocale(
-        "貼り付け範囲が入力表を超えています。既存の値は変更していません。",
-        "The pasted range exceeds the worksheet. Existing values were not changed.",
-      );
+      return "貼り付け範囲が入力表を超えています。既存の値は変更していません。";
     }
     let next = observations;
     try {
@@ -452,26 +513,14 @@ function CompactTable({
           const token = row[columnOffset] ?? "";
           const trimmed = token.trim();
           if (!trimmed) return null;
-          const parsed = parseOptionalSpreadsheetNumber(trimmed);
-          if (parsed.kind !== "value") {
-            throw new Error(
-              localizedText(
-                locale,
-                `数値として読めない値「${trimmed}」があります。`,
-                `“${trimmed}” cannot be read as a number.`,
-              ),
-            );
+          const value = Number(trimmed);
+          if (!Number.isFinite(value)) {
+            throw new Error(`数値として読めない値「${trimmed}」があります。`);
           }
-          return parsed.value;
+          return value;
         });
         const valueKey = scalarReadoutValueKey(contract, target);
-        if (!valueKey)
-          throw new Error(
-            textForLocale(
-              "貼り付け先の測定項目を確認できません。",
-              "The target measured readout could not be identified.",
-            ),
-          );
+        if (!valueKey) throw new Error("貼り付け先の測定項目を確認できません。");
         next = applyCompactScalarEdit(contract, next, {
           targetCoordinates: target.coordinates,
           values,
@@ -483,13 +532,7 @@ function CompactTable({
       onObservationsChange(next);
       return null;
     } catch (cause) {
-      return locale === "ja" && cause instanceof Error
-        ? cause.message
-        : localizedText(
-            locale,
-            "貼り付けた値を適用できませんでした。",
-            "The pasted values could not be applied.",
-          );
+      return cause instanceof Error ? cause.message : "貼り付けた値を適用できませんでした。";
     }
   };
 
@@ -579,8 +622,11 @@ function ExpandedTable({
   nextExperimentalUnitIdentity: AdaptiveCanonicalSpreadsheetProps["nextExperimentalUnitIdentity"];
   conditionCombinations: readonly CanonicalMatrixConditionCombination[];
 }>) {
-  const locale = useAppLocale();
   const [pasteError, setPasteError] = useState<string | null>(null);
+  const [pastePlan, setPastePlan] = useState<CanonicalPastePlan | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const pasteContext = JSON.stringify({ contract, conditionCombinations, editable });
+
   const entryGroups =
     model.compactEditability.status === "editable"
       ? model.compact.rows.flatMap((row) =>
@@ -603,39 +649,22 @@ function ExpandedTable({
     const width = Math.max(...matrix.map((row) => row.length));
     const startIndex = entryGroups.findIndex(({ groupKey }) => groupKey === startGroup.groupKey);
     if (startIndex < 0 || startIndex + width > entryGroups.length) {
-      return localizedText(
-        locale,
-        "貼り付け範囲が入力表を超えています。既存の値は変更していません。",
-        "The pasted range exceeds the worksheet. Existing values were not changed.",
-      );
+      return "貼り付け範囲が入力表を超えています。既存の値は変更していません。";
     }
     let next = observations;
     try {
       for (let columnOffset = 0; columnOffset < width; columnOffset += 1) {
         const target = entryGroups[startIndex + columnOffset]!;
         const valueKey = scalarReadoutValueKey(contract, target);
-        if (!valueKey) {
-          throw new Error(
-            localizedText(
-              locale,
-              "貼り付け先の測定項目を確認できません。",
-              "The target measured readout could not be identified.",
-            ),
-          );
-        }
+        if (!valueKey) throw new Error("貼り付け先の測定項目を確認できません。");
         const appended = matrix.map((row) => {
           const trimmed = (row[columnOffset] ?? "").trim();
           if (!trimmed) return null;
-          const parsed = parseOptionalSpreadsheetNumber(trimmed);
-          if (parsed.kind !== "value") {
-            throw new Error(
-              textForLocale(
-                `数値として読めない値「${trimmed}」があります。`,
-                `“${trimmed}” cannot be read as a number.`,
-              ),
-            );
+          const value = Number(trimmed);
+          if (!Number.isFinite(value)) {
+            throw new Error(`数値として読めない値「${trimmed}」があります。`);
           }
-          return parsed.value;
+          return value;
         });
         const currentGroup = buildAdaptiveSpreadsheetViewModel(contract, next)
           .compact.rows.flatMap((row) => row.readoutGroups)
@@ -655,13 +684,7 @@ function ExpandedTable({
       onObservationsChange(next);
       return null;
     } catch (cause) {
-      return locale === "ja" && cause instanceof Error
-        ? cause.message
-        : localizedText(
-            locale,
-            "貼り付けた値を適用できませんでした。",
-            "The pasted values could not be applied.",
-          );
+      return cause instanceof Error ? cause.message : "貼り付けた値を適用できませんでした。";
     }
   };
   const pasteExpandedMatrix = (event: ClipboardEvent<HTMLInputElement>) => {
@@ -684,6 +707,10 @@ function ExpandedTable({
     const startColumn = startRowControls.indexOf(start);
     let next = observations;
     try {
+      if (!editable) throw new Error("この入力表は編集できません。");
+      if (!matrix.length || matrix.some((row) => row.length !== matrix[0].length)) {
+        throw new Error("各行の列数が違います。長方形の範囲を選び直してください。");
+      }
       matrix.forEach((tokens, rowOffset) => {
         const row = startRow + rowOffset;
         const controls = [
@@ -699,23 +726,12 @@ function ExpandedTable({
         tokens.forEach((token, columnOffset) => {
           const target = controls[startColumn + columnOffset];
           if (!target || target.disabled) {
-            throw new Error(
-              textForLocale(
-                "貼り付け範囲が入力表を超えています。",
-                "The pasted range exceeds the worksheet.",
-              ),
-            );
+            throw new Error("貼り付け範囲が入力表を超えています。");
           }
           const observationId = target.dataset.observationId!;
           const semanticKey = target.dataset.semanticKey!;
           const observation = next.find((candidate) => candidate.observationId === observationId);
-          if (!observation)
-            throw new Error(
-              textForLocale(
-                "貼り付け先の記録を確認できません。",
-                "The target record could not be identified.",
-              ),
-            );
+          if (!observation) throw new Error("貼り付け先の記録を確認できません。");
           if (target.dataset.expandedField === "identity") {
             next = updateExpandedIdentity({
               contract,
@@ -726,16 +742,10 @@ function ExpandedTable({
             });
           } else {
             const trimmed = token.trim();
-            const parsed = parseOptionalSpreadsheetNumber(trimmed);
-            if (parsed.kind === "invalid") {
-              throw new Error(
-                textForLocale(
-                  `数値として読めない値「${trimmed}」があります。`,
-                  `“${trimmed}” cannot be read as a number.`,
-                ),
-              );
+            const value = trimmed === "" ? null : Number(trimmed);
+            if (value !== null && !Number.isFinite(value)) {
+              throw new Error(`数値として読めない値「${trimmed}」があります。`);
             }
-            const value = parsed.kind === "value" ? parsed.value : null;
             next = updateExpandedValue({
               observationId,
               valueKey: semanticKey,
@@ -745,27 +755,60 @@ function ExpandedTable({
           }
         });
       });
-      onObservationsChange(next);
+      setPastePlan({
+        text,
+        base: JSON.stringify(observations),
+        context: pasteContext,
+        before: observations,
+        after: next,
+        origin: start,
+      });
+      setReviewError(null);
       setPasteError(null);
     } catch (cause) {
       setPasteError(
-        `${
-          cause instanceof Error
-            ? cause.message
-            : textForLocale(
-                "貼り付けた値を適用できませんでした。",
-                "The pasted values could not be applied.",
-              )
-        } ${textForLocale("既存の値は変更していません。", "Existing values were not changed.")}`,
+        `${cause instanceof Error ? cause.message : "貼り付けた値を適用できませんでした。"} 既存の値は変更していません。`,
       );
     }
   };
 
   return (
     <>
+      {pastePlan ? (
+        <CanonicalPasteReview
+          plan={pastePlan}
+          contract={contract}
+          error={reviewError}
+          onCancel={() => {
+            setPastePlan(null);
+            setReviewError(null);
+          }}
+          onConfirm={() => {
+            if (
+              !editable ||
+              pastePlan.base !== JSON.stringify(observations) ||
+              pastePlan.context !== pasteContext
+            ) {
+              setReviewError(
+                "確認中にデータまたは実験条件が更新されました。貼り付けをキャンセルし、対象を選び直してください。既存の値は変更していません。",
+              );
+              return;
+            }
+            try {
+              onObservationsChange(pastePlan.after);
+              setPastePlan(null);
+              setReviewError(null);
+            } catch (cause) {
+              setReviewError(
+                `${cause instanceof Error ? cause.message : "貼り付けを適用できませんでした。"} 既存の値は変更していません。`,
+              );
+            }
+          }}
+        />
+      ) : null}
       <div className="adaptive-canonical-spreadsheet__table-wrap">
-        <table id={tableId} aria-label={textForLocale("すべての値を表示", "All values")}>
-          <caption>{textForLocale("すべての値を表示", "All values")}</caption>
+        <table id={tableId} aria-label="すべての値を表示">
+          <caption>すべての値を表示</caption>
           <thead>
             <tr>
               {columns.map((column) => (
@@ -773,7 +816,7 @@ function ExpandedTable({
                   {columnLabel(column)}
                 </th>
               ))}
-              {editable ? <th scope="col">{textForLocale("操作", "Actions")}</th> : null}
+              {editable ? <th scope="col">操作</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -797,7 +840,7 @@ function ExpandedTable({
                             row.observation,
                             rowIndex + 1,
                             embedded,
-                          )}${textForLocale("の", ": ")}${column.label}`}
+                          )}の${column.label}`}
                           observations={observations}
                           onObservationsChange={onObservationsChange}
                           gridRow={rowIndex}
@@ -816,7 +859,7 @@ function ExpandedTable({
                             row.observation,
                             rowIndex + 1,
                             embedded,
-                          )}${textForLocale("の", ": ")}${column.label}`}
+                          )}の${column.label}`}
                           observations={observations}
                           onObservationsChange={onObservationsChange}
                           gridRow={rowIndex}
@@ -841,10 +884,10 @@ function ExpandedTable({
                         row.observation,
                         rowIndex + 1,
                         embedded,
-                      )}${textForLocale("を削除", ": delete row")}`}
+                      )}を削除`}
                       onClick={() => onDeleteObservation(row.observationId, rowIndex)}
                     >
-                      {textForLocale("行を削除", "Delete row")}
+                      行を削除
                     </button>
                   </td>
                 ) : null}
@@ -862,18 +905,13 @@ function ExpandedTable({
                       {columns.map((column, columnIndex) => {
                         const Cell = columnIndex === 0 ? "th" : "td";
                         let content: string | number = "—";
-                        if (column.role === "observation_id")
-                          content = textForLocale("新しい記録", "New record");
+                        if (column.role === "observation_id") content = "新しい記録";
                         else if (column.role === "readout") {
                           content =
                             contract.readouts.find(
                               ({ key }) => key === group.coordinates.readoutKey,
                             )?.label ?? group.coordinates.readoutKey;
-                        } else if (column.role === "identity")
-                          content = textForLocale(
-                            "値の入力後にIDを作成",
-                            "Create ID after value entry",
-                          );
+                        } else if (column.role === "identity") content = "値の入力後にIDを作成";
                         else if (column.role === "factor" && column.semanticKey) {
                           content = group.coordinates.factors[column.semanticKey] ?? "—";
                         } else if (column.role === "axis" && column.semanticKey) {
@@ -898,7 +936,7 @@ function ExpandedTable({
                                 group={group}
                                 observations={observations}
                                 valueKey={valueKey}
-                                label={`${coordinateLabel(contract, group)}${textForLocale("の新しい測定値", ": new measured value")}`}
+                                label={`${coordinateLabel(contract, group)}の新しい測定値`}
                                 nextObservationId={nextObservationId}
                                 nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
                                 onObservationsChange={onObservationsChange}
@@ -914,9 +952,7 @@ function ExpandedTable({
                           </Cell>
                         );
                       })}
-                      <td aria-label={textForLocale("新しい記録の操作", "New-record action")}>
-                        {textForLocale("値を入力すると行を追加", "Enter a value to add a row")}
-                      </td>
+                      <td aria-label="新しい記録の操作">値を入力すると行を追加</td>
                     </tr>
                   );
                 })
@@ -954,43 +990,68 @@ function ExpandedIdentityEditor({
   gridColumn: number;
   onPaste: (event: ClipboardEvent<HTMLInputElement>) => void;
 }>) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
+  const errorId = useId();
   const initialText = observation.identities[identityKey] ?? "";
+  const [text, setText] = useState(initialText);
+  const [dirty, setDirty] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setText(initialText);
+    setDirty(false);
+    setError(null);
+  }, [initialText]);
+
+  const commit = () => {
+    if (!dirty) return;
+    try {
+      onObservationsChange(
+        updateExpandedIdentity({
+          contract,
+          observation,
+          identityKey,
+          identity: text,
+          observations,
+        }),
+      );
+      setDirty(false);
+      setError(null);
+    } catch (cause) {
+      setError(
+        `${cause instanceof Error ? cause.message : "名前を変更できませんでした。"} 入力内容は消えていません。`,
+      );
+    }
+  };
 
   return (
-    <SpreadsheetDraftTextCell
-      aria-label={label}
-      canonicalText={initialText}
-      wrapperClassName="adaptive-canonical-spreadsheet__expanded-editor"
-      data-spreadsheet-row={gridRow}
-      data-spreadsheet-column={gridColumn}
-      data-expanded-field="identity"
-      data-observation-id={observation.observationId}
-      data-semantic-key={identityKey}
-      onPaste={onPaste}
-      onCommit={(identity) => {
-        try {
-          onObservationsChange(
-            updateExpandedIdentity({
-              contract,
-              observation,
-              identityKey,
-              identity,
-              observations,
-            }),
-          );
-          return null;
-        } catch (cause) {
-          return locale === "ja" && cause instanceof Error
-            ? `${cause.message} 入力内容は消えていません。`
-            : t(
-                "名前を変更できませんでした。入力内容は消えていません。",
-                "The ID could not be changed. Your input was retained.",
-              );
-        }
-      }}
-    />
+    <div className="adaptive-canonical-spreadsheet__expanded-editor">
+      <input
+        type="text"
+        aria-label={label}
+        aria-describedby={error ? errorId : undefined}
+        aria-invalid={error ? "true" : undefined}
+        value={text}
+        data-spreadsheet-cell="true"
+        data-spreadsheet-row={gridRow}
+        data-spreadsheet-column={gridColumn}
+        data-expanded-field="identity"
+        data-observation-id={observation.observationId}
+        data-semantic-key={identityKey}
+        onChange={(event) => {
+          setText(event.currentTarget.value);
+          setDirty(true);
+          setError(null);
+        }}
+        onKeyDown={moveSpreadsheetFocus}
+        onPaste={onPaste}
+        onBlur={commit}
+      />
+      {error ? (
+        <small id={errorId} role="alert">
+          {error}
+        </small>
+      ) : null}
+    </div>
   );
 }
 
@@ -1013,42 +1074,68 @@ function ExpandedScalarValueEditor({
   gridColumn: number;
   onPaste: (event: ClipboardEvent<HTMLInputElement>) => void;
 }>) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
+  const errorId = useId();
   const value = observation.values[valueKey];
   const initialText = value === null || value === undefined ? "" : String(value);
+  const [text, setText] = useState(initialText);
+  const [dirty, setDirty] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setText(initialText);
+    setDirty(false);
+    setError(null);
+  }, [initialText]);
+
+  const commit = () => {
+    if (!dirty) return;
+    const trimmed = text.trim();
+    const nextValue = trimmed === "" ? null : Number(trimmed);
+    if (nextValue !== null && !Number.isFinite(nextValue)) {
+      setError("数値を入力してください。入力内容は消えていません。");
+      return;
+    }
+    onObservationsChange(
+      updateExpandedValue({
+        observationId: observation.observationId,
+        valueKey,
+        value: nextValue,
+        observations,
+      }),
+    );
+    setError(null);
+  };
 
   return (
-    <SpreadsheetDraftTextCell
-      wrapperClassName="adaptive-canonical-spreadsheet__expanded-editor"
-      canonicalText={initialText}
-      inputMode="decimal"
-      aria-label={label}
-      data-spreadsheet-row={gridRow}
-      data-spreadsheet-column={gridColumn}
-      data-expanded-field="value"
-      data-observation-id={observation.observationId}
-      data-semantic-key={valueKey}
-      onPaste={onPaste}
-      onCommit={(text) => {
-        const parsed = parseOptionalSpreadsheetNumber(text);
-        if (parsed.kind === "invalid") {
-          return t(
-            "数値を入力してください。入力内容は消えていません。",
-            "Enter a numeric value. Your input was retained.",
-          );
-        }
-        onObservationsChange(
-          updateExpandedValue({
-            observationId: observation.observationId,
-            valueKey,
-            value: parsed.kind === "value" ? parsed.value : null,
-            observations,
-          }),
-        );
-        return null;
-      }}
-    />
+    <div className="adaptive-canonical-spreadsheet__expanded-editor">
+      <input
+        type="text"
+        inputMode="decimal"
+        aria-label={label}
+        aria-describedby={error ? errorId : undefined}
+        aria-invalid={error ? "true" : undefined}
+        value={text}
+        data-spreadsheet-cell="true"
+        data-spreadsheet-row={gridRow}
+        data-spreadsheet-column={gridColumn}
+        data-expanded-field="value"
+        data-observation-id={observation.observationId}
+        data-semantic-key={valueKey}
+        onChange={(event) => {
+          setText(event.currentTarget.value);
+          setDirty(true);
+          setError(null);
+        }}
+        onKeyDown={moveSpreadsheetFocus}
+        onPaste={onPaste}
+        onBlur={commit}
+      />
+      {error ? (
+        <small id={errorId} role="alert">
+          {error}
+        </small>
+      ) : null}
+    </div>
   );
 }
 
@@ -1078,23 +1165,17 @@ function ExpandedAppendValueEditor({
   gridColumn: number;
 }>) {
   const errorId = useId();
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const { text, dirty, error, edit, accept, reportError, clearError } = useSpreadsheetCellDraft("");
+  const [text, setText] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const commit = () => {
     if (!dirty) return;
-    const parsed = parseOptionalSpreadsheetNumber(text);
-    if (parsed.kind !== "value") {
-      reportError(
-        t(
-          "数値を入力してください。入力内容は消えていません。",
-          "Enter a numeric value. Your input has not been discarded.",
-        ),
-      );
+    const value = Number(text.trim());
+    if (!text.trim() || !Number.isFinite(value)) {
+      setError("数値を入力してください。入力内容は消えていません。");
       return;
     }
-    const value = parsed.value;
     try {
       const currentValues = group.observations.map((observation) => {
         const current = observation.values[valueKey];
@@ -1108,13 +1189,11 @@ function ExpandedAppendValueEditor({
         createExperimentalUnitIdentity: nextExperimentalUnitIdentity,
       });
       onObservationsChange(result.observations);
-      accept("");
+      setText("");
+      setDirty(false);
+      setError(null);
     } catch (cause) {
-      reportError(
-        locale === "ja" && cause instanceof Error
-          ? cause.message
-          : t("新しい測定値を追加できませんでした。", "The new measured value could not be added."),
-      );
+      setError(cause instanceof Error ? cause.message : "新しい測定値を追加できませんでした。");
     }
   };
 
@@ -1126,23 +1205,29 @@ function ExpandedAppendValueEditor({
         aria-label={label}
         aria-describedby={error ? errorId : undefined}
         aria-invalid={error ? "true" : undefined}
-        placeholder={t("新しい値", "New value")}
+        placeholder="新しい値"
         value={text}
         data-spreadsheet-cell="true"
-        data-spreadsheet-dirty={dirty ? "true" : "false"}
         data-spreadsheet-row={gridRow}
         data-spreadsheet-column={gridColumn}
         onChange={(event) => {
-          edit(event.currentTarget.value);
+          setText(event.currentTarget.value);
+          setDirty(true);
+          setError(null);
         }}
         onKeyDown={moveSpreadsheetFocus}
         onPaste={(event) => {
           const pasted = event.clipboardData.getData("text");
           if (!pasted.includes("\t") && !/[\r\n]/u.test(pasted)) return;
           event.preventDefault();
-          const pasteProblem = onRectangularPaste(group, pasted);
-          if (pasteProblem) reportError(pasteProblem);
-          else clearError();
+          const pasteError = onRectangularPaste(group, pasted);
+          setError(pasteError);
+          if (pasteError === null) {
+            // The rectangle has already appended its observations. The
+            // previous single-value draft must not append again on blur.
+            setText("");
+            setDirty(false);
+          }
         }}
         onBlur={commit}
       />
@@ -1164,30 +1249,13 @@ const MISSINGNESS_LABELS: Readonly<Record<string, string>> = {
   unknown: "理由不明",
 };
 
-const ENGLISH_MISSINGNESS_LABELS: Readonly<Record<string, string>> = {
-  not_applicable: "Not applicable",
-  not_collected: "Not collected",
-  assay_failed: "Assay failed",
-  dropout: "Dropout",
-  censored: "Censored",
-  unknown: "Unknown reason",
-};
-
-function recordEntryFieldLabel(
-  contract: StructureContract,
-  levelKey: string,
-  locale: AppLocale,
-): string {
+function recordEntryFieldLabel(contract: StructureContract, levelKey: string): string {
   const level = contract.unitLevels.find(({ key }) => key === levelKey);
   const parent = level?.parentKey
     ? contract.unitLevels.find(({ key }) => key === level.parentKey)
     : null;
   return parent
-    ? localizedText(
-        locale,
-        `${level?.label ?? levelKey}（${parent.label}との対応ID）`,
-        `${level?.label ?? levelKey} (ID matched to ${parent.label})`,
-      )
+    ? `${level?.label ?? levelKey}（${parent.label}との対応ID）`
     : (level?.label ?? levelKey);
 }
 
@@ -1213,11 +1281,17 @@ function GenericAdaptiveRecordEntry({
   nextObservationId: AdaptiveCanonicalSpreadsheetProps["nextObservationId"];
   onObservationsChange: AdaptiveCanonicalSpreadsheetProps["onObservationsChange"];
 }>) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [draft, setDraft] = useState<AdaptiveRecordEntryDraft>(() =>
     createEmptyAdaptiveRecordEntryDraft(contract),
   );
+  const [entryOpen, setEntryOpen] = useState(() => observations.length === 0);
+  // The form stays mounted while folded; IDs, partial text, selected time and
+  // missingness belong to the unfinished draft, not to disclosure visibility.
+  useEffect(() => {
+    if (observations.length === 0) setEntryOpen(true);
+  }, [observations.length]);
+  const hasUnsubmittedDraft =
+    JSON.stringify(draft) !== JSON.stringify(createEmptyAdaptiveRecordEntryDraft(contract));
   const [error, setError] = useState<string | null>(null);
   const readout = recordEntryReadout(contract, draft.readoutKey);
   const identityFields = recordEntryIdentityFields(contract, draft.readoutKey);
@@ -1245,14 +1319,8 @@ function GenericAdaptiveRecordEntry({
       if (conditionStatus !== "performed") {
         throw new Error(
           conditionStatus === "not_performed"
-            ? t(
-                "この条件は実施していないため、測定行を追加できません。",
-                "A measurement row cannot be added because this condition was not performed.",
-              )
-            : t(
-                "この条件を実施したか確認してから、測定行を追加してください。",
-                "Confirm whether this condition was performed before adding a measurement row.",
-              ),
+            ? "この条件は実施していないため、測定行を追加できません。"
+            : "この条件を実施したか確認してから、測定行を追加してください。",
         );
       }
       const candidate = buildAdaptiveRecordEntryObservation({
@@ -1267,50 +1335,46 @@ function GenericAdaptiveRecordEntry({
       setError(null);
     } catch (cause) {
       setError(
-        locale === "ja" && cause instanceof Error
+        cause instanceof Error
           ? `${cause.message} 入力内容は変更していません。`
-          : t(
-              "測定行を追加できませんでした。入力内容は変更していません。",
-              "The measurement row could not be added. Review the entered identifiers, conditions, and values. Your input was not changed.",
-            ),
+          : "測定行を追加できませんでした。入力内容は変更していません。",
       );
     }
   };
 
   return (
-    <div className="adaptive-canonical-spreadsheet__record-entry">
-      <form
-        aria-label={t("新しい測定記録を追加", "Add a new measurement record")}
-        onSubmit={submit}
-      >
+    <details
+      className="adaptive-canonical-spreadsheet__record-entry"
+      open={entryOpen}
+      onToggle={(event) => setEntryOpen(event.currentTarget.open)}
+    >
+      <summary>
+        <span>新しい測定記録を追加</span>
+        {hasUnsubmittedDraft ? (
+          <span className="adaptive-canonical-spreadsheet__record-entry-draft-note">
+            入力途中の内容を保持しています
+          </span>
+        ) : null}
+      </summary>
+      <form aria-label="新しい測定記録を追加" onSubmit={submit}>
         <div className="adaptive-canonical-spreadsheet__record-entry-heading">
           <div>
-            <h3>{t("新しい測定記録", "New measurement record")}</h3>
-            <p>
-              {t(
-                "この1行に、1つの対象・試料から得た1つの測定を入力します。",
-                "Enter one measurement from one subject or specimen in this row.",
-              )}
-            </p>
+            <h3>新しい測定記録</h3>
+            <p>この1行に、1つの対象・試料から得た1つの測定を入力します。</p>
           </div>
-          <span>
-            {t(
-              "入力がそろうまで既存データは変更されません",
-              "Existing data is unchanged until the entry is complete",
-            )}
-          </span>
+          <span>入力がそろうまで既存データは変更されません</span>
         </div>
 
         {contract.readouts.length > 1 ? (
           <label>
-            {t("測定項目", "Readout")}
+            測定項目
             <select
-              aria-label={t("測定項目", "Readout")}
+              aria-label="測定項目"
               required
               value={draft.readoutKey}
               onChange={(event) => changeReadout(event.currentTarget.value)}
             >
-              <option value="">{t("選択してください", "Select")}</option>
+              <option value="">選択してください</option>
               {contract.readouts.map((candidate) => (
                 <option key={candidate.key} value={candidate.key}>
                   {candidate.label}
@@ -1320,8 +1384,7 @@ function GenericAdaptiveRecordEntry({
           </label>
         ) : readout ? (
           <p className="adaptive-canonical-spreadsheet__record-entry-fixed-readout">
-            {t("測定項目：", "Readout: ")}
-            <strong>{readout.label}</strong>
+            測定項目：<strong>{readout.label}</strong>
           </p>
         ) : null}
 
@@ -1334,10 +1397,7 @@ function GenericAdaptiveRecordEntry({
                 required
                 aria-label={identity.label}
                 value={draft.identities[identity.key] ?? ""}
-                placeholder={t(
-                  `${identity.label}（例：dish-01）`,
-                  `${identity.label} (example: dish-01)`,
-                )}
+                placeholder={`${identity.label}（例：dish-01）`}
                 onChange={(event) => update("identities", identity.key, event.currentTarget.value)}
               />
             </label>
@@ -1352,9 +1412,7 @@ function GenericAdaptiveRecordEntry({
                 value={draft.factors[factor.key] ?? ""}
                 onChange={(event) => update("factors", factor.key, event.currentTarget.value)}
               >
-                {factor.levels.length === 1 ? null : (
-                  <option value="">{t("選択してください", "Select")}</option>
-                )}
+                {factor.levels.length === 1 ? null : <option value="">選択してください</option>}
                 {factor.levels.map((level) => (
                   <option key={level} value={level}>
                     {level}
@@ -1370,7 +1428,7 @@ function GenericAdaptiveRecordEntry({
             return (
               <label key={axis.key}>
                 {axis.label}
-                {axis.unit.trim() ? t(`（${axis.unit.trim()}）`, ` (${axis.unit.trim()})`) : ""}
+                {axis.unit.trim() ? `（${axis.unit.trim()}）` : ""}
                 {axis.levels.length > 0 ? (
                   <select
                     required
@@ -1378,9 +1436,7 @@ function GenericAdaptiveRecordEntry({
                     value={draft.axes[axis.key] ?? ""}
                     onChange={(event) => update("axes", axis.key, event.currentTarget.value)}
                   >
-                    {axis.levels.length === 1 ? null : (
-                      <option value="">{t("選択してください", "Select")}</option>
-                    )}
+                    {axis.levels.length === 1 ? null : <option value="">選択してください</option>}
                     {axis.levels.map((level) => (
                       <option key={String(level)} value={String(level)}>
                         {String(level)}
@@ -1402,13 +1458,13 @@ function GenericAdaptiveRecordEntry({
 
           {hierarchyFields.map((level) => (
             <label key={level.key}>
-              {recordEntryFieldLabel(contract, level.key, locale)}
+              {recordEntryFieldLabel(contract, level.key)}
               <input
                 type="text"
                 required
-                aria-label={recordEntryFieldLabel(contract, level.key, locale)}
+                aria-label={recordEntryFieldLabel(contract, level.key)}
                 value={draft.hierarchy[level.key] ?? ""}
-                placeholder={t("例：dish-01", "Example: dish-01")}
+                placeholder="例：dish-01"
                 onChange={(event) => update("hierarchy", level.key, event.currentTarget.value)}
               />
             </label>
@@ -1416,15 +1472,10 @@ function GenericAdaptiveRecordEntry({
 
           {readout?.componentKeys.map((component, componentIndex) => {
             const valueKey = readout ? recordEntryValueKey(readout, component) : component;
-            const componentLabel =
-              locale === "ja"
-                ? recordEntryComponentLabel(component, componentIndex)
-                : ["numerator", "positive", "success", "event"].includes(component.toLowerCase())
-                  ? "Positive / event count"
-                  : ["denominator", "total", "eligible", "count"].includes(component.toLowerCase())
-                    ? "Total count"
-                    : component || `Value ${componentIndex + 1}`;
-            const valueLabel = `${readout?.label ?? t("測定値", "Measurement")}${t("・", " · ")}${componentLabel}`;
+            const valueLabel = `${readout?.label ?? "測定値"}・${recordEntryComponentLabel(
+              component,
+              componentIndex,
+            )}`;
             const booleanValue = readout ? recordEntryUsesBooleanValue(readout, component) : false;
             const numericValue = readout ? recordEntryUsesNumericValue(readout, component) : false;
             return (
@@ -1440,9 +1491,9 @@ function GenericAdaptiveRecordEntry({
                       value={draft.values[valueKey] ?? ""}
                       onChange={(event) => update("values", valueKey, event.currentTarget.value)}
                     >
-                      <option value="">{t("値を選択", "Select a value")}</option>
-                      <option value="true">{t("はい", "Yes")}</option>
-                      <option value="false">{t("いいえ", "No")}</option>
+                      <option value="">値を選択</option>
+                      <option value="true">はい</option>
+                      <option value="false">いいえ</option>
                     </select>
                   ) : (
                     <input
@@ -1455,21 +1506,16 @@ function GenericAdaptiveRecordEntry({
                   )}
                 </label>
                 <label>
-                  {t("欠測理由（任意）", "Missingness reason (optional)")}
+                  欠測理由（任意）
                   <select
-                    aria-label={t(
-                      `${valueLabel}の欠測理由`,
-                      `Missingness reason for ${valueLabel}`,
-                    )}
+                    aria-label={`${valueLabel}の欠測理由`}
                     value={draft.missingness[valueKey] ?? ""}
                     onChange={(event) => update("missingness", valueKey, event.currentTarget.value)}
                   >
-                    <option value="">{t("値を入力", "Enter a value")}</option>
+                    <option value="">値を入力</option>
                     {contract.allowedMissingness.map((reason) => (
                       <option key={reason} value={reason}>
-                        {locale === "ja"
-                          ? (MISSINGNESS_LABELS[reason] ?? reason)
-                          : (ENGLISH_MISSINGNESS_LABELS[reason] ?? reason)}
+                        {MISSINGNESS_LABELS[reason] ?? reason}
                       </option>
                     ))}
                   </select>
@@ -1479,10 +1525,10 @@ function GenericAdaptiveRecordEntry({
           })}
         </div>
 
-        <button type="submit">{t("測定行を追加", "Add measurement row")}</button>
+        <button type="submit">測定行を追加</button>
         {error ? <p role="alert">{error}</p> : null}
       </form>
-    </div>
+    </details>
   );
 }
 
@@ -1492,6 +1538,8 @@ export function AdaptiveCanonicalSpreadsheet({
   mode,
   onModeChange,
   onObservationsChange,
+  numericDisplayTexts,
+  onNumericDisplayTextsChange,
   onFileImport,
   nextObservationId,
   nextExperimentalUnitIdentity,
@@ -1499,24 +1547,17 @@ export function AdaptiveCanonicalSpreadsheet({
   readOnly = false,
   worksheetRows,
   conditionCombinations = [],
-  conditionBlocks,
   showExperimentDate = false,
   onWorksheetRowChange,
 }: AdaptiveCanonicalSpreadsheetProps) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const headingId = useId();
   const tableId = useId();
   const modeNoteId = useId();
+  const spreadsheetRootRef = useRef<HTMLElement | null>(null);
   const compactModeControlRef = useRef<HTMLButtonElement | null>(null);
   const expandedDeleteControlRefs = useRef(new Map<string, HTMLButtonElement>());
   const pendingExpandedDeletionFocusRef = useRef<readonly string[] | null>(null);
-  const [historyMessage, setHistoryMessage] = useState("");
-  const {
-    zoom: worksheetZoom,
-    setZoom: setWorksheetZoom,
-    changeZoom: changeWorksheetZoom,
-  } = useSpreadsheetZoom(WORKSHEET_ZOOM_STORAGE_KEY);
+  const [worksheetZoom, setWorksheetZoom] = useState<number>(initialWorksheetZoom);
   // The persisted two-state view mode remains backwards compatible.  The
   // condition sheet and the optional multi-value editor are two presentations
   // within its compact branch, so older projects do not need a schema change.
@@ -1538,6 +1579,34 @@ export function AdaptiveCanonicalSpreadsheet({
     ? continuousPresentation
     : "condition_sheet";
   const effectiveMode = continuousWorksheet && !matrixEligible ? "expanded" : mode;
+  useLayoutEffect(() => {
+    const root = spreadsheetRootRef.current;
+    if (!root) return;
+    const fitTable = () => {
+      for (const wrap of root.querySelectorAll<HTMLElement>(".adaptive-canonical-spreadsheet__table-wrap")) {
+        if (wrap.getBoundingClientRect().height === 0) continue;
+        const available = Math.max(160, window.innerHeight - Math.max(0, wrap.getBoundingClientRect().top) - 12);
+        wrap.style.setProperty("--sheet-available-height", `${available}px`);
+      }
+    };
+    fitTable();
+    let frame = 0;
+    const scheduleFit = (event?: Event) => {
+      if (event?.target instanceof Element && event.target.closest(".adaptive-canonical-spreadsheet__table-wrap")) return;
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(fitTable);
+    };
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => scheduleFit()) : null;
+    observer?.observe(root);
+    window.addEventListener("resize", scheduleFit);
+    window.addEventListener("scroll", scheduleFit, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener("resize", scheduleFit);
+      window.removeEventListener("scroll", scheduleFit, true);
+    };
+  }, [effectiveMode, effectiveContinuousPresentation]);
   const compactEntryActive =
     continuousWorksheet &&
     effectiveMode === "compact" &&
@@ -1559,33 +1628,48 @@ export function AdaptiveCanonicalSpreadsheet({
       : true);
   const compactEditable = editable && model.compactEditability.status === "editable";
   const compactDisabled = continuousWorksheet ? !compactEntryEligible : !compactEditable;
-  const interactionLabel = editable
-    ? t("測定値を入力", "Enter measurements")
-    : t("測定値を確認", "Review measurements");
-
-  const observationHistory = useControlledSpreadsheetHistory({
-    value: observations,
-    publish: (next) => onObservationsChange(next),
-  });
-  const commitObservations = (next: readonly CanonicalAdaptiveObservation[]) => {
-    if (observationHistory.commit(next, undefined)) setHistoryMessage("");
+  const [localDisplayTexts, setLocalDisplayTexts] = useState<Readonly<Record<string, string>>>({});
+  const cellDisplayTexts = numericDisplayTexts ?? localDisplayTexts;
+  const setCellDisplayTexts = (texts: Readonly<Record<string, string>>) => {
+    setLocalDisplayTexts(texts);
+    onNumericDisplayTextsChange?.(texts);
   };
+  const inputHistory = useCanonicalInputHistory(
+    observations,
+    JSON.stringify({
+      contract,
+      conditionCombinations,
+      // Independent sheet rows are display positions, rebuilt after every edit.
+      // Unit identity is already guarded by the canonical records fingerprint.
+      // Matching/block rows retain the existing context-change safe stop.
+      worksheetRows:
+        contract.matching.kind === "independent" &&
+        !contract.unitLevels.some(({ role }) => role === "block")
+          ? undefined
+          : worksheetRows,
+      readOnly,
+    }),
+    onObservationsChange,
+    editable,
+    { value: cellDisplayTexts, publish: setCellDisplayTexts },
+  );
+  const commitObservations = inputHistory.commit;
+  const importFile: AdaptiveCanonicalSpreadsheetProps["onFileImport"] = onFileImport
+    ? (input) => {
+        onFileImport(input);
+        inputHistory.reset();
+        setCellDisplayTexts({});
+      }
+    : undefined;
+  const interactionLabel = editable ? "測定値を入力" : "測定値を確認";
 
-  const handleHistoryShortcut = (event: KeyboardEvent<HTMLElement>) => {
-    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-    const key = event.key.toLocaleLowerCase("en-US");
-    const redoRequested = key === "y" || (key === "z" && event.shiftKey);
-    if (key !== "z" && key !== "y") return;
-    const target = event.target as HTMLElement;
-    if (target.dataset.spreadsheetDirty === "true") return;
-    const changed = redoRequested ? observationHistory.redo() : observationHistory.undo();
-    if (!changed) return;
-    event.preventDefault();
-    setHistoryMessage(
-      redoRequested
-        ? t("表編集をやり直しました。", "Redid the worksheet edit.")
-        : t("直前の表編集を元に戻しました。", "Undid the last worksheet edit."),
+  const changeWorksheetZoom = (direction: -1 | 1) => {
+    const currentIndex = WORKSHEET_ZOOM_LEVELS.findIndex((level) => level === worksheetZoom);
+    const boundedIndex = Math.min(
+      WORKSHEET_ZOOM_LEVELS.length - 1,
+      Math.max(0, (currentIndex < 0 ? 3 : currentIndex) + direction),
     );
+    setWorksheetZoom(WORKSHEET_ZOOM_LEVELS[boundedIndex] ?? 100);
   };
 
   useEffect(() => {
@@ -1593,6 +1677,14 @@ export function AdaptiveCanonicalSpreadsheet({
       onModeChange("expanded");
     }
   }, [continuousWorksheet, matrixEligible, mode, onModeChange]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(WORKSHEET_ZOOM_STORAGE_KEY, String(worksheetZoom));
+    } catch {
+      // A blocked preference store must not prevent data entry.
+    }
+  }, [worksheetZoom]);
 
   useLayoutEffect(() => {
     const candidates = pendingExpandedDeletionFocusRef.current;
@@ -1625,28 +1717,53 @@ export function AdaptiveCanonicalSpreadsheet({
   return (
     <section
       className="adaptive-canonical-spreadsheet"
+      ref={spreadsheetRootRef}
       aria-labelledby={embedded ? undefined : headingId}
       aria-label={embedded ? interactionLabel : undefined}
       aria-describedby={modeNoteId}
-      onKeyDownCapture={handleHistoryShortcut}
     >
       <div className="adaptive-canonical-spreadsheet__heading">
         {!embedded ? (
           <div>
             <h2 id={headingId}>{interactionLabel}</h2>
-            <p>
-              {t(
-                "2つの表示は同じ測定記録を参照します。表示を変えても値やIDは複製されません。",
-                "Both views reference the same measurement records. Switching views does not duplicate values or IDs.",
-              )}
-            </p>
+            <p>2つの表示は同じ測定記録を参照します。表示を変えても値やIDは複製されません。</p>
           </div>
         ) : null}
         <div className="adaptive-canonical-spreadsheet__table-controls">
+          {editable ? (
+            <div
+              className="adaptive-canonical-spreadsheet__history"
+              role="group"
+              aria-label="入力履歴"
+            >
+              <strong className="sr-only">入力履歴（Undo / Redo）</strong>
+              <button type="button" disabled={!inputHistory.canUndo} onClick={inputHistory.undo}>
+                入力を元に戻す
+              </button>
+              <button type="button" disabled={!inputHistory.canRedo} onClick={inputHistory.redo}>
+                入力をやり直す
+              </button>
+              <span className="sr-only" aria-live="polite">
+                {inputHistory.canUndo
+                  ? "元に戻せる入力があります"
+                  : inputHistory.canRedo
+                    ? "やり直せる入力があります"
+                    : "元に戻せる入力はありません"}
+              </span>
+      {editable ? (
+        <details className="adaptive-canonical-spreadsheet__history-note">
+          <summary>入力履歴の範囲</summary>
+          <p>
+          入力履歴はこの表の測定記録が対象です。実験の組み立て変更やファイル読込は対象外です。
+          </p>
+        </details>
+      ) : null}
+            </div>
+          ) : null}
           <div
             className="adaptive-canonical-spreadsheet__view-switch"
             role="group"
-            aria-label={t("入力表の表示", "Data-table view")}
+            aria-label="入力表の表示"
           >
             <button
               ref={compactModeControlRef}
@@ -1661,11 +1778,7 @@ export function AdaptiveCanonicalSpreadsheet({
                 onModeChange("compact");
               }}
             >
-              {continuousWorksheet
-                ? t("条件別シート", "Condition sheet")
-                : editable
-                  ? t("まとめて入力", "Grouped entry")
-                  : t("まとめて表示", "Grouped view")}
+              {continuousWorksheet ? "条件別シート" : editable ? "まとめて入力" : "まとめて表示"}
             </button>
             {continuousWorksheet && compactEntryEligible ? (
               <button
@@ -1677,7 +1790,7 @@ export function AdaptiveCanonicalSpreadsheet({
                   onModeChange("compact");
                 }}
               >
-                {t("まとめて入力", "Grouped entry")}
+                まとめて入力
               </button>
             ) : null}
             <button
@@ -1689,31 +1802,29 @@ export function AdaptiveCanonicalSpreadsheet({
                 onModeChange("expanded");
               }}
             >
-              {continuousWorksheet
-                ? t("1測定1行", "One measurement per row")
-                : t("すべての値", "All values")}
+              {continuousWorksheet ? "1測定1行" : "すべての値"}
             </button>
           </div>
           <div
             className="adaptive-canonical-spreadsheet__zoom-control"
             role="group"
-            aria-label={t("シートの拡大縮小", "Worksheet zoom")}
+            aria-label="シートの拡大縮小"
           >
-            <span aria-hidden="true">{t("表示倍率", "Zoom")}</span>
+            <span aria-hidden="true">表示倍率</span>
             <button
               type="button"
-              aria-label={t("シートを縮小", "Zoom out")}
-              disabled={worksheetZoom <= SPREADSHEET_ZOOM_LEVELS[0]}
+              aria-label="シートを縮小"
+              disabled={worksheetZoom <= WORKSHEET_ZOOM_LEVELS[0]}
               onClick={() => changeWorksheetZoom(-1)}
             >
               −
             </button>
             <select
-              aria-label={t("表の表示倍率", "Worksheet zoom level")}
+              aria-label="表の表示倍率"
               value={worksheetZoom}
               onChange={(event) => setWorksheetZoom(Number(event.currentTarget.value))}
             >
-              {SPREADSHEET_ZOOM_LEVELS.map((level) => (
+              {WORKSHEET_ZOOM_LEVELS.map((level) => (
                 <option key={level} value={level}>
                   {level}%
                 </option>
@@ -1721,10 +1832,8 @@ export function AdaptiveCanonicalSpreadsheet({
             </select>
             <button
               type="button"
-              aria-label={t("シートを拡大", "Zoom in")}
-              disabled={
-                worksheetZoom >= SPREADSHEET_ZOOM_LEVELS[SPREADSHEET_ZOOM_LEVELS.length - 1]
-              }
+              aria-label="シートを拡大"
+              disabled={worksheetZoom >= WORKSHEET_ZOOM_LEVELS[WORKSHEET_ZOOM_LEVELS.length - 1]}
               onClick={() => changeWorksheetZoom(1)}
             >
               +
@@ -1734,72 +1843,35 @@ export function AdaptiveCanonicalSpreadsheet({
               aria-live="polite"
               aria-atomic="true"
             >
-              {t("表の表示倍率", "Worksheet zoom")} {worksheetZoom}%
+              表の表示倍率 {worksheetZoom}%
             </span>
           </div>
         </div>
       </div>
 
+
+
       <p id={modeNoteId} className="adaptive-canonical-spreadsheet__mode-note" role="status">
         {continuousWorksheet
           ? !matrixEligible
-            ? t(
-                "この構造は、対象ID・階層・時間の対応を隠さない1測定1行の表で表示します。",
-                "This structure is shown as one measurement per row so unit IDs, hierarchy, and time relationships remain explicit.",
-              )
+            ? "この構造は、対象ID・階層・時間の対応を隠さない1測定1行の表で表示します。"
             : compactEntryActive
-              ? t(
-                  "これは平均や統合を行う機能ではなく、同じ条件の値を1セル内に改行して入力します。各測定を別々に保持し、IDは「1測定1行」で確認できます。",
-                  "This view does not average or merge values. Enter values for one condition on separate lines within a cell. Each measurement remains separate; inspect IDs in One measurement per row.",
-                )
+              ? "これは平均や統合を行う機能ではなく、同じ条件の値を1セル内に改行して入力します。各測定を別々に保持し、IDは「1測定1行」で確認できます。"
               : readOnly
-                ? t(
-                    "元の表との対応と取込履歴を保つため読み取り専用です。1測定1行へ切り替えると、各IDと元データ行を確認できます。",
-                    "This view is read-only to preserve source-table mapping and import history. Switch to One measurement per row to inspect IDs and source rows.",
-                  )
+                ? "元の表との対応と取込履歴を保つため読み取り専用です。1測定1行へ切り替えると、各IDと元データ行を確認できます。"
                 : effectiveMode === "compact"
                   ? contract.matching.kind === "independent"
-                    ? showExperimentDate
-                      ? t(
-                          "1セルに1つの値を入力します。左の実験日は、その行に明示した実験回のmetadataとして保存します。同じ日付・実験回でも、条件ごとの実験単位は別々であり、対応関係を作りません。",
-                          "Enter one value per cell. The date at left is saved as metadata for the explicit experiment session on that row. Even with the same date or session, condition-specific experimental units remain distinct and are not treated as matched.",
-                        )
-                      : t(
-                          "1セルに1つの値を入力します。横一行は条件ごとの値を見やすく並べる表示位置で、同じ実験日・実験回・pairを意味しません。この表示では条件ごとの実験日は入力できません。",
-                          "Enter one value per cell. A horizontal row is only a convenient alignment across conditions; it does not imply the same date, run, or pair. Condition-specific experiment dates cannot be entered in this view.",
-                        )
-                    : t(
-                        "1セルに1つの値を入力します。行の対応は、先に確認した実験構造を保持します。",
-                        "Enter one value per cell. Row matching preserves the experiment structure confirmed earlier.",
-                      )
-                  : t(
-                      "1測定1行で、対象ID・条件・値を確認・編集します。表示を変えても同じ記録です。",
-                      "Review and edit the unit ID, condition, and value with one measurement per row. Both views use the same records.",
-                    )
+                    ? "1セルに1つの値を入力します。横一行は条件ごとの値を見やすく並べる表示位置で、同じ実験日・実験回・pairを意味しません。この表示では条件ごとの実験日は入力できません。"
+                    : "1セルに1つの値を入力します。行の対応は、先に確認した実験構造を保持します。"
+                  : "1測定1行で、対象ID・条件・値を確認・編集します。表示を変えても同じ記録です。"
           : compactDisabled
             ? readOnly
-              ? t(
-                  "元の表との対応と取込履歴を保つため、この画面では読み取り専用です。「すべての値」で各IDと元データ行を確認できます。",
-                  "This view is read-only to preserve source mapping and import history. Use All values to inspect IDs and source rows.",
-                )
-              : locale === "ja"
-                ? `${model.compactEditability.explanation} 「すべての値」でIDと内訳を確認できます。`
-                : "This structure requires the expanded view. Use All values to inspect IDs and details."
+              ? "元の表との対応と取込履歴を保つため、この画面では読み取り専用です。「すべての値」で各IDと元データ行を確認できます。"
+              : `${model.compactEditability.explanation} 「すべての値」でIDと内訳を確認できます。`
             : effectiveMode === "compact"
-              ? t(
-                  "同じ条件の値を改行して入力します。矩形貼り付けと途中の空欄をそのまま保持します。",
-                  "Enter values for the same condition on separate lines. Rectangular paste and internal blanks are preserved.",
-                )
-              : t(
-                  "1測定1行でIDと値を編集します。表示を変えても値やIDは変わりません。",
-                  "Edit IDs and values with one measurement per row. Switching views does not change values or IDs.",
-                )}
+              ? "同じ条件の値を改行して入力します。矩形貼り付けと途中の空欄をそのまま保持します。"
+              : "1測定1行でIDと値を編集します。表示を変えても値やIDは変わりません。"}
       </p>
-      {historyMessage ? (
-        <span className="sr-only" role="status" aria-live="polite">
-          {historyMessage}
-        </span>
-      ) : null}
 
       <div
         className="adaptive-canonical-spreadsheet__zoom-surface"
@@ -1821,8 +1893,16 @@ export function AdaptiveCanonicalSpreadsheet({
         {effectiveMode === "compact" ? (
           continuousWorksheet && !compactEntryActive ? (
             <CanonicalMatrixWorksheet
-              conditionBlocks={conditionBlocks}
               tableId={tableId}
+              displayTexts={cellDisplayTexts}
+              onCellsCommit={(next, updates) => {
+                const nextTexts = { ...cellDisplayTexts };
+                for (const [key, text] of Object.entries(updates)) {
+                  if (text === null) delete nextTexts[key];
+                  else nextTexts[key] = text;
+                }
+                inputHistory.commit(next, nextTexts);
+              }}
               contract={contract}
               observations={observations}
               rows={worksheetRows}
@@ -1830,7 +1910,7 @@ export function AdaptiveCanonicalSpreadsheet({
               showExperimentDate={showExperimentDate}
               onRowChange={onWorksheetRowChange}
               onObservationsChange={commitObservations}
-              onFileImport={onFileImport}
+              onFileImport={importFile}
               nextObservationId={nextObservationId}
               nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
               readOnly={readOnly}

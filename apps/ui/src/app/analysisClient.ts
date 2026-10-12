@@ -78,34 +78,28 @@ export function createEvaluationAnalysisRunner(config: EvaluationModeConfig): An
 
 export function localEngineFailureMessage(error: unknown): string {
   const detail = error instanceof Error ? error.message : String(error);
+  if (/The pinned development analysis environment is missing/i.test(detail)) {
+    return "この開発版の解析環境が準備されていません。入力したデータは保持されています。入力を保存し、開発版のセットアップ手順に従って解析環境を準備してください。";
+  }
+  if (/The packaged analysis engine is missing from application resources/i.test(detail)) {
+    return "アプリに必要な解析エンジンが見つかりません。入力したデータは保持されています。入力を保存し、解析エンジンを含む完全なアプリを再インストールしてください。";
+  }
   if (/ENGINE_PROCESS_TIMEOUT/u.test(detail)) {
     return "ローカル統計エンジンが制限時間内に完了しなかったため、安全に停止しました。入力したデータは保持されています。再試行しても繰り返す場合は診断情報を保存してください。";
   }
   if (/ENGINE_PROCESS_CANCELLED/u.test(detail)) {
     return "解析を中止しました。入力したデータは保持されています。";
   }
-  if (/ENGINE_OUTPUT_INVALID_JSON:empty/iu.test(detail)) {
-    return "ローカル統計エンジンから解析結果が返りませんでした。入力したデータは保持されています。診断情報を保存して、再試行してください。";
-  }
-  if (/ENGINE_OUTPUT_INVALID_JSON:eof/iu.test(detail)) {
-    return "ローカル統計エンジンの応答が途中で途切れました。入力したデータは保持されています。診断情報を保存して、再試行してください。";
-  }
-  if (/ENGINE_OUTPUT_INVALID_JSON:non_finite/iu.test(detail)) {
-    return "ローカル統計エンジンの結果に有限でない数値が含まれたため、安全に停止しました。入力したデータは保持されています。診断情報を保存してください。";
-  }
-  if (/ENGINE_OUTPUT_INVALID_JSON|analysis engine returned invalid JSON/iu.test(detail)) {
-    return "ローカル統計エンジンの応答形式を確認できなかったため、安全に停止しました。入力したデータは保持されています。診断情報を保存して、再試行してください。";
-  }
-  if (/requires at least|insufficient residual degrees of freedom/i.test(detail)) {
+  if (/D17\b.*(?:requires at least|insufficient residual degrees of freedom)/i.test(detail)) {
     return "非線形fitに必要な異なるX値が不足しています。各seriesの時点数と欠損値を確認してください。入力したデータは保持されています。";
   }
-  if (/flat|non-identifiable|not identifiable/i.test(detail)) {
+  if (/D17\b.*(?:flat|non-identifiable|not identifiable)/i.test(detail)) {
     return "このデータでは非線形fitのparameterを一意に推定できません。変化幅と測定時点を確認してください。入力したデータは保持されています。";
   }
-  if (/initial .* bounds|bound .* lower < upper/i.test(detail)) {
+  if (/D17\b.*(?:initial .* bounds|bound .* lower < upper)/i.test(detail)) {
     return "非線形fitの初期値またはboundsが不正です。model設定を確認してください。入力したデータは保持されています。";
   }
-  if (/(?:fit|optimization|least.squares).*failed:/i.test(detail)) {
+  if (/D17\b.*fit failed:/i.test(detail)) {
     return "非線形fitが収束しませんでした。model、初期値、bounds、測定時点を確認してください。入力したデータは保持されています。";
   }
   return "ローカル解析エンジンが有効な結果を返せませんでした。入力したデータは保持されています。診断画面で「詳細を記録」を有効にすると原因を確認できます。";

@@ -71,7 +71,10 @@ export function BulkPasteScalar({ sheet, onApply }: BulkPasteScalarProps) {
     (column) => column.invalidRowNumbers.length > 0 || column.emptyRowNumbers.length > 0,
   );
   const canApply = Boolean(
-    selectedColumn && selectedColumn.values.length > 0 && selectedErrorCount === 0,
+    !parsed.parseError &&
+    selectedColumn &&
+    selectedColumn.values.length > 0 &&
+    selectedErrorCount === 0,
   );
 
   const updateText = (nextText: string) => {
@@ -80,7 +83,7 @@ export function BulkPasteScalar({ sheet, onApply }: BulkPasteScalarProps) {
   };
 
   const handleApply = () => {
-    if (!selectedColumn) return;
+    if (!canApply || !selectedColumn) return;
     setApplyError(null);
     try {
       onApply(conditionId, selectedColumn.values, {
@@ -155,6 +158,11 @@ export function BulkPasteScalar({ sheet, onApply }: BulkPasteScalarProps) {
           rows={5}
         />
       </label>
+      {parsed.parseError && (
+        <p className="bulk-paste-error" role="alert">
+          {parsed.parseError}
+        </p>
+      )}
       {parsed.columns.length > 0 && (
         <div className="bulk-paste-controls">
           <label>

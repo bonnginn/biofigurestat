@@ -1,3 +1,7 @@
+import { canonicalMatrixLexicalText } from "../app/canonicalNumericPresentation";
+import { exportWorkspaceGraphPanel } from "../components/graph/workspaceGraphPanelExport";
+import { createCellsForDraft, timePointsFor } from "../app/experimentWorkspaceDefaultCells";
+import { isTauri } from "@tauri-apps/api/core";
 import {
   Suspense,
   lazy,
@@ -11,7 +15,6 @@ import {
 import type { KeyboardEvent, Ref } from "react";
 import type { CompactScalarObservationIdFactoryContext } from "@lsaa/data-sheet";
 import type { CanonicalAdaptiveObservation } from "@lsaa/domain";
-import type { CanonicalMatrixConditionBlock } from "../components/CanonicalMatrixWorksheet";
 
 import {
   continuousSummary,
@@ -19,7 +22,6 @@ import {
   categoricalTotal,
   cellIsNotPlanned,
   createExperimentSession,
-  updateWorksheetRowMetadata,
   experimentCellKey,
   normalizeWithinExperiment,
   nextExperimentSessionIndex,
@@ -28,7 +30,6 @@ import {
   orderedAxisUnit,
   parseNumericPaste,
   percentage,
-  sharedSourceConditionTopology,
   wbRatio,
   wbCorrectedBandValue,
   timePointLabel,
@@ -42,14 +43,15 @@ import {
   type WbRatioCellDraft,
   type ReadoutDraft,
   type TimeAnalysisPlan,
+  type TimePointDraft,
 } from "../app/experimentDraft";
+import { ExperimentGraphWorkbench } from "../components/graph/ExperimentGraphWorkbench";
 import type { DraftAnalysisCorrection } from "../app/draftAnalysisDiagnostics";
 import {
   WorkspaceNestedMeasurementSheet,
   type WorkspaceDataViewMode,
 } from "../components/WorkspaceNestedMeasurementSheet";
 import { AdaptiveCanonicalSpreadsheet } from "../components/AdaptiveCanonicalSpreadsheet";
-import { moveSpreadsheetFocus } from "../components/spreadsheetGrid";
 import {
   canEditCanonicalMatrix,
   type CanonicalWorksheetFileCommit,
@@ -69,22 +71,8 @@ import { createInitialGraphGrouping } from "../app/graphGrouping";
 import {
   createExperimentWorkspaceProject,
   type WorkspaceGraphState,
+  type WorkspaceProjectIdentity,
 } from "../app/experimentWorkspaceProject";
-import {
-  graphReferencesRemainStable,
-  invalidateGraphAnalysis,
-  isSameCanonicalWorksheetIngress,
-  stableWorkspaceCoordinate,
-} from "../app/experimentWorkspaceGraphIntegrity";
-import {
-  createWorkspaceCells as createCellsForDraft,
-  findWorkspaceCellDescriptor as findCellDescriptor,
-  workspaceConditionAttributeValues as conditionAttributeValues,
-  workspaceRows as rowsFor,
-  workspaceTimePoints as timePointsFor,
-  type WorkspaceCellDescriptor as CellDescriptor,
-  type WorkspaceTableRow as TableRow,
-} from "../app/experimentWorkspaceTableModel";
 import {
   actionErrorMessage,
   type OpenedProject,
@@ -92,6 +80,7 @@ import {
 } from "../app/projectActions";
 import "./ExperimentWorkspace.css";
 import type { FavoriteGraphDefault } from "../app/favoriteDesigns";
+import { localizedText, useAppLocale } from "../app/appLocale";
 import { recordBenchmarkEvent } from "../app/benchmarkEvaluation";
 import { createAdaptiveWorkspace } from "../app/adaptiveWorkspace";
 import { synchronizeAdaptiveDraft } from "../app/adaptiveCanonicalStore";
@@ -105,21 +94,7 @@ import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/
 import { routeFromPath } from "../app/routes";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 import { recordDiagnosticError, recordDiagnosticEvent } from "../app/diagnostics";
-import { localizedText, useAppLocale } from "../app/appLocale";
-import {
-  analysisCorrectionNavigationMessage,
-  scientificSourceInvalidatedMessage,
-  structureRevisionAppliedMessage,
-  structureRevisionErrorMessage,
-  structureRevisionStoppedMessage,
-} from "../app/experimentWorkspaceMessages";
-import { useSpreadsheetCellDraft } from "../components/useSpreadsheetCellDraft";
-import {
-  parseOptionalSpreadsheetNumber,
-  parseSpreadsheetNumber,
-} from "../components/spreadsheetValues";
-import { experimentGraphTypeLabel } from "../components/graph/experimentGraphTypeLabel";
-import { exportWorkspaceGraphPanel } from "../components/graph/workspaceGraphPanelExport";
+import { synchronizeSavedWorkspaceGraphAnalyses } from "../app/savedWorkspaceGraphAnalyses";
 
 const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
   ? lazy(() =>
@@ -129,11 +104,10 @@ const DevelopmentEvaluationWorkspaceLoader = import.meta.env.DEV
     )
   : null;
 
-const ExperimentGraphWorkbench = lazy(() =>
-  import("../components/graph/ExperimentGraphWorkbench").then(
-    ({ ExperimentGraphWorkbench: GraphWorkbench }) => ({ default: GraphWorkbench }),
-  ),
-);
+import {
+  createProjectFromEditedConditions,
+  type StructureRevisionNewProject,
+} from "../app/structureRevisionNewProject";
 
 export type ExperimentWorkspaceProps = {
   initialDraft: ExperimentSetDraft;
@@ -147,6 +121,7 @@ export type ExperimentWorkspaceProps = {
   analysisAvailable?: boolean;
   saveProject?: SaveProjectAction;
   onReuseDesign?: (draft: ExperimentSetDraft) => void;
+  onCreateFromConditions?: (request: StructureRevisionNewProject) => boolean;
   onSaveFavorite?: (draft: ExperimentSetDraft, graphs: readonly WorkspaceGraphState[]) => void;
   favoriteGraphDefaults?: readonly FavoriteGraphDefault[];
   onDirtyChange?: (dirty: boolean) => void;
@@ -154,7 +129,6 @@ export type ExperimentWorkspaceProps = {
   onRequestExit?: RequestWorkspaceExit;
   onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
   rootRef?: Ref<HTMLDivElement>;
-  fiveMinuteGuide?: boolean;
 };
 
 type WorkspaceTab = "overview" | `experiment:${string}`;
@@ -163,6 +137,152 @@ type AdaptiveStructureRevisionSession = Readonly<{
   sourceDraft: ExperimentSetDraft;
   prefill: BiologicalSetupPrefill;
 }>;
+
+type CellDescriptor = {
+  key: string;
+  experiment: ExperimentSessionDraft;
+  conditionId: string;
+  conditionLabel: string;
+  timePoint: TimePointDraft | null;
+  timeUnit: string;
+  readout: ReadoutDraft;
+};
+
+type TableRow = {
+  key: string;
+  conditionId: string;
+  conditionLabel: string;
+  timePoint: TimePointDraft | null;
+};
+
+const stableCoordinate = (value: unknown): string => {
+  const normalize = (candidate: unknown): unknown =>
+    Array.isArray(candidate)
+      ? candidate.map(normalize)
+      : candidate && typeof candidate === "object"
+        ? Object.fromEntries(
+            Object.entries(candidate)
+              .sort(([left], [right]) => left.localeCompare(right))
+              .map(([key, entry]) => [key, normalize(entry)]),
+          )
+        : candidate;
+  return JSON.stringify(normalize(value));
+};
+
+function isSameCanonicalWorksheetIngress(
+  existing: Readonly<{
+    mapping: CanonicalWorksheetFileCommit["mapping"] | null;
+    rawLineage: CanonicalWorksheetFileCommit["rawLineage"];
+  }>,
+  incoming: Pick<CanonicalWorksheetFileCommit, "mapping" | "rawLineage">,
+): boolean {
+  if (!existing.mapping) return false;
+  const mappingSignature = (mapping: CanonicalWorksheetFileCommit["mapping"]) =>
+    stableCoordinate({
+      schemaVersion: mapping.schemaVersion,
+      sourceLabel: mapping.sourceLabel,
+      delimiter: mapping.delimiter,
+      headerRow: mapping.headerRow,
+      columns: mapping.columns,
+    });
+  return (
+    existing.rawLineage.sourceKind === incoming.rawLineage.sourceKind &&
+    existing.rawLineage.sourceLabel === incoming.rawLineage.sourceLabel &&
+    existing.rawLineage.rawText === incoming.rawLineage.rawText &&
+    mappingSignature(existing.mapping) === mappingSignature(incoming.mapping)
+  );
+}
+
+function graphReferencesRemainStable(
+  before: ExperimentSetDraft,
+  after: ExperimentSetDraft,
+  graph: WorkspaceGraphState,
+): boolean {
+  const oldConditions = new Map(before.conditions.map((condition) => [condition.id, condition]));
+  const newConditions = new Map(after.conditions.map((condition) => [condition.id, condition]));
+  const conditionIds = new Set([
+    ...graph.selectedConditionIds,
+    ...(graph.analysisConditionIds ?? []),
+    ...(graph.dataSets?.displaySet.conditionIds ?? []),
+    ...(graph.dataSets?.analysisSet.conditionIds ?? []),
+  ]);
+  if (
+    [...conditionIds].some(
+      (id) =>
+        !oldConditions.has(id) ||
+        !newConditions.has(id) ||
+        stableCoordinate(oldConditions.get(id)?.attributes) !==
+          stableCoordinate(newConditions.get(id)?.attributes),
+    )
+  )
+    return false;
+
+  const oldReadout = before.readouts.find(({ id }) => id === graph.selectedReadoutId);
+  const newReadout = after.readouts.find(({ id }) => id === graph.selectedReadoutId);
+  if (!oldReadout || !newReadout || oldReadout.shape !== newReadout.shape) return false;
+
+  const oldPoints = new Map(before.time.points.map((point) => [point.id, point.value]));
+  const newPoints = new Map(after.time.points.map((point) => [point.id, point.value]));
+  const timePointIds = new Set([
+    ...graph.selectedTimePointIds,
+    ...(graph.analysisTimePointId ? [graph.analysisTimePointId] : []),
+    ...(graph.dataSets?.displaySet.timePointIds ?? []),
+    ...(graph.dataSets?.analysisSet.timePointIds ?? []),
+  ]);
+  if (
+    [...timePointIds].some(
+      (id) => !oldPoints.has(id) || !newPoints.has(id) || oldPoints.get(id) !== newPoints.get(id),
+    )
+  )
+    return false;
+
+  const oldFactorIds = new Set(before.attributes.map(({ id }) => id));
+  const newFactorIds = new Set(after.attributes.map(({ id }) => id));
+  const referencedFactorIds = [
+    ...(graph.grouping?.x.factorIds ?? []),
+    ...(graph.grouping?.x.factorId ? [graph.grouping.x.factorId] : []),
+    ...(graph.grouping?.series.factorId ? [graph.grouping.series.factorId] : []),
+    ...(graph.grouping?.color?.factorId ? [graph.grouping.color.factorId] : []),
+    ...(graph.grouping?.shape?.factorId ? [graph.grouping.shape.factorId] : []),
+    ...(graph.grouping?.facet?.factorId ? [graph.grouping.facet.factorId] : []),
+  ];
+  return referencedFactorIds.every((id) => oldFactorIds.has(id) && newFactorIds.has(id));
+}
+
+function invalidateGraphAnalysis(graph: WorkspaceGraphState): WorkspaceGraphState {
+  return {
+    ...graph,
+    analysisRunId: null,
+    analysis: null,
+    statisticsAnnotation: { mode: "hidden", testIndex: 0 },
+    statisticsAnnotations: [],
+    ...(graph.dataSets
+      ? {
+          dataSets: {
+            ...graph.dataSets,
+            comparisonSet: [],
+            annotationSet: [],
+          },
+        }
+      : {}),
+  };
+}
+
+function rowsFor(draft: ExperimentSetDraft, experimentId: string): TableRow[] {
+  return draft.conditions.flatMap((condition) =>
+    timePointsFor(draft).map((timePoint) => ({
+      key: `${experimentId}::${condition.id}::${timePoint?.id ?? "time.none"}`,
+      conditionId: condition.id,
+      conditionLabel: condition.label,
+      timePoint,
+    })),
+  );
+}
+
+function conditionAttributeValues(draft: ExperimentSetDraft, conditionId: string): string[] {
+  const condition = draft.conditions.find((candidate) => candidate.id === conditionId);
+  return draft.attributes.map((attribute) => condition?.attributes[attribute.id]?.trim() || "—");
+}
 
 function ConditionCells({ draft, row }: { draft: ExperimentSetDraft; row: TableRow }) {
   const values = conditionAttributeValues(draft, row.conditionId);
@@ -182,8 +302,44 @@ function ConditionCells({ draft, row }: { draft: ExperimentSetDraft; row: TableR
   );
 }
 
+function findCellDescriptor(draft: ExperimentSetDraft, key: string): CellDescriptor | null {
+  for (const experiment of draft.experiments) {
+    for (const condition of draft.conditions) {
+      for (const readout of draft.readouts) {
+        for (const timePoint of timePointsFor(draft)) {
+          const candidate = experimentCellKey({
+            experimentId: experiment.id,
+            conditionId: condition.id,
+            readoutId: readout.id,
+            timePointId: timePoint?.id,
+          });
+          if (candidate === key) {
+            return {
+              key,
+              experiment,
+              conditionId: condition.id,
+              conditionLabel: condition.label,
+              timePoint,
+              timeUnit: orderedAxisUnit(draft.time),
+              readout,
+            };
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function nullableNumber(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function countValue(value: string): number | null {
-  const parsed = parseSpreadsheetNumber(value);
+  const parsed = nullableNumber(value);
   if (parsed === null || parsed < 0 || !Number.isInteger(parsed)) return null;
   return parsed;
 }
@@ -193,6 +349,19 @@ type ProportionPasteUpdate = Readonly<{
   field: "positive" | "eligible";
   value: number;
 }>;
+
+function graphTypeChoiceLabel(graphType: CreatableGraphType): string {
+  if (graphType === "stacked") return "Stacked count";
+  if (graphType === "stacked_100") return "100% stacked";
+  if (graphType === "category_percentage") return "Category percentage";
+  if (graphType === "scatter") return "Scatter";
+  if (graphType === "line") return "Line / Time course";
+  if (graphType === "violin") return "Violin";
+  if (graphType === "paired_dot") return "対応を線で結ぶ";
+  if (graphType === "box") return "Box";
+  if (graphType === "bar") return "Bar";
+  return "Dot";
+}
 
 type ProportionPasteRequest = Readonly<{
   experimentId: string;
@@ -294,8 +463,13 @@ function ReadoutLabel({ readout }: { readout: ReadoutDraft }) {
   );
 }
 
+function sharedSourceTopology(draft: ExperimentSetDraft) {
+  const topology = draft.conditionAssignment.matchedTopology;
+  return topology?.kind === "distinct_condition_units_shared_source" ? topology : null;
+}
+
 function matrixRelationshipCopy(draft: ExperimentSetDraft): string {
-  const sharedSource = sharedSourceConditionTopology(draft);
+  const sharedSource = sharedSourceTopology(draft);
   if (sharedSource) {
     return `同じ行は同じ${sharedSource.sourceUnitLabel}に由来する組です。各条件の${draft.conditionAssignment.unitLabel}は別の実験単位として保持します。`;
   }
@@ -305,7 +479,7 @@ function matrixRelationshipCopy(draft: ExperimentSetDraft): string {
 }
 
 function matrixRowHeading(draft: ExperimentSetDraft): string {
-  const sharedSource = sharedSourceConditionTopology(draft);
+  const sharedSource = sharedSourceTopology(draft);
   if (sharedSource) return sharedSource.sourceIdentityLabel;
   return draft.conditionAssignment.kind === "matched"
     ? draft.conditionAssignment.unitLabel || "対象ID"
@@ -316,12 +490,12 @@ function independentAdaptiveInputRows(draft: ExperimentSetDraft): boolean {
   return Boolean(
     draft.adaptiveInput &&
     draft.conditionAssignment.kind === "independent" &&
-    !sharedSourceConditionTopology(draft),
+    !sharedSourceTopology(draft),
   );
 }
 
 function matchedSetLabel(draft: ExperimentSetDraft): string {
-  const sharedSource = sharedSourceConditionTopology(draft);
+  const sharedSource = sharedSourceTopology(draft);
   return sharedSource
     ? `${sharedSource.sourceUnitLabel}の組`
     : draft.conditionAssignment.unitLabel || "対応単位";
@@ -332,20 +506,18 @@ function OverviewUnitSummaryMatrix({
   readout,
   cells,
   cellDisplayTexts,
-  onChange,
   onDisplayTextChange,
+  onChange,
   onPaste,
 }: {
   draft: ExperimentSetDraft;
   readout: ReadoutDraft;
   cells: ExperimentCellMap;
   cellDisplayTexts: Readonly<Record<string, string>>;
-  onChange: (key: string, value: number | null) => void;
   onDisplayTextChange: (key: string, text: string | null) => void;
+  onChange: (key: string, value: number | null) => void;
   onPaste: (request: OverviewScalarPasteRequest) => OverviewScalarPasteResult;
 }) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [pasteMessage, setPasteMessage] = useState<string | null>(null);
 
   return (
@@ -355,42 +527,25 @@ function OverviewUnitSummaryMatrix({
     >
       <div className="experiment-workspace-quick-entry-heading">
         <div>
-          <h3 id="overview-quick-entry-heading">{t("まとめて入力", "Enter as a table")}</h3>
+          <h3 id="overview-quick-entry-heading">まとめて入力</h3>
           <p>
-            {t(
-              "左上のセルを選び、Excelから行列をそのまま貼り付けられます。空欄はmissingとして保持します。",
-              "Select the top-left cell and paste a rectangular range directly from Excel. Blank cells remain missing.",
-            )}
+            左上のセルを選び、Excelから行列をそのまま貼り付けられます。空欄はmissingとして保持します。
           </p>
         </div>
-        <span>{t("Excel貼り付け対応", "Paste from Excel")}</span>
+        <span>Excel貼り付け対応</span>
       </div>
       <div className="experiment-workspace-overview-condition-wrap">
         <table
           className="experiment-workspace-overview-condition-table experiment-workspace-quick-entry-table"
-          aria-label={t(`${readout.label}をまとめて入力`, `Enter ${readout.label} as a table`)}
+          aria-label={`${readout.label}をまとめて入力`}
         >
           <caption>
             <ReadoutLabel readout={readout} />
-            <small>
-              {locale === "ja"
-                ? matrixRelationshipCopy(draft)
-                : draft.conditionAssignment.kind === "matched"
-                  ? "Rows identify explicitly matched units across conditions."
-                  : "Values are aligned by entry order only; rows do not imply matching across conditions."}
-            </small>
+            <small>{matrixRelationshipCopy(draft)}</small>
           </caption>
           <thead>
             <tr>
-              <th scope="col">
-                {locale === "ja"
-                  ? matrixRowHeading(draft)
-                  : independentAdaptiveInputRows(draft)
-                    ? "Entry row"
-                    : draft.conditionAssignment.kind === "matched"
-                      ? "Matched unit"
-                      : "Experiment"}
-              </th>
+              <th scope="col">{matrixRowHeading(draft)}</th>
               {draft.conditions.map((condition) => (
                 <th scope="col" key={condition.id}>
                   {condition.label}
@@ -415,25 +570,15 @@ function OverviewUnitSummaryMatrix({
                   return (
                     <td key={condition.id}>
                       <DecimalValueInput
-                        label={t(
-                          `${experiment.label}・${condition.label}の${readout.label}`,
-                          `${readout.label}: ${experiment.label}, ${condition.label}`,
-                        )}
+                        label={`${experiment.label}・${condition.label}の${readout.label}`}
                         value={value}
                         displayText={cellDisplayTexts[key]}
-                        disabled={notPlanned}
-                        spreadsheetPosition={{
-                          row: experimentIndex,
-                          column: conditionIndex,
-                        }}
-                        onChange={(nextValue) => onChange(key, nextValue)}
                         onDisplayTextChange={(text) => onDisplayTextChange(key, text)}
+                        disabled={notPlanned}
+                        onChange={(nextValue) => onChange(key, nextValue)}
                         onRejectedPaste={() =>
                           setPasteMessage(
-                            t(
-                              "複数値は、表の左上セルから行列として貼り付けてください。",
-                              "Paste multiple values as a rectangle starting from the top-left cell.",
-                            ),
+                            "複数値は、表の左上セルから行列として貼り付けてください。",
                           )
                         }
                         onMatrixPaste={(text) => {
@@ -477,8 +622,6 @@ function OverviewProportionMatrix({
   onChange: (key: string, field: "positive" | "eligible", value: number | null) => void;
   onPaste: (request: OverviewProportionPasteRequest) => OverviewScalarPasteResult;
 }) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [pasteMessage, setPasteMessage] = useState<string | null>(null);
 
   return (
@@ -488,17 +631,12 @@ function OverviewProportionMatrix({
     >
       <div className="experiment-workspace-quick-entry-heading">
         <div>
-          <h3 id="overview-proportion-quick-entry-heading">
-            {t("まとめて入力", "Enter as a table")}
-          </h3>
+          <h3 id="overview-proportion-quick-entry-heading">まとめて入力</h3>
           <p>
-            {t(
-              "各条件は「陽性数・対象数」の2列です。Excelから矩形のまま貼り付けられ、割合は自動計算します。",
-              "Each condition has two columns: positive count and total count. Paste a rectangle from Excel; percentages are calculated automatically.",
-            )}
+            各条件は「陽性数・対象数」の2列です。Excelから矩形のまま貼り付けられ、割合は自動計算します。
           </p>
         </div>
-        <span>{t("Excel貼り付け対応", "Paste from Excel")}</span>
+        <span>Excel貼り付け対応</span>
       </div>
       <div className="experiment-workspace-overview-condition-wrap">
         <table
@@ -661,11 +799,10 @@ function OverviewPanel({
   draft,
   cells,
   cellDisplayTexts,
-  onReviseStructure,
+  onDisplayTextChange,
   onProportionChange,
   onProportionPaste,
   onNestedScalarChange,
-  onNestedDisplayTextChange,
   onNestedScalarPaste,
   onNestedCellChange,
   dataViewMode,
@@ -675,11 +812,10 @@ function OverviewPanel({
   draft: ExperimentSetDraft;
   cells: ExperimentCellMap;
   cellDisplayTexts: Readonly<Record<string, string>>;
-  onReviseStructure?: (trigger: HTMLButtonElement) => void;
+  onDisplayTextChange: (key: string, text: string | null) => void;
   onProportionChange: (key: string, field: "positive" | "eligible", value: number | null) => void;
   onProportionPaste: (request: OverviewProportionPasteRequest) => OverviewScalarPasteResult;
   onNestedScalarChange: (key: string, value: number | null) => void;
-  onNestedDisplayTextChange: (key: string, text: string | null) => void;
   onNestedScalarPaste: (request: OverviewScalarPasteRequest) => OverviewScalarPasteResult;
   onNestedCellChange: (key: string, cell: NestedContinuousCellDraft) => void;
   dataViewMode: WorkspaceDataViewMode;
@@ -689,7 +825,6 @@ function OverviewPanel({
     readOnly: boolean;
     showExperimentDate: boolean;
     worksheetRows: readonly Readonly<{ key: string; label: string; date: string }>[];
-    conditionBlocks?: readonly CanonicalMatrixConditionBlock[];
     conditionCombinations?: readonly Readonly<{
       labels: readonly string[];
       displayLabel: string;
@@ -700,6 +835,8 @@ function OverviewPanel({
       patch: Partial<Readonly<{ key: string; label: string; date: string }>>,
     ) => void;
     onObservationsChange: (observations: readonly CanonicalAdaptiveObservation[]) => void;
+    numericDisplayTexts?: Readonly<Record<string, string>>;
+    onNumericDisplayTextsChange: (texts: Readonly<Record<string, string>>) => void;
     onFileImport: (result: CanonicalWorksheetFileCommit) => void;
     nextObservationId: (context: CompactScalarObservationIdFactoryContext) => string;
     nextExperimentalUnitIdentity: (
@@ -726,7 +863,7 @@ function OverviewPanel({
     (onlyReadout?.shape === "nested_continuous" && onlyReadout.nestedInputMode === "unit_summary")
       ? onlyReadout
       : null;
-  const sharedSource = sharedSourceConditionTopology(draft);
+  const sharedSource = sharedSourceTopology(draft);
   const canonicalConditionSummaries = (() => {
     const contract = draft.adaptiveInput?.contract;
     if (!contract || !canonicalSpreadsheet) return [];
@@ -736,12 +873,11 @@ function OverviewPanel({
     const groups = new Map<string, { label: string; units: Set<string>; observations: number }>();
     canonicalSpreadsheet.observations.forEach((observation) => {
       const factorValues = contract.factors.map(
-        ({ key, label }) =>
-          observation.factors[key]?.trim() || `${label}: ${t("未設定", "not set")}`,
+        ({ key, label }) => observation.factors[key]?.trim() || `${label}: 未設定`,
       );
       const groupKey = JSON.stringify(factorValues);
       const group = groups.get(groupKey) ?? {
-        label: factorValues.join(" × ") || t("測定", "Measurement"),
+        label: factorValues.join(" × ") || "測定",
         units: new Set<string>(),
         observations: 0,
       };
@@ -757,10 +893,12 @@ function OverviewPanel({
 
   return (
     <section
-      className="experiment-workspace-panel experiment-workspace-overview"
+      className={`experiment-workspace-panel experiment-workspace-overview${canonicalSpreadsheet ? " experiment-workspace-overview--sheet" : ""}${quickEntryReadout?.shape === "nested_continuous" ? " experiment-workspace-overview--nested" : ""}`}
       aria-labelledby="experiment-overview-heading"
     >
-      <div className="experiment-workspace-panel-heading">
+      <div
+        className={`experiment-workspace-panel-heading${canonicalSpreadsheet ? " sr-only" : ""}`}
+      >
         <div>
           <p className="experiment-workspace-eyebrow">
             {canonicalSpreadsheet || quickEntryReadout
@@ -777,16 +915,6 @@ function OverviewPanel({
                 : t("入力状況", "Entry status")}
           </h2>
         </div>
-        {onReviseStructure ? (
-          <button
-            id="experiment-workspace-revise-overview"
-            className="experiment-workspace-secondary-button"
-            type="button"
-            onClick={(event) => onReviseStructure(event.currentTarget)}
-          >
-            {t("実験名・条件・測定項目を修正", "Edit experiment details")}
-          </button>
-        ) : null}
       </div>
 
       {canonicalSpreadsheet && draft.adaptiveInput ? (
@@ -797,12 +925,13 @@ function OverviewPanel({
           mode={dataViewMode}
           onModeChange={onDataViewModeChange}
           onObservationsChange={canonicalSpreadsheet.onObservationsChange}
+          numericDisplayTexts={canonicalSpreadsheet.numericDisplayTexts}
+          onNumericDisplayTextsChange={canonicalSpreadsheet.onNumericDisplayTextsChange}
           nextObservationId={canonicalSpreadsheet.nextObservationId}
           nextExperimentalUnitIdentity={canonicalSpreadsheet.nextExperimentalUnitIdentity}
           readOnly={canonicalSpreadsheet.readOnly}
           worksheetRows={canonicalSpreadsheet.worksheetRows}
           conditionCombinations={canonicalSpreadsheet.conditionCombinations}
-          conditionBlocks={canonicalSpreadsheet.conditionBlocks}
           showExperimentDate={canonicalSpreadsheet.showExperimentDate}
           onWorksheetRowChange={canonicalSpreadsheet.onWorksheetRowChange}
           onFileImport={canonicalSpreadsheet.onFileImport}
@@ -821,8 +950,8 @@ function OverviewPanel({
           readout={quickEntryReadout}
           cells={cells}
           cellDisplayTexts={cellDisplayTexts}
+          onDisplayTextChange={onDisplayTextChange}
           onChange={onNestedScalarChange}
-          onDisplayTextChange={onNestedDisplayTextChange}
           onPaste={onNestedScalarPaste}
         />
       ) : null}
@@ -841,43 +970,25 @@ function OverviewPanel({
         <div
           className="experiment-workspace-progress is-compact"
           aria-label={
-            canonicalSpreadsheet.readOnly
-              ? t("保持している測定値の件数", "Number of retained measurements")
-              : t("入力した測定値の件数", "Number of entered measurements")
+            canonicalSpreadsheet.readOnly ? "保持している測定値の件数" : "入力した測定値の件数"
           }
         >
           <div className="experiment-workspace-progress-topline">
-            <strong>
-              {t(
-                `${canonicalSpreadsheet.observations.length}件の測定値`,
-                `${canonicalSpreadsheet.observations.length} measurements`,
-              )}
-            </strong>
+            <strong>{canonicalSpreadsheet.observations.length}件の測定値</strong>
           </div>
           <p>
             {canonicalSpreadsheet.readOnly
-              ? t(
-                  "元の表との対応を保ったまま、条件ごとの件数と個々の測定値を確認できます。",
-                  "Review counts by condition and individual measurements while retaining their source-table mapping.",
-                )
-              : t(
-                  "条件ごとの件数が異なっていても、そのまま保持します。",
-                  "Unequal counts between conditions are retained as entered.",
-                )}
+              ? "元の表との対応を保ったまま、条件ごとの件数と個々の測定値を確認できます。"
+              : "条件ごとの件数が異なっていても、そのまま保持します。"}
           </p>
           {canonicalConditionSummaries.length ? (
-            <ul
-              className="experiment-workspace-condition-counts"
-              aria-label={t("条件ごとの入力件数", "Entry counts by condition")}
-            >
+            <ul className="experiment-workspace-condition-counts" aria-label="条件ごとの入力件数">
               {canonicalConditionSummaries.map(({ label, units, observations }) => (
                 <li key={label}>
                   <strong>{label}</strong>
                   <span>
-                    {t("実験単位", "Experimental units")} n={units.size}
-                    {observations !== units.size
-                      ? t(` · 測定値 ${observations}件`, ` · ${observations} measurements`)
-                      : ""}
+                    実験単位 n={units.size}
+                    {observations !== units.size ? ` · 測定値 ${observations}件` : ""}
                   </span>
                 </li>
               ))}
@@ -887,14 +998,11 @@ function OverviewPanel({
       ) : (
         <div
           className={`experiment-workspace-progress${quickEntryReadout ? " is-compact" : ""}`}
-          aria-label={t("入力の進み具合", "Data-entry progress")}
+          aria-label="入力の進み具合"
         >
           <div className="experiment-workspace-progress-topline">
             <strong>
-              {t(
-                `${completedCells} / ${plannedCells} セル入力済み`,
-                `${completedCells} / ${plannedCells} cells entered`,
-              )}
+              {completedCells} / {plannedCells} セル入力済み
             </strong>
             <span>{progress}%</span>
           </div>
@@ -903,19 +1011,11 @@ function OverviewPanel({
           </div>
           <p>
             {missingCells > 0
-              ? t(
-                  `未入力のセルが${missingCells}件あります。途中の状態でもグラフを作成できます。`,
-                  `${missingCells} cells are blank. You can create a Graph from partial data.`,
-                )
-              : t("必要なセルがすべて入力されています。", "All required cells have been entered.")}
+              ? `未入力のセルが${missingCells}件あります。途中の状態でもグラフを作成できます。`
+              : "必要なセルがすべて入力されています。"}
           </p>
           {notPlannedCells > 0 ? (
-            <p>
-              {t(
-                `測定予定なし：${notPlannedCells}セル（進捗・解析から除外）`,
-                `Not planned: ${notPlannedCells} cells (excluded from progress and analysis)`,
-              )}
-            </p>
+            <p>測定予定なし：{notPlannedCells}セル（進捗・解析から除外）</p>
           ) : null}
         </div>
       )}
@@ -1029,11 +1129,23 @@ function OverviewPanel({
               <dd>{draft.importProvenance.importedAt}</dd>
             </div>
             <div>
-              <dt>除外した元データ行</dt>
+              <dt>除外した元データ行（見出しを除く）</dt>
               <dd>
                 {draft.importProvenance.excludedRowNumbers.length > 0
                   ? draft.importProvenance.excludedRowNumbers.join("、")
                   : "なし"}
+              </dd>
+            </div>
+            <div>
+              <dt>除外理由</dt>
+              <dd>
+                {draft.importProvenance.excludedRowNumbers.length === 0
+                  ? "除外なし"
+                  : draft.importProvenance.excludedRowReasons?.length
+                    ? draft.importProvenance.excludedRowReasons
+                        .map(({ rowNumber, reasons }) => `${rowNumber}行：${reasons.join("／")}`)
+                        .join("、")
+                    : "理由未記録（元データ行は保持）"}
               </dd>
             </div>
             <div>
@@ -1105,36 +1217,22 @@ function OverviewPanel({
       {!canonicalSpreadsheet ? (
         <div className="experiment-workspace-notice" role="note">
           <strong>
-            {locale === "en"
-              ? independentAdaptiveInputRows(draft)
-                ? "About entry rows"
-                : draft.conditionAssignment.kind === "matched"
-                  ? `About matched ${draft.conditionAssignment.unitLabel || "units"}`
-                  : "About experiment numbers"
-              : sharedSource
-                ? `${sharedSource.sourceUnitLabel}と条件別${draft.conditionAssignment.unitLabel}について`
-                : draft.conditionAssignment.kind === "matched"
-                  ? `${draft.conditionAssignment.unitLabel || "対応単位"}について`
-                  : independentAdaptiveInputRows(draft)
-                    ? "入力行について"
-                    : "Exp番号について"}
+            {sharedSource
+              ? `${sharedSource.sourceUnitLabel}と条件別${draft.conditionAssignment.unitLabel}について`
+              : draft.conditionAssignment.kind === "matched"
+                ? `${draft.conditionAssignment.unitLabel || "対応単位"}について`
+                : independentAdaptiveInputRows(draft)
+                  ? "入力行について"
+                  : "Exp番号について"}
           </strong>
           <p>
-            {locale === "en"
-              ? sharedSource
-                ? `Each row represents one ${sharedSource.sourceIdentityLabel}. The condition-specific ${draft.conditionAssignment.unitLabel} values remain separate experimental units and are matched only as sets derived from the same ${sharedSource.sourceUnitLabel}.`
-                : draft.conditionAssignment.kind === "matched"
-                  ? `Rows 1, 2, and so on match measurements across conditions for the same ${draft.conditionAssignment.unitLabel || "unit"}. They are not counts of experimental sessions.`
-                  : independentAdaptiveInputRows(draft)
-                    ? "Entry rows align values across conditions for display only. Values in the same row are not treated as the same subject or as a pair."
-                    : "Exp 1, Exp 2, and so on organize experimental sessions. They do not statistically pair independent conditions."
-              : sharedSource
-                ? `各行は1つの${sharedSource.sourceIdentityLabel}を表します。条件ごとの${draft.conditionAssignment.unitLabel}は別の実験単位で、同じ${sharedSource.sourceUnitLabel}に由来する組として対応づけます。`
-                : draft.conditionAssignment.kind === "matched"
-                  ? `${draft.conditionAssignment.unitLabel || "対応単位"} 1、2…の各行では、同じ${draft.conditionAssignment.unitLabel || "単位"}の条件間測定を対応づけています。これらは実験回数ではありません。`
-                  : independentAdaptiveInputRows(draft)
-                    ? "入力行1、2…は条件ごとの値を横に並べるための表示位置です。同じ行にある別条件の値を、同じ対象やpairとして扱いません。"
-                    : "Exp 1、Exp 2…は実験セッションを整理するための番号です。独立した条件同士を統計的に対応付けるものではありません。"}
+            {sharedSource
+              ? `各行は1つの${sharedSource.sourceIdentityLabel}を表します。条件ごとの${draft.conditionAssignment.unitLabel}は別の実験単位で、同じ${sharedSource.sourceUnitLabel}に由来する組として対応づけます。`
+              : draft.conditionAssignment.kind === "matched"
+                ? `${draft.conditionAssignment.unitLabel || "対応単位"} 1、2…の各行では、同じ${draft.conditionAssignment.unitLabel || "単位"}の条件間測定を対応づけています。これらは実験回数ではありません。`
+                : independentAdaptiveInputRows(draft)
+                  ? "入力行1、2…は条件ごとの値を横に並べるための表示位置です。同じ行にある別条件の値を、同じ対象やpairとして扱いません。"
+                  : "Exp 1、Exp 2…は実験セッションを整理するための番号です。独立した条件同士を統計的に対応付けるものではありません。"}
           </p>
         </div>
       ) : null}
@@ -1218,7 +1316,17 @@ function ExperimentMeta({
   experiment: ExperimentSessionDraft;
   onChange: (patch: Partial<ExperimentSessionDraft>) => void;
 }) {
-  const sharedSource = sharedSourceConditionTopology(draft);
+  const sharedSource = sharedSourceTopology(draft);
+  const sourceIdentityKey = draft.adaptiveInput?.contract.matching.identityKey;
+  // The adaptive projection binds this label to the declared canonical source.
+  // Its opaque internal stable ID and row ordinal are not source/run facts.
+  const canonicalSourceIdentity =
+    sourceIdentityKey &&
+    draft.adaptiveInput?.canonicalObservations.some(
+      (row) => row.identities[sourceIdentityKey] === experiment.label,
+    )
+      ? experiment.label
+      : "";
   return (
     <div className="experiment-workspace-meta">
       <label>
@@ -1226,7 +1334,10 @@ function ExperimentMeta({
         <input
           aria-label={`${experiment.label}の${independentAdaptiveInputRows(draft) ? "入力行ID" : "実験回ID"}`}
           type="text"
-          value={experiment.sessionId ?? experiment.id}
+          value={
+            experiment.sessionId ??
+            (draft.adaptiveInput && !independentAdaptiveInputRows(draft) ? "" : experiment.id)
+          }
           onChange={(event) => onChange({ sessionId: event.currentTarget.value })}
         />
       </label>
@@ -1249,7 +1360,11 @@ function ExperimentMeta({
           }`}
           type="text"
           disabled={Boolean(sharedSource && draft.adaptiveInput)}
-          value={experiment.stableUnitId ?? experiment.id}
+          value={
+            sharedSource && draft.adaptiveInput
+              ? canonicalSourceIdentity
+              : (experiment.stableUnitId ?? experiment.id)
+          }
           onChange={(event) => onChange({ stableUnitId: event.currentTarget.value })}
         />
         <small>
@@ -1305,6 +1420,33 @@ function ProportionTable({
 }) {
   const [pasteStatus, setPasteStatus] = useState<string | null>(null);
   const rows = rowsFor(draft, experiment.id);
+
+  const moveGridFocus = (
+    event: KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    columnIndex: number,
+  ) => {
+    const movement: Record<string, [number, number]> = {
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1],
+      Enter: [event.shiftKey ? -1 : 1, 0],
+    };
+    const delta = movement[event.key];
+    if (!delta) return;
+    const nextRow = rowIndex + delta[0];
+    const nextColumn = columnIndex + delta[1];
+    const target = event.currentTarget
+      .closest("table")
+      ?.querySelector<HTMLInputElement>(
+        `[data-grid-row="${nextRow}"][data-grid-column="${nextColumn}"]`,
+      );
+    if (!target) return;
+    event.preventDefault();
+    target.focus();
+    target.select();
+  };
 
   return (
     <div className="experiment-workspace-table-wrap">
@@ -1370,13 +1512,12 @@ function ProportionTable({
                     aria-describedby={validationMessage ? validationId : undefined}
                     min="0"
                     step="1"
-                    data-spreadsheet-cell="true"
-                    data-spreadsheet-row={rowIndex}
-                    data-spreadsheet-column={0}
+                    data-grid-row={rowIndex}
+                    data-grid-column={0}
                     value={proportionCell.positive ?? ""}
                     onFocus={(event) => event.currentTarget.select()}
                     onWheel={(event) => event.currentTarget.blur()}
-                    onKeyDown={moveSpreadsheetFocus}
+                    onKeyDown={(event) => moveGridFocus(event, rowIndex, 0)}
                     onChange={(event) => {
                       setPasteStatus(null);
                       onChange(key, "positive", countValue(event.currentTarget.value));
@@ -1405,13 +1546,12 @@ function ProportionTable({
                     aria-describedby={validationMessage ? validationId : undefined}
                     min="0"
                     step="1"
-                    data-spreadsheet-cell="true"
-                    data-spreadsheet-row={rowIndex}
-                    data-spreadsheet-column={1}
+                    data-grid-row={rowIndex}
+                    data-grid-column={1}
                     value={proportionCell.eligible ?? ""}
                     onFocus={(event) => event.currentTarget.select()}
                     onWheel={(event) => event.currentTarget.blur()}
-                    onKeyDown={moveSpreadsheetFocus}
+                    onKeyDown={(event) => moveGridFocus(event, rowIndex, 1)}
                     onChange={(event) => {
                       setPasteStatus(null);
                       onChange(key, "eligible", countValue(event.currentTarget.value));
@@ -1577,32 +1717,36 @@ function DecimalValueInput({
   label,
   value,
   displayText,
-  disabled = false,
-  spreadsheetPosition,
-  onChange,
   onDisplayTextChange,
+  disabled = false,
+  onChange,
   onRejectedPaste,
   onMatrixPaste,
 }: {
   label: string;
   value: number | null;
   displayText?: string;
-  disabled?: boolean;
-  spreadsheetPosition?: { row: number; column: number };
-  onChange: (value: number | null) => void;
   onDisplayTextChange?: (text: string | null) => void;
+  disabled?: boolean;
+  onChange: (value: number | null) => void;
   onRejectedPaste: () => void;
   onMatrixPaste?: (text: string) => boolean;
 }) {
-  const locale = useAppLocale();
   const inputRef = useRef<HTMLInputElement>(null);
-  const {
-    text: draftValue,
-    edit,
-    accept,
-  } = useSpreadsheetCellDraft(displayText ?? (value === null ? "" : String(value)), {
-    preserveDirtyOnCanonicalChange: true,
-  });
+  const focusedRef = useRef(false);
+  const acceptedDisplayText =
+    displayText === undefined
+      ? value === null
+        ? ""
+        : String(value)
+      : (canonicalMatrixLexicalText(value, displayText) ?? (value === null ? "" : String(value)));
+  const [draftValue, setDraftValue] = useState(acceptedDisplayText);
+
+  useEffect(() => {
+    if (!focusedRef.current) {
+      setDraftValue(acceptedDisplayText);
+    }
+  }, [acceptedDisplayText]);
 
   const commitIfComplete = (text: string) => {
     if (text.trim() === "") {
@@ -1619,28 +1763,25 @@ function DecimalValueInput({
       aria-label={label}
       className="experiment-workspace-number-input"
       disabled={disabled}
-      data-spreadsheet-cell={spreadsheetPosition ? "true" : undefined}
-      data-spreadsheet-arrow-navigation={spreadsheetPosition ? "cell" : undefined}
-      data-spreadsheet-column={spreadsheetPosition?.column}
-      data-spreadsheet-row={spreadsheetPosition?.row}
       inputMode="decimal"
-      placeholder={localizedText(locale, "数値を入力", "Enter a number")}
+      placeholder="数値を入力"
       type="text"
       value={draftValue}
-      onKeyDown={spreadsheetPosition ? moveSpreadsheetFocus : undefined}
       onFocus={(event) => {
+        focusedRef.current = true;
         event.currentTarget.select();
       }}
       onChange={(event) => {
         const text = event.currentTarget.value;
-        edit(text);
+        setDraftValue(text);
         onDisplayTextChange?.(text === "" ? null : text);
         commitIfComplete(text);
       }}
       onBlur={() => {
-        const parsed = parseSpreadsheetNumber(draftValue);
+        focusedRef.current = false;
+        const parsed = nullableNumber(draftValue);
         const acceptedText = parsed === null ? "" : draftValue.trim();
-        accept(acceptedText);
+        setDraftValue(acceptedText);
         onDisplayTextChange?.(acceptedText === "" ? null : acceptedText);
         onChange(parsed);
       }}
@@ -1653,8 +1794,7 @@ function DecimalValueInput({
             const accepted = onMatrixPaste(text);
             if (accepted) {
               const firstToken = proportionPasteRows(text)[0]?.[0]?.trim() ?? "";
-              edit(firstToken);
-              onDisplayTextChange?.(firstToken === "" ? null : firstToken);
+              setDraftValue(firstToken === "" ? "" : String(Number(firstToken)));
             }
           } else onRejectedPaste();
         }
@@ -1669,8 +1809,8 @@ function UnitSummaryContinuousTable({
   readout,
   cells,
   cellDisplayTexts,
-  onChange,
   onDisplayTextChange,
+  onChange,
   onToggleNotPlanned,
 }: {
   draft: ExperimentSetDraft;
@@ -1678,8 +1818,8 @@ function UnitSummaryContinuousTable({
   readout: ReadoutDraft;
   cells: ExperimentCellMap;
   cellDisplayTexts: Readonly<Record<string, string>>;
-  onChange: (key: string, value: number | null) => void;
   onDisplayTextChange: (key: string, text: string | null) => void;
+  onChange: (key: string, value: number | null) => void;
   onToggleNotPlanned: (key: string) => void;
 }) {
   const rows = rowsFor(draft, experiment.id);
@@ -1705,7 +1845,7 @@ function UnitSummaryContinuousTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, rowIndex) => {
+          {rows.map((row) => {
             const key = experimentCellKey({
               experimentId: experiment.id,
               conditionId: row.conditionId,
@@ -1731,10 +1871,9 @@ function UnitSummaryContinuousTable({
                     label={label}
                     value={value}
                     displayText={cellDisplayTexts[key]}
-                    disabled={notPlanned}
-                    spreadsheetPosition={{ row: rowIndex, column: 0 }}
-                    onChange={(nextValue) => onChange(key, nextValue)}
                     onDisplayTextChange={(text) => onDisplayTextChange(key, text)}
+                    disabled={notPlanned}
+                    onChange={(nextValue) => onChange(key, nextValue)}
                     onRejectedPaste={() =>
                       setPasteMessage(
                         "この欄には実験単位の要約値を1つだけ入力します。複数値は反映せず、既存値を保持しました。",
@@ -1798,9 +1937,7 @@ function CorrelationTable({
       .replace(/\r\n?/g, "\n")
       .split(/[\t\n]/)
       .filter((token) => token.trim());
-    tokens
-      .slice(0, 2)
-      .forEach((token, index) => onChange(keys[index], parseSpreadsheetNumber(token)));
+    tokens.slice(0, 2).forEach((token, index) => onChange(keys[index], nullableNumber(token)));
   };
   return (
     <div className="experiment-workspace-table-wrap">
@@ -1824,18 +1961,27 @@ function CorrelationTable({
                 <input
                   aria-label={`${experiment.label}の${variable.label}`}
                   className="experiment-workspace-number-input"
-                  data-spreadsheet-cell="true"
-                  data-spreadsheet-column={index}
-                  data-spreadsheet-row={0}
+                  data-grid-column={index}
                   inputMode="decimal"
                   type="number"
                   value={values[index] ?? ""}
                   onFocus={(event) => event.currentTarget.select()}
                   onWheel={(event) => event.currentTarget.blur()}
                   onChange={(event) =>
-                    onChange(keys[index], parseSpreadsheetNumber(event.currentTarget.value))
+                    onChange(keys[index], nullableNumber(event.currentTarget.value))
                   }
-                  onKeyDown={moveSpreadsheetFocus}
+                  onKeyDown={(event) => {
+                    const offset =
+                      event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0;
+                    if (!offset) return;
+                    const target = event.currentTarget
+                      .closest("table")
+                      ?.querySelector<HTMLInputElement>(`[data-grid-column="${index + offset}"]`);
+                    if (!target) return;
+                    event.preventDefault();
+                    target.focus();
+                    target.select();
+                  }}
                   onPaste={(event) => {
                     const text = event.clipboardData.getData("text");
                     if (!text.includes("\t") && !text.includes("\n")) return;
@@ -1870,6 +2016,28 @@ function CategoricalCountsTable({
 }) {
   const rows = rowsFor(draft, experiment.id);
   const categories = readout.categories ?? [];
+  const move = (event: KeyboardEvent<HTMLInputElement>, rowIndex: number, columnIndex: number) => {
+    const delta =
+      event.key === "ArrowUp"
+        ? [-1, 0]
+        : event.key === "ArrowDown" || event.key === "Enter"
+          ? [1, 0]
+          : event.key === "ArrowLeft"
+            ? [0, -1]
+            : event.key === "ArrowRight"
+              ? [0, 1]
+              : null;
+    if (!delta) return;
+    const target = event.currentTarget
+      .closest("table")
+      ?.querySelector<HTMLInputElement>(
+        `[data-grid-row="${rowIndex + delta[0]}"][data-grid-column="${columnIndex + delta[1]}"]`,
+      );
+    if (!target) return;
+    event.preventDefault();
+    target.focus();
+    target.select();
+  };
   const paste = (startRow: number, startColumn: number, text: string) => {
     proportionPasteRows(text).forEach((tokens, rowOffset) => {
       const row = rows[startRow + rowOffset];
@@ -1937,16 +2105,15 @@ function CategoricalCountsTable({
                     <input
                       aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の${category.label}数`}
                       className="experiment-workspace-number-input"
-                      data-spreadsheet-cell="true"
-                      data-spreadsheet-row={rowIndex}
-                      data-spreadsheet-column={columnIndex}
+                      data-grid-row={rowIndex}
+                      data-grid-column={columnIndex}
                       min="0"
                       step="1"
                       type="number"
                       value={cell.counts[category.id] ?? ""}
                       onFocus={(event) => event.currentTarget.select()}
                       onWheel={(event) => event.currentTarget.blur()}
-                      onKeyDown={moveSpreadsheetFocus}
+                      onKeyDown={(event) => move(event, rowIndex, columnIndex)}
                       onChange={(event) =>
                         onChange(key, category.id, countValue(event.currentTarget.value))
                       }
@@ -2038,6 +2205,28 @@ function WbRatioTable({
     if (field.endsWith("Background")) return `${bandLabel} Background`;
     return `${bandLabel} Area`;
   };
+  const move = (event: KeyboardEvent<HTMLInputElement>, rowIndex: number, columnIndex: number) => {
+    const delta =
+      event.key === "ArrowUp"
+        ? [-1, 0]
+        : event.key === "ArrowDown" || event.key === "Enter"
+          ? [1, 0]
+          : event.key === "ArrowLeft"
+            ? [0, -1]
+            : event.key === "ArrowRight"
+              ? [0, 1]
+              : null;
+    if (!delta) return;
+    const target = event.currentTarget
+      .closest("table")
+      ?.querySelector<HTMLInputElement>(
+        `[data-grid-row="${rowIndex + delta[0]}"][data-grid-column="${columnIndex + delta[1]}"]`,
+      );
+    if (!target) return;
+    event.preventDefault();
+    target.focus();
+    target.select();
+  };
   const paste = (startRow: number, startColumn: number, text: string) => {
     proportionPasteRows(text).forEach((tokens, rowOffset) => {
       const row = rows[startRow + rowOffset];
@@ -2051,7 +2240,7 @@ function WbRatioTable({
       tokens.forEach((token, columnOffset) => {
         const field = editableFields[startColumn + columnOffset];
         if (!field || !token.trim()) return;
-        const value = parseSpreadsheetNumber(token);
+        const value = nullableNumber(token);
         if (value === null || value < 0) return;
         onChange(key, field, value);
       });
@@ -2158,18 +2347,17 @@ function WbRatioTable({
                     <input
                       aria-label={`${row.conditionLabel}${rowTimeQualifier(row, orderedAxisUnit(draft.time))}の${fieldLabel(field)}`}
                       className="experiment-workspace-number-input"
-                      data-spreadsheet-cell="true"
-                      data-spreadsheet-column={columnIndex}
-                      data-spreadsheet-row={rowIndex}
+                      data-grid-column={columnIndex}
+                      data-grid-row={rowIndex}
                       inputMode="decimal"
                       min="0"
                       type="number"
                       value={wbEditableValue(cell, field) ?? ""}
                       onFocus={(event) => event.currentTarget.select()}
                       onWheel={(event) => event.currentTarget.blur()}
-                      onKeyDown={moveSpreadsheetFocus}
+                      onKeyDown={(event) => move(event, rowIndex, columnIndex)}
                       onChange={(event) => {
-                        const value = parseSpreadsheetNumber(event.currentTarget.value);
+                        const value = nullableNumber(event.currentTarget.value);
                         onChange(key, field, value !== null && value >= 0 ? value : null);
                       }}
                       onPaste={(event) => {
@@ -2298,12 +2486,12 @@ function ExperimentPanel({
   experiment,
   cells,
   cellDisplayTexts,
+  onDisplayTextChange,
   onExperimentChange,
   onProportionChange,
   onProportionPaste,
   onNestedSelect,
   onNestedScalarChange,
-  onNestedDisplayTextChange,
   onCategoricalChange,
   onWbRatioChange,
   onToggleNotPlanned,
@@ -2314,19 +2502,19 @@ function ExperimentPanel({
   experiment: ExperimentSessionDraft;
   cells: ExperimentCellMap;
   cellDisplayTexts: Readonly<Record<string, string>>;
+  onDisplayTextChange: (key: string, text: string | null) => void;
   onExperimentChange: (patch: Partial<ExperimentSessionDraft>) => void;
   onProportionChange: (key: string, field: "positive" | "eligible", value: number | null) => void;
   onProportionPaste: (request: ProportionPasteRequest) => string;
   onNestedSelect: (key: string) => void;
   onNestedScalarChange: (key: string, value: number | null) => void;
-  onNestedDisplayTextChange: (key: string, text: string | null) => void;
   onCategoricalChange: (key: string, categoryId: string, value: number | null) => void;
   onWbRatioChange: (key: string, field: WbEditableField, value: number | null) => void;
   onToggleNotPlanned: (key: string) => void;
   onRemove: () => void;
   canRemove: boolean;
 }) {
-  const sharedSource = sharedSourceConditionTopology(draft);
+  const sharedSource = sharedSourceTopology(draft);
   return (
     <section
       className="experiment-workspace-panel"
@@ -2430,8 +2618,8 @@ function ExperimentPanel({
               readout={readout}
               cells={cells}
               cellDisplayTexts={cellDisplayTexts}
+              onDisplayTextChange={onDisplayTextChange}
               onChange={onNestedScalarChange}
-              onDisplayTextChange={onNestedDisplayTextChange}
               onToggleNotPlanned={onToggleNotPlanned}
             />
           ) : (
@@ -2462,6 +2650,7 @@ export function ExperimentWorkspace({
   analysisAvailable = true,
   saveProject,
   onReuseDesign,
+  onCreateFromConditions,
   onSaveFavorite,
   favoriteGraphDefaults = [],
   onDirtyChange,
@@ -2469,12 +2658,9 @@ export function ExperimentWorkspace({
   onRequestExit,
   onRegisterSaveHandler,
   rootRef,
-  fiveMinuteGuide = false,
 }: ExperimentWorkspaceProps) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [draft, setDraft] = useState<ExperimentSetDraft>(initialDraft);
-  const sharedSource = sharedSourceConditionTopology(draft);
+  const sharedSource = sharedSourceTopology(draft);
   const [cells, setCells] = useState<ExperimentCellMap>(() => ({
     ...createCellsForDraft(initialDraft),
     ...initialCells,
@@ -2482,6 +2668,16 @@ export function ExperimentWorkspace({
   const [cellDisplayTexts, setCellDisplayTexts] = useState<Record<string, string>>(() => ({
     ...initialCellDisplayTexts,
   }));
+  const updateCellDisplayText = (key: string, text: string | null) =>
+    setCellDisplayTexts((previous) => {
+      if (text === null) {
+        if (!(key in previous)) return previous;
+        const next = { ...previous };
+        delete next[key];
+        return next;
+      }
+      return previous[key] === text ? previous : { ...previous, [key]: text };
+    });
   const dataEntryRecordedRef = useRef(
     Object.values({ ...createCellsForDraft(initialDraft), ...initialCells }).some(
       cellHasEnteredValue,
@@ -2560,8 +2756,7 @@ export function ExperimentWorkspace({
           importedProvenance,
         );
         const unchangedObservations =
-          stableWorkspaceCoordinate(snapshot.canonicalObservations) ===
-          stableWorkspaceCoordinate(observations);
+          stableCoordinate(snapshot.canonicalObservations) === stableCoordinate(observations);
         if (sameIngress && unchangedObservations) return;
         throw new Error(
           "この入力表にはすでにファイル由来のデータがあります。複数のファイルを同じ入力表へ統合する機能はまだ利用できません。既存の値と元ファイル情報は変更していません。",
@@ -2593,7 +2788,6 @@ export function ExperimentWorkspace({
           rebuilt.diagnostics.join(" / ") || "入力した値を実験ワークスペースへ反映できません。",
         );
       }
-      const rebuiltDraft = rebuilt.draft;
       const previousSessions = draft.experiments;
       const previousSessionsByIdentity = new Map(
         previousSessions.map((experiment) => [experiment.label, experiment] as const),
@@ -2616,7 +2810,7 @@ export function ExperimentWorkspace({
           }
         });
       }
-      const rebuiltExperiments = rebuiltDraft.experiments.map((experiment) => ({
+      const rebuiltExperiments = rebuilt.draft.experiments.map((experiment) => ({
         experiment,
         previous:
           snapshot.contract.matching.kind === "matched"
@@ -2625,12 +2819,11 @@ export function ExperimentWorkspace({
               )
             : undefined,
       }));
-      const reservedStableUnitIds = new Set([
-        ...previousSessions.map(({ stableUnitId, id }) => stableUnitId ?? id),
-        ...rebuiltExperiments.flatMap(({ experiment, previous }) =>
+      const reservedStableUnitIds = new Set(
+        rebuiltExperiments.flatMap(({ experiment, previous }) =>
           previous ? [previous.stableUnitId ?? experiment.stableUnitId] : [],
         ),
-      ]);
+      );
       let nextStableUnitOrdinal = 1;
       const nextAvailableStableUnitId = (preferred?: string) => {
         if (preferred && !reservedStableUnitIds.has(preferred)) {
@@ -2646,78 +2839,55 @@ export function ExperimentWorkspace({
         nextStableUnitOrdinal += 1;
         return candidate;
       };
-      const preservesExplicitIndependentSessions =
-        ["independent", "none"].includes(snapshot.contract.matching.kind) &&
-        observations.some(({ experimentSessionId }) => Boolean(experimentSessionId));
-      const observedExplicitSessionIds = [
-        ...new Set(
-          observations.flatMap(({ experimentSessionId }) =>
-            experimentSessionId ? [experimentSessionId] : [],
-          ),
-        ),
-      ];
-      const furthestWorksheetRow = observedExplicitSessionIds.reduce((furthest, id) => {
-        const match = /^experiment\.worksheet\.(\d+)$/.exec(id);
-        return Math.max(furthest, match ? Number(match[1]) : 0);
-      }, 0);
-      const worksheetSessionIds = Array.from(
-        { length: furthestWorksheetRow },
-        (_, index) => previousSessions[index]?.id ?? `experiment.worksheet.${index + 1}`,
-      );
-      const explicitSessionIds = [
-        ...new Set([...worksheetSessionIds, ...observedExplicitSessionIds]),
-      ];
-      const previousSessionIds = new Set(previousSessions.map(({ id }) => id));
-      const addedExplicitSessions = explicitSessionIds
-        .filter((id) => !previousSessionIds.has(id))
-        .map((id) => {
-          const worksheetRowIndex = explicitSessionIds.indexOf(id);
-          const template = rebuiltDraft.experiments.find((experiment) => experiment.id === id) ?? {
-            id,
-            label: `入力行 ${worksheetRowIndex + 1}`,
-            date: "",
-            note: "",
-            stableUnitId: id,
-          };
-          return {
-            ...template,
-            id,
-            label: /^experiment\.worksheet\.\d+$/.test(id)
-              ? `入力行 ${worksheetRowIndex + 1}`
-              : template.label,
-            sessionId: id,
-            stableUnitId: nextAvailableStableUnitId(template.stableUnitId),
-          };
-        });
-      const nextExperiments = preservesExplicitIndependentSessions
-        ? [...previousSessions, ...addedExplicitSessions]
-        : rebuiltExperiments.map(({ experiment, previous }) => {
-            return previous
-              ? {
-                  ...experiment,
-                  // Researcher-facing matching identities live in canonical observations
-                  // and labels. The internal stable ID remains opaque and unchanged when
-                  // the researcher corrects that label.
-                  label: experiment.label,
-                  stableUnitId: previous.stableUnitId ?? experiment.stableUnitId,
-                  sessionId: previous.sessionId,
-                  date: previous.date,
-                  note: previous.note,
-                }
-              : {
-                  ...experiment,
-                  stableUnitId: nextAvailableStableUnitId(experiment.stableUnitId),
-                };
-          });
       setDraft({
-        ...rebuiltDraft,
-        experiments: nextExperiments,
+        ...rebuilt.draft,
+        // Editing canonical values rebuilds their projection, not the researcher's
+        // explicit analysis/normalization plan. The structure contract is unchanged.
+        analysisIntent: draft.analysisIntent,
+        readouts: rebuilt.draft.readouts.map((readout) => ({
+          ...readout,
+          withinExperimentNormalization: draft.readouts.find(
+            (previous) => previous.id === readout.id && previous.shape === readout.shape,
+          )?.withinExperimentNormalization,
+        })),
+        adaptiveInput: rebuilt.draft.adaptiveInput
+          ? {
+              ...rebuilt.draft.adaptiveInput,
+              ...(!importedProvenance && snapshot.numericPresentation
+                ? { numericPresentation: snapshot.numericPresentation }
+                : {}),
+            }
+          : undefined,
+        experiments: rebuiltExperiments.map(({ experiment, previous }) => {
+          return previous
+            ? {
+                ...experiment,
+                // Researcher-facing matching identities live in canonical observations
+                // and labels. The internal stable ID remains opaque and unchanged when
+                // the researcher corrects that label.
+                label: experiment.label,
+                stableUnitId: previous.stableUnitId ?? experiment.stableUnitId,
+                sessionId: previous.sessionId,
+                date: previous.date,
+                note: previous.note,
+              }
+            : {
+                ...experiment,
+                stableUnitId: nextAvailableStableUnitId(experiment.stableUnitId),
+              };
+        }),
         entrySourceHistory: draft.entrySourceHistory,
       });
       setCells(rebuilt.cells);
       setActiveTab("overview");
     },
-    [draft.adaptiveInput, draft.entrySourceHistory, draft.experiments],
+    [
+      draft.adaptiveInput,
+      draft.entrySourceHistory,
+      draft.experiments,
+      draft.analysisIntent,
+      draft.readouts,
+    ],
   );
   const replaceAdaptiveFileImport = useCallback(
     ({ observations, mapping, rawLineage }: CanonicalWorksheetFileCommit) => {
@@ -2748,31 +2918,111 @@ export function ExperimentWorkspace({
   );
   const [showLayerBuilder, setShowLayerBuilder] = useState(false);
   const [graphCreateMessage, setGraphCreateMessage] = useState<string | null>(null);
-  const [panelExportFeedback, setPanelExportFeedback] = useState<Readonly<{
-    kind: "success" | "error";
-    text: string;
-  }> | null>(null);
+  const panelExportPendingRef = useRef(false);
+  const [panelExportPending, setPanelExportPending] = useState(false);
+  const [panelExportMessage, setPanelExportMessage] = useState<string | null>(null);
   const [graphs, setGraphs] = useState<WorkspaceGraphState[]>(() => [...initialGraphs]);
   const [activeGraphId, setActiveGraphId] = useState<string | null>(null);
   const [renamingGraphId, setRenamingGraphId] = useState<string | null>(null);
   const [graphRenameDraft, setGraphRenameDraft] = useState("");
   const [savedProject, setSavedProject] = useState<OpenedProject | undefined>(initialProject);
+  const projectIdentityRef = useRef<WorkspaceProjectIdentity | undefined>(
+    initialProject
+      ? {
+          projectId: initialProject.state.metadata.projectId,
+          createdAt: initialProject.state.metadata.createdAt,
+        }
+      : undefined,
+  );
   const [structureRevisionSession, setStructureRevisionSession] =
     useState<AdaptiveStructureRevisionSession | null>(null);
   const [structureRevisionError, setStructureRevisionError] = useState<string | null>(null);
+  const [canCreateFromConditions, setCanCreateFromConditions] = useState(false);
   const structureRevisionTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const structureRevisionReturnTargetRef = useRef<"navigation" | "overview">("navigation");
   const restoreStructureRevisionFocusRef = useRef(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [analysisInvalidationMessage, setAnalysisInvalidationMessage] = useState<string | null>(
     null,
   );
-  const scientificSourceSnapshot = JSON.stringify({ draft, cells });
+  const scientificDraft = draft.adaptiveInput
+    ? (() => {
+        const { numericPresentation: _presentation, ...adaptiveInput } = draft.adaptiveInput;
+        return { ...draft, adaptiveInput };
+      })()
+    : draft;
+  const scientificSourceSnapshot = stableCoordinate({ draft: scientificDraft, cells });
   const previousScientificSourceRef = useRef(scientificSourceSnapshot);
-  const currentSnapshot = JSON.stringify({ draft, cells, graphs, dataViewMode, cellDisplayTexts });
+  const currentSnapshot = stableCoordinate({
+    draft,
+    cells,
+    graphs,
+    dataViewMode,
+    cellDisplayTexts,
+  });
+  const latestSaveSnapshotRef = useRef({ currentSnapshot, scientificSourceSnapshot, graphs });
+  latestSaveSnapshotRef.current = { currentSnapshot, scientificSourceSnapshot, graphs };
   const savedSnapshotRef = useRef(initialProject ? currentSnapshot : "");
   const graphWorkspaceRef = useRef<HTMLDivElement | null>(null);
+  const workspaceRootRef = useRef<HTMLDivElement | null>(null);
+  const lastDataFocusRef = useRef<HTMLElement | null>(null);
+  const dataPositionRef = useRef<{
+    windowX: number;
+    windowY: number;
+    elements: { node: HTMLElement; top: number; left: number }[];
+  } | null>(null);
+  const rememberDataPosition = () => {
+    if (showGraph) return;
+    const root = workspaceRootRef.current;
+    const elements: HTMLElement[] = root
+      ? Array.from(
+          root.querySelectorAll<HTMLElement>(
+            ".experiment-workspace-body, .adaptive-canonical-spreadsheet__table-wrap, .data-table-scroll",
+          ),
+        )
+      : [];
+    let parent = root?.parentElement;
+    while (parent) {
+      elements.push(parent);
+      parent = parent.parentElement;
+    }
+    dataPositionRef.current = {
+      windowX: window.scrollX,
+      windowY: window.scrollY,
+      elements: elements.map((node) => ({ node, top: node.scrollTop, left: node.scrollLeft })),
+    };
+  };
+  useLayoutEffect(() => {
+    if (showGraph || !dataPositionRef.current) return;
+    const saved = dataPositionRef.current;
+    dataPositionRef.current = null;
+    for (const { node, top, left } of saved.elements) {
+      if (node.isConnected) {
+        node.scrollTop = top;
+        node.scrollLeft = left;
+      }
+    }
+    window.scrollTo(saved.windowX, saved.windowY);
+    if (lastDataFocusRef.current?.isConnected)
+      lastDataFocusRef.current.focus({ preventScroll: true });
+  }, [showGraph]);
+  const attachWorkspaceRoot = useCallback(
+    (node: HTMLDivElement | null) => {
+      workspaceRootRef.current = node;
+      if (typeof rootRef === "function") return rootRef(node);
+      if (rootRef) rootRef.current = node;
+    },
+    [rootRef],
+  );
+  const focusInvalidCanonicalCell = useCallback(() => {
+    const invalidCell = workspaceRootRef.current?.querySelector<HTMLInputElement>(
+      '.adaptive-canonical-spreadsheet input[aria-invalid="true"]',
+    );
+    if (!invalidCell) return false;
+    invalidCell.focus({ preventScroll: true });
+    invalidCell.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    return true;
+  }, []);
   const graphChoiceDialogRef = useRef<HTMLElement | null>(null);
   const graphChoiceReturnFocusRef = useRef<HTMLElement | null>(null);
   const focusCreatedGraphRef = useRef(false);
@@ -2781,12 +3031,7 @@ export function ExperimentWorkspace({
   useEffect(() => {
     if (structureRevisionSession || !restoreStructureRevisionFocusRef.current) return;
     restoreStructureRevisionFocusRef.current = false;
-    const returnTarget = document.getElementById(
-      structureRevisionReturnTargetRef.current === "overview"
-        ? "experiment-workspace-revise-overview"
-        : "experiment-workspace-revise-navigation",
-    );
-    returnTarget?.focus();
+    structureRevisionTriggerRef.current?.focus();
   }, [structureRevisionSession]);
 
   useEffect(() => {
@@ -2825,21 +3070,12 @@ export function ExperimentWorkspace({
         onRequestExit({ actionLabel, proceed });
         return;
       }
-      if (
-        window.confirm(
-          localizedText(
-            locale,
-            "未保存の変更があります。この実験を閉じて破棄しますか？",
-            "This experiment has unsaved changes. Close it and discard them?",
-          ),
-        )
-      )
-        proceed();
+      if (window.confirm("未保存の変更があります。この実験を閉じて破棄しますか？")) proceed();
     },
-    [isDirty, locale, onRequestExit],
+    [isDirty, onRequestExit],
   );
 
-  const requestBack = () => requestExit(localizedText(locale, "前の画面に戻る", "go back"), onBack);
+  const requestBack = () => requestExit("前の画面に戻る", onBack);
 
   useEffect(() => {
     if (!showGraphTypeChoice) {
@@ -2887,7 +3123,9 @@ export function ExperimentWorkspace({
     previousScientificSourceRef.current = scientificSourceSnapshot;
     const hadAnalysis = graphs.some((graph) => Boolean(graph.analysis));
     if (hadAnalysis) {
-      setAnalysisInvalidationMessage(scientificSourceInvalidatedMessage(locale));
+      setAnalysisInvalidationMessage(
+        "データまたは実験単位の構造が変わったため、以前の解析結果・p値注釈・Methodsを外しました。グラフの見た目は保持しています。",
+      );
       setGraphs((current) =>
         current.map((graph) =>
           graph.analysis
@@ -2901,13 +3139,7 @@ export function ExperimentWorkspace({
         ),
       );
     }
-  }, [graphs, locale, scientificSourceSnapshot]);
-
-  useEffect(() => {
-    if (!analysisInvalidationMessage) return;
-    const timer = window.setTimeout(() => setAnalysisInvalidationMessage(null), 6000);
-    return () => window.clearTimeout(timer);
-  }, [analysisInvalidationMessage]);
+  }, [graphs, scientificSourceSnapshot]);
 
   useEffect(() => {
     if (!analysisCorrectionFocus || showGraph) return;
@@ -3077,19 +3309,6 @@ export function ExperimentWorkspace({
     }));
   };
 
-  const updateNestedDisplayText = (key: string, text: string | null) => {
-    setCellDisplayTexts((previous) => {
-      if (text === null) {
-        if (!(key in previous)) return previous;
-        const next = { ...previous };
-        delete next[key];
-        return next;
-      }
-      if (previous[key] === text) return previous;
-      return { ...previous, [key]: text };
-    });
-  };
-
   const applyOverviewScalarPaste = ({
     readoutId,
     startExperiment,
@@ -3122,14 +3341,13 @@ export function ExperimentWorkspace({
           };
         }
         const trimmed = token.trim();
-        const parsed = parseOptionalSpreadsheetNumber(trimmed);
-        if (parsed.kind === "invalid") {
+        const value = trimmed === "" ? null : Number(trimmed);
+        if (value !== null && !Number.isFinite(value)) {
           return {
             accepted: false,
             message: `数値として読めない値「${trimmed}」があります。既存の値は変更していません。`,
           };
         }
-        const value = parsed.kind === "value" ? parsed.value : null;
         const key = experimentCellKey({
           experimentId: experiment.id,
           conditionId: condition.id,
@@ -3531,7 +3749,7 @@ export function ExperimentWorkspace({
     );
     const graph: WorkspaceGraphState = {
       id: `graph.${nextIndex}`,
-      displayName: t(`グラフ ${nextIndex}`, `Graph ${nextIndex}`),
+      displayName: `グラフ ${nextIndex}`,
       analysisRunId: null,
       selectedReadoutId: selectedSourceReadout?.id ?? "readout.1",
       sourceMode: selectedCreateSourceMode,
@@ -3635,9 +3853,7 @@ export function ExperimentWorkspace({
       summaryVisible: initialLayers.overall,
     });
     setActiveGraphId(graph.id);
-    setGraphCreateMessage(
-      t(`${graph.displayName}を作成しました。`, `Created ${graph.displayName}.`),
-    );
+    setGraphCreateMessage(`${graph.displayName}を作成しました。`);
     focusCreatedGraphRef.current = true;
     setGraphWorkspaceMode("graph");
     setShowGraph(true);
@@ -3652,6 +3868,11 @@ export function ExperimentWorkspace({
   }, [activeTab, graphWorkspaceMode, showGraph]);
 
   const openGraph = () => {
+    rememberDataPosition();
+    if (focusInvalidCanonicalCell()) {
+      setGraphCreateMessage("入力表のエラーを修正してからグラフを作成してください。");
+      return;
+    }
     graphChoiceReturnFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setGraphCreateMessage(null);
@@ -3676,6 +3897,10 @@ export function ExperimentWorkspace({
     const revealGraph = () => {
       const graphNode = graphWorkspaceRef.current;
       if (!graphNode) return;
+      // Delayed layout settling must not blur an editor the user already
+      // entered (for example naming a newly created graph).
+      if (document.activeElement !== graphNode && graphNode.contains(document.activeElement))
+        return;
       graphNode.scrollIntoView?.({ behavior: "auto", block: "start" });
       let ancestor = graphNode.parentElement;
       while (ancestor) {
@@ -3714,6 +3939,7 @@ export function ExperimentWorkspace({
 
   const openExistingGraphs = () => {
     if (graphs.length === 0) return;
+    rememberDataPosition();
     setActiveGraphId((current) => current ?? graphs[graphs.length - 1].id);
     setGraphWorkspaceMode("graph");
     setShowGraph(true);
@@ -3721,6 +3947,16 @@ export function ExperimentWorkspace({
 
   const openStatistics = () => {
     if (graphs.length === 0) return;
+    if (focusInvalidCanonicalCell()) {
+      setGraphCreateMessage("入力表のエラーを修正してから統計へ進んでください。");
+      if (showGraph) {
+        dataPositionRef.current = null;
+        setShowGraph(false);
+        requestAnimationFrame(() => focusInvalidCanonicalCell());
+      }
+      return;
+    }
+    rememberDataPosition();
     setActiveGraphId((current) => current ?? graphs[graphs.length - 1].id);
     setGraphWorkspaceMode("statistics");
     setShowGraph(true);
@@ -3733,12 +3969,10 @@ export function ExperimentWorkspace({
   };
 
   const commitGraphRename = (graphId: string) => {
-    const label = graphRenameDraft.trim() || t("名称未設定", "Untitled");
+    const label = graphRenameDraft.trim() || "名称未設定";
     setGraphs((current) =>
       current.map((graph) =>
-        graph.id === graphId
-          ? { ...graph, displayName: label || t("名称未設定", "Untitled") }
-          : graph,
+        graph.id === graphId ? { ...graph, displayName: label || "名称未設定" } : graph,
       ),
     );
     setRenamingGraphId(null);
@@ -3749,55 +3983,15 @@ export function ExperimentWorkspace({
     setGraphRenameDraft("");
   };
 
-  const exportGraphPanel = async () => {
-    if (graphs.length < 2 || !graphWorkspaceRef.current) return;
-    setPanelExportFeedback(null);
-    try {
-      const result = await exportWorkspaceGraphPanel({
-        root: graphWorkspaceRef.current,
-        graphs,
-        projectTitle: draft.name,
-      });
-      if (result.status === "saved") {
-        setPanelExportFeedback({
-          kind: "success",
-          text: t(
-            "保存済みGraphを2列のパネルSVGにまとめました。",
-            "Saved the Graphs as a two-column panel SVG.",
-          ),
-        });
-      } else if (result.status === "failed") {
-        recordDiagnosticError("GRAPH_EXPORT_FAILED", result.error);
-        setPanelExportFeedback({
-          kind: "error",
-          text: t(
-            "パネルSVGを保存できませんでした。元のGraphは変更されていません。",
-            "Could not save the panel SVG. The source Graphs are unchanged.",
-          ),
-        });
-      }
-    } catch (error) {
-      recordDiagnosticError("GRAPH_EXPORT_FAILED", error);
-      setPanelExportFeedback({
-        kind: "error",
-        text: t(
-          "すべてのGraphの表示が完了してから、もう一度パネルを書き出してください。",
-          "Wait for every Graph to finish rendering, then export the panel again.",
-        ),
-      });
-    }
-  };
-
   const closeAdaptiveStructureRevision = () => {
+    setCanCreateFromConditions(false);
     setStructureRevisionError(null);
     restoreStructureRevisionFocusRef.current = true;
     setStructureRevisionSession(null);
   };
 
-  const beginAdaptiveStructureRevision = (trigger?: HTMLButtonElement) => {
+  const beginAdaptiveStructureRevision = () => {
     if (!draft.adaptiveInput) return;
-    structureRevisionReturnTargetRef.current =
-      trigger?.id === "experiment-workspace-revise-overview" ? "overview" : "navigation";
     try {
       // Capture the live cell edits into a lossless canonical snapshot without
       // mutating the workspace that must remain recoverable on Cancel.
@@ -3813,7 +4007,7 @@ export function ExperimentWorkspace({
         retainedSetup ? { contract: sourceContract, ...retainedSetup } : sourceContract,
       );
       if (initial.status === "stopped") {
-        setAnalysisInvalidationMessage(structureRevisionStoppedMessage(locale, initial.reason));
+        setAnalysisInvalidationMessage(initial.reason);
         return;
       }
       setStructureRevisionError(null);
@@ -3822,11 +4016,7 @@ export function ExperimentWorkspace({
       setAnalysisInvalidationMessage(
         actionErrorMessage(
           error,
-          t(
-            "現在の測定値を安全に保持できないため、実験の組み立て編集を開始しませんでした。",
-            "Experiment structure editing was not started because the current measurements could not be retained safely.",
-          ),
-          locale,
+          "現在の測定値を安全に保持できないため、実験の組み立て編集を開始しませんでした。",
         ),
       );
     }
@@ -3834,14 +4024,7 @@ export function ExperimentWorkspace({
 
   const handleAnalysisCorrection = (correction: DraftAnalysisCorrection) => {
     setShowGraph(false);
-    setAnalysisInvalidationMessage(
-      analysisCorrectionNavigationMessage(
-        locale,
-        correction.code,
-        correction.title,
-        correction.message,
-      ),
-    );
+    setAnalysisInvalidationMessage(`${correction.title}。${correction.message}`);
     if (correction.target === "experiment_structure") {
       if (draft.adaptiveInput) beginAdaptiveStructureRevision();
       else setActiveTab("overview");
@@ -3862,6 +4045,7 @@ export function ExperimentWorkspace({
   };
 
   const applyAdaptiveStructureRevision = (result: BiologicalExperimentSetupResult): boolean => {
+    setCanCreateFromConditions(false);
     const session = structureRevisionSession;
     const sourceSnapshot = session?.sourceDraft.adaptiveInput;
     if (!session || !sourceSnapshot) return false;
@@ -3880,15 +4064,36 @@ export function ExperimentWorkspace({
       mapping: sourceSnapshot.mapping,
     });
     if (compatibility.status === "stopped") {
+      setCanCreateFromConditions(true);
+      const affectedGroups =
+        compatibility.code === "OBSERVED_FACTOR_LEVEL_REMOVED"
+          ? session.prefill.originalContract.factors.flatMap((factor) => {
+              const nextFactor = result.contract.factors.find(({ key }) => key === factor.key);
+              return factor.levels
+                .filter(
+                  (level) =>
+                    !nextFactor?.levels.includes(level) &&
+                    sourceSnapshot.canonicalObservations.some(
+                      (observation) => observation.factors[factor.key] === level,
+                    ),
+                )
+                .map((level) => `「${level}」`);
+            })
+          : [];
+      const affectedGroupNotice = affectedGroups.length
+        ? ` 入力済みの群: ${affectedGroups.join("、")}。群名を別の値に書き換えても、入力済みデータの群名は自動で置き換わりません。元の群名を残して修正するか、「変更せず戻る」を選んでください。`
+        : "";
       setStructureRevisionError(
-        structureRevisionErrorMessage(locale, "compatibility", compatibility.reason),
+        `${compatibility.reason}${affectedGroupNotice} 入力済みデータは変更されていません。「変更せず戻る」で元のワークスペースへ戻れます。`,
       );
       return false;
     }
 
     const presentation = createBiologicalSetupPresentation(result);
     if (presentation.status === "stopped") {
-      setStructureRevisionError(structureRevisionErrorMessage(locale, "presentation"));
+      setStructureRevisionError(
+        "変更後の条件表と実験構造の対応を確認できません。入力済みデータは変更されていません。",
+      );
       return false;
     }
 
@@ -3901,7 +4106,9 @@ export function ExperimentWorkspace({
       biologicalSetup: presentation.presentation,
     });
     if (rebuilt.status !== "ready" || !rebuilt.draft) {
-      setStructureRevisionError(structureRevisionErrorMessage(locale, "rebuild"));
+      setStructureRevisionError(
+        "変更後の構造へ既存データを安全に対応づけられません。入力済みデータは変更されていません。",
+      );
       return false;
     }
     const rebuiltSnapshot = rebuilt.draft.adaptiveInput;
@@ -3912,7 +4119,9 @@ export function ExperimentWorkspace({
       JSON.stringify(rebuiltSnapshot.mapping) !== JSON.stringify(sourceSnapshot.mapping) ||
       JSON.stringify(rebuiltSnapshot.rawLineage) !== JSON.stringify(sourceSnapshot.rawLineage)
     ) {
-      setStructureRevisionError(structureRevisionErrorMessage(locale, "lineage"));
+      setStructureRevisionError(
+        "既存データまたは元データ履歴が変わる可能性を検出したため、変更を適用しませんでした。",
+      );
       return false;
     }
 
@@ -3930,39 +4139,79 @@ export function ExperimentWorkspace({
     setShowGraph(false);
     setActiveGraphId(null);
     closeAdaptiveStructureRevision();
-    setAnalysisInvalidationMessage(structureRevisionAppliedMessage(locale, graphCoordinatesStable));
+    setAnalysisInvalidationMessage(
+      graphCoordinatesStable
+        ? "実験の組み立てを更新しました。測定値とGraphの外観は保持し、以前の解析結果・p値注釈・Methodsは外しました。"
+        : "実験の組み立てを更新しました。測定値は保持しましたが、条件の参照を一意に保てないGraphは安全のためワークスペースから外しました。保存済みprojectの旧履歴は残ります。",
+    );
     return true;
   };
+
+  const buildCurrentProjectState = useCallback(() => {
+    const state = createExperimentWorkspaceProject({
+      draft,
+      cells,
+      graphs,
+      dataViewMode,
+      cellDisplayTexts,
+      existingState: savedProject?.state,
+      newProjectIdentity: projectIdentityRef.current,
+    });
+    // Keep only identity after construction. Cancel does not advance the saved
+    // baseline, revision/history state, destination or clean snapshot.
+    projectIdentityRef.current ??= {
+      projectId: state.metadata.projectId,
+      createdAt: state.metadata.createdAt,
+    };
+    return state;
+  }, [cells, cellDisplayTexts, dataViewMode, draft, graphs, savedProject]);
 
   const handleSave = useCallback(
     async (saveAs = false) => {
       if (!saveProject) return false;
+      if (focusInvalidCanonicalCell()) {
+        setSaveStatus("error");
+        setSaveMessage("入力表のエラーを修正してから保存してください。");
+        return false;
+      }
       setSaveStatus("saving");
       setSaveMessage(null);
       try {
-        const state = createExperimentWorkspaceProject({
-          draft,
-          cells,
-          graphs,
-          dataViewMode,
-          cellDisplayTexts,
-          existingState: savedProject?.state,
-        });
+        const state = buildCurrentProjectState();
         const saved = await saveProject(state, saveAs ? undefined : savedProject?.target);
         if (!saved) {
           setSaveStatus("idle");
           return false;
         }
+        const latest = latestSaveSnapshotRef.current;
+        const savedGraphs = synchronizeSavedWorkspaceGraphAnalyses({
+          currentGraphs: graphs,
+          submittedGraphs: graphs,
+          savedState: saved.state,
+        });
+        const synchronizedGraphs =
+          latest.currentSnapshot === currentSnapshot
+            ? savedGraphs
+            : latest.scientificSourceSnapshot === scientificSourceSnapshot
+              ? synchronizeSavedWorkspaceGraphAnalyses({
+                  currentGraphs: latest.graphs,
+                  submittedGraphs: graphs,
+                  savedState: saved.state,
+                })
+              : latest.graphs;
         setSavedProject(saved);
-        savedSnapshotRef.current = currentSnapshot;
+        setGraphs(synchronizedGraphs);
+        // Only a completed save may adopt canonical analysis references. If a
+        // user edited meanwhile, keep that edit dirty and keep its live content.
+        savedSnapshotRef.current = stableCoordinate({
+          draft,
+          cells,
+          graphs: savedGraphs,
+          dataViewMode,
+          cellDisplayTexts,
+        });
         setSaveStatus("saved");
-        setSaveMessage(
-          localizedText(
-            locale,
-            "プロジェクトを保存しました。次回もこの入力画面で再編集できます。",
-            "Project saved. You can reopen it and continue editing this worksheet.",
-          ),
-        );
+        setSaveMessage("プロジェクトを保存しました。次回もこの入力画面で再編集できます。");
         return true;
       } catch (error) {
         // Project construction can fail before the native save bridge is
@@ -3972,29 +4221,25 @@ export function ExperimentWorkspace({
         recordDiagnosticError("PROJECT_SAVE_FAILED", error);
         recordDiagnosticEvent("project_save_failed", { stage: "unknown" });
         setSaveStatus("error");
-        setSaveMessage(
-          actionErrorMessage(
-            error,
-            t("プロジェクトを保存できませんでした。", "The project could not be saved."),
-            locale,
-          ),
-        );
+        setSaveMessage(actionErrorMessage(error, "プロジェクトを保存できませんでした。"));
         return false;
       }
     },
     [
+      buildCurrentProjectState,
       cellDisplayTexts,
+      focusInvalidCanonicalCell,
       cells,
       currentSnapshot,
       dataViewMode,
       draft,
       graphs,
-      locale,
       saveProject,
       savedProject,
+      scientificSourceSnapshot,
     ],
   );
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!onRegisterSaveHandler) return;
     onRegisterSaveHandler({
       save: (saveAs) => handleSave(Boolean(saveAs)),
@@ -4004,35 +4249,40 @@ export function ExperimentWorkspace({
               kind: "experiment",
               project: {
                 target: savedProject.target,
-                state: createExperimentWorkspaceProject({
-                  draft,
-                  cells,
-                  graphs,
-                  dataViewMode,
-                  cellDisplayTexts,
-                  existingState: savedProject.state,
-                }),
+                state: buildCurrentProjectState(),
               },
             }
           : null,
     });
     return () => onRegisterSaveHandler(null);
-  }, [
-    cellDisplayTexts,
-    cells,
-    dataViewMode,
-    draft,
-    graphs,
-    handleSave,
-    onRegisterSaveHandler,
-    savedProject,
-  ]);
+  }, [buildCurrentProjectState, handleSave, onRegisterSaveHandler, savedProject]);
 
   if (structureRevisionSession) {
     return (
       <BiologicalExperimentSetup
         enabled
         externalError={structureRevisionError}
+        onCreateNew={
+          canCreateFromConditions && onCreateFromConditions
+            ? (result) => {
+                try {
+                  // Prepare complete snapshots before creating tabs or navigating away.
+                  const nextState = createProjectFromEditedConditions(result);
+                  const sourceState = buildCurrentProjectState();
+                  return onCreateFromConditions({
+                    sourceState,
+                    sourceTarget: savedProject?.target,
+                    nextState,
+                  });
+                } catch {
+                  setStructureRevisionError(
+                    "新しい実験を作成できませんでした。元の実験と入力内容は変更されていません。",
+                  );
+                  return false;
+                }
+              }
+            : undefined
+        }
         initial={{
           ...structureRevisionSession.prefill,
           revisionMode: true,
@@ -4051,7 +4301,6 @@ export function ExperimentWorkspace({
     "overview",
     ...draft.experiments.map(({ id }) => `experiment:${id}` as WorkspaceTab),
   ];
-  const guideAnalysisComplete = graphs.some(({ analysis }) => analysis?.result.status === "ok");
   const handleWorkspaceTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     if (!(["ArrowLeft", "ArrowRight", "Home", "End"] as string[]).includes(event.key)) return;
     event.preventDefault();
@@ -4070,24 +4319,22 @@ export function ExperimentWorkspace({
   };
 
   return (
-    <div className="experiment-workspace" ref={rootRef}>
+    <div className="experiment-workspace" ref={attachWorkspaceRoot}>
       <header className="experiment-workspace-header">
         <button className="experiment-workspace-back" type="button" onClick={requestBack}>
-          ← {t("戻る", "Back")}
+          ← 戻る
         </button>
         <div>
-          <p className="experiment-workspace-eyebrow">
-            {t("実験ワークスペース", "Experiment workspace")}
-          </p>
+          <p className="experiment-workspace-eyebrow">実験ワークスペース</p>
           <h1>{draft.name}</h1>
           <p className="experiment-workspace-context">
             {draft.context === "cell_culture"
-              ? t("細胞・培養", "Cell culture")
+              ? "細胞・培養"
               : draft.context === "microscopy_imaging"
-                ? t("顕微鏡・画像解析", "Microscopy and imaging")
+                ? "顕微鏡・画像解析"
                 : draft.context === "animal"
-                  ? t("動物・個体", "Animal or organism")
-                  : t("実験データ", "Experiment data")}{" "}
+                  ? "動物・個体"
+                  : "実験データ"}{" "}
             · {draft.readouts.map(({ label }) => label).join(" / ")}
           </p>
         </div>
@@ -4095,78 +4342,11 @@ export function ExperimentWorkspace({
 
       {draft.dataOrigin === "synthetic_demo" ? (
         <div className="experiment-workspace-demo-banner" role="status">
-          <strong>{t("合成デモデータ", "Synthetic demo data")}</strong>
+          <strong>合成デモデータ</strong>
           <span>
-            {t(
-              "学習・画面確認用の人工データです。実測・未発表データではなく、正式な研究結果として使用しないでください。",
-              "These are artificial data for learning and interface review. They are not measured or unpublished research data and must not be used as formal research results.",
-            )}
+            学習・画面確認用の人工データです。実測・未発表データではなく、正式な研究結果として使用しないでください。
           </span>
         </div>
-      ) : null}
-
-      {fiveMinuteGuide ? (
-        <aside
-          className="experiment-workspace-five-minute-guide"
-          aria-label={t("5分ガイド", "Five-minute guide")}
-        >
-          <div>
-            <strong>
-              {t("5分ガイド：基本の1往復", "Five-minute guide: one complete workflow")}
-            </strong>
-            <p>
-              {t(
-                "合成データだけを使います。順番にData、Graph、Statistics、Methodsを確認してください。",
-                "This guide uses artificial data only. Review Data, Graph, Statistics, and Methods in order.",
-              )}
-            </p>
-          </div>
-          <ol>
-            <li data-complete="true">
-              {t(
-                "Data：入力済みの値と実験単位を確認",
-                "Data: review the values and experimental units",
-              )}
-            </li>
-            <li data-complete={graphs.length > 0}>
-              {t("Graph：グラフを1つ作成", "Graph: create one Graph")}
-            </li>
-            <li data-complete={guideAnalysisComplete}>
-              {t("Statistics：推奨法を実行", "Statistics: run the recommended method")}
-            </li>
-            <li data-complete={guideAnalysisComplete}>
-              {t(
-                "Methods：再現用の文章を確認・コピー",
-                "Methods: review and copy the reproducibility text",
-              )}
-            </li>
-          </ol>
-          {graphs.length === 0 ? (
-            <button type="button" onClick={openGraph}>
-              {t("次へ：グラフを作成", "Next: create a Graph")}
-            </button>
-          ) : !showGraph ? (
-            <button type="button" onClick={openExistingGraphs}>
-              {t("次へ：Graphを確認", "Next: review the Graph")}
-            </button>
-          ) : graphWorkspaceMode === "graph" ? (
-            <button type="button" onClick={openStatistics}>
-              {t("次へ：Statisticsを開く", "Next: open Statistics")}
-            </button>
-          ) : (
-            <p role="note">
-              {guideAnalysisComplete
-                ? t(
-                    "完了です。Statistics内のMethodsと再現記録を確認できます。",
-                    "Complete. Methods and the reproducibility record are now available in Statistics.",
-                  )
-                : t(
-                    "実験単位の独立性を確認し、推奨された解析を実行してください。結果の下にMethodsが表示されます。",
-                    "Confirm experimental-unit independence and run the recommendation. Methods will appear below the result.",
-                  )}
-            </p>
-          )}
-        </aside>
       ) : null}
 
       {DevelopmentEvaluationWorkspaceLoader ? (
@@ -4196,32 +4376,33 @@ export function ExperimentWorkspace({
         </Suspense>
       ) : null}
 
-      <nav
-        className="experiment-workspace-project-nav"
-        aria-label={t("プロジェクト内の移動", "Project navigation")}
-      >
+      <nav className="experiment-workspace-project-nav" aria-label="プロジェクト内の移動">
         <details className="experiment-workspace-file-menu">
-          <summary>{t("ファイル", "File")}</summary>
+          <summary>実験</summary>
           <div>
-            {onOpenProject ? (
-              <button type="button" onClick={onOpenProject}>
-                {t("プロジェクトを開く", "Open project")}
-              </button>
+            {!isTauri() ? (
+              <>
+                {onOpenProject ? (
+                  <button type="button" onClick={onOpenProject}>
+                    プロジェクトを開く
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={!saveProject || saveStatus === "saving"}
+                  onClick={() => void handleSave(false)}
+                >
+                  保存 <kbd>Ctrl/⌘S</kbd>
+                </button>
+                <button
+                  type="button"
+                  disabled={!saveProject || saveStatus === "saving"}
+                  onClick={() => void handleSave(true)}
+                >
+                  名前を付けて保存 <kbd>Shift+Ctrl/⌘S</kbd>
+                </button>
+              </>
             ) : null}
-            <button
-              type="button"
-              disabled={!saveProject || saveStatus === "saving"}
-              onClick={() => void handleSave(false)}
-            >
-              {t("保存", "Save")} <kbd>Ctrl/⌘S</kbd>
-            </button>
-            <button
-              type="button"
-              disabled={!saveProject || saveStatus === "saving"}
-              onClick={() => void handleSave(true)}
-            >
-              {t("名前を付けて保存", "Save As")} <kbd>Shift+Ctrl/⌘S</kbd>
-            </button>
             {onReuseDesign ? (
               <button
                 type="button"
@@ -4229,24 +4410,23 @@ export function ExperimentWorkspace({
                   requestExit("設計を使って新しい実験を始める", () => onReuseDesign(draft))
                 }
               >
-                {t("設計だけを新しいprojectに再利用", "Reuse only the design in a new project")}
+                設計だけを新しいprojectに再利用
               </button>
             ) : null}
             {onSaveFavorite ? (
               <button type="button" onClick={() => onSaveFavorite(draft, graphs)}>
-                {t("この設計をお気に入りに保存", "Save this design as a favorite")}
+                この設計をお気に入りに保存
               </button>
             ) : null}
           </div>
         </details>
         {draft.adaptiveInput ? (
           <button
-            id="experiment-workspace-revise-navigation"
             ref={structureRevisionTriggerRef}
             type="button"
-            onClick={(event) => beginAdaptiveStructureRevision(event.currentTarget)}
+            onClick={beginAdaptiveStructureRevision}
           >
-            {t("実験の組み立てを修正", "Revise experiment structure")}
+            実験の組み立てを修正
           </button>
         ) : null}
         <button
@@ -4255,7 +4435,7 @@ export function ExperimentWorkspace({
           aria-current={!showGraph ? "page" : undefined}
           onClick={() => setShowGraph(false)}
         >
-          {t("データ", "Data")}
+          データ
         </button>
         <button
           className={showGraph && graphWorkspaceMode === "graph" ? "is-active" : ""}
@@ -4264,8 +4444,7 @@ export function ExperimentWorkspace({
           disabled={graphs.length === 0}
           onClick={openExistingGraphs}
         >
-          {t("グラフ", "Graph")}
-          {graphs.length > 0 ? ` (${graphs.length})` : ""}
+          グラフ{graphs.length > 0 ? ` (${graphs.length})` : ""}
         </button>
         <button
           className={showGraph && graphWorkspaceMode === "statistics" ? "is-active" : ""}
@@ -4274,34 +4453,30 @@ export function ExperimentWorkspace({
           disabled={graphs.length === 0}
           onClick={openStatistics}
         >
-          {t("統計", "Statistics")}
+          統計
         </button>
         <button
           className="experiment-workspace-project-nav-create"
           type="button"
           onClick={openGraph}
         >
-          {t("＋ グラフを作成", "+ Create Graph")}
+          ＋ グラフを作成
         </button>
         <button
           className="experiment-workspace-project-nav-save"
           type="button"
-          aria-label={
-            saveStatus === "saving"
-              ? t("保存中", "Saving")
-              : t("プロジェクトを保存", "Save project")
-          }
-          title={t("保存（⌘S / Ctrl+S）", "Save (⌘S / Ctrl+S)")}
+          aria-label={saveStatus === "saving" ? "保存中" : "プロジェクトを保存"}
+          title="保存（⌘S / Ctrl+S）"
           disabled={!saveProject || saveStatus === "saving"}
           onClick={() => void handleSave(false)}
         >
-          {saveStatus === "saving" ? "…" : t("保存", "Save")}
+          {saveStatus === "saving" ? "…" : "保存"}
         </button>
         <span
           className={`experiment-workspace-dirty-state ${isDirty ? "is-dirty" : ""}`}
-          aria-label={t("保存状態", "Save status")}
+          aria-label="保存状態"
         >
-          {isDirty ? t("未保存", "Unsaved") : t("保存済み", "Saved")}
+          {isDirty ? "未保存" : "保存済み"}
         </span>
       </nav>
       {saveMessage ? (
@@ -4317,18 +4492,12 @@ export function ExperimentWorkspace({
           {graphCreateMessage}
         </p>
       ) : null}
-      {panelExportFeedback ? (
-        <p
-          className={`experiment-workspace-graph-created${panelExportFeedback.kind === "error" ? " is-error" : ""}`}
-          role={panelExportFeedback.kind === "error" ? "alert" : "status"}
-          aria-live="polite"
-        >
-          {panelExportFeedback.text}
-        </p>
-      ) : null}
       {analysisInvalidationMessage ? (
         <p className="experiment-workspace-graph-created" role="status" aria-live="polite">
           {analysisInvalidationMessage}
+          <button type="button" onClick={() => setAnalysisInvalidationMessage(null)}>
+            解析変更の案内を閉じる
+          </button>
         </p>
       ) : null}
 
@@ -4343,26 +4512,19 @@ export function ExperimentWorkspace({
           >
             <div className="experiment-workspace-graph-choice-heading">
               <div>
-                <p className="experiment-workspace-eyebrow">{t("新しいグラフ", "New Graph")}</p>
-                <h2 id="graph-choice-heading">
-                  {t("グラフの基本形を選ぶ", "Choose a Graph type")}
-                </h2>
-                <p>
-                  {t(
-                    "基本形を選んだ後も、点・箱・誤差線などのレイヤーを追加できます。",
-                    "After choosing a base type, you can still add layers such as points, boxes, and error bars.",
-                  )}
-                </p>
+                <p className="experiment-workspace-eyebrow">新しいグラフ</p>
+                <h2 id="graph-choice-heading">グラフの基本形を選ぶ</h2>
+                <p>基本形を選んだ後も、点・箱・誤差線などのレイヤーを追加できます。</p>
               </div>
               <button type="button" onClick={() => setShowGraphTypeChoice(false)}>
-                {t("キャンセル", "Cancel")}
+                キャンセル
               </button>
             </div>
             {draft.readouts.length > 1 ? (
               <label className="experiment-workspace-graph-source">
-                <span>{t("表示する測定項目", "Measured readout to display")}</span>
+                <span>表示する測定項目</span>
                 <select
-                  aria-label={t("表示する測定項目", "Measured readout to display")}
+                  aria-label="表示する測定項目"
                   value={selectedSourceReadout?.id ?? ""}
                   onChange={(event) => selectGraphSource(event.currentTarget.value)}
                 >
@@ -4372,17 +4534,12 @@ export function ExperimentWorkspace({
                     </option>
                   ))}
                 </select>
-                <small>
-                  {t(
-                    "この選択は新しいグラフにだけ保存されます。",
-                    "This selection is saved only in the new Graph.",
-                  )}
-                </small>
+                <small>この選択は新しいグラフにだけ保存されます。</small>
               </label>
             ) : null}
             {draft.time.sampling === "longitudinal" && draft.time.points.length > 1 ? (
               <fieldset className="experiment-workspace-layer-builder">
-                <legend>{t("グラフのデータソース", "Graph data source")}</legend>
+                <legend>グラフのデータソース</legend>
                 <label>
                   <input
                     type="radio"
@@ -4390,7 +4547,7 @@ export function ExperimentWorkspace({
                     checked={selectedCreateSourceMode === "raw_readout"}
                     onChange={() => selectCreateSourceMode("raw_readout")}
                   />
-                  {t("元の時系列（全時間を保持）", "Original time series (retain all time points)")}
+                  元の時系列（全時間を保持）
                 </label>
                 <label>
                   <input
@@ -4399,17 +4556,14 @@ export function ExperimentWorkspace({
                     checked={selectedCreateSourceMode === "derived_metric"}
                     onChange={() => selectCreateSourceMode("derived_metric")}
                   />
-                  {t(
-                    "各生物学的単位から求めた派生値を別グラフにする",
-                    "Create a separate Graph from a value derived for each biological unit",
-                  )}
+                  各生物学的単位から求めた派生値を別グラフにする
                 </label>
                 {selectedCreateSourceMode === "derived_metric" ? (
                   <>
                     <label className="experiment-graph-field">
-                      <span>{t("派生値", "Derived value")}</span>
+                      <span>派生値</span>
                       <select
-                        aria-label={t("新しいグラフの派生値", "Derived value for the new Graph")}
+                        aria-label="新しいグラフの派生値"
                         value={selectedCreateMetric.kind}
                         onChange={(event) =>
                           setSelectedCreateMetric({
@@ -4417,32 +4571,25 @@ export function ExperimentWorkspace({
                           })
                         }
                       >
-                        <option value="auc">{t("AUC（台形法）", "AUC (trapezoidal rule)")}</option>
-                        <option value="endpoint">{t("最後の時点", "Last time point")}</option>
-                        <option value="maximum">{t("最大値", "Maximum")}</option>
-                        <option value="minimum">{t("最小値", "Minimum")}</option>
-                        <option value="change_from_baseline">
-                          {t("baselineからの変化量", "Change from baseline")}
-                        </option>
+                        <option value="auc">AUC（台形法）</option>
+                        <option value="endpoint">最後の時点</option>
+                        <option value="maximum">最大値</option>
+                        <option value="minimum">最小値</option>
+                        <option value="change_from_baseline">baselineからの変化量</option>
                         <option value="f_over_f0">F/F0</option>
                       </select>
                     </label>
                     {selectedCreateMetric.kind === "auc" ? (
                       <>
                         <p className="experiment-graph-help">
-                          {t(
-                            `AUCは時間曲線の下の面積です。選んだ範囲の応答の大きさと持続時間を1つの値にまとめます。単位は「測定値 × ${draft.time.unit}」で、時間経過の形や開始値の違いは別に確認が必要です。`,
-                            `AUC is the area under the time curve. It summarizes response magnitude and duration over the selected range in one value. Its unit is measured value × ${draft.time.unit}; curve shape and baseline differences still require separate review.`,
-                          )}
+                          AUCは時間曲線の下の面積です。選んだ範囲の応答の大きさと持続時間を1つの値にまとめます。単位は「測定値
+                          ×{draft.time.unit}」で、時間経過の形や開始値の違いは別に確認が必要です。
                         </p>
                         <div className="experiment-graph-field-grid">
                           <label className="experiment-graph-field">
-                            <span>{t("AUC windowの開始", "Start of AUC window")}</span>
+                            <span>AUC windowの開始</span>
                             <select
-                              aria-label={t(
-                                "新しいAUC windowの開始",
-                                "Start of the new AUC window",
-                              )}
+                              aria-label="新しいAUC windowの開始"
                               value={selectedCreateMetric.windowStart ?? ""}
                               onChange={(event) => {
                                 const value = event.currentTarget.value;
@@ -4452,7 +4599,7 @@ export function ExperimentWorkspace({
                                 }));
                               }}
                             >
-                              <option value="">{t("最初の時点", "First time point")}</option>
+                              <option value="">最初の時点</option>
                               {draft.time.points.map((point) => (
                                 <option key={point.id} value={point.value}>
                                   {point.value} {draft.time.unit}
@@ -4461,9 +4608,9 @@ export function ExperimentWorkspace({
                             </select>
                           </label>
                           <label className="experiment-graph-field">
-                            <span>{t("AUC windowの終了", "End of AUC window")}</span>
+                            <span>AUC windowの終了</span>
                             <select
-                              aria-label={t("新しいAUC windowの終了", "End of the new AUC window")}
+                              aria-label="新しいAUC windowの終了"
                               value={selectedCreateMetric.windowEnd ?? ""}
                               onChange={(event) => {
                                 const value = event.currentTarget.value;
@@ -4473,7 +4620,7 @@ export function ExperimentWorkspace({
                                 }));
                               }}
                             >
-                              <option value="">{t("最後の時点", "Last time point")}</option>
+                              <option value="">最後の時点</option>
                               {draft.time.points.map((point) => (
                                 <option key={point.id} value={point.value}>
                                   {point.value} {draft.time.unit}
@@ -4483,12 +4630,7 @@ export function ExperimentWorkspace({
                           </label>
                         </div>
                         {!createMetricWindowIsValid ? (
-                          <small role="alert">
-                            {t(
-                              "開始時点は終了時点以前にしてください。",
-                              "The start must be at or before the end.",
-                            )}
-                          </small>
+                          <small role="alert">開始時点は終了時点以前にしてください。</small>
                         ) : null}
                       </>
                     ) : null}
@@ -4497,7 +4639,7 @@ export function ExperimentWorkspace({
               </fieldset>
             ) : null}
             <div className="experiment-workspace-graph-choice-recommended">
-              <span>{t("推奨グラフ", "Recommended Graph")}</span>
+              <span>推奨グラフ</span>
               {recommendedGraphTypes.map((graphType) => (
                 <button
                   className={
@@ -4506,53 +4648,29 @@ export function ExperimentWorkspace({
                   key={graphType}
                   type="button"
                   aria-pressed={graphTypeSelectionActive && selectedGraphType === graphType}
-                  aria-label={
-                    locale === "ja"
-                      ? `${experimentGraphTypeLabel(graphType, locale)}を選択（おすすめ）`
-                      : `Select ${graphType === "paired_dot" ? "Connected matched points" : experimentGraphTypeLabel(graphType, locale)} (recommended)`
-                  }
+                  aria-label={`${graphTypeChoiceLabel(graphType)}を選択（おすすめ）`}
                   onClick={() => selectGraphType(graphType)}
                 >
                   <GraphTypeThumbnail type={graphType} />
                   <span>
                     <strong>
                       {graphType === "line"
-                        ? t("時間変化を見る", "View change over time")
+                        ? "時間変化を見る"
                         : graphType === "scatter"
-                          ? t("XとYの関係を見る", "View the relationship between X and Y")
+                          ? "XとYの関係を見る"
                           : graphType === "stacked_100"
-                            ? t(
-                                "全体に占めるカテゴリ構成を見る",
-                                "View category composition of the whole",
-                              )
+                            ? "全体に占めるカテゴリ構成を見る"
                             : graphType === "category_percentage"
-                              ? t(
-                                  "カテゴリごとの割合を見る",
-                                  "View the percentage in each category",
-                                )
+                              ? "カテゴリごとの割合を見る"
                               : graphType === "violin"
-                                ? t(
-                                    "各条件・時点の分布を見る",
-                                    "View distributions by condition and time point",
-                                  )
+                                ? "各条件・時点の分布を見る"
                                 : graphType === "paired_dot"
                                   ? sharedSource
-                                    ? t(
-                                        `同じ${sharedSource.sourceUnitLabel}に由来する組の差を見る`,
-                                        `View differences among sets derived from the same ${sharedSource.sourceUnitLabel}`,
-                                      )
-                                    : t("同じ単位の変化を見る", "View changes within the same unit")
-                                  : t(
-                                      "実験単位ごとの値を見る",
-                                      "View values for each experimental unit",
-                                    )}
+                                    ? `同じ${sharedSource.sourceUnitLabel}に由来する組の差を見る`
+                                    : "同じ単位の変化を見る"
+                                  : "実験単位ごとの値を見る"}
                     </strong>
-                    <small>
-                      {t(
-                        "データ構造に合う初期表示。選択は後から変更できます。",
-                        "An initial display suited to the data structure. You can change it later.",
-                      )}
-                    </small>
+                    <small>データ構造に合う初期表示。選択は後から変更できます。</small>
                   </span>
                 </button>
               ))}
@@ -4562,12 +4680,8 @@ export function ExperimentWorkspace({
               aria-labelledby="current-preview-heading"
             >
               <div>
-                <p className="experiment-workspace-eyebrow">
-                  {t("現在のデータで確認", "Preview with current data")}
-                </p>
-                <h3 id="current-preview-heading">
-                  {t("作成後の初期表示", "Initial display after creation")}
-                </h3>
+                <p className="experiment-workspace-eyebrow">現在のデータで確認</p>
+                <h3 id="current-preview-heading">作成後の初期表示</h3>
               </div>
               {graphTypeSelectionActive ? (
                 <CurrentDataGraphPreview
@@ -4581,17 +4695,11 @@ export function ExperimentWorkspace({
                 />
               ) : (
                 <p className="graph-current-preview__empty">
-                  {t(
-                    "グラフ形式を選ぶと、現在のデータでプレビューします。",
-                    "Choose a Graph type to preview it with the current data.",
-                  )}
+                  グラフ形式を選ぶと、現在のデータでプレビューします。
                 </p>
               )}
               <p className="experiment-workspace-current-preview-note">
-                {t(
-                  "現在の選択とデータを使ったプレビューです。詳細な見た目は作成後に変更できます。",
-                  "This preview uses the current selection and data. You can adjust detailed appearance after creation.",
-                )}
+                現在の選択とデータを使ったプレビューです。詳細な見た目は作成後に変更できます。
               </p>
               {selectedGraphType === "box" && draft.experiments.length <= 3 ? (
                 <p className="experiment-workspace-box-guidance" role="note">
@@ -4600,25 +4708,22 @@ export function ExperimentWorkspace({
                 </p>
               ) : null}
             </section>
-            <div
-              className="experiment-workspace-graph-type-grid"
-              aria-label={t("その他のグラフ形式", "Other Graph types")}
-            >
+            <div className="experiment-workspace-graph-type-grid" aria-label="その他のグラフ形式">
               {(
                 [
-                  "dot",
-                  "box",
-                  "violin",
-                  "bar",
-                  "line",
-                  "paired_dot",
-                  "scatter",
-                  "stacked",
-                  "stacked_100",
-                  "category_percentage",
+                  ["dot", "Dot"],
+                  ["box", "Box"],
+                  ["violin", "Violin"],
+                  ["bar", "Bar"],
+                  ["line", "Line / Time course"],
+                  ["paired_dot", "対応を線で結ぶ"],
+                  ["scatter", "Scatter"],
+                  ["stacked", "Stacked count"],
+                  ["stacked_100", "100% stacked"],
+                  ["category_percentage", "Category percentage"],
                 ] as const
               )
-                .filter((value) => {
+                .filter(([value]) => {
                   if (recommendedGraphTypes.includes(value)) return false;
                   if (selectedSourceReadout?.shape === "categorical_counts") {
                     return (
@@ -4639,58 +4744,38 @@ export function ExperimentWorkspace({
                     value !== "category_percentage"
                   );
                 })
-                .map((value) => {
-                  const label = experimentGraphTypeLabel(value, locale);
-                  return (
-                    <button
-                      className={
-                        graphTypeSelectionActive && selectedGraphType === value ? "is-selected" : ""
-                      }
-                      key={value}
-                      type="button"
-                      aria-label={
-                        locale === "ja"
-                          ? `${label}を選択`
-                          : `Select ${value === "paired_dot" ? "Connected matched points" : label}`
-                      }
-                      aria-pressed={graphTypeSelectionActive && selectedGraphType === value}
-                      disabled={
-                        (value === "paired_dot" && !canConnectUnits) ||
-                        (value === "scatter" && draft.analysisIntent.kind !== "correlation") ||
-                        (value !== "scatter" && draft.analysisIntent.kind === "correlation")
-                      }
-                      onClick={() => selectGraphType(value)}
-                    >
-                      <GraphTypeThumbnail type={value} />
-                      <strong>
-                        {locale === "en" && value === "paired_dot"
-                          ? "Connected matched points"
-                          : label}
-                      </strong>
-                    </button>
-                  );
-                })}
+                .map(([value, label]) => (
+                  <button
+                    className={
+                      graphTypeSelectionActive && selectedGraphType === value ? "is-selected" : ""
+                    }
+                    key={value}
+                    type="button"
+                    aria-label={`${label}を選択`}
+                    aria-pressed={graphTypeSelectionActive && selectedGraphType === value}
+                    disabled={
+                      (value === "paired_dot" && !canConnectUnits) ||
+                      (value === "scatter" && draft.analysisIntent.kind !== "correlation") ||
+                      (value !== "scatter" && draft.analysisIntent.kind === "correlation")
+                    }
+                    onClick={() => selectGraphType(value)}
+                  >
+                    <GraphTypeThumbnail type={value} />
+                    <strong>{label}</strong>
+                  </button>
+                ))}
               {draft.analysisIntent.kind !== "correlation" ? (
                 <small id="scatter-disabled-reason">
-                  {t(
-                    "Scatterは「同じ試料のXとYの関係を見る」設計で利用できます",
-                    "Scatter is available for designs that examine X and Y in the same sample.",
-                  )}
+                  Scatterは「同じ試料のXとYの関係を見る」設計で利用できます
                 </small>
               ) : null}
             </div>
             {!canConnectUnits ? (
               <p className="experiment-workspace-graph-type-guidance">
-                {t(
-                  "同じ単位の対応情報がある設計で利用できます",
-                  "Available for designs with explicit matching information for the same units.",
-                )}
+                同じ単位の対応情報がある設計で利用できます
               </p>
             ) : null}
-            <section
-              className="experiment-workspace-layer-builder"
-              aria-label={t("初期レイヤー", "Initial layers")}
-            >
+            <section className="experiment-workspace-layer-builder" aria-label="初期レイヤー">
               <button
                 className="secondary-button"
                 type="button"
@@ -4698,15 +4783,12 @@ export function ExperimentWorkspace({
                 onClick={() => setShowLayerBuilder((current) => !current)}
               >
                 {showLayerBuilder
-                  ? t("カスタムグラフ設定を閉じる", "Close custom Graph settings")
-                  : t(
-                      "＋ カスタムグラフ（レイヤーから組み立てる）",
-                      "+ Custom Graph (build from layers)",
-                    )}
+                  ? "カスタムグラフ設定を閉じる"
+                  : "＋ カスタムグラフ（レイヤーから組み立てる）"}
               </button>
               {showLayerBuilder ? (
                 <fieldset>
-                  <legend>{t("作成時に表示するもの", "Layers to show on creation")}</legend>
+                  <legend>作成時に表示するもの</legend>
                   {(
                     [
                       ["raw", "個々の測定値（表示用）"],
@@ -4753,14 +4835,11 @@ export function ExperimentWorkspace({
             <div className="experiment-workspace-graph-choice-actions">
               {!graphTypeSelectionActive ? (
                 <p className="experiment-workspace-graph-choice-required" role="status">
-                  {t(
-                    "グラフ形式を1つ選んでください。選択するまでグラフは作成できません。",
-                    "Choose one Graph type. A Graph cannot be created until a type is selected.",
-                  )}
+                  グラフ形式を1つ選んでください。選択するまでグラフは作成できません。
                 </p>
               ) : null}
               <button type="button" onClick={() => setShowGraphTypeChoice(false)}>
-                {t("キャンセル", "Cancel")}
+                キャンセル
               </button>
               <button
                 className="is-primary"
@@ -4768,7 +4847,7 @@ export function ExperimentWorkspace({
                 disabled={!graphTypeSelectionActive || !createMetricWindowIsValid}
                 onClick={() => createGraph(selectedGraphType, selectedInitialLayers)}
               >
-                {t("このグラフを作成", "Create this Graph")}
+                このグラフを作成
               </button>
             </div>
           </section>
@@ -4776,11 +4855,8 @@ export function ExperimentWorkspace({
       ) : null}
 
       {!showGraph && !canonicalSpreadsheetPresentation.enabled ? (
-        <nav
-          className="experiment-workspace-tabs"
-          aria-label={t("実験の表示切り替え", "Experiment views")}
-        >
-          <div role="tablist" aria-label={t("実験タブ", "Experiment tabs")}>
+        <nav className="experiment-workspace-tabs" aria-label="実験の表示切り替え">
+          <div role="tablist" aria-label="実験タブ">
             <button
               id="workspace-tab-0"
               className={`experiment-workspace-tab ${activeTab === "overview" ? "is-active" : ""}`}
@@ -4792,7 +4868,7 @@ export function ExperimentWorkspace({
               onKeyDown={(event) => handleWorkspaceTabKeyDown(event, 0)}
               onClick={() => setActiveTab("overview")}
             >
-              {t("概要", "Overview")}
+              Overview
             </button>
             {draft.experiments.map((experiment, index) => {
               const tabId: WorkspaceTab = `experiment:${experiment.id}`;
@@ -4823,8 +4899,8 @@ export function ExperimentWorkspace({
             {draft.conditionAssignment.kind === "matched"
               ? matchedSetLabel(draft)
               : independentAdaptiveInputRows(draft)
-                ? t("入力行", "Entry row")
-                : t("実験", "Experiment")}
+                ? "入力行"
+                : "実験"}
           </button>
         </nav>
       ) : null}
@@ -4836,10 +4912,43 @@ export function ExperimentWorkspace({
           ref={graphWorkspaceRef}
           tabIndex={-1}
         >
-          <nav
-            className="experiment-workspace-graph-tabs"
-            aria-label={t("作成したグラフ", "Created Graphs")}
-          >
+          <nav className="experiment-workspace-graph-tabs" aria-label="作成したグラフ">
+            {graphWorkspaceMode !== "statistics" && graphs.length >= 2 ? (
+              <button
+                type="button"
+                disabled={panelExportPending}
+                onClick={async () => {
+                  const root = graphWorkspaceRef.current;
+                  if (!root || panelExportPendingRef.current) return;
+                  panelExportPendingRef.current = true;
+                  setPanelExportPending(true);
+                  setPanelExportMessage(null);
+                  try {
+                    const result = await exportWorkspaceGraphPanel({
+                      root,
+                      graphs,
+                      projectTitle: draft.name,
+                    });
+                    if (result.status === "saved")
+                      setPanelExportMessage("2列のパネルSVGを保存しました。");
+                    if (result.status === "failed")
+                      setPanelExportMessage(
+                        "パネルSVGを保存できませんでした。元のグラフは保持されています。",
+                      );
+                  } catch {
+                    setPanelExportMessage(
+                      "グラフの準備が完了していないためパネルSVGを保存できませんでした。",
+                    );
+                  } finally {
+                    panelExportPendingRef.current = false;
+                    setPanelExportPending(false);
+                  }
+                }}
+              >
+                2列のパネルSVGを書き出す
+              </button>
+            ) : null}
+            {panelExportMessage ? <span role="status">{panelExportMessage}</span> : null}
             {graphs.map((graph) => {
               const active = graph.id === activeGraphId;
               const renaming = graph.id === renamingGraphId;
@@ -4852,7 +4961,7 @@ export function ExperimentWorkspace({
                     <input
                       autoFocus
                       className="experiment-workspace-graph-tab-input"
-                      aria-label={t("グラフ名", "Graph name")}
+                      aria-label="グラフ名"
                       value={graphRenameDraft}
                       onChange={(event) => setGraphRenameDraft(event.currentTarget.value)}
                       onBlur={() => commitGraphRename(graph.id)}
@@ -4881,11 +4990,8 @@ export function ExperimentWorkspace({
                     <button
                       className="experiment-workspace-graph-tab-rename"
                       type="button"
-                      aria-label={t(
-                        `${graph.displayName}の名前を変更`,
-                        `Rename ${graph.displayName}`,
-                      )}
-                      title={t("グラフ名を変更", "Rename Graph")}
+                      aria-label={`${graph.displayName}の名前を変更`}
+                      title="グラフ名を変更"
                       onClick={() => beginGraphRename(graph)}
                     >
                       ✎
@@ -4894,55 +5000,46 @@ export function ExperimentWorkspace({
                 </div>
               );
             })}
-            <button
-              className="experiment-workspace-graph-panel-export"
-              type="button"
-              disabled={graphs.length < 2}
-              onClick={() => void exportGraphPanel()}
-              title={t(
-                "保存済みGraphを再解析せず2列に並べます",
-                "Arrange saved Graphs in two columns without rerunning analysis",
-              )}
-            >
-              {t("パネルSVG", "Panel SVG")}
-            </button>
           </nav>
           {graphs.map((graph) => (
             <div
               key={graph.id}
-              hidden={graph.id !== activeGraphId}
               data-workspace-graph-id={graph.id}
+              hidden={graph.id !== activeGraphId}
             >
-              <Suspense
-                fallback={
-                  <p className="experiment-graph-help" role="status">
-                    {t("グラフ編集画面を読み込んでいます…", "Loading the Graph editor…")}
-                  </p>
+              <ExperimentGraphWorkbench
+                draft={draft}
+                cells={cells}
+                workspaceMode={graphWorkspaceMode}
+                analysisRunner={analysisRunner}
+                analysisAvailable={analysisAvailable}
+                initialState={graph}
+                displayName={graph.displayName}
+                onStateChange={(state) =>
+                  setGraphs((current) =>
+                    current.map((candidate) =>
+                      candidate.id === graph.id ? { ...candidate, ...state } : candidate,
+                    ),
+                  )
                 }
-              >
-                <ExperimentGraphWorkbench
-                  draft={draft}
-                  cells={cells}
-                  workspaceMode={graphWorkspaceMode}
-                  analysisRunner={analysisRunner}
-                  analysisAvailable={analysisAvailable}
-                  initialState={graph}
-                  onStateChange={(state) =>
-                    setGraphs((current) =>
-                      current.map((candidate) =>
-                        candidate.id === graph.id ? { ...candidate, ...state } : candidate,
-                      ),
-                    )
-                  }
-                  onClose={() => setShowGraph(false)}
-                  onAnalysisCorrection={handleAnalysisCorrection}
-                />
-              </Suspense>
+                onClose={() => setShowGraph(false)}
+                onAnalysisCorrection={handleAnalysisCorrection}
+              />
             </div>
           ))}
         </div>
       ) : null}
-      <div className="experiment-workspace-body" hidden={showGraph}>
+      <div
+        className="experiment-workspace-body"
+        hidden={showGraph}
+        onFocusCapture={(event) => {
+          if (
+            event.target instanceof HTMLElement &&
+            event.target.closest(".adaptive-canonical-spreadsheet")
+          )
+            lastDataFocusRef.current = event.target;
+        }}
+      >
         <main className="experiment-workspace-main">
           {activeTab === "overview" ? (
             <div id="workspace-panel-0" role="tabpanel" aria-labelledby="workspace-tab-0">
@@ -4950,15 +5047,10 @@ export function ExperimentWorkspace({
                 draft={draft}
                 cells={cells}
                 cellDisplayTexts={cellDisplayTexts}
-                onReviseStructure={
-                  draft.adaptiveInput
-                    ? (trigger) => beginAdaptiveStructureRevision(trigger)
-                    : undefined
-                }
+                onDisplayTextChange={updateCellDisplayText}
                 onProportionChange={updateProportion}
                 onProportionPaste={applyOverviewProportionPaste}
                 onNestedScalarChange={updateNestedScalar}
-                onNestedDisplayTextChange={updateNestedDisplayText}
                 onNestedScalarPaste={applyOverviewScalarPaste}
                 onNestedCellChange={(key, cell) =>
                   setCells((current) => ({ ...current, [key]: cell }))
@@ -4970,10 +5062,26 @@ export function ExperimentWorkspace({
                     ? {
                         observations: draft.adaptiveInput.canonicalObservations,
                         readOnly: canonicalSpreadsheetPresentation.readOnly,
-                        // The date belongs to the explicit experiment session.
-                        // Showing it never changes independent/matched semantics.
-                        showExperimentDate: true,
+                        showExperimentDate: draft.adaptiveInput.contract.unitLevels.some(
+                          ({ role }) => role === "block",
+                        ),
                         onObservationsChange: replaceAdaptiveObservations,
+                        numericDisplayTexts: draft.adaptiveInput.numericPresentation?.displayTexts,
+                        onNumericDisplayTextsChange: (displayTexts) =>
+                          setDraft((current) =>
+                            current.adaptiveInput
+                              ? {
+                                  ...current,
+                                  adaptiveInput: {
+                                    ...current.adaptiveInput,
+                                    numericPresentation: {
+                                      schemaVersion: "0.1.0",
+                                      displayTexts: { ...displayTexts },
+                                    },
+                                  },
+                                }
+                              : current,
+                          ),
                         onFileImport: replaceAdaptiveFileImport,
                         nextObservationId: nextAdaptiveObservationId,
                         nextExperimentalUnitIdentity: nextAdaptiveExperimentalUnitIdentity,
@@ -4984,11 +5092,13 @@ export function ExperimentWorkspace({
                         })),
                         conditionCombinations:
                           draft.adaptiveInput.biologicalSetup?.conditionCombinations,
-                        conditionBlocks: draft.adaptiveInput.biologicalSetup?.conditionBlocks,
                         onWorksheetRowChange: (rowIndex, patch) => {
-                          setDraft((previous) =>
-                            updateWorksheetRowMetadata(previous, rowIndex, patch),
-                          );
+                          const experiment = draft.experiments[rowIndex];
+                          if (!experiment) return;
+                          updateExperiment(experiment.id, {
+                            ...(patch.label !== undefined ? { label: patch.label } : {}),
+                            ...(patch.date !== undefined ? { date: patch.date } : {}),
+                          });
                         },
                       }
                     : undefined
@@ -5010,12 +5120,12 @@ export function ExperimentWorkspace({
                     experiment={experiment}
                     cells={cells}
                     cellDisplayTexts={cellDisplayTexts}
+                    onDisplayTextChange={updateCellDisplayText}
                     onExperimentChange={(patch) => updateExperiment(experiment.id, patch)}
                     onProportionChange={updateProportion}
                     onProportionPaste={applyProportionPaste}
                     onNestedSelect={setSelectedCellKey}
                     onNestedScalarChange={updateNestedScalar}
-                    onNestedDisplayTextChange={updateNestedDisplayText}
                     onCategoricalChange={updateCategoricalCount}
                     onWbRatioChange={updateWbRatio}
                     onToggleNotPlanned={toggleNotPlanned}

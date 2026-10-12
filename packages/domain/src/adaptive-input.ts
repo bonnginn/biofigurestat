@@ -235,7 +235,7 @@ export const StructureContractSchema = z
 
 export const CanonicalAdaptiveObservationSchema = z.object({
   observationId: SemanticKeySchema,
-  /** Optional workspace run/session provenance; it never establishes pairing by itself. */
+  /** Workspace run/session provenance never establishes pairing by itself. */
   experimentSessionId: SemanticKeySchema.optional(),
   readoutKey: SemanticKeySchema,
   identities: z.record(SemanticKeySchema, z.string().min(1)),
@@ -406,6 +406,13 @@ export const AdaptiveInputSnapshotSchema = z.object({
     z.object({ key: SemanticKeySchema, answer: z.string(), confirmedAt: z.string().datetime() }),
   ),
   biologicalSetup: BiologicalSetupPresentationSchema.nullable().optional(),
+  // Optional, versioned presentation only; canonical observations remain numeric authority.
+  numericPresentation: z
+    .object({
+      schemaVersion: z.literal("0.1.0"),
+      displayTexts: z.record(z.string(), z.string()),
+    })
+    .optional(),
 });
 
 /**

@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes, type KeyboardEvent } from "react";
 
 import {
   AnalysisEngineResultSchema,
   createD01D02EngineRequest,
   createD09EngineRequest,
+  type AnalysisEngineRequest,
+  type AnalysisEngineResult,
   type AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
 import {
@@ -44,7 +46,6 @@ import {
   defaultAnalysisRunner,
   type AnalysisRunner,
 } from "../app/analysisClient";
-import { localizedFailureMessage, localizedText, useAppLocale } from "../app/appLocale";
 import { updateNestedPayloadExperimentDate } from "../app/nestedPayloadDates";
 import {
   actionErrorMessage,
@@ -66,23 +67,6 @@ import {
 import { AnalysisResultView } from "./AnalysisResultView";
 import { BulkPasteScalar } from "../components/BulkPasteScalar";
 import { NestedImageJPaste, type NestedImageJPastePayload } from "../components/NestedImageJPaste";
-import {
-  SpreadsheetGridInput,
-  type SpreadsheetGridInputProps,
-} from "../components/SpreadsheetGridInput";
-import { nextRovingTabIndex } from "../components/rovingTab";
-import {
-  createLegacyWorkspaceToken,
-  numericEngineObservations,
-  type LegacyDataSheetAnalysisRun,
-  type LegacyWorkflowTabId,
-} from "./legacyDataSheetShared";
-import { LegacyDataSheetWorkflowTabs } from "./LegacyDataSheetWorkflowTabs";
-import { LegacyProjectSavePanel } from "./LegacyProjectSavePanel";
-import {
-  formatProportionPercentage,
-  parseSpreadsheetNumber,
-} from "../components/spreadsheetValues";
 import "./DataSheetPage.grid.css";
 
 type DataSheetPageProps = {
@@ -112,11 +96,48 @@ type CanonicalData = {
   projectDesign?: ExperimentDesign;
 };
 
+type AnalysisRun = {
+  request: AnalysisEngineRequest;
+  result: AnalysisEngineResult;
+  graphSpec: GraphSpec | null;
+  graphModel: CoreGraphModel | null;
+};
+
+type EngineObservation = AnalysisEngineRequest["observations"][number];
+
+function numericEngineObservations(
+  observations: readonly EngineObservation[],
+): Array<EngineObservation & { value: number }> {
+  return observations.filter(
+    (observation): observation is EngineObservation & { value: number } =>
+      typeof observation.value === "number",
+  );
+}
+
 type WorkspaceIdentity = Readonly<{
   projectId: string;
   rawRevisionId: string;
   metadata: ProjectMetadata;
 }>;
+
+let fallbackWorkspaceSequence = 0;
+
+type WorkflowTabId = "input" | "analysis" | "graph" | "save";
+
+const WORKFLOW_TABS: ReadonlyArray<{ id: WorkflowTabId; label: string }> = [
+  { id: "input", label: "1 データ入力" },
+  { id: "analysis", label: "2 解析" },
+  { id: "graph", label: "3 グラフ" },
+  { id: "save", label: "4 保存" },
+];
+
+function createWorkspaceToken(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  fallbackWorkspaceSequence += 1;
+  return `${Date.now().toString(36)}.${fallbackWorkspaceSequence}`;
+}
 
 type MeasurementLocation =
   | { relationship: "independent"; columnIndex: number; entryIndex: number }
@@ -125,6 +146,15 @@ type MeasurementLocation =
 type ExperimentDateLocation =
   | { relationship: "independent"; columnIndex: number; entryIndex: number }
   | { relationship: "matched" | "blocked"; rowIndex: number };
+
+function parseNumber(value: string, integer = false): number | null {
+  const trimmed = value.trim();
+  if (trimmed === "") return null;
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed)) return null;
+  if (integer && !Number.isInteger(parsed)) return null;
+  return parsed;
+}
 
 function updateMeasurement(
   sheet: TwoConditionDataSheet,
@@ -210,7 +240,16 @@ function updateExperimentDate(
 }
 
 function percentageLabel(measurement: DraftMeasurement) {
-  return measurement.kind === "proportion" ? formatProportionPercentage(measurement) : "—";
+  if (measurement.kind !== "proportion") return "—";
+  if (
+    measurement.numerator === null ||
+    measurement.denominator === null ||
+    measurement.denominator <= 0 ||
+    measurement.numerator > measurement.denominator
+  ) {
+    return "—";
+  }
+  return `${((measurement.numerator / measurement.denominator) * 100).toFixed(1)}%`;
 }
 
 function loadingControlRatioLabel(measurement: DraftMeasurement) {
@@ -225,8 +264,51 @@ function loadingControlRatioLabel(measurement: DraftMeasurement) {
   return (measurement.target / measurement.loadingControl).toFixed(3);
 }
 
-function GridInput(props: Omit<SpreadsheetGridInputProps, "baseClassName">) {
-  return <SpreadsheetGridInput {...props} baseClassName="data-sheet-grid-input" />;
+type GridInputProps = InputHTMLAttributes<HTMLInputElement> & {
+  gridRow: number;
+  gridColumn: number;
+};
+
+function focusAdjacentGridInput(event: KeyboardEvent<HTMLInputElement>) {
+  if (!["Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+    return;
+  }
+  const grid = event.currentTarget.closest<HTMLElement>("[data-unit-grid]");
+  if (!grid) return;
+  const currentRow = Number(event.currentTarget.dataset.gridRow);
+  const currentColumn = Number(event.currentTarget.dataset.gridColumn);
+  if (!Number.isInteger(currentRow) || !Number.isInteger(currentColumn)) return;
+
+  let nextRow = currentRow;
+  let nextColumn = currentColumn;
+  if (event.key === "Enter") nextRow += event.shiftKey ? -1 : 1;
+  if (event.key === "ArrowLeft") nextColumn -= 1;
+  if (event.key === "ArrowRight") nextColumn += 1;
+  if (event.key === "ArrowUp") nextRow -= 1;
+  if (event.key === "ArrowDown") nextRow += 1;
+  const next = grid.querySelector<HTMLInputElement>(
+    `[data-grid-row="${nextRow}"][data-grid-column="${nextColumn}"]`,
+  );
+  if (!next) return;
+  event.preventDefault();
+  next.focus();
+  next.select();
+}
+
+function GridInput({ gridRow, gridColumn, className, onKeyDown, ...props }: GridInputProps) {
+  return (
+    <input
+      {...props}
+      className={`data-sheet-grid-input${className ? ` ${className}` : ""}`}
+      data-grid-input="true"
+      data-grid-row={gridRow}
+      data-grid-column={gridColumn}
+      onKeyDown={(event) => {
+        focusAdjacentGridInput(event);
+        onKeyDown?.(event);
+      }}
+    />
+  );
 }
 
 type MeasurementGridCellsProps = {
@@ -250,9 +332,7 @@ function MeasurementGridCells({
           inputMode="decimal"
           value={measurement.value ?? ""}
           aria-label={label}
-          onChange={(event) =>
-            onChange({ kind: "scalar", value: parseSpreadsheetNumber(event.target.value) })
-          }
+          onChange={(event) => onChange({ kind: "scalar", value: parseNumber(event.target.value) })}
           gridRow={gridRow}
           gridColumn={1}
         />
@@ -273,7 +353,7 @@ function MeasurementGridCells({
           onChange={(event) =>
             onChange({
               kind: "loading_control_ratio",
-              target: parseSpreadsheetNumber(event.target.value),
+              target: parseNumber(event.target.value),
               loadingControl: measurement.loadingControl,
             })
           }
@@ -293,7 +373,7 @@ function MeasurementGridCells({
             onChange({
               kind: "loading_control_ratio",
               target: measurement.target,
-              loadingControl: parseSpreadsheetNumber(event.target.value),
+              loadingControl: parseNumber(event.target.value),
             })
           }
           gridRow={gridRow}
@@ -318,10 +398,7 @@ function MeasurementGridCells({
         value={measurement.numerator ?? ""}
         aria-label={`${label}：陽性細胞数`}
         onChange={(event) =>
-          onChange({
-            ...measurement,
-            numerator: parseSpreadsheetNumber(event.target.value, true),
-          })
+          onChange({ ...measurement, numerator: parseNumber(event.target.value, true) })
         }
         gridRow={gridRow}
         gridColumn={1}
@@ -336,10 +413,7 @@ function MeasurementGridCells({
         value={measurement.denominator ?? ""}
         aria-label={`${label}：総細胞数`}
         onChange={(event) =>
-          onChange({
-            ...measurement,
-            denominator: parseSpreadsheetNumber(event.target.value, true),
-          })
+          onChange({ ...measurement, denominator: parseNumber(event.target.value, true) })
         }
         gridRow={gridRow}
         gridColumn={2}
@@ -538,9 +612,7 @@ export function MeasurementEditor({
           inputMode="decimal"
           value={measurement.value ?? ""}
           aria-label={label}
-          onChange={(event) =>
-            onChange({ kind: "scalar", value: parseSpreadsheetNumber(event.target.value) })
-          }
+          onChange={(event) => onChange({ kind: "scalar", value: parseNumber(event.target.value) })}
         />
         <span className="measurement-unit">{outcomeLabel}</span>
       </label>
@@ -562,7 +634,7 @@ export function MeasurementEditor({
             onChange={(event) =>
               onChange({
                 kind: "loading_control_ratio",
-                target: parseSpreadsheetNumber(event.target.value),
+                target: parseNumber(event.target.value),
                 loadingControl: measurement.loadingControl,
               })
             }
@@ -581,7 +653,7 @@ export function MeasurementEditor({
               onChange({
                 kind: "loading_control_ratio",
                 target: measurement.target,
-                loadingControl: parseSpreadsheetNumber(event.target.value),
+                loadingControl: parseNumber(event.target.value),
               })
             }
           />
@@ -605,10 +677,7 @@ export function MeasurementEditor({
           value={measurement.numerator ?? ""}
           aria-label={`${label}：陽性細胞数`}
           onChange={(event) =>
-            onChange({
-              ...measurement,
-              numerator: parseSpreadsheetNumber(event.target.value, true),
-            })
+            onChange({ ...measurement, numerator: parseNumber(event.target.value, true) })
           }
         />
       </label>
@@ -625,10 +694,7 @@ export function MeasurementEditor({
           value={measurement.denominator ?? ""}
           aria-label={`${label}：総細胞数`}
           onChange={(event) =>
-            onChange({
-              ...measurement,
-              denominator: parseSpreadsheetNumber(event.target.value, true),
-            })
+            onChange({ ...measurement, denominator: parseNumber(event.target.value, true) })
           }
         />
       </label>
@@ -689,8 +755,6 @@ export function DataSheetPage({
   onRequestExit,
   onRegisterSaveHandler,
 }: DataSheetPageProps) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const initialDerivedRevision = initialProject?.state.derivedDatasetRevisions.find(
     (revision) =>
       revision.sourceRawRevisionId === initialProject.state.activeRawRevisionId &&
@@ -817,8 +881,16 @@ export function DataSheetPage({
   const [issues, setIssues] = useState<SheetValidationIssue[]>([]);
   const [validated, setValidated] = useState(initialCanonicalData !== null);
   const [canonicalData, setCanonicalData] = useState<CanonicalData | null>(initialCanonicalData);
-  const [analysisRun, setAnalysisRun] =
-    useState<LegacyDataSheetAnalysisRun | null>(restoredAnalysis);
+  const latestCanonicalDataRef = useRef(canonicalData);
+  latestCanonicalDataRef.current = canonicalData;
+  const analysisEpochRef = useRef(0);
+  useEffect(
+    () => () => {
+      analysisEpochRef.current += 1;
+    },
+    [],
+  );
+  const [analysisRun, setAnalysisRun] = useState<AnalysisRun | null>(restoredAnalysis);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisStatus, setAnalysisStatus] = useState<"idle" | "running" | "error">("idle");
   const [runningRequestId, setRunningRequestId] = useState<string | null>(null);
@@ -847,7 +919,7 @@ export function DataSheetPage({
     initialProject?.state ?? null,
   );
   const [saveTarget, setSaveTarget] = useState<string | undefined>(initialProject?.target);
-  const [activeTab, setActiveTab] = useState<LegacyWorkflowTabId>("input");
+  const [activeTab, setActiveTab] = useState<WorkflowTabId>("input");
   const unitCount =
     sheet.relationship === "independent"
       ? Math.max(sheet.columns[0].entries.length, sheet.columns[1].entries.length)
@@ -866,7 +938,7 @@ export function DataSheetPage({
         metadata: initialProject.state.metadata,
       };
     } else {
-      const token = createLegacyWorkspaceToken();
+      const token = createWorkspaceToken();
       const projectId = `project.${token}`;
       workspaceIdentityRef.current = {
         projectId,
@@ -886,6 +958,15 @@ export function DataSheetPage({
   }
   const workspaceIdentity = workspaceIdentityRef.current as WorkspaceIdentity;
   const [draftRawRevisionId, setDraftRawRevisionId] = useState(workspaceIdentity.rawRevisionId);
+  const pendingSavedRawRevisionIdRef = useRef<string | null>(null);
+  const savePendingRef = useRef(false);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
   const lifecycleSnapshot = JSON.stringify({
     sheet,
     nestedPayloads,
@@ -896,6 +977,11 @@ export function DataSheetPage({
     draftRawRevisionId,
   });
   const savedLifecycleSnapshotRef = useRef(initialProject ? lifecycleSnapshot : "");
+  const latestLifecycleSnapshotRef = useRef(lifecycleSnapshot);
+  latestLifecycleSnapshotRef.current = lifecycleSnapshot;
+  const sourceSnapshot = JSON.stringify({ sheet, nestedPayloads });
+  const latestSourceSnapshotRef = useRef(sourceSnapshot);
+  latestSourceSnapshotRef.current = sourceSnapshot;
   const isDirty = lifecycleSnapshot !== savedLifecycleSnapshotRef.current;
   useEffect(() => {
     onDirtyChange?.(isDirty);
@@ -915,8 +1001,11 @@ export function DataSheetPage({
 
   const changeMeasurement = (location: MeasurementLocation, measurement: DraftMeasurement) => {
     setNestedPayloads({});
-    if (lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId) {
-      setDraftRawRevisionId(`raw-revision.${createLegacyWorkspaceToken()}`);
+    if (
+      (lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId) ||
+      pendingSavedRawRevisionIdRef.current === draftRawRevisionId
+    ) {
+      setDraftRawRevisionId(`raw-revision.${createWorkspaceToken()}`);
     }
     setValidated(false);
     setIssues([]);
@@ -937,8 +1026,9 @@ export function DataSheetPage({
           ? sheet.rows[location.rowIndex].experimentalUnitId
           : null;
     const nextRawRevisionId =
-      lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId
-        ? `raw-revision.${createLegacyWorkspaceToken()}`
+      (lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId) ||
+      pendingSavedRawRevisionIdRef.current === draftRawRevisionId
+        ? `raw-revision.${createWorkspaceToken()}`
         : draftRawRevisionId;
     if (nextRawRevisionId !== draftRawRevisionId) setDraftRawRevisionId(nextRawRevisionId);
     if (experimentalUnitId) {
@@ -970,10 +1060,10 @@ export function DataSheetPage({
   const replaceSheet = (nextSheet: TwoConditionDataSheet, revisionAlreadyAdvanced = false) => {
     if (
       !revisionAlreadyAdvanced &&
-      lastSavedState &&
-      draftRawRevisionId === lastSavedState.activeRawRevisionId
+      ((lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId) ||
+        pendingSavedRawRevisionIdRef.current === draftRawRevisionId)
     ) {
-      setDraftRawRevisionId(`raw-revision.${createLegacyWorkspaceToken()}`);
+      setDraftRawRevisionId(`raw-revision.${createWorkspaceToken()}`);
     }
     setValidated(false);
     setIssues([]);
@@ -1002,8 +1092,9 @@ export function DataSheetPage({
     // Keep the existing editable scalar sheet as the user-facing summary while
     // exposing the complete raw/nested payload to the project persistence layer.
     const effectiveRawRevisionId =
-      lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId
-        ? `raw-revision.${createLegacyWorkspaceToken()}`
+      (lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId) ||
+      pendingSavedRawRevisionIdRef.current === draftRawRevisionId
+        ? `raw-revision.${createWorkspaceToken()}`
         : draftRawRevisionId;
     if (effectiveRawRevisionId !== draftRawRevisionId) {
       setDraftRawRevisionId(effectiveRawRevisionId);
@@ -1137,7 +1228,8 @@ export function DataSheetPage({
   }, [buildCurrentProjectState]);
 
   const saveCurrentProject = async () => {
-    if (!saveProject) return false;
+    if (!saveProject || savePendingRef.current) return false;
+    savePendingRef.current = true;
     setSaveStatus("saving");
     setSaveError(null);
     try {
@@ -1146,7 +1238,9 @@ export function DataSheetPage({
         setSaveStatus("idle");
         return false;
       }
+      pendingSavedRawRevisionIdRef.current = state.activeRawRevisionId;
       const savedProject = await saveProject(state, saveTarget);
+      if (!mountedRef.current) return Boolean(savedProject);
       if (savedProject === null) {
         setSaveStatus("idle");
         return false;
@@ -1154,23 +1248,35 @@ export function DataSheetPage({
       savedLifecycleSnapshotRef.current = lifecycleSnapshot;
       setLastSavedState(savedProject.state);
       setSaveTarget(savedProject.target);
-      setDraftRawRevisionId(savedProject.state.activeRawRevisionId);
+      const sourceChangedDuringSave = latestSourceSnapshotRef.current !== sourceSnapshot;
+      setDraftRawRevisionId((current) =>
+        sourceChangedDuringSave
+          ? current === savedProject.state.activeRawRevisionId
+            ? `raw-revision.${createWorkspaceToken()}`
+            : current
+          : current,
+      );
+      if (sourceChangedDuringSave && latestCanonicalDataRef.current === canonicalData) {
+        setValidated(false);
+        setCanonicalData(null);
+        setAnalysisRun(null);
+      }
       setSaveStatus("success");
-      onDirtyChange?.(false);
+      onDirtyChange?.(latestLifecycleSnapshotRef.current !== lifecycleSnapshot);
       return true;
     } catch (error) {
+      if (!mountedRef.current) return false;
       setSaveStatus("error");
       setSaveError(
         actionErrorMessage(
           error,
-          t(
-            "プロジェクトを保存できませんでした。入力したデータは保持されています。",
-            "The project could not be saved. Your entered data is still retained.",
-          ),
-          locale,
+          "プロジェクトを保存できませんでした。入力したデータは保持されています。",
         ),
       );
       return false;
+    } finally {
+      savePendingRef.current = false;
+      pendingSavedRawRevisionIdRef.current = null;
     }
   };
   const saveCurrentProjectRef = useRef(saveCurrentProject);
@@ -1239,7 +1345,7 @@ export function DataSheetPage({
         );
         const createdAt = new Date().toISOString();
         const derived = createNestedScalarDerivedDataset({
-          derivedDatasetRevisionId: `derived-dataset.${createLegacyWorkspaceToken()}`,
+          derivedDatasetRevisionId: `derived-dataset.${createWorkspaceToken()}`,
           rawRevisionId: draftRawRevisionId,
           outcomeId: sheet.outcomeId,
           experimentalUnitLevelId: sheet.experimentalUnitLevelId,
@@ -1301,6 +1407,7 @@ export function DataSheetPage({
   };
 
   const runRecommendedAnalysis = async () => {
+    const epoch = ++analysisEpochRef.current;
     if (!canonicalData) return;
     if (
       recommendation.templateId !== "D01" &&
@@ -1317,7 +1424,7 @@ export function DataSheetPage({
       const request =
         recommendation.templateId === "D09"
           ? createD09EngineRequest({
-              requestId: `request.${createLegacyWorkspaceToken()}`,
+              requestId: `request.${createWorkspaceToken()}`,
               projectId: workspaceIdentity.projectId,
               analysisId: `analysis.${design.id}`,
               design,
@@ -1326,7 +1433,7 @@ export function DataSheetPage({
               unitInstances: canonicalData.unitInstances,
             })
           : createD01D02EngineRequest({
-              requestId: `request.${createLegacyWorkspaceToken()}`,
+              requestId: `request.${createWorkspaceToken()}`,
               projectId: workspaceIdentity.projectId,
               analysisId: `analysis.${design.id}`,
               design,
@@ -1337,7 +1444,12 @@ export function DataSheetPage({
       const runner = analysisRunner ?? defaultAnalysisRunner;
       setRunningRequestId(request.requestId);
       const rawResult = await runner(request);
+      if (analysisEpochRef.current !== epoch || latestCanonicalDataRef.current !== canonicalData)
+        return;
       const result = AnalysisEngineResultSchema.parse(rawResult);
+      if (result.requestId !== request.requestId) {
+        throw new Error("解析応答が今回の要求と一致しません。結果は採用せず、再実行してください。");
+      }
       if (result.status !== "ok") {
         setAnalysisRun({ request, result, graphSpec: null, graphModel: null });
         setAnalysisStatus("error");
@@ -1428,6 +1540,8 @@ export function DataSheetPage({
       setAnalysisRun({ request, result, graphSpec, graphModel });
       setAnalysisStatus("idle");
     } catch (error) {
+      if (analysisEpochRef.current !== epoch || latestCanonicalDataRef.current !== canonicalData)
+        return;
       setAnalysisStatus("error");
       setAnalysisError(
         error instanceof Error
@@ -1435,7 +1549,7 @@ export function DataSheetPage({
           : "ローカル解析エンジンが有効な結果を返せませんでした。入力したデータは保持されています。",
       );
     } finally {
-      setRunningRequestId(null);
+      if (analysisEpochRef.current === epoch) setRunningRequestId(null);
     }
   };
 
@@ -1493,14 +1607,26 @@ export function DataSheetPage({
       setSaveError(null);
     } catch (error) {
       setAnalysisError(
-        localizedFailureMessage(
-          locale,
-          error,
-          "グラフ設定を更新できませんでした。",
-          "The Graph settings could not be updated.",
-        ),
+        error instanceof Error ? error.message : "グラフ設定を更新できませんでした。",
       );
     }
+  };
+
+  const handleWorkflowTabKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    currentIndex: number,
+  ) => {
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % WORKFLOW_TABS.length;
+    if (event.key === "ArrowLeft")
+      nextIndex = (currentIndex - 1 + WORKFLOW_TABS.length) % WORKFLOW_TABS.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = WORKFLOW_TABS.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const nextTab = WORKFLOW_TABS[nextIndex].id;
+    setActiveTab(nextTab);
+    document.getElementById(`workflow-tab-${nextTab}`)?.focus();
   };
 
   return (
@@ -1509,15 +1635,52 @@ export function DataSheetPage({
         <span aria-hidden="true">←</span> デザイン確認に戻る
       </button>
 
-      <LegacyDataSheetWorkflowTabs
-        idPrefix="workflow"
-        activeTab={activeTab}
-        validated={Boolean(validated)}
-        analysisComplete={Boolean(analysisRun)}
-        graphComplete={Boolean(analysisRun?.graphModel)}
-        saved={saveStatus === "success"}
-        onSelect={setActiveTab}
-      />
+      <nav className="workflow-tabs" aria-label="解析ワークフロー" role="tablist">
+        {WORKFLOW_TABS.map(({ id: tab, label }) => {
+          const status =
+            tab === "input"
+              ? validated
+                ? "検証済み"
+                : "未入力"
+              : tab === "analysis"
+                ? analysisRun
+                  ? "解析済み"
+                  : validated
+                    ? "検証済み"
+                    : "未入力"
+                : tab === "graph"
+                  ? analysisRun?.graphModel
+                    ? "解析済み"
+                    : "未入力"
+                  : saveStatus === "success"
+                    ? "保存済み"
+                    : validated
+                      ? "検証済み"
+                      : "未入力";
+          return (
+            <button
+              key={tab}
+              id={`workflow-tab-${tab}`}
+              className={`workflow-tab ${activeTab === tab ? "is-active" : ""}`}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              aria-controls={`workflow-panel-${tab}`}
+              tabIndex={activeTab === tab ? 0 : -1}
+              onClick={() => setActiveTab(tab)}
+              onKeyDown={(event) =>
+                handleWorkflowTabKeyDown(
+                  event,
+                  WORKFLOW_TABS.findIndex(({ id }) => id === tab),
+                )
+              }
+            >
+              <span>{label}</span>
+              <small>{status}</small>
+            </button>
+          );
+        })}
+      </nav>
 
       {
         <div className="workflow-panel-intro" role="presentation" hidden={activeTab !== "input"}>
@@ -1615,9 +1778,12 @@ export function DataSheetPage({
                   tabIndex={activeUnitIndex === index ? 0 : -1}
                   onClick={() => setActiveUnitIndex(index)}
                   onKeyDown={(event) => {
-                    const nextIndex = nextRovingTabIndex(event.key, index, unitCount);
-                    if (nextIndex === null) return;
+                    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
                     event.preventDefault();
+                    const nextIndex =
+                      event.key === "ArrowRight"
+                        ? (index + 1) % unitCount
+                        : (index - 1 + unitCount) % unitCount;
                     setActiveUnitIndex(nextIndex);
                     document.getElementById(`data-sheet-unit-tab-${nextIndex}`)?.focus();
                   }}
@@ -1781,18 +1947,114 @@ export function DataSheetPage({
       )}
 
       {activeTab === "save" && (
-        <LegacyProjectSavePanel
-          idPrefix="workflow"
-          metadata={metadataDraft}
-          onMetadataChange={setMetadataDraft}
-          canSave={Boolean(saveProject)}
-          validated={Boolean(validated)}
-          saveStatus={saveStatus}
-          saveError={saveError}
-          onSave={saveCurrentProject}
-          mode="two-condition"
-          activeRawRevisionId={lastSavedState?.activeRawRevisionId}
-        />
+        <div
+          id="workflow-panel-save"
+          className="workflow-panel-stack"
+          role="tabpanel"
+          aria-labelledby="workflow-tab-save"
+        >
+          <details className="metadata-disclosure" open>
+            <summary>プロジェクト情報</summary>
+            <div className="metadata-form-grid">
+              <label className="field-label">
+                プロジェクト名 <span aria-hidden="true">*</span>
+                <input
+                  required
+                  value={metadataDraft.projectName}
+                  onChange={(event) =>
+                    setMetadataDraft((previous) => ({
+                      ...previous,
+                      projectName: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="field-label">
+                最初の実験日 <span aria-hidden="true">*</span>
+                <input
+                  required
+                  type="date"
+                  value={metadataDraft.experimentDate}
+                  onChange={(event) =>
+                    setMetadataDraft((previous) => ({
+                      ...previous,
+                      experimentDate: event.target.value,
+                    }))
+                  }
+                />
+                <small>各実験単位の日付は「データ入力」で個別に記録されています。</small>
+              </label>
+              <label className="field-label">
+                実施者（任意）
+                <input
+                  value={metadataDraft.operator ?? ""}
+                  onChange={(event) =>
+                    setMetadataDraft((previous) => ({ ...previous, operator: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="field-label">
+                バッチ／ロット（任意）
+                <input
+                  value={metadataDraft.batch ?? ""}
+                  onChange={(event) =>
+                    setMetadataDraft((previous) => ({ ...previous, batch: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="field-label metadata-note-field">
+                メモ（任意）
+                <textarea
+                  rows={2}
+                  value={metadataDraft.note ?? ""}
+                  onChange={(event) =>
+                    setMetadataDraft((previous) => ({ ...previous, note: event.target.value }))
+                  }
+                />
+              </label>
+            </div>
+          </details>
+          <section className="sheet-actions" aria-label="プロジェクトの保存">
+            <div>
+              <strong>プロジェクトを保存</strong>
+              <p>検証済みデータと実行済み解析を、再現可能なプロジェクトとして保存します。</p>
+            </div>
+            <button
+              className="save-project-button"
+              type="button"
+              disabled={
+                !saveProject ||
+                !validated ||
+                !metadataDraftIsComplete(metadataDraft) ||
+                saveStatus === "saving"
+              }
+              onClick={saveCurrentProject}
+            >
+              {saveStatus === "saving" ? "プロジェクトを保存中…" : "プロジェクトを保存"}
+            </button>
+          </section>
+          {!saveProject && (
+            <p className="project-action-note" role="status">
+              デスクトップのプロジェクト保存機能が未接続のため、保存できません。入力シートはメモリ上に保持されています。
+            </p>
+          )}
+          {saveStatus === "success" && (
+            <p className="project-action-message project-action-message--success" role="status">
+              プロジェクトを保存しました。
+            </p>
+          )}
+          {saveStatus === "error" && saveError && (
+            <p className="project-action-message project-action-message--error" role="alert">
+              {saveError} 入力したデータは保持されています。
+            </p>
+          )}
+          {lastSavedState && (
+            <p className="project-action-note" role="note">
+              保存履歴：現在の生データ改訂 {lastSavedState.activeRawRevisionId}
+              。入力を編集すると、既存の解析とグラフは再計算が必要になります。
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

@@ -481,3 +481,32 @@ describe("canonical experiment-workspace recommendation authority", () => {
     });
   });
 });
+
+function equivalenceRequestFixture(paired = false): AnalysisEngineRequest {
+  return parseRequest({
+    protocolVersion: paired ? "0.16.0" : "0.15.0", requestId: "request.tost",
+    projectId: "project.test", analysisId: "analysis.tost", templateId: paired ? "D02" : "D01",
+    templateVersion: "0.2.0", method: paired ? "paired_tost" : "welch_tost",
+    comparisonId: "equivalence:condition.1:condition.2", contrastConditionIds: ["condition.1", "condition.2"],
+    observations: observations(2, paired), excludedIncompletePairIds: [],
+    equivalencePlan: {schemaVersion:"0.1.0", margin:{scale:"raw_difference",lowerBound:-2,upperBound:2,unit:"value",declaredAsPrespecified:true}, alpha:0.05, claimMode:"single_primary_comparison",primaryComparisonId:"equivalence:condition.1:condition.2"},
+    options:{alternative:"two_sided",confidenceLevel:0.9,multiplicityMethod:null},
+  });
+}
+
+describe("prespecified equivalence recommendation authority", () => {
+  it.each([false, true])("accepts TOST with the matching existing design (paired=%s)", paired => {
+    const result = recommendAnalysisRequest(designFixture({conditionCount:3,pairing:paired?"matched":"independent"}), equivalenceRequestFixture(paired));
+    expect(result.matched).toBe(true);
+    if(result.matched) expect(result.recommendation).toMatchObject({templateVersion:"0.2.0",recommendedMethod:paired?"paired_tost":"welch_tost",multiplicityMethod:null});
+  });
+  it.each([false, true])("rejects TOST when the declared pairing conflicts (paired=%s)", paired => {
+    expect(recommendAnalysisRequest(designFixture({conditionCount:2,pairing:paired?"independent":"matched"}),equivalenceRequestFixture(paired)).matched).toBe(false);
+  });
+  it("rejects an invalid margin instead of treating it as a classical request",()=>{
+    const request=equivalenceRequestFixture(false);
+    if(request.protocolVersion!=="0.15.0")throw Error("fixture");
+    const invalid={...request,equivalencePlan:{...request.equivalencePlan,margin:{...request.equivalencePlan.margin,lowerBound:0}}};
+    expect(recommendAnalysisRequest(designFixture({conditionCount:2}),invalid)).toMatchObject({matched:false,reasonCode:"equivalence_request_invalid"});
+  });
+});

@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState, type ComponentProps } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   CanonicalAdaptiveObservationSchema,
@@ -18,10 +18,6 @@ import {
   type CanonicalMatrixConditionCombination,
   type CanonicalWorksheetRow,
 } from "./CanonicalMatrixWorksheet";
-import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
-import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
-
-afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 function makeContract(overrides: Partial<StructureContract> = {}): StructureContract {
   return StructureContractSchema.parse({
@@ -172,17 +168,154 @@ function currentObservations(): CanonicalAdaptiveObservation[] {
   ) as CanonicalAdaptiveObservation[];
 }
 
+function LexicalHistoryHarness({
+  onChange,
+}: {
+  onChange: (next: readonly CanonicalAdaptiveObservation[]) => void;
+}) {
+  const [observations, setObservations] =
+    useState<readonly CanonicalAdaptiveObservation[]>(independentObservations);
+  const [mode, setMode] = useState<"compact" | "expanded">("compact");
+  return (
+    <>
+      <AdaptiveCanonicalSpreadsheet
+        contract={makeContract()}
+        observations={observations}
+        mode={mode}
+        onModeChange={setMode}
+        onObservationsChange={(next) => {
+          setObservations(next);
+          onChange(next);
+        }}
+        nextObservationId={nextObservationId}
+        nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
+        worksheetRows={[]}
+      />
+      <button
+        onClick={() =>
+          setObservations(
+            independentObservations.map((row) => ({
+              ...row,
+              observationId: `loaded.${row.observationId}`,
+            })),
+          )
+        }
+      >
+        Replace external data
+      </button>
+      <output data-testid="canonical-observations">{JSON.stringify(observations)}</output>
+    </>
+  );
+}
 describe("CanonicalMatrixWorksheet", () => {
-  it("shows the canonical matrix without Japanese application copy in English mode", () => {
-    setAppLocale("en");
-    const view = render(<WorksheetHarness />);
-    expectNoJapaneseUi(view.container);
-    expect(screen.getByText("Load CSV / TSV / TXT file")).toBeVisible();
-    expect(screen.getByText("Choose file")).toBeVisible();
-    expect(screen.getByLabelText("Load CSV / TSV / TXT file")).toHaveClass(
-      "localized-file-input__native",
-    );
+  it("does not pollute Undo or clear Redo when an untouched cell blurs", () => {
+    const onChange = vi.fn();
+    render(<LexicalHistoryHarness onChange={onChange} />);
+    const control = screen.getByRole("textbox", { name: "入力行 1・control・Response" });
+    const drug = screen.getByRole("textbox", { name: "入力行 1・drug・Response" });
+    fireEvent.focus(drug);
+    fireEvent.blur(drug);
+    expect(screen.getByRole("button", { name: "入力を元に戻す" })).toBeDisabled();
+    fireEvent.change(control, { target: { value: "12.00" } });
+    fireEvent.blur(control);
+    fireEvent.click(screen.getByRole("button", { name: "入力を元に戻す" }));
+    fireEvent.focus(drug);
+    fireEvent.blur(drug);
+    expect(screen.getByRole("button", { name: "入力をやり直す" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "入力をやり直す" }));
+    expect(control).toHaveValue("12.00");
   });
+  it.each([
+    ["1.0000000000000001", "1"],
+    ["12345678901234567890", "12345678901234567000"],
+    ["0x1A", "26"],
+    [" 10.00 ", "10.00"],
+  ])("reveals canonical numeric conversion for %s", (typed, display) => {
+    render(<LexicalHistoryHarness onChange={vi.fn()} />);
+    const cell = screen.getByRole("textbox", { name: "入力行 1・control・Response" });
+    fireEvent.change(cell, { target: { value: typed } });
+    fireEvent.blur(cell);
+    expect(cell).toHaveValue(display);
+    expect(currentObservations()[0]?.values.value).toBe(Number(typed));
+  });
+
+  it("restores lexical precision through history and view switches without publishing unchanged measurements", () => {
+    const onChange = vi.fn();
+    render(<LexicalHistoryHarness onChange={onChange} />);
+    const cell = () => screen.getByRole("textbox", { name: "入力行 1・control・Response" });
+    fireEvent.change(cell(), { target: { value: "10.00" } });
+    fireEvent.blur(cell());
+    expect(cell()).toHaveValue("10.00");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(currentObservations()).toEqual(independentObservations);
+    fireEvent.click(screen.getByRole("button", { name: "入力を元に戻す" }));
+    expect(cell()).toHaveValue("10");
+    fireEvent.click(screen.getByRole("button", { name: "入力をやり直す" }));
+    expect(cell()).toHaveValue("10.00");
+    fireEvent.click(screen.getByRole("button", { name: "1測定1行" }));
+    fireEvent.click(screen.getByRole("button", { name: "条件別シート" }));
+    expect(cell()).toHaveValue("10.00");
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Replace external data" }));
+    expect(cell()).toHaveValue("10");
+    expect(screen.getByRole("button", { name: "入力を元に戻す" })).toBeDisabled();
+  });
+  it("publishes a rectangular paste and its lexical history atomically", () => {
+    const onChange = vi.fn();
+    render(<LexicalHistoryHarness onChange={onChange} />);
+    const control = () => screen.getByRole("textbox", { name: "入力行 1・control・Response" });
+    const drug = () => screen.getByRole("textbox", { name: "入力行 1・drug・Response" });
+    fireEvent.paste(control(), { clipboardData: { getData: () => "12.000\t22.00" } });
+    expect(control()).toHaveValue("12.000");
+    expect(drug()).toHaveValue("22.00");
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(
+      currentObservations().find((row) => row.observationId === "obs.control.1")?.values.value,
+    ).toBe(12);
+    fireEvent.click(screen.getByRole("button", { name: "入力を元に戻す" }));
+    expect(control()).toHaveValue("10");
+    expect(drug()).toHaveValue("20");
+    fireEvent.click(screen.getByRole("button", { name: "入力をやり直す" }));
+    expect(control()).toHaveValue("12.000");
+    expect(drug()).toHaveValue("22.00");
+    fireEvent.paste(control(), { clipboardData: { getData: () => "13.0\tinvalid" } });
+    expect(control()).toHaveValue("12.000");
+    expect(drug()).toHaveValue("22.00");
+    expect(onChange).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([true, false])(
+    "does not overwrite measurements edited during a pending file read (committed=%s)",
+    async (committed) => {
+      let finish!: (text: string) => void;
+      const onChange = vi.fn();
+      render(<WorksheetHarness onChange={onChange} />);
+      const layout = canonicalWorksheetFileLayout(makeContract(), independentObservations, false);
+      const file = new File([], "slow.csv", { type: "text/csv" });
+      Object.defineProperty(file, "text", {
+        value: vi.fn(
+          () =>
+            new Promise<string>((resolve) => {
+              finish = resolve;
+            }),
+        ),
+      });
+      fireEvent.change(screen.getByLabelText("CSV / TSV / TXTファイルを読み込む"), {
+        target: { files: [file] },
+      });
+      const cell = screen.getByRole("textbox", { name: "入力行 1・control・Response" });
+      fireEvent.change(cell, { target: { value: "99" } });
+      if (committed) fireEvent.blur(cell);
+      expect(onChange).toHaveBeenCalledTimes(committed ? 1 : 0);
+      await act(async () =>
+        finish(`${layout.columns.map(({ header }) => header).join(",")}\n1,control-1,4,drug-1,20`),
+      );
+      expect(onChange).toHaveBeenCalledTimes(committed ? 1 : 0);
+      expect(cell).toHaveValue("99");
+      expect(screen.getByRole("alert")).toHaveTextContent("現在の値を保全");
+      expect(screen.getByLabelText("CSV / TSV / TXTファイルを読み込む")).toBeEnabled();
+    },
+  );
   beforeEach(() => {
     window.localStorage.removeItem("lsaa.adaptive-worksheet.zoom.v1");
   });
@@ -370,6 +503,76 @@ describe("CanonicalMatrixWorksheet", () => {
     expect(screen.getByRole("textbox", { name: "入力行 1・control・Response" })).toHaveValue("10");
   });
 
+  it("replaces an uncommitted draft on same-value paste without overwriting retained records on blur", () => {
+    render(<WorksheetHarness />);
+    const start = screen.getByRole("textbox", { name: "入力行 1・control・Response" });
+    const other = screen.getByRole("textbox", { name: "入力行 1・drug・Response" });
+    const before = currentObservations();
+    const pasted = `${start.getAttribute("value")}\t${other.getAttribute("value")}`;
+    fireEvent.change(start, { target: { value: "999" } });
+    fireEvent.paste(start, { clipboardData: { getData: () => pasted } });
+    expect(start).toHaveValue(String(before[0]!.values.value));
+    fireEvent.blur(start);
+    expect(currentObservations()).toEqual(before);
+  });
+
+  it("preserves an unchanged explicit missing value without requiring unknown missingness", () => {
+    const onChange = vi.fn();
+    const retainedMissing = CanonicalAdaptiveObservationSchema.parse({
+      ...independentObservations[0],
+      values: { value: null },
+      missingness: { value: "not_collected" },
+      sourceRow: 17,
+    });
+    const initialObservations = [retainedMissing, ...independentObservations.slice(1)];
+    render(
+      <WorksheetHarness
+        contract={makeContract({ allowedMissingness: ["not_collected"] })}
+        initialObservations={initialObservations}
+        onChange={onChange}
+      />,
+    );
+    const cell = screen.getByRole("textbox", { name: "入力行 1・control・Response" });
+    cell.focus();
+    fireEvent.keyDown(cell, { key: "Tab" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(currentObservations()).toEqual(initialObservations);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("does not emit an edit for unchanged collected values but commits a real value change", () => {
+    const onChange = vi.fn();
+    render(<WorksheetHarness onChange={onChange} />);
+    const cell = screen.getByRole("textbox", { name: "入力行 1・control・Response" });
+    fireEvent.blur(cell);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(currentObservations()).toEqual(independentObservations);
+
+    fireEvent.change(cell, { target: { value: "12.5" } });
+    fireEvent.blur(cell);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(currentObservations()).toEqual([
+      { ...independentObservations[0], values: { value: 12.5 } },
+      ...independentObservations.slice(1),
+    ]);
+  });
+
+  it("still rejects clearing a collected value when unknown missingness is forbidden", () => {
+    const onChange = vi.fn();
+    render(
+      <WorksheetHarness
+        contract={makeContract({ allowedMissingness: ["not_collected"] })}
+        onChange={onChange}
+      />,
+    );
+    const cell = screen.getByRole("textbox", { name: "入力行 1・control・Response" });
+    fireEvent.change(cell, { target: { value: "" } });
+    fireEvent.blur(cell);
+    expect(screen.getByRole("alert")).toHaveTextContent("欠測理由を1測定1行の表で指定");
+    expect(currentObservations()).toEqual(independentObservations);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it("commits the exact visible value when blur occurs before a React draft render", () => {
     render(<WorksheetHarness initialObservations={[]} />);
     const cell = screen.getByRole("textbox", {
@@ -478,92 +681,6 @@ describe("CanonicalMatrixWorksheet", () => {
         }),
       ]),
     );
-  });
-
-  it("keeps pasted decimal and exponent text visible without changing canonical numbers or rows", () => {
-    const rows: readonly CanonicalWorksheetRow[] = Array.from({ length: 4 }, (_, index) => ({
-      key: `experiment.${index + 1}`,
-      label: `Run ${index + 1}`,
-      date: "",
-    }));
-    render(<WorksheetHarness initialObservations={[]} rows={rows} />);
-
-    fireEvent.paste(screen.getByRole("textbox", { name: "入力行 3・control・Response" }), {
-      clipboardData: { getData: () => "1.00\t2.50\n3e-2\t-4.00" },
-    });
-
-    expect(screen.getByRole("textbox", { name: "入力行 1・control・Response" })).toHaveValue("");
-    expect(screen.getByRole("textbox", { name: "入力行 3・control・Response" })).toHaveValue(
-      "1.00",
-    );
-    expect(screen.getByRole("textbox", { name: "入力行 3・drug・Response" })).toHaveValue("2.50");
-    expect(screen.getByRole("textbox", { name: "入力行 4・control・Response" })).toHaveValue(
-      "3e-2",
-    );
-    expect(screen.getByRole("textbox", { name: "入力行 4・drug・Response" })).toHaveValue("-4.00");
-    expect(currentObservations()).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ experimentSessionId: "experiment.3", values: { value: 1 } }),
-        expect.objectContaining({ experimentSessionId: "experiment.3", values: { value: 2.5 } }),
-        expect.objectContaining({ experimentSessionId: "experiment.4", values: { value: 0.03 } }),
-        expect.objectContaining({ experimentSessionId: "experiment.4", values: { value: -4 } }),
-      ]),
-    );
-  });
-
-  it("keeps an out-of-order independent entry on its experiment-session row", () => {
-    const rows: readonly CanonicalWorksheetRow[] = Array.from({ length: 4 }, (_, index) => ({
-      key: `experiment.${index + 1}`,
-      label: `Run ${index + 1}`,
-      date: "",
-    }));
-    render(<WorksheetHarness initialObservations={[]} rows={rows} />);
-
-    const thirdRow = screen.getByRole("textbox", { name: "入力行 3・control・Response" });
-    fireEvent.change(thirdRow, { target: { value: "30" } });
-    fireEvent.blur(thirdRow);
-
-    expect(screen.getByRole("textbox", { name: "入力行 1・control・Response" })).toHaveValue("");
-    expect(screen.getByRole("textbox", { name: "入力行 3・control・Response" })).toHaveValue("30");
-    expect(currentObservations()).toEqual([
-      expect.objectContaining({
-        experimentSessionId: "experiment.3",
-        identities: { unit_id: "unit.control.3" },
-        values: { value: 30 },
-      }),
-    ]);
-
-    const firstRow = screen.getByRole("textbox", { name: "入力行 1・control・Response" });
-    fireEvent.change(firstRow, { target: { value: "10" } });
-    fireEvent.blur(firstRow);
-    expect(screen.getByRole("textbox", { name: "入力行 1・control・Response" })).toHaveValue("10");
-    expect(screen.getByRole("textbox", { name: "入力行 3・control・Response" })).toHaveValue("30");
-  });
-
-  it("edits an independent experiment-session date without treating the row as matched", () => {
-    const onRowChange = vi.fn();
-    const rows: readonly CanonicalWorksheetRow[] = [
-      { key: "experiment.1", label: "Run Alpha", date: "2026-09-01" },
-    ];
-    render(
-      <CanonicalMatrixWorksheet
-        tableId="independent-session-date"
-        contract={makeContract()}
-        observations={[]}
-        rows={rows}
-        showExperimentDate
-        onRowChange={onRowChange}
-        onObservationsChange={vi.fn()}
-        nextObservationId={nextObservationId}
-        nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
-      />,
-    );
-
-    const date = screen.getByLabelText("Run Alphaのこの組に共通する実験日");
-    expect(date).toHaveValue("2026-09-01");
-    fireEvent.change(date, { target: { value: "2026-09-02" } });
-    expect(onRowChange).toHaveBeenCalledWith(0, { date: "2026-09-02" });
-    expect(screen.queryByText("同じIDの条件は対応")).toBeNull();
   });
 
   it("imports a CSV against the generated headers and keeps source lineage in the commit", async () => {
@@ -1152,13 +1269,10 @@ describe("CanonicalMatrixWorksheet", () => {
       />,
     );
 
-    expect(screen.getByRole("columnheader", { name: "実験日*" })).toHaveTextContent("実験日*");
-    const note = screen.getByText(
-      /任意・行内の全条件が同じ日の場合のみ。日付から対応関係は決めません/,
+    expect(screen.getByRole("columnheader", { name: /この組に共通する実験日/ })).toHaveTextContent(
+      "任意・行内の全条件が同じ日の場合のみ。日付から対応関係は決めません",
     );
-    expect(note.closest("table")).toBeNull();
     const date = screen.getByLabelText("run-1のこの組に共通する実験日");
-    expect(date).toHaveAttribute("aria-describedby", note.id);
     expect(date).toHaveValue("2026-08-21");
     fireEvent.change(date, { target: { value: "2026-08-29" } });
     expect(onRowChange).toHaveBeenCalledWith(0, { date: "2026-08-29" });

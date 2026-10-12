@@ -1,3 +1,4 @@
+import { protectWindowsDeviceFileStem } from "../../app/projectFileName";
 import type { ControlledGraphExportResult } from "../../app/graphExportController";
 import type { GraphPanelSource } from "./graphPanelExport";
 
@@ -11,17 +12,16 @@ type Dependencies = Readonly<{
 }>;
 
 async function defaultDependencies(): Promise<Dependencies> {
-  const [graphExport, exportController, dataExport, panelExport] = await Promise.all([
+  const [graphExport, exportController, panelExport] = await Promise.all([
     import("../../app/graphExport"),
     import("../../app/graphExportController"),
-    import("./experimentGraphDataExport"),
     import("./graphPanelExport"),
   ]);
   return {
     serializeGraph: graphExport.serializeGraphSvg,
     serializePanel: panelExport.serializeGraphPanelSvg,
     savePanel: exportController.saveGraphPanelSvgExport,
-    safeFileStem: dataExport.safeGraphFileStem,
+    safeFileStem: (value) => protectWindowsDeviceFileStem(value.trim().replace(/[<>:"/\\|?*\u0000-\u001f]/gu, "-").slice(0,120).replace(/[. ]+$/g, "") || "graph"),
   };
 }
 
@@ -41,7 +41,7 @@ export async function exportWorkspaceGraphPanel(input: Readonly<{
     const container = containers.find(
       (candidate) => candidate.dataset.workspaceGraphId === graph.id,
     );
-    const svg = container?.querySelector<SVGSVGElement>("svg[role='img']");
+    const svg = container?.querySelector<SVGSVGElement>("svg.experiment-graph-svg[role='img']");
     if (!svg) throw new Error(`Graph ${graph.id} is not ready for panel export`);
     return {
       graphId: graph.id,

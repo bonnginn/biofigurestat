@@ -1,3 +1,4 @@
+import { parseDelimitedRecords } from "@lsaa/adaptive-input";
 import {
   AdaptiveColumnMappingSchema,
   AdaptiveRawLineageSchema,
@@ -72,58 +73,16 @@ export function parseCanonicalWorksheetRecords(
     );
   }
 
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = "";
-  let quoted = false;
-  let justClosedQuote = false;
-
-  const pushField = () => {
-    row.push(field);
-    field = "";
-    justClosedQuote = false;
-  };
-  const pushRow = () => {
-    pushField();
-    rows.push(row);
-    row = [];
-  };
-
-  for (let index = 0; index < normalized.length; index += 1) {
-    const character = normalized[index]!;
-    if (quoted) {
-      if (character === '"') {
-        if (normalized[index + 1] === '"') {
-          field += '"';
-          index += 1;
-        } else {
-          quoted = false;
-          justClosedQuote = true;
-        }
-      } else {
-        field += character;
-      }
-      continue;
-    }
-
-    if (character === '"' && field === "") {
-      quoted = true;
-    } else if (character === delimiter) {
-      pushField();
-    } else if (character === "\n") {
-      pushRow();
-    } else if (justClosedQuote && character.trim() !== "") {
-      throw new CanonicalWorksheetFileError(
-        "引用符の後ろに予期しない文字があります。CSV/TSVを確認してください。",
-      );
-    } else {
-      field += character;
-    }
+  let rows: string[][];
+  try {
+    rows = parseDelimitedRecords(normalized, delimiter);
+  } catch (error) {
+    throw new CanonicalWorksheetFileError(
+      error instanceof Error && error.message === "DELIMITED_UNCLOSED_QUOTE"
+        ? "引用符が閉じていないため、ファイルを読み込めません。"
+        : "引用符の後ろに予期しない文字があります。CSV/TSVを確認してください。",
+    );
   }
-  if (quoted) {
-    throw new CanonicalWorksheetFileError("引用符が閉じていないため、ファイルを読み込めません。");
-  }
-  if (field !== "" || row.length > 0 || !normalized.endsWith("\n")) pushRow();
   if (rows.length === 0 || rows[0]!.every((header) => !normalizedHeader(header))) {
     throw new CanonicalWorksheetFileError(
       "見出し行がありません。1行目に表の見出しを入れてください。",

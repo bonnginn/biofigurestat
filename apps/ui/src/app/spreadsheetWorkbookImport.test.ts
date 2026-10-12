@@ -1,85 +1,73 @@
 import { describe, expect, it } from "vitest";
+import { parseDelimitedRecords } from "@lsaa/adaptive-input";
+import { spreadsheetRowsToTsv, spreadsheetWorkbookToStackedTsv, parseSpreadsheetA1Range, spreadsheetSheetSelectionToTsv, mergeImportedSpreadsheetWorkbooks } from "./spreadsheetWorkbookImport";
 
-import {
-  mergeImportedSpreadsheetWorkbooks,
-  parseSpreadsheetA1Range,
-  spreadsheetSheetDefaultRange,
-  spreadsheetSheetSelectionToTsv,
-  type ImportedSpreadsheetSheet,
-} from "./spreadsheetWorkbookImport";
+describe("workbook delimited cell preservation", () => {
+  it("quotes leading quotes, embedded tabs and newlines while keeping empty cells", () => {
+    const rows = [
+      ["Label", "Notes", "Value", "Empty"],
+      ['"quoted label', "line1\nline2\tpart", "0", ""],
+      ["plain", "", "0.000001", ""],
+    ];
+    const before = structuredClone(rows);
+    const text = spreadsheetRowsToTsv(rows);
+    expect(text).toBe(
+      'Label\tNotes\tValue\tEmpty\n"""quoted label"\t"line1\nline2\tpart"\t0\t\nplain\t\t0.000001\t',
+    );
+    expect(parseDelimitedRecords(text, "\t")).toEqual(rows);
+    expect(rows).toEqual(before);
+  });
 
-const sheet: ImportedSpreadsheetSheet = {
-  name: "Measurements",
-  rows: [
-    ["Metadata", "", "Treatment", ""],
-    ["Sample ID", "Date", "Vehicle", "Drug A"],
-    ["S01", "2026-09-01", "1.0", "1.5"],
-    ["S02", "2026-09-02", "1.1", "1.6"],
-    ["note outside table", "", "", ""],
-  ],
-};
-
-describe("spreadsheet workbook range selection", () => {
-  it("combines multiple selected files while preserving file and worksheet provenance", () => {
-    expect(
-      mergeImportedSpreadsheetWorkbooks([
-        { fileName: "run-1.xlsx", sheets: [{ name: "Data", rows: [["ID", "Value"]] }] },
-        { fileName: "run-2.xlsx", sheets: [{ name: "Data", rows: [["ID", "Value"]] }] },
-      ]),
-    ).toEqual({
-      fileName: "run-1.xlsx +1",
-      sourceFiles: ["run-1.xlsx", "run-2.xlsx"],
+  it("keeps multiline worksheet provenance and data when stacking compatible sheets", () => {
+    const workbook = {
+      fileName: "local.xlsx",
       sheets: [
-        { name: "run-1.xlsx / Data", rows: [["ID", "Value"]] },
-        { name: "run-2.xlsx / Data", rows: [["ID", "Value"]] },
+        {
+          name: '"First\nworksheet',
+          rows: [
+            ["Label", "Value"],
+            ["A\tB", "1"],
+          ],
+        },
+        {
+          name: "Second",
+          rows: [
+            ["Label", "Value"],
+            ["C\nD", ""],
+          ],
+        },
       ],
-    });
-    expect(mergeImportedSpreadsheetWorkbooks([])).toBeNull();
-  });
-
-  it("uses familiar A1 notation and rejects reversed or out-of-sheet ranges", () => {
-    expect(spreadsheetSheetDefaultRange(sheet)).toBe("A1:D5");
-    expect(parseSpreadsheetA1Range("A1:D4", sheet, 2)).toEqual({
-      startRow: 0,
-      endRow: 3,
-      startColumn: 0,
-      endColumn: 3,
-      headerRowCount: 2,
-    });
-    expect(() => parseSpreadsheetA1Range("D4:A1", sheet, 1)).toThrow(/左上/u);
-    expect(() => parseSpreadsheetA1Range("A1:E4", sheet, 1)).toThrow(/使用範囲/u);
-    expect(() => parseSpreadsheetA1Range("A1:D2", sheet, 2)).toThrow(/データ/u);
-  });
-
-  it("flattens two-level merged-style headings without changing data cells", () => {
-    const selection = parseSpreadsheetA1Range("A1:D4", sheet, 2);
-    expect(spreadsheetSheetSelectionToTsv(sheet, selection)).toBe(
-      [
-        "Metadata / Sample ID\tMetadata / Date\tTreatment / Vehicle\tTreatment / Drug A",
-        "S01\t2026-09-01\t1.0\t1.5",
-        "S02\t2026-09-02\t1.1\t1.6",
-      ].join("\n"),
-    );
-  });
-
-  it("selects a strict subtable and preserves blank internal values", () => {
-    const selected = spreadsheetSheetSelectionToTsv(
-      {
-        name: "Subtable",
-        rows: [
-          ["ignore", "Condition", "Value", "Note"],
-          ["x", "Vehicle", "1.0", ""],
-          ["x", "Drug", "1.5", "kept"],
-        ],
-      },
-      {
-        startRow: 0,
-        endRow: 2,
-        startColumn: 1,
-        endColumn: 3,
-        headerRowCount: 1,
-      },
-    );
-    expect(selected).toBe("Condition\tValue\tNote\nVehicle\t1.0\t\nDrug\t1.5\tkept");
+    };
+    const before = structuredClone(workbook);
+    expect(parseDelimitedRecords(spreadsheetWorkbookToStackedTsv(workbook), "\t")).toEqual([
+      ["Experiment / worksheet", "Label", "Value"],
+      ['"First\nworksheet', "A\tB", "1"],
+      ["Second", "C\nD", ""],
+    ]);
+    expect(workbook).toEqual(before);
   });
 });
+
+describe("restored alpha4 Excel selection", () => {
+  it("selects a range with three header rows while retaining quoted data and source rows", () => {
+    const sheet = {name: "Sheet", rows: [["ignored", "Treatment", ""], ["ignored", "Dose", ""], ["ignored", "Value", "Note"], ["ignored", "1.000", "line1\nline2\tpart"]]};
+    const before = structuredClone(sheet);
+    const selection = parseSpreadsheetA1Range("B1:C4", sheet, 3);
+    expect(parseDelimitedRecords(spreadsheetSheetSelectionToTsv(sheet, selection), "\t")).toEqual([["Treatment / Dose / Value", "Treatment / Dose / Note"], ["1.000", "line1\nline2\tpart"]]);
+    expect(sheet).toEqual(before);
+  });
+  it("rejects reversed, out-of-sheet and header-only ranges", () => {
+    const sheet = {name: "Sheet", rows: [["X", "Y"], ["1", "2"]]};
+    for (const range of ["B2:A1", "A1:C2", "A1:B1", "A0:B2"]) expect(() => parseSpreadsheetA1Range(range, sheet, 1)).toThrow();
+  });
+  it("retains source identity across multiple workbooks without inferring n", () => {
+    const workbooks = [{fileName:"a.xlsx",sheets:[{name:"Sheet",rows:[["X"],["1"]]}]}, {fileName:"b.xlsx",sheets:[{name:"Sheet",rows:[["X"],["2"]]}]}];
+    const before = structuredClone(workbooks);
+    const merged = mergeImportedSpreadsheetWorkbooks(workbooks)!;
+    expect(merged.sourceFiles).toEqual(["a.xlsx", "b.xlsx"]);
+    expect(merged.sheets.map(({name})=>name)).toEqual(["a.xlsx / Sheet", "b.xlsx / Sheet"]);
+    expect(workbooks).toEqual(before);
+  });
+});
+
+it("keeps same-named files as distinct descriptive sources", () => {const merged=mergeImportedSpreadsheetWorkbooks([{fileName:"same.xlsx",sheets:[{name:"Sheet",rows:[["h"],["a"]]}]},{fileName:"same.xlsx",sheets:[{name:"Sheet",rows:[["h"],["b"]]}]}]); expect(merged?.sourceFiles).toEqual(["same.xlsx [1]","same.xlsx [2]"]); expect(merged?.sheets.map(s=>s.name)).toEqual(["same.xlsx [1] / Sheet","same.xlsx [2] / Sheet"]);});

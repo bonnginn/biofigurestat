@@ -32,7 +32,7 @@ describe("global overlay stacking contract", () => {
     const topbar = document.createElement("header");
     topbar.className = "topbar";
     document.body.append(topbar);
-    expect(window.getComputedStyle(topbar).position).toBe("sticky");
+    expect(window.getComputedStyle(topbar).position).toBe("relative");
     topbar.remove();
   });
 

@@ -1,3 +1,4 @@
+import { inferenceStatisticLabel } from "./inferenceStatisticLabel";
 import type {
   AnalysisEngineRequest,
   AnalysisEngineResult,
@@ -17,7 +18,13 @@ import {
   nonlinearParameterLabel,
   type NonlinearModelId,
 } from "./nonlinearModelRegistry";
+import {
+  twoConditionAlternativeText,
+  twoConditionIntervalNote,
+  usesCentralTwoConditionTInterval,
+} from "./twoConditionInferenceText";
 import { PRODUCT_IDENTITY } from "./productIdentity";
+import { controlComparisonInferenceText } from "./controlComparisonInferenceText";
 
 export type MethodsTextInput = Readonly<{
   design: ExperimentDesign;
@@ -125,9 +132,7 @@ function conditionLabels(input: MethodsTextInput): string {
     input.design.conditions.map((condition) => [condition.id, condition.label]),
   );
   const contrastIds =
-    input.request.protocolVersion === "0.1.0" ||
-    input.request.protocolVersion === "0.15.0" ||
-    input.request.protocolVersion === "0.16.0"
+    (input.request.protocolVersion === "0.1.0" || input.request.protocolVersion === "0.15.0" || input.request.protocolVersion === "0.16.0")
       ? input.request.contrastConditionIds
       : input.request.protocolVersion === "0.9.0"
         ? [input.request.conditionId]
@@ -155,9 +160,7 @@ function allConditionLabels(input: MethodsTextInput): string {
     input.design.conditions.map((condition) => [condition.id, condition.label]),
   );
   const conditionIds =
-    input.request.protocolVersion === "0.1.0" ||
-    input.request.protocolVersion === "0.15.0" ||
-    input.request.protocolVersion === "0.16.0"
+    (input.request.protocolVersion === "0.1.0" || input.request.protocolVersion === "0.15.0" || input.request.protocolVersion === "0.16.0")
       ? input.request.contrastConditionIds
       : input.request.protocolVersion === "0.9.0"
         ? [input.request.conditionId]
@@ -293,7 +296,7 @@ function intervalText(estimate: AnalysisEngineResult["estimates"][number] | unde
 function pairwiseResultLines(input: MethodsTextInput, testOffset: number): string[] {
   return input.result.tests.slice(testOffset).map((test, index) => {
     const estimate = input.result.estimates[index];
-    return `・${comparisonName(input, test.name)}：平均値の差 ${numberLabel(estimate?.value)}（${intervalText(estimate)}）、p=${pValueLabel(test.pValue)}、調整済みp=${pValueLabel(test.adjustedPValue)}、${test.effectSizeName ?? "効果量"}=${numberLabel(test.effectSize)}`;
+    return `・${comparisonName(input, test.name)}：平均値の差 ${numberLabel(estimate?.value)}（${intervalText(estimate)}）、${inferenceStatisticLabel(input.result, test)}=${numberLabel(test.statistic)}、p=${pValueLabel(test.pValue)}、調整済みp=${pValueLabel(test.adjustedPValue)}、${test.effectSizeName ?? "効果量"}=${numberLabel(test.effectSize)}`;
   });
 }
 
@@ -333,6 +336,7 @@ function executedResultLines(input: MethodsTextInput): string[] {
       "判断規則：2つの片側検定をalpha=0.05で行い、対応する両側90%信頼区間が事前指定範囲内に完全に入る場合だけ同等性を支持した。",
     ];
   }
+
   if (recommendation.templateId === "D17" && result.nonlinearFit) {
     const modelId = result.nonlinearFit.modelId as NonlinearModelId;
     const descriptiveOnly =
@@ -373,7 +377,7 @@ function executedResultLines(input: MethodsTextInput): string[] {
         (group) =>
           `・${labels.get(group.conditionId) ?? group.conditionId}：n=${group.n}、event=${group.events}、censored=${group.censored}`,
       ) ?? ["・Kaplan–Meier群要約：報告なし"]),
-      `log-rank検定：${test ? `${test.statisticName}=${numberLabel(test.statistic)}、自由度 ${degreesLabel(test.degreesOfFreedom)}、p=${pValueLabel(test.pValue)}` : "報告なし"}`,
+      `log-rank検定：${test ? `${inferenceStatisticLabel(result, test)}=${numberLabel(test.statistic)}、自由度 ${degreesLabel(test.degreesOfFreedom)}、p=${pValueLabel(test.pValue)}` : "報告なし"}`,
     ];
   }
   if (recommendation.templateId === "D03" || recommendation.templateId === "D04") {
@@ -397,7 +401,7 @@ function executedResultLines(input: MethodsTextInput): string[] {
       .slice(0, 3)
       .map(
         (test, index) =>
-          `・${effectLabels[index]}：${test.statisticName}=${numberLabel(test.statistic)}、自由度 ${degreesLabel(test.degreesOfFreedom)}、p=${pValueLabel(test.pValue)}、${test.effectSizeName ?? "効果量"}=${numberLabel(test.effectSize)}`,
+          `・${effectLabels[index]}：${inferenceStatisticLabel(result, test)}=${numberLabel(test.statistic)}、自由度 ${degreesLabel(test.degreesOfFreedom)}、p=${pValueLabel(test.pValue)}、${test.effectSizeName ?? "効果量"}=${numberLabel(test.effectSize)}`,
       );
     return [
       `結果：${result.status === "ok" ? "完了" : result.status}`,
@@ -421,7 +425,7 @@ function executedResultLines(input: MethodsTextInput): string[] {
         .slice(0, 3)
         .map(
           (test, index) =>
-            `・${effectLabels[index]}：${test.statisticName}=${numberLabel(test.statistic)}、自由度 ${degreesLabel(test.degreesOfFreedom)}、p=${pValueLabel(test.pValue)}、${test.effectSizeName ?? "効果量"}=${numberLabel(test.effectSize)}`,
+            `・${effectLabels[index]}：${inferenceStatisticLabel(result, test)}=${numberLabel(test.statistic)}、自由度 ${degreesLabel(test.degreesOfFreedom)}、p=${pValueLabel(test.pValue)}、${test.effectSizeName ?? "効果量"}=${numberLabel(test.effectSize)}`,
         ),
       "条件間の事後比較：実行せず",
     ];
@@ -440,7 +444,7 @@ function executedResultLines(input: MethodsTextInput): string[] {
         .slice(0, 3)
         .map(
           (test, index) =>
-            `・${effectLabels[index]}：${test.statisticName}=${numberLabel(test.statistic)}、自由度 ${degreesLabel(test.degreesOfFreedom)}、p=${pValueLabel(test.pValue)}、${test.effectSizeName ?? "効果量"}=${numberLabel(test.effectSize)}`,
+            `・${effectLabels[index]}：${inferenceStatisticLabel(result, test)}=${numberLabel(test.statistic)}、自由度 ${degreesLabel(test.degreesOfFreedom)}、p=${pValueLabel(test.pValue)}、${test.effectSizeName ?? "効果量"}=${numberLabel(test.effectSize)}`,
         ),
       "事後比較：実行せず",
     ];
@@ -451,8 +455,8 @@ function executedResultLines(input: MethodsTextInput): string[] {
   return [
     `結果：${result.status === "ok" ? "完了" : result.status}`,
     `推定値：${estimate ? `${estimate.name} = ${numberLabel(estimate.value)}` : "報告なし"}`,
-    `信頼区間：${estimate?.confidenceInterval ? `${numberLabel(estimate.confidenceInterval.level * 100)}%：${numberLabel(estimate.confidenceInterval.lower)}～${numberLabel(estimate.confidenceInterval.upper)}` : "報告なし"}`,
-    `検定統計量：${test ? `${test.statisticName} = ${numberLabel(test.statistic)}` : "報告なし"}`,
+    `信頼区間${usesCentralTwoConditionTInterval(input.request) ? "（両側）" : ""}：${estimate?.confidenceInterval ? `${numberLabel(estimate.confidenceInterval.level * 100)}%：${numberLabel(estimate.confidenceInterval.lower)}～${numberLabel(estimate.confidenceInterval.upper)}` : "報告なし"}`,
+    `検定統計量：${test ? `${inferenceStatisticLabel(result, test)} = ${numberLabel(test.statistic)}` : "報告なし"}`,
     `自由度：${degreesLabel(test?.degreesOfFreedom)}`,
     `p値：${pValueLabel(test?.pValue)}`,
     `多重性補正後p値：${test?.adjustedPValue == null ? "なし" : pValueLabel(test.adjustedPValue)}`,
@@ -472,24 +476,26 @@ export function generateMethodsText(input: MethodsTextInput): string {
     : request.protocolVersion === "0.15.0" || request.protocolVersion === "0.16.0"
       ? "多重性補正：事前指定した単一主比較だけを評価したため指定なし。"
       : request.protocolVersion === "0.14.0"
-        ? request.fitInterpretation === "descriptive_point_estimate_only"
-          ? "多重性補正：記述的curve fitのみで、仮説検定・SE・信頼区間を生成していないため対象外。"
-          : "多重性補正：parameter estimationをseriesごとに独立して行い、仮説検定のp値を生成していないため指定なし。"
-        : request.protocolVersion === "0.6.0"
-          ? `多重性補正：条件×${repeatedAxisLabel(input)}、条件、${repeatedAxisLabel(input)}の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
-          : request.protocolVersion === "0.7.0"
-            ? `多重性補正：独立条件×${repeatedAxisLabel(input)}の3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
-            : request.protocolVersion === "0.10.0"
-              ? `多重性補正：条件×${repeatedAxisLabel(input)}の3つの事前指定omnibus効果のみを報告し、事後比較は実行していないため指定なし。`
-              : request.protocolVersion === "0.5.0"
-                ? "多重性補正：単一の相関係数を評価したため指定なし。"
-                : request.protocolVersion === "0.8.0"
-                  ? "多重性補正：事前指定した単一のlog-rank全体検定のため指定なし。"
-                  : request.protocolVersion === "0.9.0"
-                    ? "多重性補正：明示した単一の基準値との比較のため指定なし。"
-                    : request.protocolVersion === "0.2.0"
-                      ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
-                      : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
+      ? request.fitInterpretation === "descriptive_point_estimate_only"
+        ? "多重性補正：記述的curve fitのみで、仮説検定・SE・信頼区間を生成していないため対象外。"
+        : "多重性補正：parameter estimationをseriesごとに独立して行い、仮説検定のp値を生成していないため指定なし。"
+      : request.protocolVersion === "0.6.0"
+        ? `多重性補正：条件×${repeatedAxisLabel(input)}、条件、${repeatedAxisLabel(input)}の事前指定した3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
+        : request.protocolVersion === "0.7.0"
+          ? `多重性補正：独立条件×${repeatedAxisLabel(input)}の3つのomnibus効果のみを報告し、事後比較は実行していないため指定なし。`
+          : request.protocolVersion === "0.10.0"
+            ? `多重性補正：条件×${repeatedAxisLabel(input)}の3つの事前指定omnibus効果のみを報告し、事後比較は実行していないため指定なし。`
+            : request.protocolVersion === "0.5.0"
+              ? "多重性補正：単一の相関係数を評価したため指定なし。"
+              : request.protocolVersion === "0.8.0"
+                ? "多重性補正：事前指定した単一のlog-rank全体検定のため指定なし。"
+                : request.protocolVersion === "0.9.0"
+                  ? "多重性補正：明示した単一の基準値との比較のため指定なし。"
+                  : request.protocolVersion === "0.13.0"
+                    ? "多重性補正：単一の回帰の傾きと0の比較のため指定なし。"
+                  : request.protocolVersion === "0.2.0"
+                    ? "多重性補正：条件間の事後比較を実行していないため指定なし。"
+                    : "多重性補正：指定なし（2条件の主比較のため補正なし）。";
   const warnings = [
     "除外：この実行契約にはQCによる除外情報が含まれません。除外の有無はQC記録を確認してください。",
     normalizationWarning(design),
@@ -523,6 +529,11 @@ export function generateMethodsText(input: MethodsTextInput): string {
     `エラーバー：${errorBarLabel(input.graphSpec, input.graphErrorBar)}`,
     "",
     "解析結果",
+    ...[
+      twoConditionAlternativeText(request),
+      twoConditionIntervalNote(request),
+      controlComparisonInferenceText(request),
+    ].filter((line): line is string => line !== null),
     ...resultLines,
     "",
     `実行エンジン：${result.engine.name} ${result.engine.version}`,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import numpy as np
@@ -12,6 +13,15 @@ from .result_common import base_result, estimate
 
 def run_simple_regression(request: dict[str, Any]) -> dict[str, Any]:
     points = request["points"]
+    if len(points) < 3:
+        raise ValueError("Simple regression requires at least three independent X/Y points")
+    if not isinstance(request["includeIntercept"], bool):
+        raise ValueError("includeIntercept must be a boolean; the intercept choice cannot be inferred")
+    for point in points:
+        for axis in ("x", "y"):
+            value = point[axis]
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                raise ValueError("Regression X/Y values must be finite numbers")
     unit_ids = [point["experimentalUnitId"] for point in points]
     if len(unit_ids) != len(set(unit_ids)):
         raise ValueError("Simple regression requires one independent X/Y point per experimental unit")
@@ -21,6 +31,9 @@ def run_simple_regression(request: dict[str, Any]) -> dict[str, Any]:
     include_intercept = bool(request["includeIntercept"])
     if np.ptp(x) == 0:
         raise ValueError("Regression requires variation in X")
+    total = float(np.sum((y - np.mean(y)) ** 2)) if include_intercept else float(np.sum(y**2))
+    if not np.isfinite(total) or total <= 0 or (include_intercept and np.ptp(y) == 0):
+        raise ValueError("R-squared is undefined: Y must have nonzero centered variation with an intercept, or nonzero uncentered sum of squares without an intercept")
     if include_intercept:
         design = np.column_stack([np.ones(n), x])
         df = n - 2
@@ -47,10 +60,11 @@ def run_simple_regression(request: dict[str, Any]) -> dict[str, Any]:
         p_value = float(2 * stats.t.sf(abs(t_value), df))
     elif alternative == "greater":
         p_value = float(stats.t.sf(t_value, df))
-    else:
+    elif alternative == "less":
         p_value = float(stats.t.cdf(t_value, df))
-    total = float(np.sum((y - np.mean(y)) ** 2)) if include_intercept else float(np.sum(y**2))
-    r_squared = 1 - float(np.sum(residuals**2)) / total if total > 0 else 1.0
+    else:
+        raise ValueError("Regression alternative must be two_sided, greater, or less")
+    r_squared = 1 - float(np.sum(residuals**2)) / total
     x_line = np.linspace(float(np.min(x)), float(np.max(x)), 80)
     fitted_line = []
     inverse = np.linalg.inv(design.T @ design)
@@ -63,5 +77,5 @@ def run_simple_regression(request: dict[str, Any]) -> dict[str, Any]:
     result["estimates"] = [estimate("slope", slope, slope_se, {"level": confidence_level, "lower": slope - critical * slope_se, "upper": slope + critical * slope_se}), estimate("intercept", intercept, float(np.sqrt(covariance[0, 0])) if include_intercept else None, None)]
     result["tests"] = [{"name": "slope_hypothesis_test", "statisticName": "t", "statistic": t_value, "degreesOfFreedom": [float(df)], "pValue": p_value, "adjustedPValue": None, "effectSizeName": "r_squared", "effectSize": r_squared}]
     result["regression"] = {"slope": slope, "intercept": intercept, "rSquared": r_squared, "xRange": [float(np.min(x)), float(np.max(x))], "confidenceLevel": confidence_level, "fittedLine": fitted_line}
-    result["diagnostics"] = [{"code": "regression_model", "message": f"OLS with {'an estimated intercept' if include_intercept else 'intercept explicitly fixed at zero'}; X={request['xLabel']} ({request['xUnit']}); Y={request['yLabel']} ({request['yUnit']})."}]
+    result["diagnostics"] = [{"code": "regression_model", "message": f"OLS with {'an estimated intercept' if include_intercept else 'intercept explicitly fixed at zero'}; R-squared uses {'centered' if include_intercept else 'uncentered'} total sum of squares; X={request['xLabel']} ({request['xUnit']}); Y={request['yLabel']} ({request['yUnit']})."}]
     return result

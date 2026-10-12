@@ -3,7 +3,6 @@ import {
   experimentCellKey,
   percentage,
   timePointLabel,
-  orderedAxisTitle,
   orderedAxisUnit,
   wbRatio,
   type ExperimentCellMap,
@@ -13,14 +12,9 @@ import {
 import { deriveTimeMetricValue } from "../../app/experimentDraftAnalysis";
 import { defaultLayersForGraphType } from "../../app/graphDefaults";
 import type { WorkspaceGraphState } from "../../app/experimentWorkspaceProject";
-import { localizedText, useAppLocale } from "../../app/appLocale";
 import { violinDensityPath } from "./graphGeometry";
-import { createNiceTicks, createPlotRectangle, yAxisTitlePosition } from "./graphLayout";
 
 import "./graph-creation-preview.css";
-import { createInitialGraphGrouping } from "../../app/graphGrouping";
-import { buildConditionAxisLabels } from "./experimentGraphPresentation";
-import { buildHierarchyGroups } from "./graphSemantics";
 
 export type CreatableGraphType = Extract<
   WorkspaceGraphState["graphType"],
@@ -68,64 +62,6 @@ function quantile(values: readonly number[], fraction: number): number | null {
   return (
     (ordered[lower] ?? 0) + ((ordered[upper] ?? 0) - (ordered[lower] ?? 0)) * (position - lower)
   );
-}
-
-function PreviewYTicks({
-  ticks,
-  axisX,
-  yFor,
-  format,
-}: Readonly<{
-  ticks: readonly number[];
-  axisX: number;
-  yFor: (tick: number) => number;
-  format: (tick: number) => string;
-}>) {
-  return ticks.map((tick) => {
-    const y = yFor(tick);
-    return (
-      <g key={`y-tick-${tick}`} data-preview-y-tick={tick}>
-        <line className="graph-current-preview__tick" x1={axisX - 5} x2={axisX} y1={y} y2={y} />
-        <text
-          className="graph-current-preview__tick-label"
-          x={axisX - 9}
-          y={y + 4}
-          textAnchor="end"
-        >
-          {format(tick)}
-        </text>
-      </g>
-    );
-  });
-}
-
-function PreviewXTicks({
-  ticks,
-  axisY,
-  xFor,
-  format,
-}: Readonly<{
-  ticks: readonly number[];
-  axisY: number;
-  xFor: (tick: number) => number;
-  format: (tick: number) => string;
-}>) {
-  return ticks.map((tick) => {
-    const x = xFor(tick);
-    return (
-      <g key={`x-tick-${tick}`} data-preview-x-tick={tick}>
-        <line className="graph-current-preview__tick" x1={x} x2={x} y1={axisY} y2={axisY + 5} />
-        <text
-          className="graph-current-preview__tick-label"
-          x={x}
-          y={axisY + 19}
-          textAnchor="middle"
-        >
-          {format(tick)}
-        </text>
-      </g>
-    );
-  });
 }
 
 function previewGroups(
@@ -215,14 +151,13 @@ function previewGroups(
 }
 
 export function GraphTypeThumbnail({ type }: { type: CreatableGraphType }) {
-  const locale = useAppLocale();
   const points = [48, 36, 42];
   return (
     <svg
       className="graph-type-thumbnail"
       viewBox="0 0 128 76"
       role="img"
-      aria-label={localizedText(locale, `${type}の模式図`, `${type} schematic`)}
+      aria-label={`${type}の模式図`}
     >
       <line x1="15" x2="15" y1="10" y2="62" />
       <line x1="15" x2="118" y1="62" y2="62" />
@@ -295,17 +230,8 @@ export function CurrentDataGraphPreview({
   timeAnalysis?: TimeAnalysisPlan;
   layers?: WorkspaceGraphState["layers"];
 }) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const selectedReadout = draft.readouts.find(({ id }) => id === readoutId) ?? draft.readouts[0];
   if (type === "stacked" || type === "stacked_100" || type === "category_percentage") {
-    const width = Math.max(620, 273 + Math.max(0, draft.conditions.length - 1) * 72);
-    const previewPlot = createPlotRectangle(width, 300, {
-      top: 22,
-      right: 150,
-      bottom: 78,
-      left: 62,
-    });
     const readout = selectedReadout;
     const categories = readout?.categories ?? [];
     const groups = draft.conditions.map((condition) => {
@@ -333,101 +259,35 @@ export function CurrentDataGraphPreview({
     });
     if (!groups.some(({ percentages }) => percentages.some((value) => value > 0))) {
       return (
-        <p className="graph-current-preview__empty">
-          {t(
-            "カテゴリ別countを入力するとpreviewします。",
-            "Enter category counts to preview the Graph.",
-          )}
-        </p>
+        <p className="graph-current-preview__empty">カテゴリ別countを入力するとpreviewします。</p>
       );
     }
     return (
       <svg
         className="graph-current-preview"
-        width={width}
-        viewBox={`0 0 ${width} 300`}
+        viewBox="0 0 620 300"
         role="img"
-        aria-label={t(
-          "現在のカテゴリ構成を表示したpreview",
-          "Preview of the current category composition",
-        )}
+        aria-label="現在のカテゴリ構成を表示したpreview"
       >
-        <line
-          x1={previewPlot.left}
-          x2={previewPlot.left}
-          y1={previewPlot.top}
-          y2={previewPlot.bottom}
-        />
-        <line
-          x1={previewPlot.left}
-          x2={previewPlot.right}
-          y1={previewPlot.bottom}
-          y2={previewPlot.bottom}
-        />
-        <PreviewYTicks
-          ticks={[0, 25, 50, 75, 100]}
-          axisX={previewPlot.left}
-          yFor={(tick) => previewPlot.bottom - (tick / 100) * previewPlot.height}
-          format={String}
-        />
+        <line x1="62" x2="62" y1="22" y2="222" />
+        <line x1="62" x2="580" y1="222" y2="222" />
         {groups.map(({ condition, percentages }, groupIndex) => {
           let cumulative = 0;
-          const x = previewPlot.left + 23 + groupIndex * 72;
-          return (
-            <g key={condition.id}>
-              {percentages.map((value, categoryIndex) => {
-                const height = (value / 100) * previewPlot.height;
-                cumulative += height;
-                return (
-                  <rect
-                    key={`${condition.id}-${categories[categoryIndex]?.id}`}
-                    x={x}
-                    y={previewPlot.bottom - cumulative}
-                    width="38"
-                    height={height}
-                    className={`graph-current-preview__category graph-current-preview__category--${categoryIndex + 1}`}
-                  />
-                );
-              })}
-              <text x={x + 19} y={previewPlot.bottom + 21} textAnchor="middle">
-                <title>{condition.label}</title>
-                {condition.label.length > 12 ? `${condition.label.slice(0, 11)}…` : condition.label}
-              </text>
-            </g>
-          );
+          return percentages.map((value, categoryIndex) => {
+            const height = value * 2;
+            cumulative += height;
+            return (
+              <rect
+                key={`${condition.id}-${categories[categoryIndex]?.id}`}
+                x={85 + groupIndex * 72}
+                y={222 - cumulative}
+                width="38"
+                height={height}
+                className={`graph-current-preview__category graph-current-preview__category--${categoryIndex + 1}`}
+              />
+            );
+          });
         })}
-        <text
-          className="graph-current-preview__axis-title"
-          x={previewPlot.left + previewPlot.width / 2}
-          y={previewPlot.bottom + 58}
-          textAnchor="middle"
-        >
-          {draft.attributes[0]?.label || t("条件", "Condition")}
-        </text>
-        <text
-          className="graph-current-preview__axis-title"
-          x="17"
-          y={previewPlot.top + previewPlot.height / 2}
-          textAnchor="middle"
-          transform={`rotate(-90 17 ${previewPlot.top + previewPlot.height / 2})`}
-        >
-          {readout?.label ? `${readout.label} (%)` : t("割合 (%)", "Percentage (%)")}
-        </text>
-        {categories.map((category, categoryIndex) => (
-          <g
-            key={category.id}
-            transform={`translate(${previewPlot.right + 20} ${previewPlot.top + categoryIndex * 24})`}
-          >
-            <rect
-              width="13"
-              height="13"
-              className={`graph-current-preview__category graph-current-preview__category--${categoryIndex + 1}`}
-            />
-            <text x="19" y="11">
-              {category.label}
-            </text>
-          </g>
-        ))}
       </svg>
     );
   }
@@ -439,22 +299,9 @@ export function CurrentDataGraphPreview({
     ...(type === "violin" ? group.observationValues : []),
   ]);
   if (allValues.length === 0) {
-    return (
-      <p className="graph-current-preview__empty">
-        {t(
-          "測定値を入力するとここにpreviewします。",
-          "Enter measured values to preview the Graph here.",
-        )}
-      </p>
-    );
+    return <p className="graph-current-preview__empty">測定値を入力するとここにpreviewします。</p>;
   }
   if (type === "scatter") {
-    const previewPlot = createPlotRectangle(620, 300, {
-      top: 22,
-      right: 58,
-      bottom: 78,
-      left: 62,
-    });
     const [xGroup, yGroup] = groups;
     const yByExperiment = new Map(
       yGroup?.experimentPoints.map((point) => [point.experimentId, point.value]) ?? [],
@@ -465,104 +312,34 @@ export function CurrentDataGraphPreview({
         return y === undefined ? [] : [{ id: point.experimentId, x: point.value, y }];
       }) ?? [];
     if (pairs.length === 0) {
-      return (
-        <p className="graph-current-preview__empty">
-          {t("XとYを入力するとここにpreviewします。", "Enter X and Y to preview the Graph here.")}
-        </p>
-      );
+      return <p className="graph-current-preview__empty">XとYを入力するとここにpreviewします。</p>;
     }
     const xValues = pairs.map(({ x }) => x);
     const yValues = pairs.map(({ y }) => y);
-    const observedXMin = Math.min(...xValues);
-    const observedXMax = Math.max(...xValues);
-    const observedYMin = Math.min(...yValues);
-    const observedYMax = Math.max(...yValues);
-    const xPadding = Math.max(
-      (observedXMax - observedXMin) * 0.08,
-      Math.max(Math.abs(observedXMin), Math.abs(observedXMax), 1) * 0.04,
-    );
-    const yPadding = Math.max(
-      (observedYMax - observedYMin) * 0.08,
-      Math.max(Math.abs(observedYMin), Math.abs(observedYMax), 1) * 0.04,
-    );
-    const xMin = observedXMin - xPadding;
-    const xMax = observedXMax + xPadding;
-    const yMin = observedYMin - yPadding;
-    const yMax = observedYMax + yPadding;
-    const xRange = xMax - xMin;
-    const yRange = yMax - yMin;
-    const xTicks = createNiceTicks(xMin, xMax, 5, null);
-    const yTicks = createNiceTicks(yMin, yMax, 5, null);
-    const tickFormatter = new Intl.NumberFormat(locale, { maximumSignificantDigits: 4 });
-    const yTickLabels = yTicks.map((tick) => tickFormatter.format(tick));
-    const yTitleX = yAxisTitlePosition({
-      axisX: previewPlot.left,
-      tickLabels: yTickLabels,
-      tickFontSize: 11,
-      titleFontSize: 12,
-      minimumX: 14,
-      gap: 4,
-    });
-    const xForPair = (value: number) =>
-      previewPlot.left + ((value - xMin) / xRange) * previewPlot.width;
-    const yForPair = (value: number) =>
-      previewPlot.top + ((yMax - value) / yRange) * previewPlot.height;
+    const xMin = Math.min(...xValues);
+    const xMax = Math.max(...xValues);
+    const yMin = Math.min(...yValues);
+    const yMax = Math.max(...yValues);
+    const xRange = Math.max(1, xMax - xMin);
+    const yRange = Math.max(1, yMax - yMin);
+    const xForPair = (value: number) => 62 + ((value - xMin) / xRange) * 500;
+    const yForPair = (value: number) => 22 + ((yMax - value) / yRange) * 200;
     return (
       <svg
         className="graph-current-preview"
         viewBox="0 0 620 300"
         role="img"
-        aria-label={t(
-          `${xGroup?.label ?? "X"}と${yGroup?.label ?? "Y"}の現在のデータによる散布図preview`,
-          `Scatter-plot preview of the current ${xGroup?.label ?? "X"} and ${yGroup?.label ?? "Y"} data`,
-        )}
-        data-domain-x-min={xMin}
-        data-domain-x-max={xMax}
-        data-domain-y-min={yMin}
-        data-domain-y-max={yMax}
+        aria-label={`${xGroup?.label ?? "X"}と${yGroup?.label ?? "Y"}の現在のデータによる散布図preview`}
       >
-        <line
-          x1={previewPlot.left}
-          x2={previewPlot.left}
-          y1={previewPlot.top}
-          y2={previewPlot.bottom}
-        />
-        <PreviewXTicks
-          ticks={xTicks}
-          axisY={previewPlot.bottom}
-          xFor={xForPair}
-          format={(tick) => tickFormatter.format(tick)}
-        />
-        <PreviewYTicks
-          ticks={yTicks}
-          axisX={previewPlot.left}
-          yFor={yForPair}
-          format={(tick) => tickFormatter.format(tick)}
-        />
-        <line
-          x1={previewPlot.left}
-          x2={previewPlot.right}
-          y1={previewPlot.bottom}
-          y2={previewPlot.bottom}
-        />
+        <line x1="62" x2="62" y1="22" y2="222" />
+        <line x1="62" x2="562" y1="222" y2="222" />
         {pairs.map((pair) => (
           <circle key={pair.id} cx={xForPair(pair.x)} cy={yForPair(pair.y)} r="5" />
         ))}
-        <text
-          className="graph-current-preview__axis-title"
-          x={previewPlot.left + previewPlot.width / 2}
-          y="275"
-          textAnchor="middle"
-        >
+        <text x="312" y="275" textAnchor="middle">
           {xGroup?.label ?? "X"}
         </text>
-        <text
-          className="graph-current-preview__axis-title"
-          x={yTitleX}
-          y={previewPlot.top + previewPlot.height / 2}
-          textAnchor="middle"
-          transform={`rotate(-90 ${yTitleX} ${previewPlot.top + previewPlot.height / 2})`}
-        >
+        <text x="20" y="122" textAnchor="middle" transform="rotate(-90 20 122)">
           {yGroup?.label ?? "Y"}
         </text>
       </svg>
@@ -570,33 +347,11 @@ export function CurrentDataGraphPreview({
   }
   // Keep a short axis for ordinary two- or three-group previews. Wider designs
   // still grow horizontally and remain scrollable instead of compressing labels.
-  const width = Math.max(320, 100 + groups.length * 72);
-  const categoryLabels =
-    draft.time.sampling === "none"
-      ? buildConditionAxisLabels({
-          draft,
-          series: groups.map((group) => ({
-            conditionId: group.conditionId,
-            conditionLabel: group.label,
-          })),
-          hierarchyOrder: draft.attributes.map(({ id }) => id),
-          grouping: createInitialGraphGrouping(draft),
-        })
-      : [];
-  const groupedCategories = categoryLabels.some(({ levels }) =>
-    levels.some(({ id }) => id.endsWith(".member")),
-  );
-  const categoryDepth = groupedCategories
-    ? Math.max(...categoryLabels.map(({ levels }) => levels.length))
-    : 1;
-  const extraCategoryHeight = (categoryDepth - 1) * 22;
-  const height = 300 + extraCategoryHeight;
-  const previewPlot = createPlotRectangle(width, height, {
-    top: 22,
-    right: 20,
-    bottom: 78 + extraCategoryHeight,
-    left: 70,
-  });
+  const width = Math.max(360, 100 + groups.length * 72);
+  const height = 300;
+  const top = 22;
+  const bottom = 78;
+  const plotHeight = height - top - bottom;
   const observedMin = Math.min(...allValues);
   const observedMax = Math.max(...allValues);
   const observedRange = observedMax - observedMin;
@@ -615,32 +370,8 @@ export function CurrentDataGraphPreview({
         ? Math.max(0, observedMax + padding)
         : observedMax + padding;
   const yFor = (value: number) =>
-    previewPlot.top + ((domainMax - value) / (domainMax - domainMin)) * previewPlot.height;
-  const categoryInset = Math.min(32, previewPlot.width / 3);
-  const xFor = (index: number) =>
-    groups.length === 1
-      ? previewPlot.left + previewPlot.width / 2
-      : previewPlot.left +
-        categoryInset +
-        (index * (previewPlot.width - categoryInset * 2)) / (groups.length - 1);
-  const yTicks = createNiceTicks(domainMin, domainMax, 5, null);
-  const tickFormatter = new Intl.NumberFormat(locale, { maximumSignificantDigits: 4 });
-  const yTickLabels = yTicks.map((tick) => tickFormatter.format(tick));
-  const yAxisTitle = selectedReadout
-    ? `${selectedReadout.label}${selectedReadout.unit ? ` (${selectedReadout.unit})` : ""}`
-    : t("測定値", "Measurement");
-  const xAxisTitle =
-    draft.time.points.length > 0
-      ? `${draft.attributes[0]?.label || t("条件", "Condition")} × ${orderedAxisTitle(draft.time)}`
-      : draft.attributes[0]?.label || t("条件", "Condition");
-  const yTitleX = yAxisTitlePosition({
-    axisX: previewPlot.left,
-    tickLabels: yTickLabels,
-    tickFontSize: 11,
-    titleFontSize: 12,
-    minimumX: 14,
-    gap: 4,
-  });
+    top + ((domainMax - value) / (domainMax - domainMin)) * plotHeight;
+  const xFor = (index: number) => 62 + index * 72;
   const summaryLines = [...new Set(groups.map(({ conditionId }) => conditionId))].flatMap(
     (conditionId) => {
       const points = groups.flatMap((group, index) => {
@@ -691,36 +422,23 @@ export function CurrentDataGraphPreview({
         width={width}
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label={t(
-          `${type}で現在のデータを表示したpreview`,
-          `Preview of current data as ${type}`,
-        )}
+        aria-label={`${type}で現在のデータを表示したpreview`}
         data-domain-min={domainMin}
         data-domain-max={domainMax}
-        data-plot-left={previewPlot.left}
-        data-plot-right={previewPlot.right}
-        data-plot-top={previewPlot.top}
-        data-plot-bottom={previewPlot.bottom}
       >
         <line
           className="graph-current-preview__axis"
-          x1={previewPlot.left}
-          x2={previewPlot.left}
-          y1={previewPlot.top}
-          y2={previewPlot.bottom}
-        />
-        <PreviewYTicks
-          ticks={yTicks}
-          axisX={previewPlot.left}
-          yFor={yFor}
-          format={(tick) => tickFormatter.format(tick)}
+          x1="46"
+          x2="46"
+          y1={top}
+          y2={height - bottom}
         />
         <line
           className="graph-current-preview__axis"
-          x1={previewPlot.left}
-          x2={previewPlot.right}
-          y1={previewPlot.bottom}
-          y2={previewPlot.bottom}
+          x1="46"
+          x2={width - 20}
+          y1={height - bottom}
+          y2={height - bottom}
         />
         {type === "line"
           ? summaryLines.map(({ conditionId, points }) => (
@@ -749,14 +467,14 @@ export function CurrentDataGraphPreview({
             group.observationValues.length > 0 ? group.observationValues : group.experimentValues;
           const currentViolinPath = violinDensityPath(source, x, yFor, 22);
           return (
-            <g key={group.key} data-preview-group-x={x}>
+            <g key={group.key}>
               {type === "bar" && average !== null ? (
                 <rect
                   className="graph-current-preview__bar"
                   x={x - 18}
                   y={yFor(average)}
                   width="36"
-                  height={previewPlot.bottom - yFor(average)}
+                  height={height - bottom - yFor(average)}
                 />
               ) : null}
               {type === "box" && q1 !== null && median !== null && q3 !== null ? (
@@ -824,49 +542,13 @@ export function CurrentDataGraphPreview({
                   y2={yFor(average - error)}
                 />
               ) : null}
-              {!groupedCategories ? (
-                <text x={x} y={previewPlot.bottom + 21} textAnchor="middle">
-                  <title>{group.label}</title>
-                  {group.label.length > 12 ? `${group.label.slice(0, 11)}…` : group.label}
-                </text>
-              ) : null}
+              <text x={x} y={height - bottom + 21} textAnchor="middle">
+                <title>{group.label}</title>
+                {group.label.length > 12 ? `${group.label.slice(0, 11)}…` : group.label}
+              </text>
             </g>
           );
         })}
-        {groupedCategories
-          ? buildHierarchyGroups(categoryLabels).flatMap((levelGroups, levelIndex) =>
-              levelGroups
-                .filter(({ label }) => label.trim())
-                .map((group) => (
-                  <text
-                    key={`${levelIndex}:${group.key}`}
-                    x={(xFor(group.start) + xFor(group.end)) / 2}
-                    y={previewPlot.bottom + 21 + (categoryDepth - 1 - levelIndex) * 22}
-                    textAnchor="middle"
-                    data-preview-category-label={group.label}
-                  >
-                    {group.label}
-                  </text>
-                )),
-            )
-          : null}
-        <text
-          className="graph-current-preview__axis-title"
-          x={previewPlot.left + previewPlot.width / 2}
-          y={previewPlot.bottom + 58 + extraCategoryHeight}
-          textAnchor="middle"
-        >
-          {xAxisTitle}
-        </text>
-        <text
-          className="graph-current-preview__axis-title"
-          x={yTitleX}
-          y={previewPlot.top + previewPlot.height / 2}
-          textAnchor="middle"
-          transform={`rotate(-90 ${yTitleX} ${previewPlot.top + previewPlot.height / 2})`}
-        >
-          {yAxisTitle}
-        </text>
       </svg>
     </div>
   );

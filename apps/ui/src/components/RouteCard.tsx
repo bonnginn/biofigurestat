@@ -1,15 +1,11 @@
 import type { AppRoute, PrimaryRouteId } from "../app/routes";
-import { useAppLocale } from "../app/appLocale";
 
 type RouteCardProps = {
   route: {
     id: PrimaryRouteId;
     title: string;
-    titleEn: string;
     description: string;
-    descriptionEn: string;
     japaneseDescription: string;
-    englishDescription: string;
     eyebrow: string;
     accent: string;
   };
@@ -17,8 +13,6 @@ type RouteCardProps = {
 };
 
 export function RouteCard({ route, onNavigate }: RouteCardProps) {
-  const locale = useAppLocale();
-  const title = locale === "ja" ? route.title : route.titleEn;
   return (
     <button
       className={`route-card route-card--${route.accent}`}
@@ -32,13 +26,9 @@ export function RouteCard({ route, onNavigate }: RouteCardProps) {
           ↗
         </span>
       </span>
-      <span className="route-card-title">{title}</span>
-      <span className="route-card-description">
-        {locale === "ja" ? route.description : route.descriptionEn}
-      </span>
-      <span className="route-card-japanese">
-        {locale === "ja" ? route.japaneseDescription : route.englishDescription}
-      </span>
+      <span className="route-card-title">{route.title}</span>
+      <span className="route-card-description">{route.description}</span>
+      <span className="route-card-japanese">{route.japaneseDescription}</span>
     </button>
   );
 }

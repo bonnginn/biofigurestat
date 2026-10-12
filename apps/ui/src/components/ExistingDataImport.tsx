@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   buildExistingDataWorkspace,
@@ -9,8 +9,6 @@ import {
   type ExistingDataImportResult,
 } from "../app/existingDataImport";
 import type { TimeSampling } from "../app/experimentDraft";
-import { localizedText, useAppLocale } from "../app/appLocale";
-import { LocalizedFileInput } from "./LocalizedFileInput";
 
 type ColumnChoice = number | "";
 
@@ -19,8 +17,6 @@ export function ExistingDataImport({
 }: {
   onReady: (result: ExistingDataImportResult) => void;
 }) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [text, setText] = useState("");
   const [sourceLabel, setSourceLabel] = useState("clipboard paste");
   const parsed = useMemo(() => parseExistingDataText(text), [text]);
@@ -33,7 +29,7 @@ export function ExistingDataImport({
   const [valueColumn, setValueColumn] = useState<ColumnChoice>("");
   const [wideValueColumns, setWideValueColumns] = useState<number[]>([]);
   const [timeSampling, setTimeSampling] = useState<TimeSampling>("cross_sectional");
-  const [readoutLabel, setReadoutLabel] = useState(() => t("測定値", "Measurement"));
+  const [readoutLabel, setReadoutLabel] = useState("測定値");
   const [readoutUnit, setReadoutUnit] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [conflicts, setConflicts] = useState<readonly ExistingDataDuplicateConflict[]>([]);
@@ -41,6 +37,32 @@ export function ExistingDataImport({
     "reject",
   );
   const [pendingResult, setPendingResult] = useState<ExistingDataImportResult | null>(null);
+  const fileGeneration = useRef(0);
+  const inputSnapshot = JSON.stringify({
+    text,
+    sourceLabel,
+    experimentColumn,
+    unitColumn,
+    dateColumn,
+    layout,
+    conditionColumn,
+    timeColumn,
+    valueColumn,
+    wideValueColumns,
+    timeSampling,
+    readoutLabel,
+    readoutUnit,
+    duplicateHandling,
+    pendingResult,
+  });
+  const latestInputSnapshot = useRef(inputSnapshot);
+  latestInputSnapshot.current = inputSnapshot;
+  useEffect(
+    () => () => {
+      fileGeneration.current += 1;
+    },
+    [],
+  );
 
   const loadText = (next: string, nextSourceLabel = "clipboard paste") => {
     const nextParsed = parseExistingDataText(next);
@@ -73,40 +95,61 @@ export function ExistingDataImport({
     <section className="existing-data-import" aria-labelledby="existing-data-import-heading">
       <div className="experiment-start__section-heading">
         <div>
-          <p className="experiment-start__eyebrow">{t("既存データ", "Existing data")}</p>
-          <h2 id="existing-data-import-heading">{t("Excel・CSV・ImageJの表を取り込む", "Import an Excel, CSV, or ImageJ table")}</h2>
+          <p className="experiment-start__eyebrow">既存データ</p>
+          <h2 id="existing-data-import-heading">Excel・CSV・ImageJの表を取り込む</h2>
         </div>
-        <span className="experiment-start__hint">{t("プレビュー → 列の割り当て", "Preview → assign columns")}</span>
+        <span className="experiment-start__hint">プレビュー → 列の割り当て</span>
       </div>
       <label className="experiment-start__field">
-        <span>{t("表を貼り付け", "Paste a table")}</span>
+        <span>表を貼り付け</span>
         <textarea
-          aria-label={t("既存データの表", "Existing data table")}
+          aria-label="既存データの表"
           rows={7}
           placeholder={"Experiment\tCondition\tTime\tMean\nExp 1\tControl\t0\t12.4"}
           value={text}
           onChange={(event) => loadText(event.currentTarget.value, "clipboard paste")}
         />
       </label>
-      <LocalizedFileInput
-        className="existing-data-import__file"
-        label={t("CSV / TSV / TXTファイル", "CSV / TSV / TXT file")}
-        ariaLabel={t("既存データファイル", "Existing data file")}
-        accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
-        onChange={(event) => {
-          const file = event.currentTarget.files?.[0];
-          if (!file) return;
-          void file
-            .text()
-            .then((contents) => loadText(contents, file.name))
-            .catch(() => setError(t("ファイルを読み込めませんでした。", "The file could not be loaded.")));
-        }}
-      />
+      <label className="existing-data-import__file">
+        <span>CSV / TSV / TXTファイル</span>
+        <input
+          aria-label="既存データファイル"
+          accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+          type="file"
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0];
+            if (!file) return;
+            const generation = ++fileGeneration.current;
+            const snapshot = inputSnapshot;
+            event.currentTarget.value = "";
+            void file
+              .text()
+              .then((contents) => {
+                if (generation !== fileGeneration.current) return;
+                if (snapshot !== latestInputSnapshot.current) {
+                  setError(
+                    "読込中の入力・列の割り当ての変更を保全しました。必要ならファイルを選び直してください。",
+                  );
+                  return;
+                }
+                loadText(contents, file.name);
+              })
+              .catch(() => {
+                if (
+                  generation !== fileGeneration.current ||
+                  snapshot !== latestInputSnapshot.current
+                )
+                  return;
+                setError("ファイルを読み込めませんでした。");
+              });
+          }}
+        />
+      </label>
 
       {parsed.rows.length > 0 ? (
         <>
           <div className="existing-data-import__preview">
-            <table aria-label={t("取込プレビュー", "Import preview")}>
+            <table aria-label="取込プレビュー">
               <thead>
                 <tr>
                   {parsed.headers.map((header, index) => (
@@ -125,9 +168,9 @@ export function ExistingDataImport({
               </tbody>
             </table>
           </div>
-          <div className="existing-data-import__mapping" aria-label={t("列の割り当て", "Column assignments")}>
+          <div className="existing-data-import__mapping" aria-label="列の割り当て">
             <fieldset className="experiment-start__fieldset existing-data-import__layout">
-              <legend>{t("表の形", "Table layout")}</legend>
+              <legend>表の形</legend>
               <label>
                 <input
                   checked={layout === "tidy"}
@@ -135,7 +178,7 @@ export function ExistingDataImport({
                   type="radio"
                   onChange={() => setLayout("tidy")}
                 />{" "}
-                {t("1列に条件名が入っている", "Condition names are in one column")}
+                1列に条件名が入っている
               </label>
               <label>
                 <input
@@ -144,13 +187,13 @@ export function ExistingDataImport({
                   type="radio"
                   onChange={() => setLayout("wide")}
                 />{" "}
-                {t("条件ごとに列が分かれている", "Each condition has its own column")}
+                条件ごとに列が分かれている
               </label>
             </fieldset>
             <label className="experiment-start__field">
-              <span>{t("実験回／session", "Experiment session")}</span>
+              <span>実験回／session</span>
               <select
-                aria-label={t("実験回／sessionの列", "Experiment-session column")}
+                aria-label="実験回／sessionの列"
                 value={experimentColumn}
                 onChange={(event) => {
                   const value =
@@ -159,14 +202,14 @@ export function ExistingDataImport({
                   setUnitColumn(value);
                 }}
               >
-                <option value="row_number">{t("各行を別のsessionとする", "Treat each row as a separate session")}</option>
+                <option value="row_number">各行を別のsessionとする</option>
                 {columnOptions}
               </select>
             </label>
             <label className="experiment-start__field">
-              <span>{t("生物学的／統計的単位ID", "Biological/statistical unit ID")}</span>
+              <span>生物学的／統計的単位ID</span>
               <select
-                aria-label={t("生物学的単位IDの列", "Biological-unit ID column")}
+                aria-label="生物学的単位IDの列"
                 value={unitColumn}
                 onChange={(event) =>
                   setUnitColumn(
@@ -174,71 +217,71 @@ export function ExistingDataImport({
                   )
                 }
               >
-                <option value="row_number">{t("各行を別の単位とする", "Treat each row as a separate unit")}</option>
+                <option value="row_number">各行を別の単位とする</option>
                 {columnOptions}
               </select>
             </label>
             <label className="experiment-start__field">
-              <span>{t("実験日（任意）", "Experiment date (optional)")}</span>
+              <span>実験日（任意）</span>
               <select
-                aria-label={t("実験日の列", "Experiment-date column")}
+                aria-label="実験日の列"
                 value={dateColumn}
                 onChange={(event) =>
                   setDateColumn(event.target.value === "" ? "" : Number(event.target.value))
                 }
               >
-                <option value="">{t("元データに日付なし", "No date in source data")}</option>
+                <option value="">元データに日付なし</option>
                 {columnOptions}
               </select>
             </label>
             {layout === "tidy" ? (
               <label className="experiment-start__field">
-                <span>{t("条件", "Condition")}</span>
+                <span>条件</span>
                 <select
-                  aria-label={t("条件の列", "Condition column")}
+                  aria-label="条件の列"
                   value={conditionColumn}
                   onChange={(event) =>
                     setConditionColumn(event.target.value === "" ? "" : Number(event.target.value))
                   }
                 >
-                  <option value="">{t("列を選択", "Select a column")}</option>
+                  <option value="">列を選択</option>
                   {columnOptions}
                 </select>
               </label>
             ) : null}
             {layout === "tidy" ? (
               <label className="experiment-start__field">
-                <span>{t("測定値", "Measurement")}</span>
+                <span>測定値</span>
                 <select
-                  aria-label={t("測定値の列", "Measurement column")}
+                  aria-label="測定値の列"
                   value={valueColumn}
                   onChange={(event) =>
                     setValueColumn(event.target.value === "" ? "" : Number(event.target.value))
                   }
                 >
-                  <option value="">{t("列を選択", "Select a column")}</option>
+                  <option value="">列を選択</option>
                   {columnOptions}
                 </select>
               </label>
             ) : null}
             {layout === "tidy" ? (
               <label className="experiment-start__field">
-                <span>{t("時間（任意）", "Time (optional)")}</span>
+                <span>時間（任意）</span>
                 <select
-                  aria-label={t("時間の列", "Time column")}
+                  aria-label="時間の列"
                   value={timeColumn}
                   onChange={(event) =>
                     setTimeColumn(event.target.value === "" ? "" : Number(event.target.value))
                   }
                 >
-                  <option value="">{t("時間なし", "No time axis")}</option>
+                  <option value="">時間なし</option>
                   {columnOptions}
                 </select>
               </label>
             ) : null}
             {layout === "wide" ? (
               <fieldset className="experiment-start__fieldset existing-data-import__wide-columns">
-                <legend>{t("条件として取り込む列", "Columns to import as conditions")}</legend>
+                <legend>条件として取り込む列</legend>
                 {parsed.headers.map((header, index) => (
                   <label key={`${header}.${index}`}>
                     <input
@@ -258,17 +301,17 @@ export function ExistingDataImport({
               </fieldset>
             ) : null}
             <label className="experiment-start__field">
-              <span>{t("測定項目名", "Measured-value name")}</span>
+              <span>測定項目名</span>
               <input
-                aria-label={t("取込測定項目名", "Imported measured-value name")}
+                aria-label="取込測定項目名"
                 value={readoutLabel}
                 onChange={(event) => setReadoutLabel(event.target.value)}
               />
             </label>
             <label className="experiment-start__field">
-              <span>{t("単位（任意）", "Unit (optional)")}</span>
+              <span>単位（任意）</span>
               <input
-                aria-label={t("取込測定単位", "Imported measurement unit")}
+                aria-label="取込測定単位"
                 value={readoutUnit}
                 onChange={(event) => setReadoutUnit(event.target.value)}
               />
@@ -276,7 +319,7 @@ export function ExistingDataImport({
           </div>
           {layout === "tidy" && timeColumn !== "" ? (
             <fieldset className="experiment-start__fieldset">
-              <legend>{t("時間ごとの測定対象", "Units measured across time")}</legend>
+              <legend>時間ごとの測定対象</legend>
               <label>
                 <input
                   checked={timeSampling === "cross_sectional"}
@@ -284,7 +327,7 @@ export function ExistingDataImport({
                   type="radio"
                   onChange={() => setTimeSampling("cross_sectional")}
                 />{" "}
-                {t("時点ごとに別のサンプル", "Separate samples at each time point")}
+                時点ごとに別のサンプル
               </label>
               <label>
                 <input
@@ -293,43 +336,50 @@ export function ExistingDataImport({
                   type="radio"
                   onChange={() => setTimeSampling("longitudinal")}
                 />{" "}
-                {t("同じ実験単位を追跡", "Follow the same experimental unit")}
+                同じ実験単位を追跡
               </label>
             </fieldset>
           ) : null}
           <p className="experiment-start__subtle">
-            {t("列の意味は自動確定しません。プレビューを見て割り当てを確認してください。", "Column meaning is not inferred automatically. Review the preview and confirm each assignment.")}
+            列の意味は自動確定しません。プレビューを見て割り当てを確認してください。
           </p>
           {error ? <p role="alert">{error}</p> : null}
           {conflicts.length > 0 ? (
-            <section className="existing-data-import__conflicts" aria-label={t("重複した行の確認", "Review duplicate rows")}>
-              <h3>{t("同じ単位・条件・時間の組合せが複数あります", "Multiple rows share the same unit, condition, and time")}</h3>
+            <section className="existing-data-import__conflicts" aria-label="重複した行の確認">
+              <h3>同じ単位・条件・時間の組合せが複数あります</h3>
               {conflicts.map((conflict) => (
                 <p key={conflict.key}>
-                  {locale === "ja"
-                    ? `${conflict.key}：行 ${conflict.rowNumbers.join("、")}`
-                    : `${conflict.key}: rows ${conflict.rowNumbers.join(", ")}`}
+                  {conflict.key}：行 {conflict.rowNumbers.join("、")}
                 </p>
               ))}
-              <p>{t("これらは同じ生物学的単位内の複数の生測定ですか？", "Are these multiple raw measurements within the same biological unit?")}</p>
+              <p>これらは同じ生物学的単位内の複数の生測定ですか？</p>
               <button
                 type="button"
                 onClick={() => {
                   setDuplicateHandling("nested_observations");
                   setConflicts([]);
-                  setError(t("「同じ単位内の複数観測」として再確認してください。", "Review the import as multiple observations within the same unit."));
+                  setError("「同じ単位内の複数観測」として再確認してください。");
                 }}
               >
-                {t("同じ単位内の複数の生測定として扱う", "Treat as multiple raw measurements within one unit")}
+                同じ単位内の複数の生測定として扱う
               </button>
               <button type="button" onClick={() => setConflicts([])}>
-                {t("IDを修正してから取り込む", "Correct the IDs before importing")}
+                IDを修正してから取り込む
               </button>
             </section>
           ) : null}
           {pendingResult ? (
-            <section className="existing-data-import__structure" aria-label={t("取り込む実験構造", "Experiment structure to import")}>
-              <h3>{t("この実験構造で取り込みますか？", "Import with this experiment structure?")}</h3>
+            <section className="existing-data-import__structure" aria-label="取り込む実験構造">
+              <h3>この実験構造で取り込みますか？</h3>
+              {pendingResult.draft.importProvenance ? (
+                <div>
+                  <p>元データ {pendingResult.draft.importProvenance.sourceRows.length} 行／取込対象 {pendingResult.draft.importProvenance.sourceRows.length - pendingResult.draft.importProvenance.excludedRowNumbers.length} 行／除外 {pendingResult.draft.importProvenance.excludedRowNumbers.length} 行（見出しを除く）</p>
+                  {pendingResult.draft.importProvenance.excludedRowReasons?.length ? (
+                    <ul aria-label="除外行と理由">{pendingResult.draft.importProvenance.excludedRowReasons.map(({ rowNumber, reasons }) => <li key={rowNumber}>{rowNumber}行：{reasons.join("／")}</li>)}</ul>
+                  ) : null}
+                  <p>元の文字列は取込元の表に保持します。除外行は解析に含めません。行数は生物学的単位数 n と異なる場合があります。</p>
+                </div>
+              ) : null}
               <ul>
                 <li>
                   sessions：
@@ -340,7 +390,7 @@ export function ExistingDataImport({
                   }
                 </li>
                 <li>
-                  {t("生物学的単位", "Biological units")}:
+                  生物学的単位：
                   {
                     new Set(
                       pendingResult.draft.experiments.map(
@@ -349,21 +399,21 @@ export function ExistingDataImport({
                     ).size
                   }
                 </li>
-                <li>{t("条件", "Conditions")}: {pendingResult.draft.conditions.length}</li>
-                <li>{t("時間点", "Time points")}: {pendingResult.draft.time.points.length}</li>
+                <li>条件：{pendingResult.draft.conditions.length}</li>
+                <li>時間点：{pendingResult.draft.time.points.length}</li>
                 <li>readouts：{pendingResult.draft.readouts.length}</li>
                 <li>
-                  {t("同じ単位の反復", "Repeated measurements of the same unit")}:
-                  {pendingResult.draft.conditionAssignment.kind === "matched" ? t("あり", "Yes") : t("なし", "No")}
+                  同じ単位の反復：
+                  {pendingResult.draft.conditionAssignment.kind === "matched" ? "あり" : "なし"}
                 </li>
                 <li>
-                  {t("同じ単位内の複数の生測定", "Multiple raw measurements within one unit")}:
+                  同じ単位内の複数の生測定：
                   {
                     Object.values(pendingResult.cells).filter(
                       (cell) => cell.kind === "nested_continuous" && cell.rawValues.length > 1,
                     ).length
                   }
-                  {t("セル", "cells")}
+                  セル
                 </li>
               </ul>
               <button
@@ -371,10 +421,10 @@ export function ExistingDataImport({
                 type="button"
                 onClick={() => onReady(pendingResult)}
               >
-                {t("この構造で取り込む", "Import with this structure")}
+                この構造で取り込む
               </button>
               <button type="button" onClick={() => setPendingResult(null)}>
-                {t("割り当てを修正", "Edit assignments")}
+                割り当てを修正
               </button>
             </section>
           ) : null}
@@ -419,12 +469,12 @@ export function ExistingDataImport({
                   return;
                 }
                 setError(
-                  locale === "ja" && reason instanceof Error ? reason.message : t("取込設定を確認できませんでした。", "The import settings could not be validated."),
+                  reason instanceof Error ? reason.message : "取込設定を確認できませんでした。",
                 );
               }
             }}
           >
-            {t("この割り当てで入力画面を作る", "Create the data-entry screen with these assignments")}
+            この割り当てで入力画面を作る
           </button>
         </>
       ) : null}

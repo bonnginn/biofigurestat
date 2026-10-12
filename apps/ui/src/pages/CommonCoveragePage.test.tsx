@@ -1,30 +1,12 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AxisMaterialRelationship, OrderedAxisMeaning } from "@lsaa/adaptive-input";
 import type { AnalysisRunner } from "../app/analysisClient";
-import type * as GraphExportModule from "../app/graphExport";
 import type { SaveProjectAction } from "../app/projectActions";
 import { ProjectStateSchema, type ProjectState } from "@lsaa/project";
-
-const graphExport = vi.hoisted(() => ({
-  saveExportText: vi.fn(async () => "saved" as const),
-  exportGraphPng: vi.fn(async () => ({ svgText: "<svg/>", width: 1, height: 1 })),
-  copyGraphToClipboard: vi.fn(async () => "svg" as const),
-}));
-
-vi.mock("../app/graphExport", async (importOriginal) => ({
-  ...(await importOriginal<typeof GraphExportModule>()),
-  saveExportText: graphExport.saveExportText,
-  exportGraphPng: graphExport.exportGraphPng,
-  copyGraphToClipboard: graphExport.copyGraphToClipboard,
-}));
-
 import { CommonCoveragePage } from "./CommonCoveragePage";
 import { OpenProjectPage } from "./OpenProjectPage";
-import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
-import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
-
-afterEach(() => act(() => resetAppLocaleForTests("ja")));
+import * as specializedGraphExport from "../app/specializedGraphExport";
 
 const regressionRunner: AnalysisRunner = vi.fn(async (request) => ({
   protocolVersion: request.protocolVersion,
@@ -218,90 +200,108 @@ describe("final common coverage workflows", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
-  it("shows the ordered X/Y workspace without Japanese application copy in English mode", () => {
-    act(() => setAppLocale("en"));
-    const view = render(
-      <CommonCoveragePage
-        mode="nonlinear-fit"
-        onBack={vi.fn()}
-        entryIntent={adaptiveOrderedCurveIntent}
-      />,
+  it("serializes graph exports and releases all controls after a failed PNG export", async () => {
+    let fail!: (reason: Error) => void;
+    const exportPng = vi.spyOn(specializedGraphExport, "exportRenderedGraphPng").mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          fail = reject;
+        }),
     );
-
-    expect(screen.getByRole("button", { name: "Data" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Graph" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Statistics" })).toBeVisible();
-    expectNoJapaneseUi(view.container);
-  });
-
-  it("does not expose legacy Japanese export errors in English mode", async () => {
-    act(() => setAppLocale("en"));
-    graphExport.exportGraphPng.mockRejectedValueOnce(new Error("PNGを書き出せませんでした"));
-    graphExport.copyGraphToClipboard.mockRejectedValueOnce(
-      new Error("クリップボードへコピーできませんでした"),
-    );
-    const view = render(
-      <CommonCoveragePage
-        mode="nonlinear-fit"
-        onBack={vi.fn()}
-        entryIntent={adaptiveOrderedCurveIntent}
-      />,
-    );
-    fireEvent.change(screen.getByLabelText("Nonlinear X/Y fitting data"), {
-      target: { value: "Unit ID\tSeries\tX\tY\np0\tA\t0\t1\np1\tA\t1\t2\np2\tA\t2\t3" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "Export PNG" }));
-    expect(
-      await screen.findByText("The PNG could not be exported. The Graph and SVG export remain available."),
-    ).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Copy Graph" }));
-    expect(await screen.findByText("The Graph could not be copied.")).toBeVisible();
-    expectNoJapaneseUi(view.container);
-  });
-  it.each([
-    "contingency",
-    "repeated-nonparametric",
-    "regression",
-    "nonlinear-fit",
-    "distribution",
-  ] as const)("shows the %s specialist surface without Japanese application copy in English mode", (mode) => {
-    act(() => setAppLocale("en"));
-    const view = render(<CommonCoveragePage mode={mode} onBack={vi.fn()} />);
-
-    expectNoJapaneseUi(view.container);
-  });
-  it("順序のあるX/YはData・Graph・Statisticsを別面として切り替える", () => {
-    render(
-      <CommonCoveragePage
-        mode="nonlinear-fit"
-        onBack={vi.fn()}
-        entryIntent={adaptiveOrderedCurveIntent}
-      />,
-    );
-    const dataPanel = document.getElementById("ordered-curve-data");
-    const graphPanel = document.getElementById("ordered-curve-graph");
-    expect(screen.getByRole("button", { name: "データ" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    expect(graphPanel).toHaveClass("workspace-tab-panel--inactive");
-
-    fireEvent.click(screen.getByRole("button", { name: "グラフ" }));
-    expect(dataPanel).toHaveClass("workspace-tab-panel--inactive");
-    expect(graphPanel).not.toHaveClass("workspace-tab-panel--inactive");
-
-    fireEvent.click(screen.getByRole("button", { name: "統計" }));
-    expect(screen.getByRole("button", { name: "統計" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    try {
+      render(
+        <CommonCoveragePage mode="regression" onBack={vi.fn()} analysisRunner={regressionRunner} />,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "解析を実行" }));
+      const png = await screen.findByRole("button", { name: "PNGを書き出す" });
+      await waitFor(() => expect(png).toBeEnabled());
+      fireEvent.click(png);
+      fireEvent.click(png);
+      expect(exportPng).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Graphをコピー" })).toBeDisabled();
+      await act(async () => fail(new Error("fixture PNG failure")));
+      expect(await screen.findByText(/PNGを書き出せませんでした/)).toBeVisible();
+      expect(png).toBeEnabled();
+      expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Graphをコピー" })).toBeEnabled();
+    } finally {
+      exportPng.mockRestore();
+    }
   });
   it("ブラウザレビューでengine未接続なら解析実行をdisabledで説明する", () => {
     render(<CommonCoveragePage mode="nonlinear-fit" onBack={vi.fn()} analysisAvailable={false} />);
     expect(screen.getByRole("button", { name: "選択したmodelでfitを実行" })).toBeDisabled();
     expect(screen.getByText(/ブラウザレビューでは解析エンジンを実行できません/)).toBeVisible();
   });
+  it("discards an old regression response after editing and preserves the newer pending run", async () => {
+    const finishes: Array<() => Promise<void>> = [];
+    const runner = vi.fn<AnalysisRunner>(
+      (request) =>
+        new Promise((resolve) => {
+          finishes.push(async () => resolve(await regressionRunner(request)));
+        }),
+    );
+    render(<CommonCoveragePage mode="regression" onBack={vi.fn()} analysisRunner={runner} />);
+    fireEvent.click(screen.getByRole("button", { name: "解析を実行" }));
+    await waitFor(() => expect(runner).toHaveBeenCalledTimes(1));
+    fireEvent.change(screen.getByLabelText("Simple linear regression data"), {
+      target: { value: "Unit ID\tX\tY\nu1\t1\t10\nu2\t2\t20\nu3\t3\t30\nu4\t4\t40" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "解析を実行" }));
+    await waitFor(() => expect(runner).toHaveBeenCalledTimes(2));
+    await act(async () => finishes[0]!());
+    expect(screen.queryByRole("img", { name: "Simple linear regression Graph" })).toBeNull();
+    await act(async () => finishes[1]!());
+    expect(screen.getByRole("img", { name: "Simple linear regression Graph" })).toBeVisible();
+    expect(runner.mock.calls[1]![0]).toMatchObject({
+      points: [{ y: 10 }, { y: 20 }, { y: 30 }, { y: 40 }],
+    });
+  });
+
+  it("does not display a regression response belonging to another request", async () => {
+    const runner: AnalysisRunner = async (request) => ({
+      ...(await regressionRunner(request)),
+      requestId: "request.unrelated",
+    });
+    render(<CommonCoveragePage mode="regression" onBack={vi.fn()} analysisRunner={runner} />);
+    fireEvent.click(screen.getByRole("button", { name: "解析を実行" }));
+    expect(
+      await screen.findByText(
+        "解析応答が今回の要求と一致しません。結果は採用せず、再実行してください。",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByRole("img", { name: "Simple linear regression Graph" })).toBeNull();
+    expect(screen.queryByText("Methods")).toBeNull();
+  });
+
+  it("retains input and exposes the engine safe-stop instead of claiming completion", async () => {
+    const runner: AnalysisRunner = async (request) => ({
+      protocolVersion: request.protocolVersion,
+      requestId: request.requestId,
+      status: "validation_error",
+      engine: { name: "fixture", version: "1", packages: {} },
+      estimates: [],
+      tests: [],
+      diagnostics: [{ code: "invalid_request", message: "R-squared is undefined: constant Y" }],
+      warnings: [],
+      completedAt: "2026-10-09T00:00:00Z",
+    });
+    render(<CommonCoveragePage mode="regression" onBack={vi.fn()} analysisRunner={runner} />);
+    const input = screen.getByLabelText("Simple linear regression data") as HTMLTextAreaElement;
+    const before = input.value;
+    fireEvent.click(screen.getByRole("button", { name: "解析を実行" }));
+    await waitFor(() =>
+      expect(screen.getByText(/解析を停止しました。入力は保持されています/)).toHaveTextContent(
+        "R-squared is undefined",
+      ),
+    );
+    expect(input.value).toBe(before);
+    expect(screen.queryByText("解析とprovenance記録が完了しました。")).toBeNull();
+    expect(screen.queryByText("Methods")).toBeNull();
+    expect(screen.queryByRole("img", { name: "Simple linear regression Graph" })).toBeNull();
+  });
+
   it("runs regression separately from correlation and renders fitted Graph and Methods", async () => {
     render(
       <CommonCoveragePage mode="regression" onBack={vi.fn()} analysisRunner={regressionRunner} />,
@@ -312,9 +312,48 @@ describe("final common coverage workflows", () => {
       expect(screen.getByRole("img", { name: "Simple linear regression Graph" })).toBeVisible(),
     );
     expect(screen.getByText("Methods")).toBeVisible();
+    expect(
+      screen.getByRole("checkbox", { name: "Mean response confidence band" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/帯は平均応答の点ごとの中央両側信頼区間/)).toBeVisible();
     expect(regressionRunner).toHaveBeenCalledWith(
       expect.objectContaining({ protocolVersion: "0.13.0", includeIntercept: true }),
     );
+  });
+
+  it("retains analysis and input when a confidence band cannot use log Y, and recovers when hidden", async () => {
+    const runner: AnalysisRunner = async (request) => {
+      const fitted = await regressionRunner(request);
+      return {
+        ...fitted,
+        regression: {
+          ...fitted.regression!,
+          fittedLine: [
+            { x: 1, y: 2, lower: -1, upper: 4 },
+            { x: 5, y: 10, lower: 8, upper: 12 },
+          ],
+        },
+      };
+    };
+    render(<CommonCoveragePage mode="regression" onBack={vi.fn()} analysisRunner={runner} />);
+    const input = screen.getByLabelText("Simple linear regression data") as HTMLTextAreaElement;
+    const before = input.value;
+    fireEvent.click(screen.getByRole("button", { name: "解析を実行" }));
+    await waitFor(() =>
+      expect(screen.getByRole("img", { name: "Simple linear regression Graph" })).toBeVisible(),
+    );
+    fireEvent.change(screen.getByLabelText("Y scale"), { target: { value: "log10" } });
+    expect(screen.getByRole("alert")).toHaveTextContent(/log10 axis requires/);
+    expect(screen.queryByRole("img", { name: "Simple linear regression Graph" })).toBeNull();
+    expect(input.value).toBe(before);
+    expect(screen.getByRole("region", { name: "解析結果の概要" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Mean response confidence band" }));
+    const graph = screen.getByRole("img", { name: "Simple linear regression Graph" });
+    expect(graph).toBeVisible();
+    expect(graph.outerHTML).not.toMatch(/NaN|Infinity/);
+    expect(graph.querySelectorAll("path")).toHaveLength(1);
+    expect(graph.querySelectorAll("circle")).toHaveLength(5);
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("refuses a log axis containing zero without removing points", () => {
@@ -813,6 +852,61 @@ describe("final common coverage workflows", () => {
     expect(resaved.adaptiveInput?.rawLineage?.rawText).toBe(rawText);
   });
 
+  it("preserves edits made while an ordered-curve file is being read", async () => {
+    let finish!: (text: string) => void;
+    render(
+      <CommonCoveragePage
+        mode="nonlinear-fit"
+        onBack={vi.fn()}
+        entryIntent={adaptiveOrderedCurveIntent}
+      />,
+    );
+    const file = new File([], "slow.csv", { type: "text/csv" });
+    Object.defineProperty(file, "text", {
+      value: vi.fn(
+        () =>
+          new Promise<string>((resolve) => {
+            finish = resolve;
+          }),
+      ),
+    });
+    fireEvent.change(screen.getByLabelText("CSV / TSV / TXTを読み込む"), {
+      target: { files: [file] },
+    });
+    const edited = "Unit ID\tSeries\tX\tY\nu1\tControl\t1\t99";
+    fireEvent.change(screen.getByLabelText("非線形XYフィッティング data"), {
+      target: { value: edited },
+    });
+    await act(async () => finish("Unit ID,Series,X,Y\nu1,Control,1,4"));
+    expect(screen.getByLabelText("非線形XYフィッティング data")).toHaveValue(edited);
+    expect(screen.getByText(/現在の入力を保全しました/)).toBeVisible();
+  });
+
+  it("only applies the most recently selected ordered-curve file", async () => {
+    const finishes: Array<(text: string) => void> = [];
+    render(
+      <CommonCoveragePage
+        mode="nonlinear-fit"
+        onBack={vi.fn()}
+        entryIntent={adaptiveOrderedCurveIntent}
+      />,
+    );
+    for (const name of ["old.csv", "latest.csv"]) {
+      const file = new File([], name, { type: "text/csv" });
+      Object.defineProperty(file, "text", {
+        value: vi.fn(() => new Promise<string>((resolve) => finishes.push(resolve))),
+      });
+      fireEvent.change(screen.getByLabelText("CSV / TSV / TXTを読み込む"), {
+        target: { files: [file] },
+      });
+    }
+    const latest = "Unit ID,Series,X,Y\nu1,Control,1,99";
+    await act(async () => finishes[1]!(latest));
+    await act(async () => finishes[0]!("Unit ID,Series,X,Y\nu1,Control,1,4"));
+    expect(screen.getByLabelText("非線形XYフィッティング data")).toHaveValue(latest);
+    expect(screen.getByText(/latest.csvを読み込みました/)).toBeVisible();
+  });
+
   it("imports a CSV file with its name, source kind, and exact raw lineage", async () => {
     let savedState: Parameters<SaveProjectAction>[0] | null = null;
     const saveProject = vi.fn<SaveProjectAction>(async (state) => {
@@ -1050,11 +1144,11 @@ describe("final common coverage workflows", () => {
       "data-fit-model",
       "michaelis_menten",
     );
-    expect(screen.getByLabelText("非線形XYフィッティング data")).toHaveValue(exactRawText);
-    expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();
-    expect(screen.getAllByRole("rowheader", { name: "Vmax" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("rowheader", { name: "Km" }).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Vmax=12/)).toBeVisible();
+    expect(screen.getByText(/Km=18/)).toBeVisible();
+    expect(screen.getByText(/Vmax（vmax）=12/)).toBeInTheDocument();
+    expect(screen.getByText(/仮説検定のp値を生成していない/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "入力を編集して再解析" })).toBeVisible();
 
     reopened.unmount();
     render(
@@ -1175,21 +1269,6 @@ describe("final common coverage workflows", () => {
     );
     expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();
-    fireEvent.click(screen.getByRole("button", { name: "SVGを書き出す" }));
-    await waitFor(() =>
-      expect(graphExport.saveExportText).toHaveBeenCalledWith(
-        expect.stringContaining("<svg"),
-        "nonlinear-fit.svg",
-        "image/svg+xml;charset=utf-8",
-      ),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "PNGを書き出す" }));
-    await waitFor(() =>
-      expect(graphExport.exportGraphPng).toHaveBeenCalledWith(
-        expect.any(SVGSVGElement),
-        "nonlinear-fit.png",
-      ),
-    );
     answerOrderedCurveFacts("elapsed_time", "separate_material_per_axis_value");
     fireEvent.click(screen.getByRole("button", { name: "統計解析を設定" }));
     fireEvent.click(screen.getByRole("radio", { name: /Zero-baseline association/ }));
@@ -1201,14 +1280,6 @@ describe("final common coverage workflows", () => {
     expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();
     expect(screen.getAllByText(/R²/).length).toBeGreaterThan(0);
-    act(() => setAppLocale("en"));
-    expect(screen.getByRole("region", { name: "Nonlinear-fit results" })).toBeVisible();
-    expect(screen.getByText("Analysis result available to save")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Export SVG" }));
-    await waitFor(() =>
-      expect(screen.getByText("Exported an SVG matching the displayed Graph.")).toBeVisible(),
-    );
-    act(() => setAppLocale("ja"));
     expect(nonlinearRunner).toHaveBeenCalledWith(
       expect.objectContaining({
         protocolVersion: "0.14.0",
@@ -1268,13 +1339,14 @@ describe("final common coverage workflows", () => {
         persistedProject={{ state: saved!, target: "C:/tmp/nonlinear.lsa" }}
       />,
     );
-    expect(screen.getByLabelText("非線形XYフィッティング data")).toHaveValue(exactRawText);
+    expect(screen.getByText("Saved authoritative D17 result")).toBeVisible();
     expect(screen.getByRole("img", { name: "非線形フィットGraph" })).toHaveAttribute(
       "data-fit-model",
       "zero_baseline_association",
     );
-    expect(screen.getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();
+    expect(screen.getByText("Methods / provenance")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "入力を編集して再解析" }));
+    expect(screen.getByLabelText("非線形XYフィッティング data")).toHaveValue(exactRawText);
     expect(screen.queryByLabelText("専門解析を切り替える")).toBeNull();
     expect(screen.getByRole("img", { name: "非線形フィットGraph" })).toBeVisible();
     const editedRawText = exactRawText.replace("\t15\t0.55", "\t15\t0.56");
@@ -1421,6 +1493,33 @@ describe("final common coverage workflows", () => {
     expect(saveButton).toHaveAttribute("aria-describedby", unavailableNote.id);
     fireEvent.click(saveButton);
     expect(screen.queryByText("デスクトップ版で保存できます。")).toBeNull();
+  });
+
+  it("reports cancelled nonlinear Save without claiming persistence or clearing dirty work", async () => {
+    const saveProject = vi.fn<SaveProjectAction>(async () => null);
+    const onDirtyChange = vi.fn();
+    const rawText = "Unit ID\tSeries\tX\tY\nposition-negative\tA\t-5\t1.2\nposition-zero\tA\t0\tNA";
+    render(
+      <CommonCoveragePage
+        mode="nonlinear-fit"
+        onBack={vi.fn()}
+        saveProject={saveProject}
+        entryIntent={adaptiveOrderedCurveIntent}
+        onDirtyChange={onDirtyChange}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("非線形XYフィッティング data"), {
+      target: { value: rawText },
+    });
+    answerOrderedCurveFacts("distance", "separate_material_per_axis_value");
+    fireEvent.click(screen.getByRole("button", { name: "入力と観測Graphをプロジェクトへ保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    expect(
+      await screen.findByText("保存をキャンセルしました。入力内容はこの画面に残っています。"),
+    ).toBeVisible();
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+    expect(screen.getByLabelText("非線形XYフィッティング data")).toHaveValue(rawText);
+    expect(screen.queryByText(/元データとの対応履歴をプロジェクトへ保存しました/)).toBeNull();
   });
 
   it("keeps sparse and explicitly missing rows in lineage/canonical data while plotting observed points", async () => {

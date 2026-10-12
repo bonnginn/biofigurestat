@@ -1,36 +1,86 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { useState } from "react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DelimitedTextSpreadsheet } from "./DelimitedTextSpreadsheet";
 
 describe("DelimitedTextSpreadsheet", () => {
+  it("reports a failed workbook read without losing edits made during reading", async () => {
+    let reject!: (reason: Error) => void;
+    const importer = vi.fn(
+      () =>
+        new Promise<null>((_resolve, fail) => {
+          reject = fail;
+        }),
+    );
+    const onChange = vi.fn();
+    render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Graph sheet"
+        value={"X\tY\nnew\t10"}
+        onChange={onChange}
+        workbookImporter={importer}
+      />,
+    );
+    const button = screen.getByRole("button", { name: "XLS / XLSXを直接読み込む" });
+    fireEvent.click(button);
+    fireEvent.change(screen.getByLabelText("Graph sheet 行2 列2"), { target: { value: "99" } });
+    await act(async () => reject(new Error("synthetic read failure")));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith("X\tY\nnew\t99", "cell_edit");
+    expect(screen.getByText(/Excelの読込に失敗.*保全/)).toBeVisible();
+    expect(button).toBeEnabled();
+  });
+  it("preserves a cell edit while an Excel workbook is pending and allows retry", async () => {
+    const onChange = vi.fn();
+    const workbook = {
+      fileName: "old.xlsx",
+      sheets: [
+        {
+          name: "Sheet1",
+          rows: [
+            ["X", "Y"],
+            ["old", "1"],
+          ],
+        },
+      ],
+    };
+    let finish!: (value: typeof workbook) => void;
+    const importer = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<typeof workbook>((resolve) => {
+            finish = resolve;
+          }),
+      )
+      .mockResolvedValue(workbook);
+    render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Graph sheet"
+        value={"X\tY\nnew\t10"}
+        onChange={onChange}
+        workbookImporter={importer}
+      />,
+    );
+    const button = screen.getByRole("button", { name: "XLS / XLSXを直接読み込む" });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(importer).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText("Graph sheet 行2 列2"), { target: { value: "99" } });
+    await act(async () => finish(workbook));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith("X\tY\nnew\t99", "cell_edit");
+    expect(screen.getByText(/読込中の入力変更を保全/)).toBeVisible();
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+    await waitFor(() =>
+      expect(onChange).toHaveBeenLastCalledWith("X\tY\nold\t1", "workbook_import"),
+    );
+  });
   beforeEach(() => {
     window.localStorage.removeItem("lsaa.delimited-spreadsheet.zoom.v1");
-  });
-
-  it("undoes and redoes ordered-curve cell edits through the shared spreadsheet history", () => {
-    function Harness() {
-      const [value, setValue] = useState("Unit ID\tSeries\tX\tY\nr1\tA\t0\t0.5");
-      return (
-        <DelimitedTextSpreadsheet
-          ariaLabel="Curve sheet"
-          value={value}
-          onChange={(next) => setValue(next)}
-        />
-      );
-    }
-    render(<Harness />);
-    const yCell = screen.getByLabelText("Curve sheet 行2 列4");
-
-    fireEvent.change(yCell, { target: { value: "0.75" } });
-    expect(yCell).toHaveValue("0.75");
-    expect(fireEvent.keyDown(yCell, { key: "z", ctrlKey: true })).toBe(false);
-    expect(yCell).toHaveValue("0.5");
-    expect(fireEvent.keyDown(yCell, { key: "y", ctrlKey: true })).toBe(false);
-    expect(yCell).toHaveValue("0.75");
   });
 
   it("edits a cell while retaining the delimited table", () => {
@@ -263,24 +313,6 @@ describe("DelimitedTextSpreadsheet", () => {
     expect(onChange).toHaveBeenLastCalledWith("ID\tValue\ncell-1\t4.5", "workbook_import");
   });
 
-  it("offers a constrained workbook template and a semantics-safe import recipe", () => {
-    render(
-      <DelimitedTextSpreadsheet
-        ariaLabel="Graph sheet"
-        value={"X\tY"}
-        onChange={vi.fn()}
-      />,
-    );
-
-    fireEvent.click(screen.getByText("Excelテンプレートと取込手順"));
-    const template = screen.getByRole("link", { name: "制約付きExcelテンプレートを保存" });
-    expect(template).toHaveAttribute("href", "./templates/BioFigureStat-import-template.xlsx");
-    expect(template).toHaveAttribute("download");
-    expect(
-      screen.getByText(/IDや実験日だけから対応関係・独立性は推定しません/),
-    ).toHaveTextContent("複数fileの数も統計上のnではありません");
-  });
-
   it("explicitly stacks matching worksheets as Exp while retaining worksheet provenance", async () => {
     const onChange = vi.fn();
     const workbookImporter = vi.fn(async () => ({
@@ -335,76 +367,6 @@ describe("DelimitedTextSpreadsheet", () => {
     expect(screen.getByRole("note")).toHaveTextContent("統計的なnであることは自動判定しません");
   });
 
-  it("imports a selected A1 range and flattens two header rows", async () => {
-    const onChange = vi.fn();
-    const workbookImporter = vi.fn(async () => ({
-      fileName: "layout.xlsx",
-      sheets: [
-        {
-          name: "Plate export",
-          rows: [
-            ["notes", "Metadata", "", "Treatment", ""],
-            ["ignore", "Sample ID", "Date", "Vehicle", "Drug A"],
-            ["outside", "S01", "2026-09-01", "1.0", "1.5"],
-            ["outside", "S02", "2026-09-02", "1.1", "1.6"],
-          ],
-        },
-      ],
-    }));
-    render(
-      <DelimitedTextSpreadsheet
-        ariaLabel="Graph sheet"
-        value={"X\tY"}
-        onChange={onChange}
-        workbookImporter={workbookImporter}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "XLS / XLSXを直接読み込む" }));
-    await waitFor(() => expect(workbookImporter).toHaveBeenCalledOnce());
-    fireEvent.change(screen.getByLabelText("読み込む表範囲"), {
-      target: { value: "B1:E4" },
-    });
-    fireEvent.change(screen.getByLabelText("見出し行の数"), { target: { value: "2" } });
-    fireEvent.click(screen.getByRole("button", { name: "この範囲を読み込む" }));
-
-    expect(onChange).toHaveBeenLastCalledWith(
-      [
-        "Metadata / Sample ID\tMetadata / Date\tTreatment / Vehicle\tTreatment / Drug A",
-        "S01\t2026-09-01\t1.0\t1.5",
-        "S02\t2026-09-02\t1.1\t1.6",
-      ].join("\n"),
-      "workbook_import",
-    );
-  });
-
-  it("shows multi-file provenance without treating file count as statistical n", async () => {
-    const workbookImporter = vi.fn(async () => ({
-      fileName: "run-1.xlsx +1",
-      sourceFiles: ["run-1.xlsx", "run-2.xlsx"],
-      sheets: [
-        { name: "run-1.xlsx / Data", rows: [["ID", "Value"], ["S01", "1"]] },
-        { name: "run-2.xlsx / Data", rows: [["ID", "Value"], ["S02", "2"]] },
-      ],
-    }));
-    render(
-      <DelimitedTextSpreadsheet
-        ariaLabel="Graph sheet"
-        value={"X\tY"}
-        onChange={vi.fn()}
-        workbookImporter={workbookImporter}
-        allowWorkbookSheetStacking
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "XLS / XLSXを直接読み込む" }));
-    await waitFor(() => expect(workbookImporter).toHaveBeenCalledOnce());
-
-    expect(screen.getByRole("status")).toHaveTextContent("2ファイル");
-    expect(screen.getByText(/ファイル数を統計上のnとはみなしません/)).toBeVisible();
-    expect(screen.getByRole("option", { name: "run-2.xlsx / Data" })).toBeVisible();
-  });
-
   it("keeps the existing grid when workbook selection is cancelled or fails", async () => {
     const onChange = vi.fn();
     const workbookImporter = vi
@@ -429,4 +391,128 @@ describe("DelimitedTextSpreadsheet", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Workbook is encrypted");
     expect(onChange).not.toHaveBeenCalled();
   });
+});
+
+describe("quoted record integrity", () => {
+  it("keeps multiline CSV labels when a neighboring value is edited and the table is reloaded", () => {
+    const onChange = vi.fn();
+    const original = 'Condition,Value\r\n" first\r\nsecond, ""quoted"" ",1';
+    const { rerender } = render(
+      <DelimitedTextSpreadsheet ariaLabel="Quoted" value={original} onChange={onChange} />,
+    );
+    const label = screen.getByLabelText("Quoted 行2 列1");
+    expect(label.tagName).toBe("TEXTAREA");
+    expect(label).toHaveValue(' first\nsecond, "quoted" ');
+    fireEvent.change(screen.getByLabelText("Quoted 行2 列2"), { target: { value: "2" } });
+    expect(onChange).toHaveBeenLastCalledWith(
+      'Condition,Value\n" first\nsecond, ""quoted"" ",2',
+      "cell_edit",
+    );
+    rerender(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Quoted"
+        value={onChange.mock.calls[0]![0]}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByLabelText("Quoted 行2 列1")).toHaveValue(' first\nsecond, "quoted" ');
+    expect(screen.getByLabelText("Quoted 行2 列2")).toHaveValue("2");
+    const multiline = screen.getByLabelText("Quoted 行2 列1");
+    multiline.focus();
+    fireEvent.keyDown(multiline, { key: "Enter" });
+    expect(multiline).toHaveFocus();
+    fireEvent.keyDown(multiline, { key: "Tab" });
+    expect(screen.getByLabelText("Quoted 行2 列2")).toHaveFocus();
+  });
+
+  it("pastes quoted multiline TSV including embedded tabs and empty cells as logical rows", () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Paste"
+        value={"Label\tEmpty\tValue"}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.paste(screen.getByLabelText("Paste 行2 列1"), {
+      clipboardData: { getData: () => '"a\nb\tc"\t\t1\r\nplain\t\t2\r\n' },
+    });
+    expect(onChange).toHaveBeenLastCalledWith(
+      'Label\tEmpty\tValue\n"a\nb\tc"\t\t1\nplain\t\t2',
+      "clipboard",
+    );
+    rerender(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Paste"
+        value={onChange.mock.calls[0]![0]}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByLabelText("Paste 行2 列1")).toHaveValue("a\nb\tc");
+    expect(screen.getByLabelText("Paste 行2 列2")).toHaveValue("");
+    expect(screen.getByLabelText("Paste 行3 列3")).toHaveValue("2");
+  });
+
+  it("rejects an unterminated quoted paste without calling onChange", () => {
+    const onChange = vi.fn();
+    render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Invalid paste"
+        value={"Label,Value\na,1"}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.paste(screen.getByLabelText("Invalid paste 行2 列1"), {
+      clipboardData: { getData: () => '"broken\nlabel,2' },
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent("貼り付け前の表を保持");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Invalid paste 行2 列2")).toHaveValue("1");
+  });
+
+  it("shows invalid input safely and resumes editing after replacement without changing its source", () => {
+    const onChange = vi.fn(),
+      original = 'Label,Value\n"unfinished\n1';
+    const importer = vi.fn().mockResolvedValue(null);
+    const { rerender } = render(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Invalid"
+        value={original}
+        onChange={onChange}
+        workbookImporter={importer}
+      />,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("原文を保持");
+    expect(screen.getByLabelText("Invalid 読込できなかった原文")).toHaveValue(original);
+    expect(screen.getByLabelText("Invalid 行1 列1")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "XLS / XLSXを直接読み込む" })).toBeEnabled();
+    expect(onChange).not.toHaveBeenCalled();
+    rerender(
+      <DelimitedTextSpreadsheet
+        ariaLabel="Invalid"
+        value={"Label,Value\nfixed,2"}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByLabelText("Invalid 行2 列1")).toHaveValue("fixed");
+    expect(screen.getByLabelText("Invalid 行2 列1")).toBeEnabled();
+  });
+});
+
+it("imports a selected Excel range and preserves the table after an invalid range", async () => {
+  const onChange = vi.fn();
+  const importer = vi.fn().mockResolvedValue({fileName:"range.xlsx",sheets:[{name:"Sheet",rows:[["ignored","Treatment",""],["ignored","Value","Note"],["ignored","1.000","quoted\tvalue"]]}]});
+  render(<DelimitedTextSpreadsheet ariaLabel="Range sheet" value="old" onChange={onChange} workbookImporter={importer} />);
+  fireEvent.click(screen.getByRole("button", {name:"XLS / XLSXを直接読み込む"}));
+  await waitFor(() => expect(screen.getByLabelText("読み込む表範囲")).toBeVisible());
+  fireEvent.change(screen.getByLabelText("読み込む表範囲"), {target:{value:"B1:C3"}});
+  fireEvent.change(screen.getByLabelText("見出し行の数"), {target:{value:"2"}});
+  fireEvent.click(screen.getByRole("button", {name:"この範囲を読み込む"}));
+  expect(onChange).toHaveBeenLastCalledWith('Treatment / Value\tTreatment / Note\n1.000\t"quoted\tvalue"', "workbook_import");
+  const calls = onChange.mock.calls.length;
+  fireEvent.change(screen.getByLabelText("読み込む表範囲"), {target:{value:"A1:Z100"}});
+  fireEvent.click(screen.getByRole("button", {name:"この範囲を読み込む"}));
+  expect(screen.getByRole("alert")).toHaveTextContent("使用範囲を超えています");
+  expect(onChange).toHaveBeenCalledTimes(calls);
 });

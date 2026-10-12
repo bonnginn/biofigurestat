@@ -51,6 +51,8 @@ def _hedges_g(first: np.ndarray, second: np.ndarray) -> float | None:
 
 
 def run_two_way_anova(request: dict[str, Any]) -> dict[str, Any]:
+    if request.get("options", {}).get("alternative", "two_sided") != "two_sided":
+        raise ValueError("D05 currently supports only two_sided; directional inference is not implemented")
     factors = request.get("factors")
     conditions = request.get("conditions")
     if not isinstance(factors, list) or len(factors) != 2:

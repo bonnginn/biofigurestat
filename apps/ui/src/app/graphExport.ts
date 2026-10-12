@@ -27,6 +27,10 @@ const PUBLICATION_SVG_STYLE = `
 .experiment-graph-hierarchy-heading { fill: #000; font-family: inherit; font-weight: 680; }
 .experiment-graph-point { stroke: #fff; stroke-width: 1.3; }
 .experiment-graph-point--raw { stroke: none; }
+.experiment-graph-bar { stroke: #274f70; stroke-width: 1; }
+.experiment-graph-distribution-box { fill-opacity: 0.1; stroke: #526b85; stroke-width: 1.1; }
+.experiment-graph-distribution-whisker, .experiment-graph-distribution-whisker-cap, .experiment-graph-distribution-median { stroke: #526b85; stroke-width: 1.2; }
+.experiment-graph-distribution-median { stroke-width: 1.8; }
 .experiment-graph-mean-line, .experiment-graph-error-line, .experiment-graph-error-cap { stroke: #334e68; fill: none; }
 .experiment-graph-mean-line { stroke-width: 2; }
 .experiment-graph-error-line, .experiment-graph-error-cap { stroke-width: 1.6; }

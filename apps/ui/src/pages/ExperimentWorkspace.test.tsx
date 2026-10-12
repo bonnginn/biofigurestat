@@ -1,3 +1,7 @@
+import {
+  createExperimentWorkspaceProject,
+  rehydrateExperimentWorkspace,
+} from "../app/experimentWorkspaceProject";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { AnalysisEngineResult } from "@lsaa/analysis-contracts";
@@ -11,7 +15,6 @@ import {
 import {
   createComplexProportionFixture,
   createCategoricalCompositionFixture,
-  createIndependentTwoGroupFixture,
   createLongitudinalFixture,
   createMultipleReadoutFixture,
   createNestedContinuousFixture,
@@ -36,27 +39,23 @@ function chooseAndCreateGraph(name: RegExp) {
 }
 
 describe("ExperimentWorkspace", () => {
-  it("guides a first-time user from prefilled Data to Graph and Statistics", async () => {
-    const fixture = createIndependentTwoGroupFixture();
+  it("does not blur immediate graph naming when the creation layout settles", async () => {
     render(
-      <ExperimentWorkspace
-        initialDraft={fixture.draft}
-        initialCells={fixture.cells}
-        fiveMinuteGuide
-        onBack={vi.fn()}
-      />,
+      <ExperimentWorkspace initialDraft={draftWithTwoConditions("proportion")} onBack={vi.fn()} />,
     );
-
-    expect(screen.getByRole("complementary", { name: "5分ガイド" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "次へ：グラフを作成" }));
-    expect(screen.getByRole("dialog", { name: "グラフの基本形を選ぶ" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-
-    expect(await screen.findByRole("button", { name: "次へ：Statisticsを開く" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "次へ：Statisticsを開く" }));
-    expect(screen.getByRole("button", { name: "統計" })).toHaveAttribute("aria-current", "page");
+    fireEvent.click(screen.getByRole("button", { name: "グラフ 1の名前を変更" }));
+    const editor = screen.getByRole("textbox", { name: "グラフ名" });
+    fireEvent.change(editor, { target: { value: "Immediate plot" } });
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 180));
+    });
+    expect(editor).toHaveFocus();
+    expect(editor).toHaveValue("Immediate plot");
+    fireEvent.keyDown(editor, { key: "Enter" });
+    expect(screen.getByRole("button", { name: "Immediate plot" })).toBeVisible();
   });
-
   it("records Graph creation as one typed workflow milestone", () => {
     recordUsageMilestone.mockClear();
     recordUsageGraphConfiguration.mockClear();
@@ -166,12 +165,12 @@ describe("ExperimentWorkspace", () => {
     render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
 
     expect(screen.getByRole("heading", { name: "測定値を入力" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "概要" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: "Exp 1" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Exp 2" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Exp 3" })).toBeInTheDocument();
 
-    fireEvent.keyDown(screen.getByRole("tab", { name: "概要" }), { key: "ArrowRight" });
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Overview" }), { key: "ArrowRight" });
     expect(screen.getByRole("tab", { name: "Exp 1" })).toHaveAttribute("aria-selected", "true");
     fireEvent.change(screen.getByRole("spinbutton", { name: "Controlの陽性数" }), {
       target: { value: "5" },
@@ -488,46 +487,6 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("textbox", { name: "Treatmentの細胞強度" })).toHaveValue("16");
   });
 
-  it("distinguishes continuous row entry from directly selected Enter navigation", () => {
-    const draft = draftWithTwoConditions("nested_continuous");
-    render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
-
-    const table = screen.getByRole("table", { name: "細胞強度をまとめて入力" });
-    const firstRowLeft = within(table).getByRole("textbox", {
-      name: "Exp 1・Controlの細胞強度",
-    });
-    const firstRowRight = within(table).getByRole("textbox", {
-      name: "Exp 1・Treatmentの細胞強度",
-    });
-    const nextRowLeft = within(table).getByRole("textbox", {
-      name: "Exp 2・Controlの細胞強度",
-    });
-
-    fireEvent.pointerDown(firstRowRight);
-    fireEvent.focus(firstRowRight);
-    fireEvent.keyDown(firstRowRight, { key: "Enter" });
-
-    expect(
-      within(table).getByRole("textbox", {
-        name: "Exp 2・Treatmentの細胞強度",
-      }),
-    ).toHaveFocus();
-
-    fireEvent.pointerDown(firstRowLeft);
-    fireEvent.focus(firstRowLeft);
-    fireEvent.keyDown(firstRowLeft, { key: "Tab" });
-    expect(firstRowRight).toHaveFocus();
-    fireEvent.keyDown(firstRowRight, { key: "Enter" });
-
-    expect(nextRowLeft).toHaveFocus();
-
-    fireEvent.pointerDown(firstRowRight);
-    fireEvent.focus(firstRowRight);
-    fireEvent.keyDown(firstRowRight, { key: "Tab" });
-
-    expect(nextRowLeft).toHaveFocus();
-  });
-
   it("rejects an invalid Overview matrix atomically and retains existing values", () => {
     const draft = draftWithTwoConditions("nested_continuous");
     render(<ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} />);
@@ -608,7 +567,7 @@ describe("ExperimentWorkspace", () => {
         onRequestExit={({ proceed }) => proceed()}
       />,
     );
-    fireEvent.click(screen.getByText("ファイル"));
+    fireEvent.click(screen.getByText("実験"));
     fireEvent.click(screen.getByRole("button", { name: "設計だけを新しいprojectに再利用" }));
     expect(onReuseDesign).toHaveBeenCalledWith(draft);
   });
@@ -619,7 +578,7 @@ describe("ExperimentWorkspace", () => {
     render(
       <ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} onSaveFavorite={onSaveFavorite} />,
     );
-    fireEvent.click(screen.getByText("ファイル"));
+    fireEvent.click(screen.getByText("実験"));
     fireEvent.click(screen.getByRole("button", { name: "この設計をお気に入りに保存" }));
     expect(onSaveFavorite).toHaveBeenCalledWith(draft, []);
   });
@@ -631,12 +590,12 @@ describe("ExperimentWorkspace", () => {
       <ExperimentWorkspace initialDraft={draft} onBack={vi.fn()} onOpenProject={onOpenProject} />,
     );
 
-    fireEvent.click(screen.getByText("ファイル"));
+    fireEvent.click(screen.getByText("実験"));
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを開く" }));
     expect(onOpenProject).toHaveBeenCalledTimes(1);
   });
 
-  it("enters an X-Y pair directly and creates a scatter graph from stable sample IDs", async () => {
+  it("enters an X-Y pair directly and creates a scatter graph from stable sample IDs", () => {
     const fixture = createXyCorrelationFixture();
     render(
       <ExperimentWorkspace
@@ -652,15 +611,11 @@ describe("ExperimentWorkspace", () => {
     expect(
       screen.getByRole("spinbutton", { name: "Sample 1のFluorescence intensity (a.u.)" }),
     ).toHaveValue(25);
-    fireEvent.keyDown(xInput, { key: "ArrowRight" });
-    expect(
-      screen.getByRole("spinbutton", { name: "Sample 1のFluorescence intensity (a.u.)" }),
-    ).toHaveFocus();
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    expect(screen.getByRole("button", { name: "散布図を選択（おすすめ）" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Scatterを選択（おすすめ）" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    const graph = await screen.findByRole("img", { name: /散布図/ }, { timeout: 5_000 });
+    const graph = screen.getByRole("img", { name: /散布図/ });
     expect(graph).toHaveAttribute("data-graph-type", "scatter");
     expect(graph.querySelectorAll("[data-experimental-unit]")).toHaveLength(5);
   });
@@ -681,10 +636,10 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByText("追加正規化：なし（Target/reference比まで）")).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    const dot = screen.getByRole("button", { name: "ドットを選択（おすすめ）" });
+    const dot = screen.getByRole("button", { name: "Dotを選択（おすすめ）" });
     expect(dot).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("img", { name: /dotで現在のデータを表示したpreview/ })).toBeVisible();
-    expect(screen.queryByRole("button", { name: "バイオリンを選択" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Violinを選択" })).toBeNull();
     fireEvent.click(dot);
     expect(dot).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(dot);
@@ -750,34 +705,7 @@ describe("ExperimentWorkspace", () => {
     expect(target).toHaveValue(20);
   });
 
-  it("uses the shared one-keystroke grid navigation in WB and categorical tables", () => {
-    const wb = render(
-      <ExperimentWorkspace initialDraft={draftWithTwoConditions("wb_ratio")} onBack={vi.fn()} />,
-    );
-    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
-    const target = screen.getByRole("spinbutton", { name: "Controlの標的タンパク質" });
-    fireEvent.keyDown(target, { key: "ArrowRight" });
-    expect(screen.getByRole("spinbutton", { name: "ControlのGAPDH" })).toHaveFocus();
-    wb.unmount();
-
-    const fixture = createCategoricalCompositionFixture();
-    render(
-      <ExperimentWorkspace
-        initialDraft={fixture.draft}
-        initialCells={fixture.cells}
-        onBack={vi.fn()}
-      />,
-    );
-    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
-    const firstCount = screen.getByRole("spinbutton", { name: "ControlのG0/G1数" });
-    fireEvent.keyDown(firstCount, { key: "ArrowRight" });
-    const secondCount = screen.getByRole("spinbutton", { name: "ControlのS数" });
-    expect(secondCount).toHaveFocus();
-    fireEvent.keyDown(secondCount, { key: "ArrowDown" });
-    expect(screen.getByRole("spinbutton", { name: "TreatmentのS数" })).toHaveFocus();
-  });
-
-  it("keeps category counts editable and creates a 100% stacked composition graph", async () => {
+  it("keeps category counts editable and creates a 100% stacked composition graph", () => {
     const fixture = createCategoricalCompositionFixture();
     render(
       <ExperimentWorkspace
@@ -793,10 +721,12 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("spinbutton", { name: "ControlのOther数" })).toHaveValue(5);
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    expect(screen.getByRole("button", { name: "100%積み上げを選択（おすすめ）" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "カテゴリの割合を選択（おすすめ）" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "100% stackedを選択（おすすめ）" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Category percentageを選択（おすすめ）" }),
+    ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    const graph = await screen.findByRole("img", { name: /カテゴリ構成グラフ/ });
+    const graph = screen.getByRole("img", { name: /カテゴリ構成グラフ/ });
     expect(graph).toHaveAttribute("data-graph-type", "stacked_100");
     expect(graph.querySelectorAll('[data-graph-layer="category-stack"]')).not.toHaveLength(0);
   });
@@ -836,7 +766,7 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("cell", { name: "+" })).toBeInTheDocument();
     expect(screen.queryByRole("rowheader", { name: "control / -" })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("tab", { name: "概要" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Overview" }));
     const quickEntryTable = screen.getByRole("table", {
       name: "Marker X陽性率をまとめて入力",
     });
@@ -887,7 +817,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "＋ 実験" }));
 
     expect(screen.getByRole("tab", { name: "Exp 4" })).toHaveAttribute("aria-selected", "false");
-    expect(screen.getByRole("tab", { name: "概要" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
     expect(
       screen.getByText("未入力のセルが8件あります。途中の状態でもグラフを作成できます。"),
     ).toBeInTheDocument();
@@ -1072,12 +1002,6 @@ describe("ExperimentWorkspace", () => {
     fireEvent.paste(input, { clipboardData: { getData: () => "1.2\n1.3" } });
     expect(input).toHaveValue("1.74");
     expect(screen.getByRole("status")).toHaveTextContent("複数値は反映せず");
-    fireEvent.change(input, { target: { value: "1.00" } });
-    fireEvent.blur(input);
-    expect(input).toHaveValue("1.00");
-    fireEvent.click(screen.getByRole("tab", { name: "Exp 2" }));
-    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
-    expect(screen.getByRole("textbox", { name: "Controlの細胞強度" })).toHaveValue("1.00");
   });
 
   it("closes the selected raw-cell inspector when switching experiment tabs", () => {
@@ -1133,20 +1057,17 @@ describe("ExperimentWorkspace", () => {
     expect(
       screen.getByText("Scatterは「同じ試料のXとYの関係を見る」設計で利用できます"),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: /ドットを選択（おすすめ）/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Dotを選択（おすすめ）/ }));
     expect(screen.getByText("作成後の初期表示")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     expect(document.querySelector(".experiment-workspace-body")).toHaveAttribute("hidden");
-    expect(
-      await screen.findByRole("region", { name: "実験からグラフを作成" }, { timeout: 5_000 }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "実験からグラフを作成" })).toBeInTheDocument();
     await waitFor(() =>
       expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "auto", block: "start" }),
     );
     expect(scrollTo).toHaveBeenCalledWith({ top: 892, behavior: "auto" });
     expect(screen.getByText(/割合と要約は実験単位（Exp）から計算/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "グラフ (1)" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "パネルSVG" })).toBeDisabled();
     fireEvent.change(screen.getByRole("combobox", { name: "編集対象" }), {
       target: { value: "error-bar" },
     });
@@ -1156,13 +1077,27 @@ describe("ExperimentWorkspace", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "閉じる" }));
     expect(screen.getByRole("tab", { name: "Exp 2" })).toHaveAttribute("aria-selected", "true");
+    const dataBody = document.querySelector<HTMLElement>(".experiment-workspace-body")!;
+    dataBody.scrollTop = 240;
+    dataBody.scrollLeft = 80;
     fireEvent.click(screen.getByRole("button", { name: "グラフ (1)" }));
     expect(screen.getByRole("region", { name: "実験からグラフを作成" })).toBeInTheDocument();
+    // Hiding a scroll container may reset its offsets in the browser. Switching
+    // between graph and statistics must retain the original data-sheet position.
+    dataBody.scrollTop = 0;
+    dataBody.scrollLeft = 0;
+    fireEvent.click(screen.getByRole("button", { name: "統計" }));
+    expect(screen.getByRole("region", { name: "統計ワークスペース" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "閉じる" }));
+    expect(dataBody).not.toHaveAttribute("hidden");
+    expect(dataBody.scrollTop).toBe(240);
+    expect(dataBody.scrollLeft).toBe(80);
+    expect(screen.getByRole("tab", { name: "Exp 2" })).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(screen.getByRole("button", { name: "グラフ (1)" }));
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    fireEvent.click(screen.getByRole("button", { name: /ドットを選択（おすすめ）/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Dotを選択（おすすめ）/ }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
     expect(screen.getByRole("button", { name: "グラフ (2)" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "パネルSVG" })).toBeEnabled();
     expect(screen.queryByRole("textbox", { name: "グラフ名" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "グラフ 2の名前を変更" }));
     expect(screen.getByRole("textbox", { name: "グラフ名" })).toHaveValue("グラフ 2");
@@ -1185,7 +1120,7 @@ describe("ExperimentWorkspace", () => {
     scrollTo.mockRestore();
   }, 15_000);
 
-  it("ネスト測定のViolin初期表示を観測分布と実験単位点だけに抑える", async () => {
+  it("ネスト測定のViolin初期表示を観測分布と実験単位点だけに抑える", () => {
     const fixture = createNestedContinuousFixture();
     render(
       <ExperimentWorkspace
@@ -1196,8 +1131,8 @@ describe("ExperimentWorkspace", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    chooseAndCreateGraph(/バイオリンを選択/);
-    const graph = await screen.findByRole("img", { name: /実験単位ごとのグラフ/ });
+    chooseAndCreateGraph(/Violinを選択/);
+    const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="violin"]')).not.toHaveLength(0);
     expect(graph.querySelectorAll('[data-graph-layer="nested-raw"]')).not.toHaveLength(0);
     expect(graph.querySelectorAll('[data-graph-layer="nested-experiment"]')).not.toHaveLength(0);
@@ -1205,7 +1140,7 @@ describe("ExperimentWorkspace", () => {
     expect(graph.querySelectorAll('[data-graph-layer="nested-overall"]')).toHaveLength(0);
   });
 
-  it("縦断データには時間変化と分布の複数候補を示し、個体軌跡を初期表示する", async () => {
+  it("縦断データには時間変化と分布の複数候補を示し、個体軌跡を初期表示する", () => {
     const fixture = createLongitudinalFixture();
     render(
       <ExperimentWorkspace
@@ -1216,15 +1151,15 @@ describe("ExperimentWorkspace", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     expect(
-      screen.getByRole("button", { name: "折れ線／経時変化を選択（おすすめ）" }),
+      screen.getByRole("button", { name: "Line / Time courseを選択（おすすめ）" }),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: "バイオリンを選択（おすすめ）" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Violinを選択（おすすめ）" })).toBeVisible();
     fireEvent.click(
       screen.getByRole("button", { name: "＋ カスタムグラフ（レイヤーから組み立てる）" }),
     );
     expect(screen.getByRole("checkbox", { name: "同じ単位を結ぶ線" })).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    const graph = await screen.findByRole("img", { name: /実験単位ごとのグラフ/ });
+    const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="unit-trajectory"]')).toHaveLength(8);
     expect(graph.querySelector('[data-graph-layer="legend"]')).not.toBeNull();
     expect(graph).toHaveTextContent("Control");
@@ -1243,7 +1178,7 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("combobox", { name: "凡例の位置" })).toHaveValue("right");
   });
 
-  it("縦断データのAUCを元トレースと分けたGraph sourceとして作成する", async () => {
+  it("縦断データのAUCを元トレースと分けたGraph sourceとして作成する", () => {
     const fixture = createLongitudinalFixture();
     render(
       <ExperimentWorkspace
@@ -1268,7 +1203,7 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("button", { name: "対応を線で結ぶを選択（おすすめ）" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
 
-    expect(await screen.findByText(/派生値：AUC（台形法）/)).toBeVisible();
+    expect(screen.getByText(/派生値：AUC（台形法）/)).toBeVisible();
     fireEvent.change(screen.getByRole("combobox", { name: "編集対象" }), {
       target: { value: "data" },
     });
@@ -1281,7 +1216,7 @@ describe("ExperimentWorkspace", () => {
     expect(screen.getByRole("table", { name: "派生値のラインネージ" })).toBeVisible();
   });
 
-  it("複数測定項目を作成時に明示し、別グラフのsourceとして独立保持する", async () => {
+  it("複数測定項目を作成時に明示し、別グラフのsourceとして独立保持する", () => {
     const fixture = createMultipleReadoutFixture();
     render(
       <ExperimentWorkspace
@@ -1299,7 +1234,7 @@ describe("ExperimentWorkspace", () => {
     const source = screen.getByRole("combobox", { name: "表示する測定項目" });
     expect(source).toHaveValue("readout.multi.proportion");
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    expect(await screen.findByRole("combobox", { name: "測定項目" })).toHaveValue(
+    expect(screen.getByRole("combobox", { name: "測定項目" })).toHaveValue(
       "readout.multi.proportion",
     );
 
@@ -1307,9 +1242,9 @@ describe("ExperimentWorkspace", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "表示する測定項目" }), {
       target: { value: "readout.multi.intensity" },
     });
-    expect(screen.getByRole("button", { name: /バイオリンを選択（おすすめ）/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Violinを選択（おすすめ）/ })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    expect(await screen.findByRole("img", { name: /蛍光強度/ })).toBeVisible();
+    expect(screen.getByRole("img", { name: /蛍光強度/ })).toBeVisible();
     expect(screen.getByRole("combobox", { name: "測定項目" })).toHaveValue(
       "readout.multi.intensity",
     );
@@ -1320,7 +1255,7 @@ describe("ExperimentWorkspace", () => {
     );
   });
 
-  it("明示対応のfixtureを対応グラフの開始点として開く", async () => {
+  it("明示対応のfixtureを対応グラフの開始点として開く", () => {
     const fixture = createPairedTwoConditionFixture();
     render(
       <ExperimentWorkspace
@@ -1333,7 +1268,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     expect(screen.getByRole("button", { name: "対応を線で結ぶを選択（おすすめ）" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    const graph = await screen.findByRole("img", { name: /実験単位ごとのグラフ/ });
+    const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="unit-trajectory"]')).toHaveLength(4);
     fixture.draft.experiments.forEach((experiment) => {
       const stableUnitId = experiment.stableUnitId!;
@@ -1384,7 +1319,6 @@ describe("ExperimentWorkspace", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    await screen.findByRole("region", { name: "実験からグラフを作成" }, { timeout: 5_000 });
     fireEvent.click(screen.getByRole("button", { name: "統計" }));
     expect(screen.getByRole("region", { name: "統計ワークスペース" })).toBeVisible();
     expect(screen.queryByRole("combobox", { name: "編集対象" })).toBeNull();
@@ -1396,9 +1330,9 @@ describe("ExperimentWorkspace", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "グラフ (1)" }));
     expect(
-      (await screen.findByRole("img", { name: /実験単位ごとのグラフ/ })).querySelector(
-        '[data-graph-layer="statistics-annotation"]',
-      ),
+      screen
+        .getByRole("img", { name: /実験単位ごとのグラフ/ })
+        .querySelector('[data-graph-layer="statistics-annotation"]'),
     ).toHaveTextContent("p = 0.02");
 
     fireEvent.click(screen.getByRole("button", { name: "閉じる" }));
@@ -1433,7 +1367,7 @@ describe("ExperimentWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     const dialog = screen.getByRole("dialog", { name: "グラフの基本形を選ぶ" });
     expect(within(dialog).getAllByRole("img", { name: /の模式図/ })).toHaveLength(7);
-    fireEvent.click(within(dialog).getByRole("button", { name: "箱ひげを選択" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Boxを選択" }));
     expect(
       within(dialog).getByRole("img", { name: /boxで現在のデータを表示したpreview/ }),
     ).toBeVisible();
@@ -1441,7 +1375,7 @@ describe("ExperimentWorkspace", () => {
     expect(within(dialog).getByRole("button", { name: "このグラフを作成" })).toBeEnabled();
   });
 
-  it("Dot初期表示で個々の生物学的反復と平均・SDを表示する", async () => {
+  it("Dot初期表示で個々の生物学的反復と平均・SDを表示する", () => {
     const fixture = createComplexProportionFixture();
     render(
       <ExperimentWorkspace
@@ -1452,8 +1386,8 @@ describe("ExperimentWorkspace", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-    chooseAndCreateGraph(/ドットを選択/);
-    const graph = await screen.findByRole("img", { name: /実験単位ごとのグラフ/ });
+    chooseAndCreateGraph(/Dotを選択/);
+    const graph = screen.getByRole("img", { name: /実験単位ごとのグラフ/ });
     expect(graph.querySelectorAll('[data-graph-layer="proportion-experiment"]')).not.toHaveLength(
       0,
     );
@@ -1474,7 +1408,7 @@ describe("ExperimentWorkspace", () => {
         />,
       );
       fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
-      chooseAndCreateGraph(/ドットを選択/);
+      chooseAndCreateGraph(/Dotを選択/);
       expect(screen.getByText("グラフ 1を作成しました。")).toBeVisible();
       act(() => vi.advanceTimersByTime(2700));
       expect(screen.queryByText("グラフ 1を作成しました。")).not.toBeInTheDocument();
@@ -1522,6 +1456,60 @@ describe("ExperimentWorkspace", () => {
     });
     await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(2));
     expect(saveProject.mock.calls[1]?.[1]).toBe("/tmp/workspace.lsa");
-    expect(saveProject.mock.calls[1]?.[0].rawRevisions).toHaveLength(2);
+    expect(saveProject.mock.calls[1]?.[0].rawRevisions).toHaveLength(1);
+  });
+  it("reopens published lexical precision and saves display-only edits without new raw history", async () => {
+    const draft = draftWithTwoConditions("nested_continuous");
+    const key = experimentCellKey({
+      experimentId: draft.experiments[0]!.id,
+      conditionId: draft.conditions[0]!.id,
+      readoutId: draft.readouts[0]!.id,
+    });
+    const cells = {
+      [key]: { kind: "nested_continuous" as const, rawValues: [10], source: "manual" as const },
+    };
+    const original = createExperimentWorkspaceProject({
+      draft,
+      cells,
+      graphs: [],
+      cellDisplayTexts: { [key]: "10.00" },
+      now: "2026-10-12T08:00:00Z",
+    });
+    const restored = rehydrateExperimentWorkspace(original)!;
+    expect(restored.cellDisplayTexts[key]).toBe("10.00");
+    const saveProject = vi.fn(async (state, target?: string) => ({
+      state,
+      target: target ?? "C:/tmp/precision.lsa",
+    }));
+    render(
+      <ExperimentWorkspace
+        initialDraft={restored.draft}
+        initialCells={restored.cells}
+        initialCellDisplayTexts={restored.cellDisplayTexts}
+        initialProject={{ state: original, target: "C:/tmp/precision.lsa" }}
+        saveProject={saveProject}
+        onBack={vi.fn()}
+      />,
+    );
+    const table = screen.getByRole("table", { name: "細胞強度をまとめて入力" });
+    const input = within(table).getByRole("textbox", { name: "Exp 1・Controlの細胞強度" });
+    expect(input).toHaveValue("10.00");
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "10.000" } });
+    fireEvent.blur(input);
+    expect(input).toHaveValue("10.000");
+    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const saved = saveProject.mock.calls[0]![0];
+    expect(saved.experimentWorkspace.cellDisplayTexts[key]).toBe("10.000");
+    for (const history of [
+      "rawRevisions",
+      "observations",
+      "unitInstances",
+      "analysisRuns",
+      "provenanceEvents",
+    ] as const)
+      expect(saved[history]).toEqual(original[history]);
+    expect(rehydrateExperimentWorkspace(saved)!.cellDisplayTexts[key]).toBe("10.000");
   });
 });

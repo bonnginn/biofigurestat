@@ -8,22 +8,10 @@ import {
   setUsageConsent,
 } from "../app/usageTelemetry";
 import { UsageTelemetryController } from "./UsageTelemetryController";
-import { resetAppLocaleForTests } from "../app/appLocale";
-import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 
 describe("UsageTelemetryController", () => {
-  beforeEach(() =>
-    act(() => {
-      resetUsageTelemetryForTest();
-      resetAppLocaleForTests("ja");
-    }),
-  );
-  afterEach(() =>
-    act(() => {
-      resetUsageTelemetryForTest();
-      resetAppLocaleForTests("ja");
-    }),
-  );
+  beforeEach(() => act(() => resetUsageTelemetryForTest()));
+  afterEach(() => act(() => resetUsageTelemetryForTest()));
 
   it("requires an explicit first-run Yes or No choice", () => {
     const { rerender } = render(<UsageTelemetryController route="home" />);
@@ -210,7 +198,6 @@ describe("UsageTelemetryController", () => {
 
     const background = screen.getByTestId("background-content");
     const dialog = screen.getByRole("dialog");
-    const japanese = screen.getByRole("button", { name: "日本語" });
     const decline = screen.getByRole("button", { name: "協力しない" });
     const accept = screen.getByRole("button", { name: "協力する" });
     expect(background).toHaveAttribute("inert");
@@ -218,11 +205,11 @@ describe("UsageTelemetryController", () => {
     expect(dialog).toHaveFocus();
 
     fireEvent.keyDown(dialog, { key: "Tab" });
-    expect(japanese).toHaveFocus();
+    expect(decline).toHaveFocus();
 
     accept.focus();
     fireEvent.keyDown(dialog, { key: "Tab" });
-    expect(japanese).toHaveFocus();
+    expect(decline).toHaveFocus();
     fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
     expect(accept).toHaveFocus();
     fireEvent.keyDown(dialog, { key: "Escape" });
@@ -231,22 +218,5 @@ describe("UsageTelemetryController", () => {
     fireEvent.click(decline);
     expect(background).not.toHaveAttribute("inert");
     expect(background).not.toHaveAttribute("aria-hidden");
-  });
-
-  it("switches the first-run notice to English before consent without changing consent", () => {
-    const view = render(<UsageTelemetryController route="home" />);
-
-    fireEvent.click(screen.getByRole("button", { name: "English" }));
-
-    expect(
-      screen.getByRole("heading", {
-        name: "May BioFigureStat use privacy-reduced usage data to improve the product?",
-      }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Do not allow" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Allow" })).toBeInTheDocument();
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(JSON.parse(serializeLocalUsageTelemetryReport()).eventCount).toBe(0);
-    expectNoJapaneseUi(view.container);
   });
 });

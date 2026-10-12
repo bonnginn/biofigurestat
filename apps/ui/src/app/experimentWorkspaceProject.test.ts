@@ -1,3 +1,5 @@
+import { createPairedContinuousEquivalenceRequest } from "../components/graph/pairedContinuousEquivalenceRequest";
+import { createIndependentContinuousEquivalenceRequest } from "../components/graph/independentContinuousEquivalenceRequest";
 import { describe, expect, it } from "vitest";
 import {
   requireAnalysisRequestRecommendation,
@@ -193,29 +195,6 @@ describe("experiment workspace project adapter", () => {
       },
     });
     expect(legacyCompatible.experimentWorkspace?.dataViewMode).toBe("compact");
-  });
-
-  it("入力した小数表現をcanonical数値とは別に保存・復元する", () => {
-    const continuous = createNestedContinuousFixture();
-    const key = Object.keys(continuous.cells)[0]!;
-    const state = createExperimentWorkspaceProject({
-      draft: continuous.draft,
-      cells: continuous.cells,
-      graphs: [],
-      cellDisplayTexts: { [key]: "1.00" },
-      now: "2026-08-21T02:30:00.000Z",
-    });
-
-    expect(state.experimentWorkspace?.cellDisplayTexts[key]).toBe("1.00");
-    expect(rehydrateExperimentWorkspace(state)?.cellDisplayTexts[key]).toBe("1.00");
-    const legacyCompatible = ProjectStateSchema.parse({
-      ...state,
-      experimentWorkspace: {
-        ...state.experimentWorkspace!,
-        cellDisplayTexts: undefined,
-      },
-    });
-    expect(legacyCompatible.experimentWorkspace?.cellDisplayTexts).toEqual({});
   });
 
   it("実験回IDと安定した生物学的単位IDを保存・再読込で分離して保つ", () => {
@@ -1386,47 +1365,6 @@ describe("experiment workspace project adapter", () => {
       true,
     );
     expect(reopened?.draft.experiments.every(({ date }) => date === "")).toBe(true);
-
-    const sessionIds = workspace.draft.experiments.map(({ id }) => id);
-    expect(sessionIds.length).toBeGreaterThan(0);
-    const conditionOrdinals = new Map<string, number>();
-    const linkedObservations = workspace.draft.adaptiveInput!.canonicalObservations.map(
-      (observation) => {
-        const condition = JSON.stringify(observation.factors);
-        const ordinal = conditionOrdinals.get(condition) ?? 0;
-        conditionOrdinals.set(condition, ordinal + 1);
-        return CanonicalAdaptiveObservationSchema.parse({
-          ...observation,
-          experimentSessionId: sessionIds[ordinal],
-        });
-      },
-    );
-    const linkedState = createExperimentWorkspaceProject({
-      draft: {
-        ...workspace.draft,
-        adaptiveInput: {
-          ...workspace.draft.adaptiveInput!,
-          canonicalObservations: linkedObservations,
-        },
-      },
-      cells: workspace.cells,
-      graphs: [],
-      now,
-    });
-    expect(
-      new Set(
-        linkedState.unitInstances
-          .filter(({ levelId }) => levelId === `unit-level.${contract.experimentalUnitLevelKey}`)
-          .map(({ metadata }) => metadata.experimentSessionId),
-      ),
-    ).toEqual(new Set(sessionIds));
-    expect(
-      rehydrateExperimentWorkspace(
-        ProjectStateSchema.parse(JSON.parse(JSON.stringify(linkedState))),
-      )?.draft.adaptiveInput?.canonicalObservations.map(
-        ({ experimentSessionId }) => experimentSessionId,
-      ),
-    ).toEqual([sessionIds[0], sessionIds[1], sessionIds[0], sessionIds[1]]);
   });
 
   it("D09 scatter解析とX-Y対応を保存し同じworkspaceへ戻せる", () => {
@@ -1561,6 +1499,55 @@ describe("experiment workspace project adapter", () => {
     expect(
       rehydrateExperimentWorkspace(state)?.draft.readouts[0]?.withinExperimentNormalization,
     ).toEqual(draft.readouts[0]?.withinExperimentNormalization);
+  });
+
+  it("単一群workspace形式を基準値・実験ID・生値を変えず再解析用に復元する", () => {
+    // Current writer round trip; this is not a fixture produced by a published older build.
+    const base = createExperimentSetDraft("general_assay", "nested_continuous");
+    const draft: ExperimentSetDraft = {
+      ...base,
+      conditions: [
+        { ...base.conditions[0]!, label: "Cohort", attributes: { "attribute.1": "Cohort" } },
+      ],
+      analysisIntent: { kind: "single_cohort", mode: "one_sample", referenceValue: 3.5 },
+    };
+    const cells: ExperimentCellMap = Object.fromEntries(
+      draft.experiments.map((experiment, index) => [
+        experimentCellKey({
+          experimentId: experiment.id,
+          conditionId: draft.conditions[0]!.id,
+          readoutId: draft.readouts[0]!.id,
+        }),
+        { kind: "nested_continuous", rawValues: [4 + index], source: "manual" },
+      ]),
+    );
+    const assessment = (restoredDraft: ExperimentSetDraft, restoredCells: ExperimentCellMap) =>
+      assessDraftGraphAnalysis({
+        draft: restoredDraft,
+        cells: restoredCells,
+        readoutId: draft.readouts[0]!.id,
+        conditionIds: [draft.conditions[0]!.id],
+      });
+    const before = assessment(draft, cells);
+    expect(before.request).toMatchObject({
+      templateId: "D12",
+      method: "one_sample_t",
+      nullValue: 3.5,
+    });
+    const state = createExperimentWorkspaceProject({
+      draft,
+      cells,
+      graphs: [],
+      now: "2026-10-11T00:00:00.000Z",
+    });
+    const original = JSON.stringify(state);
+    const restored = rehydrateExperimentWorkspace(ProjectStateSchema.parse(JSON.parse(original)));
+    expect(restored).not.toBeNull();
+    expect(restored!.draft.analysisIntent).toEqual(draft.analysisIntent);
+    expect(restored!.cells).toEqual(cells);
+    expect(assessment(restored!.draft, restored!.cells)).toEqual(before);
+    expect(state.analysisRuns).toHaveLength(0);
+    expect(JSON.stringify(state)).toBe(original);
   });
 
   it("WBの背景補正元測定値・式・補正値を保存し、再編集用に復元する", () => {
@@ -2189,3 +2176,147 @@ describe("experiment workspace project adapter", () => {
     );
   });
 });
+
+it.each(["welch", "paired", "paired_missing"])(
+  "preserves restored TOST plan and executed recommendation across project save and reopen (%s)",
+  (mode) => {
+    const base = createExperimentSetDraft("cell_culture", "nested_continuous");
+    const draft = {
+      ...base,
+      conditionAssignment: {
+        kind: mode === "welch" ? ("independent" as const) : ("matched" as const),
+        unitLabel: "dish",
+      },
+      conditions: [
+        ...base.conditions.slice(0, 2).map((c, i) => ({
+          ...c,
+          label: i ? "Treatment" : "Control",
+          attributes: { "attribute.1": i ? "Treatment" : "Control" },
+        })),
+        {
+          ...base.conditions[0]!,
+          id: "condition.display_only",
+          label: "Display only",
+          attributes: { "attribute.1": "Display only" },
+        },
+      ],
+      time: { sampling: "none" as const, unit: "h" as const, points: [] },
+    };
+    const cells = Object.fromEntries(
+      draft.experiments.flatMap((e, i) =>
+        draft.conditions.map((c, j) => [
+          experimentCellKey({
+            experimentId: e.id,
+            conditionId: c.id,
+            readoutId: draft.readouts[0]!.id,
+          }),
+          {
+            kind: "nested_continuous" as const,
+            rawValues: [1 + i * 0.1 + j * (0.05 + i * 0.01)],
+            source: "manual" as const,
+          },
+        ]),
+      ),
+    );
+    if (mode === "paired_missing")
+      delete cells[
+        experimentCellKey({
+          experimentId: draft.experiments[2]!.id,
+          conditionId: draft.conditions[1]!.id,
+          readoutId: draft.readouts[0]!.id,
+        })
+      ];
+    const assessment = assessDraftGraphAnalysis({
+      draft,
+      cells,
+      readoutId: draft.readouts[0]!.id,
+      conditionIds: draft.conditions.slice(0, 2).map((c) => c.id),
+    });
+    const comparisonId = `equivalence:${encodeURIComponent(draft.conditions[0]!.id)}:${encodeURIComponent(draft.conditions[1]!.id)}`;
+    const plan = {
+      schemaVersion: "0.1.0" as const,
+      margin: {
+        scale: "raw_difference" as const,
+        lowerBound: -0.3,
+        upperBound: 0.3,
+        unit: "AU",
+        declaredAsPrespecified: true as const,
+      },
+      alpha: 0.05 as const,
+      claimMode: "single_primary_comparison" as const,
+      primaryComparisonId: comparisonId,
+    };
+    const request =
+      mode === "welch"
+        ? createIndependentContinuousEquivalenceRequest({
+            baseRequest: assessment.request,
+            plan,
+            comparisonId,
+          })
+        : createPairedContinuousEquivalenceRequest({
+            baseRequest: assessment.request,
+            plan,
+            comparisonId,
+            excludedIncompletePairIds: mode === "paired_missing" ? ["unit.3"] : [],
+          });
+    if (!request) throw Error("supported TOST fixture");
+    const recommendation = {
+      templateId: request.templateId,
+      templateVersion: request.templateVersion,
+      recommendedMethod: request.method,
+      alternativeMethods: [],
+      reasonCode: "prespecified_independent_continuous_equivalence",
+      explanation: "Prespecified Welch TOST",
+      statisticalNDefinition: assessment.statisticalNDefinition ?? "Independent units",
+      multiplicityMethod: null,
+      decision: { kind: "accepted" as const, selectedMethod: request.method },
+    };
+    const graph: WorkspaceGraphState = {
+      ...fixture().graph,
+      selectedReadoutId: draft.readouts[0]!.id,
+      selectedConditionIds: draft.conditions.map((c) => c.id),
+      analysisConditionIds: draft.conditions.slice(0, 2).map((c) => c.id),
+      selectedTimePointIds: [],
+      comparisonGoal: "equivalence",
+      equivalencePlan: plan,
+      analysis: {
+        request,
+        recommendation,
+        result: {
+          protocolVersion: request.protocolVersion,
+          requestId: request.requestId,
+          status: "ok",
+          engine: { name: "fixture", version: "0.15.1", packages: {} },
+          estimates: [],
+          tests: [],
+          diagnostics: [],
+          warnings: [],
+          completedAt: "2026-10-10T00:00:00.000Z",
+        },
+      },
+    };
+    const state = createExperimentWorkspaceProject({
+      draft,
+      cells,
+      graphs: [graph],
+      now: "2026-10-10T01:00:00.000Z",
+    });
+    const reopened = rehydrateExperimentWorkspace(
+      ProjectStateSchema.parse(JSON.parse(JSON.stringify(state))),
+    );
+    expect(reopened?.graphs[0]?.equivalencePlan).toEqual(plan);
+    expect(reopened?.graphs[0]?.comparisonGoal).toBe("equivalence");
+    expect(reopened?.graphs[0]?.analysis?.request.method).toBe(request.method);
+    expect(state.analysisRuns[0]?.recommendation.recommendedMethod).toBe(request.method);
+    expect(state.analysisRuns[0]?.request.observations).toHaveLength(
+      mode === "paired_missing" ? 4 : 6,
+    );
+    expect(state.observations).toHaveLength(mode === "paired_missing" ? 8 : 9);
+    expect(
+      state.analysisRuns[0]?.request.observations.every(
+        (o) => o.conditionId !== "condition.display_only",
+      ),
+    ).toBe(true);
+    expect(reopened?.draft.conditions).toHaveLength(3);
+  },
+);

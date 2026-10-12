@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type InputHTMLAttributes, type KeyboardEvent } from "react";
 
 import {
   AnalysisEngineResultSchema,
   createD03EngineRequest,
   createD04EngineRequest,
   createD05EngineRequest,
+  type AnalysisEngineRequest,
+  type AnalysisEngineResult,
   type AnalysisRecommendation,
 } from "@lsaa/analysis-contracts";
 import {
@@ -47,7 +49,6 @@ import {
   defaultAnalysisRunner,
   type AnalysisRunner,
 } from "../app/analysisClient";
-import { localizedFailureMessage, localizedText, useAppLocale } from "../app/appLocale";
 import { updateNestedPayloadExperimentDate } from "../app/nestedPayloadDates";
 import {
   actionErrorMessage,
@@ -69,23 +70,6 @@ import {
 import { AnalysisResultView } from "./AnalysisResultView";
 import { BulkPasteScalar } from "../components/BulkPasteScalar";
 import { NestedImageJPaste, type NestedImageJPastePayload } from "../components/NestedImageJPaste";
-import {
-  SpreadsheetGridInput,
-  type SpreadsheetGridInputProps,
-} from "../components/SpreadsheetGridInput";
-import { nextRovingTabIndex } from "../components/rovingTab";
-import {
-  createLegacyWorkspaceToken,
-  numericEngineObservations,
-  type LegacyDataSheetAnalysisRun,
-  type LegacyWorkflowTabId,
-} from "./legacyDataSheetShared";
-import { LegacyDataSheetWorkflowTabs } from "./LegacyDataSheetWorkflowTabs";
-import { LegacyProjectSavePanel } from "./LegacyProjectSavePanel";
-import {
-  formatProportionPercentage,
-  parseSpreadsheetNumber,
-} from "../components/spreadsheetValues";
 import "./MultiConditionDataSheetPage.css";
 
 type Props = {
@@ -103,6 +87,32 @@ type Props = {
   onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
 };
 
+type WorkflowTabId = "input" | "analysis" | "graph" | "save";
+const TABS: ReadonlyArray<{ id: WorkflowTabId; label: string }> = [
+  { id: "input", label: "1 データ入力" },
+  { id: "analysis", label: "2 解析" },
+  { id: "graph", label: "3 グラフ" },
+  { id: "save", label: "4 保存" },
+];
+
+type AnalysisRun = {
+  request: AnalysisEngineRequest;
+  result: AnalysisEngineResult;
+  graphSpec: GraphSpec | null;
+  graphModel: CoreGraphModel | null;
+};
+
+type EngineObservation = AnalysisEngineRequest["observations"][number];
+
+function numericEngineObservations(
+  observations: readonly EngineObservation[],
+): Array<EngineObservation & { value: number }> {
+  return observations.filter(
+    (observation): observation is EngineObservation & { value: number } =>
+      typeof observation.value === "number",
+  );
+}
+
 type CanonicalData = Omit<Extract<CanonicalSheetResult, { success: true }>, "success"> & {
   rawObservations?: Observation[];
   transformation?: TransformationSpec;
@@ -110,6 +120,15 @@ type CanonicalData = Omit<Extract<CanonicalSheetResult, { success: true }>, "suc
   derivedValues?: DerivedScalarValue[];
   projectDesign?: ExperimentDesign;
 };
+
+let sequence = 0;
+function token() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  sequence += 1;
+  return `${Date.now().toString(36)}.${sequence}`;
+}
 
 function issueLabel(issue: SheetValidationIssue) {
   if (issue.code === "missing_value") return "すべての実験単位に値を入力してください。";
@@ -192,12 +211,76 @@ function updateEntryExperimentDate(
   };
 }
 
-function multiPercentageLabel(measurement: MultiConditionMeasurement): string {
-  return measurement.kind === "proportion" ? formatProportionPercentage(measurement) : "—";
+function parseMultiNumber(value: string, integer = false): number | null {
+  const trimmed = value.trim();
+  if (trimmed === "") return null;
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || (integer && !Number.isInteger(parsed))) return null;
+  return parsed;
 }
 
-function MultiGridInput(props: Omit<SpreadsheetGridInputProps, "baseClassName">) {
-  return <SpreadsheetGridInput {...props} baseClassName="multi-sheet-grid-input" />;
+function multiPercentageLabel(measurement: MultiConditionMeasurement): string {
+  if (measurement.kind !== "proportion") return "—";
+  if (
+    measurement.numerator === null ||
+    measurement.denominator === null ||
+    measurement.denominator <= 0 ||
+    measurement.numerator > measurement.denominator
+  ) {
+    return "—";
+  }
+  return `${((measurement.numerator / measurement.denominator) * 100).toFixed(1)}%`;
+}
+
+type MultiGridInputProps = InputHTMLAttributes<HTMLInputElement> & {
+  gridRow: number;
+  gridColumn: number;
+};
+
+function focusAdjacentMultiGridInput(event: KeyboardEvent<HTMLInputElement>) {
+  if (!["Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+  const grid = event.currentTarget.closest<HTMLElement>("[data-unit-grid]");
+  if (!grid) return;
+  const currentRow = Number(event.currentTarget.dataset.gridRow);
+  const currentColumn = Number(event.currentTarget.dataset.gridColumn);
+  if (!Number.isInteger(currentRow) || !Number.isInteger(currentColumn)) return;
+
+  let nextRow = currentRow;
+  let nextColumn = currentColumn;
+  if (event.key === "Enter") nextRow += event.shiftKey ? -1 : 1;
+  if (event.key === "ArrowLeft") nextColumn -= 1;
+  if (event.key === "ArrowRight") nextColumn += 1;
+  if (event.key === "ArrowUp") nextRow -= 1;
+  if (event.key === "ArrowDown") nextRow += 1;
+  const next = grid.querySelector<HTMLInputElement>(
+    `[data-grid-row="${nextRow}"][data-grid-column="${nextColumn}"]`,
+  );
+  if (!next) return;
+  event.preventDefault();
+  next.focus();
+  next.select();
+}
+
+function MultiGridInput({
+  gridRow,
+  gridColumn,
+  className,
+  onKeyDown,
+  ...props
+}: MultiGridInputProps) {
+  return (
+    <input
+      {...props}
+      className={`multi-sheet-grid-input${className ? ` ${className}` : ""}`}
+      data-grid-input="true"
+      data-grid-row={gridRow}
+      data-grid-column={gridColumn}
+      onKeyDown={(event) => {
+        focusAdjacentMultiGridInput(event);
+        onKeyDown?.(event);
+      }}
+    />
+  );
 }
 
 function applyScalarValuesToIndependentMultiCondition(
@@ -247,8 +330,6 @@ export function MultiConditionDataSheetPage({
   onRequestExit,
   onRegisterSaveHandler,
 }: Props) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const isRepeated = recommendation.templateId === "D04";
   const initialDerivedRevision = initialProject?.state.derivedDatasetRevisions.find(
     (revision) =>
@@ -351,18 +432,26 @@ export function MultiConditionDataSheetPage({
   const [sheet, setSheet] = useState(initialSheet);
   const [issues, setIssues] = useState<SheetValidationIssue[]>([]);
   const [canonicalData, setCanonicalData] = useState<CanonicalData | null>(initialCanonicalData);
+  const latestCanonicalDataRef = useRef(canonicalData);
+  latestCanonicalDataRef.current = canonicalData;
+  const analysisEpochRef = useRef(0);
+  useEffect(
+    () => () => {
+      analysisEpochRef.current += 1;
+    },
+    [],
+  );
   const [nestedPayloads, setNestedPayloads] = useState<Record<string, NestedImageJPastePayload>>(
     {},
   );
   const [validated, setValidated] = useState(initialCanonicalData !== null);
-  const [analysisRun, setAnalysisRun] =
-    useState<LegacyDataSheetAnalysisRun | null>(restoredAnalysis);
+  const [analysisRun, setAnalysisRun] = useState<AnalysisRun | null>(restoredAnalysis);
   const [analysisStatus, setAnalysisStatus] = useState<"idle" | "running" | "error">("idle");
   const [runningRequestId, setRunningRequestId] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [hasPastedValues, setHasPastedValues] = useState(false);
   const [activeReplicateIndex, setActiveReplicateIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<LegacyWorkflowTabId>("input");
+  const [activeTab, setActiveTab] = useState<WorkflowTabId>(initialProject ? "input" : "input");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [metadataDraft, setMetadataDraft] = useState<ProjectMetadataDraft>(
@@ -389,12 +478,20 @@ export function MultiConditionDataSheetPage({
   );
   const [saveTarget, setSaveTarget] = useState<string | undefined>(initialProject?.target);
   const workspaceRef = useRef({
-    projectId: initialProject?.state.metadata.projectId ?? `project.${createLegacyWorkspaceToken()}`,
-    rawRevisionId:
-      initialProject?.state.activeRawRevisionId ?? `raw-revision.${createLegacyWorkspaceToken()}.1`,
+    projectId: initialProject?.state.metadata.projectId ?? `project.${token()}`,
+    rawRevisionId: initialProject?.state.activeRawRevisionId ?? `raw-revision.${token()}.1`,
     metadata: initialProject?.state.metadata ?? null,
   });
   const [draftRawRevisionId, setDraftRawRevisionId] = useState(workspaceRef.current.rawRevisionId);
+  const pendingSavedRawRevisionIdRef = useRef<string | null>(null);
+  const savePendingRef = useRef(false);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
   const lifecycleSnapshot = JSON.stringify({
     sheet,
     nestedPayloads,
@@ -405,6 +502,11 @@ export function MultiConditionDataSheetPage({
     draftRawRevisionId,
   });
   const savedLifecycleSnapshotRef = useRef(initialProject ? lifecycleSnapshot : "");
+  const latestLifecycleSnapshotRef = useRef(lifecycleSnapshot);
+  latestLifecycleSnapshotRef.current = lifecycleSnapshot;
+  const sourceSnapshot = JSON.stringify({ sheet, nestedPayloads });
+  const latestSourceSnapshotRef = useRef(sourceSnapshot);
+  latestSourceSnapshotRef.current = sourceSnapshot;
   const isDirty = lifecycleSnapshot !== savedLifecycleSnapshotRef.current;
   useEffect(() => {
     onDirtyChange?.(isDirty);
@@ -415,8 +517,11 @@ export function MultiConditionDataSheetPage({
   const selectedReplicateIndex = Math.min(activeReplicateIndex, Math.max(0, replicateCount - 1));
 
   const invalidate = (preserveNested = false, nextRawRevisionId?: string) => {
-    if (lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId) {
-      setDraftRawRevisionId(nextRawRevisionId ?? `raw-revision.${createLegacyWorkspaceToken()}`);
+    if (
+      (lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId) ||
+      pendingSavedRawRevisionIdRef.current === draftRawRevisionId
+    ) {
+      setDraftRawRevisionId(nextRawRevisionId ?? `raw-revision.${token()}`);
     }
     setValidated(false);
     setCanonicalData(null);
@@ -452,8 +557,9 @@ export function MultiConditionDataSheetPage({
           ? entry.experimentalUnitId
           : null;
     const nextRawRevisionId =
-      lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId
-        ? `raw-revision.${createLegacyWorkspaceToken()}`
+      (lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId) ||
+      pendingSavedRawRevisionIdRef.current === draftRawRevisionId
+        ? `raw-revision.${token()}`
         : draftRawRevisionId;
     invalidate(true, nextRawRevisionId);
     if (experimentalUnitId) {
@@ -478,7 +584,16 @@ export function MultiConditionDataSheetPage({
   };
 
   const onReplicateTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tabIndex: number) => {
-    const next = nextRovingTabIndex(event.key, tabIndex, replicateCount);
+    const next =
+      event.key === "ArrowRight"
+        ? (tabIndex + 1) % Math.max(replicateCount, 1)
+        : event.key === "ArrowLeft"
+          ? (tabIndex - 1 + Math.max(replicateCount, 1)) % Math.max(replicateCount, 1)
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? Math.max(replicateCount - 1, 0)
+              : null;
     if (next === null) return;
     event.preventDefault();
     setActiveReplicateIndex(next);
@@ -525,8 +640,9 @@ export function MultiConditionDataSheetPage({
   const applyNestedPaste = (payload: NestedImageJPastePayload) => {
     if (sheet.relationship !== "independent") return;
     const effectiveRawRevisionId =
-      lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId
-        ? `raw-revision.${createLegacyWorkspaceToken()}`
+      (lastSavedState && draftRawRevisionId === lastSavedState.activeRawRevisionId) ||
+      pendingSavedRawRevisionIdRef.current === draftRawRevisionId
+        ? `raw-revision.${token()}`
         : draftRawRevisionId;
     if (effectiveRawRevisionId !== draftRawRevisionId) {
       setDraftRawRevisionId(effectiveRawRevisionId);
@@ -626,7 +742,7 @@ export function MultiConditionDataSheetPage({
               ],
             };
         const derived = createNestedScalarDerivedDataset({
-          derivedDatasetRevisionId: `derived-dataset.${createLegacyWorkspaceToken()}`,
+          derivedDatasetRevisionId: `derived-dataset.${token()}`,
           rawRevisionId: draftRawRevisionId,
           outcomeId: sheet.outcomeId,
           experimentalUnitLevelId: sheet.experimentalUnitLevelId,
@@ -667,24 +783,20 @@ export function MultiConditionDataSheetPage({
         {
           code: "missing_value",
           path: "nested-observations",
-          message: localizedFailureMessage(
-            locale,
-            error,
-            "D10の要約を作成できませんでした。",
-            "The nested-observation summary could not be created.",
-          ),
+          message: error instanceof Error ? error.message : "D10の要約を作成できませんでした。",
         },
       ]);
     }
   };
 
   const runAnalysis = async () => {
+    const epoch = ++analysisEpochRef.current;
     if (!canonicalData || !["D03", "D04", "D05"].includes(recommendation.templateId)) return;
     setAnalysisStatus("running");
     setAnalysisError(null);
     try {
       const requestInput = {
-        requestId: `request.${createLegacyWorkspaceToken()}`,
+        requestId: `request.${token()}`,
         projectId: workspaceRef.current.projectId,
         analysisId: `analysis.${design.id}`,
         design: canonicalData.projectDesign ?? design,
@@ -699,9 +811,13 @@ export function MultiConditionDataSheetPage({
             ? createD05EngineRequest(requestInput)
             : createD03EngineRequest(requestInput);
       setRunningRequestId(request.requestId);
-      const result = AnalysisEngineResultSchema.parse(
-        await (analysisRunner ?? defaultAnalysisRunner)(request),
-      );
+      const rawResult = await (analysisRunner ?? defaultAnalysisRunner)(request);
+      if (analysisEpochRef.current !== epoch || latestCanonicalDataRef.current !== canonicalData)
+        return;
+      const result = AnalysisEngineResultSchema.parse(rawResult);
+      if (result.requestId !== request.requestId) {
+        throw new Error("解析応答が今回の要求と一致しません。結果は採用せず、再実行してください。");
+      }
       if (result.status !== "ok") {
         setAnalysisRun({ request, result, graphSpec: null, graphModel: null });
         setAnalysisStatus("error");
@@ -770,17 +886,14 @@ export function MultiConditionDataSheetPage({
       setAnalysisStatus("idle");
       setActiveTab("analysis");
     } catch (error) {
+      if (analysisEpochRef.current !== epoch || latestCanonicalDataRef.current !== canonicalData)
+        return;
       setAnalysisStatus("error");
       setAnalysisError(
-        localizedFailureMessage(
-          locale,
-          error,
-          "ローカル解析を実行できませんでした。",
-          "The local analysis could not be completed.",
-        ),
+        error instanceof Error ? error.message : "ローカル解析を実行できませんでした。",
       );
     } finally {
-      setRunningRequestId(null);
+      if (analysisEpochRef.current === epoch) setRunningRequestId(null);
     }
   };
 
@@ -814,12 +927,7 @@ export function MultiConditionDataSheetPage({
       setSaveStatus("idle");
     } catch (error) {
       setAnalysisError(
-        localizedFailureMessage(
-          locale,
-          error,
-          "グラフ設定を更新できませんでした。",
-          "The Graph settings could not be updated.",
-        ),
+        error instanceof Error ? error.message : "グラフ設定を更新できませんでした。",
       );
     }
   };
@@ -921,7 +1029,8 @@ export function MultiConditionDataSheetPage({
   }, [buildCurrentProjectState]);
 
   const saveCurrentProject = async () => {
-    if (!saveProject) return false;
+    if (!saveProject || savePendingRef.current) return false;
+    savePendingRef.current = true;
     setSaveStatus("saving");
     setSaveError(null);
     try {
@@ -930,7 +1039,9 @@ export function MultiConditionDataSheetPage({
         setSaveStatus("idle");
         return false;
       }
+      pendingSavedRawRevisionIdRef.current = state.activeRawRevisionId;
       const saved = await saveProject(state, saveTarget);
+      if (!mountedRef.current) return Boolean(saved);
       if (!saved) {
         setSaveStatus("idle");
         return false;
@@ -938,23 +1049,32 @@ export function MultiConditionDataSheetPage({
       savedLifecycleSnapshotRef.current = lifecycleSnapshot;
       setLastSavedState(saved.state);
       setSaveTarget(saved.target);
-      setDraftRawRevisionId(saved.state.activeRawRevisionId);
+      const sourceChangedDuringSave = latestSourceSnapshotRef.current !== sourceSnapshot;
+      setDraftRawRevisionId((current) =>
+        sourceChangedDuringSave
+          ? current === saved.state.activeRawRevisionId
+            ? `raw-revision.${token()}`
+            : current
+          : current,
+      );
+      if (sourceChangedDuringSave && latestCanonicalDataRef.current === canonicalData) {
+        setValidated(false);
+        setCanonicalData(null);
+        setAnalysisRun(null);
+      }
       setSaveStatus("success");
-      onDirtyChange?.(false);
+      onDirtyChange?.(latestLifecycleSnapshotRef.current !== lifecycleSnapshot);
       return true;
     } catch (error) {
+      if (!mountedRef.current) return false;
       setSaveStatus("error");
       setSaveError(
-        actionErrorMessage(
-          error,
-          t(
-            "プロジェクトを保存できませんでした。入力は保持されています。",
-            "The project could not be saved. Your entries are still retained.",
-          ),
-          locale,
-        ),
+        actionErrorMessage(error, "プロジェクトを保存できませんでした。入力は保持されています。"),
       );
       return false;
+    } finally {
+      savePendingRef.current = false;
+      pendingSavedRawRevisionIdRef.current = null;
     }
   };
   const saveCurrentProjectRef = useRef(saveCurrentProject);
@@ -984,6 +1104,44 @@ export function MultiConditionDataSheetPage({
     onBack();
   };
 
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const next =
+      event.key === "ArrowRight"
+        ? (index + 1) % TABS.length
+        : event.key === "ArrowLeft"
+          ? (index - 1 + TABS.length) % TABS.length
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? TABS.length - 1
+              : null;
+    if (next === null) return;
+    event.preventDefault();
+    setActiveTab(TABS[next].id);
+    document.getElementById(`multi-workflow-tab-${TABS[next].id}`)?.focus();
+  };
+
+  const statusFor = (tab: WorkflowTabId) =>
+    tab === "input"
+      ? validated
+        ? "検証済み"
+        : "未入力"
+      : tab === "analysis"
+        ? analysisRun
+          ? "解析済み"
+          : validated
+            ? "検証済み"
+            : "未入力"
+        : tab === "graph"
+          ? analysisRun?.graphModel
+            ? "解析済み"
+            : "未入力"
+          : saveStatus === "success"
+            ? "保存済み"
+            : validated
+              ? "検証済み"
+              : "未入力";
+
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={requestBack}>
@@ -1007,15 +1165,25 @@ export function MultiConditionDataSheetPage({
         </div>
         <span className="wizard-purpose-chip">{outcomeLabel}</span>
       </section>
-      <LegacyDataSheetWorkflowTabs
-        idPrefix="multi-workflow"
-        activeTab={activeTab}
-        validated={Boolean(validated)}
-        analysisComplete={Boolean(analysisRun)}
-        graphComplete={Boolean(analysisRun?.graphModel)}
-        saved={saveStatus === "success"}
-        onSelect={setActiveTab}
-      />
+      <nav className="workflow-tabs" aria-label="解析ワークフロー" role="tablist">
+        {TABS.map(({ id, label }, index) => (
+          <button
+            key={id}
+            id={`multi-workflow-tab-${id}`}
+            className={`workflow-tab ${activeTab === id ? "is-active" : ""}`}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === id}
+            aria-controls={`multi-workflow-panel-${id}`}
+            tabIndex={activeTab === id ? 0 : -1}
+            onClick={() => setActiveTab(id)}
+            onKeyDown={(event) => onTabKeyDown(event, index)}
+          >
+            <span>{label}</span>
+            <small>{statusFor(id)}</small>
+          </button>
+        ))}
+      </nav>
 
       {activeTab === "input" && (
         <div
@@ -1176,7 +1344,7 @@ export function MultiConditionDataSheetPage({
                                   onChange={(event) =>
                                     changeMeasurement(columnIndex, selectedReplicateIndex, {
                                       kind: "proportion",
-                                      numerator: parseSpreadsheetNumber(event.target.value, true),
+                                      numerator: parseMultiNumber(event.target.value, true),
                                       denominator: proportionMeasurement.denominator,
                                     })
                                   }
@@ -1197,7 +1365,7 @@ export function MultiConditionDataSheetPage({
                                     changeMeasurement(columnIndex, selectedReplicateIndex, {
                                       kind: "proportion",
                                       numerator: proportionMeasurement.numerator,
-                                      denominator: parseSpreadsheetNumber(event.target.value, true),
+                                      denominator: parseMultiNumber(event.target.value, true),
                                     })
                                   }
                                 />
@@ -1225,7 +1393,7 @@ export function MultiConditionDataSheetPage({
                                 onChange={(event) =>
                                   changeMeasurement(columnIndex, selectedReplicateIndex, {
                                     kind: "scalar",
-                                    value: parseSpreadsheetNumber(event.target.value),
+                                    value: parseMultiNumber(event.target.value),
                                   })
                                 }
                               />
@@ -1373,17 +1541,104 @@ export function MultiConditionDataSheetPage({
         </div>
       )}
       {activeTab === "save" && (
-        <LegacyProjectSavePanel
-          idPrefix="multi-workflow"
-          metadata={metadataDraft}
-          onMetadataChange={setMetadataDraft}
-          canSave={Boolean(saveProject)}
-          validated={Boolean(validated)}
-          saveStatus={saveStatus}
-          saveError={saveError}
-          onSave={saveCurrentProject}
-          mode="multi-condition"
-        />
+        <div
+          id="multi-workflow-panel-save"
+          className="workflow-panel-stack"
+          role="tabpanel"
+          aria-labelledby="multi-workflow-tab-save"
+        >
+          <details className="metadata-disclosure" open>
+            <summary>プロジェクト情報</summary>
+            <div className="metadata-form-grid">
+              <label className="field-label">
+                プロジェクト名 *
+                <input
+                  value={metadataDraft.projectName}
+                  onChange={(event) =>
+                    setMetadataDraft((previous) => ({
+                      ...previous,
+                      projectName: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="field-label">
+                最初の実験日 *
+                <input
+                  type="date"
+                  value={metadataDraft.experimentDate}
+                  onChange={(event) =>
+                    setMetadataDraft((previous) => ({
+                      ...previous,
+                      experimentDate: event.target.value,
+                    }))
+                  }
+                />
+                <small>各実験単位の日付は「データ入力」で個別に記録されています。</small>
+              </label>
+              <label className="field-label">
+                実施者（任意）
+                <input
+                  value={metadataDraft.operator ?? ""}
+                  onChange={(event) =>
+                    setMetadataDraft((previous) => ({ ...previous, operator: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="field-label">
+                バッチ／ロット（任意）
+                <input
+                  value={metadataDraft.batch ?? ""}
+                  onChange={(event) =>
+                    setMetadataDraft((previous) => ({ ...previous, batch: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="field-label metadata-note-field">
+                メモ（任意）
+                <textarea
+                  rows={2}
+                  value={metadataDraft.note ?? ""}
+                  onChange={(event) =>
+                    setMetadataDraft((previous) => ({ ...previous, note: event.target.value }))
+                  }
+                />
+              </label>
+            </div>
+          </details>
+          <section className="sheet-actions" aria-label="プロジェクトの保存">
+            <div>
+              <strong>プロジェクトを保存</strong>
+              <p>検証済みデータと実行済み解析を保存し、後から編集できます。</p>
+              <p className="project-action-note">
+                保存後の入力編集は新しいデータ履歴として記録され、以前の解析は再計算が必要になります。
+              </p>
+            </div>
+            <button
+              className="save-project-button"
+              type="button"
+              disabled={
+                !saveProject ||
+                !validated ||
+                !metadataDraftIsComplete(metadataDraft) ||
+                saveStatus === "saving"
+              }
+              onClick={saveCurrentProject}
+            >
+              {saveStatus === "saving" ? "保存中…" : "プロジェクトを保存"}
+            </button>
+          </section>
+          {saveStatus === "success" && (
+            <p className="project-action-message project-action-message--success" role="status">
+              プロジェクトを保存しました。
+            </p>
+          )}
+          {saveError && (
+            <p className="project-action-message project-action-message--error" role="alert">
+              {saveError}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

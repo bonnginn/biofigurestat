@@ -89,16 +89,10 @@
   grid-template-columns: 1fr;
 }
 
-.graph-workspace-frame__inspector input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+.graph-workspace-frame__inspector input,
 .graph-workspace-frame__inspector select {
   min-width: 0;
   width: 100%;
-}
-
-.graph-workspace-frame__inspector input[type="checkbox"],
-.graph-workspace-frame__inspector input[type="radio"] {
-  flex: 0 0 auto;
-  width: auto;
 }
 
 .graph-workspace-frame__feedback p {

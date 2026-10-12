@@ -14,6 +14,131 @@ const EXPERIMENT_WORKSPACE_MIGRATION: &str =
 const ADAPTIVE_INPUT_MIGRATION: &str =
     include_str!("../../../../packages/project/migrations/0004_adaptive_input.sql");
 static DATABASE_COUNTER: AtomicU64 = AtomicU64::new(0);
+const MATRIX_VIEWS_MIGRATION: &str =
+    include_str!("../../../../packages/project/migrations/0005_matrix_views.sql");
+
+fn validate_matrix_views(views: &Value) -> Result<(), String> {
+    let records = views.as_array().ok_or("matrixViews must be an array")?;
+    for view in records {
+        let record = record_object(view)?;
+        if record.keys().any(|key| {
+            !["id", "rawMatrix", "spec", "createdAt", "createdBy"].contains(&key.as_str())
+        }) {
+            return Err("Unsupported matrix view field; input is unchanged".into());
+        }
+        for key in ["id", "createdAt", "createdBy"] {
+            required_string(record, key)?;
+        }
+        let raw = record
+            .get("rawMatrix")
+            .and_then(Value::as_object)
+            .ok_or("Matrix raw input is missing")?;
+        if raw.keys().any(|key| {
+            ![
+                "version",
+                "rowIds",
+                "rowLabels",
+                "columnIds",
+                "columnLabels",
+                "values",
+            ]
+            .contains(&key.as_str())
+        }) {
+            return Err("Unsupported raw matrix field; input is unchanged".into());
+        }
+        let spec = record
+            .get("spec")
+            .and_then(Value::as_object)
+            .ok_or("Matrix Graph spec is missing")?;
+        if raw.get("version").and_then(Value::as_str) != Some("0.1.0")
+            || spec.get("version").and_then(Value::as_str) != Some("0.1.0")
+            || spec.get("type").and_then(Value::as_str) != Some("heatmap")
+        {
+            return Err("Unsupported matrix or Graph version/type".into());
+        }
+        let heatmap = spec
+            .get("heatmap")
+            .and_then(Value::as_object)
+            .ok_or("Heatmap settings are missing")?;
+        if spec.keys().any(|key| {
+            ![
+                "id",
+                "version",
+                "type",
+                "dataSource",
+                "analysisResultId",
+                "dataSets",
+                "mappings",
+                "summary",
+                "appearance",
+                "axes",
+                "editorPresentation",
+                "distribution",
+                "heatmap",
+                "annotations",
+                "facet",
+            ]
+            .contains(&key.as_str())
+        }) || heatmap.keys().any(|key| {
+            ![
+                "transform",
+                "transformVersion",
+                "min",
+                "max",
+                "missingColor",
+                "showCellValues",
+            ]
+            .contains(&key.as_str())
+        }) {
+            return Err("Unsupported matrix Graph field; input is unchanged".into());
+        }
+        if heatmap.get("transformVersion").and_then(Value::as_str) != Some("0.1.0") {
+            return Err("Unsupported heatmap transform version".into());
+        }
+        let rows = required_array(raw, "rowIds")?;
+        let columns = required_array(raw, "columnIds")?;
+        let values = required_array(raw, "values")?;
+        for ids in [
+            rows,
+            columns,
+            required_array(raw, "rowLabels")?,
+            required_array(raw, "columnLabels")?,
+        ] {
+            if ids
+                .iter()
+                .any(|value| value.as_str().map_or(true, str::is_empty))
+            {
+                return Err("Matrix identities and labels must be nonempty strings".into());
+            }
+        }
+        if rows.iter().collect::<std::collections::HashSet<_>>().len() != rows.len()
+            || columns
+                .iter()
+                .collect::<std::collections::HashSet<_>>()
+                .len()
+                != columns.len()
+        {
+            return Err("Matrix identities must be unique".into());
+        }
+        if rows.is_empty()
+            || columns.is_empty()
+            || rows.len() != required_array(raw, "rowLabels")?.len()
+            || columns.len() != required_array(raw, "columnLabels")?.len()
+            || rows.len() != values.len()
+            || values.iter().any(|row| {
+                row.as_array().map_or(true, |cells| {
+                    cells.len() != columns.len()
+                        || cells
+                            .iter()
+                            .any(|cell| !cell.is_null() && !cell.is_number())
+                })
+            })
+        {
+            return Err("Invalid matrix dimensions or values".into());
+        }
+    }
+    Ok(())
+}
 
 fn temporary_database_path() -> Result<PathBuf, String> {
     let nanos = SystemTime::now()
@@ -100,6 +225,9 @@ fn encode_to_path(state: &Value, path: &PathBuf) -> Result<(), String> {
     let object = state
         .as_object()
         .ok_or_else(|| "Project state must be an object".to_string())?;
+    if let Some(views) = object.get("matrixViews") {
+        validate_matrix_views(views)?;
+    }
     let connection = Connection::open(path)
         .map_err(|error| format!("Could not create the project database: {error}"))?;
     connection
@@ -131,6 +259,18 @@ fn encode_to_path(state: &Value, path: &PathBuf) -> Result<(), String> {
             ],
         )
         .map_err(|error| format!("Could not persist project metadata: {error}"))?;
+
+    if let Some(views) = object.get("matrixViews") {
+        connection
+            .execute_batch(MATRIX_VIEWS_MIGRATION)
+            .map_err(|error| format!("Could not initialize matrix persistence: {error}"))?;
+        connection
+            .execute(
+                "UPDATE project_state SET matrix_views_json = ?1 WHERE singleton = 1",
+                [serde_json::to_string(views).map_err(|error| error.to_string())?],
+            )
+            .map_err(|error| format!("Could not persist matrices: {error}"))?;
+    }
 
     insert_json_records(
         &connection,
@@ -279,13 +419,20 @@ fn decode_from_path(path: &PathBuf) -> Result<Value, String> {
     let user_version: i64 = connection
         .query_row("PRAGMA user_version", [], |row| row.get(0))
         .map_err(|error| format!("Could not read the project database version: {error}"))?;
-    if user_version != 1 && user_version != 2 && user_version != 3 && user_version != 4 {
+    if !(1..=5).contains(&user_version) {
         return Err(format!(
             "Unsupported project database version {user_version}"
         ));
     }
 
-    let (schema_version, metadata_json, active_design, active_raw, workspace_json, adaptive_input_json): (
+    let (
+        schema_version,
+        metadata_json,
+        active_design,
+        active_raw,
+        workspace_json,
+        adaptive_input_json,
+    ): (
         String,
         String,
         String,
@@ -345,7 +492,7 @@ fn decode_from_path(path: &PathBuf) -> Result<Value, String> {
     } else {
         Vec::new()
     };
-    Ok(json!({
+    let mut state = json!({
         "schemaVersion": schema_version,
         "metadata": metadata,
         "designRevisions": read_json_records(&connection, "design_revisions")?,
@@ -362,7 +509,23 @@ fn decode_from_path(path: &PathBuf) -> Result<Value, String> {
         "experimentWorkspace": experiment_workspace,
         "adaptiveInput": adaptive_input,
         "provenanceEvents": read_json_records(&connection, "provenance_events")?,
-    }))
+    });
+    if user_version >= 5 {
+        let encoded: Option<String> = connection
+            .query_row(
+                "SELECT matrix_views_json FROM project_state WHERE singleton = 1",
+                [],
+                |row| row.get(0),
+            )
+            .map_err(|error| format!("Could not read matrices: {error}"))?;
+        if let Some(encoded) = encoded {
+            let views: Value = serde_json::from_str(&encoded)
+                .map_err(|error| format!("Invalid matrix JSON: {error}"))?;
+            validate_matrix_views(&views)?;
+            state["matrixViews"] = views;
+        }
+    }
+    Ok(state)
 }
 
 fn with_temporary_database<T>(
@@ -403,7 +566,128 @@ pub async fn decode_project_database(data: Vec<u8>) -> Result<Value, String> {
 mod tests {
     use super::{decode_from_path, encode_to_path, temporary_database_path};
     use serde_json::json;
+
+    #[test]
+    fn app08_matrix_views_malformed_input_stops_before_writing() {
+        let path = temporary_database_path().unwrap();
+        let error = encode_to_path(&json!({"matrixViews": [{"id":"matrix.qa"}]}), &path)
+            .expect_err("nonempty unsupported matrix views must stop before writing");
+        assert!(error.contains("missing string field"));
+        assert!(!path.exists());
+    }
     use std::fs;
+
+    #[test]
+    fn numeric_presentation_sqlite_roundtrip() {
+        if std::env::var("BIOFIGURESTAT_NUMERIC_PRESENTATION_QA").as_deref() != Ok("1") {
+            return;
+        }
+        let qa = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../ui/.numeric-presentation-qa");
+        let mut state: serde_json::Value =
+            serde_json::from_slice(&fs::read(qa.join("state.json")).unwrap()).unwrap();
+        if state["matrixViews"].as_array().is_some_and(|views| views.is_empty()) {
+            state.as_object_mut().unwrap().remove("matrixViews");
+        }
+        assert_eq!(
+            state["adaptiveInput"]["numericPresentation"]["schemaVersion"],
+            "0.1.0"
+        );
+        assert!(state["adaptiveInput"]["numericPresentation"]["displayTexts"]
+            .as_object().unwrap().values().any(|value| value == "1.000"));
+        let path = qa.join("numeric-presentation.sqlite");
+        encode_to_path(&state, &path).unwrap();
+        let reopened = decode_from_path(&path).unwrap();
+        assert_eq!(
+            state, reopened,
+            "production SQLite must retain display text and complete canonical/history state"
+        );
+        fs::write(
+            qa.join("native-reopened-state.json"),
+            serde_json::to_vec_pretty(&reopened).unwrap(),
+        ).unwrap();
+    }
+
+    #[test]
+    fn app08_r3_legacy_versions_and_corrupt_matrix_are_read_only() {
+        let qa = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(format!(
+            "../../ui/.app-mission08/compat-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(&qa).unwrap();
+        let state = json!({
+            "schemaVersion":"0.3.0", "metadata":{"projectId":"anonymous.compatibility","projectName":"Anonymous QA"},
+            "designRevisions":[{"id":"design.1","previousRevisionId":null,"createdAt":"2026-10-09T00:00:00Z"}], "activeDesignRevisionId":"design.1",
+            "rawRevisions":[{"id":"raw.1","previousRevisionId":null,"createdAt":"2026-10-09T00:00:00Z"}], "activeRawRevisionId":"raw.1",
+            "unitInstances":[],"observations":[],"transformations":[],"derivedDatasetRevisions":[],"derivedValues":[],"analysisRuns":[],"graphs":[],"experimentWorkspace":null,"adaptiveInput":null,"provenanceEvents":[]
+        });
+        for version in 1..=4 {
+            let path = qa.join(format!("legacy-v{version}.sqlite"));
+            encode_to_path(&state, &path).unwrap();
+            let connection = rusqlite::Connection::open(&path).unwrap();
+            if version < 4 {
+                connection
+                    .execute_batch("ALTER TABLE project_state DROP COLUMN adaptive_input_json;")
+                    .unwrap();
+            }
+            if version < 3 {
+                connection
+                    .execute_batch(
+                        "ALTER TABLE project_state DROP COLUMN experiment_workspace_json;",
+                    )
+                    .unwrap();
+            }
+            if version < 2 {
+                connection.execute_batch("DROP TABLE derived_values; DROP TABLE derived_dataset_revisions; DROP TABLE transformations;").unwrap();
+            }
+            connection
+                .execute_batch(&format!("PRAGMA user_version = {version};"))
+                .unwrap();
+            connection.close().unwrap();
+            let before = fs::read(&path).unwrap();
+            assert_eq!(decode_from_path(&path).unwrap(), state);
+            assert_eq!(
+                fs::read(&path).unwrap(),
+                before,
+                "legacy read must not migrate bytes"
+            );
+        }
+        let path = qa.join("corruption-v5.sqlite");
+        let mut empty = state.clone();
+        empty["matrixViews"] = json!([]);
+        encode_to_path(&empty, &path).unwrap();
+        assert_eq!(decode_from_path(&path).unwrap(), empty);
+        let connection = rusqlite::Connection::open(&path).unwrap();
+        connection
+            .execute(
+                "UPDATE project_state SET matrix_views_json = ?1",
+                ["not-json"],
+            )
+            .unwrap();
+        connection.close().unwrap();
+        let before = fs::read(&path).unwrap();
+        assert!(decode_from_path(&path)
+            .unwrap_err()
+            .contains("Invalid matrix JSON"));
+        assert_eq!(fs::read(&path).unwrap(), before);
+        let connection = rusqlite::Connection::open(&path).unwrap();
+        connection
+            .execute_batch("PRAGMA user_version = 99")
+            .unwrap();
+        connection.close().unwrap();
+        let before = fs::read(&path).unwrap();
+        assert!(decode_from_path(&path)
+            .unwrap_err()
+            .contains("Unsupported project database version 99"));
+        assert_eq!(fs::read(&path).unwrap(), before);
+        println!(
+            "APP08 R3 old v1-4 byte-invariant reads and corrupt/unknown version safety PASS: {}",
+            qa.display()
+        );
+    }
 
     #[test]
     fn sqlite_state_round_trip_preserves_relational_records() {

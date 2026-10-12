@@ -1,15 +1,15 @@
+import { readFileSync } from "node:fs";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   createUnresolvedVisualizationProjectState,
+  UnresolvedVisualizationProjectStateSchema,
   type UnresolvedVisualizationProjectState,
 } from "@lsaa/project";
 import { recordUsageGraphConfiguration, recordUsageMilestone } from "../app/usageTelemetry";
 import type { WorkspaceExitRequest } from "../app/workspaceLifecycle";
 import { GraphOnlyVisualizationPage } from "./GraphOnlyVisualizationPage";
-import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
-import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 
 vi.mock("../app/usageTelemetry", () => ({
   recordUsageEntry: vi.fn(),
@@ -51,9 +51,9 @@ function mapColumns(input: { x?: string; y?: string; series?: string; id?: strin
   }
 }
 
-async function openGraph(): Promise<HTMLElement> {
+function openGraph(): HTMLElement {
   fireEvent.click(screen.getByRole("button", { name: "Graphを作成" }));
-  return screen.findByRole("region", { name: "表からグラフを作成" }, { timeout: 5_000 });
+  return screen.getByRole("region", { name: "表からグラフを作成" });
 }
 
 function mappedState(): UnresolvedVisualizationProjectState {
@@ -102,128 +102,156 @@ function mappedState(): UnresolvedVisualizationProjectState {
 }
 
 describe("Graph-only production workspace", () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-    act(() => resetAppLocaleForTests("ja"));
-  });
-
-  it("shows the table mapping workflow in English", () => {
-    act(() => setAppLocale("en"));
-    const view = render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
-
-    expect(screen.getByRole("heading", { name: "Create a Graph from your table" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "1. Enter or paste a table" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "2. Map columns to the Graph" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Create Graph" })).toBeDisabled();
-    expectNoJapaneseUi(view.container);
-  });
-
-  it("uses an English default title when an English Graph is first created", () => {
-    act(() => setAppLocale("en"));
-    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
-    pasteTable();
-    fireEvent.change(screen.getByRole("combobox", { name: "Graph X axis" }), {
-      target: { value: "0" },
-    });
-    fireEvent.change(screen.getByRole("combobox", { name: "Graph measured value" }), {
-      target: { value: "1" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Create Graph" }));
-
-    expect(screen.getByRole("textbox", { name: "Graph title" })).toHaveValue(
-      "Graph created from a table",
+  it("keeps the actual alpha4 table clean through hydration and no-op save/reopen, while graph edits remain dirty", async () => {
+    const original = UnresolvedVisualizationProjectStateSchema.parse(
+      JSON.parse(readFileSync("src/test-fixtures/alpha4-table-repaired-anonymous.json", "utf8")),
     );
-  });
-
-  it("localizes a legacy app-generated default title", () => {
-    act(() => setAppLocale("en"));
-    const state = mappedState();
+    const originalJson = JSON.stringify(original);
+    const onDirtyChange = vi.fn();
+    const saveProject = vi.fn(async (state: UnresolvedVisualizationProjectState) => ({
+      state: UnresolvedVisualizationProjectStateSchema.parse(JSON.parse(JSON.stringify(state))),
+      target: "C:/tmp/table-noop.lsa",
+    }));
+    const view = render(
+      <GraphOnlyVisualizationPage
+        onNavigate={vi.fn()}
+        initialState={original}
+        initialTarget="C:/tmp/table.lsa"
+        onDirtyChange={onDirtyChange}
+        saveProject={saveProject}
+      />,
+    );
+    await act(async () => {});
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+    fireEvent.click(screen.getByRole("button", { name: "このGraph用データを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
+    await act(async () => {});
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+    const saved = saveProject.mock.calls[0]![0];
+    expect(saved.table).toEqual(original.table);
+    expect(saved.rawLineage).toEqual(original.rawLineage);
+    expect(saved.mapping).toEqual(original.mapping);
+    expect(saved.dataRevisions).toEqual(original.dataRevisions);
+    expect(saved.graphSpecs).toEqual(original.graphSpecs);
+    expect(saved.provenanceEvents).toEqual(original.provenanceEvents);
+    expect(JSON.stringify(original)).toBe(originalJson);
+    view.unmount();
+    onDirtyChange.mockClear();
     render(
       <GraphOnlyVisualizationPage
         onNavigate={vi.fn()}
-        initialState={state}
-        initialTarget="C:/tmp/legacy-default-title.lsa"
+        initialState={saved}
+        initialTarget="C:/tmp/table-noop.lsa"
+        onDirtyChange={onDirtyChange}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Create Graph" }));
-
-    expect(screen.getByRole("textbox", { name: "Graph title" })).toHaveValue(
-      "Graph created from a table",
-    );
+    await act(async () => {});
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+    fireEvent.change(screen.getByRole("textbox", { name: "Graphタイトル" }), {
+      target: { value: "Edited graph" },
+    });
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
   });
 
-  it("keeps the Graph-only statistics handoff in English without inferring biological n", () => {
-    act(() => setAppLocale("en"));
-    const view = render(
-      <GraphOnlyVisualizationPage onNavigate={vi.fn()} onStatisticsStructureRequested={vi.fn()} />,
+  it("keeps a saved alpha4 table clean when opened through the file command", async () => {
+    const state = UnresolvedVisualizationProjectStateSchema.parse(
+      JSON.parse(readFileSync("src/test-fixtures/alpha4-table-repaired-anonymous.json", "utf8")),
     );
-
-    pasteTable();
-    fireEvent.change(screen.getByRole("combobox", { name: "Graph X axis" }), {
-      target: { value: "0" },
+    const onDirtyChange = vi.fn();
+    render(
+      <GraphOnlyVisualizationPage
+        onNavigate={vi.fn()}
+        openProject={async () => ({ state, target: "C:/tmp/alpha4-table.lsa" })}
+        onDirtyChange={onDirtyChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "保存したGraph用データを開く" }));
+    await screen.findByRole("textbox", { name: "Graphタイトル" });
+    await act(async () => {});
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+    fireEvent.change(screen.getByRole("textbox", { name: "Graphタイトル" }), {
+      target: { value: "Changed" },
     });
-    fireEvent.change(screen.getByRole("combobox", { name: "Graph measured value" }), {
-      target: { value: "1" },
-    });
-    fireEvent.change(screen.getByRole("combobox", { name: "Subject ID for Graph data" }), {
-      target: { value: "3" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Create Graph" }));
-    fireEvent.click(screen.getByRole("button", { name: "Review statistics" }));
-
-    expect(
-      screen.getByRole("heading", {
-        name: "Add experiment information required for statistics",
-      }),
-    ).toBeVisible();
-    expect(screen.getByText(/What does the X axis .*Condition.* represent/)).toBeVisible();
-    expect(screen.getByRole("button", { name: "Continue to experiment structure" })).toBeDisabled();
-    expectNoJapaneseUi(view.container);
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
   });
 
-  it("keeps Data, Graph, and Statistics as separate workspace tabs", async () => {
-    const { container } = render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
+  it("preserves input edited while opening a saved project and blocks duplicate opens", async () => {
+    let finish!: (value: { state: UnresolvedVisualizationProjectState; target: string }) => void;
+    const openProject = vi.fn(
+      () =>
+        new Promise<{ state: UnresolvedVisualizationProjectState; target: string }>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} openProject={openProject} />);
+    const button = screen.getByRole("button", { name: "保存したGraph用データを開く" });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(openProject).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByTestId("graph-only-cell-1-1"), { target: { value: "99" } });
+    await act(async () => finish({ state: mappedState(), target: "C:/tmp/other.lsa" }));
+    expect(screen.getByTestId("graph-only-cell-1-1")).toHaveValue("99");
+    expect(screen.getByRole("alert")).toHaveTextContent("保全しました");
+  });
+
+  it("preserves real edits and row order when a delayed clipboard read returns stale data", async () => {
+    let finish!: (text: string) => void;
+    const readText = vi.fn(
+      () =>
+        new Promise<string>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const previousClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { readText } });
+    try {
+      const onDirtyChange = vi.fn();
+      render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} onDirtyChange={onDirtyChange} />);
+      pasteTable();
+      fireEvent.click(screen.getByRole("button", { name: "クリップボードから貼り付け" }));
+      expect(readText).toHaveBeenCalledOnce();
+      const lines = rawText.split("\n");
+      const editedRows = [lines[0], lines[2], lines[1]!.replace("12.4", "99"), ...lines.slice(3)];
+      pasteTable(editedRows.join("\n"));
+      await act(async () => finish(rawText));
+      expect(screen.getByTestId("graph-only-cell-1-0")).toHaveValue("Drug A");
+      expect(screen.getByTestId("graph-only-cell-2-0")).toHaveValue("Control");
+      expect(screen.getByTestId("graph-only-cell-2-1")).toHaveValue("99");
+      expect(screen.getByRole("alert")).toHaveTextContent("保全しました");
+      expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+    } finally {
+      if (previousClipboard) Object.defineProperty(navigator, "clipboard", previousClipboard);
+      else Reflect.deleteProperty(navigator, "clipboard");
+    }
+  });
+
+  afterEach(() => vi.clearAllMocks());
+
+  it("keeps Data, Graph, and Statistics as separate workspace tabs", () => {
+    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
     expect(screen.getByRole("button", { name: "データ" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("button", { name: "グラフ" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "統計" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Graph" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Statistics" })).toBeDisabled();
 
     pasteTable();
     mapColumns({ id: "3" });
-    const workbench = await openGraph();
-    expect(container.querySelector(".graph-only--workspace-active")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "グラフ" })).toHaveAttribute("aria-current", "page");
+    const workbench = openGraph();
+    expect(screen.getByRole("button", { name: "Graph" })).toHaveAttribute("aria-current", "page");
     expect(within(workbench).getByRole("region", { name: "グラフプレビュー" })).toBeVisible();
     expect(within(workbench).getByRole("button", { name: "グラフをコピー" })).toBeEnabled();
     expect(within(workbench).getByRole("button", { name: "SVGを書き出す" })).toBeEnabled();
     expect(within(workbench).getByRole("button", { name: "PNGを書き出す" })).toBeEnabled();
-    expect(within(workbench).getByText(/実験単位と統計的なnは未確認/)).toBeVisible();
+    expect(
+      within(workbench).getByText(/実験単位と統計的なnは未確認/, { selector: "p" }),
+    ).toBeVisible();
     expect(within(workbench).getByRole("heading", { name: "元表の行" })).toBeVisible();
   });
 
-  it("lets the researcher choose the initial Graph type before opening the editor", async () => {
-    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
-    pasteTable();
-    mapColumns();
-
-    const initialGraphType = screen.getByRole("combobox", {
-      name: "最初に表示するグラフ",
-    });
-    expect(initialGraphType).toHaveValue("dot");
-    fireEvent.change(initialGraphType, { target: { value: "bar" } });
-
-    const workbench = await openGraph();
-    expect(within(workbench).getByRole("heading", { name: /棒（平均）/ })).toBeVisible();
-    fireEvent.change(within(workbench).getByRole("combobox", { name: "編集対象" }), {
-      target: { value: "background" },
-    });
-    expect(within(workbench).getByRole("combobox", { name: "グラフの基本形" })).toHaveValue("bar");
-  });
-
-  it("uses an ID column only as a row label and never as a legend series", async () => {
+  it("uses an ID column only as a row label and never as a legend series", () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
     pasteTable();
     mapColumns({ id: "3" });
-    const workbench = await openGraph();
+    const workbench = openGraph();
     expect(within(workbench).queryByText("dish-1")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "データ" }));
     expect(screen.getByRole("combobox", { name: "Graph用データの対象ID" })).toHaveValue("3");
@@ -240,11 +268,11 @@ describe("Graph-only production workspace", () => {
     expect(screen.getByRole("button", { name: "Graphを作成" })).toBeEnabled();
   });
 
-  it("retains ordinary grouping while keeping sample ID separate", async () => {
+  it("retains ordinary grouping while keeping sample ID separate", () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
     pasteTable();
     mapColumns({ series: "2", id: "3" });
-    const workbench = await openGraph();
+    const workbench = openGraph();
     expect(within(workbench).getByRole("region", { name: "グラフプレビュー" })).toBeVisible();
     expect(screen.queryByRole("alert")).toBeNull();
   });
@@ -257,9 +285,9 @@ describe("Graph-only production workspace", () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} saveProject={saveProject} />);
     pasteTable();
     mapColumns({ series: "2", id: "3" });
-    const workbench = await openGraph();
+    const workbench = openGraph();
 
-    fireEvent.click(within(workbench).getByRole("img", { name: /Valueの実験単位ごとのグラフ/ }));
+    fireEvent.click(within(workbench).getByRole("img", { name: /Valueの表の行ごとのグラフ/ }));
     fireEvent.change(within(workbench).getByRole("combobox", { name: "グラフの基本形" }), {
       target: { value: "box" },
     });
@@ -276,44 +304,40 @@ describe("Graph-only production workspace", () => {
     expect("analysisRequest" in saved).toBe(false);
   });
 
-  it("keeps an explicitly accepted one-series-per-row Graph available after save and reopen", async () => {
-    const uniqueSeriesText = [
-      "sample ID\tTreatment\tMeasurement",
-      "S01\tVehicle\t1.0",
-      "S02\tVehicle\t1.1",
-      "S03\tDrug A\t1.5",
-      "S04\tDrug A\t1.6",
-    ].join("\n");
-    let savedState: UnresolvedVisualizationProjectState | null = null;
-    const saveProject = vi.fn(async (state: UnresolvedVisualizationProjectState) => {
-      savedState = state;
-      return { state, target: "C:/tmp/unique-series.lsa" };
-    });
-    const first = render(
-      <GraphOnlyVisualizationPage onNavigate={vi.fn()} saveProject={saveProject} />,
+  it("keeps edits made during a pending save dirty and saves them on the next request", async () => {
+    let finish!: () => void;
+    const onDirtyChange = vi.fn();
+    const saveProject = vi.fn(
+      (state: UnresolvedVisualizationProjectState) =>
+        new Promise<{ state: UnresolvedVisualizationProjectState; target: string }>((resolve) => {
+          finish = () => resolve({ state, target: "C:/tmp/graph-only.lsa" });
+        }),
     );
-    pasteTable(uniqueSeriesText);
-    mapColumns({ x: "1", y: "2", series: "0" });
-    fireEvent.click(screen.getByRole("checkbox", { name: "各行を別系列として表示する意図である" }));
-    await openGraph();
-    expect(screen.getByRole("button", { name: "保存" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "別名で保存" })).toBeEnabled();
-    fireEvent.click(screen.getByRole("button", { name: "保存" }));
-    await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
-    first.unmount();
-
     render(
       <GraphOnlyVisualizationPage
         onNavigate={vi.fn()}
         saveProject={saveProject}
-        initialState={savedState}
-        initialTarget="C:/tmp/unique-series.lsa"
+        onDirtyChange={onDirtyChange}
       />,
     );
-
-    expect(screen.getByRole("button", { name: "グラフ" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "統計" })).toBeEnabled();
-    expect(screen.getByRole("region", { name: "表からグラフを作成" })).toBeVisible();
+    pasteTable();
+    mapColumns();
+    openGraph();
+    fireEvent.click(screen.getByRole("button", { name: "このGraph用データを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    const changedText = rawText.replace("12.4", "14.8");
+    fireEvent.click(screen.getByRole("button", { name: "データ" }));
+    pasteTable(changedText);
+    mapColumns();
+    await act(async () => finish());
+    expect(saveProject.mock.calls[0]![0].rawLineage.rawText).toBe(rawText);
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+    openGraph();
+    fireEvent.click(screen.getByRole("button", { name: "このGraph用データを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(2));
+    expect(saveProject.mock.calls[1]![0].rawLineage.rawText).toBe(changedText);
+    await act(async () => finish());
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
   });
 
   it("reopens a mapped project and keeps the normal editor available", async () => {
@@ -322,9 +346,11 @@ describe("Graph-only production workspace", () => {
     render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} openProject={openProject} />);
     fireEvent.click(screen.getByRole("button", { name: "保存したGraph用データを開く" }));
     await waitFor(() => expect(openProject).toHaveBeenCalledOnce());
-    expect(screen.getByRole("combobox", { name: "Graphの系列" })).toHaveValue("2");
+    await waitFor(() =>
+      expect(screen.getByRole("combobox", { name: "Graphの系列" })).toHaveValue("2"),
+    );
     expect(screen.getByRole("combobox", { name: "Graph用データの対象ID" })).toHaveValue("3");
-    await openGraph();
+    openGraph();
     expect(screen.getByRole("region", { name: "表からグラフを作成" })).toBeVisible();
   });
 
@@ -338,7 +364,7 @@ describe("Graph-only production workspace", () => {
     );
     pasteTable();
     mapColumns({ id: "3" });
-    fireEvent.click(screen.getByRole("button", { name: "統計" }));
+    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
     fireEvent.click(screen.getByRole("radio", { name: /処理・群分け/ }));
     fireEvent.change(screen.getByRole("combobox", { name: "統計で使う対象ID" }), {
       target: { value: "3" },
@@ -367,7 +393,7 @@ describe("Graph-only production workspace", () => {
         expect.objectContaining({ origin: "direct_table" }),
       );
     });
-    fireEvent.click(screen.getByRole("button", { name: "統計" }));
+    fireEvent.click(screen.getByRole("button", { name: "Statistics" }));
     expect(recordUsageMilestone).toHaveBeenCalledWith("home", "statistics_requested");
   });
 
@@ -396,5 +422,93 @@ describe("Graph-only production workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "入口へ戻る" }));
     expect(onDirtyChange).toHaveBeenLastCalledWith(true);
     expect(pendingExit).toEqual(expect.objectContaining({ actionLabel: "入口へ戻る" }));
+  });
+});
+
+describe("quoted record import", () => {
+  it("preserves a cell edited while a table file is reading", async () => {
+    render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
+    let finish!: (contents: string) => void;
+    const file = new File([], "old.tsv");
+    Object.defineProperty(file, "text", {
+      value: () =>
+        new Promise<string>((resolve) => {
+          finish = resolve;
+        }),
+    });
+    fireEvent.change(screen.getByLabelText("Graph用の表ファイル"), { target: { files: [file] } });
+    fireEvent.change(screen.getByTestId("graph-only-cell-1-1"), { target: { value: "99" } });
+    await act(async () => finish("X\tY\nold\t1"));
+    expect(screen.getByTestId("graph-only-cell-1-1")).toHaveValue("99");
+    expect(screen.getByRole("alert")).toHaveTextContent("保全しました");
+  });
+  it.each([
+    { label: "unclosed quotes", text: 'Condition,Value\n"A\nB,1.25' },
+    { label: "space after closing quote", text: 'Condition,Value\n"Drug" ,1.25' },
+    { label: "tab after closing quote", text: 'Condition,Value\n"Drug"\t,1.25' },
+    { label: "NBSP after closing quote", text: 'Condition,Value\n"Drug"\u00a0,1.25' },
+  ])("keeps the current table and mapping when a file has $label", async ({ text }) => {
+    const { container } = render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
+    pasteTable();
+    mapColumns();
+    const file = new File([], "invalid.csv", { type: "text/csv" });
+    Object.defineProperty(file, "text", { value: async () => text });
+    fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [file] } });
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent("現在の表は変更していません"),
+    );
+    expect(screen.getByTestId("graph-only-cell-1-0")).toHaveValue("Control");
+    expect(screen.getByRole("combobox", { name: "Graphの測定値" })).toHaveValue("1");
+  });
+  it("imports multiline CSV and retains the label while editing a neighboring value", async () => {
+    const { container } = render(<GraphOnlyVisualizationPage onNavigate={vi.fn()} />);
+    const file = new File([], "multiline.csv", { type: "text/csv" });
+    Object.defineProperty(file, "text", {
+      value: async () => 'Condition,Value\r\n"A\r\nB",1.25\r\nC,\r\nD,-2.5',
+    });
+    fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [file] } });
+    await waitFor(() => expect(screen.getByTestId("graph-only-cell-1-0")).toHaveValue("A\nB"));
+    fireEvent.change(screen.getByTestId("graph-only-cell-3-1"), { target: { value: "-3.5" } });
+    expect(screen.getByTestId("graph-only-cell-1-0")).toHaveValue("A\nB");
+    expect(screen.getByTestId("graph-only-cell-2-1")).toHaveValue("");
+    mapColumns();
+    expect(openGraph()).toBeInTheDocument();
+  });
+  it("passes exact imported raw text and multiline cells through save and reopen", async () => {
+    const source =
+      '\uFEFFCondition,Value,Note\r\n"A\r\nB",1.25,"  raw  "\r\nC,,missing\r\nD,-2.5,last\r\n';
+    const saveProject = vi.fn(async (state: UnresolvedVisualizationProjectState) => ({
+      state,
+      target: "C:/tmp/multiline.lsa",
+    }));
+    const view = render(
+      <GraphOnlyVisualizationPage onNavigate={vi.fn()} saveProject={saveProject} />,
+    );
+    const file = new File([], "multiline.csv");
+    Object.defineProperty(file, "text", { value: async () => source });
+    fireEvent.change(screen.getByLabelText("Graph用の表ファイル"), { target: { files: [file] } });
+    await waitFor(() => expect(screen.getByTestId("graph-only-cell-1-0")).toHaveValue("A\nB"));
+    mapColumns();
+    openGraph();
+    fireEvent.click(screen.getByRole("button", { name: "このGraph用データを保存" }));
+    await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
+    const saved = saveProject.mock.calls[0]![0];
+    expect(saved.rawLineage.rawText).toBe(source);
+    expect(saved.table.rows).toEqual([
+      ["A\nB", "1.25", "raw"],
+      ["C", "", "missing"],
+      ["D", "-2.5", "last"],
+    ]);
+    view.unmount();
+    render(
+      <GraphOnlyVisualizationPage
+        onNavigate={vi.fn()}
+        openProject={async () => ({ state: saved, target: "C:/tmp/multiline.lsa" })}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "保存したGraph用データを開く" }));
+    await waitFor(() => expect(screen.getByTestId("graph-only-cell-1-0")).toHaveValue("A\nB"));
+    expect(screen.getByTestId("graph-only-cell-1-2")).toHaveValue("  raw  ");
+    expect(screen.getByTestId("graph-only-cell-2-1")).toHaveValue("");
   });
 });

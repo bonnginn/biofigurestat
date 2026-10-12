@@ -495,6 +495,10 @@ def run_student(request: dict[str, Any]) -> dict[str, Any]:
 
 def run_mann_whitney(request: dict[str, Any]) -> dict[str, Any]:
     a, b = _independent_samples(request)
+    if np.unique(np.concatenate((a, b))).size == 1:
+        raise ValueError(
+            "Mann-Whitney U is undefined when every analyzed value is identical"
+        )
     alternative = request["options"]["alternative"].replace("two_sided", "two-sided")
     test = stats.mannwhitneyu(a, b, alternative=alternative, method="auto")
     rank_biserial = 2.0 * float(test.statistic) / (len(a) * len(b)) - 1.0
@@ -784,6 +788,18 @@ def _dispatch_request(request: dict[str, Any]) -> dict[str, Any]:
 
 def run_request(request: dict[str, Any]) -> dict[str, Any]:
     """Run one request while retaining numerical-library reliability warnings."""
+    options = request.get("options", {})
+    if not isinstance(options, dict):
+        raise ValueError("Analysis options must be an object")
+    confidence_level = options.get("confidenceLevel", 0.95)
+    if (
+        isinstance(confidence_level, bool)
+        or not isinstance(confidence_level, (int, float))
+        or not 0 < confidence_level < 1
+    ):
+        raise ValueError("confidenceLevel must be a finite number strictly between 0 and 1")
+    if "confidenceLevel" not in options:
+        request = {**request, "options": {**options, "confidenceLevel": confidence_level}}
     with warnings.catch_warnings(record=True) as captured:
         warnings.simplefilter("always")
         result = _dispatch_request(request)

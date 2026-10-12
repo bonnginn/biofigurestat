@@ -1,16 +1,22 @@
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   actionErrorMessage,
   type OpenedAnyProject,
   type OpenedProject,
 } from "./app/projectActions";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { AppShell } from "./components/AppShell";
 import type { ProjectTab } from "./components/ProjectTabBar";
 import { UnsavedChangesDialog } from "./components/UnsavedChangesDialog";
 import { CollectionPage } from "./pages/CollectionPage";
 import { HomePage } from "./pages/HomePage";
+import { NewExperimentPage } from "./pages/NewExperimentPage";
+import { OpenProjectPage } from "./pages/OpenProjectPage";
+import { SpecializedCorePage } from "./pages/SpecializedCorePage";
+import { CommonCoveragePage } from "./pages/CommonCoveragePage";
 import { defaultProjectActions } from "./app/desktopProjectActions";
 import { ProjectIoError } from "./app/desktopProjectPackage";
 import type { ProjectActions } from "./app/projectActions";
@@ -55,7 +61,6 @@ import {
   type DedicatedEntryIntent,
 } from "./app/dedicatedEntryIntent";
 import { adaptiveInputFeatureEnabled } from "./app/adaptiveInputFeature";
-import { coalesceWorkspaceExitRequest } from "./app/workspaceLifecycle";
 import type {
   RegisterWorkspaceSaveHandler,
   RequestWorkspaceExit,
@@ -64,28 +69,9 @@ import type {
 } from "./app/workspaceLifecycle";
 import { recordUsageMilestone } from "./app/usageTelemetry";
 import { resolveAnalysisRouteSwitcherAccess } from "./app/analysisRouteSwitcherAccess";
-import { localizedText, useAppLocale } from "./app/appLocale";
-import { projectPersistenceCapabilities } from "./app/projectPersistenceCapabilities";
-import {
-  createIndependentTwoGroupFixture,
-  type SyntheticFixture,
-} from "./app/syntheticFixtures";
 
-const CommonCoveragePage = lazy(() =>
-  import("./pages/CommonCoveragePage").then(({ CommonCoveragePage: Page }) => ({ default: Page })),
-);
-
-const NewExperimentPage = lazy(() =>
-  import("./pages/NewExperimentPage").then(({ NewExperimentPage: Page }) => ({ default: Page })),
-);
-
-const OpenProjectPage = lazy(() =>
-  import("./pages/OpenProjectPage").then(({ OpenProjectPage: Page }) => ({ default: Page })),
-);
-
-const SpecializedCorePage = lazy(() =>
-  import("./pages/SpecializedCorePage").then(({ SpecializedCorePage: Page }) => ({ default: Page })),
-);
+import type { StructureRevisionNewProject } from "./app/structureRevisionNewProject";
+import { isSessionProjectTarget, newSessionProjectTarget } from "./app/sessionProjectTarget";
 
 type AppProps = {
   projectActions?: ProjectActions;
@@ -100,15 +86,6 @@ const PROJECT_IO_STAGE_LABELS: Record<string, string> = {
   container_write: "project dataの書き込み",
   container_commit: "保存fileの確定",
   package_assembly: "project packageの組み立て",
-};
-
-const PROJECT_IO_STAGE_LABELS_EN: Record<string, string> = {
-  checksum: "checksum verification",
-  database_encode: "project database creation",
-  container_begin: "destination preparation",
-  container_write: "project-data writing",
-  container_commit: "saved-file finalization",
-  package_assembly: "project-package assembly",
 };
 
 export function projectIoStage(
@@ -128,27 +105,6 @@ function routeWithAdaptiveInputPreference(path: string): string {
   return preference === "0" || preference === "1" ? `${path}?adaptiveInput=${preference}` : path;
 }
 
-export function canonicalProjectTargetKey(target: string): string {
-  const slashNormalized = target.trim().replaceAll("\\", "/");
-  const normalized = slashNormalized.startsWith("//")
-    ? `//${slashNormalized.slice(2).replace(/\/{2,}/g, "/")}`
-    : slashNormalized.replace(/\/{2,}/g, "/");
-  const withoutTrailingSlash = normalized.length > 1 ? normalized.replace(/\/+$/, "") : normalized;
-  return /^[A-Za-z]:\//.test(withoutTrailingSlash) || withoutTrailingSlash.startsWith("//")
-    ? withoutTrailingSlash.toLowerCase()
-    : withoutTrailingSlash;
-}
-
-function retargetOpenedProject(opened: OpenedAnyProject, target: string): OpenedAnyProject {
-  if (opened.kind === "experiment") {
-    return { kind: opened.kind, project: { ...opened.project, target } };
-  }
-  if (opened.kind === "unresolved_visualization") {
-    return { kind: opened.kind, project: { ...opened.project, target } };
-  }
-  return { kind: opened.kind, project: { ...opened.project, target } };
-}
-
 const browserPreviewProjectActions: ProjectActions = {
   openProject: async () => {
     throw new Error("ブラウザUXプレビューではローカルプロジェクトを開けません。");
@@ -159,31 +115,22 @@ const browserPreviewProjectActions: ProjectActions = {
 };
 
 function UnresolvedVisualizationPersistenceStop({ onBack }: Readonly<{ onBack: () => void }>) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={onBack}>
-        <span aria-hidden="true">←</span> {t("新しい実験へ戻る", "Back to New Experiment")}
+        <span aria-hidden="true">←</span> 新しい実験へ戻る
       </button>
       <section className="empty-page" aria-labelledby="visualization-persistence-stop-heading">
         <span className="empty-icon empty-icon--orange" aria-hidden="true">
           !
         </span>
-        <p className="overline">
-          {t("入力を開始する前に停止しました", "Stopped before data entry")}
-        </p>
-        <h1 id="visualization-persistence-stop-heading">
-          {t("Heatmapを開始できません", "Heatmap cannot start")}
-        </h1>
+        <p className="overline">入力を開始する前に停止しました</p>
+        <h1 id="visualization-persistence-stop-heading">Heatmapを開始できません</h1>
         <p role="alert">
-          {t(
-            "行列とGraphを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。",
-            "The connections required to save and reopen the matrix and Graph are unavailable. Data entry remains closed in this environment to prevent unsavable work.",
-          )}
+          行列とGraphを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。
         </p>
         <button className="primary-button" type="button" onClick={onBack}>
-          {t("入口へ戻る", "Back to entry options")}
+          入口へ戻る
         </button>
       </section>
     </div>
@@ -194,32 +141,23 @@ function SpecializedEntryPersistenceStop({
   entryLabel,
   onBack,
 }: Readonly<{ entryLabel: string; onBack: () => void }>) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const headingId = "specialized-entry-persistence-stop-heading";
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={onBack}>
-        <span aria-hidden="true">←</span> {t("新しい実験へ戻る", "Back to New Experiment")}
+        <span aria-hidden="true">←</span> 新しい実験へ戻る
       </button>
       <section className="empty-page" aria-labelledby={headingId}>
         <span className="empty-icon empty-icon--orange" aria-hidden="true">
           !
         </span>
-        <p className="overline">
-          {t("入力を開始する前に停止しました", "Stopped before data entry")}
-        </p>
-        <h1 id={headingId}>
-          {locale === "ja" ? `${entryLabel}を開始できません` : `${entryLabel} cannot start`}
-        </h1>
+        <p className="overline">入力を開始する前に停止しました</p>
+        <h1 id={headingId}>{entryLabel}を開始できません</h1>
         <p role="alert">
-          {t(
-            "入力途中の専用データを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。",
-            "The connections required to save and reopen this specialized data are unavailable. Data entry remains closed in this environment to prevent unsavable work.",
-          )}
+          入力途中の専用データを保存・再開する接続がそろっていません。データ入力後に保存できない状態を避けるため、この環境では入力面を開きません。
         </p>
         <button className="primary-button" type="button" onClick={onBack}>
-          {t("入口へ戻る", "Back to entry options")}
+          入口へ戻る
         </button>
       </section>
     </div>
@@ -227,32 +165,22 @@ function SpecializedEntryPersistenceStop({
 }
 
 function LegacyAnalysisEntryStop({ onBack }: Readonly<{ onBack: () => void }>) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={onBack}>
-        <span aria-hidden="true">←</span> {t("新しい実験へ戻る", "Back to New Experiment")}
+        <span aria-hidden="true">←</span> 新しい実験へ戻る
       </button>
       <section className="empty-page" aria-labelledby="legacy-analysis-entry-stop-heading">
         <span className="empty-icon empty-icon--orange" aria-hidden="true">
           !
         </span>
-        <p className="overline">{t("以前の解析用入口", "Legacy analysis entry")}</p>
-        <h1 id="legacy-analysis-entry-stop-heading">
-          {t(
-            "この入口は通常モードでは利用できません",
-            "This entry is unavailable in standard mode",
-          )}
-        </h1>
+        <p className="overline">以前の解析用入口</p>
+        <h1 id="legacy-analysis-entry-stop-heading">この入口は通常モードでは利用できません</h1>
         <p role="alert">
-          {t(
-            "実験構造を確認せず解析形式だけを選ぶ以前の入口です。通常は「新しい実験」から目的に合う入口を選んでください。別の解析へ自動変換はしません。",
-            "This legacy entry selects an analysis format without confirming the experimental structure. Choose the appropriate task from New Experiment instead. The app will not convert it to another analysis automatically.",
-          )}
+          実験構造を確認せず解析形式だけを選ぶ以前の入口です。通常は「新しい実験」から目的に合う入口を選んでください。別の解析へ自動変換はしません。
         </p>
         <button className="primary-button" type="button" onClick={onBack}>
-          {t("新しい実験へ戻る", "Back to New Experiment")}
+          新しい実験へ戻る
         </button>
       </section>
     </div>
@@ -260,21 +188,10 @@ function LegacyAnalysisEntryStop({ onBack }: Readonly<{ onBack: () => void }>) {
 }
 
 function CompatibilityModeNotice() {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   return (
-    <aside
-      className="browser-preview-banner"
-      role="status"
-      aria-label={t("互換モード", "Compatibility mode")}
-    >
-      <strong>{t("互換モード（以前の入力方式）", "Compatibility mode (legacy entry)")}</strong>
-      <span>
-        {t(
-          "この画面は通常のexperiment-first入口ではありません。",
-          "This screen is not part of the standard experiment-first entry.",
-        )}
-      </span>
+    <aside className="browser-preview-banner" role="status" aria-label="互換モード">
+      <strong>互換モード（以前の入力方式）</strong>
+      <span>この画面は通常のexperiment-first入口ではありません。</span>
     </aside>
   );
 }
@@ -283,8 +200,6 @@ export default function App({
   projectActions,
   developmentAnalysisRouteSwitcher = false,
 }: AppProps) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const browserPreview = projectActions === undefined && !isTauri();
   const experimentFirstEntryEnabled = adaptiveInputFeatureEnabled();
   const evaluationPreview =
@@ -313,6 +228,11 @@ export default function App({
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>(loadRecentProjects);
   const [workspaceDirty, setWorkspaceDirty] = useState(false);
   const [projectTabs, setProjectTabs] = useState<ProjectTab[]>([]);
+  const [openedProjectSession, setOpenedProjectSession] = useState(0);
+  const projectTabsRef = useRef<readonly ProjectTab[]>(projectTabs);
+  useLayoutEffect(() => {
+    projectTabsRef.current = projectTabs;
+  }, [projectTabs]);
   const [pendingTabCloseTarget, setPendingTabCloseTarget] = useState<string | null>(null);
   const [activeProjectTabTarget, setActiveProjectTabTarget] = useState<string | null>(null);
   const activeProjectTabTargetRef = useRef<string | null>(activeProjectTabTarget);
@@ -323,6 +243,15 @@ export default function App({
   const specializedDraftCheckpointsRef = useRef(new Map<string, SpecializedDraftStore>());
   const restoredDirtyTargetRef = useRef<string | null>(null);
   const [workspaceSaveAvailable, setWorkspaceSaveAvailable] = useState(false);
+  const workspaceSavePendingRef = useRef(false);
+  const [workspaceSavePending, setWorkspaceSavePending] = useState(false);
+  const stopDuringWorkspaceSave = useCallback(() => {
+    if (!workspaceSavePendingRef.current) return false;
+    setSystemOpenError(
+      "保存処理中です。完了してからタブ移動・終了などの操作をもう一度行ってください。",
+    );
+    return true;
+  }, []);
   const requestWorkspaceExitRef = useRef<RequestWorkspaceExit>(() => undefined);
   const approvedWorkspaceExitRef = useRef(false);
   const [pendingWorkspaceExit, setPendingWorkspaceExit] = useState<WorkspaceExitRequest | null>(
@@ -332,8 +261,6 @@ export default function App({
   const [workspaceExitError, setWorkspaceExitError] = useState<string | null>(null);
   const specializedDrafts = useRef<SpecializedDraftStore>({});
   const [newExperimentSession, setNewExperimentSession] = useState(0);
-  const [fiveMinuteGuideFixture, setFiveMinuteGuideFixture] =
-    useState<SyntheticFixture | null>(null);
   const [adaptiveSurvivalHandoff, setAdaptiveSurvivalHandoff] = useState<{
     text: string;
     snapshot: AdaptiveInputSnapshot;
@@ -355,15 +282,14 @@ export default function App({
     if (!dirty && !target) return;
     const effectiveDirty = dirty || restoredDirtyTargetRef.current !== null;
     workspaceDirtyRef.current = effectiveDirty;
-    setWorkspaceDirty((current) => (current === effectiveDirty ? current : effectiveDirty));
+    setWorkspaceDirty(effectiveDirty);
     setProjectTabs((current) => {
-      let changed = false;
-      const next = current.map((tab) => {
-        if (tab.target !== target || tab.dirty === effectiveDirty) return tab;
-        changed = true;
-        return { ...tab, dirty: effectiveDirty };
-      });
-      return changed ? next : current;
+      if (!current.some((tab) => tab.target === target && tab.dirty !== effectiveDirty)) {
+        return current;
+      }
+      return current.map((tab) =>
+        tab.target === target ? { ...tab, dirty: effectiveDirty } : tab,
+      );
     });
   }, []);
 
@@ -376,12 +302,29 @@ export default function App({
   useEffect(() => {
     activeProjectTabTargetRef.current = activeProjectTabTarget;
   }, [activeProjectTabTarget]);
+
   const registerWorkspaceSaveHandler = useCallback<RegisterWorkspaceSaveHandler>((handler) => {
     const registration = typeof handler === "function" ? { save: handler } : handler;
     workspaceLifecycleRef.current = registration;
     setWorkspaceSaveAvailable(registration !== null);
   }, []);
   const executeRegisteredWorkspaceSave = useCallback(async (saveAs = false) => {
+    if (workspaceSavePendingRef.current) return false;
+    if (!workspaceLifecycleRef.current?.save) return false;
+    // Shortcut/native-menu saves do not naturally blur the cell like a mouse
+    // click does. Commit its draft before reading the latest save closure.
+    const editor = document.activeElement;
+    if (
+      editor instanceof HTMLInputElement ||
+      editor instanceof HTMLTextAreaElement ||
+      editor instanceof HTMLSelectElement
+    ) {
+      flushSync(() => editor.blur());
+      if (editor.getAttribute("aria-invalid") === "true") {
+        editor.focus({ preventScroll: true });
+        return false;
+      }
+    }
     const saveCurrent = workspaceLifecycleRef.current?.save;
     if (!saveCurrent) return false;
     try {
@@ -419,35 +362,53 @@ export default function App({
       stopListening?.();
     };
   }, [browserPreview, executeRegisteredWorkspaceSave]);
-  const requestWorkspaceExit = useCallback<RequestWorkspaceExit>((request) => {
-    // A native quit can surface through more than one platform callback. Once the user has
-    // approved an in-flight exit, ignore duplicates instead of invoking the exit command twice.
-    if (approvedWorkspaceExitRef.current) return;
-    if (!workspaceDirtyRef.current) {
-      void request.proceed();
-      return;
-    }
-    setWorkspaceExitError(null);
-    setPendingWorkspaceExit((current) => coalesceWorkspaceExitRequest(current, request));
-  }, []);
+  const requestWorkspaceExit = useCallback<RequestWorkspaceExit>(
+    (request) => {
+      if (stopDuringWorkspaceSave()) return;
+      if (approvedWorkspaceExitRef.current || !workspaceDirtyRef.current) {
+        void request.proceed();
+        return;
+      }
+      setWorkspaceExitError(null);
+      setPendingWorkspaceExit((current) => current ?? request);
+    },
+    [stopDuringWorkspaceSave],
+  );
   useEffect(() => {
     requestWorkspaceExitRef.current = requestWorkspaceExit;
   }, [requestWorkspaceExit]);
   useEffect(() => {
-    if (!workspaceDirty) return;
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (
+        !workspaceSavePendingRef.current &&
+        !workspaceDirtyRef.current &&
+        !projectTabsRef.current.some((tab) => tab.dirty)
+      )
+        return;
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", warnBeforeUnload);
     return () => window.removeEventListener("beforeunload", warnBeforeUnload);
-  }, [workspaceDirty]);
+  }, []);
 
   useEffect(() => {
     if (!isTauri()) return;
     let disposed = false;
+    let stopListeningForClose: (() => void) | undefined;
     let stopListeningForAppExit: (() => void) | undefined;
+    const appWindow = getCurrentWindow();
     const requestNativeApplicationExit = () => {
+      if (stopDuringWorkspaceSave()) return;
+      const backgroundDirty = projectTabsRef.current.some(
+        (tab) => tab.dirty && tab.target !== activeProjectTabTargetRef.current,
+      );
+      if (backgroundDirty) {
+        setSystemOpenError(
+          "別の実験タブに未保存の変更があります。各タブを保存してから終了してください。",
+        );
+        return;
+      }
       requestWorkspaceExitRef.current({
         actionLabel: "アプリを終了する",
         proceed: async () => {
@@ -455,18 +416,25 @@ export default function App({
         },
       });
     };
-    // Rust owns title-bar CloseRequested and emits the same application-level request used by
-    // Command+Q and the RunEvent fallback. A second WebView close listener duplicates that request
-    // and reintroduces a race with native window destruction on macOS.
+    void appWindow
+      .onCloseRequested((event) => {
+        event.preventDefault();
+        requestNativeApplicationExit();
+      })
+      .then((unlisten) => {
+        if (disposed) unlisten();
+        else stopListeningForClose = unlisten;
+      });
     void listen("app-exit-request", requestNativeApplicationExit).then((unlisten) => {
       if (disposed) unlisten();
       else stopListeningForAppExit = unlisten;
     });
     return () => {
       disposed = true;
+      stopListeningForClose?.();
       stopListeningForAppExit?.();
     };
-  }, []);
+  }, [stopDuringWorkspaceSave]);
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -482,6 +450,7 @@ export default function App({
   }, [experimentFirstEntryEnabled, route]);
 
   const recordRecentProject = useCallback((project: OpenedProject) => {
+    if (isSessionProjectTarget(project.target)) return;
     setRecentProjects(
       rememberRecentProject({
         target: project.target,
@@ -490,37 +459,28 @@ export default function App({
     );
   }, []);
 
-  const rememberProjectTab = useCallback(
-    (opened: OpenedAnyProject) => {
-      const openedTargetKey = canonicalProjectTargetKey(opened.project.target);
-      const existingTarget = projectTabs.find(
-        (tab) => canonicalProjectTargetKey(tab.target) === openedTargetKey,
-      )?.target;
-      const next: ProjectTab = {
-        target: existingTarget ?? opened.project.target,
-        name: opened.project.state.metadata.projectName,
-        kind: opened.kind,
-        dirty: false,
-      };
-      setProjectTabs((current) => {
-        const existing = current.findIndex(
-          (tab) => canonicalProjectTargetKey(tab.target) === openedTargetKey,
-        );
-        if (existing < 0) return [...current, next];
-        return current.map((tab, index) => (index === existing ? next : tab));
-      });
-      activeProjectTabTargetRef.current = next.target;
-      setActiveProjectTabTarget(next.target);
-    },
-    [projectTabs],
-  );
+  const rememberProjectTab = useCallback((opened: OpenedAnyProject) => {
+    const next: ProjectTab = {
+      target: opened.project.target,
+      name: opened.project.state.metadata.projectName,
+      kind: opened.kind,
+      dirty: false,
+    };
+    setProjectTabs((current) => {
+      const existing = current.findIndex((tab) => tab.target === next.target);
+      if (existing < 0) return [...current, next];
+      return current.map((tab, index) => (index === existing ? next : tab));
+    });
+    activeProjectTabTargetRef.current = next.target;
+    setActiveProjectTabTarget(next.target);
+  }, []);
 
   const checkpointActiveWorkspace = useCallback(() => {
+    if (workspaceSavePendingRef.current) return false;
     if (!workspaceDirtyRef.current) return true;
-    // A never-saved workspace has no durable tab target yet. Treating that as
-    // a successful checkpoint would let Home/New/Open discard its data without
-    // either preserving it in a tab or showing the save guard.
-    if (!activeProjectTabTarget) return browserPreview;
+    // An unsaved entry without a registered tab has no recoverable checkpoint.
+    // Keep the exit guard rather than treating absence of a tab as a saved state.
+    if (!activeProjectTabTarget) return false;
     let checkpoint: OpenedAnyProject | null = null;
     try {
       checkpoint = workspaceLifecycleRef.current?.checkpoint?.() ?? null;
@@ -537,14 +497,28 @@ export default function App({
       current.map((tab) => (tab.target === activeProjectTabTarget ? { ...tab, dirty: true } : tab)),
     );
     return true;
-  }, [activeProjectTabTarget, browserPreview]);
+  }, [activeProjectTabTarget]);
+
+  const checkpointActiveWorkspaceRef = useRef(checkpointActiveWorkspace);
+  checkpointActiveWorkspaceRef.current = checkpointActiveWorkspace;
 
   const saveProject = useCallback<NonNullable<ProjectActions["saveProject"]>>(
     async (request, existingTarget) => {
-      if (!activeProjectActions.saveProject) return null;
+      if (!activeProjectActions.saveProject || workspaceSavePendingRef.current) return null;
+      workspaceSavePendingRef.current = true;
+      setWorkspaceSavePending(true);
+      const sessionTarget = activeProjectTabTargetRef.current;
       try {
-        const saved = await activeProjectActions.saveProject(request, existingTarget);
+        const saved = await activeProjectActions.saveProject(
+          request,
+          isSessionProjectTarget(existingTarget) ? undefined : existingTarget,
+        );
         if (saved) {
+          if (sessionTarget && isSessionProjectTarget(sessionTarget)) {
+            workspaceSessionCheckpointsRef.current.delete(sessionTarget);
+            specializedDraftCheckpointsRef.current.delete(sessionTarget);
+            setProjectTabs((current) => current.filter((tab) => tab.target !== sessionTarget));
+          }
           restoredDirtyTargetRef.current = null;
           workspaceSessionCheckpointsRef.current.delete(saved.target);
           specializedDraftCheckpointsRef.current.delete(saved.target);
@@ -558,22 +532,22 @@ export default function App({
         recordDiagnosticError("PROJECT_SAVE_FAILED", error);
         const failureStage = projectIoStage(error);
         recordDiagnosticEvent("project_save_failed", { stage: failureStage ?? "unknown" });
-        const message = researcherError("PROJECT_SAVE_FAILED", locale);
+        const message = researcherError("PROJECT_SAVE_FAILED");
         const stageMessage = failureStage
-          ? t(
-              `失敗した処理：${PROJECT_IO_STAGE_LABELS[failureStage] ?? failureStage}。`,
-              `Failed stage: ${PROJECT_IO_STAGE_LABELS_EN[failureStage] ?? failureStage}. `,
-            )
+          ? `失敗した処理：${PROJECT_IO_STAGE_LABELS[failureStage] ?? failureStage}。`
           : "";
         throw new Error(
-          `${message.title}${t(`（${message.code}）。`, ` (${message.code}). `)}${stageMessage}${message.nextAction}`,
+          `${message.title}（${message.code}）。${stageMessage}${message.nextAction}`,
           {
             cause: error,
           },
         );
+      } finally {
+        workspaceSavePendingRef.current = false;
+        setWorkspaceSavePending(false);
       }
     },
-    [activeProjectActions, locale, recordRecentProject, rememberProjectTab],
+    [activeProjectActions, recordRecentProject, rememberProjectTab],
   );
 
   const saveUnresolvedVisualizationProject = useCallback(
@@ -581,15 +555,22 @@ export default function App({
       ...args: Parameters<NonNullable<ProjectActions["saveUnresolvedVisualizationProject"]>>
     ) => {
       const action = activeProjectActions.saveUnresolvedVisualizationProject;
-      if (!action) return null;
-      const saved = await action(...args);
-      if (saved) {
-        restoredDirtyTargetRef.current = null;
-        workspaceSessionCheckpointsRef.current.delete(saved.target);
-        specializedDraftCheckpointsRef.current.delete(saved.target);
-        rememberProjectTab({ kind: "unresolved_visualization", project: saved });
+      if (!action || workspaceSavePendingRef.current) return null;
+      workspaceSavePendingRef.current = true;
+      setWorkspaceSavePending(true);
+      try {
+        const saved = await action(...args);
+        if (saved) {
+          restoredDirtyTargetRef.current = null;
+          workspaceSessionCheckpointsRef.current.delete(saved.target);
+          specializedDraftCheckpointsRef.current.delete(saved.target);
+          rememberProjectTab({ kind: "unresolved_visualization", project: saved });
+        }
+        return saved;
+      } finally {
+        workspaceSavePendingRef.current = false;
+        setWorkspaceSavePending(false);
       }
-      return saved;
     },
     [activeProjectActions.saveUnresolvedVisualizationProject, rememberProjectTab],
   );
@@ -599,29 +580,39 @@ export default function App({
       ...args: Parameters<NonNullable<ProjectActions["saveSpecializedEntryDraftProject"]>>
     ) => {
       const action = activeProjectActions.saveSpecializedEntryDraftProject;
-      if (!action) return null;
-      const saved = await action(...args);
-      if (saved) {
-        restoredDirtyTargetRef.current = null;
-        workspaceSessionCheckpointsRef.current.delete(saved.target);
-        specializedDraftCheckpointsRef.current.delete(saved.target);
-        rememberProjectTab({ kind: "specialized_entry_draft", project: saved });
+      if (!action || workspaceSavePendingRef.current) return null;
+      workspaceSavePendingRef.current = true;
+      setWorkspaceSavePending(true);
+      try {
+        const saved = await action(...args);
+        if (saved) {
+          restoredDirtyTargetRef.current = null;
+          workspaceSessionCheckpointsRef.current.delete(saved.target);
+          specializedDraftCheckpointsRef.current.delete(saved.target);
+          rememberProjectTab({ kind: "specialized_entry_draft", project: saved });
+        }
+        return saved;
+      } finally {
+        workspaceSavePendingRef.current = false;
+        setWorkspaceSavePending(false);
       }
-      return saved;
     },
     [activeProjectActions.saveSpecializedEntryDraftProject, rememberProjectTab],
   );
 
-  const persistenceCapabilities = projectPersistenceCapabilities(activeProjectActions);
   const unresolvedVisualizationPersistence =
-    !browserPreview && persistenceCapabilities.unresolvedVisualization
+    !browserPreview &&
+    activeProjectActions.saveUnresolvedVisualizationProject &&
+    activeProjectActions.openUnresolvedVisualizationProject
       ? {
           save: saveUnresolvedVisualizationProject,
-          open: activeProjectActions.openUnresolvedVisualizationProject!,
+          open: activeProjectActions.openUnresolvedVisualizationProject,
         }
       : null;
   const specializedEntryDraftPersistence =
-    !browserPreview && persistenceCapabilities.specializedEntryDraft
+    !browserPreview &&
+    activeProjectActions.saveSpecializedEntryDraftProject &&
+    activeProjectActions.openAnyProject
       ? { save: saveSpecializedEntryDraftProject }
       : null;
   const specializedEntryAvailable = browserPreview || Boolean(specializedEntryDraftPersistence);
@@ -654,6 +645,17 @@ export default function App({
       source: DiagnosticProjectOpenSource,
       options: Readonly<{ restoreDirty?: boolean }> = {},
     ) => {
+      if (stopDuringWorkspaceSave()) return;
+      if (
+        workspaceDirtyRef.current &&
+        !approvedWorkspaceExitRef.current &&
+        !checkpointActiveWorkspaceRef.current()
+      ) {
+        setSystemOpenError(
+          "読込中に追加された変更を安全に保持できないため、現在のワークスペースを保全しました。保存してから、もう一度プロジェクトを開いてください。",
+        );
+        return;
+      }
       const restoreDirty = Boolean(options.restoreDirty);
       restoredDirtyTargetRef.current = restoreDirty ? opened.project.target : null;
       workspaceDirtyRef.current = restoreDirty;
@@ -666,12 +668,14 @@ export default function App({
         : {};
       setAdaptiveSurvivalHandoff(null);
       setDedicatedEntryIntent(null);
-      setRecentProjects(
-        rememberRecentProject({
-          target: opened.project.target,
-          name: opened.project.state.metadata.projectName,
-        }),
-      );
+      if (!isSessionProjectTarget(opened.project.target)) {
+        setRecentProjects(
+          rememberRecentProject({
+            target: opened.project.target,
+            name: opened.project.state.metadata.projectName,
+          }),
+        );
+      }
       recordDiagnosticEvent("project_opened", { state: "success", source });
       recordUsageMilestone("open-project", "project_opened");
       rememberProjectTab(opened);
@@ -684,6 +688,9 @@ export default function App({
       }
 
       if (opened.kind === "experiment") {
+        // Save-as copies retain projectId. Each explicit open/tab restoration
+        // needs fresh editor state; an async save itself must not remount edits.
+        setOpenedProjectSession((session) => session + 1);
         setActiveVisualizationProject(null);
         setActiveSpecializedEntryDraft(null);
         setActiveProject(opened.project);
@@ -710,36 +717,48 @@ export default function App({
         dedicatedEntryHistoryState(opened.project.state.entryIntent),
       );
     },
-    [navigate, rememberProjectTab],
+    [navigate, rememberProjectTab, stopDuringWorkspaceSave],
   );
-  const activateOpenedProject = useCallback(
-    (opened: OpenedAnyProject, source: DiagnosticProjectOpenSource) => {
-      const openedTargetKey = canonicalProjectTargetKey(opened.project.target);
-      const existingTab = projectTabs.find(
-        (tab) => canonicalProjectTargetKey(tab.target) === openedTargetKey,
-      );
-      if (!existingTab) {
-        handleOpenedAnyProject(opened, source);
-        return;
-      }
-      if (
-        activeProjectTarget &&
-        canonicalProjectTargetKey(activeProjectTarget) ===
-          canonicalProjectTargetKey(existingTab.target)
-      ) {
-        return;
-      }
-      const checkpoint = workspaceSessionCheckpointsRef.current.get(existingTab.target);
-      handleOpenedAnyProject(
-        checkpoint ?? retargetOpenedProject(opened, existingTab.target),
-        source,
-        { restoreDirty: Boolean(checkpoint) },
-      );
+  const createFromConditions = useCallback(
+    (request: StructureRevisionNewProject): boolean => {
+      if (stopDuringWorkspaceSave()) return false;
+      const sourceTarget = request.sourceTarget ?? newSessionProjectTarget();
+      const nextTarget = newSessionProjectTarget();
+      const sourceDirty = workspaceDirtyRef.current || isSessionProjectTarget(sourceTarget);
+      workspaceSessionCheckpointsRef.current.set(sourceTarget, {
+        kind: "experiment",
+        project: { state: request.sourceState, target: sourceTarget },
+      });
+      const next: OpenedAnyProject = {
+        kind: "experiment",
+        project: { state: request.nextState, target: nextTarget },
+      };
+      workspaceSessionCheckpointsRef.current.set(nextTarget, next);
+      setProjectTabs((current) => [
+        ...current.filter((tab) => tab.target !== sourceTarget),
+        {
+          target: sourceTarget,
+          name: request.sourceState.metadata.projectName,
+          kind: "experiment",
+          dirty: sourceDirty,
+        },
+      ]);
+      handleOpenedAnyProject(next, "workspace_file_menu", { restoreDirty: true });
+      return true;
     },
-    [activeProjectTarget, handleOpenedAnyProject, projectTabs],
+    [handleOpenedAnyProject, stopDuringWorkspaceSave],
   );
+
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
+      if (stopDuringWorkspaceSave()) {
+        window.history.pushState(
+          {},
+          "",
+          routeWithAdaptiveInputPreference(pathForRoute(routeRef.current)),
+        );
+        return;
+      }
       const nextRoute = routeFromPath(window.location.pathname);
       const requestedState = event.state;
       if (!workspaceDirtyRef.current || checkpointActiveWorkspace()) {
@@ -765,7 +784,13 @@ export default function App({
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [checkpointActiveWorkspace, experimentFirstEntryEnabled, navigate, requestWorkspaceExit]);
+  }, [
+    checkpointActiveWorkspace,
+    experimentFirstEntryEnabled,
+    navigate,
+    requestWorkspaceExit,
+    stopDuringWorkspaceSave,
+  ]);
   const rememberSpecializedDraft = useCallback(function rememberSpecializedDraft<
     Route extends SpecializedAnalysisRoute,
   >(draftRoute: Route, draft: SpecializedDraftByRoute[Route]) {
@@ -773,6 +798,7 @@ export default function App({
   }, []);
   const navigateAsFreshStart = useCallback(
     (nextRoute: AppRoute) => {
+      if (stopDuringWorkspaceSave()) return;
       const request: WorkspaceExitRequest = {
         actionLabel:
           nextRoute === "home"
@@ -798,7 +824,6 @@ export default function App({
             setDedicatedEntryIntent(null);
             setNewExperimentSession((session) => session + 1);
           }
-          if (nextRoute === "home") setFiveMinuteGuideFixture(null);
           navigate(nextRoute);
         },
       };
@@ -811,7 +836,7 @@ export default function App({
       }
       requestWorkspaceExit(request);
     },
-    [checkpointActiveWorkspace, navigate, requestWorkspaceExit],
+    [checkpointActiveWorkspace, navigate, requestWorkspaceExit, stopDuringWorkspaceSave],
   );
   const saveAndContinueWorkspaceExit = useCallback(async () => {
     const request = pendingWorkspaceExit;
@@ -874,6 +899,7 @@ export default function App({
   }, [workspaceExitSaving]);
 
   const openProjectFromWorkspace = useCallback(() => {
+    if (stopDuringWorkspaceSave()) return;
     const request: WorkspaceExitRequest = {
       actionLabel: "別のプロジェクトを開く",
       proceed: async () => {
@@ -884,17 +910,13 @@ export default function App({
                 .openProject()
                 .then((project) => (project ? { kind: "experiment" as const, project } : null));
           if (!opened) return;
-          activateOpenedProject(opened, "workspace_file_menu");
+          handleOpenedAnyProject(opened, "workspace_file_menu");
         } catch (error) {
           recordDiagnosticError("PROJECT_OPEN_FAILED", error);
           setSystemOpenError(
             actionErrorMessage(
               error,
-              t(
-                "プロジェクトを開けませんでした。現在のワークスペースは変更されていません。",
-                "The project could not be opened. The current workspace was not changed.",
-              ),
-              locale,
+              "プロジェクトを開けませんでした。現在のワークスペースは変更されていません。",
             ),
           );
         }
@@ -908,12 +930,19 @@ export default function App({
   }, [
     activeProjectActions,
     checkpointActiveWorkspace,
-    activateOpenedProject,
+    handleOpenedAnyProject,
     requestWorkspaceExit,
+    stopDuringWorkspaceSave,
   ]);
 
   const openProjectTabTarget = useCallback(
     async (target: string) => {
+      if (stopDuringWorkspaceSave()) return;
+      if (isSessionProjectTarget(target)) {
+        throw new Error(
+          "未保存の実験を保持した状態を確認できません。現在の入力内容は変更されていません。",
+        );
+      }
       const openTarget =
         activeProjectActions.openAnyProjectTarget ?? activeProjectActions.openProjectTarget;
       if (!openTarget) throw new Error("この環境では保存済みプロジェクトを開けません。");
@@ -922,31 +951,32 @@ export default function App({
       );
       handleOpenedAnyProject(opened, "workspace_file_menu");
     },
-    [activeProjectActions, handleOpenedAnyProject],
+    [activeProjectActions, handleOpenedAnyProject, stopDuringWorkspaceSave],
   );
 
   const selectProjectTab = useCallback(
     (target: string) => {
-      if (target === activeProjectTarget) return;
+      if (stopDuringWorkspaceSave()) return;
+      // Reusing a design leaves its source tab open while the wizard is shown.
+      // Selecting that source must restore the workspace, even though its target
+      // is still the active project's target.
+      if (target === activeProjectTarget && !reusedDraft) return;
       const request: WorkspaceExitRequest = {
         actionLabel: "別のプロジェクトへ切り替える",
         proceed: async () => {
           try {
             const checkpoint = workspaceSessionCheckpointsRef.current.get(target);
             if (checkpoint) {
-              handleOpenedAnyProject(checkpoint, "workspace_file_menu", { restoreDirty: true });
+              handleOpenedAnyProject(checkpoint, "workspace_file_menu", {
+                restoreDirty:
+                  projectTabsRef.current.find((tab) => tab.target === target)?.dirty ?? true,
+              });
             } else {
               await openProjectTabTarget(target);
             }
           } catch (error) {
             recordDiagnosticError("PROJECT_OPEN_FAILED", error);
-            setSystemOpenError(
-              actionErrorMessage(
-                error,
-                t("プロジェクトタブを開けませんでした。", "The project tab could not be opened."),
-                locale,
-              ),
-            );
+            setSystemOpenError(actionErrorMessage(error, "プロジェクトタブを開けませんでした。"));
           }
         },
       };
@@ -962,11 +992,14 @@ export default function App({
       handleOpenedAnyProject,
       openProjectTabTarget,
       requestWorkspaceExit,
+      reusedDraft,
+      stopDuringWorkspaceSave,
     ],
   );
 
   const closeProjectTab = useCallback(
     (target: string) => {
+      if (stopDuringWorkspaceSave()) return;
       const closingIndex = projectTabs.findIndex((tab) => tab.target === target);
       if (closingIndex < 0) return;
       if (target !== activeProjectTarget) {
@@ -990,7 +1023,7 @@ export default function App({
               const checkpoint = workspaceSessionCheckpointsRef.current.get(next.target);
               if (checkpoint) {
                 handleOpenedAnyProject(checkpoint, "workspace_file_menu", {
-                  restoreDirty: true,
+                  restoreDirty: next.dirty,
                 });
               } else {
                 await openProjectTabTarget(next.target);
@@ -1003,11 +1036,7 @@ export default function App({
               setSystemOpenError(
                 actionErrorMessage(
                   error,
-                  t(
-                    "次のプロジェクトタブを開けなかったため、現在のタブは閉じていません。",
-                    "The current tab was not closed because the next project tab could not be opened.",
-                  ),
-                  locale,
+                  "次のプロジェクトタブを開けなかったため、現在のタブは閉じていません。",
                 ),
               );
             }
@@ -1034,6 +1063,7 @@ export default function App({
       projectTabs,
       requestWorkspaceExit,
       selectProjectTab,
+      stopDuringWorkspaceSave,
     ],
   );
   useEffect(() => {
@@ -1104,6 +1134,7 @@ export default function App({
     let stopListening: (() => void) | undefined;
     const inFlightTargets = new Set<string>();
     const handleTargets = async (targets: readonly string[]) => {
+      if (stopDuringWorkspaceSave()) return;
       const target = [...targets].reverse().find((candidate) => !inFlightTargets.has(candidate));
       if (!target) return;
       const openTarget = async () => {
@@ -1113,16 +1144,12 @@ export default function App({
             "kind" in project ? project : { kind: "experiment" as const, project },
           );
           if (disposed) return;
-          activateOpenedProject(opened, "system");
+          handleOpenedAnyProject(opened, "system");
         } catch (error) {
           if (disposed) return;
           recordDiagnosticError("PROJECT_OPEN_FAILED", error);
           setSystemOpenError(
-            actionErrorMessage(
-              error,
-              t("指定されたプロジェクトを開けませんでした。", "The selected project could not be opened."),
-              locale,
-            ),
+            actionErrorMessage(error, "指定されたプロジェクトを開けませんでした。"),
           );
         } finally {
           inFlightTargets.delete(target);
@@ -1150,8 +1177,9 @@ export default function App({
     activeProjectActions.openProjectTarget,
     browserPreview,
     checkpointActiveWorkspace,
-    activateOpenedProject,
+    handleOpenedAnyProject,
     requestWorkspaceExit,
+    stopDuringWorkspaceSave,
   ]);
 
   const orderedCurveIntent =
@@ -1179,7 +1207,7 @@ export default function App({
         ) {
           return (
             <SpecializedEntryPersistenceStop
-              entryLabel={t("濃度–反応・酵素反応", "Concentration–response / enzyme kinetics")}
+              entryLabel="濃度–反応・酵素反応"
               onBack={() => navigate("new-experiment")}
             />
           );
@@ -1224,7 +1252,7 @@ export default function App({
         ) {
           return (
             <SpecializedEntryPersistenceStop
-              entryLabel={t("生存時間", "Survival")}
+              entryLabel="生存時間"
               onBack={() => navigate("new-experiment")}
             />
           );
@@ -1313,7 +1341,7 @@ export default function App({
       case "new-experiment":
         return (
           <NewExperimentPage
-            key={`${reusedDraft ? `reuse:${reusedDraft.name}` : fiveMinuteGuideFixture ? `guide:${fiveMinuteGuideFixture.id}` : "new"}:${newExperimentSession}:${activeVisualizationProject?.project.target ?? "none"}`}
+            key={`${reusedDraft ? `reuse:${reusedDraft.name}` : "new"}:${newExperimentSession}:${activeVisualizationProject?.project.target ?? "none"}`}
             onNavigate={navigate}
             saveProject={browserPreview ? undefined : saveProject}
             saveUnresolvedVisualizationProject={unresolvedVisualizationPersistence?.save}
@@ -1332,12 +1360,12 @@ export default function App({
             browserPreview={browserPreview}
             analysisAvailable={analysisAvailable}
             initialDraft={reusedDraft}
-            initialFixture={fiveMinuteGuideFixture}
             favoriteGraphDefaults={favoriteDefaults}
             onSaveFavorite={(draft, graphs) => {
               saveFavoriteDesign(draft, graphs);
               setFavorites(loadFavoriteDesigns());
             }}
+            onCreateFromConditions={browserPreview ? undefined : createFromConditions}
             onDirtyChange={updateWorkspaceDirty}
             onOpenProject={browserPreview ? undefined : openProjectFromWorkspace}
             onRequestExit={requestWorkspaceExit}
@@ -1369,11 +1397,7 @@ export default function App({
                   } catch (error) {
                     recordDiagnosticError("PROJECT_OPEN_FAILED", error);
                     setSystemOpenError(
-                      actionErrorMessage(
-                        error,
-                        t("最近のプロジェクトを開けませんでした。", "The recent project could not be opened."),
-                        locale,
-                      ),
+                      actionErrorMessage(error, "最近のプロジェクトを開けませんでした。"),
                     );
                     navigate("open-project");
                   }
@@ -1386,15 +1410,17 @@ export default function App({
       case "open-project":
         return (
           <OpenProjectPage
+            key={`${activeProject?.state.metadata.projectId ?? "open-project"}:${openedProjectSession}`}
+            onCreateFromConditions={browserPreview ? undefined : createFromConditions}
             onNavigate={navigate}
             openProject={activeProjectActions.openProject}
             openAnyProject={activeProjectActions.openAnyProject}
             openLegacyProject={activeProjectActions.openLegacyProject}
             persistedProject={activeProject}
             onProjectOpened={(project) => {
-              if (project) activateOpenedProject({ kind: "experiment", project }, "dialog");
+              if (project) handleOpenedAnyProject({ kind: "experiment", project }, "dialog");
             }}
-            onAnyProjectOpened={(opened) => activateOpenedProject(opened, "dialog")}
+            onAnyProjectOpened={(opened) => handleOpenedAnyProject(opened, "dialog")}
             saveProject={browserPreview ? undefined : saveProject}
             onReuseDesign={(draft) => {
               requestWorkspaceExit({
@@ -1422,15 +1448,7 @@ export default function App({
         );
       case "home":
       default:
-        return (
-          <HomePage
-            onNavigate={navigateAsFreshStart}
-            onStartFiveMinuteGuide={() => {
-              setFiveMinuteGuideFixture(createIndependentTwoGroupFixture());
-              navigateAsFreshStart("new-experiment");
-            }}
-          />
-        );
+        return <HomePage onNavigate={navigateAsFreshStart} />;
     }
   })();
 
@@ -1452,27 +1470,19 @@ export default function App({
         onOpenProject={browserPreview ? undefined : openProjectFromWorkspace}
       >
         {systemOpenError &&
-        (activeProject || activeVisualizationProject || activeSpecializedEntryDraft) ? (
+        (activeProject ||
+          activeVisualizationProject ||
+          activeSpecializedEntryDraft ||
+          workspaceSavePending ||
+          projectTabs.some((tab) => tab.dirty)) ? (
           <div className="app-system-alert" role="alert">
-            <span>
-              {locale === "ja"
-                ? systemOpenError
-                : "The operation could not be completed. The current workspace was retained."}
-            </span>
+            <span>{systemOpenError}</span>
             <button type="button" onClick={() => setSystemOpenError(null)}>
-              {t("閉じる", "Close")}
+              閉じる
             </button>
           </div>
         ) : null}
-        <Suspense
-          fallback={
-            <p className="app-route-loading" role="status">
-              {t("画面を読み込んでいます…", "Loading this workspace…")}
-            </p>
-          }
-        >
-          {page}
-        </Suspense>
+        {page}
       </AppShell>
       {pendingWorkspaceExit ? (
         <UnsavedChangesDialog

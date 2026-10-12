@@ -4,48 +4,6 @@ import { serializeGraphSvg } from "../../app/graphExport";
 import { NonlinearFitGraph } from "./NonlinearFitGraph";
 
 describe("NonlinearFitGraph", () => {
-  it("uses the shared 1/2/5 tick grammar for awkward numeric ranges", () => {
-    render(
-      <NonlinearFitGraph
-        model={{
-          modelId: "observed_only",
-          series: [
-            {
-              seriesId: "series.1",
-              points: [
-                {
-                  observationId: "obs.1",
-                  experimentalUnitId: "unit.1",
-                  seriesId: "series.1",
-                  x: 0.858,
-                  y: 0.858,
-                },
-                {
-                  observationId: "obs.2",
-                  experimentalUnitId: "unit.2",
-                  seriesId: "series.1",
-                  x: 1.642,
-                  y: 1.642,
-                },
-              ],
-              fittedCurve: [],
-            },
-          ],
-        }}
-        xLabel="Dose"
-        yLabel="Response"
-        displayMode="observed_only"
-      />,
-    );
-
-    const values = (axis: "x" | "y") =>
-      [...document.querySelectorAll<SVGLineElement>(`[data-axis-tick="${axis}"]`)].map(
-        (tick) => Number(tick.dataset.tickValue),
-      );
-    expect(values("x")).toEqual([1.6, 1.4, 1.2, 1]);
-    expect(values("y")).toEqual([1.5, 1, 0.5, 0]);
-  });
-
   it("renders observed points without implying that a fit has run", () => {
     render(
       <NonlinearFitGraph
@@ -169,8 +127,7 @@ describe("NonlinearFitGraph", () => {
     expect(svg.querySelectorAll('[data-graph-layer="authoritative-fitted-curve"]')).toHaveLength(1);
     const exported = serializeGraphSvg(svg as unknown as SVGSVGElement);
     expect(exported).toContain('data-fit-model="zero_baseline_association"');
-    expect(exported).toContain("観測点 + 保存済みZero-baseline association fit");
-    expect(exported).not.toContain(">zero_baseline_association<");
+    expect(exported).toContain("saved zero_baseline_association fit");
   });
 
   it("preserves outside axis ticks and all experimental-condition series in the export source", () => {

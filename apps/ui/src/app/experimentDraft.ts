@@ -183,6 +183,7 @@ export type ExperimentSetDraft = Readonly<{
     sourceRows: readonly (readonly string[])[];
     mapping: Readonly<Record<string, string | number | null>>;
     excludedRowNumbers: readonly number[];
+    excludedRowReasons?: readonly Readonly<{ rowNumber: number; reasons: readonly string[] }>[];
     duplicateDecision: "none" | "nested_observations";
     transformations?: readonly string[];
   }>;
@@ -362,14 +363,9 @@ export function plannedExperimentalUnitCount(draft: ExperimentSetDraft): number 
 }
 
 export function hasSharedSourceConditionUnits(draft: ExperimentSetDraft): boolean {
-  return sharedSourceConditionTopology(draft) !== null;
-}
-
-export function sharedSourceConditionTopology(
-  draft: ExperimentSetDraft,
-): Extract<MatchedConditionTopology, { kind: "distinct_condition_units_shared_source" }> | null {
-  const topology = draft.conditionAssignment.matchedTopology;
-  return topology?.kind === "distinct_condition_units_shared_source" ? topology : null;
+  return (
+    draft.conditionAssignment.matchedTopology?.kind === "distinct_condition_units_shared_source"
+  );
 }
 
 export function conditionDisplayLabel(
@@ -432,21 +428,6 @@ export function createExperimentSession(index: number): ExperimentSessionDraft {
  * for the first added row as well.  The graph could still draw both rows, but
  * D01/D02 correctly rejected the duplicate biological-unit identity.
  */
-export function updateWorksheetRowMetadata(
-  draft: ExperimentSetDraft,
-  rowIndex: number,
-  patch: Readonly<{ label?: string; date?: string }>,
-): ExperimentSetDraft {
-  if (!Number.isSafeInteger(rowIndex) || rowIndex < 0) return draft;
-  const experiments = [...draft.experiments];
-  while (experiments.length <= rowIndex) {
-    const created = createExperimentSession(nextExperimentSessionIndex(experiments));
-    experiments.push({ ...created, label: `入力行 ${experiments.length + 1}`, date: "" });
-  }
-  experiments[rowIndex] = { ...experiments[rowIndex], ...patch };
-  return { ...draft, experiments };
-}
-
 export function nextExperimentSessionIndex(experiments: readonly ExperimentSessionDraft[]): number {
   const usedExperimentIds = new Set(experiments.map(({ id }) => id));
   const usedSessionIds = new Set(experiments.map(({ sessionId }) => sessionId).filter(Boolean));
@@ -673,9 +654,11 @@ export function expectedAnalysisLabel(draft: ExperimentSetDraft): string {
       : "時間点ごとに別サンプルとして扱う条件と時間の比較候補";
   }
   if (draft.conditionAssignment.kind === "matched") {
-    const sharedSourceTopology = sharedSourceConditionTopology(draft);
-    if (sharedSourceTopology) {
-      const sourceLabel = sharedSourceTopology.sourceUnitLabel;
+    if (hasSharedSourceConditionUnits(draft)) {
+      const sourceLabel =
+        draft.conditionAssignment.matchedTopology?.kind === "distinct_condition_units_shared_source"
+          ? draft.conditionAssignment.matchedTopology.sourceUnitLabel
+          : "共通の由来";
       return activeConditions(draft).length > 2
         ? `同じ${sourceLabel}に由来する条件別${draft.conditionAssignment.unitLabel}の複数条件比較`
         : `同じ${sourceLabel}に由来する条件別${draft.conditionAssignment.unitLabel}の2条件比較`;

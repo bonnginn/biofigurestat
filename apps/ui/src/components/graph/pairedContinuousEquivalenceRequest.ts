@@ -33,6 +33,7 @@ export function createPairedContinuousEquivalenceRequest({
     plan.margin.scale !== "raw_difference" ||
     plan.claimMode !== "single_primary_comparison" ||
     plan.primaryComparisonId !== comparisonId ||
+    comparisonId !== `equivalence:${encodeURIComponent(baseRequest.contrastConditionIds[0])}:${encodeURIComponent(baseRequest.contrastConditionIds[1])}` ||
     baseRequest.observations.some(
       (observation) => !observation.pairId || observation.blockId !== undefined,
     )
@@ -51,7 +52,7 @@ export function createPairedContinuousEquivalenceRequest({
     comparisonId,
     contrastConditionIds: baseRequest.contrastConditionIds,
     equivalencePlan: plan,
-    excludedIncompletePairIds,
+    excludedIncompletePairIds: [...new Set(excludedIncompletePairIds)],
     observations: baseRequest.observations,
     options: {
       alternative: "two_sided",

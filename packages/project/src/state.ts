@@ -2,10 +2,10 @@ import { z } from "zod";
 
 import { ProjectCompatibilityError } from "./compatibility-error";
 import {
+  EquivalenceAnalysisPlanSchema,
   AnalysisEngineRequestSchema,
   AnalysisEngineResultSchema,
   AnalysisRecommendationSchema,
-  EquivalenceAnalysisPlanSchema,
 } from "@lsaa/analysis-contracts";
 import {
   EntityIdSchema,
@@ -210,7 +210,7 @@ export const ExperimentWorkspaceStateSchema = z
     /** Immutable ingress evidence; never used as canonical analysis input. */
     entrySourceHistory: ExperimentEntrySourceHistorySchema.nullable().optional(),
     dataViewMode: z.enum(["compact", "expanded"]).default("compact"),
-    /** UI-only numeric lexemes such as `1.00`; canonical analysis values remain numeric. */
+    /** Published lexical display precision; never numerical analysis authority. */
     cellDisplayTexts: z.record(z.string(), z.string()).default({}),
     adaptiveInput: AdaptiveInputSnapshotSchema.nullable().optional(),
     notPlannedCellKeys: z.array(z.string().min(1)).default([]),
@@ -244,6 +244,8 @@ export const ExperimentWorkspaceStateSchema = z
           })
           .optional(),
         analysisTimePointId: EntityIdSchema.nullable().optional(),
+        comparisonGoal: z.enum(["difference", "equivalence"]).optional(),
+        equivalencePlan: EquivalenceAnalysisPlanSchema.optional(),
         analysisMetric: z
           .object({
             kind: z.enum([
@@ -261,10 +263,6 @@ export const ExperimentWorkspaceStateSchema = z
             baselineTime: z.number().finite().optional(),
           })
           .optional(),
-        /** Scientific question only; it never changes or substitutes an engine method. */
-        comparisonGoal: z.enum(["difference", "equivalence"]).optional(),
-        /** Researcher-declared equivalence bounds; presence never makes a method executable. */
-        equivalencePlan: EquivalenceAnalysisPlanSchema.optional(),
         graphType: z
           .enum([
             "dot",
@@ -576,7 +574,7 @@ export const PersistedGraphSchema = z.object({
   staleReason: z.string().min(1).nullable(),
 });
 
-export const PersistedMatrixViewSchema = z
+const KnownPersistedMatrixViewSchema = z
   .object({
     id: EntityIdSchema,
     rawMatrix: MatrixDataSchema,
@@ -601,6 +599,54 @@ export const PersistedMatrixViewSchema = z
       });
     }
   });
+
+// Zod object parsing normally strips unknown keys. At this persistence boundary
+// reject those keys recursively before they can disappear from scientific raw data.
+export const PersistedMatrixViewSchema = z.unknown().transform((input, ctx) => {
+  const parsed = KnownPersistedMatrixViewSchema.safeParse(input);
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues)
+      ctx.addIssue({ code: "custom", path: issue.path, message: issue.message });
+    return z.NEVER;
+  }
+  const check = (original: unknown, retained: unknown, path: (string | number)[]) => {
+    if (Array.isArray(original) && Array.isArray(retained)) {
+      original.forEach((value, index) => check(value, retained[index], [...path, index]));
+    } else if (
+      original &&
+      typeof original === "object" &&
+      retained &&
+      typeof retained === "object"
+    ) {
+      for (const [key, value] of Object.entries(original)) {
+        if (!Object.hasOwn(retained, key))
+          ctx.addIssue({
+            code: "custom",
+            path: [...path, key],
+            message: "Unsupported matrix field; no data was discarded",
+          });
+        else check(value, (retained as Record<string, unknown>)[key], [...path, key]);
+      }
+    }
+  };
+  check(input, parsed.data, []);
+  const raw = parsed.data.rawMatrix;
+  if (
+    raw.rowIds.length !== raw.rowLabels.length ||
+    raw.rowIds.length !== raw.values.length ||
+    raw.columnIds.length !== raw.columnLabels.length ||
+    raw.values.some((row) => row.length !== raw.columnIds.length) ||
+    new Set(raw.rowIds).size !== raw.rowIds.length ||
+    new Set(raw.columnIds).size !== raw.columnIds.length
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["rawMatrix"],
+      message: "Matrix identities, labels and rectangular values must agree",
+    });
+  }
+  return parsed.data;
+});
 
 export const ProvenanceEventSchema = z.object({
   id: EntityIdSchema,

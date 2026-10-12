@@ -18,10 +18,9 @@ import {
 } from "@lsaa/project";
 import { defaultProjectFileName } from "./projectFileName";
 import type { OpenedAnyProject } from "./projectActions";
-import { getAppLocale } from "./appLocale";
+import { PRODUCT_IDENTITY } from "./productIdentity";
 
-const APP_VERSION = "0.1.0";
-const nativeText = (ja: string, en: string) => (getAppLocale() === "ja" ? ja : en);
+const APP_VERSION = PRODUCT_IDENTITY.version;
 
 export type ProjectIoStage =
   | "checksum"
@@ -139,7 +138,7 @@ export async function openLocalProjectPackage(): Promise<OpenedLocalProject | nu
   const selected = await open({
     directory: false,
     multiple: false,
-    title: nativeText("BioFigureStat projectを開く", "Open BioFigureStat project"),
+    title: "BioFigureStat projectを開く",
     filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
   });
   if (selected === null) return null;
@@ -197,8 +196,10 @@ export async function openLocalAnyProjectPackage(): Promise<OpenedAnyProject | n
   const selected = await open({
     directory: false,
     multiple: false,
-    title: nativeText("BioFigureStat projectを開く", "Open BioFigureStat project"),
-    filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
+    title: "BioFigureStat projectを開く",
+    // macOS may not resolve an unregistered custom extension in the native picker.
+    // The manifest reader still validates the selected file before opening it.
+    filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }, { name: "すべてのファイル（.lsa projectを選択）", extensions: ["*"] }],
   });
   if (selected === null) return null;
 
@@ -227,7 +228,7 @@ export async function openLocalUnresolvedVisualizationProjectPackage(): Promise<
   const selected = await open({
     directory: false,
     multiple: false,
-    title: nativeText("BioFigureStat Graph projectを開く", "Open BioFigureStat Graph project"),
+    title: "BioFigureStat Graph projectを開く",
     filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
   });
   if (selected === null) return null;
@@ -240,10 +241,7 @@ export async function openLegacyLocalProjectPackage(): Promise<OpenedLocalProjec
   const selected = await open({
     directory: true,
     multiple: false,
-    title: nativeText(
-      "旧形式のBioFigureStat projectフォルダを取り込む",
-      "Import legacy BioFigureStat project folder",
-    ),
+    title: "旧形式のBioFigureStat projectフォルダを取り込む",
   });
   if (selected === null) return null;
 
@@ -261,10 +259,16 @@ export async function saveLocalProjectPackage(
 ): Promise<SavedLocalProject | null> {
   if (!isTauri()) throw new Error("Local project saving is available in the desktop app only.");
   const state = stateInput;
+  // Candidate v5 preserves matrix state only in a newly named file. Keep the
+  // Rust existing-target guard authoritative; offer Save As rather than sending
+  // an opened v5 project straight back to its protected original target.
+  const requiresNewTarget = state.matrixViews !== undefined;
   const selected =
-    existingTarget ??
+    (requiresNewTarget ? undefined : existingTarget) ??
     (await save({
-      title: nativeText("BioFigureStatプロジェクトを保存", "Save BioFigureStat project"),
+      title: requiresNewTarget
+        ? "元ファイルを保全して新しい名前で保存"
+        : "BioFigureStatプロジェクトを保存",
       defaultPath: defaultProjectFileName(state.metadata.projectName),
       filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
     }));
@@ -302,10 +306,7 @@ export async function saveLocalUnresolvedVisualizationProjectPackage(
   const selected =
     existingTarget ??
     (await save({
-      title: nativeText(
-        "BioFigureStat Graphプロジェクトを保存",
-        "Save BioFigureStat Graph project",
-      ),
+      title: "BioFigureStat Graphプロジェクトを保存",
       defaultPath: defaultProjectFileName(state.metadata.projectName),
       filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
     }));
@@ -354,10 +355,7 @@ export async function saveLocalSpecializedEntryDraftProjectPackage(
   const selected =
     existingTarget ??
     (await save({
-      title: nativeText(
-        "入力途中のBioFigureStatプロジェクトを保存",
-        "Save in-progress BioFigureStat project",
-      ),
+      title: "入力途中のBioFigureStatプロジェクトを保存",
       defaultPath: defaultProjectFileName(state.metadata.projectName),
       filters: [{ name: "BioFigureStat project", extensions: ["lsa"] }],
     }));

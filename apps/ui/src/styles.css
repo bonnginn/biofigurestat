@@ -113,25 +113,6 @@
   background: #fff;
 }
 
-.workspace-mode-tabs > button[aria-pressed="true"] {
-  border-color: #b9cce0;
-  color: #173f66;
-  background: #fff;
-  box-shadow: 0 1px 4px rgb(35 50 75 / 10%);
-}
-
-.workspace-tab-panel--inactive {
-  position: fixed !important;
-  inset: auto auto 0 0 !important;
-  width: 1px !important;
-  height: 1px !important;
-  min-height: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  clip-path: inset(50%) !important;
-  white-space: nowrap !important;
-}
-
 .workspace-mode-tabs > button:focus-visible,
 .workspace-mode-tabs > a:focus-visible {
   outline: 3px solid rgb(71 121 232 / 42%);
@@ -562,30 +543,6 @@ button:focus-visible {
   letter-spacing: 0.03em;
 }
 
-.topbar-language {
-  display: inline-flex;
-  overflow: hidden;
-  border: 1px solid #b9c7db;
-  border-radius: 999px;
-  background: var(--surface);
-}
-
-.topbar-language button {
-  min-height: 2rem;
-  padding: 0.25rem 0.55rem;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--soft-muted);
-  font-size: 0.78rem;
-}
-
-.topbar-language button.is-active {
-  background: #eef3ff;
-  color: #315fab;
-  font-weight: 700;
-}
-
 .project-tabs {
   position: sticky;
   z-index: calc(var(--layer-global-header) - 1);
@@ -692,7 +649,7 @@ button:focus-visible {
 .main-content:has(.experiment-workspace) {
   width: 100%;
   max-width: none;
-  padding: 16px clamp(18px, 2.5vw, 38px) 48px;
+  padding-inline: clamp(18px, 2.5vw, 38px);
 }
 
 /* Experiment entry is a working surface, not a reading column.  Give the

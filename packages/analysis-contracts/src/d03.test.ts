@@ -317,3 +317,5 @@ describe("D03 independent multi-group contract", () => {
     ).toThrow(/cannot silently promote a nested or blocked unit/);
   });
 });
+
+it('B01 rejects declared shared-denominator normalization before constructing inference',()=>{const design=designFixture();const match=recommendD03(design);if(!match.matched)throw new Error('fixture');const {units,observations}=canonicalFixture();const before=JSON.stringify(observations);design.normalizationPlans=[{id:'norm.explicit',method:'control_equals_one',parameters:{outcomeId:'outcome.intensity',scope:'within_experiment',baselineConditionId:conditionIds[0]}}];expect(()=>createD03EngineRequest({requestId:'b01',projectId:'p',analysisId:'a',design,recommendation:match.recommendation,observations,unitInstances:units})).toThrow(/shared-denominator/);expect(JSON.stringify(observations)).toBe(before);});

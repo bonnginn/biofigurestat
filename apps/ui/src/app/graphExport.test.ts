@@ -38,6 +38,28 @@ const model: CoreGraphModel = {
 };
 
 describe("publication graph exports", () => {
+  it("keeps box whiskers and medians visible in the self-contained SVG used by PNG output", async () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 640 480");
+    for (const name of ["whisker", "whisker-cap", "median"]) {
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("class", `experiment-graph-distribution-${name}`);
+      line.setAttribute("x1", "12");
+      line.setAttribute("x2", "24");
+      line.style.strokeWidth = "3";
+      svg.append(line);
+    }
+    const rasterize = vi.fn(async () => new Blob(["png"], { type: "image/png" }));
+    const capture = await exportGraphPng(svg, "box.png", { rasterize, download: () => true });
+    const exported = new DOMParser().parseFromString(capture.svgText, "image/svg+xml");
+    const rules = exported.querySelector("style")!.textContent!;
+    expect(rules).toContain(
+      ".experiment-graph-distribution-whisker, .experiment-graph-distribution-whisker-cap, .experiment-graph-distribution-median { stroke: #526b85;",
+    );
+    expect(exported.querySelectorAll("line")).toHaveLength(3);
+    expect(exported.querySelector("line")?.getAttribute("style")).toContain("stroke-width: 3");
+    expect(svg.querySelector("style")).toBeNull();
+  });
   it("paints an opaque white canvas before rasterizing PNG", async () => {
     const save = vi.fn();
     const fillRect = vi.fn();

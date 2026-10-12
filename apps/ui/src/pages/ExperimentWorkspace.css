@@ -19,8 +19,8 @@
 
 .experiment-workspace-header h1 {
   font-size: clamp(1.16rem, 1.45vw, 1.38rem);
-  letter-spacing: -0.03em;
   line-height: 1.2;
+  letter-spacing: -0.03em;
 }
 
 .experiment-workspace-context {
@@ -43,7 +43,7 @@
 
 .experiment-workspace-eyebrow {
   color: #8b94a3;
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.14em;
   line-height: 1.35;
@@ -466,40 +466,6 @@
   flex: 0 0 auto;
 }
 
-.experiment-workspace-five-minute-guide {
-  display: grid;
-  grid-template-columns: minmax(12rem, 1fr) minmax(18rem, 2fr) auto;
-  align-items: center;
-  gap: 1rem;
-  margin: 0.75rem 1rem;
-  padding: 0.85rem 1rem;
-  border: 1px solid #9bc8bc;
-  border-radius: 0.8rem;
-  background: #f2fbf8;
-}
-
-.experiment-workspace-five-minute-guide p {
-  margin: 0.25rem 0 0;
-}
-
-.experiment-workspace-five-minute-guide ol {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem 1rem;
-  margin: 0;
-  padding-left: 1.25rem;
-}
-
-.experiment-workspace-five-minute-guide li[data-complete="true"] {
-  color: #277263;
-}
-
-@media (max-width: 900px) {
-  .experiment-workspace-five-minute-guide {
-    grid-template-columns: 1fr;
-  }
-}
-
 .experiment-workspace-tab {
   flex: 0 0 auto;
   min-height: 47px;
@@ -657,7 +623,8 @@
 .experiment-workspace-inspector-note {
   margin: 9px 0 0;
   color: #6e7785;
-  font-size: 1rem;
+  font-size: 0.88rem;
+  line-height: 1.3;
 }
 
 .experiment-workspace-summary-grid {
@@ -898,7 +865,8 @@
 
 .experiment-workspace-readout-list li > span:last-child {
   color: #6e7785;
-  font-size: 1rem;
+  font-size: 0.88rem;
+  line-height: 1.3;
 }
 
 .experiment-workspace-readout-label {
@@ -1150,10 +1118,10 @@
   font-weight: 700;
 }
 
-.experiment-workspace-graph-created.is-error {
-  border-left-color: #b64b4b;
-  color: #7f2929;
-  background: #fff4f4;
+.experiment-workspace-graph-created button {
+  margin-left: 12px;
+  padding: 3px 8px;
+  color: inherit;
 }
 
 .experiment-workspace-table tbody th {
@@ -1340,26 +1308,6 @@
 .experiment-workspace-graph-tab.is-active {
   border-bottom-color: #4779e8;
   color: #315fab;
-}
-
-.experiment-workspace-graph-panel-export {
-  flex: 0 0 auto;
-  min-height: 36px;
-  margin: 2px 4px 2px auto;
-  padding: 5px 11px;
-  border: 1px solid #9eb3cf;
-  border-radius: 6px;
-  color: #315fab;
-  background: #fff;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.experiment-workspace-graph-panel-export:disabled {
-  color: #8793a3;
-  background: #f3f5f7;
-  cursor: not-allowed;
 }
 
 @media (max-width: 760px) {
@@ -1570,3 +1518,27 @@
 }
 
 /* GraphWorkbench owns its presentation in components/graph/graph-workbench.css. */
+
+.experiment-workspace-panel.experiment-workspace-overview--nested {
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.experiment-workspace-overview--nested > .experiment-workspace-panel-heading {
+  align-items: center;
+  margin-bottom: 6px;
+}
+.experiment-workspace-overview--nested > .experiment-workspace-panel-heading h2 {
+  margin: 0;
+  font-size: 14px;
+}
+.experiment-workspace-overview--nested
+  > .experiment-workspace-panel-heading
+  .experiment-workspace-eyebrow {
+  display: none;
+}
+.experiment-workspace-overview--nested > .experiment-workspace-panel-heading button {
+  padding: 5px 8px;
+  min-height: 30px;
+  font-size: 13px;
+}

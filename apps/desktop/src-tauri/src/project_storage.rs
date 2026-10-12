@@ -305,17 +305,20 @@ fn validate_staged_manifest(
         .ok_or_else(|| "Project manifest recovery metadata is missing".to_string())?;
     let database_path = required_string(recovery, "databasePath", "recovery")?;
     validated_relative_path(database_path)?;
-    if !matches!(declared_by_path.get(database_path), Some(("database", _, _))) {
-        return Err(
-            "Recovery databasePath must reference a declared database file".to_string(),
-        );
+    if !matches!(
+        declared_by_path.get(database_path),
+        Some(("database", _, _))
+    ) {
+        return Err("Recovery databasePath must reference a declared database file".to_string());
     }
     let raw_export_path = required_string(recovery, "canonicalRawExportPath", "recovery")?;
     validated_relative_path(raw_export_path)?;
-    if !matches!(declared_by_path.get(raw_export_path), Some(("raw_export", _, _))) {
+    if !matches!(
+        declared_by_path.get(raw_export_path),
+        Some(("raw_export", _, _))
+    ) {
         return Err(
-            "Recovery canonicalRawExportPath must reference a declared raw export file"
-                .to_string(),
+            "Recovery canonicalRawExportPath must reference a declared raw export file".to_string(),
         );
     }
     if let Some(transformation_path) = recovery
@@ -323,7 +326,10 @@ fn validate_staged_manifest(
         .and_then(Value::as_str)
     {
         validated_relative_path(transformation_path)?;
-        if !matches!(declared_by_path.get(transformation_path), Some(("other", _, _))) {
+        if !matches!(
+            declared_by_path.get(transformation_path),
+            Some(("other", _, _))
+        ) {
             return Err(
                 "Recovery transformationExportPath must reference a declared auxiliary file"
                     .to_string(),
@@ -337,9 +343,9 @@ fn validate_staged_manifest(
         if relative == MANIFEST_PATH {
             continue;
         }
-        let declaration = declared_by_path.get(&relative).ok_or_else(|| {
-            format!("Project staging contains an undeclared file: {relative}")
-        })?;
+        let declaration = declared_by_path
+            .get(&relative)
+            .ok_or_else(|| format!("Project staging contains an undeclared file: {relative}"))?;
         if !staged_payload_paths.insert(relative.clone()) {
             return Err(format!(
                 "Project staging contains a duplicate file: {relative}"
@@ -378,7 +384,13 @@ fn validate_staged_manifest(
                 "Only an experiment project may declare a SQLite database payload".to_string(),
             );
         }
-        return Ok(Some(sqlite_user_version(&database)?));
+        let version = sqlite_user_version(&database)?;
+        if !(1..=5).contains(&version) {
+            return Err(format!(
+                "Unsupported staged project database version {version}"
+            ));
+        }
+        return Ok(Some(version));
     }
     if database_extension.eq_ignore_ascii_case("json") {
         if project_kind == "experiment" {
@@ -539,6 +551,13 @@ fn directory_sync_is_unsupported(error: &std::io::Error) -> bool {
 }
 
 fn commit_transaction(transaction: &ProjectWriteTransaction, token: &str) -> Result<(), String> {
+    // Candidate v5 is authorized only as a new Save As target. Reject before
+    // renaming/backing up any existing file, including an existing v5 candidate.
+    if package_database_version(&transaction.staging) == Some(5) && transaction.target.exists() {
+        return Err(
+            "候補v5は別名の新規ファイルへ保存してください。既存ファイルは変更していません。".into(),
+        );
+    }
     let staged_container = sibling_path(&transaction.target, "container-staging", token)?;
     if let Err(error) = create_single_file_container(&transaction.staging, &staged_container) {
         let _ = remove_path(&staged_container);
@@ -546,6 +565,12 @@ fn commit_transaction(transaction: &ProjectWriteTransaction, token: &str) -> Res
     }
 
     let had_previous = transaction.target.exists();
+    if had_previous && package_database_version(&transaction.staging) == Some(5) {
+        let _ = remove_path(&staged_container);
+        return Err(
+            "候補v5は別名の新規ファイルへ保存してください。既存ファイルは変更していません。".into(),
+        );
+    }
     let previous_was_directory = transaction.target.is_dir();
     let migration_versions = if had_previous {
         package_database_version(&transaction.target)
@@ -735,6 +760,295 @@ mod tests {
     use std::fs;
     use std::path::PathBuf;
 
+    #[test]
+    fn app08_real_result_container_roundtrip() {
+        // Opt-in anonymous candidate QA. Exercise the real desktop database and atomic
+        // container functions without creating a window or an alternative IPC bridge.
+        if std::env::var("BIOFIGURESTAT_APP08_ACCEPTANCE").as_deref() != Ok("1") {
+            return;
+        }
+        let mut qa = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../ui/.app-mission08");
+        if std::env::var("BIOFIGURESTAT_APP08_PHASE").as_deref() == Ok("rerun") {
+            qa = qa.join("rerun");
+        }
+        let mut state: serde_json::Value =
+            serde_json::from_slice(&fs::read(qa.join("state.json")).unwrap()).unwrap();
+        // Empty optional matrix views are not represented by the existing SQLite schema.
+        // Never normalize a nonempty record or change any scientific/provenance payload.
+        if state["matrixViews"]
+            .as_array()
+            .is_some_and(|views| views.is_empty())
+        {
+            state.as_object_mut().unwrap().remove("matrixViews");
+        }
+        let database = tauri::async_runtime::block_on(
+            crate::project_database::encode_project_database(state.clone()),
+        )
+        .expect("production SQLite encoder");
+        let mut manifest: serde_json::Value =
+            serde_json::from_slice(&fs::read(qa.join("manifest-template.json")).unwrap()).unwrap();
+        for entry in manifest["files"].as_array_mut().unwrap() {
+            if entry["path"] == "project.sqlite" {
+                entry["sha256"] = serde_json::json!(sha256_bytes(&database));
+                entry["sizeBytes"] = serde_json::json!(database.len());
+            }
+        }
+        let target = qa.join("anonymous-donor-split.lsa");
+        let (token, transaction) = begin_transaction(target.clone()).unwrap();
+        write_transaction_file(&transaction, "project.sqlite", &database).unwrap();
+        for name in ["raw/exports/canonical.csv", "derived/lineage.json"] {
+            write_transaction_file(&transaction, name, &fs::read(qa.join(name)).unwrap()).unwrap();
+        }
+        let manifest_bytes = serde_json::to_vec_pretty(&manifest).unwrap();
+        write_transaction_file(&transaction, "manifest.json", &manifest_bytes).unwrap();
+        commit_transaction(&transaction, &token).expect("production atomic .lsa commit");
+        assert!(target.is_file());
+        let target_string = target.to_string_lossy().into_owned();
+        let reopened_database =
+            read_project_file(target_string.clone(), "project.sqlite".into()).unwrap();
+        assert_eq!(database, reopened_database);
+        let reopened = tauri::async_runtime::block_on(
+            crate::project_database::decode_project_database(reopened_database),
+        )
+        .expect("production SQLite decoder");
+        fs::write(
+            qa.join("reopened-state.json"),
+            serde_json::to_vec_pretty(&reopened).unwrap(),
+        )
+        .unwrap();
+        assert!(state == reopened, "raw lineage, actual result and graph appearance must roundtrip (see candidate QA snapshots)");
+        for name in ["raw/exports/canonical.csv", "derived/lineage.json"] {
+            assert_eq!(
+                fs::read(qa.join(name)).unwrap(),
+                read_project_file(target_string.clone(), name.into()).unwrap()
+            );
+        }
+        assert_eq!(
+            manifest_bytes,
+            read_project_file(target_string.clone(), "manifest.json".into()).unwrap()
+        );
+        fs::write(
+            qa.join("reopened-state.json"),
+            serde_json::to_vec_pretty(&reopened).unwrap(),
+        )
+        .unwrap();
+        fs::write(qa.join("project.sqlite"), database).unwrap();
+        fs::write(qa.join("manifest.json"), manifest_bytes).unwrap();
+        // An invalid replacement must leave the actual previous .lsa intact.
+        let before = fs::read(&target).unwrap();
+        let (bad_token, bad) = begin_transaction(target.clone()).unwrap();
+        write_transaction_file(&bad, "manifest.json", b"invalid").unwrap();
+        assert!(commit_transaction(&bad, &bad_token).is_err());
+        rollback_transaction(bad).unwrap();
+        assert_eq!(before, fs::read(&target).unwrap());
+        println!(
+            "APP08 actual production SQLite + atomic .lsa save/reopen/failed-replacement PASS: {}",
+            target.display()
+        );
+    }
+
+    #[test]
+    fn app08_r3_matrix_codec_preserves_existing_container() {
+        if std::env::var("BIOFIGURESTAT_APP08_ACCEPTANCE").as_deref() != Ok("1") {
+            return;
+        }
+        let qa = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../ui/.app-mission08");
+        let original = qa.join("anonymous-donor-split.lsa");
+        let target = qa.join("save-contract/protected-existing.lsa");
+        let bytes = fs::read(&original).unwrap();
+        fs::write(&target, &bytes).unwrap();
+        let state: serde_json::Value =
+            serde_json::from_slice(&fs::read(qa.join("save-contract/matrix-state.json")).unwrap())
+                .unwrap();
+        let unchanged_state = state.clone();
+        assert_eq!(
+            state["matrixViews"][0]["rawMatrix"]["values"][0][1],
+            serde_json::Value::Null
+        );
+        assert_eq!(
+            state["matrixViews"][0]["spec"]["heatmap"]["transform"],
+            "row_z_score"
+        );
+        let database = tauri::async_runtime::block_on(
+            crate::project_database::encode_project_database(state.clone()),
+        )
+        .expect("candidate v5 encodes the valid matrix");
+        let decoded = tauri::async_runtime::block_on(
+            crate::project_database::decode_project_database(database),
+        )
+        .unwrap();
+        assert_eq!(decoded, state);
+        assert_eq!(state, unchanged_state);
+        // saveProjectStatePackage calls encode before beginAtomicWrite. No transaction
+        // or lossy replacement is allowed after this encoding failure.
+        assert_eq!(fs::read(&target).unwrap(), bytes);
+        assert_eq!(fs::read(&original).unwrap(), bytes);
+        let database = read_project_file(
+            target.to_string_lossy().into_owned(),
+            "project.sqlite".into(),
+        )
+        .unwrap();
+        let legacy = tauri::async_runtime::block_on(
+            crate::project_database::decode_project_database(database),
+        )
+        .unwrap();
+        assert!(legacy.get("matrixViews").is_none());
+        let encoded = tauri::async_runtime::block_on(
+            crate::project_database::encode_project_database(legacy.clone()),
+        )
+        .unwrap();
+        let reopened = tauri::async_runtime::block_on(
+            crate::project_database::decode_project_database(encoded),
+        )
+        .unwrap();
+        assert_eq!(
+            legacy, reopened,
+            "existing files without matrices retain the existing contract"
+        );
+        println!("APP08 R3 matrix codec equality + existing container preserved PASS");
+    }
+
+    #[test]
+    fn app08_r3_matrix_v5_save_as_and_failures() {
+        if std::env::var("BIOFIGURESTAT_APP08_ACCEPTANCE").as_deref() != Ok("1") {
+            return;
+        }
+        let qa = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../ui/.app-mission08");
+        let output = qa.join(format!(
+            "v5-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&output).unwrap();
+        let original = qa.join("anonymous-donor-split.lsa");
+        let original_bytes = fs::read(&original).unwrap();
+        let state: serde_json::Value =
+            serde_json::from_slice(&fs::read(qa.join("save-contract/matrix-state.json")).unwrap())
+                .unwrap();
+        let database = tauri::async_runtime::block_on(
+            crate::project_database::encode_project_database(state.clone()),
+        )
+        .unwrap();
+        for (pointer, value) in [
+            ("/matrixViews/0/rawMatrix/version", json!("99.0.0")),
+            (
+                "/matrixViews/0/spec/heatmap/transformVersion",
+                json!("99.0.0"),
+            ),
+            ("/matrixViews/0/rawMatrix/values/0", json!([1])),
+        ] {
+            let mut invalid = state.clone();
+            *invalid.pointer_mut(pointer).unwrap() = value;
+            assert!(tauri::async_runtime::block_on(
+                crate::project_database::encode_project_database(invalid)
+            )
+            .is_err());
+            assert_eq!(fs::read(&original).unwrap(), original_bytes);
+        }
+        let mut invalid = state.clone();
+        invalid["matrixViews"][0]["spec"]["heatmap"]["futureField"] = json!(true);
+        assert!(
+            tauri::async_runtime::block_on(crate::project_database::encode_project_database(
+                invalid
+            ))
+            .is_err()
+        );
+        let stage = |destination: PathBuf| {
+            let mut manifest: serde_json::Value =
+                serde_json::from_slice(&fs::read(qa.join("manifest-template.json")).unwrap())
+                    .unwrap();
+            for file in manifest["files"].as_array_mut().unwrap() {
+                if file["path"] == "project.sqlite" {
+                    file["sha256"] = json!(sha256_bytes(&database));
+                    file["sizeBytes"] = json!(database.len());
+                }
+            }
+            let (token, transaction) = begin_transaction(destination).unwrap();
+            write_transaction_file(&transaction, "project.sqlite", &database).unwrap();
+            for name in ["raw/exports/canonical.csv", "derived/lineage.json"] {
+                write_transaction_file(&transaction, name, &fs::read(qa.join(name)).unwrap())
+                    .unwrap();
+            }
+            write_transaction_file(
+                &transaction,
+                "manifest.json",
+                &serde_json::to_vec(&manifest).unwrap(),
+            )
+            .unwrap();
+            (token, transaction)
+        };
+        let target = output.join("matrix-v5.lsa");
+        let (token, transaction) = stage(target.clone());
+        commit_transaction(&transaction, &token).unwrap();
+        let reopened =
+            tauri::async_runtime::block_on(crate::project_database::decode_project_database(
+                read_project_file(
+                    target.to_string_lossy().into_owned(),
+                    "project.sqlite".into(),
+                )
+                .unwrap(),
+            ))
+            .unwrap();
+        assert_eq!(state, reopened);
+        fs::write(
+            output.join("reopened-state.json"),
+            serde_json::to_vec_pretty(&reopened).unwrap(),
+        )
+        .unwrap();
+        let old_copy = output.join("old-v4.lsa");
+        fs::write(&old_copy, &original_bytes).unwrap();
+        for existing in [&old_copy, &target] {
+            let before = fs::read(existing).unwrap();
+            let (token, transaction) = stage(existing.clone());
+            assert!(commit_transaction(&transaction, &token)
+                .unwrap_err()
+                .contains("別名"));
+            rollback_transaction(transaction).unwrap();
+            assert_eq!(fs::read(existing).unwrap(), before);
+        }
+        let bad_target = output.join("bad-v5.lsa");
+        let (token, transaction) = stage(bad_target.clone());
+        write_transaction_file(&transaction, "project.sqlite", b"corrupt").unwrap();
+        assert!(commit_transaction(&transaction, &token).is_err());
+        rollback_transaction(transaction).unwrap();
+        assert!(!bad_target.exists());
+        let unknown_database = output.join("unknown.sqlite");
+        fs::write(&unknown_database, &database).unwrap();
+        let connection = Connection::open(&unknown_database).unwrap();
+        connection
+            .execute_batch("PRAGMA user_version = 99;")
+            .unwrap();
+        connection.close().unwrap();
+        let unknown_bytes = fs::read(&unknown_database).unwrap();
+        let unknown_target = output.join("unknown-version.lsa");
+        let (token, transaction) = stage(unknown_target.clone());
+        write_transaction_file(&transaction, "project.sqlite", &unknown_bytes).unwrap();
+        let mut manifest: serde_json::Value =
+            serde_json::from_slice(&fs::read(transaction.staging.join("manifest.json")).unwrap())
+                .unwrap();
+        for file in manifest["files"].as_array_mut().unwrap() {
+            if file["path"] == "project.sqlite" {
+                file["sha256"] = json!(sha256_bytes(&unknown_bytes));
+                file["sizeBytes"] = json!(unknown_bytes.len());
+            }
+        }
+        write_transaction_file(
+            &transaction,
+            "manifest.json",
+            &serde_json::to_vec(&manifest).unwrap(),
+        )
+        .unwrap();
+        assert!(commit_transaction(&transaction, &token)
+            .unwrap_err()
+            .contains("Unsupported staged project database version 99"));
+        rollback_transaction(transaction).unwrap();
+        assert!(!unknown_target.exists());
+        assert_eq!(fs::read(original).unwrap(), original_bytes);
+        println!("APP08 R3 real v5 .lsa equality + existing v4/v5 protection + checksum failure PASS: {}", output.display());
+    }
+
     fn test_directory(name: &str) -> PathBuf {
         let path = std::env::temp_dir().join(format!(
             "lsaa-project-storage-{name}-{}-{}",
@@ -795,8 +1109,8 @@ mod tests {
             .execute_batch(&format!("PRAGMA user_version = {version};"))
             .expect("set project database version");
         drop(database);
-        let database = fs::read(transaction.staging.join(super::DATABASE_PATH))
-            .expect("read staged database");
+        let database =
+            fs::read(transaction.staging.join(super::DATABASE_PATH)).expect("read staged database");
         write_transaction_file(transaction, "raw/exports/canonical.csv", raw)
             .expect("write raw export");
         let manifest = manifest_bytes(
@@ -865,8 +1179,7 @@ mod tests {
         fs::write(target.join("manifest.json"), b"old").expect("write prior project");
 
         let (token, transaction) = begin_transaction(target.clone()).expect("begin transaction");
-        let manifest =
-            stage_project_database(&transaction, 1, b"condition,value\nA,1\n");
+        let manifest = stage_project_database(&transaction, 1, b"condition,value\nA,1\n");
         commit_transaction(&transaction, &token).expect("commit transaction");
 
         assert!(target.is_file());
@@ -1008,10 +1321,7 @@ mod tests {
         for (project_kind, database_path) in [
             ("unresolved_visualization", "project.json"),
             ("progressive_experiment", "progressive-project.json"),
-            (
-                "specialized_entry_draft",
-                "specialized-entry-draft.json",
-            ),
+            ("specialized_entry_draft", "specialized-entry-draft.json"),
         ] {
             let parent = test_directory(project_kind);
             let target = parent.join(format!("{project_kind}.lsa"));
@@ -1019,13 +1329,8 @@ mod tests {
                 begin_transaction(target.clone()).expect("begin JSON transaction");
             let database = format!(r#"{{"projectKind":"{project_kind}"}}"#).into_bytes();
             let raw = format!("raw recovery for {project_kind}").into_bytes();
-            let manifest = stage_json_project(
-                &transaction,
-                project_kind,
-                database_path,
-                &database,
-                &raw,
-            );
+            let manifest =
+                stage_json_project(&transaction, project_kind, database_path, &database, &raw);
 
             commit_transaction(&transaction, &token).expect("commit JSON-backed project");
 
@@ -1094,8 +1399,8 @@ mod tests {
         );
         write_transaction_file(&extra, "undeclared.txt", b"must not enter the container")
             .expect("write undeclared payload");
-        let extra_error = commit_transaction(&extra, &extra_token)
-            .expect_err("undeclared payload must fail");
+        let extra_error =
+            commit_transaction(&extra, &extra_token).expect_err("undeclared payload must fail");
         assert!(extra_error.contains("undeclared file"));
         assert!(!target.exists());
         rollback_transaction(extra).expect("clean extra staging");

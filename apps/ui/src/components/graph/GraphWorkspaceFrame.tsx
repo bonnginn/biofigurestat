@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from "react";
-import { useAppLocale } from "../../app/appLocale";
 
 import "./graph-workspace-frame.css";
 
@@ -16,15 +15,11 @@ export function GraphWorkspaceFrame({
   inspector: ReactNode;
   feedback?: ReactNode;
 }>) {
-  const ja = useAppLocale() === "ja";
   const [wideCanvas, setWideCanvas] = useState(false);
   const workspaceTitle = /graph$/iu.test(title.trim()) ? title.trim() : `${title.trim()} Graph`;
 
   return (
-    <section
-      className="graph-workspace-frame"
-      aria-label={ja ? `${workspaceTitle}ワークスペース` : `${workspaceTitle} workspace`}
-    >
+    <section className="graph-workspace-frame" aria-label={`${workspaceTitle}ワークスペース`}>
       <header className="graph-workspace-frame__header">
         <div>
           <p className="overline">Graph</p>
@@ -38,13 +33,7 @@ export function GraphWorkspaceFrame({
             aria-pressed={wideCanvas}
             onClick={() => setWideCanvas((current) => !current)}
           >
-            {wideCanvas
-              ? ja
-                ? "Graphと設定を横並び"
-                : "Show Graph and settings side by side"
-              : ja
-                ? "Graphを全幅表示"
-                : "Show Graph at full width"}
+            {wideCanvas ? "Graphと設定を横並び" : "Graphを全幅表示"}
           </button>
         </div>
       </header>
@@ -54,10 +43,7 @@ export function GraphWorkspaceFrame({
         data-layout={wideCanvas ? "wide-canvas" : "side-by-side"}
       >
         <div className="graph-workspace-frame__canvas">{canvas}</div>
-        <aside
-          className="graph-workspace-frame__inspector"
-          aria-label={ja ? "Graphと統計の設定" : "Graph and Statistics settings"}
-        >
+        <aside className="graph-workspace-frame__inspector" aria-label="Graphと統計の設定">
           {inspector}
         </aside>
       </div>

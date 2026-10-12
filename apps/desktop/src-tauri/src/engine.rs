@@ -40,44 +40,6 @@ enum EngineLaunch {
     PackagedBinary { executable: PathBuf },
 }
 
-fn parse_engine_stdout(
-    stdout: &[u8],
-    expected_request_id: &str,
-) -> Result<Value, serde_json::Error> {
-    match serde_json::from_slice(stdout) {
-        Ok(value) => return Ok(value),
-        Err(original_error) => {
-            // Some native numerical runtimes can write directly to the inherited OS stdout
-            // descriptor, bypassing Python's sys.stdout redirection. Recover only a complete
-            // final JSON object that carries the exact request ID sent to this process. Internal
-            // corruption, trailing output, and an unrelated final object still fail closed.
-            let mut recovered = None;
-            for (start, byte) in stdout.iter().enumerate() {
-                if *byte != b'{' {
-                    continue;
-                }
-                let mut values =
-                    serde_json::Deserializer::from_slice(&stdout[start..]).into_iter::<Value>();
-                let Some(Ok(value)) = values.next() else {
-                    continue;
-                };
-                let end = start + values.byte_offset();
-                if !stdout[end..].iter().all(u8::is_ascii_whitespace) {
-                    continue;
-                }
-                if value.get("requestId").and_then(Value::as_str) != Some(expected_request_id) {
-                    continue;
-                }
-                if recovered.is_some() {
-                    return Err(original_error);
-                }
-                recovered = Some(value);
-            }
-            recovered.ok_or(original_error)
-        }
-    }
-}
-
 fn wait_for_engine_process(
     active: &ActiveEngineProcess,
     timeout: Duration,
@@ -149,6 +111,25 @@ fn resolve_engine(app: &AppHandle) -> Result<EngineLaunch, String> {
     Ok(EngineLaunch::PackagedBinary { executable })
 }
 
+// Frozen Windows Python may use the system code page for redirected stdin.
+// JSON Unicode escapes preserve every label/identity regardless of that code page.
+fn encode_engine_request(request: &Value) -> Result<Vec<u8>, String> {
+    use std::fmt::Write as _;
+    let json = serde_json::to_string(request)
+        .map_err(|error| format!("Could not encode the analysis request: {error}"))?;
+    let mut ascii = String::with_capacity(json.len());
+    for character in json.chars() {
+        if character.is_ascii() {
+            ascii.push(character);
+        } else {
+            for unit in character.encode_utf16(&mut [0; 2]) {
+                write!(&mut ascii, "\\u{unit:04x}").expect("writing to String cannot fail");
+            }
+        }
+    }
+    Ok(ascii.into_bytes())
+}
+
 fn execute_engine_process(
     launch: EngineLaunch,
     request: Value,
@@ -179,8 +160,7 @@ fn execute_engine_process(
         .spawn()
         .map_err(|error| format!("Could not start the local analysis engine: {error}"))?;
 
-    let encoded = serde_json::to_vec(&request)
-        .map_err(|error| format!("Could not encode the analysis request: {error}"))?;
+    let encoded = encode_engine_request(&request)?;
     child
         .stdin
         .take()
@@ -245,37 +225,8 @@ fn execute_engine_process(
             detail.trim()
         ));
     }
-    parse_engine_stdout(&stdout, &request_id).map_err(|error| {
-        let category = if stdout.is_empty() {
-            "empty"
-        } else if stdout.starts_with(&[0xef, 0xbb, 0xbf]) {
-            "utf8_bom"
-        } else if stdout.windows(3).any(|bytes| bytes == b"NaN")
-            || stdout.windows(8).any(|bytes| bytes == b"Infinity")
-        {
-            "non_finite"
-        } else {
-            match error.classify() {
-                serde_json::error::Category::Io => "io",
-                serde_json::error::Category::Syntax => "syntax",
-                serde_json::error::Category::Data => "data",
-                serde_json::error::Category::Eof => "eof",
-            }
-        };
-        let starts_with_object = stdout
-            .iter()
-            .find(|byte| !byte.is_ascii_whitespace())
-            .is_some_and(|byte| *byte == b'{');
-        let ends_with_object = stdout
-            .iter()
-            .rev()
-            .find(|byte| !byte.is_ascii_whitespace())
-            .is_some_and(|byte| *byte == b'}');
-        format!(
-            "ENGINE_OUTPUT_INVALID_JSON:{category}:bytes={}:starts_object={starts_with_object}:ends_object={ends_with_object}",
-            stdout.len()
-        )
-    })
+    serde_json::from_slice(&stdout)
+        .map_err(|error| format!("The analysis engine returned invalid JSON: {error}"))
 }
 
 fn execute_engine(
@@ -327,8 +278,8 @@ pub fn cancel_analysis(
 #[cfg(test)]
 mod tests {
     use super::{
-        execute_engine_process, parse_engine_stdout, wait_for_engine_process, ActiveEngineProcess,
-        EngineLaunch, EngineProcessRegistry, EngineWaitOutcome,
+        encode_engine_request, execute_engine_process, wait_for_engine_process,
+        ActiveEngineProcess, EngineLaunch, EngineProcessRegistry, EngineWaitOutcome,
     };
     use serde_json::json;
     use std::path::PathBuf;
@@ -340,42 +291,67 @@ mod tests {
     use std::time::Duration;
 
     #[test]
-    fn engine_stdout_accepts_exact_json_and_one_noise_prefixed_final_object() {
+    fn engine_pipe_preserves_unicode_and_json_escapes_without_code_page_assumptions() {
+        let request = json!({"label": "日本語（再解析）🧪", "id": "unit.α", "literal": "\\u1234\n\"", "value": 1.25});
+        let encoded = encode_engine_request(&request).unwrap();
+        assert!(encoded.is_ascii());
         assert_eq!(
-            parse_engine_stdout(br#"{"requestId":"request.1","status":"ok"}"#, "request.1")
-                .unwrap()["status"],
-            "ok"
-        );
-        assert_eq!(
-            parse_engine_stdout(
-                b"native runtime notice\r\n{\"requestId\":\"request.1\",\"status\":\"ok\"}\r\n",
-                "request.1",
-            )
-            .unwrap()["status"],
-            "ok"
-        );
-        assert_eq!(
-            parse_engine_stdout(
-                b"{\"kind\":\"native-notice\"}\r\n{\"requestId\":\"request.1\",\"status\":\"ok\"}\r\n",
-                "request.1",
-            )
-            .unwrap()["status"],
-            "ok"
+            serde_json::from_slice::<serde_json::Value>(&encoded).unwrap(),
+            request
         );
     }
 
     #[test]
-    fn engine_stdout_rejects_trailing_noise_and_multiple_json_objects() {
-        assert!(parse_engine_stdout(
-            b"{\"requestId\":\"request.1\",\"status\":\"ok\"}\ntrailing noise",
-            "request.1",
+    fn packaged_engine_preserves_non_ascii_regression_labels() {
+        let Some(executable) = std::env::var_os("BFSTAT_TEST_ENGINE_EXECUTABLE") else {
+            return;
+        };
+        let request = json!({"protocolVersion":"0.13.0", "requestId":"request.unicode", "projectId":"project.anonymous", "analysisId":"analysis.unicode", "templateId":"D16", "templateVersion":"0.1.0", "method":"simple_linear_regression", "xLabel":"日本語（再解析）🧪", "yLabel":"応答", "xUnit":"", "yUnit":"", "includeIntercept":true, "points":[{"observationId":"o1","experimentalUnitId":"unit.α","x":1,"y":3},{"observationId":"o2","experimentalUnitId":"unit.β","x":2,"y":5},{"observationId":"o3","experimentalUnitId":"unit.γ","x":3,"y":5},{"observationId":"o4","experimentalUnitId":"unit.δ","x":4,"y":9}], "options":{"confidenceLevel":0.95,"alternative":"two_sided","multiplicityMethod":null}});
+        let result = execute_engine_process(
+            EngineLaunch::PackagedBinary {
+                executable: PathBuf::from(executable),
+            },
+            request,
+            &EngineProcessRegistry::default(),
         )
-        .is_err());
-        assert!(parse_engine_stdout(
-            b"{\"first\":true}\n{\"requestId\":\"request.other\",\"second\":true}\n",
-            "request.1",
+        .unwrap();
+        assert_eq!(result["status"], "ok");
+        assert_eq!(result["engine"]["version"], "0.15.2");
+        assert!(result["diagnostics"][0]["message"]
+            .as_str()
+            .unwrap()
+            .contains("日本語（再解析）🧪"));
+        assert!((result["regression"]["slope"].as_f64().unwrap() - 1.8).abs() < 1e-12);
+    }
+
+    #[test]
+    fn app08_existing_backend_executes_the_candidate_python() {
+        if std::env::var("BIOFIGURESTAT_APP08_ACCEPTANCE").as_deref() != Ok("1") {
+            return;
+        }
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .nth(3)
+            .unwrap()
+            .to_path_buf();
+        let request: serde_json::Value = serde_json::from_slice(
+            &std::fs::read(root.join("apps/ui/.engine-roundtrip07/request.json")).unwrap(),
         )
-        .is_err());
+        .unwrap();
+        let registry = EngineProcessRegistry::default();
+        let result = execute_engine_process(
+            EngineLaunch::PythonModule {
+                python: root.join("engine/python/.venv/Scripts/python.exe"),
+            },
+            request,
+            &registry,
+        )
+        .expect("actual existing desktop engine process");
+        assert_eq!(result["status"], "ok");
+        assert_eq!(result["engine"]["version"], "0.14.0");
+        assert_eq!(result["estimates"][0]["value"], -1.5);
+        assert!(registry.active.lock().unwrap().is_empty());
+        println!("APP08 production Rust engine process contract PASS; GUI IPC not exercised");
     }
 
     #[test]
@@ -451,10 +427,9 @@ mod tests {
             .nth(3)
             .expect("repository root")
             .to_path_buf();
-        let engine_version_source = std::fs::read_to_string(
-            repository_root.join("engine/python/lsaa_engine/__init__.py"),
-        )
-        .expect("read authoritative engine version");
+        let engine_version_source =
+            std::fs::read_to_string(repository_root.join("engine/python/lsaa_engine/__init__.py"))
+                .expect("read authoritative engine version");
         let expected_engine_version = engine_version_source
             .lines()
             .find_map(|line| {
@@ -573,89 +548,5 @@ mod tests {
         assert_eq!(d04_result["protocolVersion"], "0.3.0");
         assert_eq!(d04_result["status"], "ok");
         assert_eq!(d04_result["tests"].as_array().map(Vec::len), Some(4));
-    }
-
-    #[test]
-    #[ignore = "requires the locally built packaged Windows engine"]
-    #[cfg(target_os = "windows")]
-    fn packaged_windows_engine_round_trip_returns_equivalence_json() {
-        let repository_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .ancestors()
-            .nth(3)
-            .expect("repository root")
-            .to_path_buf();
-        let executable = repository_root.join(
-            "engine/python/dist/windows-amd64/lsaa-engine.exe/lsaa-engine.exe",
-        );
-        assert!(executable.is_file(), "build the packaged Windows engine first");
-        let cases = [
-            (
-                "Welch TOST",
-                "0.15.0",
-                include_str!(
-                    "../../../../engine/python/smoke_fixtures/welch-tost-equivalence-supported-request.json"
-                ),
-            ),
-            (
-                "paired TOST",
-                "0.16.0",
-                include_str!(
-                    "../../../../engine/python/smoke_fixtures/paired-tost-equivalence-supported-request.json"
-                ),
-            ),
-        ];
-        for (label, protocol_version, request_json) in cases {
-            let request: serde_json::Value =
-                serde_json::from_str(request_json).expect("shared equivalence boundary fixture");
-            let result = execute_engine_process(
-                EngineLaunch::PackagedBinary {
-                    executable: executable.clone(),
-                },
-                request,
-                &EngineProcessRegistry::default(),
-            )
-            .unwrap_or_else(|error| panic!("packaged {label} round trip: {error}"));
-            assert_eq!(result["protocolVersion"], protocol_version, "{label}");
-            assert_eq!(result["status"], "ok", "{label}");
-            assert_eq!(
-                result["equivalence"]["comparisons"][0]["conclusion"],
-                "equivalence_supported",
-                "{label}"
-            );
-            if protocol_version == "0.16.0" {
-                assert_eq!(
-                    result["equivalence"]["comparisons"][0]["analysisSet"]
-                        ["completePairCount"],
-                    6,
-                    "{label}"
-                );
-                assert_eq!(
-                    result["equivalence"]["comparisons"][0]["analysisSet"]
-                        ["excludedIncompletePairIds"],
-                    json!(["pair.incomplete"]),
-                    "{label}"
-                );
-            }
-        }
-
-        let mut localized_request: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../../engine/python/smoke_fixtures/welch-tost-equivalence-supported-request.json"
-        ))
-        .expect("shared Welch TOST fixture");
-        localized_request["requestId"] = json!("request.localized-round-trip");
-        localized_request["analysisId"] = json!("analysis.localized-round-trip");
-        localized_request["equivalencePlan"]["margin"]["rationale"] =
-            json!("観測値から決めず事前指定");
-        let localized_result = execute_engine_process(
-            EngineLaunch::PackagedBinary { executable },
-            localized_request,
-            &EngineProcessRegistry::default(),
-        )
-        .expect("localized packaged Welch TOST round trip");
-        assert_eq!(localized_result["status"], "ok");
-        assert_eq!(
-            localized_result["equivalence"]["plan"]["margin"]["rationale"],
-            "観測値から決めず事前指定"
-        );
     }
 }

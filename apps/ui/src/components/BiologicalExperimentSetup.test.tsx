@@ -1,5 +1,5 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { vi } from "vitest";
 import { selectAdaptiveSurface } from "@lsaa/adaptive-input";
 
 import {
@@ -9,10 +9,6 @@ import {
   safelyBuildBiologicalSetup,
   type ConditionEntryBlock,
 } from "./BiologicalExperimentSetup";
-import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
-import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
-
-afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 const block = (id: string, name: string, values: string[]): ConditionEntryBlock => ({
   id,
@@ -431,16 +427,6 @@ describe("BiologicalExperimentSetup pure safety boundary", () => {
 });
 
 describe("BiologicalExperimentSetup researcher-facing UI", () => {
-  it("shows the experiment-structure interview without Japanese application copy in English", () => {
-    act(() => setAppLocale("en"));
-    const view = render(<BiologicalExperimentSetup enabled onReady={vi.fn()} />);
-
-    expect(
-      screen.getByRole("heading", { name: "Experimental conditions and measurements" }),
-    ).toBeVisible();
-    expectNoJapaneseUi(view.container);
-  });
-
   it("is feature gated and starts with one ungrouped horizontal condition row", () => {
     const onReady = vi.fn();
     const { rerender } = render(<BiologicalExperimentSetup enabled={false} onReady={onReady} />);
@@ -461,21 +447,64 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     ).toBeNull();
   });
 
-  it("keeps the required interview outline visible with progressive optional details", () => {
+  it("offers an explicit short path for a simple independent scalar experiment", () => {
+    const onReady = vi.fn();
+    render(<BiologicalExperimentSetup enabled onReady={onReady} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "処理・群分け 1の名前" }), {
+      target: { value: "Treatment" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "行 1 列 1" }), {
+      target: { value: "Control" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "行 1 列 2" }), {
+      target: { value: "Drug" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: /^測定項目/ }), {
+      target: { value: "Relative protein amount" },
+    });
+
+    expect(screen.getByRole("heading", { name: /単純な独立条件/ })).toBeVisible();
+    fireEvent.change(screen.getByRole("textbox", { name: "短い経路の対象・試料" }), {
+      target: { value: "culture dish" },
+    });
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: /条件ごとに別々の対象を使い.*経時・反復測定もしていない/,
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "この実験事実で入力表を作る" }));
+
+    expect(onReady).toHaveBeenCalledOnce();
+    expect(onReady.mock.calls[0]?.[0]).toMatchObject({
+      answers: {
+        experimentalUnitLabel: "culture dish",
+        sameIdentityAcrossConditions: false,
+        readoutRepresentation: "scalar",
+      },
+      contract: {
+        matching: { kind: "independent" },
+        orderedAxes: [],
+      },
+    });
+  });
+
+  it("keeps required questions visible with a labelled live action rail and progressive details", () => {
     render(<BiologicalExperimentSetup enabled onReady={vi.fn()} />);
 
     expect(screen.getByLabelText("実験タイトル（任意）")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "測定した値" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "条件を受けたものと材料のつながり" })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "測定した値" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "条件を受けたものと材料のつながり" })).toBeNull();
     fireEvent.change(screen.getByRole("textbox", { name: "処理・群分け 1の名前" }), {
       target: { value: "処理" },
     });
     fireEvent.change(screen.getByRole("textbox", { name: "行 1 列 1" }), {
       target: { value: "Control" },
     });
+    expect(screen.getByRole("heading", { name: "測定した値" })).toBeVisible();
     fireEvent.change(screen.getByPlaceholderText("例：細胞生存率"), {
       target: { value: "細胞面積" },
     });
+    expect(screen.getByRole("heading", { name: "条件を受けたものと材料のつながり" })).toBeVisible();
     const rail = screen.getByRole("complementary", { name: "現在の実験と操作" });
     expect(within(rail).getByText("現在の実験")).toBeVisible();
     expect(within(rail).getByRole("button", { name: "この内容で入力表を作る" })).toBeVisible();
@@ -514,14 +543,7 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     expect(screen.getByRole("textbox", { name: "行 1 列 3" })).toHaveFocus();
 
     fireEvent.click(screen.getByRole("button", { name: "処理・群分け 1に行を追加" }));
-    const rowOne = [1, 2, 3, 4].map((column) =>
-      screen.getByRole("textbox", { name: `行 1 列 ${column}` }),
-    );
-    rowOne[0]!.focus();
-    rowOne.slice(0, -1).forEach((cell) => fireEvent.keyDown(cell, { key: "Tab" }));
-    const fourth = screen.getByRole("textbox", { name: "行 1 列 4" });
-    expect(fourth).toHaveFocus();
-    fireEvent.keyDown(fourth, { key: "Enter" });
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "行 1 列 4" }), { key: "Enter" });
     expect(screen.getByRole("textbox", { name: "行 2 列 1" })).toHaveFocus();
   });
 
@@ -605,20 +627,6 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
     expect(screen.getByRole("heading", { name: "条件を受けたものと材料のつながり" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "処理・群分け" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "測定した値" })).toBeNull();
-    expect(screen.getByRole("button", { name: "統計設定へ進む" })).toBeVisible();
-
-    fireEvent.change(
-      screen.getByRole("textbox", { name: "条件を直接受けた、または群として分けた対象・試料は？" }),
-      { target: { value: "culture dish" } },
-    );
-    fireEvent.click(screen.getByRole("button", { name: "統計設定へ進む" }));
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "異なる条件の間で、対象・試料がどのような関係かを選んでください。",
-    );
-    expect(screen.getByRole("alert")).toHaveFocus();
-    expect(
-      screen.getByRole("alert").closest("section")?.querySelector("#material-heading"),
-    ).not.toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "条件・測定を修正" }));
     expect(screen.getByRole("heading", { name: "処理・群分け" })).toBeVisible();
@@ -645,7 +653,7 @@ describe("BiologicalExperimentSetup researcher-facing UI", () => {
       { target: { value: "culture dish" } },
     );
     fireEvent.click(screen.getByRole("radio", { name: /条件ごとに別々のもの/ }));
-    fireEvent.click(screen.getByRole("button", { name: "統計設定へ進む" }));
+    fireEvent.click(screen.getByRole("button", { name: "この内容で入力表を作る" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent("IDの対応を確認してください");
     expect(

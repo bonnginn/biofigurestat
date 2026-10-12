@@ -11,6 +11,8 @@ from .result_common import base_result, estimate
 
 
 def run_correlation(request: dict[str, Any]) -> dict[str, Any]:
+    if request.get("options", {}).get("alternative", "two_sided") != "two_sided":
+        raise ValueError("D09 currently supports only two_sided; directional inference is not implemented")
     method = request.get("method")
     if method not in {"pearson", "spearman"}:
         raise ValueError("D09 supports Pearson or Spearman correlation")

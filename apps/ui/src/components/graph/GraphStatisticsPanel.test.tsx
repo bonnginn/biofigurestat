@@ -5,17 +5,13 @@ import {
   type AnalysisEngineResult,
 } from "@lsaa/analysis-contracts";
 import { ExperimentDesignSchema } from "@lsaa/domain";
-import { afterEach, vi } from "vitest";
+import { vi } from "vitest";
 
-import { AnalysisClientError } from "../../app/analysisClient";
 import type { DraftAnalysisAssessment } from "../../app/experimentDraftAnalysis";
 import { recordUsageMilestone } from "../../app/usageTelemetry";
 import { GraphStatisticsPanel } from "./GraphStatisticsPanel";
-import { resetAppLocaleForTests, setAppLocale } from "../../app/appLocale";
-import { expectNoJapaneseUi } from "../../test/expectNoJapaneseUi";
 
 vi.mock("../../app/usageTelemetry", () => ({ recordUsageMilestone: vi.fn() }));
-afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 const request = AnalysisEngineRequestSchema.parse({
   protocolVersion: "0.1.0",
@@ -80,6 +76,124 @@ const readyAssessment: DraftAnalysisAssessment = {
   request,
 };
 
+it("does not publish the first pending response after measurements change", async () => {
+  let finish!: (result: AnalysisEngineResult) => void;
+  const analysisRunner = vi.fn(
+    () =>
+      new Promise<AnalysisEngineResult>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const onAnalysisChange = vi.fn();
+  const props = {
+    assessment: readyAssessment,
+    design: panelDesign(),
+    analysisRunner,
+    relationshipAlreadyDeclared: true,
+    onAnalysisChange,
+  };
+  const view = render(<GraphStatisticsPanel {...props} />);
+  fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+  const changedRequest = AnalysisEngineRequestSchema.parse({
+    ...request,
+    observations: request.observations.map((row, index) =>
+      index === 0 ? { ...row, value: 99 } : row,
+    ),
+  });
+  view.rerender(
+    <GraphStatisticsPanel
+      {...props}
+      assessment={{ ...readyAssessment, request: changedRequest }}
+    />,
+  );
+  await act(async () =>
+    finish(
+      AnalysisEngineResultSchema.parse({
+        protocolVersion: "0.1.0",
+        requestId: request.requestId,
+        status: "ok",
+        engine: { name: "lsaa-python", version: "test", packages: {} },
+        estimates: [],
+        tests: [],
+        diagnostics: [],
+        warnings: [],
+        completedAt: "2026-08-28T00:00:00.000Z",
+      }),
+    ),
+  );
+  expect(onAnalysisChange.mock.calls.some(([value]) => value?.result)).toBe(false);
+  expect(screen.getByText(/以前の応答を採用しません/)).toBeVisible();
+  expect(screen.getByRole("button", { name: "選択した解析を実行" })).toBeEnabled();
+});
+
+it("rejects an engine response belonging to another request", async () => {
+  const onAnalysisChange = vi.fn();
+  const analysisRunner = vi.fn().mockResolvedValue(
+    AnalysisEngineResultSchema.parse({
+      protocolVersion: "0.1.0",
+      requestId: "request.other",
+      status: "ok",
+      engine: { name: "lsaa-python", version: "test", packages: {} },
+      estimates: [],
+      tests: [],
+      diagnostics: [],
+      warnings: [],
+      completedAt: "2026-08-28T00:00:00.000Z",
+    }),
+  );
+  render(
+    <GraphStatisticsPanel
+      assessment={readyAssessment}
+      design={panelDesign()}
+      analysisRunner={analysisRunner}
+      relationshipAlreadyDeclared
+      onAnalysisChange={onAnalysisChange}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+  expect(await screen.findByText(/解析応答が今回の要求と一致しません/)).toBeVisible();
+  expect(onAnalysisChange).toHaveBeenCalledWith(null);
+  expect(onAnalysisChange.mock.calls.some(([value]) => value?.result)).toBe(false);
+});
+
+it("releases the pending state when the scientific context invalidates a run", async () => {
+  let finish!: (result: AnalysisEngineResult) => void;
+  const analysisRunner = vi.fn(
+    () =>
+      new Promise<AnalysisEngineResult>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const onAnalysisChange = vi.fn();
+  const props = {
+    assessment: readyAssessment,
+    design: panelDesign(),
+    analysisRunner,
+    relationshipAlreadyDeclared: true,
+    onAnalysisChange,
+  };
+  const view = render(<GraphStatisticsPanel {...props} analysisContextKey="context.old" />);
+  fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+  view.rerender(<GraphStatisticsPanel {...props} analysisContextKey="context.new" />);
+  expect(screen.getByRole("button", { name: "選択した解析を実行" })).toBeEnabled();
+  await act(async () =>
+    finish(
+      AnalysisEngineResultSchema.parse({
+        protocolVersion: "0.1.0",
+        requestId: request.requestId,
+        status: "ok",
+        engine: { name: "lsaa-python", version: "test", packages: {} },
+        estimates: [],
+        tests: [],
+        diagnostics: [],
+        warnings: [],
+        completedAt: "2026-08-28T00:00:00.000Z",
+      }),
+    ),
+  );
+  expect(onAnalysisChange.mock.calls.some(([value]) => value?.result)).toBe(false);
+});
+
 it("shows a concise method and design-based reason before detailed controls", () => {
   render(
     <GraphStatisticsPanel
@@ -92,386 +206,6 @@ it("shows a concise method and design-based reason before detailed controls", ()
   expect(screen.getByText("推奨: Welchの2標本t検定")).toBeVisible();
   expect(screen.getByText("理由:")).toBeVisible();
   expect(screen.getByText(/dishを独立した実験単位として比較します/)).toBeVisible();
-});
-
-it("shows estimate contrasts with researcher-facing condition labels", () => {
-  const result = AnalysisEngineResultSchema.parse({
-    protocolVersion: "0.1.0",
-    requestId: request.requestId,
-    status: "ok",
-    engine: { name: "lsaa-python", version: "test", packages: {} },
-    estimates: [
-      {
-        name: "condition.drug_minus_condition.vehicle",
-        value: -0.21,
-        standardError: 0.04,
-        confidenceInterval: { level: 0.95, lower: -0.29, upper: -0.13 },
-      },
-    ],
-    tests: [],
-    diagnostics: [],
-    warnings: [],
-    completedAt: "2026-08-28T00:00:00.000Z",
-  });
-  render(
-    <GraphStatisticsPanel
-      assessment={readyAssessment}
-      design={panelDesign()}
-      analysisRunner={vi.fn()}
-      conditionOptions={defaultConditionOptions}
-      initialAnalysis={{ request, result }}
-    />,
-  );
-
-  expect(screen.getByText("Drug − Vehicle")).toBeVisible();
-  expect(screen.queryByText("condition.drug_minus_condition.vehicle")).toBeNull();
-});
-
-it("shows the recommendation and analysis action in English without changing the request", () => {
-  act(() => setAppLocale("en"));
-  const view = render(
-    <GraphStatisticsPanel
-      assessment={readyAssessment}
-      design={panelDesign()}
-      analysisRunner={vi.fn()}
-    />,
-  );
-
-  expect(screen.getByText("Recommended: Welch's t-test")).toBeVisible();
-  expect(screen.getByText(/The design contains 2 independent conditions/)).toBeVisible();
-  expect(screen.getByRole("button", { name: "Run selected analysis" })).toBeVisible();
-  expect(readyAssessment.request).toBe(request);
-  expectNoJapaneseUi(view.container);
-});
-
-it("safe-stops an equivalence goal without recommending or running ordinary NHST", () => {
-  const analysisRunner = vi.fn();
-  const onComparisonGoalChange = vi.fn();
-  render(
-    <GraphStatisticsPanel
-      assessment={readyAssessment}
-      design={panelDesign()}
-      analysisRunner={analysisRunner}
-      comparisonGoal="equivalence"
-      equivalenceSupportKind="positive_total_shared_source"
-      onComparisonGoalChange={onComparisonGoalChange}
-      relationshipAlreadyDeclared
-    />,
-  );
-
-  expect(screen.getByText("この同等性解析は現在未サポートです")).toBeVisible();
-  expect(screen.getByText(/通常のANOVAやt検定でp > 0.05となっても/)).toBeVisible();
-  expect(screen.getByText(/観測データから自動生成しません/)).toBeVisible();
-  expect(screen.getByText(/陽性数／総数と実験回内の依存/)).toBeVisible();
-  expect(screen.getByText(/割合を独立な連続量としてTOSTへ渡しません/)).toBeVisible();
-  expect(screen.getByText("同等性解析の事前計画")).toBeVisible();
-  expect(screen.getByLabelText("下限")).toBeVisible();
-  expect(screen.getByLabelText("上限")).toBeVisible();
-  expect(screen.queryByText("推奨: Welchの2標本t検定")).toBeNull();
-  expect(screen.queryByRole("button", { name: "選択した解析を実行" })).toBeNull();
-  expect(analysisRunner).not.toHaveBeenCalled();
-
-  fireEvent.click(screen.getByRole("radio", { name: "差があるか調べる" }));
-  expect(onComparisonGoalChange).toHaveBeenCalledWith("difference");
-});
-
-it("runs only the supported independent two-group equivalence request", async () => {
-  const comparisonId = "equivalence:condition.vehicle:condition.drug";
-  const equivalencePlan = {
-    schemaVersion: "0.1.0" as const,
-    margin: {
-      scale: "raw_difference" as const,
-      lowerBound: -0.3,
-      upperBound: 0.3,
-      unit: "AU",
-      declaredAsPrespecified: true as const,
-    },
-    alpha: 0.05 as const,
-    claimMode: "single_primary_comparison" as const,
-    primaryComparisonId: comparisonId,
-  };
-  const result = AnalysisEngineResultSchema.parse({
-    protocolVersion: "0.15.0",
-    requestId: `${request.requestId}:eq`,
-    status: "ok",
-    engine: { name: "lsaa-python", version: "test", packages: {} },
-    estimates: [
-      {
-        name: "condition.drug_minus_condition.vehicle",
-        value: -0.21,
-        standardError: 0.04,
-        confidenceInterval: { level: 0.9, lower: -0.28, upper: -0.14 },
-      },
-    ],
-    tests: [
-      {
-        name: "welch_tost_lower_bound",
-        statisticName: "t",
-        statistic: 2.25,
-        degreesOfFreedom: [2],
-        pValue: 0.08,
-        adjustedPValue: null,
-        effectSizeName: null,
-        effectSize: null,
-      },
-      {
-        name: "welch_tost_upper_bound",
-        statisticName: "t",
-        statistic: -12.75,
-        degreesOfFreedom: [2],
-        pValue: 0.003,
-        adjustedPValue: null,
-        effectSizeName: null,
-        effectSize: null,
-      },
-    ],
-    equivalence: {
-      resultVersion: "0.1.0",
-      plan: equivalencePlan,
-      comparisons: [
-        {
-          comparisonId,
-          estimate: -0.21,
-          standardError: 0.04,
-          lowerConfidenceBound: -0.28,
-          upperConfidenceBound: -0.14,
-          confidenceLevel: 0.9,
-          lowerOneSidedPValue: 0.08,
-          upperOneSidedPValue: 0.003,
-          tostPValue: 0.08,
-          conclusion: "equivalence_supported",
-        },
-      ],
-    },
-    diagnostics: [],
-    warnings: [],
-    completedAt: "2026-09-02T00:00:00.000Z",
-  });
-  const analysisRunner = vi.fn().mockResolvedValue(result);
-  render(
-    <GraphStatisticsPanel
-      assessment={readyAssessment}
-      design={panelDesign()}
-      analysisRunner={analysisRunner}
-      comparisonGoal="equivalence"
-      equivalencePlan={equivalencePlan}
-      equivalenceSupportKind="continuous_independent"
-      conditionOptions={defaultConditionOptions}
-      relationshipAlreadyDeclared
-    />,
-  );
-
-  expect(screen.getByText("Welch TOSTによる同等性解析")).toBeVisible();
-  fireEvent.click(screen.getByRole("button", { name: "Welch TOSTを実行" }));
-
-  await waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(1));
-  expect(analysisRunner.mock.calls[0]?.[0]).toEqual(
-    expect.objectContaining({
-      protocolVersion: "0.15.0",
-      method: "welch_tost",
-      comparisonId,
-      equivalencePlan,
-    }),
-  );
-  expect(await screen.findByText("同等性を支持")).toBeVisible();
-});
-
-it("runs paired TOST with complete pairs and reports excluded incomplete pair IDs", async () => {
-  const comparisonId = "equivalence:condition.vehicle:condition.drug";
-  const equivalencePlan = {
-    schemaVersion: "0.1.0" as const,
-    margin: {
-      scale: "raw_difference" as const,
-      lowerBound: -0.3,
-      upperBound: 0.3,
-      unit: "AU",
-      declaredAsPrespecified: true as const,
-    },
-    alpha: 0.05 as const,
-    claimMode: "single_primary_comparison" as const,
-    primaryComparisonId: comparisonId,
-  };
-  const pairedBaseRequest = AnalysisEngineRequestSchema.parse({
-    ...request,
-    templateId: "D02",
-    method: "paired_t",
-    observations: [
-      {
-        observationId: "o.v1",
-        conditionId: "condition.vehicle",
-        experimentalUnitId: "pair.1",
-        pairId: "pair.1",
-        value: 1,
-      },
-      {
-        observationId: "o.d1",
-        conditionId: "condition.drug",
-        experimentalUnitId: "pair.1",
-        pairId: "pair.1",
-        value: 1.1,
-      },
-      {
-        observationId: "o.v2",
-        conditionId: "condition.vehicle",
-        experimentalUnitId: "pair.2",
-        pairId: "pair.2",
-        value: 2,
-      },
-      {
-        observationId: "o.d2",
-        conditionId: "condition.drug",
-        experimentalUnitId: "pair.2",
-        pairId: "pair.2",
-        value: 2.2,
-      },
-    ],
-  });
-  const pairedAssessment: DraftAnalysisAssessment = {
-    ...readyAssessment,
-    title: "対応のあるt検定を推奨",
-    method: "paired_t",
-    recommendedMethod: "paired_t",
-    request: pairedBaseRequest,
-    inputDiagnostics: [
-      {
-        code: "INCOMPLETE_MATCHED_SET",
-        title: "対応がそろっていない組が1組あります",
-        message: "完全な組だけを解析します。",
-        incompleteMatchedSets: [
-          {
-            pairId: "pair.missing",
-            experimentId: "experiment.missing",
-            experimentLabel: "Animal missing",
-            missingConditions: [{ conditionId: "condition.drug", label: "Drug" }],
-          },
-        ],
-      },
-    ],
-  };
-  const result = AnalysisEngineResultSchema.parse({
-    protocolVersion: "0.16.0",
-    requestId: `${pairedBaseRequest.requestId}:paired-eq`,
-    status: "ok",
-    engine: { name: "lsaa-python", version: "test", packages: {} },
-    estimates: [],
-    tests: [],
-    equivalence: {
-      resultVersion: "0.1.0",
-      plan: equivalencePlan,
-      comparisons: [
-        {
-          comparisonId,
-          estimate: 0.15,
-          standardError: 0.05,
-          lowerConfidenceBound: 0.05,
-          upperConfidenceBound: 0.25,
-          confidenceLevel: 0.9,
-          lowerOneSidedPValue: 0.001,
-          upperOneSidedPValue: 0.02,
-          tostPValue: 0.02,
-          conclusion: "equivalence_supported",
-          analysisSet: { completePairCount: 2, excludedIncompletePairIds: ["pair.missing"] },
-        },
-      ],
-    },
-    diagnostics: [],
-    warnings: [],
-    completedAt: "2026-09-02T00:00:00.000Z",
-  });
-  const analysisRunner = vi.fn().mockResolvedValue(result);
-  render(
-    <GraphStatisticsPanel
-      assessment={pairedAssessment}
-      design={panelDesign()}
-      analysisRunner={analysisRunner}
-      comparisonGoal="equivalence"
-      equivalencePlan={equivalencePlan}
-      equivalenceSupportKind="continuous_matched"
-      conditionOptions={defaultConditionOptions}
-      relationshipAlreadyDeclared
-    />,
-  );
-
-  expect(screen.getByText("対応のあるTOSTによる同等性解析")).toBeVisible();
-  fireEvent.click(screen.getByRole("button", { name: "対応のあるTOSTを実行" }));
-  await waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(1));
-  expect(analysisRunner.mock.calls[0]?.[0]).toMatchObject({
-    protocolVersion: "0.16.0",
-    method: "paired_tost",
-    excludedIncompletePairIds: ["pair.missing"],
-  });
-  expect(await screen.findByText("同等性を支持")).toBeVisible();
-  const resultRegion = screen.getByRole("region", { name: "同等性解析結果" });
-  expect(within(resultRegion).getByText(/完全な対応組/)).toHaveTextContent("2");
-  expect(within(resultRegion).getByText(/pair\.missing/)).toBeVisible();
-});
-
-it("retains privacy-safe local engine guidance instead of replacing it with a generic error", async () => {
-  const analysisRunner = vi
-    .fn()
-    .mockRejectedValue(
-      new AnalysisClientError(
-        "ENGINE_EXECUTION_FAILED",
-        "ローカル統計エンジンの出力を検証できませんでした。診断情報を保存してください。",
-      ),
-    );
-  render(
-    <GraphStatisticsPanel
-      assessment={readyAssessment}
-      design={panelDesign()}
-      analysisRunner={analysisRunner}
-      relationshipAlreadyDeclared
-    />,
-  );
-
-  fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
-
-  expect(
-    await screen.findByText(/ローカル統計エンジンの出力を検証できませんでした/u),
-  ).toBeVisible();
-  expect(screen.getByText(/ENGINE_EXECUTION_FAILED/u)).toBeVisible();
-});
-
-it("states that a non-significant difference test does not establish equivalence", () => {
-  act(() => setAppLocale("en"));
-  const result = AnalysisEngineResultSchema.parse({
-    protocolVersion: "0.1.0",
-    requestId: request.requestId,
-    status: "ok",
-    engine: { name: "lsaa-python", version: "test", packages: {} },
-    estimates: [],
-    tests: [
-      {
-        name: "welch_t",
-        statisticName: "t",
-        statistic: 0.4,
-        degreesOfFreedom: [2],
-        pValue: 0.72,
-        adjustedPValue: null,
-        effectSizeName: "hedges_g",
-        effectSize: 0.1,
-      },
-    ],
-    diagnostics: [],
-    warnings: [],
-    completedAt: "2026-09-01T00:00:00.000Z",
-  });
-  const view = render(
-    <GraphStatisticsPanel
-      assessment={readyAssessment}
-      design={panelDesign()}
-      analysisRunner={vi.fn()}
-      initialAnalysis={{ request, result }}
-      relationshipAlreadyDeclared
-    />,
-  );
-
-  expect(
-    screen.getByText(
-      "No statistically significant difference was detected. This result does not demonstrate equivalence or absence of an effect.",
-    ),
-  ).toBeVisible();
-  expectNoJapaneseUi(view.container);
 });
 
 const defaultConditionOptions = [
@@ -698,28 +432,6 @@ describe("GraphStatisticsPanel validation repair routes", () => {
     expect(analysisRunner).not.toHaveBeenCalled();
   });
 
-  it("shows a design-request safe stop entirely in English", async () => {
-    act(() => setAppLocale("en"));
-    const analysisRunner = vi.fn();
-    const view = render(
-      <GraphStatisticsPanel
-        assessment={readyAssessment}
-        design={panelDesign(defaultConditionOptions, "matched")}
-        outcomeId="outcome.value"
-        analysisRunner={analysisRunner}
-        relationshipAlreadyDeclared
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Run selected analysis" }));
-
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "request does not match the experimental structure",
-    );
-    expect(analysisRunner).not.toHaveBeenCalled();
-    expectNoJapaneseUi(view.container);
-  });
-
   it("records a manual request and completion without researcher values or labels", async () => {
     vi.mocked(recordUsageMilestone).mockClear();
     const analysisRunner = vi.fn().mockResolvedValue(
@@ -762,12 +474,7 @@ describe("GraphStatisticsPanel validation repair routes", () => {
         engine: { name: "lsaa-python", version: "test", packages: {} },
         estimates: [],
         tests: [],
-        diagnostics: [
-          {
-            code: "paired_difference_distribution",
-            message: "paired_difference_distribution",
-          },
-        ],
+        diagnostics: [],
         warnings: [
           {
             code: "small_sample_size",
@@ -789,9 +496,7 @@ describe("GraphStatisticsPanel validation repair routes", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
 
-    expect(await screen.findByText("重要な注意（2件）")).toBeVisible();
-    expect(screen.getByText(/対応する各実験単位について条件間の差を計算/)).toBeVisible();
-    expect(screen.queryByText("paired_difference_distribution")).toBeNull();
+    expect(await screen.findByText("重要な注意（1件）")).toBeVisible();
     const details = container.querySelector(".experiment-graph-analysis-diagnostics");
     expect(details).toHaveAttribute("open");
     expect(details).toHaveClass("is-important");
@@ -835,67 +540,6 @@ describe("GraphStatisticsPanel validation repair routes", () => {
     expect(recordUsageMilestone).toHaveBeenCalledWith("home", "statistics_requested");
     expect(recordUsageMilestone).toHaveBeenCalledWith("home", "safe_stop");
     expect(recordUsageMilestone).not.toHaveBeenCalledWith("home", "statistics_completed");
-  });
-
-  it("shows engine validation feedback entirely in English", async () => {
-    act(() => setAppLocale("en"));
-    const analysisRunner = vi.fn().mockResolvedValue(
-      AnalysisEngineResultSchema.parse({
-        protocolVersion: "0.1.0",
-        requestId: "request.test",
-        status: "validation_error",
-        engine: { name: "lsaa-python", version: "test", packages: {} },
-        estimates: [],
-        tests: [],
-        diagnostics: [
-          {
-            code: "invalid_request",
-            message: "Each independent D01 unit can contribute only one analyzed value",
-          },
-        ],
-        warnings: [],
-        completedAt: "2026-08-28T00:00:00.000Z",
-      }),
-    );
-    const view = render(
-      <GraphStatisticsPanel
-        assessment={readyAssessment}
-        design={panelDesign()}
-        outcomeId="outcome.value"
-        analysisRunner={analysisRunner}
-        relationshipAlreadyDeclared
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Run selected analysis" }));
-
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "experimental-unit ID is duplicated",
-    );
-    expect(screen.getByRole("alert")).toHaveTextContent("Dish ID");
-    expectNoJapaneseUi(view.container);
-  });
-
-  it("keeps unsupported assessment copy out of the English UI", () => {
-    act(() => setAppLocale("en"));
-    const assessment: DraftAnalysisAssessment = {
-      ...readyAssessment,
-      state: "unsupported",
-      title: "すべての対応差が同じため、対応のあるt検定を計算できません",
-      reason: "差の標準誤差が0です。",
-      request: null,
-      correction: undefined,
-    };
-    const view = render(
-      <GraphStatisticsPanel
-        assessment={assessment}
-        design={panelDesign()}
-        analysisRunner={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("This analysis structure is not currently supported")).toBeVisible();
-    expectNoJapaneseUi(view.container);
   });
 
   it("offers a targeted data route and an explicit non-coercive alternative", () => {
@@ -984,7 +628,7 @@ describe("GraphStatisticsPanel validation repair routes", () => {
       />,
     );
 
-    fireEvent.click(screen.getByText("対応がそろっていない組が8組あります"));
+    expect(screen.getByText("対応がそろっていない組が8組あります").closest("details")).toHaveAttribute("open");
     const detailList = screen.getByRole("list", {
       name: "stable unit / pair IDごとの不足条件",
     });
@@ -1000,53 +644,6 @@ describe("GraphStatisticsPanel validation repair routes", () => {
     expect(onCorrectionRequested).toHaveBeenCalledWith(
       assessment.inputDiagnostics?.[0]?.correction,
     );
-  });
-
-  it("localizes matched analysis-set and incomplete-set diagnostics from legacy Japanese runtime copy", () => {
-    act(() => setAppLocale("en"));
-    const assessment: DraftAnalysisAssessment = {
-      ...readyAssessment,
-      missingCount: 1,
-      analysisSetSummary:
-        "完全な対応組 1組を統計解析に使います。対応相手がそろわない観測 1件は解析から除外します。",
-      graphAnalysisSetDifference:
-        "Graphには入力済みの観測を残します。統計解析だけが完全な対応組に限定されます。",
-      matchedAnalysisSet: {
-        completePairCount: 1,
-        unmatchedObservationCount: 1,
-      },
-      inputDiagnostics: [
-        {
-          code: "INCOMPLETE_MATCHED_SET",
-          title: "対応がそろっていない組が1組あります",
-          message:
-            "完全な組だけを対応解析に使い、不完全な組の入力値と実験設計は保持します。独立群には読み替えません。",
-          incompleteMatchedSets: [
-            {
-              pairId: "mouse.1",
-              experimentId: "experiment.1",
-              experimentLabel: "Mouse 1",
-              missingConditions: [{ conditionId: "condition.drug", label: "Drug" }],
-            },
-          ],
-        },
-      ],
-    };
-    const view = render(
-      <GraphStatisticsPanel
-        assessment={assessment}
-        design={panelDesign(defaultConditionOptions, "matched")}
-        analysisRunner={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByRole("status")).toHaveTextContent(/1 complete matched pair will be used/);
-    expect(screen.getByText("1 matched set is incomplete")).toBeVisible();
-    fireEvent.click(screen.getByText("1 matched set is incomplete"));
-    expect(
-      screen.getByRole("list", { name: "Missing conditions by stable unit / pair ID" }),
-    ).toHaveTextContent("mouse.1 (Mouse 1): Drug");
-    expectNoJapaneseUi(view.container);
   });
 
   it("asks the Case 3 run/source question before enabling an independent dish analysis", () => {
@@ -1089,37 +686,127 @@ describe("GraphStatisticsPanel validation repair routes", () => {
 });
 
 describe("GraphStatisticsPanel pairwise result table", () => {
-  it("enables control-versus-many when the control condition is explicitly retained", () => {
+  it("uses the executable method when a prior multi-group preference no longer fits", () => {
+    render(<GraphStatisticsPanel
+      assessment={readyAssessment}
+      selectedMethod="one_way_anova"
+      design={panelDesign()}
+      analysisRunner={vi.fn()}
+      relationshipAlreadyDeclared
+    />);
+    expect(screen.getByRole("radio", { name: /Welchの2標本t検定/ })).toBeChecked();
+    expect(screen.getByText(/推奨法を選択中：Welchの2標本t検定/)).toBeVisible();
+    expect(screen.queryByText(/推奨とは異なる方法として/)).toBeNull();
+  });
+
+  it("updates the displayed and persisted decision when contrast intent changes the method", async () => {
     const conditionOptions = [
-      { id: "group:control", label: "Control" },
-      { id: "group:drug", label: "Drug" },
-      { id: "group:rescue", label: "Rescue" },
-    ] as const;
+      { id: "control", label: "Control" },
+      { id: "drug", label: "Drug" },
+      { id: "rescue", label: "Rescue" },
+    ];
     const base = multiGroupAssessment(conditionOptions);
-    const assessment: DraftAnalysisAssessment = {
-      ...base,
-      request: AnalysisEngineRequestSchema.parse({
-        ...base.request,
-        controlConditionId: "group:control",
-      }),
+    if (base.request?.protocolVersion !== "0.2.0") throw new Error("wrong fixture");
+    const analysisRunner = vi.fn().mockResolvedValue(pairwiseResult("dunnett:drug:control"));
+    const onAnalysisChange = vi.fn();
+    const props = {
+      design: panelDesign(conditionOptions),
+      outcomeId: "outcome.value",
+      analysisRunner,
+      onAnalysisChange,
+      conditionOptions,
+      relationshipAlreadyDeclared: true,
     };
-    const onContrastIntentChange = vi.fn();
+    const { rerender } = render(<GraphStatisticsPanel {...props} assessment={base} />);
+    expect(screen.getByText(/推奨法を選択中：Welch/)).toBeVisible();
+    const controlAssessment: DraftAnalysisAssessment = {
+      ...base,
+      method: "one_way_anova",
+      methodChoices: [
+        {
+          method: "one_way_anova",
+          level: "alternative",
+          label: "一元配置分散分析 + Dunnett",
+          explanation: "対照と比較します。",
+          enabled: true,
+        },
+      ],
+      request: {
+        ...base.request,
+        method: "one_way_anova",
+        contrastIntent: "control_vs_many",
+        controlConditionId: "control",
+        options: { ...base.request.options, multiplicityMethod: "dunnett_control_vs_many" },
+      },
+    };
+    // No method-radio click: the contrast selector chose a compatible method.
+    rerender(<GraphStatisticsPanel {...props} assessment={controlAssessment} />);
+    expect(
+      screen.getByText(/推奨とは異なる方法として一元配置分散分析 \+ Dunnettを選択中/),
+    ).toBeVisible();
+    expect(screen.queryByText(/推奨法を選択中：Welch/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+    await screen.findByRole("group", { name: "統計解析結果" });
+    expect(analysisRunner).toHaveBeenCalledWith(
+      expect.objectContaining({ method: "one_way_anova" }),
+    );
+    expect(onAnalysisChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        recommendation: expect.objectContaining({
+          decision: { kind: "overridden", selectedMethod: "one_way_anova" },
+        }),
+      }),
+    );
+  });
+
+  it("explains the executed Dunnett comparison family only after success", async () => {
+    const conditionOptions = [
+      { id: "control", label: "Control" },
+      { id: "drug", label: "Drug" },
+      { id: "rescue", label: "Rescue" },
+    ];
+    const base = multiGroupAssessment(conditionOptions);
+    if (base.request?.protocolVersion !== "0.2.0") throw new Error("wrong fixture");
+    const request = {
+      ...base.request,
+      method: "one_way_anova" as const,
+      contrastIntent: "control_vs_many" as const,
+      controlConditionId: "control",
+      options: { ...base.request.options, multiplicityMethod: "dunnett_control_vs_many" as const },
+    };
+    const assessment = {
+      ...base,
+      request,
+      method: "one_way_anova" as const,
+      recommendedMethod: "one_way_anova" as const,
+      methodChoices: [
+        {
+          method: "one_way_anova" as const,
+          level: "recommended" as const,
+          label: "一元配置分散分析",
+          explanation: "等分散を仮定します。",
+          enabled: true,
+        },
+      ],
+    };
+    const result = pairwiseResult("dunnett:drug:control");
+    const analysisRunner = vi.fn().mockResolvedValue(result);
     render(
       <GraphStatisticsPanel
         assessment={assessment}
         design={panelDesign(conditionOptions)}
         outcomeId="outcome.value"
-        analysisRunner={vi.fn()}
+        analysisRunner={analysisRunner}
         conditionOptions={conditionOptions}
         relationshipAlreadyDeclared
-        onContrastIntentChange={onContrastIntentChange}
       />,
     );
-
-    const choice = screen.getByRole("radio", { name: "各処置を対照群と比較" });
-    expect(choice).toBeEnabled();
-    fireEvent.click(choice);
-    expect(onContrastIntentChange).toHaveBeenCalledWith("control_vs_many");
+    expect(screen.queryByText(/Dunnettの95%同時信頼区間/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
+    const resultGroup = await screen.findByRole("group", { name: "統計解析結果" });
+    expect(resultGroup).toHaveTextContent("各条件 − 明示した対照（control）");
+    expect(resultGroup).toHaveTextContent("2件の比較をまとめて調整");
+    expect(resultGroup).toHaveTextContent("数値積分による近似値");
   });
 
   it("shows comparison labels and adjusted p-values without exposing condition IDs", async () => {
@@ -1130,7 +817,7 @@ describe("GraphStatisticsPanel pairwise result table", () => {
     ] as const;
     const analysisRunner = vi
       .fn()
-      .mockResolvedValue(pairwiseResult("games_howell:group:control:group:drug"));
+      .mockResolvedValue({...pairwiseResult("games_howell:group:control:group:drug"), estimates:[{name:"group:control_minus_group:drug",value:-1,standardError:.2,confidenceInterval:{level:.95,lower:-1.4,upper:-.6}}]});
     render(
       <GraphStatisticsPanel
         assessment={multiGroupAssessment(conditionOptions)}
@@ -1150,6 +837,9 @@ describe("GraphStatisticsPanel pairwise result table", () => {
     expect(table).toHaveTextContent("0.016");
     expect(table).not.toHaveTextContent("group:control");
     expect(table).not.toHaveTextContent("group:drug");
+    const estimates = document.querySelector('dl[aria-label="主要な推定値"]')!;
+    expect(estimates).toHaveTextContent("95% CI -1.4–-0.6、調整済みp = 0.016（未調整p = 0.008）");
+    expect(estimates).not.toHaveTextContent("group:control");
   });
 
   it("does not guess or expose a pair when colon-containing IDs are ambiguous", async () => {
@@ -1177,4 +867,124 @@ describe("GraphStatisticsPanel pairwise result table", () => {
     expect(within(resultGroup).queryByRole("table", { name: "条件間比較の結果" })).toBeNull();
     expect(resultGroup).not.toHaveTextContent("games_howell:a:b:c");
   });
+});
+
+it("keeps the completed result and important warnings outside collapsed settings", async () => {
+ const answer = AnalysisEngineResultSchema.parse({
+  protocolVersion: "0.1.0", requestId: request.requestId, status: "ok",
+  engine: { name: "lsaa-python", version: "test", packages: {} },
+  estimates: [{ name: "difference", value: -0.22, standardError: .02, confidenceInterval: {level: .95, lower: -.3, upper: -.14} }],
+  tests: [], diagnostics: [], warnings: [{code: "small_n", message: "small sample"}], completedAt: "2026-10-10T04:00:00.000Z",
+ });
+ render(<GraphStatisticsPanel assessment={readyAssessment} design={panelDesign()} relationshipAlreadyDeclared analysisRunner={vi.fn().mockResolvedValue(answer)} measurementCountSummary="Vehicle 8測定、Drug 10測定" />);
+ fireEvent.click(screen.getByRole("button", {name: "選択した解析を実行"}));
+ const result = await screen.findByRole("group", {name: "統計解析結果"});
+ expect(result).toBeVisible();
+ expect(result).toHaveFocus();
+ expect(within(result).getByText(/推定値.*95%.*CI/)).toBeVisible();
+ expect(within(result).getByText(/検定・モデル：Welch/)).toBeVisible();
+ expect(screen.getByText(/Vehicle 8測定、Drug 10測定/)).toBeVisible();
+ const settings = screen.getByText("解析設定（方法・比較・独立性）").closest("details")!;
+ expect(settings).not.toHaveAttribute("open");
+ expect(result.compareDocumentPosition(settings) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+ expect(within(result).getByText(/重要な注意/).closest("details")).toHaveAttribute("open");
+ expect(within(result).getByText("推定図を表示").closest("details")).not.toHaveAttribute("open");
+});
+
+it.each([
+  [1 - 0.05 / 3, "98.3333%"],
+  [0.99999999, "99.999999%"],
+  [0.00000001, "0.000001%"],
+])("explains saved Tukey q and formats coverage %s without changing saved values", (level, coverage) => {
+  const savedResult = AnalysisEngineResultSchema.parse({
+    protocolVersion: request.protocolVersion, requestId: request.requestId, status: "ok",
+    engine: { name: "lsaa-python", version: "0.15.2", packages: {} },
+    estimates: [{ name: "difference", value: -3, standardError: 0.2,
+      confidenceInterval: { level, lower: -4, upper: -2 } }],
+    tests: [], warnings: [],
+    diagnostics: [{ code: "tukey_studentized_range_q", message: "q is standardized; intervals retain outcome units" }],
+    completedAt: "2026-10-10T00:00:00Z",
+  });
+  const original = JSON.stringify(savedResult);
+  const runner = vi.fn();
+  render(<GraphStatisticsPanel assessment={readyAssessment} design={panelDesign()}
+    initialAnalysis={{request,result:savedResult}} analysisRunner={runner} relationshipAlreadyDeclared />);
+  expect(screen.getByText(/Tukeyの検定統計量qは/)).toHaveTextContent("プールした群内分散（残差平均平方）");
+  expect(screen.getByText(/Tukeyの検定統計量qは/)).toHaveTextContent("解析に用いた尺度の単位");
+  expect(screen.queryByText("tukey_studentized_range_q")).toBeNull();
+  const estimates = document.querySelector('dl[aria-label="主要な推定値"]')!;
+  expect(estimates).toHaveTextContent(coverage);
+  expect(estimates).not.toHaveTextContent("98.333333333333");
+  expect(JSON.stringify(savedResult)).toBe(original);
+  expect(runner).not.toHaveBeenCalled();
+});
+
+it("keeps the saved no-sphericity diagnostic open without rerunning the engine", () => {
+  const savedRequest = AnalysisEngineRequestSchema.parse({
+    ...request,
+    protocolVersion: "0.3.0",
+    templateId: "D04",
+    method: "repeated_measures_anova",
+    conditionIds: ["condition.vehicle", "condition.drug", "condition.third"],
+    primaryContrastConditionIds: ["condition.vehicle", "condition.drug"],
+    observations: ["condition.vehicle", "condition.drug", "condition.third"].flatMap((conditionId, j) =>
+      [0, 1].map((i) => ({ observationId: `o${i}${j}`, experimentalUnitId: `u${i}`,
+        pairId: `p${i}`, conditionId, value: i + j + (i * j) / 2 }))),
+    options: { ...request.options, multiplicityMethod: "holm_paired_all_pairs" },
+  });
+  const savedResult = AnalysisEngineResultSchema.parse(JSON.parse(JSON.stringify({
+    protocolVersion: "0.3.0", requestId: request.requestId, status: "ok",
+    engine: { name: "lsaa-python", version: "0.15.2", packages: {} },
+    estimates: [], tests: [], warnings: [],
+    diagnostics: [{ code: "sphericity_not_estimated", message: "Uncorrected repeated-measures ANOVA." }],
+    completedAt: "2026-10-10T00:00:00Z",
+  })));
+  const runner = vi.fn();
+  render(<GraphStatisticsPanel assessment={readyAssessment} design={panelDesign()}
+    initialAnalysis={{request:savedRequest,result:savedResult}}
+    analysisRunner={runner} relationshipAlreadyDeclared />);
+  const note = screen.getByText(/この反復測定ANOVAは球面性補正を計算していません/);
+  expect(note).toBeVisible();
+  expect(note).toHaveTextContent("この未補正のp値で判断せず");
+  expect(note.closest("details")).toHaveAttribute("open");
+  expect(note.closest("details")).toHaveClass("is-important");
+  expect(runner).not.toHaveBeenCalled();
+});
+
+const restoredEquivalencePlan = { schemaVersion: "0.1.0" as const, margin: { scale: "raw_difference" as const, lowerBound: -0.5, upperBound: 0.5, unit: "AU", declaredAsPrespecified: true as const }, alpha: 0.05 as const, claimMode: "single_primary_comparison" as const, primaryComparisonId: "equivalence:condition.vehicle:condition.drug" };
+it("runs the restored Welch TOST route after validating the original independent design", async () => {
+ const runner = vi.fn(async (r) => AnalysisEngineResultSchema.parse({ protocolVersion: r.protocolVersion, requestId: r.requestId, status: "ok", engine: {name:"lsaa-python",version:"test",packages:{}},estimates:[],tests:[],diagnostics:[],warnings:[],completedAt:"2026-10-10T00:00:00.000Z" }));
+ const changed = vi.fn();
+ render(<GraphStatisticsPanel assessment={readyAssessment} design={panelDesign()} analysisRunner={runner} onAnalysisChange={changed} conditionOptions={defaultConditionOptions} relationshipAlreadyDeclared comparisonGoal="equivalence" equivalencePlan={restoredEquivalencePlan} equivalenceMarginUnit="AU" equivalenceSupportKind="continuous_independent" />);
+ fireEvent.click(screen.getByRole("button",{name:"Welch TOSTを実行"}));
+ await screen.findByRole("group",{name:"統計解析結果"});
+ expect(runner).toHaveBeenCalledTimes(1); expect(runner.mock.calls[0]![0]).toMatchObject({protocolVersion:"0.15.0",method:"welch_tost",equivalencePlan:restoredEquivalencePlan});
+ expect(screen.getByText(/D01 \/ protocol 0.15.0/)).toBeInTheDocument();
+ expect(changed).toHaveBeenLastCalledWith(expect.objectContaining({recommendation:expect.objectContaining({recommendedMethod:"welch_tost"})}));
+ expect(screen.queryByText("解析設定（方法・比較・独立性）")).not.toBeInTheDocument();
+});
+it("does not run restored TOST when the canonical design conflicts with its independent base request", async () => {
+ const runner=vi.fn(); render(<GraphStatisticsPanel assessment={readyAssessment} design={panelDesign(defaultConditionOptions,"matched")} analysisRunner={runner} conditionOptions={defaultConditionOptions} relationshipAlreadyDeclared comparisonGoal="equivalence" equivalencePlan={restoredEquivalencePlan} equivalenceMarginUnit="AU" equivalenceSupportKind="continuous_independent" />);
+ fireEvent.click(screen.getByRole("button",{name:"Welch TOSTを実行"})); await screen.findByRole("alert"); expect(runner).not.toHaveBeenCalled();
+});
+
+it("does not repeat completed TOST on rerender and discards an obsolete pending plan", async () => {
+ let resolveRun!: (value: ReturnType<typeof AnalysisEngineResultSchema.parse>) => void;
+ const runner = vi.fn(() => new Promise<ReturnType<typeof AnalysisEngineResultSchema.parse>>(resolve => { resolveRun=resolve; }));
+ const props = {assessment:readyAssessment,design:panelDesign(),analysisRunner:runner,conditionOptions:defaultConditionOptions,relationshipAlreadyDeclared:true,comparisonGoal:"equivalence" as const,equivalencePlan:restoredEquivalencePlan,equivalenceMarginUnit:"AU",equivalenceSupportKind:"continuous_independent" as const};
+ const {rerender}=render(<GraphStatisticsPanel {...props} />);
+ fireEvent.click(screen.getByRole("button",{name:"Welch TOSTを実行"}));
+ await waitFor(()=>expect(runner).toHaveBeenCalledTimes(1));
+ const requested = runner.mock.calls[0] as unknown as [ { protocolVersion:string; requestId:string } ];
+ const answer=AnalysisEngineResultSchema.parse({protocolVersion:requested[0].protocolVersion,requestId:requested[0].requestId,status:"ok",engine:{name:"lsaa-python",version:"test",packages:{}},estimates:[],tests:[],diagnostics:[],warnings:[],completedAt:"2026-10-10T00:00:00.000Z"});
+ await act(async()=>resolveRun(answer));
+ await screen.findByRole("group",{name:"統計解析結果"});
+ rerender(<GraphStatisticsPanel {...props} />);
+ expect(runner).toHaveBeenCalledTimes(1);
+ fireEvent.click(screen.getByRole("button",{name:"Welch TOSTを実行"}));
+ await waitFor(()=>expect(runner).toHaveBeenCalledTimes(2));
+ rerender(<GraphStatisticsPanel {...props} equivalencePlan={{...restoredEquivalencePlan,margin:{...restoredEquivalencePlan.margin,upperBound:0.6}}} />);
+ await act(async()=>resolveRun(answer));
+ expect(screen.queryByRole("group",{name:"統計解析結果"})).toBeNull();
+ expect(runner).toHaveBeenCalledTimes(2);
 });

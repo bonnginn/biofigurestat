@@ -1,3 +1,14 @@
+import { legacyWorkspaceRawEqualsRehydrated } from "./legacyWorkspaceRawEquality";
+import { workspaceExecutionRecommendation } from "./workspaceExecutionRecommendation";
+import {
+  LEGACY_NESTED_CELL_PROVENANCE_KEY,
+  decodeLegacyNestedCellProvenance,
+  encodeLegacyNestedCellProvenance,
+  restoreLegacyNestedCellProvenance,
+  type LegacyNestedCellProvenance,
+} from "./legacyNestedCellProvenance";
+import { resolveNestedNormalizationLineage } from "./nestedNormalizationLineage";
+import { rebindAnalysisAnnotationReferences } from "./savedWorkspaceGraphAnalyses";
 import {
   appendAnalysisExecution,
   appendDerivedDatasetArtifacts,
@@ -23,7 +34,6 @@ import {
 import {
   AnalysisEngineRequestSchema,
   AnalysisEngineResultSchema,
-  requireAnalysisRequestRecommendation,
   type AnalysisEngineRequest,
   type AnalysisEngineResult,
   type AnalysisRecommendation,
@@ -48,7 +58,11 @@ import {
   type ExperimentCellMap,
   type ExperimentSetDraft,
 } from "./experimentDraft";
-import { synchronizeAdaptiveDraft } from "./adaptiveCanonicalStore";
+import {
+  restoreLegacyScalarDisplayTexts,
+  synchronizeAdaptiveDraft,
+} from "./adaptiveCanonicalStore";
+import { createWorkspaceProjectId } from "./workspaceProjectIdentity";
 import {
   assertDualWriteEquivalence,
   projectContractToExperimentDesign,
@@ -161,7 +175,9 @@ function pendingAnalysisGraphs(
       selectedConditionIds: candidate.selectedConditionIds,
       selectedTimePointIds: candidate.selectedTimePointIds,
       analysisTimePointId: candidate.analysisTimePointId,
-      analysisMetric: candidate.analysisMetric,
+      // The workbench and analysis preparation use the same default. Making
+      // that default explicit does not create a new scientific result.
+      analysisMetric: candidate.analysisMetric ?? { kind: "selected_timepoint" },
     });
     if (
       semanticFingerprint(derivationPayload(graph)) !==
@@ -222,13 +238,9 @@ function createAdaptiveCanonicalRecords(
   const sharedSourceConditionUnits = hasSharedSourceConditionUnits(draft);
   const sessionIdentityKey = contract.matching.identityKey ?? experimentalIdentityKey;
   const experimentSessionFor = (row: (typeof snapshot.canonicalObservations)[number]) => {
-    // An explicit worksheet session is provenance/block metadata only. It does
-    // not establish pairing; the declared matching structure remains authoritative.
-    if (row.experimentSessionId) {
-      return draft.experiments.some(({ id }) => id === row.experimentSessionId)
-        ? row.experimentSessionId
-        : undefined;
-    }
+    // A row's ordinal position within an independent condition is presentation state,
+    // not evidence that it belongs to the same experimental session as the nth row
+    // in another condition. Only an explicit matched identity may create this link.
     if (draft.conditionAssignment.kind !== "matched") return undefined;
     const semanticIdentity = row.identities[sessionIdentityKey];
     if (!semanticIdentity) return undefined;
@@ -753,6 +765,8 @@ function createCanonicalRecords(
             });
           }
           if (cell?.kind === "nested_continuous") {
+            // Provenance has no measurement values and never controls unit identity.
+            const cellProvenance = encodeLegacyNestedCellProvenance({ cellKey: key, cell });
             cell.rawValues.filter(Number.isFinite).forEach((value, valueIndex) => {
               const observationUnitId = `${unitId}.observation.${condition.id}.${readout.id}.${timePoint?.id ?? "none"}.${valueIndex + 1}`;
               unitInstances.push({
@@ -760,7 +774,12 @@ function createCanonicalRecords(
                 levelId: "unit-level.observation",
                 parentUnitId: unitId,
                 label: `${condition.label} · ${valueIndex + 1}`,
-                metadata,
+                metadata: {
+                  ...metadata,
+                  ...(valueIndex === 0 && cellProvenance !== null
+                    ? { [LEGACY_NESTED_CELL_PROVENANCE_KEY]: cellProvenance }
+                    : {}),
+                },
               });
               observations.push({
                 id: `observation.${observations.length + 1}.r${revisionIndex}`,
@@ -954,14 +973,17 @@ function prepareWorkspaceAnalyses(input: {
         observation.sourceLocation === undefined
       )
         return false;
-      if (sourceKeys.has(observation.sourceLocation.replace(/^workspace:/, ""))) return true;
+      const sourceKey = observation.sourceLocation.startsWith("workspace:")
+        ? observation.sourceLocation.slice("workspace:".length).split("#source=", 1)[0]
+        : observation.sourceLocation;
+      if (sourceKeys.has(sourceKey)) return true;
       if (!observation.sourceLocation.startsWith("adaptive:")) return false;
 
-      // An independent adaptive row may carry an explicit experiment-session
-      // provenance link, but that link never manufactures pairing. The active
-      // raw revision already scopes independent rows to this workspace, so
-      // factor and time selection remain sufficient. Matched designs retain
-      // their declared matching identity and continue to validate it here.
+      // Independent adaptive rows intentionally have no experimentSessionId:
+      // their display ordinal must never manufacture run/pair linkage. The
+      // active raw revision already scopes them to this workspace, so factor
+      // and time selection are sufficient. Matched designs retain their
+      // explicit session identity and continue to validate it here.
       const belongsToSelectedExperiment =
         input.draft.conditionAssignment.kind === "independent" ||
         selectedExperimentIds.has(sourceExperimentId(observation.unitInstanceId) ?? "");
@@ -1181,6 +1203,33 @@ function prepareWorkspaceAnalyses(input: {
 
     if (readout?.withinExperimentNormalization) {
       const sourceDatasetId = derivedDatasetRevisionId ?? input.records.rawRevision.id;
+      // The current project schema records direct raw lineage. Resolve the
+      // already materialized mean rather than passing a derived ID as raw.
+      const nestedNormalizationLineage =
+        readout.shape === "nested_continuous" &&
+        !usesTimeMetric &&
+        !usesFullTimeCourse &&
+        readout.withinExperimentNormalization.method === "control_equals_one" &&
+        derivedDatasetRevisionId
+          ? resolveNestedNormalizationLineage({
+              sourceDatasetId: derivedDatasetRevisionId,
+              rawRevisionId: input.records.rawRevision.id,
+              outcomeId: graph.selectedReadoutId,
+              experimentalUnitLevelId: input.design.experimentalUnitLevelId,
+              derivedDatasetRevisions,
+              transformations,
+              derivedValues,
+              observations: input.records.observations,
+              unitInstances: input.records.unitInstances,
+            })
+          : null;
+      const valueDependencies: Array<{
+        normalizedValueId: string;
+        numeratorDerivedValueId: string;
+        denominatorDerivedValueId: string;
+        experimentSessionId: string;
+        baselineConditionId: string;
+      }> = [];
       const normalizationId = `transformation.workspace.${graph.id}.within-experiment.r${input.revisionIndex}`;
       const normalizedRevisionId = `derived.workspace.${graph.id}.within-experiment.r${input.revisionIndex}`;
       const byExperimentSession = new Map<string, typeof analysisObservations>();
@@ -1198,40 +1247,85 @@ function prepareWorkspaceAnalyses(input: {
         ]);
       });
       const normalizedValues: DerivedScalarValue[] = [];
-      analysisObservations = [...byExperimentSession.values()].flatMap((unitObservations) => {
-        const valuesByCondition = Object.fromEntries(
-          unitObservations.map(({ conditionId, value }) => [conditionId, value]),
-        );
-        return unitObservations.flatMap((observation) => {
-          const value = normalizeWithinExperiment(
-            observation.value,
-            valuesByCondition,
-            observation.conditionId,
-            readout,
+      analysisObservations = [...byExperimentSession.entries()].flatMap(
+        ([sessionId, unitObservations]) => {
+          if (
+            nestedNormalizationLineage &&
+            new Set(unitObservations.map(({ conditionId }) => conditionId)).size !==
+              unitObservations.length
+          ) {
+            throw new Error("NESTED_NORMALIZATION_CONDITION_AMBIGUOUS");
+          }
+          const valuesByCondition = Object.fromEntries(
+            unitObservations.map(({ conditionId, value }) => [conditionId, value]),
           );
-          if (value === null) return [];
-          normalizedValues.push({
-            id: `derived-value.workspace.${graph.id}.within-experiment.${normalizedValues.length + 1}`,
-            derivedDatasetRevisionId: normalizedRevisionId,
-            experimentalUnitId: observation.experimentalUnitId,
-            conditionId: observation.conditionId,
-            outcomeId: graph.selectedReadoutId,
-            value,
-            sourceObservationIds: [observation.observationId],
-            sourceUnitIds: [observation.experimentalUnitId],
-            subsampleCount: 1,
+          return unitObservations.flatMap((observation) => {
+            const value = normalizeWithinExperiment(
+              observation.value,
+              valuesByCondition,
+              observation.conditionId,
+              readout,
+            );
+            if (value === null) return [];
+            const sourceValue = nestedNormalizationLineage?.resolveValue(observation);
+            const normalizedValueId = `derived-value.workspace.${graph.id}.within-experiment.${normalizedValues.length + 1}.r${input.revisionIndex}`;
+            if (sourceValue && nestedNormalizationLineage) {
+              const baselineConditionId =
+                readout.withinExperimentNormalization!.baselineConditionId;
+              const baseline = unitObservations.find(
+                ({ conditionId }) => conditionId === baselineConditionId,
+              );
+              if (!baseline || !baselineConditionId)
+                throw new Error("NESTED_NORMALIZATION_BASELINE_MISSING");
+              const denominator = nestedNormalizationLineage.resolveValue(baseline);
+              valueDependencies.push({
+                normalizedValueId,
+                numeratorDerivedValueId: sourceValue.id,
+                denominatorDerivedValueId: denominator.id,
+                experimentSessionId: sessionId,
+                baselineConditionId,
+              });
+            }
+            normalizedValues.push({
+              // New executions append versioned values while retaining legacy
+              // historical IDs exactly as they were stored.
+              id: normalizedValueId,
+              derivedDatasetRevisionId: normalizedRevisionId,
+              experimentalUnitId: observation.experimentalUnitId,
+              conditionId: observation.conditionId,
+              outcomeId: graph.selectedReadoutId,
+              value,
+              sourceObservationIds: sourceValue
+                ? [...sourceValue.sourceObservationIds]
+                : [observation.observationId],
+              sourceUnitIds: sourceValue
+                ? [...sourceValue.sourceUnitIds]
+                : [observation.experimentalUnitId],
+              subsampleCount: sourceValue?.subsampleCount ?? 1,
+            });
+            return [{ ...observation, observationId: normalizedValues.at(-1)!.id, value }];
           });
-          return [{ ...observation, observationId: normalizedValues.at(-1)!.id, value }];
-        });
-      });
+        },
+      );
       transformations.push({
         id: normalizationId,
-        version: "0.1.0",
+        version: nestedNormalizationLineage ? "0.2.0" : "0.1.0",
         method: readout.withinExperimentNormalization.method,
-        inputRevisionIds: [sourceDatasetId],
+        inputRevisionIds: [
+          nestedNormalizationLineage ? input.records.rawRevision.id : sourceDatasetId,
+        ],
         parameters: {
           scope: "within_experiment",
           method: readout.withinExperimentNormalization.method,
+          ...(nestedNormalizationLineage
+            ? {
+                inputDerivedDatasetRevisionId: nestedNormalizationLineage.sourceRevision.id,
+                inputTransformationId: nestedNormalizationLineage.sourceTransformation.id,
+                sourceRawRevisionId: input.records.rawRevision.id,
+                outcomeId: graph.selectedReadoutId,
+                valueDependencies,
+              }
+            : {}),
           ...(readout.withinExperimentNormalization.baselineConditionId
             ? { baselineConditionId: readout.withinExperimentNormalization.baselineConditionId }
             : {}),
@@ -1251,6 +1345,69 @@ function prepareWorkspaceAnalyses(input: {
       });
       derivedValues.push(...normalizedValues);
       derivedDatasetRevisionId = normalizedRevisionId;
+    }
+
+    // Canonicalize the executed scope independently of the displayed raw data.
+    // Keep the full display material above, including normalization controls.
+    if (
+      (executedAnalysis.request.protocolVersion === "0.1.0" ||
+        executedAnalysis.request.protocolVersion === "0.15.0" ||
+        executedAnalysis.request.protocolVersion === "0.16.0") &&
+      (executedAnalysis.request.templateId === "D01" ||
+        executedAnalysis.request.templateId === "D02")
+    ) {
+      const executedRequest = executedAnalysis.request;
+      const executedConditionIds = new Set(executedRequest.contrastConditionIds);
+      const explicitScopes = [graph.analysisConditionIds, graph.dataSets?.analysisSet.conditionIds];
+      if (
+        executedConditionIds.size !== 2 ||
+        executedRequest.observations.some(
+          (observation) => !executedConditionIds.has(observation.conditionId),
+        ) ||
+        explicitScopes.some(
+          (scope) =>
+            scope !== undefined &&
+            (new Set(scope).size !== executedConditionIds.size ||
+              scope.some((conditionId) => !executedConditionIds.has(conditionId))),
+        )
+      ) {
+        throw new Error("EXECUTED_CONDITION_SCOPE_INVALID");
+      }
+      analysisObservations = analysisObservations.filter((observation) =>
+        executedConditionIds.has(observation.conditionId),
+      );
+      if (executedRequest.protocolVersion === "0.16.0") {
+        const membersByPair = new Map<string, typeof analysisObservations>();
+        for (const observation of analysisObservations) {
+          if (!observation.pairId) throw new Error("EXECUTED_PAIR_ID_MISSING");
+          const members = membersByPair.get(observation.pairId) ?? [];
+          members.push(observation);
+          membersByPair.set(observation.pairId, members);
+        }
+        const completePairIds = new Set(
+          [...membersByPair.entries()]
+            .filter(
+              ([, members]) =>
+                members.length === 2 &&
+                new Set(members.map(({ conditionId }) => conditionId)).size === 2,
+            )
+            .map(([pairId]) => pairId),
+        );
+        analysisObservations = analysisObservations.filter(
+          ({ pairId }) => pairId !== undefined && completePairIds.has(pairId),
+        );
+      }
+      for (const conditionId of executedConditionIds) {
+        const executedCount = executedRequest.observations.filter(
+          (observation) => observation.conditionId === conditionId,
+        ).length;
+        const canonicalCount = analysisObservations.filter(
+          (observation) => observation.conditionId === conditionId,
+        ).length;
+        if (executedCount === 0 || canonicalCount !== executedCount) {
+          throw new Error("EXECUTED_CONDITION_SAMPLE_COUNT_CHANGED");
+        }
+      }
     }
 
     const requestId = `request.workspace.${graph.id}.r${input.revisionIndex}`;
@@ -1414,15 +1571,12 @@ function prepareWorkspaceAnalyses(input: {
           }
         : {}),
     });
-    const canonicalRecommendation =
-      request.protocolVersion === "0.15.0" || request.protocolVersion === "0.16.0"
-        ? graph.analysis?.recommendation
-        : requireAnalysisRequestRecommendation(input.design, request, {
-            outcomeId: graph.selectedReadoutId,
-          });
-    if (!canonicalRecommendation) {
-      throw new Error("EXECUTED_EQUIVALENCE_RECOMMENDATION_REQUIRED");
-    }
+    const canonicalRecommendation = workspaceExecutionRecommendation(
+      input.design,
+      request,
+      graph.analysis?.recommendation,
+      graph.selectedReadoutId,
+    );
     analyses.push({
       graphId: graph.id,
       request,
@@ -1441,6 +1595,9 @@ function prepareWorkspaceAnalyses(input: {
   return { transformations, derivedDatasetRevisions, derivedValues, analyses };
 }
 
+/** Retain identity across unsaved serialization attempts without treating them as saved revisions. */
+export type WorkspaceProjectIdentity = Pick<ProjectState["metadata"], "projectId" | "createdAt">;
+
 export function createExperimentWorkspaceProject(input: {
   draft: ExperimentSetDraft;
   cells: ExperimentCellMap;
@@ -1448,6 +1605,7 @@ export function createExperimentWorkspaceProject(input: {
   dataViewMode?: "compact" | "expanded";
   cellDisplayTexts?: Readonly<Record<string, string>>;
   existingState?: ProjectState;
+  newProjectIdentity?: WorkspaceProjectIdentity;
   now?: string;
 }): ProjectState {
   const now = input.now ?? new Date().toISOString();
@@ -1481,19 +1639,30 @@ export function createExperimentWorkspaceProject(input: {
   );
   const persistedAdaptive =
     input.existingState?.adaptiveInput ?? input.existingState?.experimentWorkspace?.adaptiveInput;
+  const legacyBaseline =
+    input.existingState && !draft.adaptiveInput && !persistedAdaptive
+      ? rehydrateExperimentWorkspace(input.existingState)
+      : null;
   const rawChanged = input.existingState
     ? draft.adaptiveInput && persistedAdaptive
       ? semanticFingerprint(adaptiveRawPayload(draft.adaptiveInput)) !==
         semanticFingerprint(adaptiveRawPayload(persistedAdaptive))
-      : true
+      : legacyBaseline
+        ? !legacyWorkspaceRawEqualsRehydrated(
+            { draft, cells: input.cells },
+            { draft: legacyBaseline.draft, cells: legacyBaseline.cells },
+          )
+        : true
     : true;
   const rawRevisionIndex = input.existingState
     ? input.existingState.rawRevisions.length + (rawChanged ? 1 : 0)
     : 1;
-  const artifactRevisionIndex =
-    input.existingState && !rawChanged
-      ? nextWorkspaceArtifactRevisionIndex(input.existingState)
-      : rawRevisionIndex;
+  // Re-execution may already have advanced artifact IDs beyond raw history.
+  // A real raw edit still appends its own revision, while all new scientific
+  // artifacts must advance from the highest ID retained in the project.
+  const artifactRevisionIndex = input.existingState
+    ? nextWorkspaceArtifactRevisionIndex(input.existingState)
+    : rawRevisionIndex;
   const rawRevision: RawDatasetRevision = rawChanged
     ? {
         id: `raw.workspace.${rawRevisionIndex}`,
@@ -1508,7 +1677,9 @@ export function createExperimentWorkspaceProject(input: {
     ? createCanonicalRecords(draft, input.cells, rawRevision, rawRevisionIndex)
     : activeCanonicalRecords(input.existingState!);
   const projectId =
-    input.existingState?.metadata.projectId ?? `project.workspace.${Date.parse(now)}`;
+    input.existingState?.metadata.projectId ??
+    input.newProjectIdentity?.projectId ??
+    createWorkspaceProjectId();
   const analysesToPersist = pendingAnalysisGraphs(
     input.graphs,
     input.existingState,
@@ -1536,7 +1707,9 @@ export function createExperimentWorkspaceProject(input: {
             input.dataViewMode ??
               input.existingState.experimentWorkspace?.dataViewMode ??
               "compact",
-            input.cellDisplayTexts,
+            input.cellDisplayTexts ??
+              input.existingState.experimentWorkspace?.cellDisplayTexts ??
+              {},
           ),
         })
       : input.existingState;
@@ -1578,7 +1751,7 @@ export function createExperimentWorkspaceProject(input: {
         projectId,
         projectName: draft.name,
         experimentDate: firstDate ?? "",
-        createdAt: now,
+        createdAt: input.newProjectIdentity?.createdAt ?? now,
         updatedAt: now,
       },
       design,
@@ -1617,12 +1790,23 @@ export function createExperimentWorkspaceProject(input: {
       graph.analysisRunId,
     ]),
   );
-  const linkedGraphs = input.graphs.map((graph) => ({
-    ...graph,
-    analysisRunId:
+  const linkedGraphs = input.graphs.map((graph) => {
+    const analysisRunId =
       graphRunIds.get(graph.id) ??
-      (graph.analysis ? (previousGraphRunIds.get(graph.id) ?? null) : null),
-  }));
+      (graph.analysis ? (previousGraphRunIds.get(graph.id) ?? null) : null);
+    const run = state.analysisRuns.find(({ id }) => id === analysisRunId);
+    return {
+      ...graph,
+      analysisRunId,
+      statisticsAnnotations: run
+        ? rebindAnalysisAnnotationReferences(
+            graph.statisticsAnnotations,
+            graph.analysis?.request.requestId,
+            run.request.requestId,
+          )
+        : graph.statisticsAnnotations,
+    };
+  });
   return ProjectStateSchema.parse({
     ...state,
     experimentWorkspace: createWorkspaceSnapshot(
@@ -1630,7 +1814,7 @@ export function createExperimentWorkspaceProject(input: {
       input.cells,
       linkedGraphs,
       input.dataViewMode ?? "compact",
-      input.cellDisplayTexts,
+      input.cellDisplayTexts ?? input.existingState?.experimentWorkspace?.cellDisplayTexts ?? {},
     ),
     adaptiveInput: draft.adaptiveInput ?? null,
   });
@@ -1677,6 +1861,8 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
     adaptiveInput: workspace.adaptiveInput ?? undefined,
   };
   const cells: Record<string, ExperimentCellMap[string]> = {};
+  const nestedCellProvenance = new Map<string, LegacyNestedCellProvenance>();
+  let invalidNestedCellProvenance = false;
   const unitsById = new Map(state.unitInstances.map((unit) => [unit.id, unit]));
   const experimentalUnitFor = (unitId: string) => {
     let unit = unitsById.get(unitId);
@@ -1737,6 +1923,22 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
         readoutId: observation.outcomeId,
         timePointId: timePoint?.id,
       });
+    const sourceMetadata = unitsById.get(observation.unitInstanceId)?.metadata;
+    if (sourceMetadata && Object.hasOwn(sourceMetadata, LEGACY_NESTED_CELL_PROVENANCE_KEY)) {
+      const provenance = decodeLegacyNestedCellProvenance(
+        sourceMetadata[LEGACY_NESTED_CELL_PROVENANCE_KEY],
+      );
+      if (
+        observation.measurement.kind !== "scalar" ||
+        !provenance ||
+        provenance.cellKey !== key ||
+        nestedCellProvenance.has(key)
+      ) {
+        invalidNestedCellProvenance = true;
+      } else {
+        nestedCellProvenance.set(key, provenance);
+      }
+    }
     if (observation.measurement.kind === "proportion") {
       cells[key] = {
         kind: "proportion",
@@ -1747,6 +1949,15 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
     if (observation.measurement.kind === "scalar") {
       const existing = cells[key];
       const encodedSource = observation.sourceLocation?.split("#source=")[1];
+      const observationUnit = unitsById.get(observation.unitInstanceId);
+      const childIdentity =
+        draft.adaptiveInput &&
+        observationUnit?.levelId !== design.experimentalUnitLevelId &&
+        typeof observationUnit?.metadata.semanticIdentity === "string"
+          ? observationUnit.metadata.semanticIdentity
+          : null;
+      const priorChildIds =
+        existing?.kind === "nested_continuous" ? existing.observationUnitIds : undefined;
       cells[key] = {
         kind: "nested_continuous",
         source: "paste",
@@ -1754,6 +1965,16 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
           ...(existing?.kind === "nested_continuous" ? existing.rawValues : []),
           observation.measurement.value,
         ],
+        ...(childIdentity !== null || priorChildIds
+          ? {
+              observationUnitIds: [
+                ...(existing?.kind === "nested_continuous"
+                  ? (priorChildIds ?? existing.rawValues.map(() => ""))
+                  : []),
+                childIdentity ?? "",
+              ],
+            }
+          : {}),
         sourceLocations: [
           ...(existing?.kind === "nested_continuous" ? (existing.sourceLocations ?? []) : []),
           ...(encodedSource ? [decodeURIComponent(encodedSource)] : []),
@@ -1782,6 +2003,18 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
       };
     }
   });
+  // Legacy files without this field keep their existing fallback. Reserved but
+  // malformed provenance stops reconstruction rather than inventing source data.
+  if (invalidNestedCellProvenance) return null;
+  for (const [key, provenance] of nestedCellProvenance) {
+    const restored = restoreLegacyNestedCellProvenance({
+      cellKey: key,
+      cell: cells[key],
+      provenance,
+    });
+    if (!restored) return null;
+    cells[key] = restored;
+  }
   workspace.notPlannedCellKeys.forEach((key) => {
     const readoutId = key.split("::").at(-1);
     const readout = draft.readouts.find(({ id }) => id === readoutId);
@@ -1832,7 +2065,7 @@ export function rehydrateExperimentWorkspace(state: ProjectState): {
     };
   });
   return {
-    draft,
+    draft: restoreLegacyScalarDisplayTexts(draft, cells, workspace.cellDisplayTexts),
     cells,
     graphs,
     dataViewMode: workspace.dataViewMode,

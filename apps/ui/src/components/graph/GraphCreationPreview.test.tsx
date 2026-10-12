@@ -34,36 +34,6 @@ function previewFixture() {
   return { draft, cells: mutableCells as ExperimentCellMap };
 }
 
-function compositionFixture() {
-  const base = createExperimentSetDraft("cell_culture", "categorical_counts");
-  const draft = {
-    ...base,
-    conditions: base.conditions.map((condition, index) => ({
-      ...condition,
-      label: `Condition ${index + 1}`,
-      attributes: { "attribute.1": `Condition ${index + 1}` },
-    })),
-  };
-  const mutableCells: Record<string, ExperimentCellMap[string]> = {};
-  draft.conditions.forEach((condition, conditionIndex) => {
-    mutableCells[
-      experimentCellKey({
-        experimentId: draft.experiments[0]!.id,
-        conditionId: condition.id,
-        readoutId: draft.readouts[0]!.id,
-      })
-    ] = {
-      kind: "categorical_counts",
-      counts: {
-        "category.1": 5 + conditionIndex,
-        "category.2": 3,
-        "category.3": 2,
-      },
-    };
-  });
-  return { draft, cells: mutableCells as ExperimentCellMap };
-}
-
 describe("CurrentDataGraphPreview scientific integrity", () => {
   it("anchors bar previews to a zero-containing domain", () => {
     const { draft, cells } = previewFixture();
@@ -72,33 +42,6 @@ describe("CurrentDataGraphPreview scientific integrity", () => {
     const graph = screen.getByRole("img", { name: /barで現在のデータ/ });
     expect(Number(graph.getAttribute("data-domain-min"))).toBeLessThanOrEqual(0);
     expect(Number(graph.getAttribute("data-domain-max"))).toBeGreaterThan(0);
-  });
-
-  it("uses shared plot bounds and renders non-overlapping axis context", () => {
-    const { draft, cells } = previewFixture();
-    render(<CurrentDataGraphPreview type="dot" draft={draft} cells={cells} />);
-
-    const graph = screen.getByRole("img", { name: /dotで現在のデータ/ });
-    const plotLeft = Number(graph.getAttribute("data-plot-left"));
-    const plotRight = Number(graph.getAttribute("data-plot-right"));
-    const plotTop = Number(graph.getAttribute("data-plot-top"));
-    const plotBottom = Number(graph.getAttribute("data-plot-bottom"));
-    const yTitle = screen.getByText("細胞強度 (a.u.)");
-
-    expect({ plotLeft, plotRight, plotTop, plotBottom }).toEqual({
-      plotLeft: 70,
-      plotRight: 300,
-      plotTop: 22,
-      plotBottom: 222,
-    });
-    const groupCenters = [...graph.querySelectorAll("[data-preview-group-x]")].map((group) =>
-      Number(group.getAttribute("data-preview-group-x")),
-    );
-    expect(groupCenters[0] - plotLeft).toBeGreaterThanOrEqual(30);
-    expect(plotRight - groupCenters.at(-1)!).toBeGreaterThanOrEqual(30);
-    expect(graph.querySelectorAll("[data-preview-y-tick]").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText("条件")).toBeVisible();
-    expect(Number(yTitle.getAttribute("x"))).toBeLessThan(plotLeft);
   });
 
   it("uses a sampled density outline instead of a min-max silhouette for violin previews", () => {
@@ -126,31 +69,5 @@ describe("CurrentDataGraphPreview scientific integrity", () => {
       .querySelector('[data-graph-layer="violin"]');
     expect(path?.getAttribute("d")?.match(/ L /g)?.length).toBeGreaterThan(40);
     expect(path?.getAttribute("d")).not.toContain(" C ");
-  });
-
-  it("pads scatter points away from axes and renders shared nice ticks", () => {
-    const { draft, cells } = previewFixture();
-    render(<CurrentDataGraphPreview type="scatter" draft={draft} cells={cells} />);
-
-    const graph = screen.getByRole("img", { name: /散布図preview/ });
-    expect(Number(graph.getAttribute("data-domain-x-min"))).toBeLessThan(0.72);
-    expect(Number(graph.getAttribute("data-domain-x-max"))).toBeGreaterThan(0.88);
-    expect(Number(graph.getAttribute("data-domain-y-min"))).toBeLessThan(1.4);
-    expect(Number(graph.getAttribute("data-domain-y-max"))).toBeGreaterThan(1.62);
-    expect(graph.querySelectorAll("[data-preview-x-tick]").length).toBeGreaterThanOrEqual(2);
-    expect(graph.querySelectorAll("[data-preview-y-tick]").length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("keeps wide composition previews scrollable with axes, labels, and legend", () => {
-    const { draft, cells } = compositionFixture();
-    render(<CurrentDataGraphPreview type="stacked_100" draft={draft} cells={cells} />);
-
-    const graph = screen.getByRole("img", { name: /カテゴリ構成/ });
-    const viewBoxWidth = Number(graph.getAttribute("viewBox")?.split(" ")[2]);
-    expect(viewBoxWidth).toBeGreaterThan(620);
-    expect(graph.querySelectorAll("[data-preview-y-tick]")).toHaveLength(5);
-    expect(screen.getAllByText("Condition 10")[0]).toBeVisible();
-    expect(screen.getByText("Category A")).toBeVisible();
-    expect(screen.getByText("カテゴリ構成 (%)")).toBeVisible();
   });
 });

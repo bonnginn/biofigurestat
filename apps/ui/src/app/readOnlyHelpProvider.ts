@@ -1,11 +1,8 @@
 import { contextualHelpSuggestions, type ContextualHelpContext } from "./contextualHelp";
-import {
-  localizedScientificHelpTopic,
-  type ScientificHelpTopicId,
-} from "./scientificHelpGlossary";
+import { scientificHelpTopic, type ScientificHelpTopicId } from "./scientificHelpGlossary";
 
 export type ReadOnlyHelpRequest = Readonly<{
-  locale: "ja" | "en";
+  locale: "ja";
   context: ContextualHelpContext;
   topicId?: ScientificHelpTopicId;
   question?: string;
@@ -53,7 +50,6 @@ export function helpProviderMayRun(
 
 export function createReadOnlyHelpRequest(input: {
   context: ContextualHelpContext;
-  locale?: "ja" | "en";
   topicId?: ScientificHelpTopicId;
   question?: string;
 }): ReadOnlyHelpRequest {
@@ -73,7 +69,7 @@ export function createReadOnlyHelpRequest(input: {
     ...(context.transformation ? { transformation: context.transformation } : {}),
   };
   return {
-    locale: input.locale ?? "ja",
+    locale: "ja",
     context: safeContext,
     ...(input.topicId ? { topicId: input.topicId } : {}),
     ...(input.question?.trim() ? { question: input.question.trim().slice(0, 500) } : {}),
@@ -87,13 +83,11 @@ export const deterministicHelpProvider: ReadOnlyHelpProvider = {
     const topicIds = request.topicId
       ? [request.topicId]
       : contextualHelpSuggestions(request.context).map(({ topic }) => topic.id);
-    const topics = topicIds.map((id) => localizedScientificHelpTopic(id, request.locale));
+    const topics = topicIds.map(scientificHelpTopic);
     const answer = topics
       .map(
         (topic) =>
-          request.locale === "ja"
-            ? `${topic.title}：${topic.summary}${topic.limitation ? ` 注意：${topic.limitation}` : ""}`
-            : `${topic.title}: ${topic.summary}${topic.limitation ? ` Caution: ${topic.limitation}` : ""}`,
+          `${topic.title}：${topic.summary}${topic.limitation ? ` 注意：${topic.limitation}` : ""}`,
       )
       .join("\n\n");
     return {

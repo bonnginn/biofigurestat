@@ -14,7 +14,6 @@ import {
   percentage,
   plannedExperimentalUnitCount,
   reuseExperimentDesign,
-  sharedSourceConditionTopology,
   wbCorrectedBandValue,
   wbRatio,
 } from "./experimentDraft";
@@ -122,7 +121,6 @@ describe("experiment-first UX draft", () => {
       },
     };
     expect(plannedExperimentalUnitCount(sharedSourceDraft)).toBe(6);
-    expect(sharedSourceConditionTopology(sharedSourceDraft)?.sourceUnitLabel).toBe("Donor culture");
     expect(expectedAnalysisLabel(sharedSourceDraft)).toBe(
       "同じDonor cultureに由来する条件別condition dishの2条件比較",
     );

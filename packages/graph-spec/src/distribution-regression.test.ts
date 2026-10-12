@@ -86,4 +86,32 @@ describe("distribution and regression Graph contracts", () => {
     expect(spec.axes.xScale).toBe("log10");
     expect(spec.axes.yScale).toBe("linear");
   });
+  it("validates only displayed regression uncertainty on a log axis without changing source values", () => {
+    const spec = createRegressionGraphSpec({
+      graphId: "g",
+      dataSource: { kind: "analysis_result", id: "r", revision: "r" },
+      analysisResultId: "r",
+      xLabel: "X",
+      yLabel: "Y",
+      yScale: "log10",
+    });
+    const points = [
+      { experimentalUnitId: "u1", x: 1, y: 2 },
+      { experimentalUnitId: "u2", x: 2, y: 3 },
+    ];
+    const result = {
+      regression: {
+        fittedLine: [
+          { x: 1, y: 2, lower: 0, upper: 4 },
+          { x: 2, y: 3, lower: 1, upper: 5 },
+        ],
+      },
+    };
+    const before = JSON.stringify({ points, result });
+    expect(() => createRegressionGraphModel(spec, points, result, true)).toThrow(
+      /every displayed value/,
+    );
+    expect(createRegressionGraphModel(spec, points, result, false).points).toEqual(points);
+    expect(JSON.stringify({ points, result })).toBe(before);
+  });
 });

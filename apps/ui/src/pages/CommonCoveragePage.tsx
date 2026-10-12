@@ -7,7 +7,12 @@ import {
   type ChangeEvent,
   type ClipboardEvent,
 } from "react";
-import type { DelimitedSourceKind, EntryModuleFacts } from "@lsaa/adaptive-input";
+import {
+  parseAdaptiveDelimited,
+  type DelimitedSourceKind,
+  type EntryModuleFacts,
+} from "@lsaa/adaptive-input";
+import type { ExperimentDesign, Observation, UnitInstance } from "@lsaa/domain";
 import {
   AnalysisEngineRequestSchema,
   type AnalysisEngineResult,
@@ -37,6 +42,7 @@ import {
   ProjectStateSchema,
   type ProjectState,
   type SpecializedEntryDraftProjectState,
+  type TableRegressionSnapshot,
 } from "@lsaa/project";
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
 import type {
@@ -44,12 +50,6 @@ import type {
   SaveProjectAction,
   SaveSpecializedEntryDraftProjectAction,
 } from "../app/projectActions";
-import {
-  localizedFailureDetail,
-  localizedFailureMessage,
-  localizedText,
-  useAppLocale,
-} from "../app/appLocale";
 import {
   createSpecializedEntryDraft,
   specializedSafeStop,
@@ -75,7 +75,8 @@ import {
 } from "../app/benchmarkEvaluation";
 import { evaluationMode } from "../app/evaluationMode";
 import { copyGraphToClipboard, serializeGraphSvg, svgToPngBlob } from "../app/graphExport";
-import { saveGraphPngExport, saveGraphSvgExport } from "../app/graphExportController";
+import { exportRenderedGraphPng, exportRenderedGraphSvg } from "../app/specializedGraphExport";
+import { CommonAnalysisResults } from "../components/CommonAnalysisResults";
 import { generateCommonCoverageMethods } from "../app/commonCoverageMethods";
 import { generateMethodsText } from "../app/methodsText";
 import {
@@ -99,6 +100,7 @@ import {
   withOrderedCurveAnalysisProvenance,
 } from "../app/orderedCurveAnalysisProvenance";
 import type { CommonCoverageDraft } from "../app/specializedAnalysisDrafts";
+import { regressionDraftForSave, regressionSnapshotToken } from "../app/tableRegressionPersistence";
 import type { DedicatedEntryIntent } from "../app/dedicatedEntryIntent";
 import {
   createEntryModuleTargetedFactsState,
@@ -124,26 +126,9 @@ import { NonlinearFitGraph } from "../components/graph/NonlinearFitGraph";
 import { GraphWorkspaceFrame } from "../components/graph/GraphWorkspaceFrame";
 import { AnalysisRouteSwitcher } from "../components/AnalysisRouteSwitcher";
 import { DelimitedTextSpreadsheet } from "../components/DelimitedTextSpreadsheet";
-import { LocalizedFileInput } from "../components/LocalizedFileInput";
 import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import type { AnalysisRouteSwitcherAccess } from "../app/analysisRouteSwitcherAccess";
 import { useWorkspaceDirtyBaseline } from "../app/useWorkspaceDirtyBaseline";
-import {
-  ORDERED_CURVE_HEADER,
-  completeFitSettings,
-  createLegacyNonlinearDesignData,
-  finiteOptional,
-  generatedCurveExample,
-  genericOrderedCurveExample,
-  isGeneratedCurveExample,
-  isGenericOrderedCurveExample,
-  nextOrderedCurveRawRevisionId,
-  orderedCurveFileSourceKind,
-  orderedCurveStatusMessage,
-  parseNonlinearXyPaste,
-  replaceTextareaSelectionWithClipboardText,
-  type FitSetting,
-} from "../app/commonCoverageOrderedCurve";
 
 type Mode =
   "contingency" | "repeated-nonparametric" | "regression" | "nonlinear-fit" | "distribution";
@@ -163,6 +148,11 @@ type Props = Readonly<{
   onOpenProject?: () => void;
   initialDraft?: CommonCoverageDraft;
   onDraftChange?: (draft: CommonCoverageDraft) => void;
+  initialRegressionSnapshot?: TableRegressionSnapshot;
+  regressionSourceDataRevisionId?: string;
+  regressionProjectId?: string;
+  onRegressionSnapshotChange?: (snapshot: TableRegressionSnapshot) => void;
+  savedRegressionSnapshot?: string;
   entryIntent?: DedicatedEntryIntent;
   initialProject?: OpenedProject;
   onDirtyChange?: (dirty: boolean) => void;
@@ -177,6 +167,8 @@ const defaults: Record<Mode, string> = {
   "nonlinear-fit": nonlinearModelDefinition(DEFAULT_NONLINEAR_MODEL_ID).examplePaste,
   distribution: "1 2 2 3 5 8 13 21 34",
 };
+const ORDERED_CURVE_HEADER = "Unit ID\tSeries\tX\tY";
+
 const titles: Record<Mode, string> = {
   contingency: "Categorical / contingency",
   "repeated-nonparametric": "Repeated nonparametric",
@@ -184,43 +176,366 @@ const titles: Record<Mode, string> = {
   "nonlinear-fit": "濃度–反応・酵素反応",
   distribution: "Histogram / ECDF",
 };
-const englishTitles: Record<Mode, string> = {
-  contingency: "Categorical / contingency",
-  "repeated-nonparametric": "Repeated nonparametric",
-  regression: "Simple linear regression",
-  "nonlinear-fit": "Concentration–response / enzyme kinetics",
-  distribution: "Histogram / ECDF",
-};
 const dataLabels: Record<Mode, string> = {
   ...titles,
   "nonlinear-fit": "非線形XYフィッティング",
-};
-const englishDataLabels: Record<Mode, string> = {
-  ...englishTitles,
-  "nonlinear-fit": "Nonlinear X/Y fitting",
-};
-
-const nonlinearModelDescriptionsEn: Record<NonlinearModelId, string> = {
-  zero_baseline_association:
-    "A monotonic saturating process over time or another ordered axis, with the starting value fixed at zero",
-  one_phase_association:
-    "A monotonic saturating process over time or another ordered axis, with the starting value estimated from the data",
-  michaelis_menten:
-    "Estimate Vmax and Km from substrate concentration and initial reaction velocity; do not use a raw reaction time series",
-};
-const nonlinearModelRationalesEn: Record<NonlinearModelId, string> = {
-  zero_baseline_association:
-    "A minimal zero-baseline association model is appropriate because the response is a monotonic saturating process and the starting value is fixed at zero.",
-  one_phase_association:
-    "A one-phase association model is appropriate because the response is a monotonic saturating process and the starting value must be estimated from the data.",
-  michaelis_menten:
-    "The experiment estimates Vmax and Km from saturation of initial reaction velocity across substrate concentrations using the single-substrate Michaelis–Menten equation.",
 };
 const options = {
   alternative: "two_sided" as const,
   confidenceLevel: 0.95,
   multiplicityMethod: null,
 };
+
+type FitSetting = Readonly<{ initial: string; lower: string; upper: string }>;
+const EMPTY_FIT_SETTING: FitSetting = { initial: "", lower: "", upper: "" };
+
+function completeFitSettings(
+  input?: Readonly<Partial<Record<NonlinearParameterId, FitSetting>>>,
+): Record<NonlinearParameterId, FitSetting> {
+  return {
+    baseline: input?.baseline ?? EMPTY_FIT_SETTING,
+    plateau: input?.plateau ?? EMPTY_FIT_SETTING,
+    rate: input?.rate ?? EMPTY_FIT_SETTING,
+    vmax: input?.vmax ?? EMPTY_FIT_SETTING,
+    km: input?.km ?? EMPTY_FIT_SETTING,
+  };
+}
+type ParsedNonlinear = Readonly<{
+  allPoints: ReadonlyArray<{
+    observationId: string;
+    experimentalUnitId: string;
+    unitLabel: string;
+    seriesId: string;
+    seriesLabel: string;
+    x: number;
+    y: number | null;
+  }>;
+  points: ReadonlyArray<{
+    observationId: string;
+    experimentalUnitId: string;
+    unitLabel: string;
+    seriesId: string;
+    seriesLabel: string;
+    x: number;
+    y: number;
+  }>;
+  series: ReadonlyArray<{ id: string; label: string }>;
+  units: ReadonlyArray<{ id: string; label: string; seriesId: string }>;
+}>;
+
+function parseNonlinearXyPaste(text: string): ParsedNonlinear {
+  const delimited = parseAdaptiveDelimited(text);
+  if (delimited.rows.length < 1) throw new Error("headerと1行以上のX/Yデータが必要です");
+  const header = delimited.headers.map((value) => value.trim().toLowerCase());
+  const unitIndex = header.findIndex((value) => ["unit id", "unit", "sample id"].includes(value));
+  const seriesIndex = header.findIndex((value) => value === "series");
+  const xIndex = header.findIndex((value) => value === "x");
+  const yIndex = header.findIndex((value) => value === "y");
+  if ([unitIndex, seriesIndex, xIndex, yIndex].some((index) => index < 0)) {
+    throw new Error("列は Unit ID、Series、X、Y の4列にしてください");
+  }
+  const seriesByLabel = new Map<string, string>();
+  const unitByLabel = new Map<string, { id: string; seriesId: string }>();
+  const missingTokens = new Set(["", "na", "n/a", "undetermined", "over"]);
+  const allPoints = delimited.rows.map((cells, index) => {
+    const unitLabel = cells[unitIndex] ?? "";
+    const seriesLabel = cells[seriesIndex] ?? "";
+    const x = Number(cells[xIndex]);
+    const rawY = (cells[yIndex] ?? "").trim();
+    const y = missingTokens.has(rawY.toLowerCase()) ? null : Number(rawY);
+    if (!unitLabel || !seriesLabel || !Number.isFinite(x) || (y !== null && !Number.isFinite(y))) {
+      throw new Error(`${index + 2}行目のUnit ID、Series、有限X/Yを確認してください`);
+    }
+    let seriesId = seriesByLabel.get(seriesLabel);
+    if (!seriesId) {
+      seriesId = `series.${seriesByLabel.size + 1}`;
+      seriesByLabel.set(seriesLabel, seriesId);
+    }
+    let unit = unitByLabel.get(unitLabel);
+    if (!unit) {
+      unit = { id: `unit.${unitByLabel.size + 1}`, seriesId };
+      unitByLabel.set(unitLabel, unit);
+    }
+    return {
+      observationId: `observation.${index + 1}`,
+      experimentalUnitId: unit.id,
+      unitLabel,
+      seriesId,
+      seriesLabel,
+      x,
+      y,
+    };
+  });
+  const points = allPoints.filter(
+    (point): point is (typeof allPoints)[number] & Readonly<{ y: number }> => point.y !== null,
+  );
+  return {
+    allPoints,
+    points,
+    series: [...seriesByLabel].map(([label, id]) => ({ id, label })),
+    units: [...unitByLabel].map(([label, unit]) => ({
+      id: unit.id,
+      label,
+      seriesId: unit.seriesId,
+    })),
+  };
+}
+
+function generatedCurveExample(
+  definition: ReturnType<typeof nonlinearModelDefinition>,
+  relationship: "same_physical_material_across_axis" | "separate_material_per_axis_value",
+): string {
+  const lines = definition.examplePaste.split(/\r?\n/);
+  const seriesIds = new Map<string, string>();
+  return lines
+    .map((line, index) => {
+      if (index === 0) return line;
+      const cells = line.split("\t");
+      const series = cells[1] ?? "Series";
+      let seriesId = seriesIds.get(series);
+      if (!seriesId) {
+        seriesId = `curve-${seriesIds.size + 1}`;
+        seriesIds.set(series, seriesId);
+      }
+      cells[0] =
+        relationship === "same_physical_material_across_axis"
+          ? seriesId
+          : `${seriesId}-point-${index}`;
+      return cells.join("\t");
+    })
+    .join("\n");
+}
+
+function genericOrderedCurveExample(
+  relationship: "same_physical_material_across_axis" | "separate_material_per_axis_value",
+): string {
+  const unitIds =
+    relationship === "same_physical_material_across_axis"
+      ? ["unit-1", "unit-1", "unit-1"]
+      : ["unit-at-0", "unit-at-1", "unit-at-2"];
+  return [
+    ORDERED_CURVE_HEADER,
+    `${unitIds[0]}\tSeries A\t0\t0`,
+    `${unitIds[1]}\tSeries A\t1\t0.4`,
+    `${unitIds[2]}\tSeries A\t2\t0.8`,
+  ].join("\n");
+}
+
+function isGenericOrderedCurveExample(value: string): boolean {
+  return [
+    genericOrderedCurveExample("same_physical_material_across_axis"),
+    genericOrderedCurveExample("separate_material_per_axis_value"),
+  ].includes(value);
+}
+
+function orderedCurveFileSourceKind(file: Pick<File, "name" | "type">): DelimitedSourceKind {
+  const lowerName = file.name.toLowerCase();
+  if (lowerName.endsWith(".csv") || file.type === "text/csv") return "csv";
+  if (lowerName.endsWith(".tsv") || file.type === "text/tab-separated-values") return "tsv";
+  return "generic_file";
+}
+
+/** Legacy/direct advanced projection retained behind the non-adaptive route. */
+function createLegacyNonlinearDesignData(
+  parsed: ParsedNonlinear,
+  input: Readonly<{
+    xLabel: string;
+    yLabel: string;
+    yUnit: string;
+    modelId: NonlinearModelId;
+    rationale: string;
+    createdAt: string;
+  }>,
+) {
+  const factorId = "factor.series";
+  const outcomeId = "outcome.nonlinear-y";
+  const design: ExperimentDesign = {
+    schemaVersion: "0.2.0",
+    id: "design.nonlinear",
+    name: "Nonlinear XY fitting",
+    purpose: "custom",
+    outcomes: [
+      {
+        id: outcomeId,
+        key: "nonlinear-y",
+        label: input.yLabel || "Y",
+        type: "continuous",
+        ...(input.yUnit ? { unit: input.yUnit } : {}),
+      },
+    ],
+    factors: [
+      {
+        id: factorId,
+        key: "series",
+        label: "Series",
+        levels: parsed.series.map((series, order) => ({
+          id: `level.series.${order + 1}`,
+          label: series.label,
+          order,
+        })),
+      },
+    ],
+    conditions: parsed.series.map((series, order) => ({
+      id: series.id,
+      label: series.label,
+      factorLevels: { [factorId]: `level.series.${order + 1}` },
+    })),
+    unitLevels: [
+      {
+        id: "level.reaction",
+        key: "reaction",
+        label: "Independent reaction / biological unit",
+        role: "experimental_unit",
+        parentLevelId: null,
+      },
+    ],
+    experimentalUnitLevelId: "level.reaction",
+    pairing: { kind: "independent" },
+    plannedN: parsed.units.length,
+    normalizationPlans: [],
+    primaryContrast:
+      parsed.series.length >= 2
+        ? {
+            id: "contrast.nonlinear-series-identity",
+            label: `${parsed.series[0]!.label} / ${parsed.series[1]!.label} fit identity (no hypothesis test)`,
+            conditionIds: [parsed.series[0]!.id, parsed.series[1]!.id],
+          }
+        : null,
+    wizardRuleVersion: "nonlinear-xy-core-0.1.0",
+    wizardDecisions: [
+      { questionId: "nonlinear.model", answer: input.modelId },
+      { questionId: "nonlinear.model-rationale", answer: input.rationale },
+      { questionId: "nonlinear.x-label", answer: input.xLabel },
+    ],
+    createdAt: input.createdAt,
+  };
+  const units: UnitInstance[] = parsed.units.map((unit) => ({
+    id: unit.id,
+    levelId: "level.reaction",
+    parentUnitId: null,
+    label: unit.label,
+    metadata: { seriesId: unit.seriesId },
+  }));
+  const observations: Observation[] = parsed.points.map((point) => ({
+    id: point.observationId,
+    rawRevisionId: "raw.nonlinear.1",
+    unitInstanceId: point.experimentalUnitId,
+    conditionId: point.seriesId,
+    outcomeId,
+    measurement: { kind: "scalar", value: point.y },
+    time: point.x,
+    sourceLocation: `pasted XY; ${input.xLabel}=${point.x}`,
+  }));
+  return { design, units, observations, outcomeId };
+}
+
+function isGeneratedCurveExample(value: string): boolean {
+  return NONLINEAR_MODEL_DEFINITIONS.some((definition) =>
+    [
+      definition.examplePaste,
+      generatedCurveExample(definition, "same_physical_material_across_axis"),
+      generatedCurveExample(definition, "separate_material_per_axis_value"),
+    ].includes(value),
+  );
+}
+
+function finiteOptional(value: string, label: string) {
+  if (!value.trim()) return undefined;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) throw new Error(`${label}は有限値にしてください`);
+  return parsed;
+}
+
+function orderedCurveStatusMessage(entry: OrderedCurveEntryResult | null): string | null {
+  if (!entry || entry.status === "surface_ready") return null;
+  const diagnostics = entry.dualWrite.diagnostics;
+  if (diagnostics.includes("ORDERED_CURVE_STABLE_ID_NOT_REUSED_ACROSS_AXIS")) {
+    return "同じ反応・対象を続けて測った場合は、その対象のUnit IDを複数のX点で同じにしてください。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_SEPARATE_MATERIAL_REUSES_ID_ACROSS_AXIS")) {
+    return "X点ごとに別の反応・試料を用意した場合は、異なるX点へ同じUnit IDを使わないでください。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_UNIT_ID_SPANS_MULTIPLE_SERIES")) {
+    return "同じUnit IDが複数のSeriesにあります。IDは変更せず保持しました。Seriesが条件、別run・個体、別readoutのどれを表すかと、共通の由来をもつかを一般の実験設定で確認してください。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_DUPLICATE_UNIT_AXIS_POINT_REQUIRES_OBSERVATION_LEVEL")) {
+    return "同じUnit ID・Series・Xに複数の値があります。下位の観測単位を定義するまで別の1点へまとめません。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_REQUIRES_TWO_AXIS_LEVELS")) {
+    return "曲線として扱うには、少なくとも2つの異なるX値が必要です。";
+  }
+  if (
+    diagnostics.includes("ORDERED_CURVE_AXIS_LABEL_REQUIRED") ||
+    diagnostics.includes("ORDERED_CURVE_READOUT_LABEL_REQUIRED")
+  ) {
+    return "Graphと保存用の構造を確定するため、横方向に変えたものと測った値の名前を入力してください。X / Yのままでは意味を推測しません。入力済みの値は保持します。";
+  }
+  if (diagnostics.includes("AXIS_POINT_PARENT_RELATIONSHIP_UNRESOLVED")) {
+    return "別々に用意した試料が同じdonor・animal・dish・実験run・batchなどを共有するか確認してください。推測せず入力済みの値を保持します。";
+  }
+  if (diagnostics.includes("SEPARATE_AXIS_MATERIAL_HAS_SHARED_PARENT_REQUIRES_HIERARCHY")) {
+    return "共通の由来または対応関係をもつ試料です。この簡易曲線表で独立した試料へ読み替えず、親IDを保持できる一般の実験設定で続けてください。入力済みの値は保持します。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_SERIES_MEANING_UNRESOLVED")) {
+    return "複数のSeriesが比較条件、別run・個体、別readoutのどれを表すか確認してください。推測せず入力済みの値とIDを保持します。";
+  }
+  if (diagnostics.includes("ORDERED_CURVE_SERIES_PARENT_RELATIONSHIP_UNRESOLVED")) {
+    return "異なるSeriesの試料が同じdonor・animal・dish・実験run・batchなどを共有するか確認してください。推測せず入力済みの値とIDを保持します。";
+  }
+  if (
+    diagnostics.includes("ORDERED_CURVE_SERIES_REPLICATES_REQUIRE_RESHAPING") ||
+    diagnostics.includes("ORDERED_CURVE_MULTIPLE_READOUTS_REQUIRE_TYPED_READOUTS") ||
+    diagnostics.includes("ORDERED_CURVE_SERIES_SHARED_PARENT_REQUIRES_HIERARCHY")
+  ) {
+    return "Seriesの意味または対応関係をこの簡易曲線表では安全に保持できません。別条件へ読み替えず、入力済みの値とIDを保持して一般の実験設定で続けます。";
+  }
+  if (
+    diagnostics.some((code) =>
+      [
+        "ORDERED_CURVE_OBSERVATION_ID_INVALID",
+        "ORDERED_CURVE_OBSERVATION_ID_DUPLICATE",
+        "ORDERED_CURVE_UNIT_ID_REQUIRED",
+        "ORDERED_CURVE_SERIES_VALUE_REQUIRED",
+        "ORDERED_CURVE_X_MUST_BE_FINITE",
+        "ORDERED_CURVE_Y_MUST_BE_FINITE",
+      ].includes(code),
+    )
+  ) {
+    return "入力表のUnit ID、Series、X、Yを確認してください。入力済みの値は保持しています。";
+  }
+  if (entry.status === "dual_write_mismatch" || entry.status === "surface_mismatch") {
+    return "実験構造と保存用designの意味が一致しないため停止しました。別のdesignへ変換していません。";
+  }
+  return "実験構造を安全に確定できないため停止しました。入力済みの値は保持しています。";
+}
+
+function nextOrderedCurveRawRevisionId(state: ProjectState): string {
+  let index = state.rawRevisions.length + 1;
+  while (state.rawRevisions.some(({ id }) => id === `raw.nonlinear.${index}`)) index += 1;
+  return `raw.nonlinear.${index}`;
+}
+
+function rawOffsetForTextareaOffset(rawText: string, textareaOffset: number): number {
+  let rawOffset = 0;
+  let normalizedOffset = 0;
+  while (rawOffset < rawText.length && normalizedOffset < textareaOffset) {
+    if (rawText[rawOffset] === "\r" && rawText[rawOffset + 1] === "\n") rawOffset += 2;
+    else rawOffset += 1;
+    normalizedOffset += 1;
+  }
+  return rawOffset;
+}
+
+function replaceTextareaSelectionWithClipboardText(
+  rawText: string,
+  clipboardText: string,
+  selectionStart: number,
+  selectionEnd: number,
+): string {
+  const rawStart = rawOffsetForTextareaOffset(rawText, selectionStart);
+  const rawEnd = rawOffsetForTextareaOffset(rawText, selectionEnd);
+  return `${rawText.slice(0, rawStart)}${clipboardText}${rawText.slice(rawEnd)}`;
+}
 
 export function CommonCoveragePage({
   mode,
@@ -235,16 +550,17 @@ export function CommonCoveragePage({
   onOpenProject,
   initialDraft,
   onDraftChange,
+  initialRegressionSnapshot,
+  regressionSourceDataRevisionId,
+  regressionProjectId,
+  onRegressionSnapshotChange,
+  savedRegressionSnapshot,
   entryIntent: inputEntryIntent,
   initialProject,
   onDirtyChange,
   onRequestExit,
   onRegisterSaveHandler,
 }: Props) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
-  const failure = (error: unknown, ja: string, en: string) =>
-    localizedFailureMessage(locale, error, ja, en);
   const entryIntent = inputEntryIntent ?? initialSpecializedEntryDraft?.state.entryIntent;
   const [currentSpecializedEntryDraft, setCurrentSpecializedEntryDraft] = useState(
     initialSpecializedEntryDraft,
@@ -311,9 +627,6 @@ export function CommonCoveragePage({
   const [nonlinearAnalysisSetupVisible, setNonlinearAnalysisSetupVisible] = useState(
     !adaptiveOrderedCurveActive,
   );
-  const [orderedCurveWorkspaceTab, setOrderedCurveWorkspaceTab] = useState<
-    "data" | "graph" | "statistics"
-  >("data");
   const [text, setText] = useState(
       initialDraft?.text ??
         initialSpecializedEntryDraft?.state.rawLineage.rawText ??
@@ -321,11 +634,13 @@ export function CommonCoveragePage({
         (mode === "nonlinear-fit" ? ORDERED_CURVE_HEADER : defaults[mode]),
     ),
     [result, setResult] = useState<AnalysisEngineResult | null>(
-      initialNonlinearRun?.result ?? null,
+      initialRegressionSnapshot?.execution?.result ?? initialNonlinearRun?.result ?? null,
     ),
     [executedRequest, setExecutedRequest] = useState<ReturnType<
       typeof AnalysisEngineRequestSchema.parse
-    > | null>(initialNonlinearRun?.request ?? null),
+    > | null>(
+      initialRegressionSnapshot?.execution?.request ?? initialNonlinearRun?.request ?? null,
+    ),
     [message, setMessage] = useState<string | null>(null);
   const lastSaveSucceededRef = useRef(false);
   const [literatureCase, setLiteratureCase] = useState<LiteratureExperimenterCase | null>(null);
@@ -365,6 +680,17 @@ export function CommonCoveragePage({
     ),
     [binCount, setBinCount] = useState(initialDraft?.binCount ?? ""),
     svgRef = useRef<SVGSVGElement>(null);
+  const graphExportPendingRef = useRef(false);
+  const [graphExportPending, setGraphExportPending] = useState(false);
+  const fileImportEpochRef = useRef(0);
+  const latestTextRef = useRef(text);
+  latestTextRef.current = text;
+  useEffect(
+    () => () => {
+      fileImportEpochRef.current += 1;
+    },
+    [],
+  );
   const persistedNonlinearModel = restoredNonlinearModelSelection(initialAdaptiveSnapshot);
   const restoredModel = NONLINEAR_MODEL_DEFINITIONS.some(({ id }) => id === persistedNonlinearModel)
     ? (persistedNonlinearModel as NonlinearModelId)
@@ -397,9 +723,7 @@ export function CommonCoveragePage({
       initialNonlinearRequest?.modelSelectionRationale ??
       (adaptiveOrderedCurveActive
         ? ""
-        : locale === "ja"
-          ? nonlinearModelDefinition(DEFAULT_NONLINEAR_MODEL_ID).defaultRationale
-          : nonlinearModelRationalesEn[DEFAULT_NONLINEAR_MODEL_ID]),
+        : nonlinearModelDefinition(DEFAULT_NONLINEAR_MODEL_ID).defaultRationale),
   );
   const [fitSettings, setFitSettings] = useState<Record<NonlinearParameterId, FitSetting>>(
     completeFitSettings(initialDraft?.fitSettings ?? restoredSpecializedAnswers?.fitSettings),
@@ -427,8 +751,8 @@ export function CommonCoveragePage({
     );
   });
   const entryFactsView = useMemo(
-    () => entryModuleTargetedFactsViewModel(entryFactsState, locale),
-    [entryFactsState, locale],
+    () => entryModuleTargetedFactsViewModel(entryFactsState, "ja"),
+    [entryFactsState],
   );
   const draft = useMemo<CommonCoverageDraft>(
     () => ({
@@ -493,21 +817,62 @@ export function CommonCoveragePage({
     }),
     [draft, executedRequest, orderedCurveSource, rawTextCaptureMode, result],
   );
-  const { adoptCurrentAsBaseline, interactionCaptureProps } = useWorkspaceDirtyBaseline(
-    dirtyLifecycleSnapshot,
-    onDirtyChange,
+  const { adoptCurrentAsBaseline, captureSaveBaseline, interactionCaptureProps } =
+    useWorkspaceDirtyBaseline(dirtyLifecycleSnapshot, onDirtyChange);
+  const analysisInputFingerprint = JSON.stringify({
+    ...draft,
+    display: undefined,
+    xScale: undefined,
+    yScale: undefined,
+    showBand: undefined,
+    distributionType: undefined,
+    binCount: undefined,
+  });
+  const regressionSnapshotValue = useMemo<TableRegressionSnapshot>(
+    () => ({
+      draft: regressionDraftForSave(draft),
+      execution:
+        result?.status === "ok" &&
+        executedRequest?.protocolVersion === "0.13.0" &&
+        regressionSourceDataRevisionId
+          ? {
+              draft: regressionDraftForSave(draft),
+              sourceDataRevisionId: regressionSourceDataRevisionId,
+              request: executedRequest,
+              result,
+            }
+          : null,
+    }),
+    [draft, executedRequest, result, regressionSourceDataRevisionId],
+  );
+  const regressionSnapshotCallbackRef = useRef(onRegressionSnapshotChange);
+  regressionSnapshotCallbackRef.current = onRegressionSnapshotChange;
+  useLayoutEffect(() => {
+    if (mode === "regression") regressionSnapshotCallbackRef.current?.(regressionSnapshotValue);
+  }, [mode, regressionSnapshotValue]);
+  useEffect(() => {
+    if (
+      mode === "regression" &&
+      savedRegressionSnapshot === regressionSnapshotToken(regressionSnapshotValue)
+    )
+      adoptCurrentAsBaseline();
+  }, [mode, savedRegressionSnapshot, regressionSnapshotValue, adoptCurrentAsBaseline]);
+  const analysisInputFingerprintRef = useRef(analysisInputFingerprint);
+  analysisInputFingerprintRef.current = analysisInputFingerprint;
+  const analysisEpochRef = useRef(0);
+  useEffect(
+    () => () => {
+      analysisEpochRef.current += 1;
+    },
+    [],
   );
   const selectNonlinearModel = (modelId: NonlinearModelId) => {
     const nextDefinition = nonlinearModelDefinition(modelId);
     setNonlinearModel(modelId);
     setNonlinearModelExplicitlySelected(true);
     setModelRationale((current) =>
-      !current.trim() ||
-      isGeneratedNonlinearRationale(current) ||
-      Object.values(nonlinearModelRationalesEn).includes(current)
-        ? locale === "ja"
-          ? nextDefinition.defaultRationale
-          : nonlinearModelRationalesEn[modelId]
+      !current.trim() || isGeneratedNonlinearRationale(current)
+        ? nextDefinition.defaultRationale
         : current,
     );
     const generatedXLabels = [
@@ -766,8 +1131,17 @@ export function CommonCoveragePage({
     const input = event.currentTarget;
     const file = input.files?.[0];
     if (!file) return;
+    const epoch = ++fileImportEpochRef.current;
+    const textBeforeImport = latestTextRef.current;
     try {
       const rawText = await file.text();
+      if (fileImportEpochRef.current !== epoch) return;
+      if (latestTextRef.current !== textBeforeImport) {
+        setMessage(
+          "ファイル読込中に入力が変更されたため、現在の入力を保全しました。必要ならファイルをもう一度選択してください。",
+        );
+        return;
+      }
       setText(rawText);
       setOrderedCurveSource({
         sourceKind: orderedCurveFileSourceKind(file),
@@ -776,18 +1150,22 @@ export function CommonCoveragePage({
       setRawTextCaptureMode("file_text_exact");
       setResult(null);
       setExecutedRequest(null);
-      setMessage(t(`${file.name}を読み込みました。`, `Loaded ${file.name}.`));
+      setMessage(`${file.name}を読み込みました。`);
     } catch {
-      setMessage(t(`${file.name}を読み込めませんでした。`, `Could not load ${file.name}.`));
+      if (fileImportEpochRef.current !== epoch || latestTextRef.current !== textBeforeImport)
+        return;
+      setMessage(`${file.name}を読み込めませんでした。`);
     } finally {
-      input.value = "";
+      if (fileImportEpochRef.current === epoch) input.value = "";
     }
   };
   const run = async () => {
+    const epoch = ++analysisEpochRef.current;
+    const inputFingerprint = analysisInputFingerprint;
     const usageRoute = routeFromPath(window.location.pathname);
     recordUsageMilestone(usageRoute, "statistics_requested");
     try {
-      setMessage(t("解析中…", "Analyzing…"));
+      setMessage("解析中…");
       if ("error" in parsed) throw new Error(parsed.error);
       let request;
       if (parsed.kind === "contingency") {
@@ -836,8 +1214,8 @@ export function CommonCoveragePage({
       } else if (parsed.kind === "regression") {
         request = {
           protocolVersion: "0.13.0",
-          requestId: "request.regression.1",
-          projectId: "project.regression",
+          requestId: `request.regression.${crypto.randomUUID()}`,
+          projectId: regressionProjectId ?? "project.regression",
           analysisId: "analysis.regression.1",
           templateId: "D16",
           templateVersion: "0.1.0",
@@ -862,36 +1240,22 @@ export function CommonCoveragePage({
         ) {
           throw new Error(
             orderedCurveValidationMessage ??
-              t(
-                "実験構造を確定できないため、別のdesignへ変換せずfitを停止しました。",
-                "The fit stopped because the experiment structure could not be confirmed. The data were not converted to another design.",
-              ),
+              "実験構造を確定できないため、別のdesignへ変換せずfitを停止しました。",
           );
         }
         if (adaptiveOrderedCurveActive && !orderedCurveFitAllowed) {
-          throw new Error(orderedCurveAnalysisReadiness.message[locale]);
+          throw new Error(orderedCurveAnalysisReadiness.message.ja);
         }
         if (!modelRationale.trim())
-          throw new Error(
-            t(
-              "model selectionの科学的理由を記録してください",
-              "Record the scientific reason for selecting this model.",
-            ),
-          );
+          throw new Error("model selectionの科学的理由を記録してください");
         if (nonlinearDefinition.requiresAxisUnits && (!xUnit.trim() || !yUnit.trim())) {
           throw new Error(
-            t(
-              "Michaelis–Menten fitでは、基質濃度と反応初速度の単位を両方入力してください",
-              "For a Michaelis–Menten fit, enter units for both substrate concentration and initial reaction rate.",
-            ),
+            "Michaelis–Menten fitでは、基質濃度と反応初速度の単位を両方入力してください",
           );
         }
         if (nonlinearModel === "michaelis_menten" && parsed.data.points.some(({ x }) => x < 0)) {
           throw new Error(
-            t(
-              "Michaelis–Menten fitの基質濃度Xは0以上にしてください。入力値は削除していません。",
-              "Substrate-concentration X values must be zero or greater for a Michaelis–Menten fit. Entered values were not deleted.",
-            ),
+            "Michaelis–Menten fitの基質濃度Xは0以上にしてください。入力値は削除していません。",
           );
         }
         const initialTemplate: Record<string, number> = {};
@@ -903,20 +1267,10 @@ export function CommonCoveragePage({
           const lower = finiteOptional(setting.lower, `${parameterLabel} lower bound`);
           const upper = finiteOptional(setting.upper, `${parameterLabel} upper bound`);
           if ((lower === undefined) !== (upper === undefined)) {
-            throw new Error(
-              t(
-                `${parameterLabel}のboundはlowerとupperを両方指定してください`,
-                `Specify both lower and upper bounds for ${parameterLabel}.`,
-              ),
-            );
+            throw new Error(`${parameterLabel}のboundはlowerとupperを両方指定してください`);
           }
           if (lower !== undefined && upper !== undefined && lower >= upper) {
-            throw new Error(
-              t(
-                `${parameterLabel}のboundはlower < upperにしてください`,
-                `The lower bound for ${parameterLabel} must be less than its upper bound.`,
-              ),
-            );
+            throw new Error(`${parameterLabel}のboundはlower < upperにしてください`);
           }
           if (
             nonlinearModel === "michaelis_menten" &&
@@ -925,10 +1279,7 @@ export function CommonCoveragePage({
               (upper !== undefined && upper <= 0))
           ) {
             throw new Error(
-              t(
-                `${parameterLabel}は正のinitial、0以上のlower、正のupperを指定してください`,
-                `For ${parameterLabel}, specify a positive initial value, a nonnegative lower bound, and a positive upper bound.`,
-              ),
+              `${parameterLabel}は正のinitial、0以上のlower、正のupperを指定してください`,
             );
           }
           if (initial !== undefined) initialTemplate[parameter] = initial;
@@ -977,6 +1328,14 @@ export function CommonCoveragePage({
         );
       const validated = AnalysisEngineRequestSchema.parse(request);
       const next = await analysisRunner(validated);
+      if (analysisEpochRef.current !== epoch) return;
+      if (analysisInputFingerprintRef.current !== inputFingerprint) {
+        setMessage("解析中に入力が変わりました。結果は採用せず、現在の表で再実行してください。");
+        return;
+      }
+      if (next.requestId !== validated.requestId) {
+        throw new Error("解析応答が今回の要求と一致しません。結果は採用せず、再実行してください。");
+      }
       setExecutedRequest(validated);
       setResult(next);
       recordUsageMilestone(usageRoute, next.status === "ok" ? "statistics_completed" : "safe_stop");
@@ -1008,16 +1367,20 @@ export function CommonCoveragePage({
         engineVersion: next.engine.version,
       });
       setMessage(
-        t(
-          "解析とprovenance記録が完了しました。",
-          "Analysis and provenance recording are complete.",
-        ),
+        next.status === "ok"
+          ? "解析とprovenance記録が完了しました。"
+          : `解析を停止しました。入力は保持されています。${next.diagnostics.map(({ message }) => message).join(" ") || "有効な解析結果を得られませんでした。"}`,
       );
     } catch (error) {
+      if (
+        analysisEpochRef.current !== epoch ||
+        analysisInputFingerprintRef.current !== inputFingerprint
+      )
+        return;
       recordUsageMilestone(usageRoute, "safe_stop");
       setExecutedRequest(null);
       setResult(null);
-      setMessage(failure(error, "解析できませんでした", "The analysis could not be completed."));
+      setMessage(error instanceof Error ? error.message : "解析できませんでした");
     }
   };
   let graph: React.ReactNode = null;
@@ -1128,11 +1491,10 @@ export function CommonCoveragePage({
   } catch (error) {
     graph = (
       <p role="alert">
-        {failure(
-          error,
-          "Graphを表示できません",
-          "Check the data table before displaying the Graph.",
-        )}
+        {error instanceof Error ? error.message : "Graphを表示できません"}
+        {mode === "regression" && yScale === "log10"
+          ? " 0以下の点や信頼帯の境界がある場合は、Y軸をlinearへ戻してください。点と回帰線が正なら、信頼帯を非表示にしてlog軸を使えます。入力と解析結果は保持されています。"
+          : ""}
       </p>
     );
   }
@@ -1144,12 +1506,10 @@ export function CommonCoveragePage({
   const validAdaptiveOrderedCurveGraph = adaptiveOrderedCurveActive && graphExportAvailable;
   const orderedCurveSetupMissingItems = adaptiveOrderedCurveActive
     ? [
-        !text.trim() || "error" in parsed ? t("入力表", "data table") : null,
-        !xLabel.trim() ? t("横軸名", "X-axis name") : null,
-        !yLabel.trim() ? t("測定値名", "measured-value name") : null,
-        orderedCurveEntry?.status !== "surface_ready"
-          ? t("実験構造の回答", "experiment-structure answers")
-          : null,
+        !text.trim() || "error" in parsed ? "入力表" : null,
+        !xLabel.trim() ? "横軸名" : null,
+        !yLabel.trim() ? "測定値名" : null,
+        orderedCurveEntry?.status !== "surface_ready" ? "実験構造の回答" : null,
       ].filter((item): item is string => Boolean(item))
     : [];
   useEffect(() => {
@@ -1253,9 +1613,10 @@ export function CommonCoveragePage({
       : null;
 
   const saveNonlinearProject = async (saveAs = false) => {
+    const commitSavedBaseline = captureSaveBaseline();
     lastSaveSucceededRef.current = false;
     if (!saveProject && !saveSpecializedEntryDraftProject) {
-      setMessage(t("デスクトップ版で保存できます。", "Saving is available in the desktop app."));
+      setMessage("デスクトップ版で保存できます。");
       return;
     }
     if (
@@ -1301,30 +1662,16 @@ export function CommonCoveragePage({
           saveAs ? undefined : currentSpecializedEntryDraft?.target,
         );
         if (!saved) {
-          setMessage(
-            t(
-              "保存をキャンセルしました。入力内容はこの画面に残っています。",
-              "Saving was canceled. Your entries remain on this screen.",
-            ),
-          );
+          setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
           return;
         }
         setCurrentSpecializedEntryDraft(saved);
         lastSaveSucceededRef.current = true;
-        adoptCurrentAsBaseline();
-        setMessage(
-          t(
-            "入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。",
-            "Saved the in-progress table and answers. Experiment structure, Graph, and Statistics remain unresolved.",
-          ),
-        );
+        commitSavedBaseline();
+        setMessage("入力途中の表と回答を保存しました。実験構造・Graph・統計は未確定のままです。");
       } catch (error) {
         setMessage(
-          failure(
-            error,
-            "入力途中のprojectを保存できませんでした",
-            "The in-progress project could not be saved. Your current entries were retained.",
-          ),
+          error instanceof Error ? error.message : "入力途中のprojectを保存できませんでした",
         );
       }
       return;
@@ -1338,7 +1685,7 @@ export function CommonCoveragePage({
         !legacyNonlinearDesignData ||
         !nonlinearSpec
       ) {
-        setMessage(t("先に非線形fitを実行してください。", "Run the nonlinear fit first."));
+        setMessage("先に非線形fitを実行してください。");
         return;
       }
       try {
@@ -1372,34 +1719,26 @@ export function CommonCoveragePage({
             },
           }),
         );
+        if (!saved) {
+          setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
+          return;
+        }
         if (saved) {
           lastSaveSucceededRef.current = true;
-          adoptCurrentAsBaseline();
+          commitSavedBaseline();
         }
         setMessage(
-          t(
-            "選んだモデル、推定値、診断、入力した測定点、保存済みの適合曲線をプロジェクトへ保存しました。",
-            "Saved the selected model, estimates, diagnostics, entered observations, and fitted curve to the project.",
-          ),
+          "選んだモデル、推定値、診断、入力した測定点、保存済みの適合曲線をプロジェクトへ保存しました。",
         );
       } catch (error) {
-        setMessage(
-          failure(
-            error,
-            "プロジェクトを保存できませんでした",
-            "The project could not be saved. Your current entries were retained.",
-          ),
-        );
+        setMessage(error instanceof Error ? error.message : "プロジェクトを保存できませんでした");
       }
       return;
     }
     if (!nonlinearDesignData || orderedCurveEntry?.status !== "surface_ready") {
       setMessage(
         orderedCurveValidationMessage ??
-          t(
-            "実験構造を確定できないため、別のdesignへ変換せず保存を停止しました。",
-            "Saving stopped because the experiment structure could not be confirmed. The data were not converted to another design.",
-          ),
+          "実験構造を確定できないため、別のdesignへ変換せず保存を停止しました。",
       );
       return;
     }
@@ -1512,30 +1851,22 @@ export function CommonCoveragePage({
         });
       }
       const saved = await saveProject(projectState, saveAs ? undefined : persistedBaseline?.target);
+      if (!saved) {
+        setMessage("保存をキャンセルしました。入力内容はこの画面に残っています。");
+        return;
+      }
       if (saved) {
         lastSaveSucceededRef.current = true;
         setPersistedBaseline(saved);
-        adoptCurrentAsBaseline();
+        commitSavedBaseline();
       }
       setMessage(
         analysisPayload
-          ? t(
-              "選んだモデル、推定値、診断、入力した測定点、保存済みの適合曲線をプロジェクトへ保存しました。",
-              "Saved the selected model, estimates, diagnostics, entered observations, and fitted curve to the project.",
-            )
-          : t(
-              "入力した測定点、観測Graphを再現する実験構造、元データとの対応履歴をプロジェクトへ保存しました。",
-              "Saved the entered observations, experiment structure needed to reproduce the observed Graph, and source-data mapping history.",
-            ),
+          ? "選んだモデル、推定値、診断、入力した測定点、保存済みの適合曲線をプロジェクトへ保存しました。"
+          : "入力した測定点、観測Graphを再現する実験構造、元データとの対応履歴をプロジェクトへ保存しました。",
       );
     } catch (error) {
-      setMessage(
-        failure(
-          error,
-          "プロジェクトを保存できませんでした",
-          "The project could not be saved. Your current entries were retained.",
-        ),
-      );
+      setMessage(error instanceof Error ? error.message : "プロジェクトを保存できませんでした");
     }
   };
   const saveNonlinearProjectRef = useRef(saveNonlinearProject);
@@ -1785,19 +2116,13 @@ export function CommonCoveragePage({
     mode === "nonlinear-fit" ? (
       <div className="nonlinear-fit-axis-fields">
         <label>
-          {adaptiveOrderedCurveActive
-            ? t("横軸に表示する量の名前", "Quantity shown on the X axis")
-            : "X label"}
+          {adaptiveOrderedCurveActive ? "横軸に表示する量の名前" : "X label"}
           <input
-            aria-label={
-              adaptiveOrderedCurveActive
-                ? t("横軸に表示する量の名前", "Quantity shown on the X axis")
-                : "X label"
-            }
+            aria-label={adaptiveOrderedCurveActive ? "横軸に表示する量の名前" : "X label"}
             value={xLabel}
             placeholder={
               adaptiveOrderedCurveActive
-                ? t("例：経過時間、基質濃度", "Example: elapsed time or substrate concentration")
+                ? "例：経過時間、基質濃度"
                 : nonlinearDefinition.suggestedXLabel
             }
             onChange={(event) => {
@@ -1812,10 +2137,10 @@ export function CommonCoveragePage({
         </label>
         <label>
           {adaptiveOrderedCurveActive
-            ? t("横方向の単位（ない場合は空欄）", "X-axis unit (leave blank if none)")
+            ? "横方向の単位（ない場合は空欄）"
             : `X unit${nonlinearDefinition.requiresAxisUnits ? "（必須）" : ""}`}
           <input
-            aria-label={adaptiveOrderedCurveActive ? t("横方向の単位", "X-axis unit") : "X unit"}
+            aria-label={adaptiveOrderedCurveActive ? "横方向の単位" : "X unit"}
             value={xUnit}
             placeholder={nonlinearDefinition.xUnitExample}
             onChange={(event) => {
@@ -1829,18 +2154,13 @@ export function CommonCoveragePage({
           />
         </label>
         <label>
-          {adaptiveOrderedCurveActive ? t("測った値の名前", "Measured value name") : "Y label"}
+          {adaptiveOrderedCurveActive ? "測った値の名前" : "Y label"}
           <input
-            aria-label={
-              adaptiveOrderedCurveActive ? t("測った値の名前", "Measured value name") : "Y label"
-            }
+            aria-label={adaptiveOrderedCurveActive ? "測った値の名前" : "Y label"}
             value={yLabel}
             placeholder={
               adaptiveOrderedCurveActive
-                ? t(
-                    "例：反応初速度、蛍光強度",
-                    "Example: initial reaction rate or fluorescence intensity",
-                  )
+                ? "例：反応初速度、蛍光強度"
                 : nonlinearDefinition.suggestedYLabel
             }
             onChange={(event) => {
@@ -1855,12 +2175,10 @@ export function CommonCoveragePage({
         </label>
         <label>
           {adaptiveOrderedCurveActive
-            ? t("測った値の単位（ない場合は空欄）", "Measured-value unit (leave blank if none)")
+            ? "測った値の単位（ない場合は空欄）"
             : `Y unit${nonlinearDefinition.requiresAxisUnits ? "（必須）" : ""}`}
           <input
-            aria-label={
-              adaptiveOrderedCurveActive ? t("測った値の単位", "Measured-value unit") : "Y unit"
-            }
+            aria-label={adaptiveOrderedCurveActive ? "測った値の単位" : "Y unit"}
             value={yUnit}
             placeholder={nonlinearDefinition.yUnitExample}
             onChange={(event) => {
@@ -1894,11 +2212,7 @@ export function CommonCoveragePage({
               />
               <span>
                 <strong>{definition.label}</strong>
-                <small>
-                  {locale === "ja"
-                    ? definition.shortDescription
-                    : nonlinearModelDescriptionsEn[definition.id]}
-                </small>
+                <small>{definition.shortDescription}</small>
                 <small>{definition.formula}</small>
               </span>
             </label>
@@ -1907,19 +2221,13 @@ export function CommonCoveragePage({
         {nonlinearModel === "michaelis_menten" ? (
           <>
             <p className="callout-info">
-              {t(
-                "Xには基質濃度、Yには各濃度で求めた反応初速度を入力します。吸光度などの時系列をそのまま入力する欄ではありません。",
-                "Enter substrate concentration for X and the initial reaction velocity calculated at each concentration for Y. Do not enter a raw absorbance or other time series here.",
-              )}
+              Xには基質濃度、Yには各濃度で求めた反応初速度を入力します。吸光度などの時系列をそのまま入力する欄ではありません。
             </p>
             {adaptiveOrderedCurveActive && nonlinearModelExplicitlySelected ? (
               <label>
-                {t(
-                  "Yに入力した値は、各基質濃度で求めた反応初速度ですか？",
-                  "Are the Y values initial reaction velocities calculated at each substrate concentration?",
-                )}
+                Yに入力した値は、各基質濃度で求めた反応初速度ですか？
                 <select
-                  aria-label={t("Michaelis–MentenのY値", "Michaelis–Menten Y values")}
+                  aria-label="Michaelis–MentenのY値"
                   value={michaelisReadoutMeaning ?? ""}
                   onChange={(event) => {
                     setMichaelisReadoutMeaning(
@@ -1929,20 +2237,14 @@ export function CommonCoveragePage({
                     setExecutedRequest(null);
                   }}
                 >
-                  <option value="">{t("選択してください", "Select an answer")}</option>
+                  <option value="">選択してください</option>
                   <option value="calculated_initial_velocity">
-                    {t(
-                      "はい。各濃度の反応初速度を計算した値",
-                      "Yes. They are calculated initial reaction velocities",
-                    )}
+                    はい。各濃度の反応初速度を計算した値
                   </option>
                   <option value="raw_time_series_or_other">
-                    {t(
-                      "いいえ。吸光度などの時系列、または別の値",
-                      "No. They are a raw time series or another value",
-                    )}
+                    いいえ。吸光度などの時系列、または別の値
                   </option>
-                  <option value="unknown">{t("判断できない", "Not sure")}</option>
+                  <option value="unknown">判断できない</option>
                 </select>
               </label>
             ) : null}
@@ -1950,13 +2252,13 @@ export function CommonCoveragePage({
         ) : null}
         {adaptiveOrderedCurveActive ? (
           <p className="specialized-engine-note" role="status">
-            {orderedCurveAnalysisReadiness.message[locale]}
+            {orderedCurveAnalysisReadiness.message.ja}
           </p>
         ) : null}
         <label>
-          {t("Model selectionの理由", "Reason for model selection")}
+          Model selectionの理由
           <textarea
-            aria-label={t("Model selectionの理由", "Reason for model selection")}
+            aria-label="Model selectionの理由"
             rows={3}
             value={modelRationale}
             onChange={(event) => {
@@ -1968,14 +2270,9 @@ export function CommonCoveragePage({
         </label>
         {!adaptiveOrderedCurveActive ? nonlinearAxisFields : null}
         <details>
-          <summary>
-            {t("Initial values / bounds（必要な場合のみ）", "Initial values / bounds (optional)")}
-          </summary>
+          <summary>Initial values / bounds（必要な場合のみ）</summary>
           <p>
-            {t(
-              "指定値は各系列へ適用し、解析設定と履歴に保存します。空欄ではアプリの既定値を一定の規則で使います。",
-              "The specified values apply to each series and are saved with the analysis settings and history. Blank fields use deterministic application defaults.",
-            )}
+            指定値は各系列へ適用し、解析設定と履歴に保存します。空欄ではアプリの既定値を一定の規則で使います。
           </p>
           <div className="nonlinear-fit-parameter-scroll">
             <table className="nonlinear-fit-parameter-inputs">
@@ -2034,8 +2331,8 @@ export function CommonCoveragePage({
       onClick={() => void run()}
     >
       {orderedCurveAnalysisReadiness.fitInterpretation === "descriptive_point_estimate_only"
-        ? t("選択したmodelで記述的fitを実行", "Run descriptive fit with the selected model")
-        : t("選択したmodelでfitを実行", "Run fit with the selected model")}
+        ? "選択したmodelで記述的fitを実行"
+        : "選択したmodelでfitを実行"}
     </button>
   );
   const nonlinearSaveButton = (
@@ -2051,102 +2348,96 @@ export function CommonCoveragePage({
       onClick={() => void saveNonlinearProject()}
     >
       {result?.nonlinearFit
-        ? t("fit結果をプロジェクトへ保存", "Save fit result to project")
+        ? "fit結果をプロジェクトへ保存"
         : adaptiveOrderedCurveActive
-          ? t("入力と観測Graphをプロジェクトへ保存", "Save input and observed Graph to project")
-          : t("fit結果をプロジェクトへ保存", "Save fit result to project")}
+          ? "入力と観測Graphをプロジェクトへ保存"
+          : "fit結果をプロジェクトへ保存"}
     </button>
   );
   const nonlinearSaveUnavailableNote = !saveProject ? (
     <p id="nonlinear-save-unavailable-note" className="specialized-engine-note" role="note">
-      {t(
-        "このブラウザレビューではプロジェクトを保存できません。デスクトップ版で利用できます。",
-        "Projects cannot be saved in this browser preview. Use the desktop app.",
-      )}
+      このブラウザレビューではプロジェクトを保存できません。デスクトップ版で利用できます。
     </p>
   ) : null;
-  const exportGraphSvg = async () => {
+  const exportGraphSvg = () => {
+    if (graphExportPendingRef.current) return;
     const svg = svgRef.current;
     if (!svg) return;
-    const result = await saveGraphSvgExport(svg, `${mode}.svg`);
-    if (result.status === "saved") {
-      setMessage(
-        t(
-          "表示中のGraphと同じ内容をSVGで書き出しました。",
-          "Exported an SVG matching the displayed Graph.",
-        ),
-      );
-    } else if (result.status === "failed") {
-      setMessage(
-        t(
-          "SVGを書き出せませんでした。Graphは画面に保持されています。",
-          "The SVG could not be exported. The Graph remains on screen.",
-        ),
-      );
-    }
+    const downloaded = exportRenderedGraphSvg(svg, `${mode}.svg`);
+    setMessage(
+      downloaded
+        ? "表示中のGraphと同じ内容をSVGで書き出しました。"
+        : "SVGを書き出せませんでした。Graphは画面に保持されています。",
+    );
   };
   const exportGraphPng = async () => {
+    if (graphExportPendingRef.current) return;
     const svg = svgRef.current;
     if (!svg) return;
-    const result = await saveGraphPngExport(svg, `${mode}.png`);
-    if (result.status === "saved") {
+    graphExportPendingRef.current = true;
+    setGraphExportPending(true);
+    try {
+      await exportRenderedGraphPng(svg, `${mode}.png`);
+      setMessage("表示中のGraphと同じ内容をPNGで書き出しました。");
+    } catch (error) {
       setMessage(
-        t(
-          "表示中のGraphと同じ内容をPNGで書き出しました。",
-          "Exported a PNG matching the displayed Graph.",
-        ),
+        `PNGを書き出せませんでした。GraphとSVG書き出しは利用できます。${
+          error instanceof Error && error.message ? ` ${error.message}` : ""
+        }`,
       );
-    } else if (result.status === "failed") {
-      const detail = localizedFailureDetail(locale, result.error);
-      setMessage(
-        t(
-          `PNGを書き出せませんでした。GraphとSVG書き出しは利用できます。${detail}`,
-          "The PNG could not be exported. The Graph and SVG export remain available.",
-        ),
-      );
+    } finally {
+      graphExportPendingRef.current = false;
+      setGraphExportPending(false);
     }
   };
   const copyRenderedGraph = async () => {
+    if (graphExportPendingRef.current) return;
     const svg = svgRef.current;
     if (!svg) return;
+    graphExportPendingRef.current = true;
+    setGraphExportPending(true);
     try {
       const format = await copyGraphToClipboard(svg);
-      setMessage(
-        t(
-          `表示中のGraphをクリップボードへコピーしました（${format.toUpperCase()}）。`,
-          `Copied the displayed Graph to the clipboard (${format.toUpperCase()}).`,
-        ),
-      );
+      setMessage(`表示中のGraphをクリップボードへコピーしました（${format.toUpperCase()}）。`);
     } catch (error) {
-      const detail = localizedFailureDetail(locale, error);
-      setMessage(t(`Graphをコピーできませんでした。${detail}`, "The Graph could not be copied."));
+      setMessage(
+        `Graphをコピーできませんでした。${
+          error instanceof Error && error.message ? ` ${error.message}` : ""
+        }`,
+      );
+    } finally {
+      graphExportPendingRef.current = false;
+      setGraphExportPending(false);
     }
   };
   const graphExportButton = (
     <>
-      <button type="button" disabled={!graphExportAvailable} onClick={() => void exportGraphSvg()}>
-        {t("SVGを書き出す", "Export SVG")}
-      </button>
-      <button type="button" disabled={!graphExportAvailable} onClick={() => void exportGraphPng()}>
-        {t("PNGを書き出す", "Export PNG")}
+      <button
+        type="button"
+        disabled={!graphExportAvailable || graphExportPending}
+        onClick={exportGraphSvg}
+      >
+        SVGを書き出す
       </button>
       <button
         type="button"
-        disabled={!graphExportAvailable}
+        disabled={!graphExportAvailable || graphExportPending}
+        onClick={() => void exportGraphPng()}
+      >
+        PNGを書き出す
+      </button>
+      <button
+        type="button"
+        disabled={!graphExportAvailable || graphExportPending}
         onClick={() => void copyRenderedGraph()}
       >
-        {t("Graphをコピー", "Copy Graph")}
+        Graphをコピー
       </button>
     </>
   );
   const orderedCurveFactPanel = adaptiveOrderedCurveActive ? (
-    <section
-      className="callout-info"
-      aria-label={t("曲線データの測定方法", "How the curve data were measured")}
-    >
-      <strong>
-        {t("入力表を決めるための確認", "Confirm the facts needed to choose the data table")}
-      </strong>
+    <section className="callout-info" aria-label="曲線データの測定方法">
+      <strong>入力表を決めるための確認</strong>
       <p>{entryFactsView.summary}</p>
       {entryFactsView.questions.map((question) => (
         <label key={question.key}>
@@ -2182,7 +2473,7 @@ export function CommonCoveragePage({
               }
             }}
           >
-            <option value="">{t("選択してください", "Select an answer")}</option>
+            <option value="">選択してください</option>
             {question.choices.map((choice) => (
               <option key={choice.value} value={choice.value}>
                 {choice.label}
@@ -2207,71 +2498,33 @@ export function CommonCoveragePage({
             }
           }}
         />{" "}
-        {t(
-          "時間と濃度など、順序のある量を2つ以上同時に変えた",
-          "Two or more ordered quantities, such as time and concentration, changed together",
-        )}
+        時間と濃度など、順序のある量を2つ以上同時に変えた
       </label>
       <small>
-        {t(
-          "入力したX/Y値は回答を変更しても保持します。未対応構造を別の曲線へ自動変換しません。",
-          "Entered X/Y values are preserved when answers change. Unsupported structures are not converted into a different curve.",
-        )}
+        入力したX/Y値は回答を変更しても保持します。未対応構造を別の曲線へ自動変換しません。
       </small>
     </section>
   ) : null;
   return (
     <div className="page-stack specialized-analysis-page" {...interactionCaptureProps}>
       <button className="back-link" type="button" onClick={requestBack}>
-        {t("← 戻る", "← Back")}
+        ← 戻る
       </button>
       {adaptiveOrderedCurveActive ? (
-        <nav
-          aria-label={t("プロジェクトワークスペース", "Project workspace")}
-          className="workspace-mode-tabs"
-        >
+        <nav aria-label="プロジェクトワークスペース" className="workspace-mode-tabs">
           <button
             type="button"
             disabled={!onOpenProject}
             title={
-              !onOpenProject
-                ? t(
-                    "プロジェクトを開く機能はデスクトップ版で利用できます",
-                    "Opening projects is available in the desktop app",
-                  )
-                : undefined
+              !onOpenProject ? "プロジェクトを開く機能はデスクトップ版で利用できます" : undefined
             }
             onClick={onOpenProject}
           >
-            {t("開く", "Open")}
+            開く
           </button>
-          <button
-            type="button"
-            aria-pressed={orderedCurveWorkspaceTab === "data"}
-            onClick={() => setOrderedCurveWorkspaceTab("data")}
-          >
-            {t("データ", "Data")}
-          </button>
-          <button
-            type="button"
-            aria-pressed={orderedCurveWorkspaceTab === "graph"}
-            onClick={() => {
-              setOrderedCurveWorkspaceTab("graph");
-              setNonlinearAnalysisSetupVisible(false);
-            }}
-          >
-            {t("グラフ", "Graph")}
-          </button>
-          <button
-            type="button"
-            aria-pressed={orderedCurveWorkspaceTab === "statistics"}
-            onClick={() => {
-              setOrderedCurveWorkspaceTab("statistics");
-              setNonlinearAnalysisSetupVisible(true);
-            }}
-          >
-            {t("統計", "Statistics")}
-          </button>
+          <a href="#ordered-curve-data">データ</a>
+          <a href="#ordered-curve-graph">グラフ</a>
+          <a href="#ordered-curve-analysis">統計</a>
           <button
             type="button"
             disabled={
@@ -2281,25 +2534,16 @@ export function CommonCoveragePage({
             }
             title={
               orderedCurveEntry?.status !== "surface_ready" && !saveSpecializedEntryDraftProject
-                ? t(
-                    "入力途中のプロジェクト保存はデスクトップ版で利用できます",
-                    "Saving an in-progress project is available in the desktop app",
-                  )
+                ? "入力途中のプロジェクト保存はデスクトップ版で利用できます"
                 : !saveProject
-                  ? t(
-                      "プロジェクトの保存はデスクトップ版で利用できます",
-                      "Project saving is available in the desktop app",
-                    )
+                  ? "プロジェクトの保存はデスクトップ版で利用できます"
                   : orderedCurveEntry?.status !== "surface_ready"
-                    ? t(
-                        "未確定の回答と入力表を、入力途中のプロジェクトとして保存します",
-                        "Save the unresolved answers and data table as an in-progress project",
-                      )
+                    ? "未確定の回答と入力表を、入力途中のプロジェクトとして保存します"
                     : undefined
             }
             onClick={() => void saveNonlinearProject()}
           >
-            {t("保存", "Save")}
+            保存
           </button>
           {persistedBaseline ? (
             <button
@@ -2307,7 +2551,7 @@ export function CommonCoveragePage({
               disabled={!saveProject}
               onClick={() => void saveNonlinearProject(true)}
             >
-              {t("別名で保存", "Save As")}
+              別名で保存
             </button>
           ) : null}
         </nav>
@@ -2321,53 +2565,26 @@ export function CommonCoveragePage({
       )}
       <section
         id={adaptiveOrderedCurveActive ? "ordered-curve-data" : undefined}
-        inert={adaptiveOrderedCurveActive && orderedCurveWorkspaceTab !== "data" ? true : undefined}
-        className={`workspace-panel specialized-workspace-panel${
-          adaptiveOrderedCurveActive && orderedCurveWorkspaceTab !== "data"
-            ? " workspace-tab-panel--inactive"
-            : ""
-        }`}
+        className="workspace-panel specialized-workspace-panel"
       >
-        <p className="overline">
-          {adaptiveOrderedCurveActive
-            ? t("実験から入力", "Experiment-first entry")
-            : t("専門解析", "Specialized analysis")}
-        </p>
+        <p className="overline">{adaptiveOrderedCurveActive ? "実験から入力" : "専門解析"}</p>
         <h1>
           {entryIntent?.experimentName ??
             (adaptiveOrderedCurveActive ? initialProject?.state.metadata.projectName : undefined) ??
-            (locale === "ja" ? titles[mode] : englishTitles[mode])}
+            titles[mode]}
         </h1>
         <p>
           {mode === "contingency"
-            ? t(
-                "独立した実験単位の整数count、または対応binaryの2×2遷移表だけを入力します。percentageをcountへ変換しません。",
-                "Enter integer counts from independent experimental units, or a paired-binary 2×2 transition table. Percentages are not converted to counts.",
-              )
+            ? "独立した実験単位の整数count、または対応binaryの2×2遷移表だけを入力します。percentageをcountへ変換しません。"
             : mode === "repeated-nonparametric"
-              ? t(
-                  "同じ生物学的単位のIDを保ったままFriedman検定とHolm補正済みWilcoxon比較を行います。",
-                  "Keep each biological unit ID intact while running the Friedman test and Holm-adjusted Wilcoxon comparisons.",
-                )
+              ? "同じ生物学的単位のIDを保ったままFriedman検定とHolm補正済みWilcoxon比較を行います。"
               : mode === "regression"
-                ? t(
-                    "相関とは別にOLS回帰を実行します。切片は既定で推定します。",
-                    "Run OLS regression separately from correlation analysis. The intercept is estimated by default.",
-                  )
+                ? "相関とは別にOLS回帰を実行します。切片は既定で推定します。"
                 : mode === "nonlinear-fit"
                   ? adaptiveOrderedCurveActive
-                    ? t(
-                        "横方向に変えたものと試料の対応を確認してX/Yを入力すると、まず観測点をGraphに表示します。必要な場合だけ「統計解析を設定」からmodelを選びます。入力した値は確認内容を変更しても保持します。",
-                        "Confirm what changes along the X axis and how specimens relate, then enter X/Y values to display the observed points first. Choose a model from Set up statistical analysis only when needed. Entered values remain when the answers change.",
-                      )
-                    : t(
-                        "入力直後は観測点を表示し、fit後は保存可能なfit曲線を重ねます。見た目の変更では再計算しません。",
-                        "Observed points appear immediately. After fitting, a savable fitted curve is overlaid. Visual edits do not rerun the analysis.",
-                      )
-                  : t(
-                      "元の個別値を保持した探索的Graphです。検定は自動追加しません。",
-                      "This exploratory Graph preserves the original individual values. It does not add a statistical test automatically.",
-                    )}
+                    ? "横方向に変えたものと試料の対応を確認してX/Yを入力すると、まず観測点をGraphに表示します。必要な場合だけ「統計解析を設定」からmodelを選びます。入力した値は確認内容を変更しても保持します。"
+                    : "入力直後は観測点を表示し、fit後は保存可能なfit曲線を重ねます。見た目の変更では再計算しません。"
+                  : "元の個別値を保持した探索的Graphです。検定は自動追加しません。"}
         </p>
         {import.meta.env.DEV && mode === "regression" && literatureCase ? (
           <section className="benchmark-pilot-loader" aria-label="Literature単回帰合成値">
@@ -2384,8 +2601,8 @@ export function CommonCoveragePage({
         {adaptiveOrderedCurveActive ? (
           <>
             <DelimitedTextSpreadsheet
-              ariaLabel={t("曲線データ表", "Curve data table")}
-              caption={t("Unit ID、Series、X、Y", "Unit ID, Series, X, Y")}
+              ariaLabel="曲線データ表"
+              caption="Unit ID、Series、X、Y"
               minimumColumns={4}
               value={text}
               onChange={(nextText, source) => {
@@ -2401,11 +2618,9 @@ export function CommonCoveragePage({
               }}
             />
             <details>
-              <summary>
-                {t("区切りテキストを直接編集（詳細）", "Edit delimited text directly (advanced)")}
-              </summary>
+              <summary>区切りテキストを直接編集（詳細）</summary>
               <textarea
-                aria-label={t(`${dataLabels[mode]} data`, "Nonlinear X/Y fitting data")}
+                aria-label={`${dataLabels[mode]} data`}
                 rows={7}
                 value={text}
                 onPaste={pasteRawText}
@@ -2421,7 +2636,7 @@ export function CommonCoveragePage({
           </>
         ) : (
           <textarea
-            aria-label={`${locale === "ja" ? dataLabels[mode] : englishDataLabels[mode]} data`}
+            aria-label={`${dataLabels[mode]} data`}
             rows={9}
             value={text}
             onPaste={pasteRawText}
@@ -2435,12 +2650,15 @@ export function CommonCoveragePage({
           />
         )}
         {adaptiveOrderedCurveActive ? (
-          <LocalizedFileInput
-            label={t("CSV / TSV / TXTを読み込む", "Load CSV / TSV / TXT")}
-            ariaLabel={t("CSV / TSV / TXTを読み込む", "Load CSV / TSV / TXT")}
-            accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
-            onChange={(event) => void loadOrderedCurveFile(event)}
-          />
+          <label>
+            CSV / TSV / TXTを読み込む
+            <input
+              aria-label="CSV / TSV / TXTを読み込む"
+              type="file"
+              accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+              onChange={(event) => void loadOrderedCurveFile(event)}
+            />
+          </label>
         ) : null}
         {adaptiveOrderedCurveActive && entryIntent ? (
           <button
@@ -2467,10 +2685,7 @@ export function CommonCoveragePage({
               setExecutedRequest(null);
             }}
           >
-            {t(
-              "入力形式の例を読み込む（合成値）",
-              "Load an input-format example (synthetic values)",
-            )}
+            入力形式の例を読み込む（合成値）
           </button>
         ) : null}
         {mode === "nonlinear-fit" &&
@@ -2485,29 +2700,17 @@ export function CommonCoveragePage({
               setExecutedRequest(null);
             }}
           >
-            {t(
-              "入力形式の例を読み込む（合成値）",
-              "Load an input-format example (synthetic values)",
-            )}
+            入力形式の例を読み込む（合成値）
           </button>
         ) : null}
         {adaptiveOrderedCurveActive ? (
           <small>
             {entryFactsState.facts.axisMaterialRelationship === "same_physical_material_across_axis"
-              ? t(
-                  "同じ反応・対象の行では、Xが変わっても同じUnit IDを使います。",
-                  "Use the same Unit ID across X values for rows from the same reaction or subject.",
-                )
+              ? "同じ反応・対象の行では、Xが変わっても同じUnit IDを使います。"
               : entryFactsState.facts.axisMaterialRelationship ===
                   "separate_material_per_axis_value"
-                ? t(
-                    "X点ごとに別の反応・試料を用意した行には、それぞれのUnit IDを付けます。",
-                    "Assign a separate Unit ID to each row when each X value uses a separate reaction or specimen.",
-                  )
-                : t(
-                    "上の2項目を選ぶと、Unit IDの付け方を例に反映します。",
-                    "Answer the two questions above to reflect the appropriate Unit ID pattern in the example.",
-                  )}
+                ? "X点ごとに別の反応・試料を用意した行には、それぞれのUnit IDを付けます。"
+                : "上の2項目を選ぶと、Unit IDの付け方を例に反映します。"}
           </small>
         ) : null}
         {mode === "contingency" ? (
@@ -2558,9 +2761,14 @@ export function CommonCoveragePage({
                 checked={showBand}
                 onChange={(e) => setShowBand(e.target.checked)}
               />{" "}
-              Confidence band
+              Mean response confidence band
             </label>
           </>
+        ) : null}
+        {mode === "regression" && result?.regression && showBand ? (
+          <p>
+            帯は平均応答の点ごとの中央両側信頼区間です。個々の新しい観測値の予測区間ではありません。
+          </p>
         ) : null}
         {mode === "nonlinear-fit" && !adaptiveOrderedCurveActive ? nonlinearFitSettings : null}
         {mode === "distribution" ? (
@@ -2615,15 +2823,12 @@ export function CommonCoveragePage({
             disabled={!analysisAvailable}
             onClick={() => void run()}
           >
-            {t("解析を実行", "Run analysis")}
+            解析を実行
           </button>
         ) : null}
         {adaptiveOrderedCurveActive && !entryFactsView.canCompileStructureContract ? (
           <p className="specialized-engine-note" role="status">
-            {t(
-              "X/Y値は入力できます。fitを実行する前に、上の測定方法だけ確認してください。",
-              "You can enter X/Y values now. Confirm the measurement pattern above before running a fit.",
-            )}
+            X/Y値は入力できます。fitを実行する前に、上の測定方法だけ確認してください。
           </p>
         ) : null}
         {adaptiveOrderedCurveActive &&
@@ -2637,15 +2842,12 @@ export function CommonCoveragePage({
         !["ready", "ready_descriptive_only"].includes(orderedCurveAnalysisReadiness.status) &&
         !nonlinearAnalysisSetupVisible ? (
           <p className="specialized-engine-note" role="status">
-            {orderedCurveAnalysisReadiness.message[locale]}
+            {orderedCurveAnalysisReadiness.message.ja}
           </p>
         ) : null}
         {mode !== "distribution" && !analysisAvailable && !adaptiveOrderedCurveActive ? (
           <p className="specialized-engine-note" role="note">
-            {t(
-              "このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。",
-              "The analysis engine is unavailable in this browser preview. It is available in the desktop app.",
-            )}
+            このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
           </p>
         ) : null}
         {mode === "nonlinear-fit" && !adaptiveOrderedCurveActive ? nonlinearSaveButton : null}
@@ -2661,65 +2863,48 @@ export function CommonCoveragePage({
         {message ? <p role="status">{message}</p> : null}
         {"error" in parsed &&
         !(mode === "nonlinear-fit" && entryIntent && text.trim() === ORDERED_CURVE_HEADER) ? (
-          <p role="alert">
-            {locale === "ja" ? parsed.error : "Check the data table and required columns."}
-          </p>
+          <p role="alert">{parsed.error}</p>
         ) : null}
       </section>
       <section
         id={adaptiveOrderedCurveActive ? "ordered-curve-graph" : undefined}
-        inert={adaptiveOrderedCurveActive && orderedCurveWorkspaceTab === "data" ? true : undefined}
-        className={`workspace-panel specialized-workspace-panel${
-          adaptiveOrderedCurveActive && orderedCurveWorkspaceTab === "data"
-            ? " workspace-tab-panel--inactive"
-            : ""
-        }`}
+        className="workspace-panel specialized-workspace-panel"
       >
         {mode === "nonlinear-fit" && adaptiveOrderedCurveActive ? (
           <GraphWorkspaceFrame
             title={
               entryIntent?.experimentName ??
               initialProject?.state.metadata.projectName ??
-              t("濃度–反応・酵素反応", "Concentration–response / enzyme kinetics")
+              "濃度–反応・酵素反応"
             }
             actions={graphExportButton}
             canvas={graph}
             inspector={
               <div className="graph-workspace-frame__settings">
-                <h3>{t("Graph設定", "Graph settings")}</h3>
+                <h3>Graph設定</h3>
                 {nonlinearAxisFields}
-                {(orderedCurveWorkspaceTab === "statistics" || nonlinearAnalysisSetupVisible) &&
-                orderedCurveEntry?.status === "surface_ready" ? (
+                {nonlinearAnalysisSetupVisible && orderedCurveEntry?.status === "surface_ready" ? (
                   <section
                     id="ordered-curve-analysis"
                     className="nonlinear-analysis-stage"
-                    aria-label={t("統計解析の設定", "Statistical-analysis settings")}
+                    aria-label="統計解析の設定"
                   >
                     <header>
                       <h3>
                         {orderedCurveAnalysisReadiness.fitInterpretation ===
                         "descriptive_point_estimate_only"
-                          ? t("曲線モデルを設定", "Set up a curve model")
-                          : t("統計解析を設定", "Set up statistical analysis")}
+                          ? "曲線モデルを設定"
+                          : "統計解析を設定"}
                       </h3>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setNonlinearAnalysisSetupVisible(false);
-                          setOrderedCurveWorkspaceTab("graph");
-                        }}
-                      >
-                        {t("設定を閉じる", "Close settings")}
+                      <button type="button" onClick={() => setNonlinearAnalysisSetupVisible(false)}>
+                        設定を閉じる
                       </button>
                     </header>
                     {nonlinearFitSettings}
                     {nonlinearRunButton}
                     {!analysisAvailable ? (
                       <p className="specialized-engine-note" role="note">
-                        {t(
-                          "このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。",
-                          "The analysis engine is unavailable in this browser preview. It is available in the desktop app.",
-                        )}
+                        このブラウザレビューでは解析エンジンを実行できません。デスクトップ版では利用できます。
                       </p>
                     ) : null}
                   </section>
@@ -2732,28 +2917,20 @@ export function CommonCoveragePage({
                         orderedCurveEntry?.status !== "surface_ready" ||
                         orderedCurveAnalysisReadiness.status === "safe_stop"
                       }
-                      onClick={() => {
-                        setNonlinearAnalysisSetupVisible(true);
-                        setOrderedCurveWorkspaceTab("statistics");
-                      }}
+                      onClick={() => setNonlinearAnalysisSetupVisible(true)}
                     >
                       {orderedCurveAnalysisReadiness.status === "ready_descriptive_only"
-                        ? t("曲線モデルを設定", "Set up a curve model")
-                        : t("統計解析を設定", "Set up statistical analysis")}
+                        ? "曲線モデルを設定"
+                        : "統計解析を設定"}
                     </button>
                     {orderedCurveSetupMissingItems.length > 0 ? (
                       <small role="status">
-                        {t(
-                          `あと${orderedCurveSetupMissingItems.length}項目：${orderedCurveSetupMissingItems.join("、")}`,
-                          `${orderedCurveSetupMissingItems.length} items remaining: ${orderedCurveSetupMissingItems.join(", ")}`,
-                        )}
+                        あと{orderedCurveSetupMissingItems.length}項目：
+                        {orderedCurveSetupMissingItems.join("、")}
                       </small>
                     ) : orderedCurveAnalysisReadiness.status === "safe_stop" ? (
                       <small role="status">
-                        {t(
-                          "この構造では解析を開始できません。上に表示された理由を確認してください。",
-                          "Analysis cannot start for this structure. Review the reason shown above.",
-                        )}
+                        この構造では解析を開始できません。上に表示された理由を確認してください。
                       </small>
                     ) : null}
                   </>
@@ -2767,15 +2944,9 @@ export function CommonCoveragePage({
           graph
         )}
         {result?.nonlinearFit ? (
-          <div
-            className="nonlinear-fit-results"
-            role="region"
-            aria-label={t("非線形fit結果", "Nonlinear-fit results")}
-          >
+          <div className="nonlinear-fit-results" role="region" aria-label="非線形fit結果">
             <header>
-              <p className="overline">
-                {t("保存対象の解析結果", "Analysis result available to save")}
-              </p>
+              <p className="overline">保存対象の解析結果</p>
               <h2>Parameter estimates & fit diagnostics</h2>
               <p>
                 Model: <strong>{nonlinearModelLabel(result.nonlinearFit.modelId)}</strong> · ID{" "}
@@ -2785,10 +2956,7 @@ export function CommonCoveragePage({
             </header>
             {descriptiveNonlinearFit ? (
               <p className="specialized-engine-note" role="status">
-                {t(
-                  "同じ対象を順に測った曲線への記述的fitです。Parameterは点推定として表示し、SE・信頼区間・群間推論は生成していません。",
-                  "This is a descriptive fit to a curve measured sequentially on the same subject. Parameters are shown as point estimates; no SE, confidence interval, or between-group inference is generated.",
-                )}
+                同じ対象を順に測った曲線への記述的fitです。Parameterは点推定として表示し、SE・信頼区間・群間推論は生成していません。
               </p>
             ) : null}
             {result.nonlinearFit.series.map((seriesFit) => (
@@ -2881,6 +3049,10 @@ export function CommonCoveragePage({
                 .join(", ")}
             </p>
           </div>
+        ) : result &&
+          executedRequest &&
+          ["0.11.0", "0.13.0"].includes(executedRequest.protocolVersion) ? (
+          <CommonAnalysisResults request={executedRequest} result={result} />
         ) : result ? (
           <pre style={{ whiteSpace: "pre-wrap" }}>
             {JSON.stringify(

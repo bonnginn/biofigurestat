@@ -1,6 +1,6 @@
 import type { ExperimentDesign } from "@lsaa/domain";
 
-import type { AnalysisEngineRequest, AnalysisRecommendation } from "./contracts";
+import { AnalysisEngineRequestSchema, type AnalysisEngineRequest, type AnalysisRecommendation } from "./contracts";
 import { recommendD01OrD02 } from "./d01-d02";
 import { recommendD03 } from "./d03";
 import { recommendD04 } from "./d04";
@@ -349,6 +349,37 @@ export function recommendAnalysisRequest(
       "template_not_owned_by_core_workspace_recommender",
       `Template ${request.templateId} has a separate recommendation contract.`,
     );
+  }
+
+  if (request.protocolVersion === "0.15.0" || request.protocolVersion === "0.16.0") {
+    const validated = AnalysisEngineRequestSchema.safeParse(request);
+    if (!validated.success) {
+      return mismatch("equivalence_request_invalid", "The prespecified equivalence request is invalid.");
+    }
+    const paired = request.protocolVersion === "0.16.0";
+    const baseRequest = AnalysisEngineRequestSchema.parse({
+      ...request,
+      protocolVersion: "0.1.0",
+      templateVersion: "0.1.0",
+      method: paired ? "paired_t" : "welch_t",
+      options: { alternative: "two_sided", confidenceLevel: 0.95, multiplicityMethod: null },
+    });
+    const base = recommendAnalysisRequest(design, baseRequest, context);
+    if (!base.matched) return base;
+    return {
+      matched: true,
+      recommendation: {
+        ...base.recommendation,
+        templateVersion: request.templateVersion,
+        recommendedMethod: request.method,
+        alternativeMethods: [],
+        reasonCode: paired ? "prespecified_paired_continuous_equivalence" : "prespecified_independent_continuous_equivalence",
+        explanation: paired
+          ? "Prespecified paired TOST uses second minus first differences and a 90% confidence interval."
+          : "Prespecified Welch TOST uses first minus second differences and a 90% confidence interval.",
+        multiplicityMethod: null,
+      },
+    };
   }
 
   const conditionIds =

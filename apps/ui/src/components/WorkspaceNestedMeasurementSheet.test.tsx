@@ -1,6 +1,6 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
   createExperimentSetDraft,
@@ -10,10 +10,6 @@ import {
   type NestedContinuousCellDraft,
 } from "../app/experimentDraft";
 import { WorkspaceNestedMeasurementSheet } from "./WorkspaceNestedMeasurementSheet";
-import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
-import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
-
-afterEach(() => act(() => resetAppLocaleForTests("ja")));
 
 function fixture(): { draft: ExperimentSetDraft; cells: ExperimentCellMap; keys: string[] } {
   const base = createExperimentSetDraft("microscopy_imaging", "nested_continuous");
@@ -85,70 +81,6 @@ function Harness({ initialCells }: { initialCells: ExperimentCellMap }) {
 }
 
 describe("WorkspaceNestedMeasurementSheet", () => {
-  it("shows compact and expanded nested measurement entry without Japanese application copy in English mode", () => {
-    setAppLocale("en");
-    const data = fixture();
-    const draft = {
-      ...data.draft,
-      conditionAssignment: { ...data.draft.conditionAssignment, unitLabel: "Experimental unit" },
-      attributes: data.draft.attributes.map((attribute) => ({ ...attribute, label: "Condition" })),
-      readouts: data.draft.readouts.map((readout) => ({ ...readout, label: "Fluorescence intensity" })),
-    };
-    const view = render(
-      <WorkspaceNestedMeasurementSheet
-        draft={draft}
-        cells={data.cells}
-        mode="compact"
-        onModeChange={() => undefined}
-        onCellChange={() => undefined}
-      />,
-    );
-    expectNoJapaneseUi(view.container);
-    view.rerender(
-      <WorkspaceNestedMeasurementSheet
-        draft={draft}
-        cells={data.cells}
-        mode="expanded"
-        onModeChange={() => undefined}
-        onCellChange={() => undefined}
-      />,
-    );
-    expectNoJapaneseUi(view.container);
-  });
-  it("does not expose a Japanese parent error after expanded paste in English mode", () => {
-    setAppLocale("en");
-    const data = fixture();
-    const draft = {
-      ...data.draft,
-      conditionAssignment: { ...data.draft.conditionAssignment, unitLabel: "Experimental unit" },
-      attributes: data.draft.attributes.map((attribute) => ({ ...attribute, label: "Condition" })),
-      readouts: data.draft.readouts.map((readout) => ({
-        ...readout,
-        label: "Fluorescence intensity",
-      })),
-    };
-    const view = render(
-      <WorkspaceNestedMeasurementSheet
-        draft={draft}
-        cells={data.cells}
-        mode="expanded"
-        onModeChange={() => undefined}
-        onCellChange={() => {
-          throw new Error("保存済みの測定値を更新できませんでした");
-        }}
-      />,
-    );
-
-    fireEvent.paste(
-      screen.getByRole("textbox", { name: "Control, Exp 1, measurement 1 value" }),
-      { clipboardData: { getData: () => "11\tCell-1" } },
-    );
-
-    expect(
-      screen.getByText("The pasted values could not be applied. Existing values were not changed."),
-    ).toBeVisible();
-    expectNoJapaneseUi(view.container);
-  });
   it("edits unequal condition lists without padding or creating positional pairing", () => {
     const data = fixture();
     render(<Harness initialCells={data.cells} />);

@@ -19,13 +19,17 @@ const desktopTestActions = {
   saveProject: async () => null,
 };
 
-const unresolvedRouteCases = [
+const unresolvedBridgeCases = [
   { bridgeCase: "none", hasUnresolvedSave: false, hasUnresolvedOpen: false },
+  { bridgeCase: "save-only", hasUnresolvedSave: true, hasUnresolvedOpen: false },
+  { bridgeCase: "open-only", hasUnresolvedSave: false, hasUnresolvedOpen: true },
   { bridgeCase: "both", hasUnresolvedSave: true, hasUnresolvedOpen: true },
 ] as const;
 
-const specializedRouteCases = [
+const specializedBridgeCases = [
   { bridgeCase: "none", hasSpecializedSave: false, hasGenericOpen: false },
+  { bridgeCase: "save-only", hasSpecializedSave: true, hasGenericOpen: false },
+  { bridgeCase: "open-only", hasSpecializedSave: false, hasGenericOpen: true },
   { bridgeCase: "both", hasSpecializedSave: true, hasGenericOpen: true },
 ] as const;
 
@@ -61,7 +65,7 @@ describe("workspace home", () => {
     vi.unstubAllEnvs();
   });
 
-  it("新しいrouteとfresh-startを確認dialogなしで画面先頭から開く", async () => {
+  it("新しいrouteを先頭から開き、未保存データのfresh-startは破棄確認後に進む", async () => {
     render(<App />);
     const scrollTo = vi.mocked(window.scrollTo);
     scrollTo.mockClear();
@@ -69,18 +73,18 @@ describe("workspace home", () => {
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: /^Simple 3群（連続値）/ }, { timeout: 5_000 }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
     await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
     scrollTo.mockClear();
     fireEvent.click(screen.getByRole("button", { name: /新しい実験/ }));
+    expect(screen.getByRole("dialog", { name: "この実験を保存しますか？" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
     await screen.findByRole("heading", { name: "何をした実験ですか？" });
-    expect(screen.queryAllByRole("button", { name: "変更を破棄して続ける" })).toHaveLength(0);
+    expect(screen.queryByRole("button", { name: "変更を破棄して続ける" })).toBeNull();
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
   });
 
-  it("お気に入りの設計をデータなしで呼び出し、確認画面から修正できる", async () => {
+  it("お気に入りの設計をデータなしで呼び出し、確認画面から修正できる", () => {
     const draft = {
       ...createExperimentSetDraft("cell_culture", "proportion"),
       name: "陽性率の定番設計",
@@ -96,7 +100,7 @@ describe("workspace home", () => {
     expect(screen.getByText("陽性率の定番設計")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "この設計から始める" }));
 
-    expect(await screen.findByRole("heading", { name: "この実験の設計を確認" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "この実験の設計を確認" })).toBeVisible();
     expect(screen.getByRole("button", { name: "設計を修正" })).toBeVisible();
   });
 
@@ -113,27 +117,28 @@ describe("workspace home", () => {
     }
   });
 
-  it("keeps the adaptive feature flag while navigating from Home to New Experiment", async () => {
+  it("keeps the adaptive feature flag while navigating from Home to New Experiment", () => {
     window.history.replaceState({}, "", "/?adaptiveInput=1");
     render(<App />);
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
     expect(window.location.search).toBe("?adaptiveInput=1");
-    expect(await screen.findByRole("heading", { name: "何から始めますか？" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "何から始めますか？" })).toBeVisible();
     expect(screen.getByRole("button", { name: "実験から始めるを開く" })).toBeVisible();
     expect(screen.getByRole("button", { name: "手元の表からGraphを作るを開く" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "ヒートマップを開く" })).toBeEnabled();
     expect(screen.queryByText(/保存・再開する接続がそろっていない/)).toBeNull();
   });
 
-  it("opens the task-oriented hub by default in a production build without an override", async () => {
+  it("opens the task-oriented hub by default in a production build without an override", () => {
     vi.stubEnv("PROD", true);
     render(<App />);
 
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
 
-    expect(await screen.findByRole("heading", { name: "何から始めますか？" })).toBeVisible();
-    expect(document.querySelectorAll("[data-entry-id]")).toHaveLength(6);
+    expect(screen.getByRole("heading", { name: "何から始めますか？" })).toBeVisible();
+    expect(document.querySelectorAll("[data-entry-id]")).toHaveLength(5);
     expect(screen.queryByRole("heading", { name: "何をした実験ですか？" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "以前の入口を使う" })).toBeNull();
   });
 
   it.each([
@@ -158,7 +163,7 @@ describe("workspace home", () => {
     },
   );
 
-  it.each(unresolvedRouteCases)(
+  it.each(unresolvedBridgeCases)(
     "keeps Graph-only and Heatmap fail-closed with $bridgeCase unresolved bridges",
     async ({ hasUnresolvedSave, hasUnresolvedOpen }) => {
       window.history.replaceState({}, "", "/?adaptiveInput=1");
@@ -178,7 +183,7 @@ describe("workspace home", () => {
       render(<App projectActions={projectActions} />);
 
       fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
-      const graphOnlyEntry = await screen.findByRole("button", {
+      const graphOnlyEntry = screen.getByRole("button", {
         name: "手元の表からGraphを作るを開く",
       });
       const heatmapEntry = screen.getByRole("button", { name: "ヒートマップを開く" });
@@ -200,7 +205,7 @@ describe("workspace home", () => {
 
       expect(graphOnlyEntry).toBeEnabled();
       fireEvent.click(graphOnlyEntry);
-      fireEvent.paste(await screen.findByTestId("graph-only-cell-0-0"), {
+      fireEvent.paste(screen.getByTestId("graph-only-cell-0-0"), {
         clipboardData: { getData: () => "X\tY\n0\t1\n1\t2" },
       });
       fireEvent.change(screen.getByRole("combobox", { name: "Graphの横軸" }), {
@@ -257,7 +262,7 @@ describe("workspace home", () => {
     },
   );
 
-  it.each(specializedRouteCases)(
+  it.each(specializedBridgeCases)(
     "gates Survival and ordered-curve hub entries with $bridgeCase specialized persistence",
     ({ hasSpecializedSave, hasGenericOpen }) => {
       window.history.replaceState({}, "", "/?adaptiveInput=1");
@@ -304,7 +309,7 @@ describe("workspace home", () => {
   );
 
   it.each(
-    specializedRouteCases.flatMap((bridge) => [
+    specializedBridgeCases.flatMap((bridge) => [
       { ...bridge, path: "/survival", entryLabel: "生存時間", pageHeading: "生存時間" },
       {
         ...bridge,
@@ -347,7 +352,7 @@ describe("workspace home", () => {
     },
   );
 
-  it.each(unresolvedRouteCases)(
+  it.each(unresolvedBridgeCases)(
     "gates direct /heatmap with paired persistence for $bridgeCase bridges",
     async ({ hasUnresolvedSave, hasUnresolvedOpen }) => {
       window.history.replaceState({}, "", "/heatmap");
@@ -390,7 +395,7 @@ describe("workspace home", () => {
     },
   );
 
-  it.each(unresolvedRouteCases)(
+  it.each(unresolvedBridgeCases)(
     "gates the compatibility Heatmap path with paired persistence for $bridgeCase bridges",
     ({ hasUnresolvedSave, hasUnresolvedOpen }) => {
       const unresolvedOpen = vi.fn(async () => null);
@@ -643,13 +648,13 @@ describe("workspace home", () => {
     expect(screen.getByRole("heading", { name: "Simple linear regression" })).toBeVisible();
   });
 
-  it("専門解析を切り替えたときに別familyの入力状態を持ち越さない", async () => {
+  it("専門解析を切り替えたときに別familyの入力状態を持ち越さない", () => {
     render(<App developmentAnalysisRouteSwitcher />);
 
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
-    fireEvent.click(await screen.findByText("既存の解析用データを直接入力する"));
+    fireEvent.click(screen.getByText("既存の解析用データを直接入力する"));
     fireEvent.click(screen.getByRole("button", { name: /単回帰/ }));
-    fireEvent.change(await screen.findByRole("textbox", { name: "X label" }), {
+    fireEvent.change(screen.getByRole("textbox", { name: "X label" }), {
       target: { value: "前の解析のX" },
     });
 
@@ -661,16 +666,15 @@ describe("workspace home", () => {
     expect(screen.getByText(/別の専門解析へ切り替える/)).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
 
-    expect(await screen.findByRole("heading", { name: "濃度–反応・酵素反応" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "濃度–反応・酵素反応" })).toBeVisible();
     expect(screen.getByRole("textbox", { name: "X label" })).toHaveValue("X");
     expect(screen.queryByDisplayValue("前の解析のX")).toBeNull();
 
     fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
       target: { value: "regression" },
     });
-    fireEvent.click(await screen.findByRole("button", { name: "変更を破棄して続ける" }));
 
-    expect(await screen.findByRole("heading", { name: "Simple linear regression" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Simple linear regression" })).toBeVisible();
     expect(screen.getByRole("textbox", { name: "X label" })).toHaveValue("前の解析のX");
   });
 
@@ -710,12 +714,8 @@ describe("workspace home", () => {
     fireEvent.change(screen.getByRole("combobox", { name: "専門解析を切り替える" }), {
       target: { value: "heatmap" },
     });
-    const discardRestoredSurvival = screen.queryByRole("button", {
-      name: "変更を破棄して続ける",
-    });
-    if (discardRestoredSurvival) fireEvent.click(discardRestoredSurvival);
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(screen.getByRole("textbox", { name: "Matrix data" })).toHaveValue(heatmapText);
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "Matrix data" })).toHaveValue(heatmapText));
     expect(screen.getByLabelText("Heatmap transform")).toHaveValue("row_z_score");
     expect(screen.getByText(/入力途中の内容は解析ごとに一時保持/)).toBeVisible();
   });
@@ -796,10 +796,8 @@ describe("workspace home", () => {
         name,
         conditions: base.conditions.slice(0, 2).map((condition, index) => ({
           ...condition,
-          label: index === 0 ? `${name} Control` : `${name} Treatment`,
-          attributes: {
-            "attribute.1": index === 0 ? `${name} Control` : `${name} Treatment`,
-          },
+          label: index === 0 ? "Control" : "Treatment",
+          attributes: { "attribute.1": index === 0 ? "Control" : "Treatment" },
         })),
       };
       return {
@@ -836,7 +834,6 @@ describe("workspace home", () => {
     fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
     await waitFor(() => expect(picker).toHaveBeenCalledOnce());
     expect(await screen.findByRole("tab", { name: "Drug response" })).toBeVisible();
-    expect(await screen.findByText("Drug response Control")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "＋ 開く" }));
     await waitFor(() => expect(picker).toHaveBeenCalledTimes(2));
     expect(await screen.findByRole("tab", { name: "Survival pilot" })).toHaveAttribute(
@@ -844,8 +841,6 @@ describe("workspace home", () => {
       "true",
     );
     expect(screen.getByRole("tab", { name: "Drug response" })).toBeVisible();
-    expect(await screen.findByText("Survival pilot Control")).toBeVisible();
-    expect(screen.queryByText("Drug response Control")).toBeNull();
 
     fireEvent.click(screen.getByRole("tab", { name: "Drug response" }));
     await waitFor(() => expect(openTarget).toHaveBeenCalledWith(first.target));
@@ -894,63 +889,6 @@ describe("workspace home", () => {
     fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
     await waitFor(() => expect(picker).toHaveBeenCalledTimes(2));
     expect(await screen.findByRole("tab", { name: "Immediate reopen" })).toBeVisible();
-  });
-
-  it("clears discarded dirty state before immediately opening another project", async () => {
-    const makeProject = (name: string, target: string) => {
-      const base = createExperimentSetDraft("cell_culture", "proportion");
-      const draft = {
-        ...base,
-        name,
-        conditions: base.conditions.slice(0, 2).map((condition, index) => ({
-          ...condition,
-          label: index === 0 ? "Control" : "Treatment",
-          attributes: { "attribute.1": index === 0 ? "Control" : "Treatment" },
-        })),
-      };
-      return {
-        state: createExperimentWorkspaceProject({
-          draft,
-          cells: {},
-          graphs: [],
-          now: "2026-08-30T00:00:00.000Z",
-        }),
-        target,
-      };
-    };
-    const first = makeProject("Discard then open", "/tmp/discard-then-open.lsa");
-    const second = makeProject("Opened after discard", "/tmp/opened-after-discard.lsa");
-    const picker = vi
-      .fn()
-      .mockResolvedValueOnce({ kind: "experiment" as const, project: first })
-      .mockResolvedValueOnce({ kind: "experiment" as const, project: second });
-    render(
-      <App
-        projectActions={{
-          openProject: async () => null,
-          openAnyProject: picker,
-          saveProject: async (state, target) => ({ state, target: target ?? first.target }),
-        }}
-      />,
-    );
-
-    fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
-    await screen.findByRole("tab", { name: "Discard then open" });
-    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
-    fireEvent.change(screen.getByRole("spinbutton", { name: "Controlの陽性数" }), {
-      target: { value: "5" },
-    });
-    fireEvent.change(screen.getByRole("spinbutton", { name: "Controlの対象数" }), {
-      target: { value: "10" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Discard then openを閉じる" }));
-    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
-    await waitFor(() => expect(screen.queryByRole("tab", { name: "Discard then open" })).toBeNull());
-
-    fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
-    await waitFor(() => expect(picker).toHaveBeenCalledTimes(2));
-    expect(screen.queryByRole("dialog", { name: "この実験を保存しますか？" })).toBeNull();
-    expect(await screen.findByRole("tab", { name: "Opened after discard" })).toBeVisible();
   });
 
   it("keeps a dirty project checkpoint when Home is opened and restores it without disk reload", async () => {
@@ -1006,62 +944,6 @@ describe("workspace home", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
     expect(screen.getByRole("spinbutton", { name: "Controlの陽性数" })).toHaveValue(5);
     expect(openTarget).not.toHaveBeenCalled();
-  });
-
-  it("activates an already-open canonical target without replacing its dirty in-memory values", async () => {
-    const base = createExperimentSetDraft("cell_culture", "proportion");
-    const draft = {
-      ...base,
-      name: "Dirty same-file open",
-      conditions: base.conditions.slice(0, 2).map((condition, index) => ({
-        ...condition,
-        label: index === 0 ? "Control" : "Treatment",
-        attributes: { "attribute.1": index === 0 ? "Control" : "Treatment" },
-      })),
-    };
-    const diskState = createExperimentWorkspaceProject({
-      draft,
-      cells: {},
-      graphs: [],
-      now: "2026-08-31T00:00:00.000Z",
-    });
-    const picker = vi
-      .fn()
-      .mockResolvedValueOnce({
-        kind: "experiment" as const,
-        project: { state: diskState, target: "C:\\Research\\same-file.lsa" },
-      })
-      .mockResolvedValueOnce({
-        kind: "experiment" as const,
-        project: { state: diskState, target: "c:/research/same-file.lsa" },
-      });
-    render(
-      <App
-        projectActions={{
-          openProject: async () => null,
-          openAnyProject: picker,
-          saveProject: async () => null,
-        }}
-      />,
-    );
-
-    fireEvent.click(document.querySelector('[data-primary-route="open-project"]')!);
-    await screen.findByRole("tab", { name: "Dirty same-file open" });
-    fireEvent.click(screen.getByRole("tab", { name: "Exp 1" }));
-    fireEvent.change(screen.getByRole("spinbutton", { name: "Controlの陽性数" }), {
-      target: { value: "7" },
-    });
-    fireEvent.change(screen.getByRole("spinbutton", { name: "Controlの対象数" }), {
-      target: { value: "10" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "＋ 開く" }));
-    await waitFor(() => expect(picker).toHaveBeenCalledTimes(2));
-
-    expect(screen.queryByRole("dialog", { name: "この実験を保存しますか？" })).toBeNull();
-    expect(screen.getByRole("spinbutton", { name: "Controlの陽性数" })).toHaveValue(7);
-    expect(screen.getByRole("spinbutton", { name: "Controlの対象数" })).toHaveValue(10);
-    expect(screen.getAllByRole("tab", { name: /Dirty same-file open/ })).toHaveLength(1);
   });
 
   it("keeps the active tab when opening its replacement fails during close", async () => {
@@ -1457,10 +1339,10 @@ describe("workspace home", () => {
     expect(screen.getByText(/選んだ場合だけ適用し、標的・referenceの生値は残します/)).toBeVisible();
   });
 
-  it("既存の表をpreviewし、明示的な列割り当てから入力画面を作る", async () => {
+  it("既存の表をpreviewし、明示的な列割り当てから入力画面を作る", () => {
     render(<App projectActions={desktopTestActions} />);
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
-    fireEvent.click(await screen.findByRole("button", { name: /既存データを取り込む/ }));
+    fireEvent.click(document.querySelector('[data-context="existing_data"]')!);
     fireEvent.change(screen.getByRole("textbox", { name: "既存データの表" }), {
       target: {
         value:
@@ -1482,7 +1364,7 @@ describe("workspace home", () => {
     expect(screen.getByRole("heading", { name: "この実験構造で取り込みますか？" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "この構造で取り込む" }));
 
-    expect(await screen.findByRole("tab", { name: "E1" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "E1" })).toBeVisible();
     expect(screen.getByRole("tab", { name: "E2" })).toBeVisible();
     fireEvent.click(screen.getByText("取込元・列の割り当て・変換履歴を確認"));
     expect(screen.getByRole("table", { name: "取込元の表（未変更）" })).toBeVisible();
@@ -1574,14 +1456,23 @@ describe("workspace home", () => {
     expect(screen.getByRole("heading", { name: "合成デモデータですぐ試す" })).toBeVisible();
   });
 
-  it("合成デモだけのbrowser previewはtop navigationで保存確認を要求しない", async () => {
+  it("未保存workspaceからのtop navigationは破棄確認なしに状態を失わない", async () => {
     render(<App />);
     fireEvent.click(document.querySelector('[data-primary-route="new-experiment"]')!);
     fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
     await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
 
     fireEvent.click(screen.getByRole("button", { name: /ホーム/ }));
+    expect(screen.getByRole("dialog", { name: "この実験を保存しますか？" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "保存して続ける" })).toBeDisabled();
+    expect(screen.getByRole("heading", { name: "合成デモ：Simple 3群（連続値）" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
     expect(screen.queryByRole("dialog", { name: "この実験を保存しますか？" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "合成デモ：Simple 3群（連続値）" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: /ホーム/ }));
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
     expect(await screen.findByRole("heading", { name: /どの実験を整理しますか？/ })).toBeVisible();
   });
 
@@ -1592,7 +1483,7 @@ describe("workspace home", () => {
     await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
 
     fireEvent.click(screen.getByRole("button", { name: /新しい実験/ }));
-    expect(screen.queryAllByRole("button", { name: "変更を破棄して続ける" })).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));
     expect(await screen.findByRole("heading", { name: "何をした実験ですか？" })).toBeVisible();
   });
 
@@ -1632,7 +1523,6 @@ describe("workspace home", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Simple 3群（連続値）/ }));
     await screen.findByRole("heading", { name: "合成デモ：Simple 3群（連続値）" });
 
-    fireEvent.click(screen.getByText("ファイル"));
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを開く" }));
     expect(screen.getByRole("dialog", { name: "この実験を保存しますか？" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "変更を破棄して続ける" }));

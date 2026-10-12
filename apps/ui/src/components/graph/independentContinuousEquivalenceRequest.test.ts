@@ -82,3 +82,8 @@ describe("createIndependentContinuousEquivalenceRequest", () => {
     ).toBeNull();
   });
 });
+
+it("safe-stops a comparison ID whose order differs from the actual contrast", () => {
+ const reversed = {...baseRequest,contrastConditionIds:[baseRequest.protocolVersion === "0.1.0" ? baseRequest.contrastConditionIds[1] : "invalid",baseRequest.protocolVersion === "0.1.0" ? baseRequest.contrastConditionIds[0] : "invalid"]} as AnalysisEngineRequest;
+ expect(createIndependentContinuousEquivalenceRequest({baseRequest:reversed,plan,comparisonId})).toBeNull();
+});

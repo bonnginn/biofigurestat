@@ -17,9 +17,7 @@ const baseContract = {
     },
   ],
   experimentalUnitLevelKey: "sample",
-  identities: [
-    { key: "sample_id", label: "Sample ID", unitLevelKey: "sample", required: true },
-  ],
+  identities: [{ key: "sample_id", label: "Sample ID", unitLevelKey: "sample", required: true }],
   factors: [
     {
       key: "treatment",
@@ -59,28 +57,30 @@ const baseContract = {
 };
 
 describe("adaptive semantic invariants", () => {
-  it("keeps experiment-session provenance optional and separate from observation identity", () => {
-    const legacy = CanonicalAdaptiveObservationSchema.parse({
-      observationId: "observation.legacy",
-      readoutKey: "signal",
-      identities: { sample_id: "sample.1" },
+  it("preserves published alpha.4 session provenance while accepting observations without it", () => {
+    const observation = {
+      observationId: "observation.1",
+      readoutKey: "protein",
+      identities: { dishid: "dish.1" },
       factors: { treatment: "Control" },
       axes: {},
       hierarchy: {},
-      values: { signal: 1 },
-      missingness: {},
+      values: { protein_target: 10, protein_reference: 5 },
       sourceRow: null,
-    });
-    expect(legacy.experimentSessionId).toBeUndefined();
-
-    const linked = CanonicalAdaptiveObservationSchema.parse({
-      ...legacy,
+    };
+    expect(
+      CanonicalAdaptiveObservationSchema.parse(observation).experimentSessionId,
+    ).toBeUndefined();
+    const saved = CanonicalAdaptiveObservationSchema.parse({
+      ...observation,
       experimentSessionId: "experiment.3",
     });
-    expect(linked.experimentSessionId).toBe("experiment.3");
-    expect(linked.identities).toEqual(legacy.identities);
+    expect(
+      CanonicalAdaptiveObservationSchema.parse(JSON.parse(JSON.stringify(saved)))
+        .experimentSessionId,
+    ).toBe("experiment.3");
+    expect(saved.identities).toEqual(observation.identities);
   });
-
   it("rejects factor levels that collide after string normalization", () => {
     expect(() =>
       StructureContractSchema.parse({

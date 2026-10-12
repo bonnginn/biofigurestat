@@ -28,7 +28,6 @@ import {
 } from "../app/projectActions";
 import type { AppRoute } from "../app/routes";
 import type { ExperimentSetDraft } from "../app/experimentDraft";
-import { localizedText, useAppLocale } from "../app/appLocale";
 import { rehydrateExperimentWorkspace } from "../app/experimentWorkspaceProject";
 import { DataSheetPage } from "./DataSheetPage";
 import { CommonCoveragePage } from "./CommonCoveragePage";
@@ -70,6 +69,7 @@ type OpenProjectPageProps = {
   saveProject?: SaveProjectAction;
   onReuseDesign?: (draft: ExperimentSetDraft) => void;
   onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
+  onCreateFromConditions?: Parameters<typeof ExperimentWorkspace>[0]["onCreateFromConditions"];
   autoOpen?: boolean;
   initialError?: string | null;
   onDirtyChange?: (dirty: boolean) => void;
@@ -195,6 +195,7 @@ function PersistedProjectView({
   onBack,
   onReuseDesign,
   onSaveFavorite,
+  onCreateFromConditions,
   onDirtyChange,
   onOpenProject,
   onRequestExit,
@@ -206,15 +207,15 @@ function PersistedProjectView({
   onBack: () => void;
   onReuseDesign?: (draft: ExperimentSetDraft) => void;
   onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
+  onCreateFromConditions?: Parameters<typeof ExperimentWorkspace>[0]["onCreateFromConditions"];
   onDirtyChange?: (dirty: boolean) => void;
   onOpenProject?: () => void;
   onRequestExit?: RequestWorkspaceExit;
   onRegisterSaveHandler?: RegisterWorkspaceSaveHandler;
   restoredSpecializedDrafts?: SpecializedDraftStore;
 }) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const { state } = project;
+  const [editingOrderedCurve, setEditingOrderedCurve] = useState(false);
   const workspace = rehydrateExperimentWorkspace(state);
   if (workspace) {
     return (
@@ -229,6 +230,7 @@ function PersistedProjectView({
         onBack={onBack}
         onReuseDesign={onReuseDesign}
         onSaveFavorite={onSaveFavorite}
+        onCreateFromConditions={onCreateFromConditions}
         onDirtyChange={onDirtyChange}
         onOpenProject={onOpenProject}
         onRequestExit={onRequestExit}
@@ -240,14 +242,7 @@ function PersistedProjectView({
     (revision) => revision.id === state.activeDesignRevisionId,
   )?.design;
   if (!design) {
-    return (
-      <p role="alert">
-        {t(
-          "有効な実験デザインを復元できません。",
-          "The active experiment design could not be restored.",
-        )}
-      </p>
-    );
+    return <p role="alert">有効な実験デザインを復元できません。</p>;
   }
   const matrixView = state.matrixViews?.at(-1);
   if (matrixView?.spec.heatmap) {
@@ -255,13 +250,12 @@ function PersistedProjectView({
     return (
       <div className="page-stack">
         <button type="button" onClick={onBack}>
-          {t("← 戻る", "← Back")}
+          ← 戻る
         </button>
         <h1>{state.metadata.projectName}</h1>
         <p>
-          {t("保存済みのraw matrixとtransform", "Restored the saved raw matrix and transform")}{" "}
-          {matrixView.spec.heatmap.transform} ({matrixView.spec.heatmap.transformVersion})
-          {locale === "ja" ? " を復元しました。" : "."}
+          保存済みのraw matrixとtransform {matrixView.spec.heatmap.transform} (
+          {matrixView.spec.heatmap.transformVersion}) を復元しました。
         </p>
         <HeatmapGraph
           model={model}
@@ -281,11 +275,14 @@ function PersistedProjectView({
       analysis.result.status === "ok" &&
       analysis.result.nonlinearFit,
   );
-  if (orderedCurveReopen) {
+  if (orderedCurveReopen && (!nonlinearRun || editingOrderedCurve)) {
     return (
       <CommonCoveragePage
         mode="nonlinear-fit"
-        onBack={onBack}
+        onBack={() => {
+          if (nonlinearRun) setEditingOrderedCurve(false);
+          else onBack();
+        }}
         saveProject={saveProject}
         initialDraft={restoredSpecializedDrafts?.["nonlinear-fit"] ?? orderedCurveReopen.draft}
         entryIntent={orderedCurveReopen.entryIntent}
@@ -306,14 +303,7 @@ function PersistedProjectView({
         graph.spec.type === "nonlinear_xy",
     );
     if (!graphRecord) {
-      return (
-        <p role="alert">
-          {t(
-            "保存済みD17結果に対応するGraph specificationがありません。",
-            "No Graph specification corresponds to the saved D17 result.",
-          )}
-        </p>
-      );
+      return <p role="alert">保存済みD17結果に対応するGraph specificationがありません。</p>;
     }
     try {
       const labels = Object.fromEntries(
@@ -335,7 +325,7 @@ function PersistedProjectView({
       return (
         <div className="page-stack">
           <button type="button" onClick={onBack}>
-            {t("← 戻る", "← Back")}
+            ← 戻る
           </button>
           <section className="workspace-panel nonlinear-opened-project">
             <p className="overline">Saved authoritative D17 result</p>
@@ -345,16 +335,18 @@ function PersistedProjectView({
               {nonlinearRun.result.nonlinearFit.modelId} · model version{" "}
               {nonlinearRun.result.nonlinearFit.modelVersion}
             </p>
+            {orderedCurveReopen ? (
+              <button type="button" onClick={() => setEditingOrderedCurve(true)}>
+                入力を編集して再解析
+              </button>
+            ) : null}
             <NonlinearFitGraph
               model={model}
               xLabel={`${nonlinearRun.request.xLabel}${nonlinearRun.request.xUnit ? ` (${nonlinearRun.request.xUnit})` : ""}`}
               yLabel={`${nonlinearRun.request.yLabel}${nonlinearRun.request.yUnit ? ` (${nonlinearRun.request.yUnit})` : ""}`}
               seriesLabels={labels}
             />
-            <div
-              className="nonlinear-fit-results"
-              aria-label={t("復元した非線形fit結果", "Restored nonlinear-fit result")}
-            >
+            <div className="nonlinear-fit-results" aria-label="復元した非線形fit結果">
               {nonlinearRun.result.nonlinearFit.series.map((seriesFit) => (
                 <section key={seriesFit.seriesId} className="nonlinear-fit-series-result">
                   <h2>{labels[seriesFit.seriesId] ?? seriesFit.seriesId}</h2>
@@ -386,30 +378,17 @@ function PersistedProjectView({
         <p role="alert">
           {actionErrorMessage(
             error,
-            t(
-              "D17 projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
-              "The saved D17 project could not be restored safely. The source file was not changed.",
-            ),
-            locale,
+            "D17 projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
           )}
         </p>
       );
     }
   }
   const outcome = design.outcomes[0];
-  if (!outcome)
-    return (
-      <p role="alert">
-        {t("解析項目を復元できません。", "The analysis outcome could not be restored.")}
-      </p>
-    );
+  if (!outcome) return <p role="alert">解析項目を復元できません。</p>;
   if (outcome.type === "time_to_event") {
     if (!state.adaptiveInput) {
       try {
-        const savedSurvivalSpec = state.graphs.find(
-          ({ state: graphState, spec }) =>
-            graphState === "current" && spec.type === "survival_curve",
-        )?.spec;
         const model = createKaplanMeierGraphModel(
           design.conditions,
           state.observations
@@ -433,25 +412,13 @@ function PersistedProjectView({
         return (
           <div className="page-stack">
             <button type="button" onClick={onBack}>
-              {t("← 戻る", "← Back")}
+              ← 戻る
             </button>
             <p role="alert">
-              {t(
-                "この旧Survival projectには編集に必要なStructureContract・mapping・raw lineageがありません。別のsupported designには変換せず、読み取り専用で表示します。",
-                "This legacy Survival project lacks the StructureContract, mapping, and raw lineage required for editing. It is shown read-only without conversion to another supported design.",
-              )}
+              この旧Survival projectには編集に必要なStructureContract・mapping・raw
+              lineageがありません。別のsupported designには変換せず、読み取り専用で表示します。
             </p>
-            <SurvivalGraph
-              model={model}
-              timeLabel={savedSurvivalSpec?.axes.xLabel || outcome.unit || "Follow-up time"}
-              probabilityLabel={savedSurvivalSpec?.axes.yLabel || "Survival probability"}
-              palette={savedSurvivalSpec?.appearance.palette}
-              fontSize={savedSurvivalSpec?.appearance.fontSize}
-              legendFontSize={savedSurvivalSpec?.appearance.legendFontSize}
-              legendPosition={savedSurvivalSpec?.appearance.legendPosition}
-              showMinorTicks={savedSurvivalSpec?.axes.showMinorTicks}
-              tickDirection={savedSurvivalSpec?.axes.tickDirection}
-            />
+            <SurvivalGraph model={model} timeLabel={outcome.unit ?? "Follow-up time"} />
           </div>
         );
       } catch (error) {
@@ -459,11 +426,7 @@ function PersistedProjectView({
           <p role="alert">
             {actionErrorMessage(
               error,
-              t(
-                "Survival projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
-                "The saved Survival project could not be restored safely. The source file was not changed.",
-              ),
-              locale,
+              "Survival projectの保存内容を安全に復元できません。元ファイルは変更されていません。",
             )}
           </p>
         );
@@ -485,24 +448,6 @@ function PersistedProjectView({
         onRequestExit={onRequestExit}
         onRegisterSaveHandler={onRegisterSaveHandler}
       />
-    );
-  }
-  if (locale === "en") {
-    return (
-      <div className="page-stack">
-        <button type="button" onClick={onBack}>
-          ← Back
-        </button>
-        <section className="workspace-panel" aria-labelledby="legacy-project-language-heading">
-          <p className="overline">Legacy project editor</p>
-          <h1 id="legacy-project-language-heading">This project uses a legacy data-sheet format</h1>
-          <p role="note">
-            The project file was opened and validated, but its legacy editor has not been
-            translated. Switch the display language to Japanese to edit it. The file and its
-            measurements remain unchanged.
-          </p>
-        </section>
-      </div>
     );
   }
   const activeDerivedRevision = state.derivedDatasetRevisions.find(
@@ -546,12 +491,7 @@ function PersistedProjectView({
             ? recommendD03(design)
             : recommendD04(design);
       if (!multiMatch.matched)
-        throw new Error(
-          t(
-            "この実験デザインはD03/D04/D05編集画面の対象外です。",
-            "This experiment design is not supported by the D03/D04/D05 editor.",
-          ),
-        );
+        throw new Error("この実験デザインはD03/D04/D05編集画面の対象外です。");
       const multiSheet =
         design.pairing.kind === "independent"
           ? rehydrateIndependentMultiConditionDataSheet(
@@ -591,13 +531,7 @@ function PersistedProjectView({
       (decision) => decision.questionId === "correlation.relationship_form",
     );
     const match = isCorrelation ? recommendD09(design) : recommendD01OrD02(design);
-    if (!match.matched)
-      throw new Error(
-        t(
-          "この実験デザインはD01/D02編集画面の対象外です。",
-          "This experiment design is not supported by the D01/D02 editor.",
-        ),
-      );
+    if (!match.matched) throw new Error("この実験デザインはD01/D02編集画面の対象外です。");
     const sheet = rehydrateTwoConditionDataSheet(
       design,
       outcome.id,
@@ -625,11 +559,7 @@ function PersistedProjectView({
       <p role="alert">
         {actionErrorMessage(
           error,
-          t(
-            "編集画面を安全に復元できません。元ファイルは変更されていません。",
-            "The editor could not be restored safely. The source file was not changed.",
-          ),
-          locale,
+          "編集画面を安全に復元できません。元ファイルは変更されていません。",
         )}
       </p>
     );
@@ -647,6 +577,7 @@ export function OpenProjectPage({
   saveProject,
   onReuseDesign,
   onSaveFavorite,
+  onCreateFromConditions,
   autoOpen = false,
   initialError = null,
   onDirtyChange,
@@ -655,8 +586,6 @@ export function OpenProjectPage({
   onRegisterSaveHandler,
   restoredSpecializedDrafts,
 }: OpenProjectPageProps) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [status, setStatus] = useState<"idle" | "opening" | "success" | "error">(
     initialError ? "error" : "idle",
   );
@@ -687,51 +616,31 @@ export function OpenProjectPage({
       }
       if (opened.kind !== "experiment") {
         if (!onAnyProjectOpened) {
-          throw new Error(
-            t(
-              "この環境では、この入力途中projectの表示先がありません。",
-              "This environment cannot display this in-progress project.",
-            ),
-          );
+          throw new Error("この環境では、この入力途中projectの表示先がありません。");
         }
         onAnyProjectOpened(opened);
         setStatus("success");
         setMessage(
           opened.kind === "unresolved_visualization"
-            ? t(
-                `${opened.project.state.metadata.projectName} を開き、入力表とGraph設定を復元しました。`,
-                `Opened ${opened.project.state.metadata.projectName} and restored its data table and Graph settings.`,
-              )
-            : t(
-                `${opened.project.state.metadata.projectName} を開き、入力途中の表と回答を復元しました。`,
-                `Opened ${opened.project.state.metadata.projectName} and restored the in-progress table and answers.`,
-              ),
+            ? `${opened.project.state.metadata.projectName} を開き、入力表とGraph設定を復元しました。`
+            : `${opened.project.state.metadata.projectName} を開き、入力途中の表と回答を復元しました。`,
         );
         return;
       }
       setOpenedProject(opened.project);
       onProjectOpened?.(opened.project);
       setStatus("success");
-      setMessage(
-        t(
-          `${opened.project.state.metadata.projectName} を開き、整合性を確認しました。`,
-          `Opened ${opened.project.state.metadata.projectName} and verified its integrity.`,
-        ),
-      );
+      setMessage(`${opened.project.state.metadata.projectName} を開き、整合性を確認しました。`);
     } catch (error) {
       setStatus("error");
       setMessage(
         actionErrorMessage(
           error,
-          t(
-            "プロジェクトを開けませんでした。現在のワークスペースは変更されていません。",
-            "The project could not be opened. The current workspace was not changed.",
-          ),
-          locale,
+          "プロジェクトを開けませんでした。現在のワークスペースは変更されていません。",
         ),
       );
     }
-  }, [locale, onAnyProjectOpened, onProjectOpened, openAnyProject, openProject]);
+  }, [onAnyProjectOpened, onProjectOpened, openAnyProject, openProject]);
 
   const handleLegacyOpen = useCallback(async () => {
     if (!openLegacyProject) return;
@@ -747,25 +656,13 @@ export function OpenProjectPage({
       onProjectOpened?.(project);
       setStatus("success");
       setMessage(
-        t(
-          `${project.state.metadata.projectName} を開きました。次回の保存で1ファイル形式へ安全に変換します。`,
-          `Opened ${project.state.metadata.projectName}. It will be safely converted to the single-file format the next time you save.`,
-        ),
+        `${project.state.metadata.projectName} を開きました。次回の保存で1ファイル形式へ安全に変換します。`,
       );
     } catch (error) {
       setStatus("error");
-      setMessage(
-        actionErrorMessage(
-          error,
-          t(
-            "旧形式のprojectフォルダを取り込めませんでした。",
-            "The legacy project folder could not be imported.",
-          ),
-          locale,
-        ),
-      );
+      setMessage(actionErrorMessage(error, "旧形式のprojectフォルダを取り込めませんでした。"));
     }
-  }, [locale, onProjectOpened, openLegacyProject]);
+  }, [onProjectOpened, openLegacyProject]);
 
   useEffect(() => {
     if (!autoOpen || autoOpenAttempted.current || persistedProject || openedProject) return;
@@ -777,12 +674,12 @@ export function OpenProjectPage({
   if (projectToShow) {
     return (
       <PersistedProjectView
-        key={projectToShow.target}
         project={projectToShow}
         saveProject={saveProject}
         onBack={() => onNavigate("home")}
         onReuseDesign={onReuseDesign}
         onSaveFavorite={onSaveFavorite}
+        onCreateFromConditions={onCreateFromConditions}
         onDirtyChange={onDirtyChange}
         onOpenProject={onOpenProject}
         onRequestExit={onRequestExit}
@@ -795,19 +692,16 @@ export function OpenProjectPage({
   return (
     <div className="page-stack narrow-page">
       <button className="back-link" type="button" onClick={() => onNavigate("home")}>
-        <span aria-hidden="true">←</span> {t("ワークスペースに戻る", "Back to workspace")}
+        <span aria-hidden="true">←</span> ワークスペースに戻る
       </button>
       <section className="empty-page" aria-labelledby="open-project-heading">
         <span className="empty-icon empty-icon--orange" aria-hidden="true">
           ↥
         </span>
-        <p className="overline">{t("ワークスペース", "Workspace")} / 04</p>
-        <h1 id="open-project-heading">{t("ローカルプロジェクトを開く", "Open a local project")}</h1>
+        <p className="overline">ワークスペース / 04</p>
+        <h1 id="open-project-heading">ローカルプロジェクトを開く</h1>
         <p>
-          {t(
-            "このコンピューター上のプロジェクトパッケージを選びます。ファイル選択と検証の結果だけを表示します。",
-            "Select a project package on this computer. BioFigureStat only displays the result of file selection and validation.",
-          )}
+          このコンピューター上のプロジェクトパッケージを選びます。ファイル選択と検証の結果だけを表示します。
         </p>
         <button
           className="primary-button primary-button--ready"
@@ -815,12 +709,8 @@ export function OpenProjectPage({
           disabled={status === "opening"}
           onClick={handleOpen}
         >
-          {status === "opening"
-            ? t("プロジェクトを開いています…", "Opening project…")
-            : t("プロジェクトファイルを選ぶ", "Choose project file")}
-          <span className="button-note">
-            {t("ローカルのデスクトッププロジェクトを開きます", "Open a local desktop project")}
-          </span>
+          {status === "opening" ? "プロジェクトを開いています…" : "プロジェクトファイルを選ぶ"}
+          <span className="button-note">ローカルのデスクトッププロジェクトを開きます</span>
         </button>
         {openLegacyProject ? (
           <button
@@ -829,7 +719,7 @@ export function OpenProjectPage({
             disabled={status === "opening"}
             onClick={() => void handleLegacyOpen()}
           >
-            {t("旧形式のprojectフォルダを取り込む", "Import legacy project folder")}
+            旧形式のprojectフォルダを取り込む
           </button>
         ) : null}
         {status === "success" && message && (
@@ -839,11 +729,7 @@ export function OpenProjectPage({
         )}
         {status === "error" && message && (
           <p className="project-action-message project-action-message--error" role="alert">
-            {message}{" "}
-            {t(
-              "現在のワークスペースは変更されていません。",
-              "The current workspace was not changed.",
-            )}
+            {message} 現在のワークスペースは変更されていません。
           </p>
         )}
       </section>

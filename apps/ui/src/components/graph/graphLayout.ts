@@ -1,56 +1,5 @@
 export type GraphCanvasPreset = "compact" | "standard" | "wide";
 
-export type GraphPlotMargin = Readonly<{
-  top: number;
-  right: number;
-  bottom: number;
-  left: number;
-}>;
-
-export function estimateGraphTextWidth(text: string, fontSize: number): number {
-  return [...text].reduce(
-    (width, character) =>
-      width +
-      (/\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}/u.test(character)
-        ? fontSize
-        : fontSize * 0.58),
-    0,
-  );
-}
-
-/** Keeps a rotated Y title close to the axis without colliding with tick labels. */
-export function yAxisTitlePosition(input: Readonly<{
-  axisX: number;
-  tickLabels: readonly string[];
-  tickFontSize: number;
-  titleFontSize: number;
-  minimumX?: number;
-  gap?: number;
-}>): number {
-  const widestTickLabel = Math.max(
-    0,
-    ...input.tickLabels.map((label) => estimateGraphTextWidth(label, input.tickFontSize)),
-  );
-  return Math.max(
-    input.minimumX ?? 18,
-    input.axisX - 10 - widestTickLabel - input.titleFontSize / 2 - (input.gap ?? 8),
-  );
-}
-
-/** One coordinate contract for the drawable rectangle inside an SVG canvas. */
-export function createPlotRectangle(width: number, height: number, margin: GraphPlotMargin) {
-  const right = width - margin.right;
-  const bottom = height - margin.bottom;
-  return {
-    left: margin.left,
-    top: margin.top,
-    right,
-    bottom,
-    width: right - margin.left,
-    height: bottom - margin.top,
-  } as const;
-}
-
 export type CategoryLayoutInput = Readonly<{
   gapWeights: readonly number[];
   denseGaps?: readonly boolean[];
@@ -121,10 +70,9 @@ export function createNiceTicks(
   targetTickCount = 5,
   manualInterval: number | null = null,
 ): readonly number[] {
-  if (!Number.isFinite(minimum) || !Number.isFinite(maximum) || maximum < minimum) {
-    return [...new Set([minimum, maximum].filter(Number.isFinite))];
+  if (!Number.isFinite(minimum) || !Number.isFinite(maximum) || maximum <= minimum) {
+    return [minimum, maximum].filter(Number.isFinite);
   }
-  if (maximum === minimum) return [minimum];
   const interval =
     manualInterval && manualInterval > 0
       ? manualInterval

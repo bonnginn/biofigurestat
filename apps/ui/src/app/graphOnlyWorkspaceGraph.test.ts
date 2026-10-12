@@ -105,6 +105,9 @@ function fixture() {
       withinGroupSpacing: 0.72,
       betweenGroupSpacing: 1.35,
       barOutline: true,
+      barOutlineMode: "custom",
+      barOutlineColor: "#cc3311",
+      barOutlineWidth: 2.4,
       barMeanMarker: false,
       boxWhiskerMode: "tukey_1_5_iqr",
       uncertaintyStyle: "none",
@@ -218,6 +221,9 @@ describe("Graph-only Graph promotion", () => {
       appearance: {
         pointSize: 7,
         pointOpacity: 0.75,
+        barOutlineMode: "custom",
+        barOutlineColor: "#cc3311",
+        barOutlineWidth: 2.4,
         seriesColors: { "condition.1": "#176f63", "condition.2": "#176f63" },
       },
       axes: {
@@ -243,6 +249,7 @@ describe("Graph-only Graph promotion", () => {
       id: "graph.from-table",
       selectedReadoutId: "outcome.cellarea",
       analysis: null,
+      appearance: { barOutlineMode: "custom", barOutlineColor: "#cc3311", barOutlineWidth: 2.4 },
     });
   });
 

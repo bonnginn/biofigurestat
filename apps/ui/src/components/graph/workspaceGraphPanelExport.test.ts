@@ -7,6 +7,11 @@ function renderedGraph(id: string): HTMLDivElement {
   container.dataset.workspaceGraphId = id;
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("role", "img");
+  svg.setAttribute("class", "experiment-graph-svg");
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("role", "img");
+  icon.dataset.source = "not-the-graph";
+  container.append(icon);
   svg.dataset.source = id;
   container.append(svg);
   return container;

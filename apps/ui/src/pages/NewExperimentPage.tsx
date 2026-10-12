@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import type {
   ConditionAttributeDraft,
@@ -32,8 +32,7 @@ import type {
 import { defaultAnalysisRunner, type AnalysisRunner } from "../app/analysisClient";
 import { ConditionTimePreview } from "../components/ConditionTimePreview";
 import { ExistingDataImport } from "../components/ExistingDataImport";
-import { moveSpreadsheetFocus } from "../components/spreadsheetGrid";
-import type { ExperimentWorkspaceProps } from "./ExperimentWorkspace";
+import { ExperimentWorkspace } from "./ExperimentWorkspace";
 import { recordBenchmarkEvent } from "../app/benchmarkEvaluation";
 import { evaluationMode, evaluationModeIsConfigured } from "../app/evaluationMode";
 import { syntheticFixtures, type SyntheticFixture } from "../app/syntheticFixtures";
@@ -43,21 +42,33 @@ import type { AdaptiveInputSnapshot } from "@lsaa/domain";
 import {
   createUnresolvedVisualizationPromotionHistory,
   type UnresolvedVisualizationProjectState,
+  type TableRegressionSnapshot,
 } from "@lsaa/project";
 import { AdaptiveExperimentEntry } from "../components/AdaptiveExperimentEntry";
 import { BiologicalExperimentSetup } from "../components/BiologicalExperimentSetup";
-import { SimpleGroupExperimentEntry } from "../components/SimpleGroupExperimentEntry";
 import {
   NewExperimentEntryHub,
   type NewExperimentEntryId,
 } from "../components/NewExperimentEntryHub";
 import { createAdaptiveWorkspace } from "../app/adaptiveWorkspace";
+import {
+  WorkspaceAnalysisPreparation,
+  needsAnalysisPreparation,
+} from "../components/WorkspaceAnalysisPreparation";
 import { createBiologicalSetupPresentation } from "../app/adaptiveStructureRevision";
 import { adaptiveInputFeatureEnabled } from "../app/adaptiveInputFeature";
-import { localizedText, useAppLocale, type AppLocale } from "../app/appLocale";
 import { bridgeGraphOnlyTableToStatistics } from "../app/graphOnlyStatisticsBridge";
 import { rebindGraphOnlyGraphsToWorkspace } from "../app/graphOnlyWorkspaceGraph";
 import type { WorkspaceGraphState } from "../app/experimentWorkspaceProject";
+import { GraphOnlyVisualizationPage } from "./GraphOnlyVisualizationPage";
+import { CommonCoveragePage } from "./CommonCoveragePage";
+import type { CommonCoverageDraft } from "../app/specializedAnalysisDrafts";
+import {
+  regressionDraftForSave,
+  regressionSnapshot,
+  regressionSnapshotToken,
+  withTableRegression,
+} from "../app/tableRegressionPersistence";
 import {
   createDedicatedEntryIntent,
   type DedicatedEntryIntent,
@@ -65,22 +76,6 @@ import {
 } from "../app/dedicatedEntryIntent";
 import type { RegisterWorkspaceSaveHandler, RequestWorkspaceExit } from "../app/workspaceLifecycle";
 import { recordUsageEntry, recordUsageMilestone } from "../app/usageTelemetry";
-import {
-  biologicalHandoffStopMessage,
-  biologicalWorkspaceStopMessage,
-} from "../app/newExperimentMessages";
-
-const ExperimentWorkspace = lazy(() =>
-  import("./ExperimentWorkspace").then(({ ExperimentWorkspace: Workspace }) => ({
-    default: Workspace,
-  })),
-);
-
-const GraphOnlyVisualizationPage = lazy(() =>
-  import("./GraphOnlyVisualizationPage").then(({ GraphOnlyVisualizationPage: Page }) => ({
-    default: Page,
-  })),
-);
 
 type NewExperimentPageProps = {
   onNavigate: (route: AppRoute) => void;
@@ -93,9 +88,9 @@ type NewExperimentPageProps = {
   browserPreview?: boolean;
   analysisAvailable?: boolean;
   initialDraft?: ExperimentSetDraft | null;
-  initialFixture?: SyntheticFixture | null;
   favoriteGraphDefaults?: readonly FavoriteGraphDefault[];
-  onSaveFavorite?: ExperimentWorkspaceProps["onSaveFavorite"];
+  onSaveFavorite?: Parameters<typeof ExperimentWorkspace>[0]["onSaveFavorite"];
+  onCreateFromConditions?: Parameters<typeof ExperimentWorkspace>[0]["onCreateFromConditions"];
   onDirtyChange?: (dirty: boolean) => void;
   onOpenProject?: () => void;
   onRequestExit?: RequestWorkspaceExit;
@@ -109,8 +104,9 @@ type NewExperimentPageProps = {
 };
 
 type FlowStage =
+  | "regression"
+  | "analysis-preparation"
   | "context"
-  | "simple"
   | "import"
   | "graph-only"
   | "biological"
@@ -128,7 +124,26 @@ type ExplicitStructureAnswers = Readonly<{
   sharedSourceSplit: boolean;
 }>;
 
-function graphOnlyBiologicalInitial(state: UnresolvedVisualizationProjectState, locale: AppLocale) {
+export function biologicalWorkspaceStopMessage(diagnostics: readonly string[]): string {
+  const mixedGrain = diagnostics.some((diagnostic) =>
+    diagnostic.includes("heterogeneous_readout_grains"),
+  );
+  const mixedAxis = diagnostics.some((diagnostic) =>
+    diagnostic.includes("heterogeneous_readout_axes"),
+  );
+  if (mixedGrain && mixedAxis) {
+    return "測定項目ごとに、Cell・ROIなど個別の値か試料全体の値か、また時間・距離の系列で測ったかが異なります。現在の入力画面は違いを1つの表へ強制せず、ここで停止しました。回答と条件表は保持されています。";
+  }
+  if (mixedGrain) {
+    return "測定項目ごとに、Cell・ROIなど個別の値か試料全体の値かが異なります。現在の入力画面は違いを1つの表へ強制せず、ここで停止しました。回答と条件表は保持されています。";
+  }
+  if (mixedAxis) {
+    return "時間・距離の系列で測った項目と、系列の最後などで1回だけ測った項目が混在しています。現在の入力画面は違いを1つの表へ強制せず、ここで停止しました。回答と条件表は保持されています。";
+  }
+  return "この実験内容は現在の入力画面へ安全に変換できません。入力内容は保持されています。";
+}
+
+function graphOnlyBiologicalInitial(state: UnresolvedVisualizationProjectState) {
   const xColumn = state.mapping?.columns.find(({ role }) => role === "x");
   const yColumn = state.mapping?.columns.find(({ role }) => role === "y");
   if (!xColumn || !yColumn) return undefined;
@@ -140,11 +155,8 @@ function graphOnlyBiologicalInitial(state: UnresolvedVisualizationProjectState, 
     measurementLabel: yColumn.header,
     conditionBlocks: [{ name: xColumn.header, levels }],
     statisticsHandoff: true,
-    notice: localizedText(
-      locale,
+    notice:
       "Graph用の元表は保持しています。横軸の値と測定項目を候補として入れました。実際の対象・試料と条件間の関係だけ追加してください。",
-      "The source table for the Graph is retained. X-axis values and the measured readout are prefilled; add only the actual subject or specimen and its relationship across conditions.",
-    ),
   } as const;
 }
 
@@ -1417,6 +1429,33 @@ function ConditionsStep({
       </section>
     );
   }
+  const moveConditionGridFocus = (
+    event: KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    columnIndex: number,
+  ) => {
+    const movement: Record<string, [number, number]> = {
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1],
+      Enter: [event.shiftKey ? -1 : 1, 0],
+    };
+    const delta = movement[event.key];
+    if (!delta || event.metaKey || event.ctrlKey || event.altKey) return;
+    const target = event.currentTarget
+      .closest("table")
+      ?.querySelector<HTMLInputElement>(
+        `[data-condition-row="${rowIndex + delta[0]}"][data-condition-column="${
+          columnIndex + delta[1]
+        }"]`,
+      );
+    if (!target) return;
+    event.preventDefault();
+    target.focus();
+    target.select();
+  };
+
   const appendRows = (count = 5) => {
     if (draft.conditions.length >= 50) return;
     onUpdate((current) => {
@@ -1681,12 +1720,10 @@ function ConditionsStep({
                     <input
                       aria-label={`行${index + 1}：${attribute.label || `列${columnIndex + 1}`}`}
                       value={condition.attributes[attribute.id] ?? ""}
-                      data-spreadsheet-cell="true"
-                      data-spreadsheet-row={index}
-                      data-spreadsheet-column={columnIndex}
-                      data-spreadsheet-arrow-navigation="cell"
+                      data-condition-row={index}
+                      data-condition-column={columnIndex}
                       onFocus={(event) => event.currentTarget.select()}
-                      onKeyDown={moveSpreadsheetFocus}
+                      onKeyDown={(event) => moveConditionGridFocus(event, index, columnIndex)}
                       onChange={(event) =>
                         updateDescriptor(condition.id, attribute.id, event.target.value)
                       }
@@ -2278,7 +2315,13 @@ function DesignConfirmation({
         </dl>
       </section>
 
-      <ConditionTimePreview draft={draft} />
+      <p className="experiment-start__helper">
+        条件名や配置は統計上のn（実験反復）を表しません。各条件の測定値は入力後に確認します。
+      </p>
+      <details className="experiment-start__layout-details">
+        <summary>条件・測定軸の配置を確認</summary>
+        <ConditionTimePreview draft={draft} />
+      </details>
 
       <section
         className="experiment-start__expected-analysis"
@@ -2338,9 +2381,9 @@ export function NewExperimentPage({
   browserPreview = false,
   analysisAvailable = true,
   initialDraft = null,
-  initialFixture = null,
   favoriteGraphDefaults,
   onSaveFavorite,
+  onCreateFromConditions,
   onDirtyChange,
   onOpenProject,
   onRequestExit,
@@ -2350,32 +2393,25 @@ export function NewExperimentPage({
   specializedEntryAvailable = false,
   showCompatibilityEntry = false,
 }: NewExperimentPageProps) {
-  const locale = useAppLocale();
   const evaluationPreview =
     import.meta.env.DEV && browserPreview && evaluationModeIsConfigured(evaluationMode);
   const [stage, setStage] = useState<FlowStage>(
-    initialGraphOnlyState
-      ? "graph-only"
-      : initialFixture
-        ? "workspace"
-        : initialDraft
-          ? "confirmation"
-          : "context",
+    initialGraphOnlyState ? "graph-only" : initialDraft ? "confirmation" : "context",
   );
   const [designStep, setDesignStep] = useState<DesignStep>(0);
-  const [furthestStep, setFurthestStep] = useState<FlowStep>(
-    initialDraft || initialFixture ? 4 : 0,
-  );
-  const [draft, setDraft] = useState<ExperimentSetDraft | null>(
-    initialFixture?.draft ?? initialDraft,
-  );
+  const [furthestStep, setFurthestStep] = useState<FlowStep>(initialDraft ? 4 : 0);
+  const [draft, setDraft] = useState<ExperimentSetDraft | null>(initialDraft);
+  const [regressionDraft, setRegressionDraft] = useState<CommonCoverageDraft | null>(null);
+  const regressionSourceRef = useRef("");
+  const [regressionGeneration, setRegressionGeneration] = useState(0);
+  const regressionSnapshotRef = useRef<TableRegressionSnapshot | null>(null);
+  const regressionSourceRevisionRef = useRef<string | null>(null);
+  const [regressionInitialSnapshot, setRegressionInitialSnapshot] =
+    useState<TableRegressionSnapshot>();
+  const [savedRegressionSnapshot, setSavedRegressionSnapshot] = useState<string>();
   const [explicitStructureAnswers, setExplicitStructureAnswers] =
-    useState<ExplicitStructureAnswers>(
-      initialDraft || initialFixture ? CONFIRMED_STRUCTURE : UNANSWERED_STRUCTURE,
-    );
-  const [fixtureCells, setFixtureCells] = useState<ExperimentCellMap | undefined>(
-    initialFixture?.cells,
-  );
+    useState<ExplicitStructureAnswers>(initialDraft ? CONFIRMED_STRUCTURE : UNANSWERED_STRUCTURE);
+  const [fixtureCells, setFixtureCells] = useState<ExperimentCellMap | undefined>();
   const [fixtureGraphs, setFixtureGraphs] = useState<readonly WorkspaceGraphState[] | undefined>();
   const [selectedContext, setSelectedContext] = useState<Exclude<
     ExperimentContext,
@@ -2385,7 +2421,7 @@ export function NewExperimentPage({
   const [pendingGraphOnlyState, setPendingGraphOnlyState] =
     useState<UnresolvedVisualizationProjectState | null>(initialGraphOnlyState);
   const [biologicalHandoffError, setBiologicalHandoffError] = useState<string | null>(null);
-  const entryDirtySourcesRef = useRef({ graphOnly: false, biological: false, simple: false });
+  const entryDirtySourcesRef = useRef({ graphOnly: false, biological: false, preparation: false });
   const pageRootRef = useRef<HTMLDivElement>(null);
   const returnFocusEntryRef = useRef<NewExperimentEntryId | null>(null);
   const flowSteps = draft ? flowStepsFor(draft) : ([0, 1, 2, 3, 4] as const);
@@ -2397,25 +2433,20 @@ export function NewExperimentPage({
     browserPreview || unresolvedVisualizationPersistenceAvailable;
   const dedicatedEntryAvailable = browserPreview || specializedEntryAvailable;
 
-  const updateEntryDirtySource = useCallback(
-    (source: "graphOnly" | "biological" | "simple", dirty: boolean) => {
-      if (entryDirtySourcesRef.current[source] === dirty) return;
-      entryDirtySourcesRef.current = { ...entryDirtySourcesRef.current, [source]: dirty };
-      onDirtyChange?.(
-        entryDirtySourcesRef.current.graphOnly ||
-          entryDirtySourcesRef.current.biological ||
-          entryDirtySourcesRef.current.simple,
-      );
-    },
-    [onDirtyChange],
-  );
-  const updateGraphOnlyDirty = useCallback(
-    (dirty: boolean) => updateEntryDirtySource("graphOnly", dirty),
-    [updateEntryDirtySource],
-  );
+  const updateEntryDirtySource = (
+    source: "graphOnly" | "biological" | "preparation",
+    dirty: boolean,
+  ) => {
+    entryDirtySourcesRef.current = { ...entryDirtySourcesRef.current, [source]: dirty };
+    onDirtyChange?.(
+      entryDirtySourcesRef.current.graphOnly ||
+        entryDirtySourcesRef.current.biological ||
+        entryDirtySourcesRef.current.preparation,
+    );
+  };
 
   const clearEntryDirtyLifecycle = () => {
-    entryDirtySourcesRef.current = { graphOnly: false, biological: false, simple: false };
+    entryDirtySourcesRef.current = { graphOnly: false, biological: false, preparation: false };
     onDirtyChange?.(false);
     onRegisterSaveHandler?.(null);
   };
@@ -2447,21 +2478,19 @@ export function NewExperimentPage({
         return;
       }
     }
-    const focusHeading = (): boolean => {
-      const heading = root.querySelector<HTMLElement>("h1");
-      if (!heading) return false;
-      heading.tabIndex = -1;
-      heading.focus({ preventScroll: true });
-      return true;
-    };
-    if (focusHeading()) return;
-
-    const observer = new MutationObserver(() => {
-      if (focusHeading()) observer.disconnect();
-    });
-    observer.observe(root, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [stage]);
+    const heading = root.querySelector<HTMLElement>(
+      stage === "design" ? ".experiment-start__form-card h2" : "h1",
+    );
+    if (!heading) return;
+    heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
+    if (stage === "design" || stage === "confirmation") {
+      root.querySelector<HTMLElement>('[aria-current="step"]')?.scrollIntoView?.({
+        block: "nearest",
+        inline: "nearest",
+      });
+    }
+  }, [stage, designStep]);
 
   const enterStageFromHub = (entryId: NewExperimentEntryId, nextStage: FlowStage) => {
     returnFocusEntryRef.current = entryId;
@@ -2679,35 +2708,23 @@ export function NewExperimentPage({
 
   if (stage === "workspace" && draft) {
     return (
-      <Suspense
-        fallback={
-          <p className="app-route-loading" role="status">
-            {localizedText(
-              locale,
-              "実験ワークスペースを読み込んでいます…",
-              "Loading experiment workspace…",
-            )}
-          </p>
-        }
-      >
-        <ExperimentWorkspace
-          rootRef={pageRootRef}
-          initialDraft={withActiveConditions(draft)}
-          initialCells={fixtureCells}
-          initialGraphs={fixtureGraphs}
-          analysisRunner={analysisRunner}
-          analysisAvailable={analysisAvailable}
-          saveProject={saveProject}
-          favoriteGraphDefaults={favoriteGraphDefaults}
-          onSaveFavorite={onSaveFavorite}
-          onDirtyChange={onDirtyChange}
-          onOpenProject={onOpenProject}
-          onRequestExit={onRequestExit}
-          onRegisterSaveHandler={onRegisterSaveHandler}
-          fiveMinuteGuide={Boolean(initialFixture)}
-          onBack={() => (fixtureCells ? goBackToContext() : setStage("confirmation"))}
-        />
-      </Suspense>
+      <ExperimentWorkspace
+        rootRef={pageRootRef}
+        initialDraft={withActiveConditions(draft)}
+        initialCells={fixtureCells}
+        initialGraphs={fixtureGraphs}
+        analysisRunner={analysisRunner}
+        analysisAvailable={analysisAvailable}
+        saveProject={saveProject}
+        favoriteGraphDefaults={favoriteGraphDefaults}
+        onSaveFavorite={onSaveFavorite}
+        onCreateFromConditions={onCreateFromConditions}
+        onDirtyChange={onDirtyChange}
+        onOpenProject={onOpenProject}
+        onRequestExit={onRequestExit}
+        onRegisterSaveHandler={onRegisterSaveHandler}
+        onBack={() => (fixtureCells ? goBackToContext() : setStage("confirmation"))}
+      />
     );
   }
 
@@ -2720,17 +2737,11 @@ export function NewExperimentPage({
           onClick={(event) => {
             if (!acceptSingleClick(event.detail)) return;
             if (stage === "context") onNavigate("home");
-            else
-              requestEntryExit(
-                localizedText(locale, "実験の種類を変更する", "change the experiment type"),
-                goBackToContext,
-              );
+            else requestEntryExit("実験の種類を変更する", goBackToContext);
           }}
         >
           <span aria-hidden="true">←</span>{" "}
-          {stage === "context"
-            ? localizedText(locale, "ワークスペースに戻る", "Back to workspace")
-            : localizedText(locale, "実験の種類を変更", "Change experiment type")}
+          {stage === "context" ? "ワークスペースに戻る" : "実験の種類を変更"}
         </button>
       ) : null}
 
@@ -2738,10 +2749,6 @@ export function NewExperimentPage({
         <>
           {taskEntryHubEnabled && !compatibilityEntryVisible ? (
             <NewExperimentEntryHub
-              onSimple={() => {
-                setFixtureGraphs(undefined);
-                enterStageFromHub("simple", "simple");
-              }}
               onGeneral={() => {
                 setBiologicalHandoffError(null);
                 setFixtureGraphs(undefined);
@@ -2874,15 +2881,13 @@ export function NewExperimentPage({
         </>
       )}
 
-      {stage === "biological" ? (
-        <>
+      {stage === "biological" || stage === "analysis-preparation" ? (
+        <div hidden={stage !== "biological"}>
           <BiologicalExperimentSetup
             enabled={taskEntryHubEnabled}
             externalError={biologicalHandoffError}
             initial={
-              pendingGraphOnlyState
-                ? graphOnlyBiologicalInitial(pendingGraphOnlyState, locale)
-                : undefined
+              pendingGraphOnlyState ? graphOnlyBiologicalInitial(pendingGraphOnlyState) : undefined
             }
             onDirtyChange={(dirty) => updateEntryDirtySource("biological", dirty)}
             onCancel={() => {
@@ -2890,18 +2895,16 @@ export function NewExperimentPage({
               if (pendingGraphOnlyState) {
                 updateEntryDirtySource("biological", false);
                 setStage("graph-only");
-              } else
-                requestEntryExit(
-                  localizedText(locale, "実験の種類を変更する", "change the experiment type"),
-                  goBackToContext,
-                );
+              } else requestEntryExit("実験の種類を変更する", goBackToContext);
             }}
             onReady={(result) => {
               try {
                 const presentation = createBiologicalSetupPresentation(result);
                 if (presentation.status === "stopped") {
                   recordUsageMilestone("new-experiment", "safe_stop");
-                  setBiologicalHandoffError(biologicalHandoffStopMessage(locale, "presentation"));
+                  setBiologicalHandoffError(
+                    "条件表と実験構造の対応を安全に確認できませんでした。入力内容は保持されています。",
+                  );
                   return false;
                 }
                 const { contract } = result;
@@ -2910,9 +2913,7 @@ export function NewExperimentPage({
                   : null;
                 if (promoted?.status === "stopped") {
                   recordUsageMilestone("new-experiment", "safe_stop");
-                  setBiologicalHandoffError(
-                    biologicalHandoffStopMessage(locale, "table_promotion", promoted.reason),
-                  );
+                  setBiologicalHandoffError(promoted.reason);
                   return false;
                 }
                 const workspace = createAdaptiveWorkspace({
@@ -2924,9 +2925,7 @@ export function NewExperimentPage({
                 });
                 if (workspace.status !== "ready" || !workspace.draft) {
                   recordUsageMilestone("new-experiment", "safe_stop");
-                  setBiologicalHandoffError(
-                    biologicalWorkspaceStopMessage(workspace.diagnostics, locale),
-                  );
+                  setBiologicalHandoffError(biologicalWorkspaceStopMessage(workspace.diagnostics));
                   return false;
                 }
                 const reboundGraphs = pendingGraphOnlyState
@@ -2938,9 +2937,7 @@ export function NewExperimentPage({
                   : ({ status: "ready", graphs: [] } as const);
                 if (reboundGraphs.status === "stopped") {
                   recordUsageMilestone("new-experiment", "safe_stop");
-                  setBiologicalHandoffError(
-                    biologicalHandoffStopMessage(locale, "graph_rebind", reboundGraphs.reason),
-                  );
+                  setBiologicalHandoffError(reboundGraphs.reason);
                   return false;
                 }
                 const promotedDraft = pendingGraphOnlyState
@@ -2954,7 +2951,7 @@ export function NewExperimentPage({
                     }
                   : workspace.draft;
                 setBiologicalHandoffError(null);
-                setPendingGraphOnlyState(null);
+                if (!needsAnalysisPreparation(promotedDraft)) setPendingGraphOnlyState(null);
                 setDraft(promotedDraft);
                 setFixtureCells(workspace.cells);
                 setFixtureGraphs(reboundGraphs.graphs);
@@ -2962,36 +2959,33 @@ export function NewExperimentPage({
                   promotedDraft,
                   promoted ? "graph_only_statistics_bridge" : "biological_experiment_setup_alpha",
                 );
-                clearEntryDirtyLifecycle();
+                if (!needsAnalysisPreparation(promotedDraft)) clearEntryDirtyLifecycle();
+                else updateEntryDirtySource("preparation", true);
                 returnFocusEntryRef.current = null;
-                setStage("workspace");
+                setStage(
+                  needsAnalysisPreparation(promotedDraft) ? "analysis-preparation" : "workspace",
+                );
                 return true;
               } catch {
                 recordUsageMilestone("new-experiment", "safe_stop");
-                setBiologicalHandoffError(biologicalHandoffStopMessage(locale, "unexpected"));
+                setBiologicalHandoffError(
+                  "入力画面の準備中に実験内容を確認できませんでした。入力内容は保持されています。",
+                );
                 return false;
               }
             }}
           />
-        </>
+        </div>
       ) : null}
 
-      {stage === "simple" ? (
-        <SimpleGroupExperimentEntry
-          onDirtyChange={(dirty) => updateEntryDirtySource("simple", dirty)}
-          onBack={() =>
-            requestEntryExit(
-              localizedText(locale, "実験の種類を変更する", "change the experiment type"),
-              goBackToContext,
-            )
-          }
-          onReady={(simpleDraft) => {
-            setDraft(simpleDraft);
-            setFixtureCells(undefined);
-            setFixtureGraphs(undefined);
-            recordWorkspaceStart(simpleDraft, "simple_independent_groups");
+      {stage === "analysis-preparation" && draft ? (
+        <WorkspaceAnalysisPreparation
+          draft={draft}
+          onBack={() => setStage("biological")}
+          onReady={(prepared) => {
+            setDraft(prepared);
+            setPendingGraphOnlyState(null);
             clearEntryDirtyLifecycle();
-            returnFocusEntryRef.current = null;
             setStage("workspace");
           }}
         />
@@ -2999,7 +2993,11 @@ export function NewExperimentPage({
 
       {stage === "adaptive" ? (
         <AdaptiveExperimentEntry
-          locale={locale}
+          locale={
+            typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("ja")
+              ? "ja"
+              : "en"
+          }
           onCancel={() => setStage("context")}
           onReady={(adaptiveDraft, adaptiveCells) => {
             setDraft(adaptiveDraft);
@@ -3027,14 +3025,8 @@ export function NewExperimentPage({
         />
       ) : null}
 
-      {stage === "graph-only" ? (
-        <Suspense
-          fallback={
-            <p className="app-route-loading" role="status">
-              {localizedText(locale, "Graph入力画面を読み込んでいます…", "Loading Graph input…")}
-            </p>
-          }
-        >
+      {stage === "graph-only" || stage === "regression" ? (
+        <div hidden={stage !== "graph-only"}>
           <GraphOnlyVisualizationPage
             onNavigate={onNavigate}
             onBack={() => {
@@ -3046,16 +3038,87 @@ export function NewExperimentPage({
             initialState={pendingGraphOnlyState}
             initialTarget={initialGraphOnlyTarget}
             initialDirty={entryDirtySourcesRef.current.graphOnly}
-            onDirtyChange={updateGraphOnlyDirty}
+            onDirtyChange={(dirty) => updateEntryDirtySource("graphOnly", dirty)}
             onRequestExit={onRequestExit}
             onRegisterSaveHandler={onRegisterSaveHandler}
+            prepareStateForSave={(state) =>
+              regressionSnapshotRef.current && regressionSourceRevisionRef.current
+                ? withTableRegression(
+                    state,
+                    regressionSnapshotRef.current,
+                    regressionSourceRevisionRef.current,
+                  )
+                : state
+            }
+            onProjectSaved={(state) => {
+              if (state.regressionWorkspace)
+                setSavedRegressionSnapshot(
+                  regressionSnapshotToken(regressionSnapshot(state.regressionWorkspace)),
+                );
+            }}
+            onProjectOpened={(state) => {
+              regressionSnapshotRef.current = null;
+              regressionSourceRevisionRef.current = null;
+              regressionSourceRef.current = "";
+              setRegressionDraft(null);
+              setRegressionInitialSnapshot(undefined);
+              setSavedRegressionSnapshot(undefined);
+              setPendingGraphOnlyState(state);
+              updateEntryDirtySource("preparation", false);
+            }}
             onStatisticsStructureRequested={(state) => {
               setPendingGraphOnlyState(state);
               setBiologicalHandoffError(null);
               setStage("biological");
             }}
+            onRegressionRequested={(state, nextDraft) => {
+              setPendingGraphOnlyState(state);
+              const source = JSON.stringify({
+                table: state.table,
+                mapping: state.mapping?.columns,
+                sourceDataRevisionId: state.activeDataRevisionId,
+              });
+              if (source !== regressionSourceRef.current) {
+                regressionSourceRef.current = source;
+                const restored =
+                  state.regressionWorkspace?.sourceDataRevisionId === state.activeDataRevisionId
+                    ? regressionSnapshot(state.regressionWorkspace)
+                    : undefined;
+                regressionSourceRevisionRef.current = state.activeDataRevisionId;
+                regressionSnapshotRef.current = restored ?? {
+                  draft: regressionDraftForSave(nextDraft),
+                  execution: null,
+                };
+                setRegressionInitialSnapshot(restored);
+                setRegressionDraft(restored ? { ...nextDraft, ...restored.draft } : nextDraft);
+                setRegressionGeneration((value) => value + 1);
+              }
+              setStage("regression");
+            }}
           />
-        </Suspense>
+        </div>
+      ) : null}
+
+      {regressionDraft && (stage === "graph-only" || stage === "regression") ? (
+        <div hidden={stage !== "regression"}>
+          <p>読み込んだ元の表とGraphは保持されています。「戻る」で表へ戻れます。</p>
+          <CommonCoveragePage
+            key={regressionGeneration}
+            mode="regression"
+            initialDraft={regressionDraft}
+            initialRegressionSnapshot={regressionInitialSnapshot}
+            regressionSourceDataRevisionId={regressionSourceRevisionRef.current ?? undefined}
+            regressionProjectId={pendingGraphOnlyState?.metadata.projectId}
+            onRegressionSnapshotChange={(snapshot) => {
+              regressionSnapshotRef.current = snapshot;
+            }}
+            savedRegressionSnapshot={savedRegressionSnapshot}
+            analysisRunner={analysisRunner}
+            analysisAvailable={analysisAvailable && !browserPreview}
+            onBack={() => setStage("graph-only")}
+            onDirtyChange={(dirty) => updateEntryDirtySource("preparation", dirty)}
+          />
+        </div>
       ) : null}
 
       {stage === "design" && draft && (

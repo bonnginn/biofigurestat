@@ -11,6 +11,8 @@ export type AnalysisReviewSetInput = Readonly<{
   methodsText: string;
   svgText: string;
   displayedDataCsv: string;
+  /** Executed workspace n projection; never counts rows as biological n. */
+  statisticalNText?: string;
 }>;
 
 function escapeHtml(value: string): string {
@@ -43,7 +45,7 @@ export function serializeAnalysisReviewSetHtml(input: AnalysisReviewSetInput): s
   const unitIds = new Map<string, Set<string>>();
   request.observations.forEach((observation) => {
     const units = unitIds.get(observation.conditionId) ?? new Set<string>();
-    units.add(observation.experimentalUnitId);
+    if ("experimentalUnitId" in observation) units.add(observation.experimentalUnitId);
     unitIds.set(observation.conditionId, units);
   });
   const nRows = [...unitIds.entries()].map(([conditionId, units]) => [
@@ -99,7 +101,7 @@ export function serializeAnalysisReviewSetHtml(input: AnalysisReviewSetInput): s
 <dt>${ja ? "解析engine" : "Analysis engine"}</dt><dd>${escapeHtml(result.engine.name)} ${escapeHtml(result.engine.version)}</dd>
 </dl><p class="notice">${ja ? "共同研究者向けの読取専用review copyです。再編集と完全なprovenanceの保持には元の.lsaプロジェクトを使用してください。" : "This is a read-only review copy for collaborators. Use the original .lsa project for editing and complete provenance."}</p></header>
 <section class="graph"><h2>Graph</h2>${inlineSvg}</section>
-<section><h2>${ja ? "群別n" : "n by condition"}</h2>${table([ja ? "条件" : "Condition", "n"], nRows)}</section>
+<section><h2>${ja ? "群別n" : "n by condition"}</h2>${input.statisticalNText ? `<p>${escapeHtml(input.statisticalNText)}</p>` : table([ja ? "条件" : "Condition", "n"], nRows)}</section>
 <section><h2>${ja ? "推定値と信頼区間" : "Estimates and confidence intervals"}</h2>${estimateRows.length ? table([ja ? "推定対象" : "Estimate", ja ? "値" : "Value", "SE", "CI"], estimateRows) : `<p>${ja ? "推定値はありません。" : "No estimates were returned."}</p>`}</section>
 <section><h2>${ja ? "検定" : "Tests"}</h2>${testRows.length ? table([ja ? "検定" : "Test", ja ? "統計量" : "Statistic", "df", "p", ja ? "調整済みp" : "Adjusted p", ja ? "効果量" : "Effect size"], testRows) : `<p>${ja ? "検定結果はありません。" : "No test results were returned."}</p>`}</section>
 <section><h2>${ja ? "警告・診断" : "Warnings and diagnostics"}</h2>${messageRows.length ? table([ja ? "コード" : "Code", ja ? "内容" : "Message"], messageRows) : `<p>${ja ? "警告・診断はありません。" : "No warnings or diagnostics."}</p>`}</section>

@@ -63,7 +63,12 @@ export function createRegressionGraphModel(
     "X",
   );
   validateGraphScale(
-    [...points.map(({ y }) => y), ...result.regression.fittedLine.map(({ y }) => y)],
+    [
+      ...points.map(({ y }) => y),
+      ...result.regression.fittedLine.flatMap(({ y, lower, upper }) =>
+        showConfidenceBand ? [y, lower ?? y, upper ?? y] : [y],
+      ),
+    ],
     spec.axes.yScale,
     "Y",
   );

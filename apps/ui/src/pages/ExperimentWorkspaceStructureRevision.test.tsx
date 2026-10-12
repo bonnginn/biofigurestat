@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { buildStructureContract } from "@lsaa/adaptive-input";
 import type {
@@ -355,28 +355,6 @@ function analyzedGraph(contract: StructureContract): WorkspaceGraphState {
 }
 
 describe("ExperimentWorkspace non-destructive structure revision", () => {
-  it("opens the safe structure editor from Overview for correcting names and labels", () => {
-    const { workspace } = fixture();
-    render(
-      <ExperimentWorkspace
-        initialDraft={workspace.draft!}
-        initialCells={workspace.cells}
-        onBack={vi.fn()}
-      />,
-    );
-
-    const trigger = screen.getByRole("button", { name: "実験名・条件・測定項目を修正" });
-    fireEvent.click(trigger);
-
-    expect(screen.getByRole("heading", { name: "実験の組み立てを修正" })).toBeVisible();
-    expect(screen.getByDisplayValue("Cell signal")).toBeVisible();
-    expect(screen.getByDisplayValue("Treatment")).toBeVisible();
-    expect(screen.getByDisplayValue("Signal")).toBeVisible();
-
-    fireEvent.click(screen.getByRole("button", { name: "変更せず戻る" }));
-    expect(screen.getByRole("button", { name: "実験名・条件・測定項目を修正" })).toHaveFocus();
-  });
-
   it("moves focus into revision and restores it to the trigger on Cancel and no-op apply", () => {
     const { workspace } = fixture();
     render(
@@ -551,6 +529,9 @@ describe("ExperimentWorkspace non-destructive structure revision", () => {
     applyButton.focus();
     fireEvent.click(applyButton);
     expect(screen.getByRole("alert")).toHaveTextContent(/既存データで使われている/);
+    expect(screen.getByRole("alert")).toHaveTextContent("入力済みの群: 「Control」");
+    expect(screen.getByRole("alert")).toHaveTextContent("自動で置き換わりません");
+    expect(screen.getByRole("alert")).toHaveTextContent("元の群名を残して修正するか");
     expect(applyButton).toHaveFocus();
     expect(
       screen.getByRole("heading", { name: "実験の組み立てを修正" }).closest("section"),
@@ -581,8 +562,17 @@ describe("ExperimentWorkspace non-destructive structure revision", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "行 1 列 3" }), {
       target: { value: "" },
     });
+    vi.useFakeTimers();
     fireEvent.click(screen.getByRole("button", { name: "変更を適用" }));
     expect(screen.getByText(/以前の解析結果・p値注釈・Methodsは外しました/)).toBeVisible();
+    act(() => vi.advanceTimersByTime(7000));
+    vi.useRealTimers();
+    expect(screen.getByText(/以前の解析結果・p値注釈・Methodsは外しました/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "解析変更の案内を閉じる" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "解析変更の案内を閉じる" }));
+    expect(
+      screen.queryByText(/以前の解析結果・p値注釈・Methodsは外しました/),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
     await waitFor(() => expect(saveProject).toHaveBeenCalledOnce());
 

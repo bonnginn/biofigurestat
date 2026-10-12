@@ -1,6 +1,6 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   CanonicalAdaptiveObservationSchema,
@@ -9,10 +9,42 @@ import {
   type StructureContract,
 } from "@lsaa/domain";
 import { AdaptiveCanonicalSpreadsheet } from "./AdaptiveCanonicalSpreadsheet";
-import { resetAppLocaleForTests, setAppLocale } from "../app/appLocale";
-import { expectNoJapaneseUi } from "../test/expectNoJapaneseUi";
 
-afterEach(() => act(() => resetAppLocaleForTests("ja")));
+it("retains independent input Undo/Redo when the parent rebuilds display rows after paste", () => {
+  const contract = makeContract();
+  let nextId = 0;
+  let currentRecords: readonly CanonicalAdaptiveObservation[] = [];
+  function RebuiltRowsHarness() {
+    const [observations, setObservations] = useState<readonly CanonicalAdaptiveObservation[]>([]);
+    currentRecords = observations;
+    return (
+      <AdaptiveCanonicalSpreadsheet
+        contract={contract}
+        observations={observations}
+        mode="compact"
+        onModeChange={() => undefined}
+        onObservationsChange={setObservations}
+        nextObservationId={() => `history.${++nextId}`}
+        worksheetRows={observations.map((observation) => ({
+          key: observation.observationId,
+          label: observation.observationId,
+          date: "",
+        }))}
+      />
+    );
+  }
+  render(<RebuiltRowsHarness />);
+  expect(screen.getByRole("button", { name: "入力を元に戻す" })).toBeDisabled();
+  fireEvent.paste(screen.getByRole("textbox", { name: "入力行 1・control・Response" }), {
+    clipboardData: { getData: () => "3\t8\n5\t10" },
+  });
+  const pasted = structuredClone(currentRecords);
+  expect(pasted.map((record) => record.values.value)).toEqual([3, 8, 5, 10]);
+  fireEvent.click(screen.getByRole("button", { name: "入力を元に戻す" }));
+  expect(currentRecords).toEqual([]);
+  fireEvent.click(screen.getByRole("button", { name: "入力をやり直す" }));
+  expect(currentRecords).toEqual(pasted);
+});
 
 function makeContract(overrides: Partial<StructureContract> = {}): StructureContract {
   return StructureContractSchema.parse({
@@ -106,7 +138,6 @@ function Harness({
   nextExperimentalUnitIdentity,
   embedded = false,
   readOnly = false,
-  exposeExternalReset = false,
 }: Readonly<{
   initialObservations?: readonly CanonicalAdaptiveObservation[];
   contract?: StructureContract;
@@ -120,29 +151,21 @@ function Harness({
   >;
   embedded?: boolean;
   readOnly?: boolean;
-  exposeExternalReset?: boolean;
 }>) {
   const [observations, setObservations] = useState(initialObservations);
   const [mode, setMode] = useState<"compact" | "expanded">("compact");
   return (
-    <>
-      {exposeExternalReset ? (
-        <button type="button" onClick={() => setObservations([...scalarObservations])}>
-          Replace from external source
-        </button>
-      ) : null}
-      <AdaptiveCanonicalSpreadsheet
-        contract={contract}
-        observations={observations}
-        mode={mode}
-        onModeChange={setMode}
-        onObservationsChange={setObservations}
-        nextObservationId={nextObservationId}
-        nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
-        embedded={embedded}
-        readOnly={readOnly}
-      />
-    </>
+    <AdaptiveCanonicalSpreadsheet
+      contract={contract}
+      observations={observations}
+      mode={mode}
+      onModeChange={setMode}
+      onObservationsChange={setObservations}
+      nextObservationId={nextObservationId}
+      nextExperimentalUnitIdentity={nextExperimentalUnitIdentity}
+      embedded={embedded}
+      readOnly={readOnly}
+    />
   );
 }
 
@@ -186,92 +209,36 @@ function ContinuousHarness({
 }
 
 describe("AdaptiveCanonicalSpreadsheet", () => {
-  it("undoes and redoes committed canonical cell edits with Ctrl+Z and Ctrl+Y", () => {
-    render(<Harness />);
-    const control = screen.getAllByRole("textbox", {
-      name: /Response・Condition=controlの測定値/,
-    })[0]!;
-
-    fireEvent.change(control, { target: { value: "10\n20" } });
-    fireEvent.blur(control);
-    expect(control).toHaveValue("10\n20");
-    expect(control).toHaveAttribute("data-spreadsheet-dirty", "false");
-
-    expect(fireEvent.keyDown(control, { key: "z", ctrlKey: true })).toBe(false);
-    expect(control).toHaveValue("1\n2");
-    expect(screen.getByText("直前の表編集を元に戻しました。")).toBeInTheDocument();
-
-    expect(fireEvent.keyDown(control, { key: "y", ctrlKey: true })).toBe(false);
-    expect(control).toHaveValue("10\n20");
+  it("replaces a pending append draft with an accepted rectangle without adding it again on blur", () => {
+    render(<ContinuousHarness />);
+    fireEvent.click(screen.getByRole("button", { name: "1測定1行" }));
+    const append = screen.getAllByPlaceholderText("新しい値")[0]!;
+    fireEvent.change(append, { target: { value: "999" } });
+    fireEvent.paste(append, { clipboardData: { getData: () => "30\t80" } });
+    expect(append).toHaveValue("");
+    fireEvent.blur(append);
+    const values = [
+      ...document.querySelectorAll<HTMLInputElement>('[data-expanded-field="value"]'),
+    ].map((input) => input.value);
+    expect(values).toEqual(["1", "2", "30", "3", "80"]);
+    expect(screen.getByText("obs.c1")).toBeVisible();
+    expect(screen.getByText("obs.c2")).toBeVisible();
+    expect(screen.getByText("obs.d1")).toBeVisible();
   });
 
-  it("leaves Ctrl+Z to the active editor while its visible draft is uncommitted", () => {
-    render(<Harness />);
-    const control = screen.getAllByRole("textbox", {
-      name: /Response・Condition=controlの測定値/,
-    })[0]!;
-
-    fireEvent.change(control, { target: { value: "10\n20" } });
-    expect(control).toHaveAttribute("data-spreadsheet-dirty", "true");
-    expect(fireEvent.keyDown(control, { key: "z", ctrlKey: true })).toBe(true);
+  it("retains a pending append draft when its rectangle is rejected atomically", () => {
+    render(<ContinuousHarness />);
+    fireEvent.click(screen.getByRole("button", { name: "1測定1行" }));
+    const append = screen.getAllByPlaceholderText("新しい値")[0]!;
+    fireEvent.change(append, { target: { value: "999" } });
+    fireEvent.paste(append, { clipboardData: { getData: () => "30\tnot-a-number" } });
+    expect(append).toHaveValue("999");
+    expect(
+      [...document.querySelectorAll<HTMLInputElement>('[data-expanded-field="value"]')].map(
+        (input) => input.value,
+      ),
+    ).toEqual(["1", "2", "3"]);
   });
-
-  it("clears worksheet undo history when observations are replaced by an external source", () => {
-    render(<Harness exposeExternalReset />);
-    const control = screen.getAllByRole("textbox", {
-      name: /Response・Condition=controlの測定値/,
-    })[0]!;
-
-    fireEvent.change(control, { target: { value: "10\n20" } });
-    fireEvent.blur(control);
-    fireEvent.click(screen.getByRole("button", { name: "Replace from external source" }));
-    expect(control).toHaveValue("1\n2");
-
-    expect(fireEvent.keyDown(control, { key: "z", ctrlKey: true })).toBe(true);
-    expect(control).toHaveValue("1\n2");
-  });
-
-  it("switches worksheet controls to English without changing canonical observations", () => {
-    act(() => setAppLocale("en"));
-    const view = render(<ContinuousHarness />);
-
-    expect(screen.getByRole("button", { name: "Condition sheet" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "One measurement per row" })).toBeVisible();
-    expect(screen.getByRole("group", { name: "Worksheet zoom" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "One measurement per row" }));
-    const expanded = screen.getByRole("table", { name: "All values" });
-    expect(within(expanded).getByRole("columnheader", { name: "Record ID" })).toBeVisible();
-    expect(within(expanded).getByRole("columnheader", { name: "Actions" })).toBeVisible();
-    expect(within(expanded).getAllByRole("button", { name: /delete row/ })).toHaveLength(3);
-    expect(scalarObservations.map(({ observationId }) => observationId)).toEqual([
-      "obs.c1",
-      "obs.c2",
-      "obs.d1",
-    ]);
-    expectNoJapaneseUi(view.container);
-  });
-
-  it("keeps compact and expanded numeric validation errors in English", () => {
-    act(() => setAppLocale("en"));
-    const view = render(<Harness />);
-
-    const compactValue = screen.getAllByRole("textbox", {
-      name: /Response: measured values for Condition=/,
-    })[0]!;
-    fireEvent.change(compactValue, { target: { value: "not-a-number" } });
-    fireEvent.blur(compactValue);
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Enter numeric values separated by new lines or tabs",
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "All values" }));
-    const expandedValue = screen.getByRole("textbox", { name: "obs.c1: Response" });
-    fireEvent.change(expandedValue, { target: { value: "still-not-a-number" } });
-    fireEvent.blur(expandedValue);
-    expect(screen.getByRole("alert")).toHaveTextContent("Enter a numeric value");
-    expectNoJapaneseUi(view.container);
-  });
-
   it("shows every independent condition before values exist and creates stable unit identities", () => {
     render(<Harness initialObservations={[]} />);
 
@@ -542,42 +509,6 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
     expect(within(expanded).getByText("24")).toBeVisible();
   });
 
-  it("renders the contract-driven record-entry form entirely in English", () => {
-    act(() => setAppLocale("en"));
-    const orderedContract = makeContract({
-      identities: [{ key: "unit_id", label: "Dish ID", unitLevelKey: "unit", required: true }],
-      orderedAxes: [
-        {
-          key: "time",
-          label: "Time",
-          unit: "hour",
-          levels: [0, 24],
-          sampling: "repeated_same_identity",
-          identityRetained: true,
-        },
-      ],
-      readouts: [
-        {
-          key: "signal",
-          label: "Signal",
-          valueType: "scalar",
-          representation: "scalar",
-          componentKeys: ["value"],
-          referenceRole: "none",
-          observationLevelKey: "unit",
-          axisKeys: ["time"],
-        },
-      ],
-    });
-
-    const view = render(<Harness contract={orderedContract} initialObservations={[]} />);
-
-    const form = screen.getByRole("form", { name: "Add a new measurement record" });
-    expect(within(form).getByRole("heading", { name: "New measurement record" })).toBeVisible();
-    expect(within(form).getByRole("button", { name: "Add measurement row" })).toBeVisible();
-    expectNoJapaneseUi(view.container);
-  });
-
   it("pastes identity and measurement rectangles in the all-values spreadsheet", () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole("button", { name: "すべての値" }));
@@ -586,6 +517,8 @@ describe("AdaptiveCanonicalSpreadsheet", () => {
       clipboardData: { getData: () => "dish-A\t101\ndish-B\t102" },
     });
 
+    expect(screen.queryByDisplayValue("dish-A")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "貼り付けを確定" }));
     expect(screen.getByDisplayValue("dish-A")).toBeVisible();
     expect(screen.getByDisplayValue("dish-B")).toBeVisible();
     expect(screen.getByRole("textbox", { name: "obs.c1のResponse" })).toHaveValue("101");

@@ -191,3 +191,18 @@ describe("existing data import mapping", () => {
     );
   });
 });
+
+it('B11 rejects censored text in wide measurement cells rather than silently reducing n',()=>{const p=parseExistingDataText('Unit\tControl\tTreatment\nE1\t<0.1\t2\nE2\t1\t3');const original=JSON.stringify(p);expect(()=>buildWideExistingDataWorkspace(p,{experimentColumn:0,valueColumns:[1,2],readoutLabel:'Signal',readoutUnit:''})).toThrow(/1行・Control/);expect(JSON.stringify(p)).toBe(original);});
+
+it('B11 preserves excluded long-row reasons and lexical source through saved JSON', () => {
+ const parsed = parseExistingDataText('Unit\tCondition\tValue\nU1\tControl\t1.000\nU2\tTreatment\t2\nU3\tControl\t<0.1\nU4\t\t3');
+ const original = JSON.stringify(parsed);
+ const result = buildExistingDataWorkspace(parsed, {experimentColumn:0,conditionColumn:1,valueColumn:2,timeColumn:null,timeSampling:'none',readoutLabel:'Signal',readoutUnit:''});
+ const saved = JSON.parse(JSON.stringify(result));
+ expect(saved.draft.importProvenance.excludedRowNumbers).toEqual([3,4]);
+ expect(saved.draft.importProvenance.excludedRowReasons).toEqual([{rowNumber:3,reasons:['測定値が有限の数値ではない']},{rowNumber:4,reasons:['条件が空欄']}]);
+ expect(saved.draft.importProvenance.sourceRows[0][2]).toBe('1.000');
+ expect(saved.draft.importProvenance.sourceRows[2][2]).toBe('<0.1');
+ expect(Object.values(result.cells).length).toBe(2);
+ expect(JSON.stringify(parsed)).toBe(original);
+});

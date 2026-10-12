@@ -54,6 +54,26 @@ describe("D14-D16 contracts", () => {
       }).success,
     ).toBe(false);
     expect(AnalysisEngineRequestSchema.safeParse(base).success).toBe(true);
+    expect(
+      ContingencyAnalysisEngineRequestSchema.safeParse({
+        ...base,
+        rowCategoryIds: ["control", "control"],
+      }).success,
+    ).toBe(false);
+    expect(
+      ContingencyAnalysisEngineRequestSchema.safeParse({
+        ...base,
+        columnCategoryIds: ["event", "event"],
+      }).success,
+    ).toBe(false);
+    expect(
+      ContingencyAnalysisEngineRequestSchema.safeParse({
+        ...base,
+        cells: base.cells.map((cell, index) =>
+          index === 0 ? { ...cell, rowCategoryId: "unknown" } : cell,
+        ),
+      }).success,
+    ).toBe(false);
   });
 
   it("requires pair identity for Friedman observations", () => {

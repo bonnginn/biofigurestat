@@ -1,6 +1,6 @@
+import { EquivalenceAnalysisPlanSchema, EquivalenceAnalysisResultSchema } from "./equivalence";
 import { z } from "zod";
 import { EntityIdSchema, IsoDateTimeSchema } from "@lsaa/domain";
-import { EquivalenceAnalysisPlanSchema, EquivalenceAnalysisResultSchema } from "./equivalence";
 
 export const AnalysisTemplateIdSchema = z.enum([
   "D01",
@@ -497,10 +497,24 @@ export const ContingencyAnalysisEngineRequestSchema = z
   })
   .superRefine((request, context) => {
     const expected = request.rowCategoryIds.length * request.columnCategoryIds.length;
+    const rows = new Set(request.rowCategoryIds);
+    const columns = new Set(request.columnCategoryIds);
+    if (
+      rows.size !== request.rowCategoryIds.length ||
+      columns.size !== request.columnCategoryIds.length
+    ) {
+      context.addIssue({ code: "custom", message: "Row and column category IDs must be unique" });
+    }
     const keys = new Set(
       request.cells.map((cell) => `${cell.rowCategoryId}\u0000${cell.columnCategoryId}`),
     );
-    if (request.cells.length !== expected || keys.size !== expected) {
+    if (
+      request.cells.length !== expected ||
+      keys.size !== expected ||
+      request.cells.some(
+        (cell) => !rows.has(cell.rowCategoryId) || !columns.has(cell.columnCategoryId),
+      )
+    ) {
       context.addIssue({
         code: "custom",
         path: ["cells"],
@@ -650,6 +664,8 @@ export const NonlinearXyFitEngineRequestSchema = z
 
 export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion", [
   TwoConditionAnalysisEngineRequestSchema,
+  IndependentContinuousEquivalenceEngineRequestSchema,
+  PairedContinuousEquivalenceEngineRequestSchema,
   MultiGroupAnalysisEngineRequestSchema,
   RepeatedGroupAnalysisEngineRequestSchema,
   FactorialAnalysisEngineRequestSchema,
@@ -663,8 +679,6 @@ export const AnalysisEngineRequestSchema = z.discriminatedUnion("protocolVersion
   FriedmanAnalysisEngineRequestSchema,
   SimpleLinearRegressionEngineRequestSchema,
   NonlinearXyFitEngineRequestSchema,
-  IndependentContinuousEquivalenceEngineRequestSchema,
-  PairedContinuousEquivalenceEngineRequestSchema,
 ]);
 
 export const EstimateSchema = z.object({
@@ -717,9 +731,9 @@ export const AnalysisEngineResultSchema = z.object({
     version: z.string().min(1),
     packages: z.record(z.string(), z.string()),
   }),
+  equivalence: EquivalenceAnalysisResultSchema.optional(),
   estimates: z.array(EstimateSchema),
   tests: z.array(TestResultSchema),
-  equivalence: EquivalenceAnalysisResultSchema.optional(),
   factorMetadata: z
     .object({
       withinFactor: z.object({

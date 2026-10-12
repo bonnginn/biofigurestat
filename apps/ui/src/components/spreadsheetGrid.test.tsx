@@ -13,8 +13,6 @@ function Grid() {
               <td key={column}>
                 <input
                   aria-label={`${row}:${column}`}
-                  defaultValue={`${row}:${column}`}
-                  data-spreadsheet-arrow-navigation="cell"
                   data-spreadsheet-cell="true"
                   data-spreadsheet-column={column}
                   data-spreadsheet-row={row}
@@ -70,21 +68,6 @@ function ScrollableGrid() {
 }
 
 describe("spreadsheet grid interaction", () => {
-  it("leaves composition keys to the IME without moving focus or causing a blur commit", () => {
-    render(<Grid />);
-    const first = screen.getByRole("textbox", { name: "0:0" });
-    const blurred = vi.fn();
-    first.addEventListener("blur", blurred);
-    first.focus();
-    for (const key of ["Enter", "Tab", "ArrowRight", "ArrowDown"]) {
-      expect(fireEvent.keyDown(first, { key, isComposing: true })).toBe(true);
-      expect(first).toHaveFocus();
-    }
-    expect(blurred).not.toHaveBeenCalled();
-    fireEvent.keyDown(first, { key: "Enter", isComposing: false });
-    expect(screen.getByRole("textbox", { name: "1:0" })).toHaveFocus();
-    expect(blurred).toHaveBeenCalledOnce();
-  });
   it("preserves rectangular cells and interior blanks from clipboard text", () => {
     expect(parseClipboardMatrix("1\t\n3\t4\n")).toEqual([
       ["1", ""],
@@ -94,46 +77,16 @@ describe("spreadsheet grid interaction", () => {
 
   it("moves with arrows, Enter, Shift+Enter, and Tab while skipping read-only gaps", () => {
     render(<Grid />);
-    const first = screen.getByRole("textbox", { name: "0:0" }) as HTMLInputElement;
+    const first = screen.getByRole("textbox", { name: "0:0" });
     first.focus();
     fireEvent.keyDown(first, { key: "ArrowRight" });
     expect(screen.getByRole("textbox", { name: "0:2" })).toHaveFocus();
     fireEvent.keyDown(document.activeElement!, { key: "Enter" });
-    expect(screen.getByRole("textbox", { name: "1:2" })).toHaveFocus();
+    expect(screen.getByRole("textbox", { name: "1:0" })).toHaveFocus();
     fireEvent.keyDown(document.activeElement!, { key: "Enter", shiftKey: true });
     expect(screen.getByRole("textbox", { name: "0:2" })).toHaveFocus();
     fireEvent.keyDown(document.activeElement!, { key: "Tab" });
     expect(screen.getByRole("textbox", { name: "1:0" })).toHaveFocus();
-  });
-
-  it("moves a numeric-style cell with one horizontal arrow press", () => {
-    render(<Grid />);
-    const first = screen.getByRole("textbox", { name: "0:0" }) as HTMLInputElement;
-
-    first.focus();
-    first.setSelectionRange(0, 0);
-    fireEvent.keyDown(first, { key: "ArrowRight" });
-
-    expect(screen.getByRole("textbox", { name: "0:2" })).toHaveFocus();
-  });
-
-  it("wraps Enter only after continuous left-to-right entry", () => {
-    render(<Grid />);
-    const firstRowLeft = screen.getByRole("textbox", { name: "0:0" });
-    const firstRowRight = screen.getByRole("textbox", { name: "0:2" });
-    const nextRowLeft = screen.getByRole("textbox", { name: "1:0" });
-    const nextRowRight = screen.getByRole("textbox", { name: "1:2" });
-
-    firstRowLeft.focus();
-    fireEvent.keyDown(firstRowLeft, { key: "Tab" });
-    expect(firstRowRight).toHaveFocus();
-    fireEvent.keyDown(firstRowRight, { key: "Enter" });
-    expect(nextRowLeft).toHaveFocus();
-
-    fireEvent.pointerDown(firstRowRight);
-    firstRowRight.focus();
-    fireEvent.keyDown(firstRowRight, { key: "Enter" });
-    expect(nextRowRight).toHaveFocus();
   });
 
   it("moves focus without changing the worksheet scroll position", () => {
@@ -216,3 +169,18 @@ describe("spreadsheet grid interaction", () => {
     expect(date).toHaveFocus();
   });
 });
+
+it.each([{ isComposing: true }, { keyCode: 229 }])(
+  "does not move or blur during IME conversion %j",
+  (composition) => {
+    render(<Grid />);
+    const cell = screen.getByRole("textbox", { name: "0:0" });
+    cell.focus();
+    fireEvent.keyDown(cell, { key: "Enter", ...composition });
+    expect(cell).toHaveFocus();
+    fireEvent.keyDown(cell, { key: "ArrowDown", ...composition });
+    expect(cell).toHaveFocus();
+    fireEvent.keyDown(cell, { key: "Enter" });
+    expect(screen.getByRole("textbox", { name: "1:0" })).toHaveFocus();
+  },
+);

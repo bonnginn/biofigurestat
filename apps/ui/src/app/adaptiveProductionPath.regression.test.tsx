@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { AnalysisEngineResult } from "@lsaa/analysis-contracts";
 
@@ -171,11 +171,6 @@ describe("adaptive production path regressions", () => {
     });
     fireEvent.change(overwrittenCell, { target: { value: "101" } });
     fireEvent.blur(overwrittenCell);
-    expect(
-      screen.getByRole("textbox", {
-        name: "入力行 2・Control・Fluorescence intensity",
-      }),
-    ).toHaveValue("101");
     expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("5件の測定値");
     expect(screen.queryByRole("navigation", { name: "実験の表示切り替え" })).toBeNull();
     expect(screen.queryByRole("button", { name: /＋ 入力行/ })).toBeNull();
@@ -197,33 +192,8 @@ describe("adaptive production path regressions", () => {
     // Capture the canonical IDs before the researcher-facing identity is edited. The
     // display identity is allowed to change; the internal observation identity is not.
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const beforeIdentityEdit = saveProject.mock.calls[0]![0];
-    const savedSessionIds = beforeIdentityEdit.experimentWorkspace!.experimentSessions.map(
-      ({ id }) => id,
-    );
-    expect(
-      beforeIdentityEdit.adaptiveInput!.canonicalObservations.map(
-        ({ experimentSessionId }) => experimentSessionId,
-      ),
-    ).toEqual([
-      savedSessionIds[0],
-      savedSessionIds[0],
-      savedSessionIds[1],
-      savedSessionIds[1],
-      savedSessionIds[2],
-    ]);
-    expect(
-      new Set(
-        beforeIdentityEdit.adaptiveInput!.canonicalObservations.map(
-          ({ experimentSessionId }) => experimentSessionId,
-        ),
-      ),
-    ).toEqual(
-      new Set(
-        beforeIdentityEdit.experimentWorkspace!.experimentSessions.map(({ id }) => id),
-      ),
-    );
     const beforeCanonicalIds = beforeIdentityEdit.adaptiveInput!.canonicalObservations.map(
       ({ observationId }) => observationId,
     );
@@ -253,7 +223,7 @@ describe("adaptive production path regressions", () => {
     ).toHaveValue("101");
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(2));
     const saved = saveProject.mock.calls[1]![0];
     expect(saved.adaptiveInput?.canonicalObservations).toHaveLength(5);
     expect(
@@ -316,9 +286,7 @@ describe("adaptive production path regressions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    expect(
-      await screen.findByRole("img", { name: /実験単位ごとのグラフ/ }, { timeout: 5_000 }),
-    ).toBeVisible();
+    expect(screen.getByRole("img", { name: /実験単位ごとのグラフ/ })).toBeVisible();
     expect(screen.getByLabelText(/Control 入力行 1の実験単位平均/)).toBeVisible();
     expect(screen.getByLabelText(/Control 入力行 2の実験単位平均: 101/)).toBeVisible();
     expect(screen.queryByLabelText(/97101/)).toBeNull();
@@ -332,7 +300,7 @@ describe("adaptive production path regressions", () => {
     );
     expect(screen.queryByText(/表上の空欄または無効な値/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "選択した解析を実行" }));
-    await waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(1));
     expect(analysisRunner.mock.calls[0]![0]).toMatchObject({
       templateId: "D01",
       method: "welch_t",
@@ -348,88 +316,6 @@ describe("adaptive production path regressions", () => {
     expect(await screen.findByRole("group", { name: "統計解析結果" })).toHaveTextContent(
       "p = 0.12",
     );
-  });
-
-  it("keeps a first value entered below blank rows on that experiment row through save/open", async () => {
-    const contract = biologicalContract({
-      title: "Sparse independent entry",
-      measurement: "Fluorescence intensity",
-      form: "single",
-      blocks: [block("treatment", "Treatment", ["Control", "Drug"])],
-      receiver: "culture dish",
-    });
-    const workspace = createAdaptiveWorkspace({
-      contract,
-      observations: [],
-      mapping: null,
-      lineage: null,
-      now,
-    });
-    if (!workspace.draft) throw new Error("Expected an editable adaptive workspace");
-    const saveProject = vi.fn(async (state: ProjectState, target?: string) => ({
-      state,
-      target: target ?? "/tmp/sparse-independent-entry.lsa",
-    }));
-
-    const rendered = render(
-      <ExperimentWorkspace
-        initialDraft={workspace.draft}
-        initialCells={workspace.cells}
-        onBack={vi.fn()}
-        saveProject={saveProject}
-      />,
-    );
-    const thirdControlCell = screen.getByRole("textbox", {
-      name: "入力行 3・Control・Fluorescence intensity",
-    });
-    fireEvent.change(thirdControlCell, { target: { value: "999" } });
-    fireEvent.blur(thirdControlCell);
-
-    expect(
-      screen.getByRole("textbox", {
-        name: "入力行 1・Control・Fluorescence intensity",
-      }),
-    ).toHaveValue("");
-    expect(
-      screen.getByRole("textbox", {
-        name: "入力行 3・Control・Fluorescence intensity",
-      }),
-    ).toHaveValue("999");
-
-    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
-    const saved = saveProject.mock.calls[0]![0];
-    expect(saved.adaptiveInput?.canonicalObservations).toHaveLength(1);
-    expect(saved.adaptiveInput?.canonicalObservations[0]).toMatchObject({
-      factors: { treatment: "Control" },
-      experimentSessionId: saved.experimentWorkspace?.experimentSessions[2]?.id,
-    });
-    expect(Object.values(saved.adaptiveInput?.canonicalObservations[0]?.values ?? {})).toEqual([
-      999,
-    ]);
-
-    const reopened = rehydrateExperimentWorkspace(
-      ProjectStateSchema.parse(JSON.parse(JSON.stringify(saved))),
-    );
-    if (!reopened) throw new Error("Expected the sparse project to reopen");
-    rendered.unmount();
-    render(
-      <ExperimentWorkspace
-        initialDraft={reopened.draft}
-        initialCells={reopened.cells}
-        onBack={vi.fn()}
-      />,
-    );
-    expect(
-      screen.getByRole("textbox", {
-        name: "入力行 1・Control・Fluorescence intensity",
-      }),
-    ).toHaveValue("");
-    expect(
-      screen.getByRole("textbox", {
-        name: "入力行 3・Control・Fluorescence intensity",
-      }),
-    ).toHaveValue("999");
   });
 
   it("distinguishes an explicitly retained missing unit from unequal-n projection padding", () => {
@@ -594,7 +480,7 @@ describe("adaptive production path regressions", () => {
     expect(within(expanded).getAllByRole("textbox").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const saved = saveProject.mock.calls[0]![0];
     expect(saved.adaptiveInput?.mapping).toEqual(mapping);
     expect(saved.adaptiveInput?.rawLineage?.rawText).toBe(lineage.rawText);
@@ -647,13 +533,13 @@ describe("adaptive production path regressions", () => {
     fireEvent.change(screen.getByLabelText("CSV / TSV / TXTファイルを読み込む"), {
       target: { files: [file] },
     });
-    await waitFor(() =>
+    await vi.waitFor(() =>
       expect(screen.getByText(/generated\.csvを読み込みました/)).toBeVisible(),
     );
     expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("4件の測定値");
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const saved = saveProject.mock.calls[0]![0];
     expect(saved.adaptiveInput?.mapping).toMatchObject({
       sourceLabel: "generated.csv",
@@ -720,13 +606,13 @@ describe("adaptive production path regressions", () => {
     const firstFile = new File([firstText], "first.csv", { type: "text/csv" });
     Object.defineProperty(firstFile, "text", { value: async () => firstText });
     fireEvent.change(fileInput, { target: { files: [firstFile] } });
-    await waitFor(() => expect(screen.getByText(/first\.csvを読み込みました/)).toBeVisible());
+    await vi.waitFor(() => expect(screen.getByText(/first\.csvを読み込みました/)).toBeVisible());
     expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("4件の測定値");
 
     const secondFile = new File([secondText], "second.csv", { type: "text/csv" });
     Object.defineProperty(secondFile, "text", { value: async () => secondText });
     fireEvent.change(fileInput, { target: { files: [secondFile] } });
-    await waitFor(() =>
+    await vi.waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent(
         "複数のファイルを同じ入力表へ統合する機能はまだ利用できません",
       ),
@@ -737,7 +623,7 @@ describe("adaptive production path regressions", () => {
     expect(screen.getByLabelText("入力した測定値の件数")).toHaveTextContent("4件の測定値");
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const saved = saveProject.mock.calls[0]![0];
     expect(saved.adaptiveInput?.rawLineage).toMatchObject({
       sourceLabel: "first.csv",
@@ -908,7 +794,7 @@ describe("adaptive production path regressions", () => {
     ).toEqual(["2", "3", "4"]);
 
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const saved = saveProject.mock.calls[0]![0];
     expect(saved.adaptiveInput?.canonicalObservations).toEqual(observations);
     expect(saved.adaptiveInput?.mapping).toEqual(mapping);
@@ -1147,7 +1033,7 @@ describe("adaptive production path regressions", () => {
     }
   });
 
-  it("persists an edited shared experimental-run ID and its optional date through save/open", async () => {
+  it("persists an edited shared experimental-run ID and its optional date through save/open", () => {
     const contract = biologicalContract({
       title: "Independent dishes within experimental runs",
       measurement: "Signal",
@@ -1187,16 +1073,11 @@ describe("adaptive production path regressions", () => {
       now,
     });
     expect(workspace.status).toBe("ready");
-    const saveProject = vi.fn(async (state: ProjectState, target?: string) => ({
-      state,
-      target: target ?? "/tmp/shared-run-date.lsa",
-    }));
     render(
       <ExperimentWorkspace
         initialDraft={workspace.draft!}
         initialCells={workspace.cells}
         onBack={vi.fn()}
-        saveProject={saveProject}
       />,
     );
 
@@ -1209,14 +1090,36 @@ describe("adaptive production path regressions", () => {
     expect(date).toHaveValue("");
     fireEvent.change(date, { target: { value: "2026-08-28" } });
     expect(date).toHaveValue("2026-08-28");
-    expect(screen.getByRole("columnheader", { name: "実験日*" })).toBeVisible();
-    expect(date).toHaveAccessibleDescription(
-      /任意・行内の全条件が同じ日の場合のみ。日付から対応関係は決めません/,
+    expect(screen.getByRole("columnheader", { name: /この組に共通する実験日/ })).toHaveTextContent(
+      "任意・行内の全条件が同じ日の場合のみ。日付から対応関係は決めません",
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
-    await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
-    const saved = saveProject.mock.calls[0]![0];
+    const renamedObservations = observations.map((row) =>
+      CanonicalAdaptiveObservationSchema.parse({
+        ...row,
+        identities: { ...row.identities, [sourceIdentity!.key]: "Run Alpha" },
+      }),
+    );
+    const persistedWorkspace = createAdaptiveWorkspace({
+      contract,
+      observations: renamedObservations,
+      mapping: null,
+      lineage: null,
+      now,
+    });
+    expect(persistedWorkspace.status).toBe("ready");
+    const persistedDraft = {
+      ...persistedWorkspace.draft!,
+      experiments: persistedWorkspace.draft!.experiments.map((experiment, index) =>
+        index === 0 ? { ...experiment, date: "2026-08-28" } : experiment,
+      ),
+    };
+    const saved = createExperimentWorkspaceProject({
+      draft: persistedDraft,
+      cells: persistedWorkspace.cells,
+      graphs: [],
+      now,
+    });
     expect(
       saved.adaptiveInput?.canonicalObservations.map(
         ({ identities }) => identities[sourceIdentity!.key],

@@ -51,10 +51,12 @@ export function buildExistingDataWorkspace(
   parsed: ParsedTabularClipboard,
   mapping: ExistingDataColumnMapping,
 ): ExistingDataImportResult {
+  if (parsed.parseError) throw new Error(parsed.parseError);
   if (!mapping.readoutLabel.trim()) throw new Error("測定項目の名前を入力してください。");
   if (mapping.conditionColumn === mapping.valueColumn) {
     throw new Error("条件列と測定値列は別の列を選んでください。");
   }
+  const excludedRowReasons: { rowNumber: number; reasons: string[] }[] = [];
   const validRows = parsed.rows.flatMap((row, rowIndex) => {
     const condition = row[mapping.conditionColumn]?.trim() ?? "";
     const value = finiteNumber(row[mapping.valueColumn] ?? "");
@@ -69,8 +71,17 @@ export function buildExistingDataWorkspace(
         ? ""
         : (row[mapping.dateColumn]?.trim() ?? "");
     const time = mapping.timeColumn === null ? null : finiteNumber(row[mapping.timeColumn] ?? "");
-    if (!condition || !sessionLabel || !unitLabel || value === null) return [];
-    if (mapping.timeColumn !== null && time === null) return [];
+    const reasons = [
+      ...(!condition ? ["条件が空欄"] : []),
+      ...(!sessionLabel ? ["実験回IDが空欄"] : []),
+      ...(!unitLabel ? ["生物学的単位IDが空欄"] : []),
+      ...(value === null ? [(row[mapping.valueColumn]?.trim() ?? "") ? "測定値が有限の数値ではない" : "測定値が空欄"] : []),
+      ...(mapping.timeColumn !== null && time === null ? ["時間が空欄または有限の数値ではない"] : []),
+    ];
+    if (reasons.length || value === null) {
+      excludedRowReasons.push({ rowNumber: rowIndex + 1, reasons });
+      return [];
+    }
     return [{ rowIndex, condition, sessionLabel, unitLabel, experimentDate, value, time }];
   });
   if (validRows.length === 0) throw new Error("割り当てた列から有効な数値行を作れません。");
@@ -186,6 +197,7 @@ export function buildExistingDataWorkspace(
         valueColumn: mapping.valueColumn,
         dateColumn: mapping.dateColumn ?? null,
       },
+      excludedRowReasons,
       excludedRowNumbers: parsed.rows
         .map((_, index) => index + 1)
         .filter((rowNumber) => !validRows.some(({ rowIndex }) => rowIndex + 1 === rowNumber)),
@@ -253,6 +265,7 @@ export function buildWideExistingDataWorkspace(
     importedAt?: string;
   }>,
 ): ExistingDataImportResult {
+  if (parsed.parseError) throw new Error(parsed.parseError);
   if (!input.readoutLabel.trim()) throw new Error("測定項目の名前を入力してください。");
   const mappedColumns = new Set(
     [input.experimentColumn, input.sessionColumn, input.unitColumn, input.dateColumn].filter(
@@ -263,6 +276,13 @@ export function buildWideExistingDataWorkspace(
     (index) => index >= 0 && index < parsed.headers.length && !mappedColumns.has(index),
   );
   if (valueColumns.length < 2) throw new Error("比較する条件列を2列以上選んでください。");
+  const invalidCells = parsed.rows.flatMap((row, rowIndex) => valueColumns.flatMap((columnIndex) => {
+    const text = row[columnIndex]?.trim() ?? "";
+    return text && finiteNumber(text) === null ? [`${rowIndex + 1}行・${parsed.headers[columnIndex] || `列 ${columnIndex + 1}`}`] : [];
+  }));
+  if (invalidCells.length > 0) {
+    throw new Error(`測定値の非数値を欠測へ自動変換しません（${invalidCells.join("、")}）。元の表は変更していません。値または取込列を確認してください。`);
+  }
   const conditions = valueColumns.map((columnIndex, index) => ({
     id: `condition.import.${index + 1}`,
     label: parsed.headers[columnIndex] || `条件 ${index + 1}`,
@@ -270,6 +290,7 @@ export function buildWideExistingDataWorkspace(
       "attribute.import.condition": parsed.headers[columnIndex] || `条件 ${index + 1}`,
     },
   }));
+  const excludedRowReasons: { rowNumber: number; reasons: string[] }[] = [];
   const validRows = parsed.rows.flatMap((row, rowIndex) => {
     const sessionColumn = input.sessionColumn ?? input.experimentColumn;
     const unitColumn = input.unitColumn ?? input.experimentColumn;
@@ -281,9 +302,18 @@ export function buildWideExistingDataWorkspace(
       input.dateColumn === null || input.dateColumn === undefined
         ? ""
         : (row[input.dateColumn]?.trim() ?? "");
-    if (!sessionLabel || !unitLabel) return [];
+    if (!sessionLabel || !unitLabel) {
+      excludedRowReasons.push({ rowNumber: rowIndex + 1, reasons: [
+        ...(!sessionLabel ? ["実験回IDが空欄"] : []),
+        ...(!unitLabel ? ["生物学的単位IDが空欄"] : []),
+      ] });
+      return [];
+    }
     const values = valueColumns.map((columnIndex) => finiteNumber(row[columnIndex] ?? ""));
-    if (values.every((value) => value === null)) return [];
+    if (values.every((value) => value === null)) {
+      excludedRowReasons.push({ rowNumber: rowIndex + 1, reasons: ["選択した測定値列がすべて空欄"] });
+      return [];
+    }
     return [{ rowIndex, sessionLabel, unitLabel, experimentDate, values }];
   });
   if (validRows.length === 0) throw new Error("選択した条件列に有効な数値がありません。");
@@ -349,6 +379,7 @@ export function buildWideExistingDataWorkspace(
         dateColumn: input.dateColumn ?? null,
         valueColumns: valueColumns.join(","),
       },
+      excludedRowReasons,
       excludedRowNumbers: parsed.rows
         .map((_, index) => index + 1)
         .filter((rowNumber) => !validRows.some(({ rowIndex }) => rowIndex + 1 === rowNumber)),

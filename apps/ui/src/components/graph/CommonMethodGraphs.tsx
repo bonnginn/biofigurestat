@@ -98,7 +98,9 @@ export const RegressionGraph = forwardRef<
   const xs = model.points.map(({ x }) => x),
     ys = [
       ...model.points.map(({ y }) => y),
-      ...model.line.flatMap(({ lower, upper, y }) => [lower ?? y, upper ?? y]),
+      ...model.line.flatMap(({ lower, upper, y }) =>
+        model.showConfidenceBand ? [y, lower ?? y, upper ?? y] : [y],
+      ),
     ];
   const x = (v: number) => scale(v, Math.min(...xs), Math.max(...xs), L, W - R, xScale),
     y = (v: number) => scale(v, Math.min(...ys), Math.max(...ys), H - B, T, yScale);

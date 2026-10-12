@@ -17,7 +17,6 @@ import type { CoreGraphModel, GraphSpec } from "@lsaa/graph-spec";
 import { copyMethodsText, copyText, generateMethodsText } from "../app/methodsText";
 import { downloadTextFile, serializeAnalyzedDataCsv, serializeGraphSvg } from "../app/graphExport";
 import { methodLabel, templateLabel } from "../app/recommendationLabels";
-import { createNiceTicks, createPlotRectangle } from "../components/graph/graphLayout";
 
 type AnalysisResultViewProps = {
   result: AnalysisEngineResult;
@@ -488,7 +487,8 @@ function InlineCoreGraph({
     bottom: factorA?.levelGroups?.length ? 128 : factorA ? 96 : 88,
     left: 61,
   };
-  const plot = createPlotRectangle(width, height, margin);
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
   const allValues = model.groups.flatMap((group) => [
     ...group.values.map((value) => value.value),
     ...group.rawValues.map((value) => value.value),
@@ -501,16 +501,16 @@ function InlineCoreGraph({
   const domainMin = model.yStartAtZero ? 0 : minimum - padding;
   const domainMax = Math.max(domainMin + 1, maximum + padding);
   const domainRange = domainMax - domainMin;
-  const yFor = (value: number) => plot.top + ((domainMax - value) / domainRange) * plot.height;
-  const flatSpacing = Math.min(170, plot.width / Math.max(model.groups.length + 1, 3));
+  const yFor = (value: number) => margin.top + ((domainMax - value) / domainRange) * plotHeight;
+  const flatSpacing = Math.min(170, plotWidth / Math.max(model.groups.length + 1, 3));
   const conditionById = new Map(design?.conditions.map((condition) => [condition.id, condition]));
   const factorAIndex = new Map(factorA?.levels.map((level, index) => [level.id, index]));
   const factorBIndex = new Map(factorB?.levels.map((level, index) => [level.id, index]));
-  const clusterWidth = factorA ? plot.width / factorA.levels.length : 0;
+  const clusterWidth = factorA ? plotWidth / factorA.levels.length : 0;
   const seriesSpacing = factorB
     ? Math.min(30, (clusterWidth * 0.68) / Math.max(factorB.levels.length, 2))
     : 0;
-  const xForFactorALevel = (index: number) => plot.left + clusterWidth * (index + 0.5);
+  const xForFactorALevel = (index: number) => margin.left + clusterWidth * (index + 0.5);
   const xForGroup = (index: number) => {
     const group = model.groups[index];
     const condition = group ? conditionById.get(group.conditionId) : undefined;
@@ -523,14 +523,14 @@ function InlineCoreGraph({
     if (aIndex !== undefined && bIndex !== undefined && factorB) {
       return xForFactorALevel(aIndex) + (bIndex - (factorB.levels.length - 1) / 2) * seriesSpacing;
     }
-    const center = plot.left + plot.width / 2;
+    const center = margin.left + plotWidth / 2;
     return center + (index - (model.groups.length - 1) / 2) * flatSpacing;
   };
   const xForPoint = (groupIndex: number, pointIndex: number, count: number) =>
     xForGroup(groupIndex) + (pointIndex - (count - 1) / 2) * 12;
   const xForRawPoint = (groupIndex: number, pointIndex: number) =>
     xForGroup(groupIndex) + (((pointIndex * 37) % 101) / 100 - 0.5) * 54;
-  const yTicks = createNiceTicks(domainMin, domainMax, 5, null);
+  const yTicks = [domainMax, domainMin + domainRange / 2, domainMin];
   const palette = spec.appearance.palette;
   const errorBarKind =
     model.groups.find((group) => group.errorBar !== null)?.errorBarKind ?? "none";
@@ -573,31 +573,31 @@ function InlineCoreGraph({
             const y = yFor(tick);
             return (
               <g key={`tick-${index}`}>
-                <line x1={plot.left - 5} x2={plot.left} y1={y} y2={y} className="graph-tick" />
-                <text x={plot.left - 9} y={y + 4} textAnchor="end" className="graph-axis-label">
+                <line x1={margin.left - 5} x2={margin.left} y1={y} y2={y} className="graph-tick" />
+                <text x={margin.left - 9} y={y + 4} textAnchor="end" className="graph-axis-label">
                   {formatNumber(tick)}
                 </text>
               </g>
             );
           })}
           <line
-            x1={plot.left}
-            x2={plot.left}
-            y1={plot.top}
-            y2={plot.bottom}
+            x1={margin.left}
+            x2={margin.left}
+            y1={margin.top}
+            y2={height - margin.bottom}
             className="graph-axis-line"
           />
           <line
-            x1={plot.left}
-            x2={plot.right}
-            y1={plot.bottom}
-            y2={plot.bottom}
+            x1={margin.left}
+            x2={width - margin.right}
+            y1={height - margin.bottom}
+            y2={height - margin.bottom}
             className="graph-axis-line"
           />
           <text
             x={15}
-            y={plot.top + plot.height / 2}
-            transform={`rotate(-90 15 ${plot.top + plot.height / 2})`}
+            y={margin.top + plotHeight / 2}
+            transform={`rotate(-90 15 ${margin.top + plotHeight / 2})`}
             className="graph-axis-title"
             textAnchor="middle"
           >
@@ -607,7 +607,7 @@ function InlineCoreGraph({
             <text
               key={level.id}
               x={xForFactorALevel(levelIndex)}
-              y={plot.bottom + 28}
+              y={height - margin.bottom + 28}
               className="graph-condition-label"
               textAnchor="middle"
             >
@@ -621,7 +621,7 @@ function InlineCoreGraph({
             if (memberIndexes.length === 0) return null;
             const start = xForFactorALevel(Math.min(...memberIndexes)) - clusterWidth * 0.38;
             const end = xForFactorALevel(Math.max(...memberIndexes)) + clusterWidth * 0.38;
-            const y = plot.bottom + 53;
+            const y = height - margin.bottom + 53;
             return (
               <g key={levelGroup.id} data-factor-level-group={levelGroup.id}>
                 <path
@@ -651,7 +651,7 @@ function InlineCoreGraph({
                 {!factorA && (
                   <text
                     x={x}
-                    y={plot.bottom + 25}
+                    y={height - margin.bottom + 25}
                     className="graph-condition-label"
                     textAnchor="middle"
                   >
@@ -766,7 +766,8 @@ function InlineCorrelationGraph({
   const width = 640;
   const height = 450;
   const margin = { top: 28, right: 28, bottom: 76, left: 82 };
-  const plot = createPlotRectangle(width, height, margin);
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
   const xValues = points.map((point) => point.x);
   const yValues = points.map((point) => point.y);
   const extent = (values: number[]) => {
@@ -780,10 +781,15 @@ function InlineCorrelationGraph({
   const [yMin, yMax] = extent(yValues);
   const xRange = xMax - xMin;
   const yRange = yMax - yMin;
-  const xFor = (value: number) => plot.left + ((value - xMin) / xRange) * plot.width;
-  const yFor = (value: number) => plot.top + ((yMax - value) / yRange) * plot.height;
-  const xTicks = createNiceTicks(xMin, xMax, 5, null);
-  const yTicks = createNiceTicks(yMin, yMax, 5, null);
+  const xFor = (value: number) => margin.left + ((value - xMin) / xRange) * plotWidth;
+  const yFor = (value: number) => margin.top + ((yMax - value) / yRange) * plotHeight;
+  const ticks = (minimum: number, maximum: number) => [
+    minimum,
+    minimum + (maximum - minimum) / 2,
+    maximum,
+  ];
+  const xTicks = ticks(xMin, xMax);
+  const yTicks = ticks(yMin, yMax);
 
   return (
     <figure className="core-graph-figure correlation-graph-figure">
@@ -812,13 +818,13 @@ function InlineCorrelationGraph({
               <line
                 x1={xFor(tick)}
                 x2={xFor(tick)}
-                y1={plot.top}
-                y2={plot.bottom}
+                y1={margin.top}
+                y2={height - margin.bottom}
                 className="graph-grid-line"
               />
               <text
                 x={xFor(tick)}
-                y={plot.bottom + 25}
+                y={height - margin.bottom + 25}
                 textAnchor="middle"
                 className="graph-axis-label"
               >
@@ -829,14 +835,14 @@ function InlineCorrelationGraph({
           {yTicks.map((tick, index) => (
             <g key={`y-tick-${index}`}>
               <line
-                x1={plot.left}
-                x2={plot.right}
+                x1={margin.left}
+                x2={width - margin.right}
                 y1={yFor(tick)}
                 y2={yFor(tick)}
                 className="graph-grid-line"
               />
               <text
-                x={plot.left - 11}
+                x={margin.left - 11}
                 y={yFor(tick) + 4}
                 textAnchor="end"
                 className="graph-axis-label"
@@ -846,21 +852,21 @@ function InlineCorrelationGraph({
             </g>
           ))}
           <line
-            x1={plot.left}
-            x2={plot.left}
-            y1={plot.top}
-            y2={plot.bottom}
+            x1={margin.left}
+            x2={margin.left}
+            y1={margin.top}
+            y2={height - margin.bottom}
             className="graph-axis-line"
           />
           <line
-            x1={plot.left}
-            x2={plot.right}
-            y1={plot.bottom}
-            y2={plot.bottom}
+            x1={margin.left}
+            x2={width - margin.right}
+            y1={height - margin.bottom}
+            y2={height - margin.bottom}
             className="graph-axis-line"
           />
           <text
-            x={plot.left + plot.width / 2}
+            x={margin.left + plotWidth / 2}
             y={height - 18}
             textAnchor="middle"
             className="graph-axis-title"
@@ -869,8 +875,8 @@ function InlineCorrelationGraph({
           </text>
           <text
             x={18}
-            y={plot.top + plot.height / 2}
-            transform={`rotate(-90 18 ${plot.top + plot.height / 2})`}
+            y={margin.top + plotHeight / 2}
+            transform={`rotate(-90 18 ${margin.top + plotHeight / 2})`}
             textAnchor="middle"
             className="graph-axis-title"
           >

@@ -146,7 +146,7 @@ export async function saveUnresolvedVisualizationProjectPackage(input: {
     schemaVersions: {
       design: "unresolved",
       data: state.schemaVersion,
-      analysis: "unresolved",
+      analysis: state.regressionWorkspace ? "table-regression-0.1.0" : "unresolved",
       graph: "0.1.0",
     },
     createdAt: state.metadata.createdAt,
@@ -196,7 +196,8 @@ export async function openUnresolvedVisualizationProjectPackage(input: {
   }
   if (
     opened.manifest.schemaVersions.design !== "unresolved" ||
-    opened.manifest.schemaVersions.analysis !== "unresolved" ||
+    opened.manifest.schemaVersions.analysis !==
+      (state.regressionWorkspace ? "table-regression-0.1.0" : "unresolved") ||
     (opened.manifest.schemaVersions.data !== state.schemaVersion &&
       !(
         opened.manifest.schemaVersions.data === "0.1.0" &&

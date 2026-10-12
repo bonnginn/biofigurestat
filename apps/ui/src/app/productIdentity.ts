@@ -2,9 +2,9 @@ export const PRODUCT_IDENTITY = {
   developmentName: "BioFigureStat",
   displayNameJa: "BioFigureStat",
   shortMark: "BFS",
-  version: "0.1.0",
-  expectedEngineVersion: "0.15.1",
+  version: "0.1.1",
+  expectedEngineVersion: "0.15.2",
   licenseStatus: "MIT License",
-  repositoryUrl: "https://github.com/bonnginn/biofigurestat" as string | null,
+  repositoryUrl: "https://github.com/bonnginn/life-science-analysis-app" as string | null,
   buildRevision: import.meta.env.VITE_LSAA_BUILD_REVISION?.trim() || "unavailable",
 } as const;

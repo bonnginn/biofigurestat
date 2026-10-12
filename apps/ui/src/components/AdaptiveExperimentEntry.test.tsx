@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AdaptiveExperimentEntry } from "./AdaptiveExperimentEntry";
 import { buildStructureContract } from "@lsaa/adaptive-input";
@@ -21,6 +21,64 @@ function answerJapaneseQuestions() {
 }
 
 describe("AdaptiveExperimentEntry accessibility and localization", () => {
+  it("preserves newer pasted data while a file is being read", async () => {
+    const onReady = vi.fn();
+    const { container } = render(
+      <AdaptiveExperimentEntry
+        locale="ja"
+        onCancel={vi.fn()}
+        onReady={onReady}
+        onSurvivalReady={vi.fn()}
+      />,
+    );
+    answerJapaneseQuestions();
+    fireEvent.click(screen.getByRole("button", { name: "入力面を作る" }));
+    let resolve!: (value: string) => void;
+    const file = new File([], "old.tsv");
+    Object.defineProperty(file, "text", {
+      value: () =>
+        new Promise<string>((done) => {
+          resolve = done;
+        }),
+    });
+    fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [file] } });
+    const newer = "CellID\tDark\tLit\nC1\t99\t100";
+    fireEvent.change(screen.getByLabelText("表を貼り付ける"), { target: { value: newer } });
+    await act(async () => resolve("CellID\tDark\tLit\nC1\t1\t2"));
+    expect(screen.getByLabelText("表を貼り付ける")).toHaveValue(newer);
+    expect(onReady).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("保全しました");
+  });
+
+  it("does not import using an experiment structure changed during file reading", async () => {
+    const onReady = vi.fn();
+    const { container } = render(
+      <AdaptiveExperimentEntry
+        locale="ja"
+        onCancel={vi.fn()}
+        onReady={onReady}
+        onSurvivalReady={vi.fn()}
+      />,
+    );
+    answerJapaneseQuestions();
+    fireEvent.click(screen.getByRole("button", { name: "入力面を作る" }));
+    let resolve!: (value: string) => void;
+    const file = new File([], "old.tsv");
+    Object.defineProperty(file, "text", {
+      value: () =>
+        new Promise<string>((done) => {
+          resolve = done;
+        }),
+    });
+    fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: "実験構造を修正" }));
+    fireEvent.change(screen.getByLabelText("水準（カンマ区切り）"), {
+      target: { value: "Dark, Light" },
+    });
+    await act(async () => resolve("CellID\tDark\tLit\nC1\t1\t2"));
+    expect(onReady).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("水準（カンマ区切り）")).toHaveValue("Dark, Light");
+  });
   it("is keyboard-focusable, selects a surface deterministically, and exposes semantic table headers", async () => {
     const onReady = vi.fn();
     render(
@@ -36,7 +94,7 @@ describe("AdaptiveExperimentEntry accessibility and localization", () => {
     generate.focus();
     expect(generate).toHaveFocus();
     fireEvent.click(generate);
-    expect(screen.getByRole("heading", { name: "条件ごとの対応入力" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "compact_unit_matrix" })).toBeVisible();
     const paste = screen.getByLabelText("表を貼り付ける");
     fireEvent.change(paste, { target: { value: "CellID\tDark\tLit\nC1\t1\t2\nC2\t3\t4" } });
     fireEvent.click(screen.getByRole("button", { name: "この入力面を使う" }));
@@ -155,7 +213,7 @@ describe("AdaptiveExperimentEntry accessibility and localization", () => {
     fireEvent.change(screen.getByLabelText("条件・要因名 2"), { target: { value: "Construct" } });
     fireEvent.change(screen.getByLabelText("水準 2"), { target: { value: "Empty, Rescue" } });
     fireEvent.click(screen.getByRole("button", { name: "入力面を作る" }));
-    expect(screen.getByRole("heading", { name: "観測ごとの入力表" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "factor_observation_table" })).toBeVisible();
     fireEvent.change(screen.getByLabelText("表を貼り付ける"), {
       target: {
         value:

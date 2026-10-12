@@ -342,7 +342,7 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
     expect(
       screen.getByRole("region", { name: "Animal survival Graphワークスペース" }),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: "統計" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "Statistics" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
     await waitFor(() => expect(saveProject).toHaveBeenCalledTimes(1));
     const unchanged = ProjectStateSchema.parse(saveProject.mock.calls[0]![0]);
@@ -410,7 +410,8 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
       }),
     );
     expect(screen.getByRole("img", { name: "Kaplan–Meier survival graph" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "統計" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Statistics" }));
+    fireEvent.click(screen.getByRole("button", { name: "統計解析を設定" }));
     fireEvent.click(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" }));
     expect(await screen.findByText(/log-rank検定が完了/)).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
@@ -445,7 +446,7 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
         value: handoff.replace("M1-1\tVehicle\t5\tCensored", "M1-1\tVehicle\t7\tCensored"),
       },
     });
-    fireEvent.click(screen.getByRole("button", { name: "統計" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Statistics" }));
     fireEvent.click(screen.getByRole("button", { name: "Kaplan–Meier + log-rankを実行" }));
     await waitFor(() => expect(analysisRunner).toHaveBeenCalledTimes(2));
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));
@@ -493,9 +494,7 @@ describe("Human Manual Validation Cases 1-5 on the adaptive path", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "＋ グラフを作成" }));
     fireEvent.click(screen.getByRole("button", { name: "このグラフを作成" }));
-    expect(
-      await screen.findByRole("img", { name: /実験単位ごとのグラフ/ }, { timeout: 5_000 }),
-    ).toBeVisible();
+    expect(screen.getByRole("img", { name: /実験単位ごとのグラフ/ })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "統計" }));
     expect(screen.getByRole("region", { name: "統計ワークスペース" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "プロジェクトを保存" }));

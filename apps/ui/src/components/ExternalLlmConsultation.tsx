@@ -5,7 +5,6 @@ import {
   EXTERNAL_LLM_GUIDE_URL,
 } from "../app/externalLlmConsultation";
 import { openProblemReportWithPrefill } from "../app/problemReports";
-import { localizedText, useAppLocale } from "../app/appLocale";
 import "./ExternalLlmConsultation.css";
 
 export function ExternalLlmConsultation({
@@ -15,8 +14,6 @@ export function ExternalLlmConsultation({
   prompt: string;
   placement: "experiment_setup" | "statistics";
 }>) {
-  const locale = useAppLocale();
-  const t = (ja: string, en: string) => localizedText(locale, ja, en);
   const [open, setOpen] = useState(false);
   const [editablePrompt, setEditablePrompt] = useState(prompt);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
@@ -40,11 +37,11 @@ export function ExternalLlmConsultation({
     try {
       await navigator.clipboard.writeText(request);
       setRequestCopyStatus(
-        t("実装要望をコピーしました。内容を確認し、問題報告フォームや開発タスクへ自分で貼り付けてください。", "Improvement request copied. Review it, then paste it into the problem-report form or a development task yourself."),
+        "実装要望をコピーしました。内容を確認し、問題報告フォームや開発タスクへ自分で貼り付けてください。",
       );
     } catch {
       setRequestCopyStatus(
-        t("自動コピーできませんでした。入力内容を選択して手動でコピーしてください。", "Automatic copy failed. Select the text and copy it manually."),
+        "自動コピーできませんでした。入力内容を選択して手動でコピーしてください。",
       );
     }
   };
@@ -57,74 +54,74 @@ export function ExternalLlmConsultation({
     });
     openProblemReportWithPrefill({
       type: "feature_request",
-      attempted: t("外部LLMへの相談結果をもとに、BioFigureStatの改善を依頼したい", "Request a BioFigureStat improvement based on an external LLM consultation"),
+      attempted: "外部LLMへの相談結果をもとに、BioFigureStatの改善を依頼したい",
       observed: request,
     });
     setRequestCopyStatus(
-      t("問題報告フォームへ引き継ぎました。送信内容とprivacyを確認するまで送信されません。", "Transferred to the problem-report form. Nothing is sent until you review the content and privacy options."),
+      "問題報告フォームへ引き継ぎました。送信内容とprivacyを確認するまで送信されません。",
     );
   };
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(editablePrompt);
-      setCopyStatus(t("相談文をコピーしました。利用する外部LLMへ貼り付けてください。", "Consultation prompt copied. Paste it into the external LLM you choose."));
+      setCopyStatus("相談文をコピーしました。利用する外部LLMへ貼り付けてください。");
     } catch {
-      setCopyStatus(t("自動コピーできませんでした。文章を選択してコピーしてください。", "Automatic copy failed. Select the prompt and copy it manually."));
+      setCopyStatus("自動コピーできませんでした。文章を選択してコピーしてください。");
     }
   };
 
   return (
     <section
       className="external-llm-consultation"
-      aria-label={placement === "statistics" ? t("統計を外部LLMに相談", "Consult an external LLM about statistics") : t("実験入力を外部LLMに相談", "Consult an external LLM about experiment entry")}
+      aria-label={placement === "statistics" ? "統計を外部LLMに相談" : "実験入力を外部LLMに相談"}
     >
       {!open ? (
         <div className="external-llm-consultation__entry">
           <button className="secondary-button" type="button" onClick={reveal}>
-            {t("外部LLMに相談する", "Consult an external LLM")}
+            外部LLMに相談する
           </button>
           <small>
-            {t("アプリ内AIではありません。測定値を含まない相談文を表示するだけで、自動送信しません。", "This is not in-app AI. It only prepares a prompt without measurement values and never sends it automatically.")}
+            アプリ内AIではありません。測定値を含まない相談文を表示するだけで、自動送信しません。
           </small>
         </div>
       ) : (
         <div className="external-llm-consultation__panel">
           <div className="external-llm-consultation__heading">
             <div>
-              <strong>{t("外部LLMへ渡す相談文", "Prompt for an external LLM")}</strong>
+              <strong>外部LLMへ渡す相談文</strong>
               <p>
-                {t("アプリから外部サイトを開いたり送信したりしません。標準では測定値を含まない相談文だけを作ります。内容を確認・編集し、自分で選んだ外部LLMへ貼り付けてください。", "BioFigureStat does not open an external site or send anything. By default it prepares only a prompt without measurement values. Review and edit it, then paste it into the external LLM you choose.")}
+                アプリから外部サイトを開いたり送信したりしません。標準では測定値を含まない相談文だけを作ります。内容を確認・編集し、自分で選んだ外部LLMへ貼り付けてください。
               </p>
             </div>
             <button type="button" onClick={() => setOpen(false)}>
-              {t("閉じる", "Close")}
+              閉じる
             </button>
           </div>
           <textarea
-            aria-label={t("外部LLMへ渡す相談文", "Prompt for an external LLM")}
+            aria-label="外部LLMへ渡す相談文"
             value={editablePrompt}
             onChange={(event) => setEditablePrompt(event.currentTarget.value)}
             rows={14}
           />
           <div className="external-llm-consultation__actions">
             <button className="primary-button" type="button" onClick={() => void copy()}>
-              {t("相談文をコピー", "Copy prompt")}
+              相談文をコピー
             </button>
             <a href={EXTERNAL_LLM_GUIDE_URL} target="_blank" rel="noreferrer">
-              {t("BioFigureStat使用ガイドを開く", "Open the BioFigureStat guide")}
+              BioFigureStat使用ガイドを開く
             </a>
           </div>
           {copyStatus ? <p role="status">{copyStatus}</p> : null}
           <details className="external-llm-consultation__improvement">
-            <summary>{t("相談結果から改善要望を作る", "Create an improvement request from the consultation")}</summary>
+            <summary>相談結果から改善要望を作る</summary>
             <p>
-              {t("外部LLMの回答は自動実行しません。必要な部分だけ貼り付け、実装してほしい内容を自分の言葉で確認してください。研究データを含める必要はありません。アプリから送信もしません。", "External LLM responses are never executed automatically. Paste only the relevant portion and confirm the requested change in your own words. Research data are not needed, and the app does not send this automatically.")}
+              外部LLMの回答は自動実行しません。必要な部分だけ貼り付け、実装してほしい内容を自分の言葉で確認してください。研究データを含める必要はありません。アプリから送信もしません。
             </p>
             <label>
-              <span>{t("外部LLMの回答（任意）", "External LLM response (optional)")}</span>
+              <span>外部LLMの回答（任意）</span>
               <textarea
-                aria-label={t("外部LLMの回答（任意）", "External LLM response (optional)")}
+                aria-label="外部LLMの回答（任意）"
                 value={externalLlmResponse}
                 onChange={(event) => {
                   setExternalLlmResponse(event.currentTarget.value);
@@ -134,16 +131,16 @@ export function ExternalLlmConsultation({
               />
             </label>
             <label>
-              <span>{t("実装してほしい内容", "Requested change")}</span>
+              <span>実装してほしい内容</span>
               <textarea
-                aria-label={t("実装してほしい内容", "Requested change")}
+                aria-label="実装してほしい内容"
                 value={requestedChange}
                 onChange={(event) => {
                   setRequestedChange(event.currentTarget.value);
                   setRequestCopyStatus(null);
                 }}
                 rows={4}
-                placeholder={t("例：この説明では実験者が選択肢を区別しにくいため、実験上の事実で選べる表現にしてほしい", "Example: These options are difficult to distinguish; please rewrite them so a researcher can choose based on experimental facts.")}
+                placeholder="例：この説明では実験者が選択肢を区別しにくいため、実験上の事実で選べる表現にしてほしい"
               />
             </label>
             <button
@@ -152,7 +149,7 @@ export function ExternalLlmConsultation({
               disabled={!requestedChange.trim() && !externalLlmResponse.trim()}
               onClick={() => void copyImprovementRequest()}
             >
-              {t("実装要望をコピー", "Copy improvement request")}
+              実装要望をコピー
             </button>
             <button
               className="secondary-button"
@@ -160,7 +157,7 @@ export function ExternalLlmConsultation({
               disabled={!requestedChange.trim() && !externalLlmResponse.trim()}
               onClick={reportImprovementRequest}
             >
-              {t("改善要望として報告", "Report as an improvement request")}
+              改善要望として報告
             </button>
             {requestCopyStatus ? <p role="status">{requestCopyStatus}</p> : null}
           </details>

@@ -1,8 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { biologicalWorkspaceStopMessage } from "../app/newExperimentMessages";
-import { NewExperimentPage } from "./NewExperimentPage";
+import { biologicalWorkspaceStopMessage, NewExperimentPage } from "./NewExperimentPage";
 
 function startCellCountStructureStep() {
   render(<NewExperimentPage onNavigate={() => undefined} />);
@@ -52,6 +51,7 @@ describe("NewExperimentPage explicit scientific structure answers", () => {
     fireEvent.click(screen.getByRole("button", { name: "次へ" }));
 
     expect(screen.getByRole("heading", { name: "条件を入力してください" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "条件を入力してください" })).toHaveFocus();
     expect(screen.getByRole("button", { name: "3. 測定軸" })).toBeDisabled();
     expect(screen.queryByRole("radio", { name: /条件ごとに別の単位/ })).toBeNull();
   });

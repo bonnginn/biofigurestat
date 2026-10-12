@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { SpecializedEntryDraftProjectState } from "@lsaa/project";
@@ -83,6 +83,63 @@ function orderedDraft(text: string): CommonCoverageDraft {
 }
 
 describe("dedicated entry safe-draft UI persistence", () => {
+  it.each(["survival", "nonlinear-fit"] as const)(
+    "retains %s edits made while an earlier draft is saving",
+    async (mode) => {
+      const original =
+        mode === "survival"
+          ? "Unit ID\tGroup\tFollow-up time\tStatus\nmouse-1\tControl\t4\tEvent\nmouse-2\tDrug\t\tCensored"
+          : "Unit ID\tSeries\tX\tY\nrun-1\tDrug A\t0\t0.1\nrun-1\tDrug A\t5\t0.8";
+      let finish!: () => void;
+      const onDirtyChange = vi.fn();
+      const saveDraft = vi.fn<SaveSpecializedEntryDraftProjectAction>(
+        (state) =>
+          new Promise((resolve) => {
+            finish = () => resolve({ state, target: "C:/tmp/pending-draft.lsa" });
+          }),
+      );
+      render(
+        mode === "survival" ? (
+          <SpecializedCorePage
+            mode="survival"
+            onBack={vi.fn()}
+            entryIntent={survivalIntent}
+            initialDraft={survivalDraft(original)}
+            saveSpecializedEntryDraftProject={saveDraft}
+            onDirtyChange={onDirtyChange}
+          />
+        ) : (
+          <CommonCoveragePage
+            mode="nonlinear-fit"
+            onBack={vi.fn()}
+            entryIntent={orderedCurveIntent}
+            initialDraft={orderedDraft(original)}
+            saveSpecializedEntryDraftProject={saveDraft}
+            onDirtyChange={onDirtyChange}
+          />
+        ),
+      );
+      fireEvent.click(screen.getByRole("button", { name: "保存" }));
+      await waitFor(() => expect(saveDraft).toHaveBeenCalledTimes(1));
+      const changed = original.replace(
+        mode === "survival" ? "\t4\tEvent" : "\t0.8",
+        mode === "survival" ? "\t6\tEvent" : "\t0.9",
+      );
+      fireEvent.change(
+        screen.getByLabelText(mode === "survival" ? "Survival data" : "非線形XYフィッティング data"),
+        { target: { value: changed } },
+      );
+      await act(async () => finish());
+      expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+      expect(saveDraft.mock.calls[0]![0].rawLineage.rawText).toBe(original);
+      fireEvent.click(screen.getByRole("button", { name: "保存" }));
+      await waitFor(() => expect(saveDraft).toHaveBeenCalledTimes(2));
+      expect(saveDraft.mock.calls[1]![0].rawLineage.rawText).toBe(changed);
+      await act(async () => finish());
+      expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+    },
+  );
+
   it("saves and reopens incomplete Survival input without claiming a design", async () => {
     const rawText =
       "Unit ID\tGroup\tFollow-up time\tStatus\nmouse-1\tControl\t4\tEvent\nmouse-2\tDrug\t\tCensored";
@@ -134,8 +191,7 @@ describe("dedicated entry safe-draft UI persistence", () => {
   });
 
   it("saves a multiple-axis ordered-curve stop with the entered model and exact table", async () => {
-    const rawText =
-      "Unit ID\tSeries\tX\tY\nrun-1\tDrug A\t0\t0.1\nrun-1\tDrug A\t5\t0.8";
+    const rawText = "Unit ID\tSeries\tX\tY\nrun-1\tDrug A\t0\t0.1\nrun-1\tDrug A\t5\t0.8";
     let savedState: SpecializedEntryDraftProjectState | undefined;
     const saveDraft = vi.fn<SaveSpecializedEntryDraftProjectAction>(async (state) => {
       savedState = state;
