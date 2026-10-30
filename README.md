@@ -2,6 +2,8 @@
 
 [English](#english) | [日本語](#日本語)
 
+[Features, workflow and downloads / 機能・使い方・ダウンロード](https://bonnginn.github.io/biofigurestat/)
+
 ## English
 
 BioFigureStat is a local-first desktop application for structuring life-science experiments,
