@@ -1,3 +1,5 @@
+[紹介ページ（日本語）](https://bonnginn.github.io/biofigurestat/) | [Full English introduction](https://bonnginn.github.io/biofigurestat/en.html)
+
 # BioFigureStat
 
 [English](#english) | [日本語](#日本語)
